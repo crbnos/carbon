@@ -2029,11 +2029,7 @@ export const path = {
     projectTemplate: (id: string) =>
       generatePath(`${x}/project/${id}/template`),
     projectTime: (id: string) => generatePath(`${x}/project/${id}/time`),
-    projectTimesheet: `${x}/projects/timesheet`,
     projectTimesheetApprovals: `${x}/projects/approvals`,
-    projectTimesheetCorrect: `${x}/projects/timesheet/correct`,
-    projectTimesheetSubmit: `${x}/projects/timesheet/submit`,
-    projectTimesheetUpdate: `${x}/projects/timesheet/update`,
     projectViews: (id: string) => generatePath(`${x}/project/${id}/views`),
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
@@ -2412,6 +2408,7 @@ export const path = {
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
     serviceMake: (id: string, makeMethodId: string) =>
       generatePath(`${x}/service/${id}/make/${makeMethodId}`),
+    serviceOrder: (id: string) => generatePath(`${x}/service-order/${id}`),
     servicePurchasing: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing`),
     serviceQuality: (id: string) => generatePath(`${x}/service/${id}/quality`),
@@ -2540,6 +2537,10 @@ export const path = {
     theme: `${x}/account/theme`,
     timecard: (id: string) => generatePath(`${x}/people/timecard/${id}`),
     timecards: `${x}/timecards`,
+    timesheet: `${x}/timesheet`,
+    timesheetCorrect: `${x}/timesheet/correct`,
+    timesheetSubmit: `${x}/timesheet/submit`,
+    timesheetUpdate: `${x}/timesheet/update`,
     tool: (id: string) => generatePath(`${x}/tool/${id}`),
     toolCosting: (id: string) => generatePath(`${x}/tool/${id}/costing`),
     toolDetails: (id: string) => generatePath(`${x}/tool/${id}/details`),

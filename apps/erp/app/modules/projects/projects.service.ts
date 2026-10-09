@@ -2492,11 +2492,12 @@ export async function upsertLaborCategoryRate(
 // --- Timesheets --------------------------------------------------------------
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 /**
  * Gets an employee's timesheet entries between two dates (inclusive), with
- * the project, element and labor category names.
+ * the project, element and labor category names. A Service project carries
+ * its service order.
  * @mcp read
  */
 export async function getTimesheetWeek(
@@ -2611,8 +2612,8 @@ export async function upsertTimesheetCell(
 }
 
 /**
- * Submits an employee's Draft entries between two dates (inclusive).
- * Returns the ids it submitted.
+ * Submits an employee's Draft entries of Standard projects between two
+ * dates (inclusive). Returns the ids it submitted.
  * @mcp action
  */
 export async function submitTimesheetEntries(
@@ -2639,6 +2640,14 @@ export async function submitTimesheetEntries(
     .where("status", "=", "Draft")
     .where("entryDate", ">=", args.from)
     .where("entryDate", "<=", args.to)
+    // A service order's time is posted from its visit page, never here.
+    .where("projectId", "in", (eb) =>
+      eb
+        .selectFrom("project")
+        .select("id")
+        .where("companyId", "=", args.companyId)
+        .where("projectType", "=", "Standard")
+    )
     .returning("id")
     .execute();
   return rows.map((row) => row.id);

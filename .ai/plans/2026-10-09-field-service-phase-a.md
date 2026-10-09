@@ -46,7 +46,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 12: Stop the second stock relief and release billable item stamps
 - [x] Task 13: Add `create-service-order-invoice`
 - [x] Task 14: Hide Service projects outside Service
-- [ ] Task 15: Make My Timesheet personal
+- [x] Task 15: Make My Timesheet personal
 - [ ] Task 16: Add the service models and services
 - [ ] Task 17: Add `createServiceOrder` and the status roll-up
 - [ ] Task 18: Add the Service module navigation and layout
@@ -1251,3 +1251,7 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 14: no search index source lists projects (the `sync_*_to_search_index` functions cover items, customers, suppliers, jobs, orders and invoices only), so step 2 had nothing to change.
 - Task 14: `dimension-mapping.ts` is unchanged. Its `DIMENSION_LABEL_SOURCES` resolves the labels of journal lines that already carry a Project value, and a Service order's journal lines must keep resolving (step 3). The picker is `getEntityValues` (`accounting.service.ts`): the Project case lists Standard projects only, and the ProjectElement case lists only elements of Standard projects.
 - Task 14: the Ramp hooks call only `pushProjects`, so the filter in `PROJECT_SPEC.loadDesiredOptions` covers both. It moved into the pure `desiredProjectOptions`, tested in `lib/__tests__/projects.test.ts`. `ramp-integration.md` says so.
+- Task 15: the four routes already needed only `role: "employee"`; the move takes them out of the Projects layout and its sidebar. `/x/timesheet` has no module, so it shows no module sidebar. `x+/projects+/timesheet.tsx` is now a redirect to `/x/timesheet` that keeps `?week=`. `path.to.timesheet`, `timesheetUpdate`, `timesheetSubmit` and `timesheetCorrect` replace the `projectTimesheet*` helpers; `projectTimesheetApprovals` stays in Projects.
+- Task 15: `path.to.serviceOrder(id)` (`/x/service-order/:id`, the Task 20 document page) is added here, because a Service row links to it. Task 18 adds the other service helpers. The Service navigation link to My Timesheet comes with Task 18's submodules.
+- Task 15: the grid reads the project's `projectType` and its service order (embedded in `TIMESHEET_ENTRY_COLUMNS`). A Service row shows the order's readable id and the node's name, links to the order, and shows its cells read-only (status and hours, no correction). A Standard row's name links to its element, else its project. `submitTimesheetEntries` now submits Standard projects' Draft entries only, so **Submit week** never posts a service order's time; Submit is enabled only by a Standard Draft cell.
+- Task 15: **My Timesheet** is in the user menu (`AvatarMenu`) for employees. `projects.mdx` names the new route.

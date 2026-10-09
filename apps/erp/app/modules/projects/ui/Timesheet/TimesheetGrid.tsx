@@ -77,9 +77,16 @@ type GridRow = {
   projectId: string;
   projectElementId: string | null;
   laborCategoryId: string;
-  /** The project identifier, or the element's readable id. */
+  /**
+   * The project identifier, or the element's readable id; on a service
+   * order, the order's readable id.
+   */
   readableId: string;
   name: string;
+  /** Where the charge number opens. */
+  to: string | null;
+  /** A service order's time: read-only here, its visit page posts it. */
+  isService: boolean;
   laborCategory: string;
   cells: Record<string, TimesheetCell>;
   total: number;
@@ -98,7 +105,12 @@ type TimesheetGridProps = {
     cells: Record<string, TimesheetCell>;
     total: number;
     entry: {
-      project: { identifier: string | null; name: string } | null;
+      project: {
+        identifier: string | null;
+        name: string;
+        projectType: "Standard" | "Service";
+        serviceOrder: { id: string; serviceOrderId: string }[];
+      } | null;
       element: { readableId: string; name: string } | null;
       laborCategory: { name: string } | null;
     };
@@ -113,7 +125,8 @@ const EDITABLE_STATUSES: TimesheetEntryStatusType[] = ["Draft", "Rejected"];
 /**
  * The signed-in user's week: one row per charge number and labor category,
  * one cell per day. A cell saves on blur. Submit week submits the Draft
- * cells; a posted cell changes only through a correction.
+ * cells; a posted cell changes only through a correction. A service order's
+ * row is read-only: its visit page posts the time.
  */
 export default function TimesheetGrid({
   weekOffset,
@@ -146,18 +159,35 @@ export default function TimesheetGrid({
   } | null>(null);
 
   const gridRows = useMemo<GridRow[]>(() => {
-    const serverRows: GridRow[] = rows.map((row) => ({
-      key: row.key,
-      projectId: row.projectId,
-      projectElementId: row.projectElementId,
-      laborCategoryId: row.laborCategoryId,
-      readableId:
-        row.entry.element?.readableId ?? row.entry.project?.identifier ?? "",
-      name: row.entry.element?.name ?? row.entry.project?.name ?? "",
-      laborCategory: row.entry.laborCategory?.name ?? "",
-      cells: row.cells,
-      total: row.total
-    }));
+    const serverRows: GridRow[] = rows.map((row) => {
+      const project = row.entry.project;
+      const serviceOrder =
+        project?.projectType === "Service"
+          ? (project.serviceOrder[0] ?? null)
+          : null;
+      const isService = project?.projectType === "Service";
+      return {
+        key: row.key,
+        projectId: row.projectId,
+        projectElementId: row.projectElementId,
+        laborCategoryId: row.laborCategoryId,
+        readableId: isService
+          ? (serviceOrder?.serviceOrderId ?? "")
+          : (row.entry.element?.readableId ?? project?.identifier ?? ""),
+        name: row.entry.element?.name ?? project?.name ?? "",
+        to: isService
+          ? serviceOrder
+            ? path.to.serviceOrder(serviceOrder.id)
+            : null
+          : row.projectElementId
+            ? path.to.projectElement(row.projectId, row.projectElementId)
+            : path.to.project(row.projectId),
+        isService,
+        laborCategory: row.entry.laborCategory?.name ?? "",
+        cells: row.cells,
+        total: row.total
+      };
+    });
     const keys = new Set(serverRows.map((row) => row.key));
     const localRows: GridRow[] = addedRows
       .map((row) => ({ ...row, key: timesheetRowKey(row) }))
@@ -172,6 +202,10 @@ export default function TimesheetGrid({
           ...row,
           readableId: chargeNumber?.readableId ?? "",
           name: chargeNumber?.name ?? "",
+          to: row.projectElementId
+            ? path.to.projectElement(row.projectId, row.projectElementId)
+            : path.to.project(row.projectId),
+          isService: false,
           laborCategory:
             laborCategories.find((c) => c.id === row.laborCategoryId)?.name ??
             "",
@@ -190,8 +224,10 @@ export default function TimesheetGrid({
     (sum, day) => sum + (timecardHours[day] ?? 0),
     0
   );
-  const hasDraft = gridRows.some((row) =>
-    Object.values(row.cells).some((cell) => cell.status === "Draft")
+  const hasDraft = gridRows.some(
+    (row) =>
+      !row.isService &&
+      Object.values(row.cells).some((cell) => cell.status === "Draft")
   );
   const isSubmitting = submitFetcher.state !== "idle";
 
@@ -209,7 +245,7 @@ export default function TimesheetGrid({
               variant="ghost"
               size="sm"
               onClick={() =>
-                navigate(`${path.to.projectTimesheet}?week=${weekOffset - 1}`)
+                navigate(`${path.to.timesheet}?week=${weekOffset - 1}`)
               }
             />
             <span className="whitespace-nowrap text-sm tabular-nums">
@@ -221,12 +257,12 @@ export default function TimesheetGrid({
               variant="ghost"
               size="sm"
               onClick={() =>
-                navigate(`${path.to.projectTimesheet}?week=${weekOffset + 1}`)
+                navigate(`${path.to.timesheet}?week=${weekOffset + 1}`)
               }
             />
             {weekOffset !== 0 && (
               <Button variant="ghost" size="sm" asChild>
-                <Link to={path.to.projectTimesheet}>
+                <Link to={path.to.timesheet}>
                   <Trans>This week</Trans>
                 </Link>
               </Button>
@@ -241,10 +277,7 @@ export default function TimesheetGrid({
           >
             <Trans>Add row</Trans>
           </Button>
-          <submitFetcher.Form
-            method="post"
-            action={path.to.projectTimesheetSubmit}
-          >
+          <submitFetcher.Form method="post" action={path.to.timesheetSubmit}>
             <input type="hidden" name="from" value={weekStart} />
             <input type="hidden" name="to" value={weekEnd} />
             <input type="hidden" name="week" value={weekOffset} />
@@ -305,7 +338,16 @@ export default function TimesheetGrid({
                         <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
                           {row.readableId}
                         </span>
-                        <span className="truncate">{row.name}</span>
+                        {row.to ? (
+                          <Link
+                            to={row.to}
+                            className="truncate hover:underline"
+                          >
+                            {row.name}
+                          </Link>
+                        ) : (
+                          <span className="truncate">{row.name}</span>
+                        )}
                       </span>
                       <span className="truncate text-xs text-muted-foreground">
                         {row.laborCategory}
@@ -314,6 +356,13 @@ export default function TimesheetGrid({
                   </Td>
                   {days.map((day) => {
                     const cell = row.cells[day];
+                    if (row.isService) {
+                      return (
+                        <Td key={day} className="p-0">
+                          {cell && <ReadOnlyCell cell={cell} />}
+                        </Td>
+                      );
+                    }
                     if (cell && !EDITABLE_STATUSES.includes(cell.status)) {
                       return (
                         <Td key={day} className="p-0">
@@ -439,7 +488,7 @@ function HoursCell({
     const next = latest.current;
     const hours = next === undefined || !Number.isFinite(next) ? 0 : next;
     if (hours === (serverHours ?? 0)) return;
-    const result = await save(path.to.projectTimesheetUpdate, {
+    const result = await save(path.to.timesheetUpdate, {
       entryDate: day,
       projectId: row.projectId,
       projectElementId: row.projectElementId ?? "",
@@ -480,6 +529,17 @@ function HoursCell({
   );
 }
 
+/** A cell shown with its status and hours, with no action. */
+function ReadOnlyCell({ cell }: { cell: TimesheetCell }) {
+  const formatQuantity = useQuantityFormatter();
+  return (
+    <span className="flex h-9 items-center justify-end gap-1.5 px-3 tabular-nums">
+      <TimesheetEntryStatus status={cell.status} iconOnly />
+      {formatQuantity(cell.hours)}
+    </span>
+  );
+}
+
 /** A submitted, approved or posted cell. A posted one offers a correction. */
 function LockedCell({
   cell,
@@ -489,13 +549,7 @@ function LockedCell({
   onCorrect: () => void;
 }) {
   const { t } = useLingui();
-  const formatQuantity = useQuantityFormatter();
-  const content = (
-    <span className="flex h-9 items-center justify-end gap-1.5 px-3 tabular-nums">
-      <TimesheetEntryStatus status={cell.status} iconOnly />
-      {formatQuantity(cell.hours)}
-    </span>
-  );
+  const content = <ReadOnlyCell cell={cell} />;
 
   if (cell.status !== "Posted") return content;
 
@@ -615,7 +669,7 @@ function CorrectionModal({
         <ValidatedForm
           validator={timesheetCorrectionValidator}
           method="post"
-          action={path.to.projectTimesheetCorrect}
+          action={path.to.timesheetCorrect}
           fetcher={fetcher}
           defaultValues={{
             timesheetEntryId: entryId,

@@ -44,6 +44,7 @@ import {
   LuPalette,
   LuShieldCheck,
   LuSun,
+  LuTimer,
   LuUser
 } from "react-icons/lu";
 import { Form, Link, useFetcher } from "react-router";
@@ -58,7 +59,8 @@ const AvatarMenu = () => {
   const { t } = useLingui();
   const user = useUser();
   const name = `${user.firstName} ${user.lastName}`;
-  const { isOwner } = usePermissions();
+  const permissions = usePermissions();
+  const { isOwner } = permissions;
   const edition = useEdition();
 
   const mode = useMode();
@@ -133,6 +135,14 @@ const AvatarMenu = () => {
               <Trans>Dashboard</Trans>
             </Link>
           </DropdownMenuItem>
+          {permissions.is("employee") && (
+            <DropdownMenuItem asChild>
+              <Link to={path.to.timesheet}>
+                <DropdownMenuIcon icon={<LuTimer />} />
+                <Trans>My Timesheet</Trans>
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
 
           <DropdownMenuItem asChild>

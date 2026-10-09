@@ -18,7 +18,6 @@ import { path } from "~/utils/path";
 // The Projects route owns every page under /x/projects except the module's
 // other submodules, plus the project workspace under /x/project.
 const otherProjectsRoutes = [
-  path.to.projectTimesheet,
   path.to.projectTimesheetApprovals,
   path.to.laborCategories
 ];
@@ -51,10 +50,9 @@ export default function useProjectsSubmodules() {
         },
         {
           name: t`My Timesheet`,
-          to: path.to.projectTimesheet,
+          to: path.to.timesheet,
           icon: <LuTimer />,
-          isActive: (pathname: string) =>
-            pathname.startsWith(path.to.projectTimesheet)
+          isActive: (pathname: string) => pathname.startsWith(path.to.timesheet)
         },
         {
           name: t`Approvals`,

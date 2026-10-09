@@ -32,7 +32,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const from = String(formData.get("from") ?? "");
   const to = String(formData.get("to") ?? "");
   const week = String(formData.get("week") ?? "0");
-  const back = `${path.to.projectTimesheet}?week=${encodeURIComponent(week)}`;
+  const back = `${path.to.timesheet}?week=${encodeURIComponent(week)}`;
 
   if (!DATE_PATTERN.test(from) || !DATE_PATTERN.test(to)) {
     throw redirect(
