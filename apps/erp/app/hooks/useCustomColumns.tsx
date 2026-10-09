@@ -144,8 +144,10 @@ export function useCustomColumns<T extends { customFields: Json }>(
               const value = isObject(item.row.original.customFields)
                 ? item.row.original.customFields[field.id]
                 : null;
+              // A long address would stretch the column to the cell's 30dvw
+              // cap; 10rem keeps it near its neighbours, the tooltip has the rest.
               return typeof value === "string" && value ? (
-                <LinkValue value={value} />
+                <LinkValue value={value} className="max-w-40" />
               ) : null;
             }
             case DataType.User:
