@@ -95258,6 +95258,7 @@ export type Database = {
         | "Assembly"
         | "Inspection"
         | "Outside Processing"
+      parameterSource: "Manual" | "Sum" | "Min" | "Max" | "Formula" | "Item"
       payableLineType:
         | "Comment"
         | "G/L Account"
@@ -95322,6 +95323,15 @@ export type Database = {
         | "Material Variance"
         | "Payback Variance"
         | "Burden"
+      projectElementLinkType:
+        | "satisfies"
+        | "verifies"
+        | "derives"
+        | "implements"
+        | "blocks"
+        | "precedes"
+        | "relates to"
+        | "feeds"
       projectElementPriority: "Urgent" | "High" | "Medium" | "Low" | "None"
       projectElementType:
         | "Folder"
@@ -95331,6 +95341,7 @@ export type Database = {
         | "Task"
         | "Test Case"
         | "Parameter"
+      projectLayout: "list" | "board" | "table" | "tree" | "timeline" | "reader"
       projectStateGroup:
         | "Backlog"
         | "Unstarted"
@@ -95418,6 +95429,18 @@ export type Database = {
       rentalInvoiceLineType: "Rent" | "Charge" | "Purchase Option"
       rentalRateUnit: "Day" | "Week" | "Month"
       reportViewVisibility: "Private" | "Company"
+      requirementCategory:
+        | "Functional"
+        | "Performance"
+        | "Interface"
+        | "Environmental"
+        | "Design Constraint"
+      requirementTargetOperator: "≤" | "≥" | "=" | "Range"
+      requirementVerificationMethod:
+        | "Test"
+        | "Analysis"
+        | "Inspection"
+        | "Demonstration"
       revenueScheduleStatus: "Planned" | "Posted"
       revenueScheduleType: "Deferral" | "Accrual" | "Interest"
       riskRegisterType: "Risk" | "Opportunity"
@@ -95543,6 +95566,7 @@ export type Database = {
         | "Educational"
         | "Religious"
         | "Other"
+      testCaseVerdict: "Not Run" | "Pass" | "Fail" | "Inconclusive"
       timesheetEntryStatus:
         | "Draft"
         | "Submitted"
@@ -96826,6 +96850,7 @@ export const Constants = {
         "Inspection",
         "Outside Processing",
       ],
+      parameterSource: ["Manual", "Sum", "Min", "Max", "Formula", "Item"],
       payableLineType: [
         "Comment",
         "G/L Account",
@@ -96896,6 +96921,16 @@ export const Constants = {
         "Payback Variance",
         "Burden",
       ],
+      projectElementLinkType: [
+        "satisfies",
+        "verifies",
+        "derives",
+        "implements",
+        "blocks",
+        "precedes",
+        "relates to",
+        "feeds",
+      ],
       projectElementPriority: ["Urgent", "High", "Medium", "Low", "None"],
       projectElementType: [
         "Folder",
@@ -96906,6 +96941,7 @@ export const Constants = {
         "Test Case",
         "Parameter",
       ],
+      projectLayout: ["list", "board", "table", "tree", "timeline", "reader"],
       projectStateGroup: [
         "Backlog",
         "Unstarted",
@@ -97002,6 +97038,20 @@ export const Constants = {
       rentalInvoiceLineType: ["Rent", "Charge", "Purchase Option"],
       rentalRateUnit: ["Day", "Week", "Month"],
       reportViewVisibility: ["Private", "Company"],
+      requirementCategory: [
+        "Functional",
+        "Performance",
+        "Interface",
+        "Environmental",
+        "Design Constraint",
+      ],
+      requirementTargetOperator: ["≤", "≥", "=", "Range"],
+      requirementVerificationMethod: [
+        "Test",
+        "Analysis",
+        "Inspection",
+        "Demonstration",
+      ],
       revenueScheduleStatus: ["Planned", "Posted"],
       revenueScheduleType: ["Deferral", "Accrual", "Interest"],
       riskRegisterType: ["Risk", "Opportunity"],
@@ -97139,6 +97189,7 @@ export const Constants = {
         "Religious",
         "Other",
       ],
+      testCaseVerdict: ["Not Run", "Pass", "Fail", "Inconclusive"],
       timesheetEntryStatus: [
         "Draft",
         "Submitted",

@@ -36,7 +36,7 @@
 
 ## Progress
 
-- [ ] Task 1: Create the Phase 1b enum migration
+- [x] Task 1: Create the Phase 1b enum migration
 - [ ] Task 2: Create the capital projects migration
 - [ ] Task 3: Create the trace links and element fields migration
 - [ ] Task 4: Create the views and preferences migration
@@ -1438,3 +1438,9 @@ ls .ai/playbooks/projects-phase-1b.md
 ```
 
 **Out of scope:** Phase 1c (baselines and change requests).
+
+## Execution notes
+
+- Prerequisite check: the Phase 1a artifacts this plan names exist. They are the `project` and `projectElement` tables (with `itemId` and the `projectElement_project_key` UNIQUE on `id, projectId, companyId`), `fixedAssetCipCost`, `.claude/rules/projects-system.md` and `packages/server-functions/src/lib/project-posting.ts`. Every Phase 1a task is committed except Task 47 (browser verification, deferred by the overnight run).
+- Tasks 1–4: each migration was applied with `pnpm db:migrate` before its commit, and its regenerated types were committed with it, as in Phase 1a. The pre-commit `check:manifest` gate refuses a migration commit with a stale digest.
+- Tasks 1–4: `pnpm run check:workflow-catalog` fails before this plan. Phase 1a added `job.projectId`, `job.projectElementId` and `job.consumeToProject`, and the catalog has no labels for them. This plan leaves that failure alone.
