@@ -20431,6 +20431,9 @@ msgstr "अगले चरण में जाने से पहले सा
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "साइन-ऑफ जो इस समस्या को बंद करने से पहले दर्ज किए जाने चाहिए; वर्कफ़्लो द्वारा आवश्यक किसी के अलावा।"
 
+msgid "Signature pad"
+msgstr ""
+
 msgid "Signed in as {name}"
 msgstr "{name} के रूप में साइन इन किया गया"
 

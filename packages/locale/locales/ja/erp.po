@@ -20431,6 +20431,9 @@ msgstr "次のステップに進む前のサインオフレビュー"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "この問題を閉じる前に記録する必要があるサインオフ。ワークフローで必要なもの以外に。"
 
+msgid "Signature pad"
+msgstr ""
+
 msgid "Signed in as {name}"
 msgstr "{name}としてサインインしています"
 

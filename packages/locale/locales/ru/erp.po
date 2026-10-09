@@ -20431,6 +20431,9 @@ msgstr "Подтверждение рассмотрения перед пере�
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Утверждения, которые должны быть записаны перед закрытием этой проблемы; в дополнение к тем, которые требуются рабочим процессом."
 
+msgid "Signature pad"
+msgstr ""
+
 msgid "Signed in as {name}"
 msgstr "Вы вошли как {name}"
 

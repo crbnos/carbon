@@ -20431,6 +20431,9 @@ msgstr "在进入下一步骤前进行签署评审"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "必须在此问题关闭前记录的签核；除工作流要求的外。"
 
+msgid "Signature pad"
+msgstr ""
+
 msgid "Signed in as {name}"
 msgstr "以 {name} 身份登录"
 

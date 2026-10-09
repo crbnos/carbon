@@ -1651,6 +1651,9 @@ msgstr "退出登录"
 msgid "Sign out instead"
 msgstr "改为登出"
 
+msgid "Signature pad"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
 

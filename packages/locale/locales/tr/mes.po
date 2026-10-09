@@ -1651,6 +1651,9 @@ msgstr "Oturumu Kapat"
 msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
 
+msgid "Signature pad"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
 

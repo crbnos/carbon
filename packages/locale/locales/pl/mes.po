@@ -1651,6 +1651,9 @@ msgstr "Wyloguj się"
 msgid "Sign out instead"
 msgstr "Zamiast tego wyloguj się"
 
+msgid "Signature pad"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "Zalogowany jako {stationName}"
 

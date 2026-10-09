@@ -20431,6 +20431,9 @@ msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Bu sorun kapatılmadan önce kaydedilmesi gereken onaylar; iş akışı tarafından gerekli olan olanların dışında."
 
+msgid "Signature pad"
+msgstr ""
+
 msgid "Signed in as {name}"
 msgstr "Oturum açıldı olarak {name}"
 

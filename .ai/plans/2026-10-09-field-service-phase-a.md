@@ -54,7 +54,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 20: Add the service order list, new form and document page
 - [x] Task 21: Add the Work section
 - [x] Task 22: Add visits and the Schedule page
-- [ ] Task 23: Add the `SignaturePad` component
+- [x] Task 23: Add the `SignaturePad` component
 - [ ] Task 24: Add My Visits and the visit page
 - [ ] Task 25: Add invoicing and the billable item review
 - [ ] Task 26: Add Print estimate
@@ -1277,3 +1277,4 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 22: Visits is a route tab of the order (`$id.visits.tsx`), as Work is. `$id.visits.new.tsx` schedules a visit, and with `?visitId=` it moves a Scheduled visit (technician and window). `scheduleServiceVisit` and `setServiceVisitStatus` (`service.server.ts`) write in one transaction with `syncServiceOrderStatus`. The pure `canMoveVisit` (tested) allows Scheduled → Traveling or On Site, Traveling → On Site, On Site → Completed, and Cancelled from any of them. **Complete** asks **Work complete?** (`VisitStatusActions`): Yes passes `workComplete`, so the roll-up gives Completed. `getServiceVisits` gains a `serviceOrderId` filter.
 - Task 22: the status route needs `view: "service"`. A user without `service_update` moves only a visit where they are the technician (`getUserClaims` + `hasPermission`), because the Kysely write does not pass through RLS.
 - Task 22 (deviation): the window uses the existing `DateTimePicker`, which reads the time in the browser's time zone and stores a UTC instant. The plan asked for the company time zone; that needs a new picker. **Schedule** groups by the company's day (`parseAbsolute` in the company zone), shows 7 days from `?from=` (today by default), and filters status (default: not done) and technician. A row opens the order's Visits tab; Task 24 points it at the visit page when that page exists.
+- Task 23: the drawing logic is the pure `createSignatureDrawing` (strokes, quadratic curves between midpoints, a dot for a tap, clear and redraw), exported beside `SignaturePad`, so it can be tested without a DOM. `@carbon/react` tests run in Node with no DOM library, and adding one is a new dependency. The test renders the pad to static markup (the canvas with `touch-action: none` and the Clear button) and checks that `clear()` calls `onChange(true)` on a fake 2D context. It mocks `@lingui/react/macro`, because the package's vitest config has no macro transform. The ref also exposes `clear()` and `isEmpty()`. The Clear button is `size="lg"` (44 px) for the phone page of Task 24. The canvas width takes the fractional device size, which the canvas truncates, so no raw rounding is needed.

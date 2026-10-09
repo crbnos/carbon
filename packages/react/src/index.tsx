@@ -330,6 +330,12 @@ import {
   SidebarTrigger,
   useSidebar
 } from "./Sidebar";
+import type {
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps
+} from "./SignaturePad";
+import { createSignatureDrawing, SignaturePad } from "./SignaturePad";
 import { Skeleton } from "./Skeleton";
 import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
@@ -377,6 +383,7 @@ import { VStack } from "./VStack";
 export * from "./Acknowledge";
 export * from "./hooks";
 export * from "./RecordOutlet";
+export { createSignatureDrawing };
 export {
   Accordion,
   AccordionContent,
@@ -644,6 +651,7 @@ export {
   Slider,
   Spinner,
   SplitButton,
+  SignaturePad,
   Status,
   Subheading,
   Switch,
@@ -692,6 +700,9 @@ export {
   useSidebar
 };
 export type {
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps,
   AvatarProps,
   BadgeProps,
   ButtonProps,
