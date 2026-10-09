@@ -42,6 +42,8 @@ const Switch = forwardRef<
     <SwitchPrimitives.Root
       className={cn(
         "group flex items-center transition-colors focus-visible:outline-none",
+        // Phones: a 44x44 hit area around the visual switch.
+        "max-md:hit-area",
         container,
         className
       )}

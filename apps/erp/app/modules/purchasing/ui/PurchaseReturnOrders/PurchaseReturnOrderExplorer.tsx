@@ -329,7 +329,7 @@ function PurchaseReturnOrderLineItem({
             <IconButton
               aria-label={disclosure.isOpen ? t`Hide` : t`Show`}
               className={cn(
-                "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -344,7 +344,7 @@ function PurchaseReturnOrderLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"

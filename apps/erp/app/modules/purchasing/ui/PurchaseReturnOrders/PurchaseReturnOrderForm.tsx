@@ -220,7 +220,7 @@ const PurchaseReturnOrderForm = ({
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isEditing

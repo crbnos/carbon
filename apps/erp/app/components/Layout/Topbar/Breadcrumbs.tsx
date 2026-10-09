@@ -24,7 +24,6 @@ import {
   ModalTitle,
   ScrollArea,
   useDisclosure,
-  useIsMobile,
   useMode,
   VStack
 } from "@carbon/react";
@@ -66,7 +65,12 @@ const BreadcrumbHandleMatch = z.object({
   handle: BreadcrumbHandle
 });
 
-const Breadcrumbs = () => {
+/**
+ * The current route's breadcrumbs from each match's `handle.breadcrumb`, with
+ * `msg` descriptors translated. Desktop renders them as Breadcrumbs; the
+ * compact app bar derives its title, subtitle and Back target from them.
+ */
+export function useBreadcrumbs() {
   const { i18n } = useLingui();
   const matches = useMatches();
 
@@ -103,7 +107,12 @@ const Breadcrumbs = () => {
     }));
   });
 
-  const isMobile = useIsMobile();
+  return breadcrumbs;
+}
+
+const Breadcrumbs = () => {
+  const breadcrumbs = useBreadcrumbs();
+
   const { company } = useUser();
   const mode = useMode();
   const logo = mode === "dark" ? company?.logoDarkIcon : company?.logoLightIcon;
@@ -125,7 +134,7 @@ const Breadcrumbs = () => {
       </Button>
 
       <BreadcrumbsBase className="line-clamp-1">
-        {!isMobile && <CompanyBreadcrumb />}
+        <CompanyBreadcrumb />
         {breadcrumbs.map((breadcrumb, i) => (
           <BreadcrumbItem key={i}>
             <BreadcrumbLink

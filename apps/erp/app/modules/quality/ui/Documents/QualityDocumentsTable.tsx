@@ -80,6 +80,7 @@ const QualityDocumentsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -91,6 +92,8 @@ const QualityDocumentsTable = memo(
             <QualityDocumentStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
+            mobilePill: true,
             icon: <LuCalendar />
           }
         },
@@ -101,6 +104,7 @@ const QualityDocumentsTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />
           }
         },

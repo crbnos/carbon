@@ -81,6 +81,8 @@ const Cell = <T extends object>({
     <Td
       className={cn(
         "group/cell relative py-2 whitespace-nowrap text-sm outline-none max-w-[30dvw] truncate",
+        // Phones: a grid's name column opts in to more width than the others.
+        "max-md:[&:has([data-key-cell])]:max-w-[45dvw]",
         cell.column.id === "Select" ? "px-2" : "px-4",
         wasEdited && "bg-yellow-100 dark:bg-yellow-900",
         isEditMode && !hasEditableTableCellComponent && "bg-muted/50",

@@ -14,7 +14,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -31,6 +30,7 @@ import { LuMapPin } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
   getCompanySettings,
   jobCompletedValidator,
@@ -331,13 +331,10 @@ export default function ProductionSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Production</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <Card>
           <CardHeader>
@@ -608,7 +605,7 @@ export default function ProductionSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

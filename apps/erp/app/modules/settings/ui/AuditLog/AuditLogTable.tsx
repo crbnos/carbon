@@ -154,6 +154,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
           );
         },
         meta: {
+          mobile: "P1",
           filter: {
             type: "static",
             options: getEntityTypes().map((entityType) => ({
@@ -182,6 +183,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -195,6 +197,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
       {
         accessorKey: "actorId",
         header: t`Changed By`,
+        meta: { mobile: "P3" },
         cell: ({ row }) => {
           const entry = row.original;
           return entry.actorId ? (
@@ -227,6 +230,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`When`,
+        meta: { mobile: "P2" },
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
             <DateTime value={row.original.createdAt} variant="absolute" />

@@ -22,7 +22,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -39,6 +38,7 @@ import { useFetcher, useLoaderData } from "react-router";
 import CompanyDefaultAttachmentsCard from "~/components/CompanyDefaultAttachmentsCard";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
@@ -421,13 +421,10 @@ export default function PurchasingSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Purchasing</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Documents</Trans>
@@ -838,7 +835,7 @@ export default function PurchasingSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

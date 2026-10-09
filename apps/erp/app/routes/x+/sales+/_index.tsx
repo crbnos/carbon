@@ -381,7 +381,7 @@ export default function SalesDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<RiProgress2Line />}
           title={<Trans>Open RFQs</Trans>}
@@ -414,9 +414,9 @@ export default function SalesDashboard() {
       </div>
 
       <Card>
-        <HStack className="justify-between items-center">
+        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
           <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2">
+            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -447,11 +447,11 @@ export default function SalesDashboard() {
                 onChange={setCustomerId}
                 options={customerOptions}
                 size="sm"
-                className="min-w-[160px] gap-4"
+                className="min-w-[160px] gap-4 max-md:min-w-0"
               />
             </div>
           </CardHeader>
-          <CardAction className="flex-row items-center gap-2">
+          <CardAction className="flex-row items-center gap-2 max-md:pt-0">
             <DateSelect
               value={interval}
               onValueChange={onIntervalChange}
@@ -503,7 +503,7 @@ export default function SalesDashboard() {
           </VStack>
           <Loading
             isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full"
+            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
           >
             {selectedKpi === "salesFunnel" ? (
               <FunnelChart
@@ -514,7 +514,7 @@ export default function SalesDashboard() {
             ) : (
               <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
+                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
               >
                 <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
                   <CartesianGrid vertical={false} />
@@ -719,7 +719,7 @@ function SalesOrderDocumentRow({ doc }: { doc: SalesOrder }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.salesOrder(doc.id!)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.salesOrder(doc.id!)}>
           <HStack spacing={1}>
             <RiProgress8Line className="size-4" />
             <span>{doc.salesOrderId}</span>
@@ -740,7 +740,7 @@ function QuoteDocumentRow({ doc }: { doc: Quotation }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.quote(doc.id!)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.quote(doc.id!)}>
           <HStack spacing={1}>
             <RiProgress4Line className="size-4" />
             <span>{doc.quoteId}</span>
@@ -761,7 +761,7 @@ function RfqDocumentRow({ doc }: { doc: SalesRFQ }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.salesRfq(doc.id!)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.salesRfq(doc.id!)}>
           <HStack spacing={1}>
             <RiProgress2Line className="size-4" />
             <span>{doc.rfqId}</span>

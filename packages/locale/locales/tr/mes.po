@@ -215,6 +215,9 @@ msgstr "kullanılabilir"
 msgid "Available"
 msgstr "Kullanılabilir"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "Partiye geri dön"
 
@@ -295,6 +298,9 @@ msgstr "E-postanızı kontrol edin"
 msgid "Choose a job"
 msgstr "İş emri seç"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Clear"
 msgstr "Temizle"
 
@@ -360,6 +366,10 @@ msgstr "Şirket"
 msgid "Complete"
 msgstr "Tamamla"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
@@ -406,8 +416,7 @@ msgstr "Panoya kopyala"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0} Oluştur"
 
@@ -510,8 +519,8 @@ msgid "Due"
 msgstr "Vade"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Süresi dolacak {0}"
 
@@ -668,6 +677,9 @@ msgstr "Malzeme seçilmeden bitir?"
 msgid "First due {0}"
 msgstr "İlk vade {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Tamamlamadan önce vurgulanan miktarları düzeltin."
 
@@ -688,6 +700,9 @@ msgstr "İşleme geri dön"
 
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
@@ -810,6 +825,9 @@ msgstr "Bir operasyonu atlamak için 0'da bırakın — çalıştırılmadan çi
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
 
@@ -879,6 +897,9 @@ msgstr "Makine"
 msgid "Machine down for maintenance now?"
 msgstr "Makine şu anda bakım için kapalı mı?"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "Bakım"
 
@@ -930,6 +951,9 @@ msgstr "Metrik"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "Daha fazla işlem"
@@ -1160,13 +1184,14 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için NCR aç"
 
 msgid "Open Jobs"
-msgstr "Açık İş emirleri"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Alt derlemeyi aç {0}: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "Operasyon için gereken tarih: {0}"
@@ -1185,6 +1210,9 @@ msgstr "Operatör Tarafından Yapıldı"
 
 msgid "Optional"
 msgstr "İsteğe bağlı"
+
+msgid "Options"
+msgstr ""
 
 msgid "or"
 msgstr "veya"
@@ -1224,6 +1252,9 @@ msgstr "Geçiş anahtarı ile açma başarısız"
 
 msgid "Pause"
 msgstr "Duraklat"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "Topla"
@@ -1279,6 +1310,9 @@ msgstr "PM zamanlaması süresi doldu"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Herhangi bir sayfada bu listeyi açmak için ? tuşuna basın. Bir alan içinde yazarken kısayollar yoksayılır."
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "Önceki"
@@ -1646,6 +1680,9 @@ msgstr "Başlat {0}"
 msgid "Start or pause the operation"
 msgstr "Operasyonu başlat veya duraklat"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
 
@@ -1744,6 +1781,9 @@ msgstr "Bu partinin iş talimatı yok."
 msgid "This lot is expired and can't be picked."
 msgstr "Bu lot'un süresi doldu ve toplanamaz."
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapmak için rotasını yeniden açabilir."
 
@@ -1778,11 +1818,23 @@ msgstr "Çalıştırılacak"
 msgid "Today"
 msgstr "Bugün"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "Kenar çubuğunu aç/kapat"
 
 msgid "Tools"
 msgstr "Araçlar"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "Toplam"
@@ -1918,6 +1970,9 @@ msgstr "İş Merkezi Ekranları"
 
 msgid "Work instructions"
 msgstr "İş talimatları"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "Evet"

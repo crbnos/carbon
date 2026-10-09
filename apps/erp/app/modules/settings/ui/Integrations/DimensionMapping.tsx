@@ -286,7 +286,7 @@ export function DimensionMapping({
                 )}
               </p>
             )}
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               {rows.length === 0 ? (
                 <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
                   <Trans>No dimension slots configured</Trans>
@@ -571,7 +571,7 @@ function MappingSection({
         </div>
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      <div className="w-full rounded-lg border border-border">
+      <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
         {count === 0 ? (
           <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
             {emptyMessage}
@@ -770,7 +770,7 @@ function MatchByNameDrawer({
               <Trans>No unmapped values match a provider option name</Trans>
             </div>
           ) : (
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               <Table>
                 <Thead>
                   <Tr>

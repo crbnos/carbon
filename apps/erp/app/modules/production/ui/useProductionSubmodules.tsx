@@ -16,6 +16,7 @@ import {
   LuTrash,
   LuTruck
 } from "react-icons/lu";
+import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -132,4 +133,11 @@ export default function useProductionSubmodules() {
         routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
       }))
   };
+}
+
+/** Phones: the module's section switcher, for routes outside the module's
+ *  own layout (`handle.compactSidebar`). */
+export function ProductionSections() {
+  const { groups } = useProductionSubmodules();
+  return <GroupedContentSidebar groups={groups} />;
 }

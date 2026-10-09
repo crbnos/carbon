@@ -9,11 +9,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  generateHTML,
+  RichTextView,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
@@ -64,11 +65,9 @@ const FixedAssetNotes = ({
             }}
           />
         ) : (
-          <div
-            className="prose dark:prose-invert"
-            dangerouslySetInnerHTML={{
-              __html: generateHTML(notes as JSONContent)
-            }}
+          <RichTextView
+            content={notes as JSONContent}
+            empty={<Trans>No notes</Trans>}
           />
         )}
       </CardContent>

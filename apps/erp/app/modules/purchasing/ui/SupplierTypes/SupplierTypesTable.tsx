@@ -41,6 +41,7 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P1",
           icon: <LuShapes />
         }
       }

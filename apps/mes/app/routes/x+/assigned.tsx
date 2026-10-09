@@ -9,13 +9,12 @@ import {
   Button,
   CarbonPulse,
   ClientOnly,
-  Heading,
+  IconButton,
   Input,
   Popover,
   PopoverContent,
   PopoverTrigger,
   Separator,
-  SidebarTrigger,
   Switch,
   ToggleGroup,
   ToggleGroupItem,
@@ -36,6 +35,7 @@ import { useLoaderData } from "react-router";
 import { OperationsList } from "~/components";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { userContext } from "~/context";
 import {
   getJobOperationsAssignedToEmployee,
@@ -235,22 +235,107 @@ export default function AssignedRoute() {
     !searchTerm &&
     columns.length > 0;
 
-  return (
-    <div className="flex flex-col flex-1 min-w-0">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] overflow-y-scroll scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent shrink-0 items-center gap-2 border-b bg-card">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">
-            <Trans>Assigned to Me</Trans>
-          </Heading>
-        </div>
-      </header>
+  const displayPopoverContent = (
+    <PopoverContent className="w-56">
+      <VStack>
+        <span className="text-xs font-medium text-muted-foreground">
+          <Trans>Columns</Trans>
+        </span>
+        {[
+          {
+            key: "emptyWorkCenters",
+            label: t`Empty work centers`
+          }
+        ].map(({ key, label }) => (
+          <Switch
+            key={key}
+            variant="small"
+            label={label}
+            checked={mergedDisplaySettings[key as keyof DisplaySettings]}
+            onCheckedChange={(checked) =>
+              setDisplaySettings((prev) => ({
+                ...defaultDisplaySettings,
+                ...prev,
+                [key]: checked
+              }))
+            }
+          />
+        ))}
+        <Separator />
+        <span className="text-xs font-medium text-muted-foreground">
+          <Trans>Cards</Trans>
+        </span>
+        {[
+          { key: "showCustomer", label: t`Customer` },
+          { key: "showDescription", label: t`Description` },
+          { key: "showDueDate", label: t`Due Date` },
+          { key: "showDuration", label: t`Duration` },
+          { key: "showProgress", label: t`Progress` },
+          { key: "showStatus", label: t`Status` },
+          { key: "showSalesOrder", label: t`Sales Order` },
+          { key: "showThumbnail", label: t`Thumbnail` }
+        ].map(({ key, label }) => (
+          <Switch
+            key={key}
+            variant="small"
+            label={label}
+            checked={mergedDisplaySettings[key as keyof DisplaySettings]}
+            onCheckedChange={(checked) =>
+              setDisplaySettings((prev) => ({
+                ...defaultDisplaySettings,
+                ...prev,
+                [key]: checked
+              }))
+            }
+          />
+        ))}
+      </VStack>
+    </PopoverContent>
+  );
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
-        <div className="w-full px-4 h-[var(--header-height)] flex items-center">
+  return (
+    // Phones: the page takes the screen above the tab bar, so the list and
+    // the board scroll inside it (see Schedule).
+    <div className="flex flex-col flex-1 min-h-0 min-w-0 max-md:h-[calc(100dvh-var(--mes-tab-bar-h))] max-md:flex-none">
+      <MesAppBar
+        title={<Trans>Assigned</Trans>}
+        actions={
+          <>
+            {view === "board" && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <IconButton
+                    aria-label={t`Display`}
+                    variant="ghost"
+                    size="lg"
+                    icon={<LuSettings2 />}
+                  />
+                </PopoverTrigger>
+                {displayPopoverContent}
+              </Popover>
+            )}
+            <IconButton
+              aria-label={view === "board" ? t`List view` : t`Board view`}
+              variant="ghost"
+              size="lg"
+              icon={view === "board" ? <LuList /> : <LuKanban />}
+              onClick={() => setView(view === "board" ? "list" : "board")}
+            />
+          </>
+        }
+      />
+      <MesQueueHeader
+        title={<Trans>Assigned to Me</Trans>}
+        className="overflow-y-scroll scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent"
+      />
+
+      {/* Phones: a column so the board fills what the toolbar leaves and
+          each column scrolls under its header (see Schedule). */}
+      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent max-md:flex max-md:flex-col">
+        <div className="w-full px-4 h-[var(--header-height)] flex items-center max-md:h-auto max-md:pt-3">
           <div className="relative w-full">
             <div className="flex justify-between gap-4">
-              <div className="flex flex-grow">
+              <div className="flex flex-grow min-w-0">
                 <LuSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchTerm}
@@ -259,7 +344,7 @@ export default function AssignedRoute() {
                   className="pl-8"
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 max-md:hidden">
                 {view === "board" && (
                   <Popover>
                     <PopoverTrigger asChild>
@@ -271,69 +356,7 @@ export default function AssignedRoute() {
                         <Trans>Display</Trans>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-56">
-                      <VStack>
-                        <span className="text-xs font-medium text-muted-foreground">
-                          <Trans>Columns</Trans>
-                        </span>
-                        {[
-                          {
-                            key: "emptyWorkCenters",
-                            label: t`Empty work centers`
-                          }
-                        ].map(({ key, label }) => (
-                          <Switch
-                            key={key}
-                            variant="small"
-                            label={label}
-                            checked={
-                              mergedDisplaySettings[
-                                key as keyof DisplaySettings
-                              ]
-                            }
-                            onCheckedChange={(checked) =>
-                              setDisplaySettings((prev) => ({
-                                ...defaultDisplaySettings,
-                                ...prev,
-                                [key]: checked
-                              }))
-                            }
-                          />
-                        ))}
-                        <Separator />
-                        <span className="text-xs font-medium text-muted-foreground">
-                          <Trans>Cards</Trans>
-                        </span>
-                        {[
-                          { key: "showCustomer", label: t`Customer` },
-                          { key: "showDescription", label: t`Description` },
-                          { key: "showDueDate", label: t`Due Date` },
-                          { key: "showDuration", label: t`Duration` },
-                          { key: "showProgress", label: t`Progress` },
-                          { key: "showStatus", label: t`Status` },
-                          { key: "showSalesOrder", label: t`Sales Order` },
-                          { key: "showThumbnail", label: t`Thumbnail` }
-                        ].map(({ key, label }) => (
-                          <Switch
-                            key={key}
-                            variant="small"
-                            label={label}
-                            checked={
-                              mergedDisplaySettings[
-                                key as keyof DisplaySettings
-                              ]
-                            }
-                            onCheckedChange={(checked) =>
-                              setDisplaySettings((prev) => ({
-                                ...defaultDisplaySettings,
-                                ...prev,
-                                [key]: checked
-                              }))
-                            }
-                          />
-                        ))}
-                      </VStack>
-                    </PopoverContent>
+                    {displayPopoverContent}
                   </Popover>
                 )}
                 <ToggleGroup
@@ -365,7 +388,7 @@ export default function AssignedRoute() {
               }
             >
               {() => (
-                <div className="flex flex-grow items-stretch overflow-hidden relative">
+                <div className="flex flex-grow items-stretch overflow-hidden relative max-md:min-h-0">
                   <div className="flex flex-1 min-h-full w-full relative">
                     <Kanban
                       columns={columns}

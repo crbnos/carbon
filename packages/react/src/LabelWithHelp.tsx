@@ -63,7 +63,9 @@ export function LabelWithHelp({
             // -2px vertical margin collapses the button's margin-box back to
             // the text line height so the row height is identical either way;
             // the hover ring overhangs harmlessly and the icon stays in line.
-            isInline ? "h-4 w-4" : "h-5 w-5 -my-0.5"
+            isInline ? "h-4 w-4" : "h-5 w-5 -my-0.5",
+            // Tap target on phones: an invisible 44px hit area around the icon.
+            "max-md:hit-area"
           )}
         >
           <LuInfo

@@ -9,12 +9,15 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
   Heading,
-  IconButton
+  IconButton,
+  useViewport
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Children, useEffect, useRef, useState } from "react";
 import { LuEllipsisVertical, LuPanelRight } from "react-icons/lu";
+import { PhoneActionBar } from "../Layout/Mobile/ChromeSlots";
+import { RecordPhoneChrome } from "../Layout/RecordHeader";
 import { useDocumentPage } from "./DocumentPage";
 
 type DocumentPageHeaderProps = {
@@ -32,7 +35,8 @@ type DocumentPageHeaderProps = {
 /**
  * The flat header of a `DocumentPage`: identity left, actions right, a line
  * of facts underneath. It is pinned, and draws its bottom rule only once the
- * content has scrolled under it.
+ * content has scrolled under it. Phones: the ⋯ menu and Copy ID move to the
+ * app bar and the actions to the bottom bar, as on every record page.
  */
 export function DocumentPageHeader({
   title,
@@ -42,6 +46,7 @@ export function DocumentPageHeader({
   meta
 }: DocumentPageHeaderProps) {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { hasSidebar, isSidebarOpen, toggleSidebar } = useDocumentPage();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [isStuck, setIsStuck] = useState(false);
@@ -57,6 +62,61 @@ export function DocumentPageHeader({
   }, []);
 
   const metaItems = Children.toArray(meta);
+  const metaLine =
+    metaItems.length > 0 ? (
+      <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        {metaItems.map((item, index) => (
+          // The separator leads its item, so a wrap never strands it
+          // at the end of a line.
+          <span key={index} className="inline-flex items-center gap-1">
+            {index > 0 && (
+              <span aria-hidden className="mr-0.5">
+                ·
+              </span>
+            )}
+            {item}
+          </span>
+        ))}
+      </div>
+    ) : null;
+
+  const sidebarToggle = hasSidebar ? (
+    <IconButton
+      aria-label={
+        isSidebarOpen
+          ? t`Hide documents and activity`
+          : t`Show documents and activity`
+      }
+      icon={<LuPanelRight />}
+      variant="ghost"
+      aria-expanded={isSidebarOpen}
+      onClick={toggleSidebar}
+    />
+  ) : null;
+
+  if (isPhone) {
+    return (
+      <>
+        <RecordPhoneChrome menu={menuItems} copyValue={title} />
+        {status || metaLine || sidebarToggle ? (
+          <header className="flex flex-col gap-1.5 border-b border-border bg-card px-4 py-3">
+            <div className="flex min-h-11 items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                {status}
+              </div>
+              {sidebarToggle}
+            </div>
+            {metaLine}
+          </header>
+        ) : null}
+        {actions ? (
+          <PhoneActionBar className="[&>*]:min-w-0 [&>*]:flex-1">
+            {actions}
+          </PhoneActionBar>
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <>
@@ -99,37 +159,10 @@ export function DocumentPageHeader({
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {actions}
-              {hasSidebar && (
-                <IconButton
-                  aria-label={
-                    isSidebarOpen
-                      ? t`Hide documents and activity`
-                      : t`Show documents and activity`
-                  }
-                  icon={<LuPanelRight />}
-                  variant="ghost"
-                  aria-expanded={isSidebarOpen}
-                  onClick={toggleSidebar}
-                />
-              )}
+              {sidebarToggle}
             </div>
           </div>
-          {metaItems.length > 0 && (
-            <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-1">
-              {metaItems.map((item, index) => (
-                // The separator leads its item, so a wrap never strands it
-                // at the end of a line.
-                <span key={index} className="inline-flex items-center gap-1">
-                  {index > 0 && (
-                    <span aria-hidden className="mr-0.5">
-                      ·
-                    </span>
-                  )}
-                  {item}
-                </span>
-              ))}
-            </div>
-          )}
+          {metaLine}
         </div>
       </header>
     </>

@@ -5,7 +5,8 @@
 import { Badge, BarProgress, cn } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import { withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 type JobOperationNodeData = {
@@ -38,6 +39,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
   const colors = STATUS_COLORS[d.status] ?? STATUS_COLORS.Todo;
   const isHorizontal = d.direction === "LR";
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <>
@@ -49,9 +51,10 @@ function JobOperationNodeImpl({ data }: NodeProps) {
       <div
         role="button"
         tabIndex={0}
-        onClick={() => navigate(path.to.operation(d.id))}
+        onClick={() => navigate(withOrigin(path.to.operation(d.id), location))}
         onKeyDown={(e) => {
-          if (e.key === "Enter") navigate(path.to.operation(d.id));
+          if (e.key === "Enter")
+            navigate(withOrigin(path.to.operation(d.id), location));
         }}
         className={cn(
           "w-[200px] rounded-lg border-2 bg-card px-3 py-2 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors",

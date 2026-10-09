@@ -2945,7 +2945,8 @@ with no actions — indistinguishable from "nothing to do". Demo data and hand-m
 (a few actions each) never came near the limit; it took load data to see it.
 
 **Rule:** An id list for `.in()` must be bounded by something you control (the page size), and
-chunked when that bound is large — about 100 ids per request. When the related rows hang off
+chunked when that bound is large — about 100 ids per request (`fetchAllByIds` in
+`@carbon/database` does the chunking and the paging). When the related rows hang off
 a foreign key, embed them in the first read instead of looking them up afterwards. And a
 loader never swaps a failed read for an empty list: log it and throw.
 
@@ -3334,6 +3335,47 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Applies to:** `packages/jobs/src/inngest/functions/tasks/company-restore.ts` (`wipeAndLoad`); any new job that sets `session_replication_role`.
 
+## macOS silently replaces a web notification that reuses a tag
+
+**Context:** Browser push notifications (`apps/erp/public/push-worker.js`) passed each notification's `tag` (`job-assignment:<id>`, `carbon-test`) to `showNotification`, so a second push about the same thing would replace the first instead of stacking.
+
+**Problem:** On macOS the browser hands the tag to the OS as the notification's identifier, and the OS replaces a notification with the same identifier silently: no banner, only an updated entry in Notification Center. The first test arrived while banners were still off, and every later test replaced it without a sound, so push looked broken although every send returned `201` (2026-10-08). `renotify: true` did not change it. The cause was only visible in the macOS log (`log show --predicate 'process == "usernoted"'`): `updatedExisting: true`.
+
+**Rule:** Never pass a reused `tag` to `showNotification` when the user must see the repeat. Close the older notifications yourself (`registration.getNotifications()`, match on `notification.data.tag`), then show the new one with no `tag`, so it gets a fresh identifier. To debug a push that "does not arrive", read the send's status code first, then the OS notification log, before changing code.
+
+**Applies to:** `apps/erp/public/push-worker.js`; any future service worker or Notification API caller.
+
+## A new key in an Inngest step's return breaks runs in flight at deploy
+
+**Context:** The `notify` function's step `filter-recipients-by-preference` returned `{ emailRecipientIds, slackRecipientIds }`. Browser notifications added `pushRecipientIds` to the same step, under the same step id, and the code after it read `pushRecipientIds.length` (2026-10-08).
+
+**Problem:** Inngest replays a completed step from its memoized output. A run that started before the deploy and resumes after it gets the OLD output, with no `pushRecipientIds`, so `.length` throws and the notification fails. Typecheck cannot see it: the type describes the new code, not the stored output. Self-review caught it before merge.
+
+**Rule:** When a step's return grows a key, read that key with a default (`pushRecipientIds = []`) and comment why, or rename the step id so old runs re-execute it (only when the step is idempotent). Never assume a memoized step output has the current shape. (The `pushRecipientIds` key was removed again later, when push stopped having a per-topic switch; the example stays as the pattern.)
+
+**Applies to:** every `step.run` in `packages/jobs/src/inngest/functions/**` whose return shape changes.
+
+
+## A notification click on an uncontrolled tab opens nothing
+
+**Context:** `push-worker.js` handled `notificationclick` with `clients.matchAll({ type: "window", includeUncontrolled: true })`, then `focus()` and `navigate()` on the first Carbon tab (2026-10-09).
+
+**Problem:** `WindowClient.navigate()` rejects for a tab the worker does not control: a tab opened before the worker was installed, or a hard-reloaded one. The rejection ended the click handler, so the click opened nothing. No error reached the page.
+
+**Rule:** Call `matchAll({ type: "window" })` without `includeUncontrolled` when you will call `navigate()`. Focus first, because the click allows focus for a short time only. Wrap the focus and the navigation in `try`, and call `clients.openWindow()` when either fails or no tab exists.
+
+**Applies to:** `apps/erp/public/push-worker.js`; any service worker that navigates a client.
+
+## A push service's 401 or 403 does not mean the subscription is dead
+
+**Context:** After the VAPID key changed, WNS answered 401 for a subscription made with the old key, and FCM answers 403 for the same case. Deleting the row on 401/403 was proposed so such rows stop failing (2026-10-09).
+
+**Problem:** Apple's push service answers 403 when it refuses our own token (`BadJwtToken`, for example a contact address it does not accept). That refusal hits every Safari subscription at once. A delete on 403 would remove every Safari row on each push, the page load would save them again, and no Safari user would ever get a push, with no error anywhere.
+
+**Rule:** Delete a subscription only on 404 or 410. On 401 or 403, log a warning with the push service's body and keep the row (`pushDeliveryOutcome` → `rejected`). An old-key row is replaced on the browser's next page load or ages out.
+
+**Applies to:** `packages/jobs/src/inngest/functions/notifications/push-outcome.ts`, `send-push.ts`; any Web Push sender.
+
 ## A generated avatar is a seed, so the library version decides the face
 
 **Context:** `user.avatarUrl` stores a generated avatar as `dicebear:<style>:<seed>[:<rrggbb>]` (`packages/utils/src/avatar.ts`). The browser draws it with DiceBear every time it renders (`packages/react/src/utils/generatedAvatar.ts`). Nothing about the picture is stored, only the seed.
@@ -3363,6 +3405,16 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 **Rule:** Never put an import attribute on a JSON import in code that also runs in the browser. Make the server bundle the package instead: add it to `ssrNoExternal` in each app's `vite.config.ts` (the ERP and MES lists apply to both `ssr.noExternal` and `environments.ssr.resolve.noExternal`). To check the browser side, fetch the module from the dev server (`curl $ERP_URL/@fs<absolute path>`) and confirm the `import()` call has no second argument.
 
 **Applies to:** `packages/react/src/utils/generatedAvatar.ts`; any isomorphic code that imports JSON from a dependency.
+
+## One Inngest send carries at most 512 KB, and a rendered email is about 17 KB
+
+**Context:** `notify` rendered every recipient's notification email in one step, then sent all the `carbon/send-email` events with one `step.sendEvent` (2026-10-09).
+
+**Problem:** One rendered `NotificationEmail` is about 16.9 KB, because the event carries the full HTML. Inngest accepts at most 512 KB in one send and 4 MB in one step's output. So email to about 30 recipients or more could fail the send, and about 240 filled the step. A group notification reaches those sizes; a test with one recipient never does.
+
+**Rule:** Size a fan-out by its bytes, not its count. When each event carries a rendered body, render and send it in chunks (`EMAIL_CHUNK` in `notify.ts`), each chunk in its own step with an indexed id (`render-emails-${index}`). A new step id replays a run in flight at deploy, so a send step that changes id sends again for those runs.
+
+**Applies to:** `packages/jobs/src/inngest/functions/notifications/notify.ts`; any job that fans out events with large payloads.
 
 ## A caller-supplied document number used to leave the counter behind
 

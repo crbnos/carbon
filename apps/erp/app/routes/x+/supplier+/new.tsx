@@ -10,6 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useSupplierApprovalRequired, useUser } from "~/hooks";
 import { supplierValidator, upsertSupplier } from "~/modules/purchasing";
 import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
@@ -85,8 +86,8 @@ export default function SuppliersNewRoute() {
     website: ""
   };
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage className="max-md:p-0">
       <SupplierForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

@@ -959,7 +959,7 @@ export function IntegrationForm({
         </div>
       )}
       {installed && installMode && (
-        <div className="flex flex-col gap-1 rounded-md border border-border bg-muted/40 px-3 py-2">
+        <div className="flex flex-col gap-1 rounded-md border border-border bg-muted/40 px-3 py-2 max-md:border-0 max-md:p-0 max-md:rounded-none max-md:bg-transparent">
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{installMode.label}</Badge>
             {installMode.detail && (

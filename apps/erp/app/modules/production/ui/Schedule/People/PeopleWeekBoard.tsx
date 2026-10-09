@@ -25,6 +25,7 @@ import { createPortal } from "react-dom";
 import { LuGripVertical, LuX } from "react-icons/lu";
 import { useSubmit } from "react-router";
 import { EmployeeAvatar } from "~/components";
+import { type MoveTarget, MoveToMenu } from "~/components/MoveToSubmenu";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { BoardContainer } from "../Kanban/components/ColumnCard";
@@ -89,12 +90,17 @@ function WeekCard({
   item,
   isOverlay,
   isDisabled,
-  onRemove
+  onRemove,
+  getMoveTargets = () => [],
+  onMove
 }: {
   item: WeekCardItem;
   isOverlay?: boolean;
   isDisabled?: boolean;
   onRemove: (item: WeekCardItem) => void;
+  /** Phones: the other columns, for the card's "Move to" menu. */
+  getMoveTargets?: () => MoveTarget[];
+  onMove?: (item: WeekCardItem, columnId: string) => void;
 }) {
   const {
     setNodeRef,
@@ -149,12 +155,20 @@ function WeekCard({
             <button
               type="button"
               aria-label="Remove"
-              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400"
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400 max-md:hit-area"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={() => onRemove(item)}
             >
               <LuX className="h-3.5 w-3.5" />
             </button>
+          )}
+          {/* Phones: the card has no menu on desktop, where moving is drag
+              only; this holds just the drop's move, reachable by tap. */}
+          {onMove && !isDisabled && !isOverlay && (
+            <MoveToMenu
+              getTargets={getMoveTargets}
+              onMove={(columnId) => onMove(item, columnId)}
+            />
           )}
         </div>
       </div>
@@ -180,7 +194,9 @@ function WeekColumn({
   items,
   isDisabled,
   sticky = false,
-  onRemove
+  onRemove,
+  columnTargets = [],
+  onMove
 }: {
   id: string;
   title: string;
@@ -188,6 +204,9 @@ function WeekColumn({
   isDisabled: boolean;
   sticky?: boolean;
   onRemove: (item: WeekCardItem) => void;
+  /** Every column of the board, for the cards' "Move to" menu. */
+  columnTargets?: MoveTarget[];
+  onMove?: (item: WeekCardItem, columnId: string) => void;
 }) {
   const { setNodeRef } = useSortable({
     id,
@@ -219,7 +238,10 @@ function WeekColumn({
       className={cn(
         "w-[300px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none bg-card/30 border-0 border-r h-[calc(100dvh-var(--header-height)*2)]",
         sticky && "sticky left-0 z-10 bg-card transition-shadow",
-        sticky && isScrolled && "shadow-[6px_0_12px_-6px_rgba(0,0,0,0.15)]"
+        sticky && isScrolled && "shadow-[6px_0_12px_-6px_rgba(0,0,0,0.15)]",
+        // Phones: a pinned 300px column would leave no room for the rest, so
+        // Unassigned scrolls with the board like any other column.
+        sticky && "max-md:static max-md:shadow-none"
       )}
     >
       <div className="p-4 w-full font-semibold text-left flex flex-row items-center sticky top-0 z-1 border-b bg-card">
@@ -235,6 +257,8 @@ function WeekColumn({
                 item={item}
                 isDisabled={isDisabled}
                 onRemove={onRemove}
+                getMoveTargets={() => columnTargets.filter((c) => c.id !== id)}
+                onMove={onMove}
               />
             ))}
             {/* the dashed box doubles as the drop affordance — an empty
@@ -403,6 +427,12 @@ const PeopleWeekBoard = ({
     }
     if (!targetColumnId) return;
 
+    moveToColumn(item, targetColumnId);
+  }
+
+  // The drop's move; phones also reach it from a card's "Move to" menu.
+  function moveToColumn(item: WeekCardItem, targetColumnId: string) {
+    if (isDisabled) return;
     const currentColumnId = item.workCenterId ?? UNASSIGNED;
     if (targetColumnId === currentColumnId) return;
 
@@ -448,6 +478,14 @@ const PeopleWeekBoard = ({
     toast.success(t`Assigned ${employeeName} to ${targetName} for the week`);
   }
 
+  const columnTargets: MoveTarget[] = [
+    { id: UNASSIGNED, title: t`Unassigned` },
+    ...workCenters.map((workCenter) => ({
+      id: workCenter.id,
+      title: workCenter.name
+    }))
+  ];
+
   const onRemove = (item: WeekCardItem) => {
     if (!item.workCenterId) return;
     const weekShiftId = shiftForEmployee(item.employee.id);
@@ -475,6 +513,8 @@ const PeopleWeekBoard = ({
           isDisabled={isDisabled}
           sticky
           onRemove={onRemove}
+          columnTargets={columnTargets}
+          onMove={moveToColumn}
         />
         {workCenters.map((workCenter) => (
           <WeekColumn
@@ -484,6 +524,8 @@ const PeopleWeekBoard = ({
             items={itemsByColumn.get(workCenter.id) ?? []}
             isDisabled={isDisabled}
             onRemove={onRemove}
+            columnTargets={columnTargets}
+            onMove={moveToColumn}
           />
         ))}
       </BoardContainer>

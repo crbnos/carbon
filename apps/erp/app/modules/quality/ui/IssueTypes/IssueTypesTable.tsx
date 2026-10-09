@@ -39,6 +39,7 @@ const IssueTypesTable = memo(({ data, count }: IssueTypesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuOctagonX />
         }
       }

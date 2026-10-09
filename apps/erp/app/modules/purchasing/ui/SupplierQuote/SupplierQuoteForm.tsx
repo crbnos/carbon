@@ -243,7 +243,7 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               (isEditing && isLocked) ||

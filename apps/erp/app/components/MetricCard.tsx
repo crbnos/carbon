@@ -7,11 +7,13 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle
+  CardTitle,
+  cn,
+  useViewport
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { LuArrowUpRight } from "react-icons/lu";
+import { LuArrowUpRight, LuChevronRight } from "react-icons/lu";
 import { Link } from "react-router";
 
 type MetricCardProps = {
@@ -34,17 +36,28 @@ const MetricCard = ({
   className
 }: MetricCardProps) => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
+  // Compact: the whole tile is the link, so no View button.
+  // The link is then the grid item, so it takes the caller's layout classes.
+  const isLinkTile = isPhone && !!to;
 
-  return (
-    <Card className={className}>
+  const card = (
+    <Card className={cn(!isLinkTile && className, "max-md:h-full")}>
       <CardHeader className="flex-row items-center gap-2">
         {icon && (
           <span className="flex-shrink-0 text-muted-foreground">{icon}</span>
         )}
-        <CardTitle className="flex-1 min-w-0 truncate line-clamp-none">
+        <CardTitle
+          className={cn(
+            "flex-1 min-w-0 line-clamp-none",
+            // Phones: two lines, so similar labels stay distinguishable; always two
+            // lines tall, so values line up across a row of tiles.
+            isPhone ? "line-clamp-2 min-h-[2lh] text-[13px]" : "truncate"
+          )}
+        >
           {title}
         </CardTitle>
-        {to && (
+        {to && !isLinkTile && (
           <Button
             aria-label={linkLabel}
             asChild
@@ -56,9 +69,13 @@ const MetricCard = ({
             <Link to={to}>{t`View`}</Link>
           </Button>
         )}
+        {/* The View button's place on a link tile: the whole tile opens. */}
+        {isLinkTile && (
+          <LuChevronRight className="size-4 shrink-0 text-muted-foreground" />
+        )}
       </CardHeader>
       <CardContent>
-        <h3 className="text-4xl font-medium tracking-tighter tabular-nums truncate">
+        <h3 className="text-4xl font-medium tracking-tighter tabular-nums truncate max-md:text-[26px] max-md:font-semibold max-md:tracking-tight">
           {value}
         </h3>
         {description && (
@@ -67,6 +84,22 @@ const MetricCard = ({
       </CardContent>
     </Card>
   );
+
+  if (isLinkTile && to) {
+    return (
+      <Link
+        to={to}
+        className={cn(
+          "block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          className
+        )}
+      >
+        {card}
+      </Link>
+    );
+  }
+
+  return card;
 };
 
 export default MetricCard;

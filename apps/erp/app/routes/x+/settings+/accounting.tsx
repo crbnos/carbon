@@ -15,7 +15,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   ScrollArea,
   Switch,
@@ -36,6 +35,7 @@ import {
   Number as NumberInput,
   Submit
 } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { useFlags } from "~/hooks";
 import { getDefaultAccounts } from "~/modules/accounting";
 import {
@@ -283,13 +283,10 @@ export default function AccountingSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Accounting</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <Card>
           <CardHeader>
@@ -528,7 +525,7 @@ export default function AccountingSettingsRoute() {
             )}
           </Card>
         </ValidatedForm>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

@@ -13,6 +13,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -149,7 +150,7 @@ export default function DefaultAttachmentsPanel({
       </CardHeader>
       <CardContent>
         <Table className="w-full table-fixed">
-          <Thead>
+          <Thead className={cn(files.length === 0 && "max-md:hidden")}>
             <Tr>
               <Th className="w-auto">
                 <Trans>Name</Trans>

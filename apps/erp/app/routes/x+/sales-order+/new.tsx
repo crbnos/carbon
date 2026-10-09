@@ -9,6 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
 import { insertSalesOrder, salesOrderValidator } from "~/modules/sales";
 import { SalesOrderForm } from "~/modules/sales/ui/SalesOrder";
@@ -122,8 +123,8 @@ export default function SalesOrderNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <SalesOrderForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

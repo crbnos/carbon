@@ -251,6 +251,7 @@ const JobMaterialsTable = memo(
             );
           },
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
             // Filter by item id (a real column) so it filters server-side;
             // scoped to items on this job, with the readable id as the label.
@@ -295,6 +296,7 @@ const JobMaterialsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuShoppingCart />,
             // `header` is JSX (tooltip), so name the column for the filter UI.
             filterHeader: t`Status`,
@@ -400,6 +402,7 @@ const JobMaterialsTable = memo(
           ),
           cell: ({ row }) => formatter.format(row.original.estimatedQuantity),
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },

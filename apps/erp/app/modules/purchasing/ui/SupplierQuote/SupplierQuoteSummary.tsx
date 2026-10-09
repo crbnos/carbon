@@ -17,6 +17,7 @@ import {
   Thead,
   Tr,
   TruncatedTooltipText,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
@@ -29,6 +30,7 @@ import { Link, useParams } from "react-router";
 import { DateTime, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import { useCurrencyFormatter, useRouteData, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -49,6 +51,7 @@ const LineItems = ({
   locale: string;
 }) => {
   const { company } = useUser();
+  const { isPhone } = useViewport();
   const accounts = useAccounts();
   const { id } = useParams();
   if (!id) throw new Error("Could not find quote id");
@@ -91,109 +94,143 @@ const LineItems = ({
   const shouldConvertCurrency =
     routeData?.quote.currencyCode !== company?.baseCurrencyCode;
 
+  const rows = routeData?.lines?.map((line) => {
+    const prices = pricingByLine[line.id!];
+
+    const isGlAccount = line.supplierQuoteLineType === "G/L Account";
+    const itemReadableId = isGlAccount
+      ? line.description || "Indirect Expense"
+      : getItemReadableId(items, line.itemId);
+    const lineDescription = isGlAccount
+      ? (accounts.find((a) => a.id === line.accountId)?.name ?? "G/L Account")
+      : distinctItemText(itemReadableId, line.description);
+    if (!line || !prices || !line.id) {
+      return null;
+    }
+
+    const pricingOptions = (
+      <motion.div
+        initial="collapsed"
+        animate={openItems.includes(line.id) ? "open" : "collapsed"}
+        variants={{
+          open: { opacity: 1, height: "auto", marginTop: 16 },
+          collapsed: { opacity: 0, height: 0, marginTop: 0 }
+        }}
+        transition={{ duration: 0.3 }}
+        className="w-full overflow-hidden"
+      >
+        <LinePricingOptions
+          formatter={formatter}
+          line={line}
+          options={pricingByLine[line.id!]}
+          quoteCurrency={routeData?.quote.currencyCode ?? "USD"}
+          quoteExchangeRate={routeData?.quote.exchangeRate ?? 1}
+          shouldConvertCurrency={shouldConvertCurrency}
+          locale={locale}
+        />
+      </motion.div>
+    );
+
+    // Phones: a text row (no image or Edit link) that opens the prices.
+    if (isPhone) {
+      return (
+        <div key={line.id} className="w-full">
+          <SummaryLineRow
+            expanded={openItems.includes(line.id)}
+            onClick={() => toggleOpen(line.id!)}
+            title={itemReadableId}
+            value={null}
+            trailing={
+              <motion.span
+                className="self-center text-muted-foreground"
+                animate={{ rotate: openItems.includes(line.id) ? 90 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <LuChevronRight className="size-4" />
+              </motion.span>
+            }
+            description={lineDescription}
+          />
+          {pricingOptions}
+        </div>
+      );
+    }
+
+    return (
+      <motion.div
+        key={line.id}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        className="py-6 w-full"
+      >
+        <HStack spacing={4} className="items-start">
+          {line.thumbnailPath ? (
+            <img
+              alt={itemReadableId!}
+              className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+              src={getPrivateUrl(line.thumbnailPath)}
+            />
+          ) : (
+            <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+              <LuImage className="w-16 h-16 text-muted-foreground" />
+            </div>
+          )}
+
+          <VStack spacing={0} className="flex-1 min-w-0">
+            <div
+              className="flex flex-col cursor-pointer w-full"
+              onClick={() => toggleOpen(line.id!)}
+            >
+              <div className="flex items-center gap-x-4 justify-between flex-grow">
+                <HStack spacing={2} className="min-w-0 flex-shrink">
+                  <Heading className="truncate">{itemReadableId}</Heading>
+                  <Button
+                    asChild
+                    variant="link"
+                    size="sm"
+                    className="text-muted-foreground flex-shrink-0"
+                  >
+                    <Link to={path.to.supplierQuoteLine(id, line.id!)}>
+                      <Trans>Edit</Trans>
+                    </Link>
+                  </Button>
+                </HStack>
+                <HStack spacing={4}>
+                  <motion.div
+                    animate={{
+                      rotate: openItems.includes(line.id) ? 90 : 0
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <LuChevronRight size={24} />
+                  </motion.div>
+                </HStack>
+              </div>
+              {lineDescription && (
+                <TruncatedTooltipText
+                  className="text-muted-foreground text-sm truncate"
+                  tooltip={lineDescription}
+                >
+                  {lineDescription}
+                </TruncatedTooltipText>
+              )}
+            </div>
+          </VStack>
+        </HStack>
+
+        {pricingOptions}
+      </motion.div>
+    );
+  });
+
+  if (isPhone) {
+    return <SummaryLineList>{rows}</SummaryLineList>;
+  }
+
   return (
     <VStack spacing={8} className="w-full overflow-hidden">
-      {routeData?.lines?.map((line) => {
-        const prices = pricingByLine[line.id!];
-
-        const isGlAccount = line.supplierQuoteLineType === "G/L Account";
-        const itemReadableId = isGlAccount
-          ? line.description || "Indirect Expense"
-          : getItemReadableId(items, line.itemId);
-        const lineDescription = isGlAccount
-          ? (accounts.find((a) => a.id === line.accountId)?.name ??
-            "G/L Account")
-          : distinctItemText(itemReadableId, line.description);
-        if (!line || !prices || !line.id) {
-          return null;
-        }
-
-        return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="py-6 w-full"
-          >
-            <HStack spacing={4} className="items-start">
-              {line.thumbnailPath ? (
-                <img
-                  alt={itemReadableId!}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
-                  src={getPrivateUrl(line.thumbnailPath)}
-                />
-              ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
-                  <LuImage className="w-16 h-16 text-muted-foreground" />
-                </div>
-              )}
-
-              <VStack spacing={0} className="flex-1 min-w-0">
-                <div
-                  className="flex flex-col cursor-pointer w-full"
-                  onClick={() => toggleOpen(line.id!)}
-                >
-                  <div className="flex items-center gap-x-4 justify-between flex-grow">
-                    <HStack spacing={2} className="min-w-0 flex-shrink">
-                      <Heading className="truncate">{itemReadableId}</Heading>
-                      <Button
-                        asChild
-                        variant="link"
-                        size="sm"
-                        className="text-muted-foreground flex-shrink-0"
-                      >
-                        <Link to={path.to.supplierQuoteLine(id, line.id!)}>
-                          <Trans>Edit</Trans>
-                        </Link>
-                      </Button>
-                    </HStack>
-                    <HStack spacing={4}>
-                      <motion.div
-                        animate={{
-                          rotate: openItems.includes(line.id) ? 90 : 0
-                        }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <LuChevronRight size={24} />
-                      </motion.div>
-                    </HStack>
-                  </div>
-                  {lineDescription && (
-                    <TruncatedTooltipText
-                      className="text-muted-foreground text-sm truncate"
-                      tooltip={lineDescription}
-                    >
-                      {lineDescription}
-                    </TruncatedTooltipText>
-                  )}
-                </div>
-              </VStack>
-            </HStack>
-
-            <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
-              className="w-full overflow-hidden"
-            >
-              <LinePricingOptions
-                formatter={formatter}
-                line={line}
-                options={pricingByLine[line.id!]}
-                quoteCurrency={routeData?.quote.currencyCode ?? "USD"}
-                quoteExchangeRate={routeData?.quote.exchangeRate ?? 1}
-                shouldConvertCurrency={shouldConvertCurrency}
-                locale={locale}
-              />
-            </motion.div>
-          </motion.div>
-        );
-      })}
+      {rows}
     </VStack>
   );
 };

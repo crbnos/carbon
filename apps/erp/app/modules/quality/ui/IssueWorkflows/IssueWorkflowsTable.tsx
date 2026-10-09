@@ -54,6 +54,7 @@ const IssueWorkflowsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -67,6 +68,7 @@ const IssueWorkflowsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P3",
             icon: <LuDna />
           }
         },
@@ -80,6 +82,7 @@ const IssueWorkflowsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P2",
             icon: <LuChartNoAxesColumnIncreasing />
           }
         }

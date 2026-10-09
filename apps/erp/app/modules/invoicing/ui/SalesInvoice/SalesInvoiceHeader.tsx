@@ -6,16 +6,13 @@ import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Button,
-  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Heading,
   HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure
@@ -30,12 +27,9 @@ import {
   LuCircleCheck,
   LuCircleX,
   LuDollarSign,
-  LuEllipsisVertical,
   LuEye,
   LuFile,
   LuFileText,
-  LuPanelLeft,
-  LuPanelRight,
   LuSend,
   LuTicketX,
   LuTrash,
@@ -46,6 +40,7 @@ import type { FetcherWithComponents } from "react-router";
 import { Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useSettings, useUser } from "~/hooks";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
@@ -271,296 +266,294 @@ const SalesInvoiceHeader = () => {
     invoiceId,
     balance: salesInvoice.balance
   });
+  const isDraft = routeData?.salesInvoice?.status === "Draft";
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      {canMarkPaid && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={statusFetcher.state !== "idle"}
+            onClick={() =>
+              statusFetcher.submit(
+                { status: "Paid" },
+                {
+                  method: "post",
+                  action: path.to.salesInvoiceStatus(invoiceId)
+                }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuCircleCheck />} />
+            <Trans>Mark as Paid</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+      {canMarkUnpaid && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={statusFetcher.state !== "idle"}
+            onClick={() =>
+              statusFetcher.submit(
+                { status: "Submitted" },
+                {
+                  method: "post",
+                  action: path.to.salesInvoiceStatus(invoiceId)
+                }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuCircleX />} />
+            <Trans>Mark as Unpaid</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+      {isPosted && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={isVoided || !permissions.can("update", "invoicing")}
+            destructive
+            onClick={voidModal.onOpen}
+          >
+            <DropdownMenuIcon icon={<LuTicketX />} />
+            <Trans>Void</Trans>
+          </DropdownMenuItem>
+        </>
+      )}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          salesInvoice.status !== "Draft" ||
+          !permissions.can("delete", "invoicing") ||
+          !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Sales Invoice</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+  const statusBadges = (
+    <>
+      <SalesInvoiceStatus status={salesInvoice.status} />
+      {holdReason && (
+        <Status color="orange" tooltip={holdReason}>
+          <Trans>Needs Review</Trans>
+        </Status>
+      )}
+      {showEmailed &&
+        (sentViaStripe ? (
+          <Status color="green" tooltip={t`On ${sentDate}`}>
+            <Trans>Sent via Stripe</Trans>
+          </Status>
+        ) : (
+          <Status color="green" tooltip={t`To ${sentTo} on ${sentDate}`}>
+            <Trans>Emailed</Trans>
+          </Status>
+        ))}
+      {showNotSent && (
+        <>
+          <Status color="red" tooltip={salesInvoice.sendError}>
+            <Trans>Not sent</Trans>
+          </Status>
+          <Button
+            variant="secondary"
+            leftIcon={<LuSend />}
+            isLoading={sendFetcher.state !== "idle"}
+            isDisabled={
+              sendFetcher.state !== "idle" ||
+              !permissions.can("update", "invoicing")
+            }
+            onClick={() =>
+              sendFetcher.submit(
+                {},
+                {
+                  method: "post",
+                  action: path.to.salesInvoiceSend(invoiceId)
+                }
+              )
+            }
+          >
+            <Trans>Send</Trans>
+          </Button>
+        </>
+      )}
+      {routeData?.stripeInvoiceUrl && isPosted && (
+        <a
+          href={routeData.stripeInvoiceUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="no-underline"
+        >
+          <Status color="purple">
+            <Trans>Stripe</Trans>
+          </Status>
+        </a>
+      )}
+    </>
+  );
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="w-full justify-between">
-          <HStack>
-            <IconButton
-              aria-label={t`Toggle Explorer`}
-              icon={<LuPanelLeft />}
-              onClick={toggleExplorer}
-              variant="ghost"
-            />
-            <Link to={path.to.salesInvoiceDetails(invoiceId)}>
-              <Heading size="h4" className="flex items-center gap-2">
-                <span>{routeData?.salesInvoice?.invoiceId}</span>
-              </Heading>
-            </Link>
-            <Copy text={routeData?.salesInvoice?.invoiceId ?? ""} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {auditLogTrigger}
-                {canMarkPaid && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={statusFetcher.state !== "idle"}
-                      onClick={() =>
-                        statusFetcher.submit(
-                          { status: "Paid" },
-                          {
-                            method: "post",
-                            action: path.to.salesInvoiceStatus(invoiceId)
-                          }
-                        )
-                      }
-                    >
-                      <DropdownMenuIcon icon={<LuCircleCheck />} />
-                      <Trans>Mark as Paid</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {canMarkUnpaid && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={statusFetcher.state !== "idle"}
-                      onClick={() =>
-                        statusFetcher.submit(
-                          { status: "Submitted" },
-                          {
-                            method: "post",
-                            action: path.to.salesInvoiceStatus(invoiceId)
-                          }
-                        )
-                      }
-                    >
-                      <DropdownMenuIcon icon={<LuCircleX />} />
-                      <Trans>Mark as Unpaid</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {isPosted && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      disabled={
-                        isVoided || !permissions.can("update", "invoicing")
-                      }
-                      destructive
-                      onClick={voidModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTicketX />} />
-                      <Trans>Void</Trans>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={
-                    salesInvoice.status !== "Draft" ||
-                    !permissions.can("delete", "invoicing") ||
-                    !permissions.is("employee")
-                  }
-                  destructive
-                  onClick={deleteModal.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Sales Invoice</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <SalesInvoiceStatus status={salesInvoice.status} />
-            {holdReason && (
-              <Status color="orange" tooltip={holdReason}>
-                <Trans>Needs Review</Trans>
-              </Status>
-            )}
-            {showEmailed &&
-              (sentViaStripe ? (
-                <Status color="green" tooltip={t`On ${sentDate}`}>
-                  <Trans>Sent via Stripe</Trans>
-                </Status>
-              ) : (
-                <Status color="green" tooltip={t`To ${sentTo} on ${sentDate}`}>
-                  <Trans>Emailed</Trans>
-                </Status>
-              ))}
-            {showNotSent && (
-              <>
-                <Status color="red" tooltip={salesInvoice.sendError}>
-                  <Trans>Not sent</Trans>
-                </Status>
-                <Button
-                  variant="secondary"
-                  leftIcon={<LuSend />}
-                  isLoading={sendFetcher.state !== "idle"}
-                  isDisabled={
-                    sendFetcher.state !== "idle" ||
-                    !permissions.can("update", "invoicing")
-                  }
-                  onClick={() =>
-                    sendFetcher.submit(
-                      {},
-                      {
-                        method: "post",
-                        action: path.to.salesInvoiceSend(invoiceId)
-                      }
-                    )
-                  }
-                >
-                  <Trans>Send</Trans>
-                </Button>
-              </>
-            )}
-            {routeData?.stripeInvoiceUrl && isPosted && (
-              <a
-                href={routeData.stripeInvoiceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="no-underline"
-              >
-                <Status color="purple">
-                  <Trans>Stripe</Trans>
-                </Status>
-              </a>
-            )}
-          </HStack>
-          <HStack>
+      <RecordHeader
+        title={routeData?.salesInvoice?.invoiceId}
+        titleTo={path.to.salesInvoiceDetails(invoiceId)}
+        copyValue={routeData?.salesInvoice?.invoiceId ?? ""}
+        menu={menuItems}
+        status={statusBadges}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
             {contract && (
-              <Button variant="secondary" leftIcon={<LuFileText />} asChild>
-                <Link to={path.to.contract(contract.id)}>
-                  <Trans>Contract {contractReadableId}</Trans>
-                </Link>
-              </Button>
+              <RecordAction slot="overflow">
+                <Button variant="secondary" leftIcon={<LuFileText />} asChild>
+                  <Link to={path.to.contract(contract.id)}>
+                    <Trans>Contract {contractReadableId}</Trans>
+                  </Link>
+                </Button>
+              </RecordAction>
             )}
 
             {relatedDocs.salesOrders.length === 1 && (
-              <Button
-                variant="secondary"
-                leftIcon={<RiProgress8Line />}
-                asChild
-              >
-                <Link
-                  to={path.to.salesOrderDetails(relatedDocs.salesOrders[0].id)}
+              <RecordAction slot="overflow">
+                <Button
+                  variant="secondary"
+                  leftIcon={<RiProgress8Line />}
+                  asChild
                 >
-                  <Trans>Sales Order</Trans>
-                </Link>
-              </Button>
+                  <Link
+                    to={path.to.salesOrderDetails(
+                      relatedDocs.salesOrders[0].id
+                    )}
+                  >
+                    <Trans>Sales Order</Trans>
+                  </Link>
+                </Button>
+              </RecordAction>
             )}
 
             {relatedDocs.salesOrders.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" leftIcon={<RiProgress8Line />}>
-                    <Trans>Sales Orders</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {relatedDocs.salesOrders.map((po) => (
-                    <DropdownMenuItem key={po.id} asChild>
-                      <Link to={path.to.salesOrderDetails(po.id)}>
-                        {po.readableId}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <RecordAction slot="overflow">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" leftIcon={<RiProgress8Line />}>
+                      <Trans>Sales Orders</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {relatedDocs.salesOrders.map((po) => (
+                      <DropdownMenuItem key={po.id} asChild>
+                        <Link to={path.to.salesOrderDetails(po.id)}>
+                          {po.readableId}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </RecordAction>
             )}
 
             {relatedDocs.shipments.length > 0 && (
+              <RecordAction slot="overflow">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      leftIcon={<LuTruck />}
+                      rightIcon={
+                        relatedDocs.shipments.length > 1 ? (
+                          <LuChevronDown />
+                        ) : undefined
+                      }
+                    >
+                      {relatedDocs.shipments.length === 1 ? (
+                        <Trans>Shipment</Trans>
+                      ) : (
+                        <Trans>Shipments</Trans>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {relatedDocs.shipments.map((shipment) => (
+                      <DropdownMenuItem key={shipment.id} asChild>
+                        <Link to={path.to.shipment(shipment.id)}>
+                          <DropdownMenuIcon icon={<LuTruck />} />
+                          <HStack spacing={8}>
+                            <span>{shipment.readableId}</span>
+                            <ShipmentStatus
+                              status={shipment.status as "Posted"}
+                            />
+                          </HStack>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </RecordAction>
+            )}
+            <RecordAction slot="overflow">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
+                    leftIcon={<LuEye />}
                     variant="secondary"
-                    leftIcon={<LuTruck />}
-                    rightIcon={
-                      relatedDocs.shipments.length > 1 ? (
-                        <LuChevronDown />
-                      ) : undefined
-                    }
+                    rightIcon={<LuChevronDown />}
                   >
-                    {relatedDocs.shipments.length === 1 ? (
-                      <Trans>Shipment</Trans>
-                    ) : (
-                      <Trans>Shipments</Trans>
-                    )}
+                    <Trans>Preview</Trans>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  {relatedDocs.shipments.map((shipment) => (
-                    <DropdownMenuItem key={shipment.id} asChild>
-                      <Link to={path.to.shipment(shipment.id)}>
-                        <DropdownMenuIcon icon={<LuTruck />} />
-                        <HStack spacing={8}>
-                          <span>{shipment.readableId}</span>
-                          <ShipmentStatus
-                            status={shipment.status as "Posted"}
-                          />
-                        </HStack>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
+                  <DropdownMenuItem asChild>
+                    <a
+                      target="_blank"
+                      href={path.to.file.salesInvoice(invoiceId)}
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuFile />} />
+                      <Trans>PDF</Trans>
+                    </a>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  leftIcon={<LuEye />}
-                  variant="secondary"
-                  rightIcon={<LuChevronDown />}
-                >
-                  <Trans>Preview</Trans>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <a
-                    target="_blank"
-                    href={path.to.file.salesInvoice(invoiceId)}
-                    rel="noreferrer"
-                  >
-                    <DropdownMenuIcon icon={<LuFile />} />
-                    <Trans>PDF</Trans>
-                  </a>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button
-              leftIcon={<LuCheckCheck />}
-              variant={
-                routeData?.salesInvoice?.status === "Draft"
-                  ? "primary"
-                  : "secondary"
-              }
-              onClick={showPostModal}
-              isLoading={postFetcher.state !== "idle"}
-              isDisabled={
-                postFetcher.state !== "idle" ||
-                isPosted ||
-                routeData?.salesInvoiceLines?.length === 0 ||
-                !permissions.can("update", "invoicing")
-              }
-            >
-              <Trans>Post</Trans>
-            </Button>
-            {canReceivePayment && (
-              <Button variant="primary" leftIcon={<LuDollarSign />} asChild>
-                <Link to={receivePaymentHref}>
-                  <Trans>Payment</Trans>
-                </Link>
+            </RecordAction>
+            <RecordAction slot={isDraft ? "primary" : "secondary"}>
+              <Button
+                leftIcon={<LuCheckCheck />}
+                variant={
+                  routeData?.salesInvoice?.status === "Draft"
+                    ? "primary"
+                    : "secondary"
+                }
+                onClick={showPostModal}
+                isLoading={postFetcher.state !== "idle"}
+                isDisabled={
+                  postFetcher.state !== "idle" ||
+                  isPosted ||
+                  routeData?.salesInvoiceLines?.length === 0 ||
+                  !permissions.can("update", "invoicing")
+                }
+              >
+                <Trans>Post</Trans>
               </Button>
+            </RecordAction>
+            {canReceivePayment && (
+              <RecordAction slot={isDraft ? "secondary" : "primary"}>
+                <Button variant="primary" leftIcon={<LuDollarSign />} asChild>
+                  <Link to={receivePaymentHref}>
+                    <Trans>Payment</Trans>
+                  </Link>
+                </Button>
+              </RecordAction>
             )}
-            <IconButton
-              aria-label={t`Toggle Properties`}
-              icon={<LuPanelRight />}
-              onClick={toggleProperties}
-              variant="ghost"
-            />
-          </HStack>
-        </HStack>
-      </div>
+          </>
+        }
+      />
 
       {postingModal.isOpen && (
         <SalesInvoicePostModal

@@ -534,7 +534,7 @@ const PurchaseOrderLineForm = ({
               >
                 <HStack
                   className={cn(
-                    "w-full justify-between items-start",
+                    "w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0",
                     type === "modal" && "pr-16"
                   )}
                 >
@@ -599,7 +599,7 @@ const PurchaseOrderLineForm = ({
                       )}
                     </ModalCardDescription>
                   </ModalCardHeader>
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 max-md:min-w-0 max-md:overflow-x-auto max-md:scroll-fade-x max-md:px-4 max-md:pb-2 max-md:empty:hidden">
                     {!isEditing && (
                       <TabsList>
                         <TabsTrigger value="item">
@@ -962,7 +962,7 @@ const PurchaseOrderLineForm = ({
                             className={
                               activeTab === "asset"
                                 ? "col-span-1"
-                                : "col-span-3"
+                                : "col-span-3 max-md:col-span-full"
                             }
                           >
                             <FormLabel>

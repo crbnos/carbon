@@ -25,6 +25,11 @@ import {
   LuSend
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import {
+  RecordAction,
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
 import { usePermissions } from "~/hooks";
 import type {
   InventoryCountLine,
@@ -104,70 +109,82 @@ const InventoryCountDetails = ({
   // edit gate (blind spans Draft + Pending, editing is Draft-only).
   const hideSystemQuantity = inventoryCount.isBlind && status !== "Posted";
 
+  const statusBadge = <InventoryCountStatus status={status} />;
+
   // Actions live in the table header (the `primaryAction` slot) instead of a
   // dedicated detail header. Notes are surfaced via an info icon → modal.
   const actions = (
-    <HStack spacing={2} className="items-center">
+    <HStack spacing={2} className="items-center max-md:hidden">
       {inventoryCount.notes && (
-        <IconButton
-          aria-label={t`View notes`}
-          variant="ghost"
-          icon={<LuInfo />}
-          onClick={notesModal.onOpen}
-        />
+        <RecordAction slot="overflow">
+          <IconButton
+            aria-label={t`View notes`}
+            variant="ghost"
+            icon={<LuInfo />}
+            onClick={notesModal.onOpen}
+          />
+        </RecordAction>
       )}
       {movements.length > 0 && (
-        <Button
-          variant="secondary"
-          leftIcon={<LuHistory />}
-          onClick={historyModal.onOpen}
-        >
-          {t`History`}
-        </Button>
+        <RecordAction slot="overflow">
+          <Button
+            variant="secondary"
+            leftIcon={<LuHistory />}
+            onClick={historyModal.onOpen}
+          >
+            {t`History`}
+          </Button>
+        </RecordAction>
       )}
       {status === "Draft" && (
-        <Button
-          isDisabled={!canUpdate}
-          onClick={() => {
-            // Inline edits write directly to the DB without revalidating, so
-            // refresh the loader to get accurate warning counts before review.
-            revalidator.revalidate();
-            confirmModal.onOpen();
-          }}
-          leftIcon={<LuCheck />}
-        >
-          {t`Confirm`}
-        </Button>
+        <RecordAction slot="primary">
+          <Button
+            isDisabled={!canUpdate}
+            onClick={() => {
+              // Inline edits write directly to the DB without revalidating, so
+              // refresh the loader to get accurate warning counts before review.
+              revalidator.revalidate();
+              confirmModal.onOpen();
+            }}
+            leftIcon={<LuCheck />}
+          >
+            {t`Confirm`}
+          </Button>
+        </RecordAction>
       )}
       {status === "Pending" && (
         <>
-          <reopenFetcher.Form
-            method="post"
-            action={path.to.inventoryCountReopen(inventoryCount.id!)}
-          >
-            <Button
-              type="submit"
-              variant="secondary"
-              isDisabled={!canUpdate}
-              isLoading={reopenFetcher.state !== "idle"}
-              leftIcon={<LuRotateCcw />}
+          <RecordAction slot="secondary">
+            <reopenFetcher.Form
+              method="post"
+              action={path.to.inventoryCountReopen(inventoryCount.id!)}
             >
-              {t`Reopen`}
-            </Button>
-          </reopenFetcher.Form>
-          <postFetcher.Form
-            method="post"
-            action={path.to.inventoryCountPost(inventoryCount.id!)}
-          >
-            <Button
-              type="submit"
-              isDisabled={!canUpdate}
-              isLoading={postFetcher.state !== "idle"}
-              leftIcon={<LuSend />}
+              <Button
+                type="submit"
+                variant="secondary"
+                isDisabled={!canUpdate}
+                isLoading={reopenFetcher.state !== "idle"}
+                leftIcon={<LuRotateCcw />}
+              >
+                {t`Reopen`}
+              </Button>
+            </reopenFetcher.Form>
+          </RecordAction>
+          <RecordAction slot="primary">
+            <postFetcher.Form
+              method="post"
+              action={path.to.inventoryCountPost(inventoryCount.id!)}
             >
-              {t`Post`}
-            </Button>
-          </postFetcher.Form>
+              <Button
+                type="submit"
+                isDisabled={!canUpdate}
+                isLoading={postFetcher.state !== "idle"}
+                leftIcon={<LuSend />}
+              >
+                {t`Post`}
+              </Button>
+            </postFetcher.Form>
+          </RecordAction>
         </>
       )}
     </HStack>
@@ -175,6 +192,8 @@ const InventoryCountDetails = ({
 
   return (
     <>
+      <RecordHero status={statusBadge} />
+      <RecordPhoneChrome />
       <div className="flex-1 min-h-0 w-full">
         <InventoryCountLines
           lines={lines}
@@ -183,7 +202,7 @@ const InventoryCountDetails = ({
           isReadOnly={isReadOnly}
           locationId={inventoryCount.locationId}
           title={inventoryCount.inventoryCountId}
-          titleBadge={<InventoryCountStatus status={status} />}
+          titleBadge={statusBadge}
           primaryAction={actions}
           invalidLineIds={invalidLineIds}
           forms={forms}

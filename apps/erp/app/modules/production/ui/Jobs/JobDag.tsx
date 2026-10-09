@@ -165,7 +165,8 @@ function JobDagInner({ operations, dependencies }: Props) {
           onClick={toggleDirection}
           className={cn(
             "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5",
-            "border border-border bg-background hover:bg-accent/60 transition-colors"
+            "border border-border bg-background hover:bg-accent/60 transition-colors",
+            "max-md:hit-area max-md:h-8 max-md:text-sm"
           )}
         >
           {direction === "LR" ? (
@@ -180,7 +181,8 @@ function JobDagInner({ operations, dependencies }: Props) {
           onClick={handleFitView}
           className={cn(
             "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5",
-            "border border-border bg-background hover:bg-accent/60 transition-colors"
+            "border border-border bg-background hover:bg-accent/60 transition-colors",
+            "max-md:hit-area max-md:h-8 max-md:text-sm"
           )}
         >
           <LuMaximize className="w-3.5 h-3.5" />
@@ -210,7 +212,7 @@ function JobDagInner({ operations, dependencies }: Props) {
             nodeStrokeWidth={3}
             pannable
             zoomable
-            className="!bg-card !border-border"
+            className="!bg-card !border-border max-md:!hidden"
           />
         </ReactFlow>
         <DagLegend />
@@ -246,7 +248,7 @@ function DagLegend() {
             type="button"
             aria-label="Show legend"
             className={cn(
-              "h-8 w-8 rounded-md flex items-center justify-center transition-colors",
+              "h-8 w-8 rounded-md flex items-center justify-center transition-colors max-md:size-11",
               "border border-border bg-card/90 backdrop-blur shadow-sm",
               "text-muted-foreground hover:text-foreground hover:bg-accent/60",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

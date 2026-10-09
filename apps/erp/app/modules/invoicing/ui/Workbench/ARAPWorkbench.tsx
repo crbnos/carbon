@@ -276,13 +276,16 @@ export function ARAPWorkbench({
             const kids = childrenByParty[r.partyId] ?? [];
             const isExpanded = expandedIds.has(r.partyId);
             return (
-              <div className="flex items-center">
+              <div
+                data-key-cell=""
+                className="flex items-center max-md:w-[calc(45dvw-32px)] max-md:pl-3"
+              >
                 <div className="w-5 shrink-0 flex items-center justify-center self-center">
                   {kids.length > 0 ? (
                     <button
                       type="button"
                       aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground max-md:hit-area"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpand(r.partyId);
@@ -297,9 +300,15 @@ export function ARAPWorkbench({
                   ) : null}
                 </div>
                 {r.customerId ? (
-                  <CustomerAvatar customerId={r.customerId} />
+                  <CustomerAvatar
+                    customerId={r.customerId}
+                    className="max-md:min-w-0 max-md:truncate"
+                  />
                 ) : r.supplierId ? (
-                  <SupplierAvatar supplierId={r.supplierId} />
+                  <SupplierAvatar
+                    supplierId={r.supplierId}
+                    className="max-md:min-w-0 max-md:truncate"
+                  />
                 ) : null}
               </div>
             );
@@ -311,7 +320,10 @@ export function ARAPWorkbench({
                 : path.to.purchaseInvoiceDetails(r.invoiceId)
               : path.to.memo(r.invoiceId);
           return (
-            <div className="flex items-center">
+            <div
+              data-key-cell=""
+              className="flex items-center max-md:w-[calc(45dvw-32px)]"
+            >
               <div
                 aria-hidden
                 className="w-5 shrink-0 border-l border-border -my-2"
@@ -334,7 +346,7 @@ export function ARAPWorkbench({
             </div>
           );
         },
-        meta: { icon: <LuUser /> }
+        meta: { icon: <LuUser />, mobile: "P1" }
       },
       {
         id: "paymentTerm",
@@ -557,6 +569,7 @@ export function ARAPWorkbench({
           title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
           primaryAction={filters}
           defaultColumnPinning={{ left: ["Select", "counterparty"] }}
+          mobileLayout="table"
         />
       </div>
     </VStack>

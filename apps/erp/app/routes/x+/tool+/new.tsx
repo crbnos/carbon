@@ -10,6 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { toolValidator, upsertTool } from "~/modules/items";
 import { ToolForm } from "~/modules/items/ui/Tools";
 import { setCustomFields } from "~/utils/form";
@@ -80,8 +81,8 @@ export default function ToolsNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <ToolForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

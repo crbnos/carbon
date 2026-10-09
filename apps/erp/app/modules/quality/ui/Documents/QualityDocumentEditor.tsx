@@ -106,7 +106,7 @@ export default function QualityDocumentEditor() {
           }}
         />
       ) : (
-        <div className="flex flex-col gap-6 w-full h-full p-8">
+        <div className="flex flex-col gap-6 w-full h-full p-8 max-md:p-4">
           <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
             {documentName}
           </h1>

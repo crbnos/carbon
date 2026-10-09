@@ -5,8 +5,9 @@
 import { Slot, Slottable } from "@radix-ui/react-slot";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
-import type { ButtonHTMLAttributes, ReactElement } from "react";
+import type { ButtonHTMLAttributes, MouseEvent, ReactElement } from "react";
 import { cloneElement, forwardRef, useCallback, useRef } from "react";
+import { useActionPresentation } from "./ActionPresentation";
 import type { ShortcutInput } from "./hooks/useShortcutKeys";
 import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { ShortcutKey } from "./ShortcutKey";
@@ -14,6 +15,7 @@ import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { mergeRefs } from "./utils/react";
+import { HitArea, useViewport } from "./Viewport";
 
 export const buttonVariants = cva(
   [
@@ -168,6 +170,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Comp = asChild ? Slot : "button";
     const innerRef = useRef<HTMLButtonElement>(null);
+    const presentation = useActionPresentation();
+    const { isPhone } = useViewport();
     // The badge shows the first binding; the rest are silent alternatives.
     const primaryShortcut = Array.isArray(shortcut) ? shortcut[0] : shortcut;
     const badgeShortcut =
@@ -200,19 +204,46 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled: Boolean(isDisabled || props.disabled || isLoading)
     });
 
+    // Phones, inside a record action: a bottom-bar cell or an action-sheet
+    // row (see ActionPresentation).
+    const isRow = presentation?.kind === "row";
+    // A square bar cell (Preview): the left icon, the label for screen readers.
+    const isIconCell =
+      presentation?.kind === "bar" && presentation.iconOnly === true;
+    const onClick = isRow
+      ? (event: MouseEvent<HTMLButtonElement>) => {
+          props.onClick?.(event);
+          if (event.defaultPrevented || props["aria-haspopup"]) return;
+          // Next task, so a submit button's form is still mounted when the
+          // browser submits it.
+          setTimeout(presentation.onSelect, 0);
+        }
+      : props.onClick;
+
     return (
       <Comp
         {...props}
+        onClick={onClick}
         className={cn(
           buttonVariants({
-            variant,
-            size,
+            variant:
+              presentation?.kind === "bar"
+                ? presentation.emphasis
+                : isRow
+                  ? "ghost"
+                  : variant,
+            size: presentation ? "lg" : size,
             isDisabled,
-            isIcon,
+            isIcon: isIcon || isIconCell,
             isLoading,
             isRound,
             className
-          })
+          }),
+          presentation?.kind === "bar" &&
+            (isIconCell ? "shrink-0" : "w-full min-w-0"),
+          isRow &&
+            "h-12 w-full min-w-0 shrink justify-start rounded-sm px-3 text-[15px] font-normal text-foreground shadow-none",
+          isRow && variant === "destructive" && "text-destructive"
         )}
         type={asChild ? undefined : (props.type ?? "button")}
         // `isLoading` disables too. It already blocks the keyboard path via
@@ -226,19 +257,28 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         role={asChild ? undefined : "button"}
         ref={mergeRefs(ref, innerRef)}
       >
+        {isPhone && <HitArea />}
         {isLoading && (
           <Spinner className={cn("size-4 flex-shrink-0", !isIcon && "mr-2")} />
         )}
         {!isLoading &&
           leftIcon &&
           cloneElement(leftIcon, {
-            className: !leftIcon.props?.size
-              ? cn("mr-2 h-4 w-4 flex-shrink-0", leftIcon.props.className)
-              : cn("mr-2 flex-shrink-0", leftIcon.props.className)
+            className: isIconCell
+              ? cn("size-5 flex-shrink-0", leftIcon.props.className)
+              : !leftIcon.props?.size
+                ? cn("mr-2 h-4 w-4 flex-shrink-0", leftIcon.props.className)
+                : cn("mr-2 flex-shrink-0", leftIcon.props.className)
           })}
         {/* An icon button's icon arrives as children — while loading, the
             spinner must REPLACE it or both clip inside the square hit area. */}
-        {isIcon && isLoading ? null : <Slottable>{children}</Slottable>}
+        {isIcon && isLoading ? null : isIconCell ? (
+          <span className="sr-only">
+            <Slottable>{children}</Slottable>
+          </span>
+        ) : (
+          <Slottable>{children}</Slottable>
+        )}
         {badgeShortcut && (
           <ShortcutKey
             shortcut={badgeShortcut}
@@ -248,6 +288,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {/* The badge owns the trailing slot — a rightIcon next to it reads
             cluttered, so the badge wins while it's visible. */}
         {!badgeShortcut &&
+          !isIconCell &&
           rightIcon &&
           cloneElement(rightIcon, {
             className: !rightIcon.props?.size

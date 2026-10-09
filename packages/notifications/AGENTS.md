@@ -7,7 +7,7 @@ Notification event taxonomy — enums and topic mapping shared across app routes
 - **Import `NotificationEvent` from `@carbon/notifications`** — this is the single source of truth for event types
 - **Map new events to a `NotificationTopic` in `getNotificationTopic()`** — every event must belong to exactly one topic
 - **Remember topic strings are persisted** — `NotificationTopic` values are stored in the `notification.topic` DB column; renaming is a migration
-- **Dispatch via `trigger("notify", payload)` from `@carbon/lib`** — the `carbon/notify` Inngest function handles fan-out (inApp / email / Slack)
+- **Dispatch via `trigger("notify", payload)` from `@carbon/lib`** — the `carbon/notify` Inngest function handles fan-out (inApp / email / Slack; browser push mirrors inApp)
 
 ## Ask First
 
@@ -31,6 +31,7 @@ pnpm --filter @carbon/notifications typecheck  # tsgo --noEmit
 - **Body rendering lives here, all three renditions together** — `renderInlineLinks` (the strict `[label](https://origin/…)` matcher; a security boundary, since a workflow's message body is customer-authored) plus `renderSlackMrkdwn` / `escapeSlackText` for the Slack rendition. The in-app topbar and `NotificationEmail.tsx` consume the segments directly. A fourth channel adds its rendition beside these, not in the fan-out job
 - **`NotificationEvent.Workflow` is the payload-text kind** — every other event's content is read from its source document; this one carries `title` / `body` on the `carbon/notify` payload and reads nothing. Raised by the workflows notify action (`packages/jobs/src/workflows/actions/notify.ts`), topic `General`
 - **inApp is always included** — regardless of caller-specified destinations
+- **Browser push mirrors inApp** — it is neither a `NotificationDestination` nor a `NotificationPreferenceChannel`: `notify` pushes every notification to every recipient's enabled browsers, with no per-topic switch
 - **Single export**: `@carbon/notifications` barrel from `src/index.ts`
 
 ## Cross-References

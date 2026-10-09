@@ -7,7 +7,8 @@ import {
   cn,
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
+  useEnumerableAsText
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { Enumerable } from "./Enumerable";
@@ -37,9 +38,20 @@ const EnumerableGroup = ({
   chipClassName
 }: EnumerableGroupProps) => {
   const { t } = useLingui();
+  const asText = useEnumerableAsText();
   if (items.length === 0) return null;
   const visible = items.slice(0, limit);
   const overflow = items.slice(limit);
+
+  // Phones, compact row context line: plain comma-joined text plus "+N".
+  if (asText) {
+    return (
+      <span>
+        {visible.map((item) => item.label).join(", ")}
+        {overflow.length > 0 ? ` +${overflow.length}` : null}
+      </span>
+    );
+  }
 
   const renderChip = (item: EnumerableGroupItem) =>
     chip === "outline" ? (

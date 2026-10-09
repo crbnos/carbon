@@ -539,11 +539,11 @@ const InspectionMeasurementMatrix = ({
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto">
+    <div className="min-h-0 flex-1 overflow-auto max-md:scroll-fade-x">
       <table className="w-full border-separate border-spacing-0 text-sm">
         <thead className="sticky top-0 z-20">
           <tr>
-            <th className="sticky left-0 z-30 min-w-[220px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
+            <th className="sticky left-0 z-30 min-w-[220px] max-md:w-[150px] max-md:min-w-[150px] max-md:max-w-[150px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
               {hasFeatures ? (
                 <span>{t`Characteristic`}</span>
               ) : (
@@ -551,7 +551,7 @@ const InspectionMeasurementMatrix = ({
               )}
             </th>
             {hasFeatures && (
-              <th className="min-w-[140px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
+              <th className="min-w-[140px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground max-md:hidden">
                 {t`Gauge`}
               </th>
             )}
@@ -580,7 +580,7 @@ const InspectionMeasurementMatrix = ({
               >
                 <td
                   className={cn(
-                    "sticky left-0 z-10 cursor-pointer border-b border-r border-border bg-card px-3 py-2 align-top",
+                    "sticky left-0 z-10 cursor-pointer border-b border-r border-border bg-card px-3 py-2 align-top max-md:max-w-[150px] max-md:px-2",
                     isActive && "bg-accent"
                   )}
                   onClick={() =>
@@ -589,7 +589,7 @@ const InspectionMeasurementMatrix = ({
                       : undefined
                   }
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 max-md:gap-2">
                     {row.featureId !== OVERALL_ROW_ID ? (
                       <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted font-mono text-sm font-semibold text-foreground tabular-nums">
                         {row.label}
@@ -614,9 +614,31 @@ const InspectionMeasurementMatrix = ({
                       </div>
                     </div>
                   </div>
+                  {hasFeatures ? (
+                    // Phones: the gauge sits under the characteristic.
+                    // The click must not toggle the active row.
+                    <div
+                      className="-mx-2 -mb-2 mt-2 hidden min-w-0 border-t border-border max-md:block [&>*]:min-w-0"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      <InspectionGaugePicker
+                        gauges={gauges}
+                        characteristicLabel={row.label}
+                        recentGaugeIds={recentGauges}
+                        gaugeTypeId={row.gaugeTypeId}
+                        gaugeTypeName={row.gaugeTypeName}
+                        value={gaugeFor(row.featureId)}
+                        isReadOnly={isReadOnly}
+                        onChange={(gaugeId) =>
+                          persistGauge(row.featureId, gaugeId)
+                        }
+                      />
+                    </div>
+                  ) : null}
                 </td>
                 {hasFeatures && (
-                  <td className="h-px border-b border-r border-border p-0 align-middle">
+                  <td className="h-px border-b border-r border-border p-0 align-middle max-md:hidden">
                     <InspectionGaugePicker
                       gauges={gauges}
                       characteristicLabel={row.label}

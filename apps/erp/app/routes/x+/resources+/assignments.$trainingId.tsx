@@ -262,7 +262,7 @@ export default function TrainingAssignmentDetailRoute() {
             </HStack>
           </HStack>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           <VStack spacing={0} className="h-full w-full">
             <div className="p-4 border-b flex flex-col gap-4 w-full">
               <div className="relative">

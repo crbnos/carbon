@@ -136,6 +136,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -146,6 +147,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           return <CustomerAvatar customerId={row.original.customerId} />;
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -161,6 +163,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <SalesStatus status={row.original.displayStatus} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: salesOrderStatusType.map((status) => ({
@@ -353,6 +356,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         header: t`Order Total`,
         cell: (item) => currencyFormatter.format(item.getValue<number>()),
         meta: {
+          mobile: "P2",
           icon: <LuDollarSign />,
           formatter: currencyFormatter.format,
           renderTotal: true

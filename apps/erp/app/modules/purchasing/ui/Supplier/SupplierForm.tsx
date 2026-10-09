@@ -210,7 +210,7 @@ const SupplierForm = ({
                   <CustomFormFields table="supplier" />
                 </div>
               </ModalCardBody>
-              <ModalCardFooter>
+              <ModalCardFooter sticky={type === "card" && !isEditing}>
                 <HStack>
                   <Submit isDisabled={isDisabled}>
                     <Trans>Save</Trans>
