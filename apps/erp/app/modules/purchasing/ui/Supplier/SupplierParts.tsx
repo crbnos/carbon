@@ -19,7 +19,7 @@ import {
 import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuEllipsisVertical, LuExternalLink, LuPencil } from "react-icons/lu";
-import { Link, Outlet, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { ItemThumbnail, New } from "~/components";
 import {
   useCurrencyFormatter,
@@ -143,17 +143,25 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
                           <LuPencil className="mr-2" />
                           <Trans>Edit Supplier Part</Trans>
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          shortcut={MENU_ITEM_SHORTCUTS.view}
-                          disabled={!type || !item?.id}
-                          onClick={() => {
-                            if (type && item?.id)
-                              navigate(getLinkToItemPurchasing(type, item.id));
-                          }}
-                        >
-                          <LuExternalLink className="mr-2" />
-                          <Trans>View Item</Trans>
-                        </DropdownMenuItem>
+                        {type && item?.id ? (
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.view}
+                            asChild
+                          >
+                            <Link to={getLinkToItemPurchasing(type, item.id)}>
+                              <LuExternalLink className="mr-2" />
+                              <Trans>View Item</Trans>
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.view}
+                            disabled
+                          >
+                            <LuExternalLink className="mr-2" />
+                            <Trans>View Item</Trans>
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </li>
@@ -163,7 +171,6 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
           )}
         </CardContent>
       </Card>
-      <Outlet />
     </>
   );
 };

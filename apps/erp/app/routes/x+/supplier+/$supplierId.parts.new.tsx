@@ -2,11 +2,50 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useRouteData } from "@carbon/react";
-import { useNavigate, useParams } from "react-router";
-import type { SupplierPartWithItem } from "~/modules/items";
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { fetchAllRecords } from "@carbon/database";
+import { redirect } from "@carbon/utils";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { path } from "~/utils/path";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "purchasing"
+  });
+
+  const { supplierId } = params;
+  if (!supplierId) throw new Error("Could not find supplierId");
+
+  // Every item this supplier already has a supplier part for, inactive ones
+  // included: the Parts tab lists only active rows, but a second row for the
+  // same item and supplier is refused either way.
+  const existing = await fetchAllRecords(() =>
+    client
+      .from("supplierPart")
+      .select("itemId")
+      .eq("supplierId", supplierId)
+      .eq("companyId", companyId)
+      .order("itemId")
+  );
+
+  if (existing.error) {
+    throw redirect(
+      path.to.supplierParts(supplierId),
+      await flash(
+        request,
+        error(existing.error, "Failed to load supplier parts")
+      )
+    );
+  }
+
+  return {
+    excludeItemIds: (existing.data ?? []).map((part) => part.itemId)
+  };
+}
 
 // The form posts to the picked item's own create route, so this route has no
 // action; the item decides the type and the inventory unit.
@@ -14,11 +53,7 @@ export default function SupplierNewSupplierPartRoute() {
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  // The Parts tab already loaded this supplier's parts: one per item at most.
-  const routeData = useRouteData<{ supplierParts: SupplierPartWithItem[] }>(
-    path.to.supplierParts(supplierId)
-  );
-  const excludeItemIds = routeData?.supplierParts.map((part) => part.itemId);
+  const { excludeItemIds } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
   const onClose = () => navigate(path.to.supplierParts(supplierId));

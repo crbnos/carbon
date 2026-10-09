@@ -48,6 +48,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The form posts its price breaks back in full and the save replaces the
+  // stored ones, so an unread list must not reach it as an empty one.
+  if (priceBreaksResult.error) {
+    throw redirect(
+      path.to.supplierParts(supplierId),
+      await flash(
+        request,
+        error(priceBreaksResult.error, "Failed to load supplier price breaks")
+      )
+    );
+  }
+
   const purchasingHistory = await client
     .from("purchaseOrderLine")
     .select(
