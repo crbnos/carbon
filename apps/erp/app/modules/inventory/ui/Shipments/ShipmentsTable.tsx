@@ -35,6 +35,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewAction } from "~/components/New";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -48,17 +49,26 @@ import ShipmentStatus from "./ShipmentStatus";
 
 function NewShipment() {
   const fetcher = useFetcher();
+  const { t } = useLingui();
   return (
-    <fetcher.Form method="post" action={path.to.newShipment}>
-      <Button
-        type="submit"
-        leftIcon={<LuCirclePlus />}
-        variant="primary"
-        isLoading={fetcher.state !== "idle"}
-      >
-        <Trans>Add Shipment</Trans>
-      </Button>
-    </fetcher.Form>
+    <NewAction
+      label={t`Add Shipment`}
+      isDisabled={fetcher.state !== "idle"}
+      onClick={() =>
+        fetcher.submit(null, { method: "post", action: path.to.newShipment })
+      }
+    >
+      <fetcher.Form method="post" action={path.to.newShipment}>
+        <Button
+          type="submit"
+          leftIcon={<LuCirclePlus />}
+          variant="primary"
+          isLoading={fetcher.state !== "idle"}
+        >
+          <Trans>Add Shipment</Trans>
+        </Button>
+      </fetcher.Form>
+    </NewAction>
   );
 }
 
@@ -91,6 +101,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -99,6 +110,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
         header: t`Source Document`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: shipmentSourceDocumentType.map((type) => ({
@@ -185,6 +197,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: shipmentStatusType.map((type) => ({
@@ -265,6 +278,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           return <CustomerAvatar customerId={row.original.customerId} />;
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({

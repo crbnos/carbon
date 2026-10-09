@@ -31,7 +31,7 @@ A passkey is tied to a device. Register a second passkey to retain access if the
 
 ## Notification preferences
 
-**Account → Notifications** contains topic-by-channel preferences. In-app notifications are always delivered. The toggles control email and, when connected, Slack. Each topic and channel is enabled by default; turn off a switch to opt out of that combination. See [notifications](/docs/reference/notifications) for notification triggers and channel availability.
+**Account → Notifications** contains topic-by-channel preferences. In-app notifications are always delivered. The toggles control email and, when connected, Slack. Each topic and channel is enabled by default; turn off a switch to opt out of that combination. The **Browser notifications** card enables or disables browser push for the current browser; like in-app, it has no per-topic switch. See [notifications](/docs/reference/notifications) for notification triggers and channel availability.
 
 ## Theme, language, and attributes
 
@@ -60,4 +60,7 @@ The per-user language preference exists in the account model, but the picker isn
 
 ### The Slack or Email notification column is missing
 Slack's column needs the integration connected. Email preferences are stored regardless but only take effect when the plan includes `EMAIL_NOTIFICATIONS`.
+
+### The Browser notifications card is missing
+The deployment's Web Push keys are derived from `SESSION_SECRET` (`getVapidDetails`, `@carbon/env/push.server`), so every deployment has them and the loader returns the public key. A browser without the Push API shows "not supported" instead of the **Enable** button. The subscription is one `pushSubscription` row per browser endpoint, owned by the signed-in user (`api+/push-subscription.ts`); `clearAuthCookies` (`@carbon/auth`) deletes it on sign-out through the signed `carbon-push` cookie.
 </AgentContext>

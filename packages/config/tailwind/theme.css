@@ -7,7 +7,45 @@
 
 @custom-variant dark (&:is(.dark *));
 @custom-variant tall (@media (min-height: 769px));
-@custom-variant hover (&:hover);
+/* Hover applies where a pointer can hover and at >=768px (byte-identical to
+   the old plain `&:hover` on desktop), so phones drop sticky tap highlights. */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+  @media (width >= 48rem) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+/* A 44x44 tap target around a smaller control, drawn by ::after (use as
+   `max-md:hit-area`). Sets position: relative, so not for absolutely
+   positioned elements, and needs the element's ::after to be free. */
+@utility hit-area {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: calc(max(0px, (44px - 100%) / 2) * -1);
+  }
+}
+
+/* Safe-area padding (needs viewport-fit=cover on the viewport meta). */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility pb-safe-4 {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+}
 
 @utility bg-gradient-fade {
   background-image: linear-gradient(
@@ -378,5 +416,22 @@
   .has-document-title .ProseMirror > :first-child {
     font-size: 1.875rem;
     line-height: 2.25rem;
+  }
+}
+
+/*
+ * Phone presentation (< 768px), every app.
+ * - Muted text gets a darker token in light mode to pass 4.5:1 on grey.
+ * - `.truncate` always ends in an ellipsis, whatever text-wrap utility is set.
+ */
+@media (width < 48rem) {
+  html:not(.dark) {
+    --muted-foreground: 220 3.8% 42% !important;
+  }
+
+  /* `text-pretty` / `text-balance` (CardTitle, Heading) reset the wrap mode
+     that `truncate` sets, so a truncated title wrapped instead of ending in "…". */
+  .truncate {
+    white-space: nowrap;
   }
 }

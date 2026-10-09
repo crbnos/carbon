@@ -45,7 +45,7 @@ import {
 } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import type { LoaderFunctionArgs } from "react-router";
-import { Link, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import {
   ClaudeIcon,
   CodexIcon,
@@ -54,6 +54,7 @@ import {
 } from "~/components/AgentToolIcons";
 import { Greeting } from "~/components/Greeting";
 import CreateMenu from "~/components/Layout/Topbar/CreateMenu";
+import { ModuleCard } from "~/components/ModuleCard";
 import {
   useAllModules,
   useModules,
@@ -68,7 +69,6 @@ import {
 } from "~/hooks/useImplementationNavItem";
 import type { RecentDocument } from "~/hooks/useRecentlyViewed";
 import { useUIStore } from "~/stores/ui";
-import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 
@@ -158,7 +158,7 @@ export default function AppIndexRoute() {
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div className="relative z-10 w-full h-full overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
+        <div className="max-w-7xl mx-auto p-8 max-md:p-4">
           <div className="mb-8">
             {!CONTROLLED_ENVIRONMENT && (
               <OnboardAgentWidget dismissed={agentDismissed} />
@@ -166,23 +166,26 @@ export default function AppIndexRoute() {
             <Greeting
               hour={greeting.hour}
               pick={greeting.pick}
-              className="mt-6 mx-auto max-w-[30ch] text-center font-medium"
+              className="mt-6 mx-auto max-w-[30ch] text-center font-medium max-md:mt-0"
             />
             <div className="mt-8 flex items-center gap-3">
               <SearchBar />
-              <CreateMenu
-                trigger={
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    leftIcon={<LuCirclePlus />}
-                    rightIcon={<LuChevronDown />}
-                    className="shrink-0 h-11"
-                  >
-                    <Trans>New</Trans>
-                  </Button>
-                }
-              />
+              {/* Phones create from the Create tab. */}
+              <div className="contents max-md:hidden">
+                <CreateMenu
+                  trigger={
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      leftIcon={<LuCirclePlus />}
+                      rightIcon={<LuChevronDown />}
+                      className="shrink-0 h-11"
+                    >
+                      <Trans>New</Trans>
+                    </Button>
+                  }
+                />
+              </div>
             </div>
           </div>
           <ImplementationData>
@@ -235,7 +238,7 @@ export default function AppIndexRoute() {
               <SectionLabel>
                 <Trans>Modules</Trans>
               </SectionLabel>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-md:grid-cols-3 max-md:gap-3">
                 {modules
                   .filter((mod) => mod.key !== "settings")
                   .map((module) => (
@@ -269,7 +272,7 @@ function SearchBar() {
     >
       <RxMagnifyingGlass className="w-4 h-4 shrink-0" />
       <span className="text-base truncate">{t`Search`}</span>
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex items-center gap-1 max-md:hidden">
         <KeyCap>{modifierKey}</KeyCap>
         <KeyCap>K</KeyCap>
       </div>
@@ -339,13 +342,13 @@ function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
     // No gap: the pill stays perfectly centered because the ✕ slot collapses to
     // zero width when idle. On hover (or keyboard focus) the slot animates open,
     // sliding the pill left to make room — the movement IS the reveal.
-    <div className="group flex items-center justify-center">
+    <div className="group flex items-center justify-center max-md:mb-6">
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-3 h-9 pl-4 pr-4 max-w-full rounded-full border border-border bg-muted/30 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors active:scale-[0.98]"
+            className="flex items-center gap-3 h-9 max-md:h-11 pl-4 pr-4 max-w-full rounded-full border border-border bg-muted/30 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors active:scale-[0.98]"
           >
             {/* min-w-0 + overflow-hidden lets the label clip instead of
                 wrapping to a second line on narrow screens — the icons keep
@@ -364,7 +367,7 @@ function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
           <Trans>Copies a setup prompt for your AI coding tool</Trans>
         </TooltipContent>
       </Tooltip>
-      <div className="w-0 overflow-hidden transition-[width] duration-200 ease-out group-hover:w-8 group-focus-within:w-8">
+      <div className="w-0 overflow-hidden transition-[width] duration-200 ease-out group-hover:w-8 group-focus-within:w-8 max-md:w-8">
         <Tooltip>
           <TooltipTrigger asChild>
             <IconButton
@@ -374,7 +377,7 @@ function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
               size="sm"
               isRound
               onClick={dismiss}
-              className="ml-2 text-muted-foreground rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100"
+              className="ml-2 text-muted-foreground rounded-full md:opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100"
             />
           </TooltipTrigger>
           <TooltipContent>
@@ -492,28 +495,8 @@ const RecentDocumentRow = ({
         variant="ghost"
         size="sm"
         onClick={onRemove}
-        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 group-hover:opacity-100 transition-opacity"
       />
     </div>
-  );
-};
-
-const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => {
-  const Anchor = module.external ? Link : PrefetchLink;
-  return (
-    <Anchor
-      to={module.to}
-      {...(module.external
-        ? { target: "_blank", rel: "noopener noreferrer" }
-        : {})}
-      className="flex items-center gap-4 p-4 rounded-lg border border-border group bg-muted/20 hover:border-foreground/20 cursor-pointer transition-colors duration-200"
-    >
-      <div className="shrink-0 p-2.5 rounded-lg border border-border group-hover:border-foreground/20 transition-colors">
-        <module.icon className="text-xl" />
-      </div>
-      <span className="text-sm py-1 px-4 border border-border rounded-full group-hover:bg-background font-medium tracking-tight transition-colors">
-        {module.name}
-      </span>
-    </Anchor>
   );
 };

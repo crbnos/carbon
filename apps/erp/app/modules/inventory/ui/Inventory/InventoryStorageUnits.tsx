@@ -72,6 +72,7 @@ import {
 import ScrapReason from "~/components/Form/ScrapReason";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { PhoneActionBar } from "~/components/Layout/Mobile/ChromeSlots";
 import {
   useCompanyToday,
   useCurrencyDecimals,
@@ -103,6 +104,8 @@ type InventoryStorageUnitsProps = {
   } | null;
   trackedEntityExpirations: Record<string, string | null>;
   storageUnits: { value: string; label: string }[];
+  /** The inventory quantities page: phones show a bottom bar. */
+  variant?: "quantity";
 };
 
 const InventoryStorageUnits = ({
@@ -112,10 +115,12 @@ const InventoryStorageUnits = ({
   itemShelfLife,
   trackedEntityExpirations,
   pickMethod,
-  storageUnits
+  storageUnits,
+  variant
 }: InventoryStorageUnitsProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
+  const isQuantity = variant === "quantity";
   const adjustmentModal = useDisclosure();
   const ruleViolations = useRuleViolations({
     action: path.to.inventoryItemAdjustment(pickMethod.itemId),
@@ -567,7 +572,11 @@ const InventoryStorageUnits = ({
                   />
                 </InputGroup>
               )}
-              <Button onClick={() => openAdjustmentModal()}>
+              {/* Quantities page, phones: the action is in the bottom bar. */}
+              <Button
+                className={isQuantity ? "max-md:hidden" : undefined}
+                onClick={() => openAdjustmentModal()}
+              >
                 <Trans>Update Inventory</Trans>
               </Button>
             </HStack>
@@ -681,6 +690,17 @@ const InventoryStorageUnits = ({
           </div>
         </CardContent>
       </Card>
+      {isQuantity ? (
+        <PhoneActionBar>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => openAdjustmentModal()}
+          >
+            <Trans>Update Inventory</Trans>
+          </Button>
+        </PhoneActionBar>
+      ) : null}
       {recostItem?.trackedEntityId && (
         <Modal
           open

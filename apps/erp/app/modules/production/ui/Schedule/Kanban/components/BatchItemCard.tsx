@@ -40,6 +40,7 @@ import {
 import { useFetcher } from "react-router";
 import { CustomerAvatar, OperationStatusIcon } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import { MoveToSubmenu } from "~/components/MoveToSubmenu";
 import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import {
@@ -112,7 +113,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
 }: BatchItemCardProps & SortableCardProps) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
-  const { displaySettings, scheduleToday } = useKanban();
+  const { displaySettings, scheduleToday, moveTo } = useKanban();
   const fetcher = useFetcher();
   const isCompleting = item.batchStatus === "Completing";
   // Planned = composed but not yet on the floor. Visually distinct (dashed
@@ -274,6 +275,12 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
                       {t`Dissolve batch`}
                     </DropdownMenuItem>
                   )}
+                  {moveTo && !isCompleting && (
+                    <MoveToSubmenu
+                      getTargets={() => moveTo.targetsFor(item.id)}
+                      onMove={(columnId) => moveTo.onMove(item.id, columnId)}
+                    />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </HStack>
@@ -370,7 +377,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
                     icon={<LuX />}
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                    className="md:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
                     onClick={() => setRemoving(m)}
                   />
                 )}

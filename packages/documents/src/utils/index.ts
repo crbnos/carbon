@@ -8,3 +8,4 @@
 export { getPurchaseOrderDisplayId } from "./purchase-order";
 export { getQuoteDisplayId } from "./quote";
 export { withRevisionSuffix } from "./revision";
+export { getLineTotal as getSalesOrderLineTotal } from "./sales-order";

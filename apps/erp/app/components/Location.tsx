@@ -49,7 +49,9 @@ const Location = ({ location, actions }: LocationProps) => {
     <div className="grid w-full gap-4 grid-cols-[auto_1fr_auto]">
       <LuMapPin className="size-5 mt-2" />
       <VStack spacing={0}>
-        <p className="font-bold line-clamp-1">{locationName}</p>
+        <p className="font-bold line-clamp-1 max-md:font-semibold">
+          {locationName}
+        </p>
         <p className="text-sm text-muted-foreground line-clamp-1">
           {addressLines}
         </p>

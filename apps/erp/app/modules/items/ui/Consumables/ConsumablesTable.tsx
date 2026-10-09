@@ -144,6 +144,7 @@ const ConsumablesTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
             // The accessor is the raw item id — export the readable id
             // the cell shows instead of a UUID.
@@ -164,6 +165,7 @@ const ConsumablesTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P3",
             icon: <LuAlignJustify />
           }
         },
@@ -214,6 +216,7 @@ const ConsumablesTable = memo(
             </VStack>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: methodType.map((value) => ({
@@ -612,7 +615,12 @@ const ConsumablesTable = memo(
           primaryAction={
             permissions.can("create", "parts") && (
               <div className="flex items-center gap-2">
-                <Button variant="secondary" leftIcon={<LuGroup />} asChild>
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuGroup />}
+                  className="max-md:hidden"
+                  asChild
+                >
                   <Link to={path.to.itemPostingGroups}>
                     <Trans>Item Groups</Trans>
                   </Link>

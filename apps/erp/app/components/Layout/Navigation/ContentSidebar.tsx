@@ -6,6 +6,11 @@ import { Button, cn, PrefetchLink, VStack } from "@carbon/react";
 import { useUrlParams } from "~/hooks";
 import type { Route } from "~/types";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
+import {
+  SheetNavGroup,
+  SheetNavRow,
+  useSidebarPresentation
+} from "./SidebarPresentation";
 
 const ContentSidebar = ({ links }: { links: Route[] }) => {
   const location = useSidebarLocation((pathname) =>
@@ -13,25 +18,47 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
   );
   const [params] = useUrlParams();
   const filter = params.get("q") ?? undefined;
+  const presentation = useSidebarPresentation();
+  const isActive = (route: Route) =>
+    location.pathname.includes(route.to) && route.q === filter;
+
+  if (presentation === "title") {
+    const active = links.find(isActive);
+    return active ? <>{active.name}</> : null;
+  }
+
+  if (presentation === "sheet") {
+    return (
+      <SheetNavGroup>
+        {links.map((route) => (
+          <SheetNavRow
+            key={route.name}
+            to={route.to + (route.q ? `?q=${route.q}` : "")}
+            icon={route.icon}
+            label={route.name}
+            isActive={isActive(route)}
+          />
+        ))}
+      </SheetNavGroup>
+    );
+  }
 
   return (
     <SidebarLinks>
       <VStack>
         <VStack spacing={1} className="p-2">
           {links.map((route) => {
-            const isActive =
-              location.pathname.includes(route.to) && route.q === filter;
+            const active = isActive(route);
             return (
               <Button
                 key={route.name}
                 asChild
                 leftIcon={route.icon}
-                variant={isActive ? "active" : "ghost"}
+                variant={active ? "active" : "ghost"}
                 data-nav-item=""
                 className={cn(
                   "w-full justify-start",
-                  !isActive &&
-                    "hover:bg-transparent hover:text-active-foreground"
+                  !active && "hover:bg-transparent hover:text-active-foreground"
                 )}
               >
                 <PrefetchLink to={route.to + (route.q ? `?q=${route.q}` : "")}>

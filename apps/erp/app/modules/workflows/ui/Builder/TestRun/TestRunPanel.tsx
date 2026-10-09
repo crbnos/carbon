@@ -51,15 +51,16 @@ export function TestRunPanel() {
     result !== null && result.error !== null && !result.steps.length;
 
   return (
-    <div className="flex h-full flex-col border-l border-border">
-      <div className="flex items-center gap-2 border-b border-border p-3">
+    <div className="flex h-full flex-col border-l border-border max-md:border-l-0">
+      {/* Phones show this panel in a full-screen sheet, whose own × closes it. */}
+      <div className="flex items-center gap-2 border-b border-border p-3 max-md:min-h-11 max-md:pr-14">
         <span className="text-sm font-semibold">
           <Trans>Test run</Trans>
         </span>
         {result && <RunStatus status={result.status} />}
         <IconButton
           aria-label={t`Close`}
-          className="ml-auto"
+          className="ml-auto max-md:hidden"
           icon={<LuX />}
           size="sm"
           variant="ghost"

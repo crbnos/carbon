@@ -7,6 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { MetaFunction } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
+import { SettingsPage } from "~/components/SettingsPage";
 import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -35,9 +36,9 @@ export default function AccountRoute() {
       spacing={0}
       className="overflow-y-auto scrollbar-hide h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]"
     >
-      <VStack spacing={4} className="py-12 px-4 max-w-[60rem] h-full mx-auto">
+      <SettingsPage>
         <RecordOutlet />
-      </VStack>
+      </SettingsPage>
     </VStack>
   );
 }

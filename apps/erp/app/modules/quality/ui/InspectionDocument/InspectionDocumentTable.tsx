@@ -79,6 +79,7 @@ const InspectionDocumentTable = memo(
             );
           },
           meta: {
+            mobile: "P1",
             filter: {
               type: "static" as const,
               options: items?.map((item) => ({
@@ -93,7 +94,7 @@ const InspectionDocumentTable = memo(
           accessorKey: "name",
           header: t`Name`,
           cell: ({ row }) => row.original.name,
-          meta: { icon: <LuTarget /> }
+          meta: { mobile: "P3", icon: <LuTarget /> }
         },
         {
           id: "createdBy",
@@ -109,7 +110,7 @@ const InspectionDocumentTable = memo(
           cell: (item) => (
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
-          meta: { icon: <LuFileText /> }
+          meta: { mobile: "P2", icon: <LuFileText /> }
         },
         {
           id: "updatedBy",

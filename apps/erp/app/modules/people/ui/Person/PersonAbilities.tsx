@@ -71,15 +71,18 @@ const PersonAbilities = ({ personId, abilities }: PersonAbilitiesProps) => {
               return (
                 <li key={employeeAbility.id}>
                   <HStack className="w-full justify-between">
-                    <HStack spacing={2}>
-                      <Link className="font-medium" to={editPath}>
+                    <HStack spacing={2} className="max-md:min-w-0">
+                      <Link
+                        className="font-medium max-md:block max-md:min-w-0 max-md:truncate max-md:leading-[2.75rem]"
+                        to={editPath}
+                      >
                         {process?.name}
                       </Link>
                       <EmployeeAbilityStatus
                         employeeAbility={employeeAbility}
                       />
                     </HStack>
-                    <HStack spacing={2}>
+                    <HStack spacing={2} className="max-md:shrink-0">
                       <p className="text-sm text-muted-foreground">
                         <DateTime
                           value={employeeAbility.lastTrainingDate}

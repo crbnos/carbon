@@ -215,6 +215,9 @@ msgstr "dostępne"
 msgid "Available"
 msgstr "Dostępne"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "Powrót do partii produkcyjnej"
 
@@ -295,6 +298,9 @@ msgstr "Sprawdź swoją skrzynkę e-mail"
 msgid "Choose a job"
 msgstr "Wybierz zlecenie produkcyjne"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Clear"
 msgstr "Wyczyść"
 
@@ -360,6 +366,10 @@ msgstr "Firma"
 msgid "Complete"
 msgstr "Ukończ"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Uzupełnij wszystko"
 
@@ -406,8 +416,7 @@ msgstr "Kopiuj do schowka"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Koszt nieplanowanego utrzymania ruchu, ostatnie {0} dni"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Utwórz {0}"
 
@@ -510,8 +519,8 @@ msgid "Due"
 msgstr "Termin"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Termin {0}"
 
@@ -668,6 +677,9 @@ msgstr "Zakończyć bez wybranego materiału?"
 msgid "First due {0}"
 msgstr "Pierwszy termin {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Popraw podświetlone ilości przed sfinalizowaniem."
 
@@ -688,6 +700,9 @@ msgstr "Wróć do operacji"
 
 msgid "Go to onboarding"
 msgstr "Przejdź do wdrożenia"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "Ukryj opis"
@@ -810,6 +825,9 @@ msgstr "Pozostaw operację na 0, aby ją pominąć — powraca do harmonogramu b
 msgid "Leave this page"
 msgstr "Opuść tę stronę"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Zbudujmy coś"
 
@@ -879,6 +897,9 @@ msgstr "Maszyna"
 msgid "Machine down for maintenance now?"
 msgstr "Maszyna niedostępna z powodu utrzymania ruchu teraz?"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "Utrzymanie ruchu"
 
@@ -930,6 +951,9 @@ msgstr "Metryczny"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "Więcej akcji"
@@ -1160,13 +1184,14 @@ msgid "Open an NCR for MRB disposition"
 msgstr "Otwórz NCR dla dyspozycji MRB"
 
 msgid "Open Jobs"
-msgstr "Otwarte zlecenia produkcyjne"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Otwórz podzestawienie {0}: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "Operacja potrzebna do {0}"
@@ -1185,6 +1210,9 @@ msgstr "Wykonane przez operatora"
 
 msgid "Optional"
 msgstr "Opcjonalnie"
+
+msgid "Options"
+msgstr ""
 
 msgid "or"
 msgstr "lub"
@@ -1224,6 +1252,9 @@ msgstr "Nieudane odblokowanie klucza dostępu"
 
 msgid "Pause"
 msgstr "Wstrzymaj"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "Pobierz"
@@ -1279,6 +1310,9 @@ msgstr "Harmonogram PM wygasł"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Naciśnij ? na dowolnej stronie, aby otworzyć tę listę. Skróty klawiszowe są ignorowane podczas wpisywania w polu."
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "Poprzedni"
@@ -1646,6 +1680,9 @@ msgstr "Rozpocznij {0}"
 msgid "Start or pause the operation"
 msgstr "Uruchom lub wstrzymaj operację"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "Użytkownik stacji"
 
@@ -1744,6 +1781,9 @@ msgstr "Ta partia produkcyjna nie ma instrukcji roboczych."
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Ta część została wyprodukowana na zamówienie. Jej skierowanie do braku może ponownie otworzyć jej marszrutę, aby stworzyć zamiennik."
 
@@ -1778,11 +1818,23 @@ msgstr "Do uruchomienia"
 msgid "Today"
 msgstr "Dzisiaj"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "Przełącz pasek boczny"
 
 msgid "Tools"
 msgstr "Narzędzia"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "Suma"
@@ -1918,6 +1970,9 @@ msgstr "Wyświetlacze stanowiska roboczego"
 
 msgid "Work instructions"
 msgstr "Instrukcje robocze"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "Tak"

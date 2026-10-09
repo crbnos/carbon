@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { fetchAllByIds } from "@carbon/database";
 import { resolveIntegrationSecrets } from "@carbon/ee";
 import { emailNotificationsEnabled } from "@carbon/ee/email-notifications.server";
 import {
@@ -10,7 +11,13 @@ import {
   notifyTaskAssigned
 } from "@carbon/ee/notifications";
 import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
-import { ERP_URL } from "@carbon/env";
+import {
+  CONTROLLED_ENVIRONMENT,
+  ERP_URL,
+  SESSION_ABSOLUTE_MAX_MS,
+  SESSION_MAX_AGE
+} from "@carbon/env";
+import { isPushConfigured } from "@carbon/env/push.server";
 import type { Events } from "@carbon/lib/events";
 import {
   escapeSlackText,
@@ -20,9 +27,11 @@ import {
   isRecurringNotificationEvent,
   NotificationDestination,
   NotificationEvent,
+  renderInlineLinks,
   renderSlackMrkdwn
 } from "@carbon/notifications";
-import { datetime } from "@carbon/utils";
+import { chunkArray, datetime } from "@carbon/utils";
+import { now } from "@internationalized/date";
 import { render } from "@react-email/components";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
@@ -31,6 +40,26 @@ import {
   getNotificationContent,
   getNotificationEmailComponent
 } from "./content";
+import { pushSessionMaxAgeMs, pushSubscriptionCutoff } from "./push-outcome";
+
+// A group notification can have hundreds of recipients. One request, insert
+// or send that carries all of them fails the whole notification, so each is
+// split into chunks of these sizes.
+
+// Ids per `.in()` write: the filter rides in the URL, and the gateway rejects
+// a request line it cannot buffer (HTTP 431). Reads use fetchAllByIds.
+const IN_FILTER_CHUNK = 100;
+
+// Rows per `notification` insert, so one request body stays small.
+const INSERT_CHUNK = 500;
+
+// Emails per render step and per send. One rendered notification email is
+// about 16.9 KB, and Inngest accepts at most 512 KB in one send: 20 × 16.9 KB
+// is about 338 KB, far under a step's 4 MB output limit too.
+const EMAIL_CHUNK = 20;
+
+// Slack and push events per send. Each event is under 1 KB.
+const EVENT_CHUNK = 500;
 
 async function getCompanyIntegrations(
   client: ReturnType<typeof getCarbonServiceRole>,
@@ -44,7 +73,8 @@ async function getCompanyIntegrations(
 
 // Per-event default destinations. Callers can override by passing
 // `destinations` in the payload; otherwise these defaults apply.
-// InApp is always added separately and cannot be opted out of.
+// InApp is always added separately and cannot be opted out of. Push is not
+// listed here: it follows in-app, so every notification pushes.
 const defaultDestinations: Partial<
   Record<NotificationEvent, NotificationDestination[]>
 > = {
@@ -195,7 +225,9 @@ const defaultDestinations: Partial<
     NotificationDestination.Email
   ],
   // In-app only: the outbound sweep re-fires while failures persist, and an
-  // email per sweep cycle would be noise.
+  // email per sweep cycle would be noise. Browser push still follows in-app,
+  // so the integration's last editor gets a push every sweep (30 min) until
+  // the failures clear — deliberate: push mirrors the bell exactly.
   [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]
 };
 
@@ -303,12 +335,18 @@ export const notifyFunction = inngest.createFunction(
       if (payload.from) ids = ids.filter((id) => id !== payload.from);
       ids = [...new Set(ids)];
 
+      // Every read keyed by the recipients goes through fetchAllByIds: a
+      // group can hold more users than one `.in()` URL or one 1000-row page
+      // carries, and a read cut short would drop recipients without an error.
       if (ids.length > 0) {
-        const members = await client
-          .from("userToCompany")
-          .select("userId")
-          .eq("companyId", payload.companyId)
-          .in("userId", ids);
+        const members = await fetchAllByIds(ids, (batch) =>
+          client
+            .from("userToCompany")
+            .select("userId")
+            .eq("companyId", payload.companyId)
+            .in("userId", batch)
+            .order("userId")
+        );
         if (members.error) {
           console.error(
             "Failed to filter recipients by company membership",
@@ -330,18 +368,28 @@ export const notifyFunction = inngest.createFunction(
 
     const wantsEmail = destinations.includes(NotificationDestination.Email);
     const wantsSlack = destinations.includes(NotificationDestination.Slack);
+    // Push mirrors in-app: every notification goes to every browser with
+    // notifications enabled, with no per-topic switch. The push keys come from
+    // SESSION_SECRET, so only a deployment without one has no push channel.
+    const wantsPush = isPushConfigured();
 
     // Per-user channel opt-outs: absence of a row = enabled; enabled=false
     // mutes that (topic, channel). In-app delivery is never filtered.
     const { emailRecipientIds, slackRecipientIds } =
       wantsEmail || wantsSlack
         ? await step.run("filter-recipients-by-preference", async () => {
-            const { data: prefs, error } = await client
-              .from("notificationPreference")
-              .select("userId, channel, enabled")
-              .in("userId", userIds)
-              .eq("companyId", payload.companyId)
-              .eq("topic", topic);
+            const { data: prefs, error } = await fetchAllByIds(
+              userIds,
+              (batch) =>
+                client
+                  .from("notificationPreference")
+                  .select("userId, channel, enabled")
+                  .in("userId", batch)
+                  .eq("companyId", payload.companyId)
+                  .eq("topic", topic)
+                  .order("userId")
+                  .order("channel")
+            );
             if (error) {
               console.error("Failed to load notification preferences", error);
               throw error;
@@ -417,32 +465,35 @@ export const notifyFunction = inngest.createFunction(
         if (content.digest) {
           const supersededAt = datetime.timestamp();
 
-          const [supersededDigests, supersededFlat] = await Promise.all([
-            client
-              .from("notification")
-              .update({ readAt: supersededAt, seenAt: supersededAt })
-              .eq("companyId", payload.companyId)
-              .eq("event", NotificationEvent.Digest)
-              .eq("payload->>sourceEvent", payload.event)
-              .is("readAt", null)
-              .in("userId", userIds),
-            client
-              .from("notification")
-              .update({ readAt: supersededAt, seenAt: supersededAt })
-              .eq("companyId", payload.companyId)
-              .eq("event", payload.event)
-              .is("digestedInto", null)
-              .is("readAt", null)
-              .in("userId", userIds)
-          ]);
-          const supersedeError =
-            supersededDigests.error ?? supersededFlat.error;
-          if (supersedeError) {
-            console.error(
-              "Failed to supersede prior reminder rows",
-              supersedeError
-            );
-            throw supersedeError;
+          // One chunk of recipients at a time: the ids ride in the URL.
+          for (const chunk of chunkArray(userIds, IN_FILTER_CHUNK)) {
+            const [supersededDigests, supersededFlat] = await Promise.all([
+              client
+                .from("notification")
+                .update({ readAt: supersededAt, seenAt: supersededAt })
+                .eq("companyId", payload.companyId)
+                .eq("event", NotificationEvent.Digest)
+                .eq("payload->>sourceEvent", payload.event)
+                .is("readAt", null)
+                .in("userId", chunk),
+              client
+                .from("notification")
+                .update({ readAt: supersededAt, seenAt: supersededAt })
+                .eq("companyId", payload.companyId)
+                .eq("event", payload.event)
+                .is("digestedInto", null)
+                .is("readAt", null)
+                .in("userId", chunk)
+            ]);
+            const supersedeError =
+              supersededDigests.error ?? supersededFlat.error;
+            if (supersedeError) {
+              console.error(
+                "Failed to supersede prior reminder rows",
+                supersedeError
+              );
+              throw supersedeError;
+            }
           }
         }
 
@@ -451,57 +502,83 @@ export const notifyFunction = inngest.createFunction(
         // DigestNotification UI renders. Single-item digests use the flat path.
         if (digestItems && digestItems.length > 1) {
           let inserted = 0;
-          for (const userId of userIds) {
-            const parent = await client
+          // One parent insert per chunk of recipients, then their children,
+          // instead of two round trips per recipient.
+          for (const chunk of chunkArray(userIds, IN_FILTER_CHUNK)) {
+            const parents = await client
               .from("notification")
-              .insert({
-                companyId: payload.companyId,
-                event: NotificationEvent.Digest,
-                payload: {
-                  count: digestItems.length,
-                  description,
+              .insert(
+                chunk.map((userId) => ({
+                  companyId: payload.companyId,
                   event: NotificationEvent.Digest,
-                  sourceEvent: payload.event,
-                  topic
+                  payload: {
+                    count: digestItems.length,
+                    description,
+                    event: NotificationEvent.Digest,
+                    sourceEvent: payload.event,
+                    topic
+                  },
+                  title: description,
+                  topic,
+                  userId
+                }))
+              )
+              .select("id, userId");
+            if (parents.error) {
+              console.error("Failed to insert digest parents", parents.error);
+              throw parents.error;
+            }
+            inserted += parents.data.length;
+
+            // Keyed by user, so the order the rows come back in never matters.
+            const parentIdByUser = new Map(
+              parents.data.map((parent) => [parent.userId, parent.id])
+            );
+            const childRows = chunk.flatMap((userId) => {
+              const parentId = parentIdByUser.get(userId);
+              if (!parentId) {
+                const error = new Error(
+                  `Failed to insert digest parent for ${userId}`
+                );
+                console.error("Failed to insert digest parent", {
+                  companyId: payload.companyId,
+                  userId
+                });
+                throw error;
+              }
+              return digestItems.map((item) => ({
+                companyId: payload.companyId,
+                digestedInto: parentId,
+                documentId: item.documentId,
+                documentType: payload.documentType ?? null,
+                event: payload.event,
+                from: payload.from ?? null,
+                payload: {
+                  description: item.description,
+                  documentId: item.documentId,
+                  event: payload.event,
+                  from: payload.from
                 },
-                title: description,
+                title: item.description,
                 topic,
                 userId
-              })
-              .select("id")
-              .single();
-            if (parent.error || !parent.data?.id) {
-              console.error("Failed to insert digest parent", parent.error);
-              throw parent.error ?? new Error("Failed to insert digest parent");
-            }
+              }));
+            });
 
-            const childRows = digestItems.map((item) => ({
-              companyId: payload.companyId,
-              digestedInto: parent.data.id,
-              documentId: item.documentId,
-              documentType: payload.documentType ?? null,
-              event: payload.event,
-              from: payload.from ?? null,
-              payload: {
-                description: item.description,
-                documentId: item.documentId,
-                event: payload.event,
-                from: payload.from
-              },
-              title: item.description,
-              topic,
-              userId
-            }));
-
-            const children = await client
-              .from("notification")
-              .insert(childRows)
-              .select("id");
-            if (children.error) {
-              console.error("Failed to insert digest children", children.error);
-              throw children.error;
+            for (const rows of chunkArray(childRows, INSERT_CHUNK)) {
+              const children = await client
+                .from("notification")
+                .insert(rows)
+                .select("id");
+              if (children.error) {
+                console.error(
+                  "Failed to insert digest children",
+                  children.error
+                );
+                throw children.error;
+              }
+              inserted += children.data?.length ?? 0;
             }
-            inserted += 1 + (children.data?.length ?? 0);
           }
           return { inserted, userIds };
         }
@@ -525,15 +602,19 @@ export const notifyFunction = inngest.createFunction(
           userId
         }));
 
-        const { data, error } = await client
-          .from("notification")
-          .insert(rows)
-          .select("id");
-        if (error) {
-          console.error("Failed to insert notification rows", error);
-          throw error;
+        let inserted = 0;
+        for (const chunk of chunkArray(rows, INSERT_CHUNK)) {
+          const { data, error } = await client
+            .from("notification")
+            .insert(chunk)
+            .select("id");
+          if (error) {
+            console.error("Failed to insert notification rows", error);
+            throw error;
+          }
+          inserted += data?.length ?? 0;
         }
-        return { inserted: data?.length ?? 0, userIds };
+        return { inserted, userIds };
       });
     }
 
@@ -553,48 +634,59 @@ export const notifyFunction = inngest.createFunction(
     }
 
     if (emailAllowed && emailRecipientIds.length > 0) {
-      const emailEvents = await step.run(
-        "resolve-email-recipients",
-        async () => {
-          const { data: users, error } = await client
-            .from("user")
-            .select("id, email, fullName")
-            .in("id", emailRecipientIds);
-          if (error) {
-            console.error("Failed to resolve email recipients", error);
-            throw error;
-          }
+      // The read is its own step, and each chunk of EMAIL_CHUNK recipients is
+      // rendered and sent in steps of its own: one step holding every
+      // recipient's HTML outgrows a step's output and a send's size limit.
+      // These step ids are new on purpose: the single step they replace
+      // stored its output in another shape, and a replay must not read it.
+      const recipients = await step.run("load-email-recipients", async () => {
+        const { data: users, error } = await fetchAllByIds(
+          emailRecipientIds,
+          (batch) =>
+            client
+              .from("user")
+              .select("id, email, fullName")
+              .in("id", batch)
+              .order("id")
+        );
+        if (error) {
+          console.error("Failed to resolve email recipients", error);
+          throw error;
+        }
+        return (users ?? []).filter((u) => u.email);
+      });
 
-          const subject = description;
-          const heading = getNotificationEmailHeading(payload.event);
-          const ctaLabel = getNotificationEmailCtaLabel(payload.event);
-          const ctaUrl = buildNotificationLink(
-            payload.event,
-            primaryDocumentId,
-            payload.companyId,
-            payload.documentType
-          );
+      const subject = description;
+      const heading = getNotificationEmailHeading(payload.event);
+      const ctaLabel = getNotificationEmailCtaLabel(payload.event);
+      const ctaUrl = buildNotificationLink(
+        payload.event,
+        primaryDocumentId,
+        payload.companyId,
+        payload.documentType
+      );
 
-          const recipients = (users ?? []).filter((u) => u.email);
+      // Recurring reminders carry delivery tracking; the recurrence
+      // period is folded into the tracked id ("ta_1:2026") so each period
+      // gets a fresh MAX_NOTIFICATION_DELIVERIES budget, while a plain id
+      // (no period) caps permanently.
+      const trackedDocumentIds = isRecurringNotificationEvent(payload.event)
+        ? (digestItems?.map((item) =>
+            item.period ? `${item.documentId}:${item.period}` : item.documentId
+          ) ?? [primaryDocumentId])
+        : null;
 
-          // Recurring reminders carry delivery tracking; the recurrence
-          // period is folded into the tracked id ("ta_1:2026") so each period
-          // gets a fresh MAX_NOTIFICATION_DELIVERIES budget, while a plain id
-          // (no period) caps permanently.
-          const trackedDocumentIds = isRecurringNotificationEvent(payload.event)
-            ? (digestItems?.map((item) =>
-                item.period
-                  ? `${item.documentId}:${item.period}`
-                  : item.documentId
-              ) ?? [primaryDocumentId])
-            : null;
-
-          // Render the template once per recipient because the greeting bakes
-          // in the user's name. The template itself is small so this is cheap;
-          // if it ever becomes hot we can split into a shared body + per-user
-          // greeting Section.
-          const events = await Promise.all(
-            recipients.map(async (u) => {
+      for (const [index, chunk] of chunkArray(
+        recipients,
+        EMAIL_CHUNK
+      ).entries()) {
+        // Render the template once per recipient because the greeting bakes
+        // in the user's name. The template itself is small so this is cheap;
+        // if it ever becomes hot we can split into a shared body + per-user
+        // greeting Section.
+        const emailEvents = await step.run(`render-emails-${index}`, () =>
+          Promise.all(
+            chunk.map(async (u) => {
               const html = await render(
                 getNotificationEmailComponent({
                   companyId: payload.companyId,
@@ -641,12 +733,9 @@ export const notifyFunction = inngest.createFunction(
                 name: "carbon/send-email" as const
               };
             })
-          );
-          return events;
-        }
-      );
-      if (emailEvents.length > 0) {
-        await step.sendEvent("fan-out-emails", emailEvents);
+          )
+        );
+        await step.sendEvent(`fan-out-emails-${index}`, emailEvents);
       }
     }
 
@@ -729,8 +818,86 @@ export const notifyFunction = inngest.createFunction(
         }
       );
 
-      if (slackEvents.length > 0) {
-        await step.sendEvent("fan-out-slack", slackEvents);
+      for (const [index, chunk] of chunkArray(
+        slackEvents,
+        EVENT_CHUNK
+      ).entries()) {
+        await step.sendEvent(`fan-out-slack-${index}`, chunk);
+      }
+    }
+
+    // ---- Push fan-out ----
+    // Every recipient of the in-app row, one carbon/send-push per browser row,
+    // so each browser retries on its own. A row belongs to the user, not a
+    // company: recipients are already limited to members of this
+    // notification's company (resolve-recipients), so each user gets the push
+    // of every company they belong to.
+    if (wantsPush) {
+      const pushEvents = await step.run(
+        "resolve-push-subscriptions",
+        async () => {
+          // Skip browsers no session has saved within a session's lifetime:
+          // their session ended without a sign-out.
+          const liveSince = pushSubscriptionCutoff(
+            now("UTC"),
+            pushSessionMaxAgeMs({
+              controlledEnvironment: CONTROLLED_ENVIRONMENT,
+              absoluteMaxMs: SESSION_ABSOLUTE_MAX_MS,
+              cookieMaxAgeSeconds: SESSION_MAX_AGE
+            })
+          );
+          const { data: subscriptions, error } = await fetchAllByIds(
+            userIds,
+            (batch) =>
+              client
+                .from("pushSubscription")
+                .select("id, userId")
+                .in("userId", batch)
+                .gte("updatedAt", liveSince)
+                .order("id")
+          );
+          if (error) {
+            console.error("Failed to load push subscriptions", error);
+            throw error;
+          }
+          const url = buildNotificationLink(
+            payload.event,
+            primaryDocumentId,
+            payload.companyId,
+            payload.documentType
+          );
+          // A workflow notification carries its author's subject as the
+          // description and their message as the "Message" detail; the
+          // generic heading would title every one "Workflow". A system
+          // notification shows no links, so [label](url) keeps its label.
+          const isWorkflow = payload.event === NotificationEvent.Workflow;
+          const title = isWorkflow
+            ? description
+            : getNotificationEmailHeading(payload.event);
+          const body = isWorkflow
+            ? renderInlineLinks(details[0]?.value ?? "", ERP_URL)
+                .map((segment) => segment.text)
+                .join("")
+            : description;
+          return (subscriptions ?? []).map((subscription) => ({
+            data: {
+              body,
+              companyId: payload.companyId,
+              subscriptionId: subscription.id,
+              userId: subscription.userId,
+              tag: `${payload.event}:${primaryDocumentId}`,
+              title,
+              url
+            },
+            name: "carbon/send-push" as const
+          }));
+        }
+      );
+      for (const [index, chunk] of chunkArray(
+        pushEvents,
+        EVENT_CHUNK
+      ).entries()) {
+        await step.sendEvent(`fan-out-push-${index}`, chunk);
       }
     }
   }

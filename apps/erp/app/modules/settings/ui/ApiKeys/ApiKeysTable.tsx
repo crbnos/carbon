@@ -75,6 +75,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -137,6 +138,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           return <EmployeeAvatar employeeId={row.original.createdBy} />;
         },
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
@@ -170,6 +172,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuCalendar />
         }
       },

@@ -36,6 +36,7 @@ import {
   Spinner,
   toast,
   useLocalStorage,
+  useViewport,
   VStack
 } from "@carbon/react";
 import {
@@ -1144,6 +1145,16 @@ function DrawerBodyGrid({
   left: React.ReactNode;
   right: React.ReactNode;
 }) {
+  const { isPhone } = useViewport();
+  if (isPhone) {
+    return (
+      <div className="flex flex-col min-h-0 flex-1 overflow-y-auto">
+        <div className="flex-shrink-0 border-b px-4 py-3 bg-card">{scope}</div>
+        <div className="flex h-full flex-shrink-0 flex-col">{left}</div>
+        <div className="flex flex-shrink-0 flex-col border-t">{right}</div>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
       <div className="flex-shrink-0 border-b px-4 py-3 bg-card">{scope}</div>
@@ -1253,7 +1264,7 @@ function ScopeBar({
             <Trans>Scope</Trans>
           </span>
         </HStack>
-        <div className="w-[220px]">
+        <div className="w-[220px] max-md:w-full max-md:!mx-0">
           <Combobox
             size="md"
             value={locationId}
@@ -1262,7 +1273,7 @@ function ScopeBar({
             placeholder={t`Location`}
           />
         </div>
-        <div className="w-[220px]">
+        <div className="w-[220px] max-md:w-full max-md:!mx-0">
           <Combobox
             size="md"
             value={processId ?? ""}
@@ -1856,7 +1867,8 @@ function CandidateTable({
         header: t`Job`,
         cell: ({ row }) => (
           <span className="font-medium">{row.original.jobReadableId}</span>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         id: "jobStatus",
@@ -1950,6 +1962,7 @@ function CandidateTable({
   return (
     <div className="flex-1 min-h-0 overflow-hidden w-full px-4">
       <Table<BatchCandidate>
+        mobileLayout="table"
         compact
         data={visible}
         columns={columns}

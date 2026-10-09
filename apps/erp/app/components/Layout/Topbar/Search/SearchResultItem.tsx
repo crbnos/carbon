@@ -60,10 +60,10 @@ export function SearchResultItem({
 
       {/* Entity type label + chevron */}
       <div className="flex-shrink-0 flex items-center gap-2 text-muted-foreground">
-        <span className="text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-xs font-medium md:opacity-0 group-hover:opacity-100 transition-opacity">
           {entityLabel}
         </span>
-        <LuChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <LuChevronRight className="w-4 h-4 md:opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
     </button>
   );

@@ -146,7 +146,7 @@ function WarehouseTransferLineListItem({
   const date = line.updatedAt ?? line.createdAt;
 
   return (
-    <div className={cn("@container border-b p-6", className)}>
+    <div className={cn("@container border-b p-6 max-md:p-4", className)}>
       {/* Sized by the line's own width, not the viewport: the content pane
           it sits in is resizable. The item takes what the rest leaves, and
           the quantity and bins drop below it on a narrow line. */}

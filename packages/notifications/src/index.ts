@@ -100,7 +100,9 @@ export const USER_FACING_NOTIFICATION_TOPICS = [
   NotificationTopic.Changelog
 ] as const satisfies readonly NotificationTopic[];
 
-// In-app is always delivered, so it is not a preference channel.
+// In-app is always delivered, so it is not a preference channel. Neither is
+// browser push: it mirrors in-app, every notification to every browser with
+// notifications enabled.
 export type NotificationPreferenceChannel = "email" | "slack";
 
 export function getNotificationTopicChannels(
@@ -154,7 +156,8 @@ export function isRecurringNotificationEvent(
 
 // Fan-out targets understood by the notify Inngest function. inApp is
 // always included regardless of what the caller passes — the topbar reflects
-// every notification. email and slack are opt-in extras.
+// every notification. email and slack are opt-in extras. Browser push is not
+// a destination: it follows in-app, so every notification pushes too.
 export enum NotificationDestination {
   InApp = "inApp",
   Email = "email",

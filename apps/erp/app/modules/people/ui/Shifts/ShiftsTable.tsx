@@ -110,6 +110,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
           <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCalendarRange />
         }
       },
@@ -119,6 +120,21 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         cell: ({ row }) =>
           renderShiftTime(row.original.startTime, row.original.locationId),
         meta: {
+          mobile: "P3",
+          // Phones: line 2 shows the whole span, start – end.
+          mobileCell: ({ row }) =>
+            row.original.endTime ? (
+              <>
+                {renderShiftTime(
+                  row.original.startTime,
+                  row.original.locationId
+                )}
+                {" – "}
+                {renderShiftTime(row.original.endTime, row.original.locationId)}
+              </>
+            ) : (
+              renderShiftTime(row.original.startTime, row.original.locationId)
+            ),
           icon: <LuClock />
         }
       },

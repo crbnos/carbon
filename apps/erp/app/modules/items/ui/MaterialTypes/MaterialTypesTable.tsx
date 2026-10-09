@@ -52,6 +52,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
         header: t`Substance`,
         cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
         meta: {
+          mobile: "P2",
           icon: <LuGlassWater />,
           filter: {
             type: "static",
@@ -67,6 +68,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
         header: t`Shape`,
         cell: ({ row }) => <Enumerable value={row.original.formName} />,
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -93,6 +95,7 @@ const MaterialTypesTable = memo(({ data, count }: MaterialTypesTableProps) => {
             </Hyperlink>
           ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },

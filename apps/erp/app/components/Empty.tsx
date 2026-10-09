@@ -21,7 +21,7 @@ export default function Empty({
       {...props}
     >
       <EmptyCabinet className="shrink-0 mb-4" />
-      <h3 className="text-lg font-medium tracking-tight text-foreground">
+      <h3 className="text-lg font-medium tracking-tight text-foreground max-md:text-[17px] max-md:font-semibold">
         <Trans>No data yet</Trans>
       </h3>
       <p className="max-w-56 text-center text-xs text-muted-foreground text-balance">

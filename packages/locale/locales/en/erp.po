@@ -77,6 +77,10 @@ msgstr "{0, plural, one {# day short} other {# days short}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr "{0, plural, one {# record needs attention} other {# records need attention}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -222,6 +226,15 @@ msgstr "{0} lines to map"
 msgid "{0} months"
 msgstr "{0} months"
 
+#. placeholder {0}: currencyFormatter.format(actualTotalCost)
+#. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
+#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
+#. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
+#. placeholder {1}: duration(estimated[key])
+msgid "{0} of {1}"
+msgstr "{0} of {1}"
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -287,6 +300,7 @@ msgid "{0} scrapped"
 msgstr "{0} scrapped"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} selected"
 
@@ -382,6 +396,9 @@ msgstr "{assetCount} Assets"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
+msgid "{completedLines} of {lines} lines complete"
+msgstr "{completedLines} of {lines} lines complete"
+
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# component} other {# components}}"
 
@@ -415,6 +432,9 @@ msgstr "{count} of {total} units"
 msgid "{count} units"
 msgstr "{count} units"
 
+msgid "{created} created, {updated} updated."
+msgstr "{created} created, {updated} updated."
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -438,6 +458,9 @@ msgstr "{from}–{to} of {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} of {count} operations"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr "{hidden, plural, one {And # more record.} other {And # more records.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} more: {hiddenNames}"
@@ -511,12 +534,18 @@ msgstr "{off} off"
 msgid "{off} off until {0}"
 msgstr "{off} off until {0}"
 
+msgid "{onHand} on hand"
+msgstr "{onHand} on hand"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# part} other {# parts}}"
+
+msgid "{percent} picked"
+msgstr "{percent} picked"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -1646,6 +1675,10 @@ msgstr "Activity"
 msgid "Actual"
 msgstr "Actual"
 
+#. placeholder {0}: duration(actual.total)
+msgid "Actual <0>{0}</0>"
+msgstr "Actual <0>{0}</0>"
+
 msgid "Actual Cost"
 msgstr "Actual Cost"
 
@@ -1741,6 +1774,9 @@ msgstr "Add any notes about your decision..."
 msgid "Add Approval Requirement"
 msgstr "Add Approval Requirement"
 
+msgid "Add Asset Class"
+msgstr "Add Asset Class"
+
 msgid "Add at least one service."
 msgstr "Add at least one service."
 
@@ -1789,6 +1825,9 @@ msgstr "Add Employee"
 msgid "Add Entry"
 msgstr "Add Entry"
 
+msgid "Add Fixed Asset"
+msgstr "Add Fixed Asset"
+
 msgid "Add from library…"
 msgstr "Add from library…"
 
@@ -1809,6 +1848,9 @@ msgstr "Add Invoice"
 
 msgid "Add Item"
 msgstr "Add Item"
+
+msgid "Add Journal Entry"
+msgstr "Add Journal Entry"
 
 msgid "Add Line"
 msgstr "Add Line"
@@ -1937,6 +1979,9 @@ msgstr "Add Spare Part"
 msgid "Add station"
 msgstr "Add station"
 
+msgid "Add step"
+msgstr "Add step"
+
 msgid "Add Step"
 msgstr "Add Step"
 
@@ -1949,8 +1994,17 @@ msgstr "Add Stock Transfer"
 msgid "Add Supplier"
 msgstr "Add Supplier"
 
+msgid "Add the materials this item uses."
+msgstr "Add the materials this item uses."
+
+msgid "Add the materials this job uses."
+msgstr "Add the materials this job uses."
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Add the next capability on the same system instead of buying another tool."
+
+msgid "Add the operations that make this item."
+msgstr "Add the operations that make this item."
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
@@ -2049,6 +2103,9 @@ msgstr "Advanced"
 
 msgid "Affected item not found."
 msgstr "Affected item not found."
+
+msgid "Affected Items"
+msgstr "Affected Items"
 
 msgid "After"
 msgstr "After"
@@ -3170,6 +3227,9 @@ msgstr "Assemblies"
 msgid "Assembly"
 msgstr "Assembly"
 
+msgid "assembly instruction"
+msgstr "assembly instruction"
+
 msgid "Assembly instruction"
 msgstr "Assembly instruction"
 
@@ -3277,6 +3337,9 @@ msgstr "Assigns this storage unit to a work center (lineside)"
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
+
+msgid "Associations"
+msgstr "Associations"
 
 msgid "Assumptions"
 msgstr "Assumptions"
@@ -3784,6 +3847,9 @@ msgstr "Blocked by {0}"
 msgid "Blocking sync"
 msgstr "Blocking sync"
 
+msgid "Blocks"
+msgstr "Blocks"
+
 msgid "Blocks Machine"
 msgstr "Blocks Machine"
 
@@ -3855,6 +3921,12 @@ msgstr "Browse library"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+
+msgid "Browser notifications"
+msgstr "Browser notifications"
+
+msgid "Browser notifications are on for this browser."
+msgstr "Browser notifications are on for this browser."
 
 msgid "BSB"
 msgstr "BSB"
@@ -3945,6 +4017,9 @@ msgstr "By Location"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
+
+msgid "By you · edited <0/>"
+msgstr "By you · edited <0/>"
 
 msgid "CAD Model"
 msgstr "CAD Model"
@@ -4474,6 +4549,9 @@ msgstr "Choose a serial number"
 msgid "choose a supplier for {0} on the job"
 msgstr "choose a supplier for {0} on the job"
 
+msgid "Choose an option"
+msgstr "Choose an option"
+
 msgid "Choose another file"
 msgstr "Choose another file"
 
@@ -4533,6 +4611,9 @@ msgstr "Clear"
 
 msgid "Clear due date"
 msgstr "Clear due date"
+
+msgid "Clear filters"
+msgstr "Clear filters"
 
 msgid "Clear Filters"
 msgstr "Clear Filters"
@@ -4683,6 +4764,10 @@ msgstr "Collapse Setup"
 msgid "Collapse subtree"
 msgstr "Collapse subtree"
 
+#. placeholder {0}: index + 1
+msgid "Column {0} of {count}"
+msgstr "Column {0} of {count}"
+
 msgid "Column dimension"
 msgstr "Column dimension"
 
@@ -4766,6 +4851,11 @@ msgstr "Compatibility rules"
 
 msgid "Complete"
 msgstr "Complete"
+
+#. placeholder {0}: getCompleteQuantity(operation)
+#. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
+msgid "Complete {0}/{1}"
+msgstr "Complete {0}/{1}"
 
 msgid "Complete All"
 msgstr "Complete All"
@@ -5265,6 +5355,9 @@ msgstr "Copied link to clipboard"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Copied setup prompt to your clipboard"
 
+msgid "Copied to clipboard"
+msgstr "Copied to clipboard"
+
 msgid "Copied!"
 msgstr "Copied!"
 
@@ -5671,8 +5764,7 @@ msgstr "Coverage"
 msgid "Create"
 msgstr "Create"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Create {0}"
 
@@ -6321,6 +6413,9 @@ msgstr "Daily check-ins while your team finds its feet on the live system"
 msgid "Daily summary"
 msgstr "Daily summary"
 
+msgid "Daily usage"
+msgstr "Daily usage"
+
 msgid "Daily Usage"
 msgstr "Daily Usage"
 
@@ -6817,6 +6912,9 @@ msgstr "Delete Holiday"
 msgid "Delete Inspection Plan"
 msgstr "Delete Inspection Plan"
 
+msgid "Delete Instruction"
+msgstr "Delete Instruction"
+
 msgid "Delete Invoice"
 msgstr "Delete Invoice"
 
@@ -6825,6 +6923,9 @@ msgstr "Delete Issue"
 
 msgid "Delete Item Group"
 msgstr "Delete Item Group"
+
+msgid "Delete Job"
+msgstr "Delete Job"
 
 msgid "Delete Journal Entry"
 msgstr "Delete Journal Entry"
@@ -7017,6 +7118,9 @@ msgstr "Delete the {0} invoice"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Delete the price break for quantity {0}? This can't be undone."
 
+msgid "Delete this line?"
+msgstr "Delete this line?"
+
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "Delete this sub-assembly and all of its steps? This cannot be undone."
 
@@ -7185,6 +7289,9 @@ msgstr "Depreciation Start Date"
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 
+msgid "Descending"
+msgstr "Descending"
+
 msgid "Description"
 msgstr "Description"
 
@@ -7268,6 +7375,9 @@ msgstr "Direction"
 
 msgid "Directions"
 msgstr "Directions"
+
+msgid "Disable"
+msgstr "Disable"
 
 msgid "Disabled"
 msgstr "Disabled"
@@ -7587,7 +7697,7 @@ msgstr "Due (by due date)"
 msgid "due {0}"
 msgstr "due {0}"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+#. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "Due {0}"
 
@@ -8156,6 +8266,9 @@ msgstr "Edit Work Center"
 msgid "Edited"
 msgstr "Edited"
 
+msgid "edited <0/>"
+msgstr "edited <0/>"
+
 msgid "Eliminated"
 msgstr "Eliminated"
 
@@ -8239,6 +8352,9 @@ msgstr "Enable Accounting"
 
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Enable audit logging in settings to start tracking changes to your data."
+
+msgid "Enable browser notifications"
+msgstr "Enable browser notifications"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
@@ -8409,6 +8525,9 @@ msgstr "Enter a quantity between 1 and {0}."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Enter a reason to take the unit out of service"
 
+msgid "Enter a web address, such as https://example.com"
+msgstr "Enter a web address, such as https://example.com"
+
 msgid "Enter an item and quantity yourself."
 msgstr "Enter an item and quantity yourself."
 
@@ -8568,11 +8687,18 @@ msgstr "Escalation"
 msgid "Est. Duration"
 msgstr "Est. Duration"
 
+msgid "Estimate"
+msgstr "Estimate"
+
 msgid "Estimated"
 msgstr "Estimated"
 
 msgid "Estimated — no capacity reservation"
 msgstr "Estimated — no capacity reservation"
+
+#. placeholder {0}: duration(estimated.total)
+msgid "Estimated <0>{0}</0>"
+msgstr "Estimated <0>{0}</0>"
 
 msgid "Estimated Duration"
 msgstr "Estimated Duration"
@@ -8717,6 +8843,9 @@ msgstr "Existing mappings. Pick a different provider option to re-map."
 
 msgid "Existing Stripe customer"
 msgstr "Existing Stripe customer"
+
+msgid "Exp. <0/>"
+msgstr "Exp. <0/>"
 
 msgid "Expand"
 msgstr "Expand"
@@ -8873,9 +9002,6 @@ msgstr "Expiry begins when the selected process starts."
 
 msgid "Expiry trace"
 msgstr "Expiry trace"
-
-msgid "Explorer"
-msgstr "Explorer"
 
 msgid "Export"
 msgstr "Export"
@@ -9089,8 +9215,14 @@ msgstr "Failed to create work center: {0}"
 msgid "Failed to delete file from old location"
 msgstr "Failed to delete file from old location"
 
+msgid "Failed to disable browser notifications"
+msgstr "Failed to disable browser notifications"
+
 msgid "Failed to download file for moving"
 msgstr "Failed to download file for moving"
+
+msgid "Failed to enable browser notifications"
+msgstr "Failed to enable browser notifications"
 
 msgid "Failed to fetch item costs"
 msgstr "Failed to fetch item costs"
@@ -9425,8 +9557,17 @@ msgstr "fills a run"
 msgid "Filter"
 msgstr "Filter"
 
+msgid "Filter & sort"
+msgstr "Filter & sort"
+
+msgid "Filter and sort"
+msgstr "Filter and sort"
+
 msgid "Filter by…"
 msgstr "Filter by…"
+
+msgid "Filters"
+msgstr "Filters"
 
 msgid "Finalize"
 msgstr "Finalize"
@@ -9821,6 +9962,9 @@ msgstr "Get started"
 msgid "Get Started"
 msgstr "Get Started"
 
+msgid "Get your Carbon notifications as they happen."
+msgstr "Get your Carbon notifications as they happen."
+
 msgid "Gets the summary for every agreement"
 msgstr "Gets the summary for every agreement"
 
@@ -10098,6 +10242,9 @@ msgstr "Has operations that can't be scheduled"
 msgid "Headers"
 msgstr "Headers"
 
+msgid "Heading {level}"
+msgstr "Heading {level}"
+
 msgid "Healthy"
 msgstr "Healthy"
 
@@ -10172,6 +10319,9 @@ msgstr "Holiday Name"
 
 msgid "Holidays"
 msgstr "Holidays"
+
+msgid "Home"
+msgstr "Home"
 
 msgid "Home Phone"
 msgstr "Home Phone"
@@ -10898,9 +11048,6 @@ msgstr "Inventory Qty"
 msgid "Inventory Quantities"
 msgstr "Inventory Quantities"
 
-msgid "Inventory Tracking"
-msgstr "Inventory Tracking"
-
 msgid "Inventory Unit of Measure"
 msgstr "Inventory Unit of Measure"
 
@@ -11506,11 +11653,21 @@ msgstr "Last name"
 msgid "Last Name"
 msgstr "Last Name"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr "Last push {when} failed: {0}"
+
+msgid "Last push {when}:"
+msgstr "Last push {when}:"
+
 msgid "Last Quarter"
 msgstr "Last Quarter"
 
 msgid "Last Run"
 msgstr "Last Run"
+
+msgid "Last scheduled push {when}:"
+msgstr "Last scheduled push {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "Last synced: <0/>"
@@ -11800,6 +11957,9 @@ msgstr "List Parameters"
 msgid "List view"
 msgstr "List view"
 
+msgid "List View"
+msgstr "List View"
+
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
@@ -11813,6 +11973,9 @@ msgstr "Live reloading"
 
 msgid "Load"
 msgstr "Load"
+
+msgid "Load more"
+msgstr "Load more"
 
 msgid "Load newer"
 msgstr "Load newer"
@@ -11882,6 +12045,9 @@ msgstr "Lock Period"
 
 msgid "Locked"
 msgstr "Locked"
+
+msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
+msgstr "Locked while the quote is {quoteStatus}. Reopen it to edit."
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
@@ -12013,6 +12179,9 @@ msgstr "MACRS Property Class"
 msgid "Magic link"
 msgstr "Magic link"
 
+msgid "Main"
+msgstr "Main"
+
 msgid "Main build (after its last step)"
 msgstr "Main build (after its last step)"
 
@@ -12108,6 +12277,10 @@ msgstr "Make to Order"
 
 msgid "Make tracked entities available again"
 msgstr "Make tracked entities available again"
+
+#. placeholder {0}: instruction.version
+msgid "Make version {0} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it."
+msgstr "Make version {0} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it."
 
 msgid "Makes this document active again."
 msgstr "Makes this document active again."
@@ -12683,6 +12856,9 @@ msgstr "More options"
 msgid "More overtime"
 msgstr "More overtime"
 
+msgid "More records are waiting. Push again to continue."
+msgstr "More records are waiting. Push again to continue."
+
 msgid "Morning, {name}."
 msgstr "Morning, {name}."
 
@@ -12694,6 +12870,9 @@ msgstr "Most things get caught and resolved here. Name it plainly."
 
 msgid "Motion"
 msgstr "Motion"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 
 msgid "Move"
 msgstr "Move"
@@ -13229,6 +13408,9 @@ msgstr "Next Calibration"
 msgid "Next Calibration Date"
 msgstr "Next Calibration Date"
 
+msgid "Next column"
+msgstr "Next column"
+
 msgid "Next Date"
 msgstr "Next Date"
 
@@ -13304,6 +13486,9 @@ msgstr "No {0} sync operations"
 msgid "No {0} yet"
 msgstr "No {0} yet"
 
+msgid "No {title} yet"
+msgstr "No {title} yet"
+
 msgid "No abilities added"
 msgstr "No abilities added"
 
@@ -13321,6 +13506,9 @@ msgstr "No actions found."
 
 msgid "No actions selected"
 msgstr "No actions selected"
+
+msgid "No actions yet."
+msgstr "No actions yet."
 
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "No active jobs found for this sales order. The order will be cancelled directly."
@@ -13345,6 +13533,9 @@ msgstr "No amendments."
 
 msgid "No applications. Payment will be on-account."
 msgstr "No applications. Payment will be on-account."
+
+msgid "No approval requirements yet."
+msgstr "No approval requirements yet."
 
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
@@ -13512,6 +13703,9 @@ msgstr "No end"
 msgid "No events found."
 msgstr "No events found."
 
+msgid "No external notes"
+msgstr "No external notes"
+
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "No extra cutover steps yet. Add anything specific to this customer."
 
@@ -13565,6 +13759,9 @@ msgstr "No image"
 
 msgid "No inspection plans"
 msgstr "No inspection plans"
+
+msgid "No internal notes"
+msgstr "No internal notes"
 
 msgid "No invoices planned after the change."
 msgstr "No invoices planned after the change."
@@ -13641,6 +13838,9 @@ msgstr "No matching operations"
 msgid "No materials"
 msgstr "No materials"
 
+msgid "No materials yet"
+msgstr "No materials yet"
+
 msgid "No new notifications"
 msgstr "No new notifications"
 
@@ -13692,6 +13892,9 @@ msgstr "No operations require picking at this location"
 
 msgid "No operations selected"
 msgstr "No operations selected"
+
+msgid "No operations yet"
+msgstr "No operations yet"
 
 msgid "No operators."
 msgstr "No operators."
@@ -13827,6 +14030,9 @@ msgstr "No returnable lines match your search"
 
 msgid "No revenue to recognize for this period."
 msgstr "No revenue to recognize for this period."
+
+msgid "No risks"
+msgstr "No risks"
 
 msgid "No rows here."
 msgstr "No rows here."
@@ -13984,9 +14190,6 @@ msgstr "Non-conformances"
 msgid "Non-Inventory"
 msgstr "Non-Inventory"
 
-msgid "Non-Inventory Tracking"
-msgstr "Non-Inventory Tracking"
-
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 
@@ -14028,6 +14231,9 @@ msgstr "Not enough unit data"
 
 msgid "Not feasible"
 msgstr "Not feasible"
+
+msgid "Not now"
+msgstr "Not now"
 
 msgid "Not reached"
 msgstr "Not reached"
@@ -14093,6 +14299,9 @@ msgstr "Nothing else at this location has stock to pull from."
 msgid "Nothing here matches your search and filters."
 msgstr "Nothing here matches your search and filters."
 
+msgid "Nothing here yet"
+msgstr "Nothing here yet"
+
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
@@ -14128,6 +14337,9 @@ msgstr "Notification Type"
 
 msgid "Notifications"
 msgstr "Notifications"
+
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Notifications are blocked for Carbon in this browser's site settings."
 
 msgid "Notify"
 msgstr "Notify"
@@ -14464,9 +14676,6 @@ msgstr "Open Jobs"
 
 msgid "Open menu"
 msgstr "Open menu"
-
-msgid "Open navigation"
-msgstr "Open navigation"
 
 msgid "Open Orders"
 msgstr "Open Orders"
@@ -14818,6 +15027,9 @@ msgstr "Output never outlasts its raw materials. Falls back to the fixed duratio
 msgid "Outside operation"
 msgstr "Outside operation"
 
+msgid "Outside Processing"
+msgstr "Outside Processing"
+
 msgid "Outstanding"
 msgstr "Outstanding"
 
@@ -14883,6 +15095,9 @@ msgstr "Override the expiration on {label}."
 
 msgid "Overtime"
 msgstr "Overtime"
+
+msgid "Overview"
+msgstr "Overview"
 
 msgid "Overwrite Existing"
 msgstr "Overwrite Existing"
@@ -15070,6 +15285,9 @@ msgstr "Paste the metadata XML if your identity provider does not publish a meta
 
 msgid "Path"
 msgstr "Path"
+
+msgid "Pause"
+msgstr "Pause"
 
 msgid "Pay"
 msgstr "Pay"
@@ -15658,6 +15876,9 @@ msgstr "Present Week"
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 
+msgid "Press '/' for commands"
+msgstr "Press '/' for commands"
+
 msgid "Prev"
 msgstr "Prev"
 
@@ -15687,6 +15908,9 @@ msgstr "Previewing the cancellation…"
 
 msgid "Previous"
 msgstr "Previous"
+
+msgid "Previous column"
+msgstr "Previous column"
 
 msgid "Previous Date"
 msgstr "Previous Date"
@@ -15776,6 +16000,9 @@ msgstr "Print batch list"
 
 msgid "Print Jobs"
 msgstr "Print Jobs"
+
+msgid "Print label"
+msgstr "Print label"
 
 msgid "Print Label"
 msgstr "Print Label"
@@ -16253,6 +16480,12 @@ msgstr "QR Code to start the next operation for this kanban"
 msgid "Qty"
 msgstr "Qty"
 
+msgid "Qty {jobQuantity}"
+msgstr "Qty {jobQuantity}"
+
+msgid "Qty {quantity}"
+msgstr "Qty {quantity}"
+
 msgid "Qty On Hand"
 msgstr "Qty On Hand"
 
@@ -16386,6 +16619,9 @@ msgstr "Quarterly"
 
 msgid "Question"
 msgstr "Question"
+
+msgid "Questions"
+msgstr "Questions"
 
 msgid "Queued"
 msgstr "Queued"
@@ -16530,6 +16766,9 @@ msgstr "Raw Materials"
 
 msgid "Raw Materials (default)"
 msgstr "Raw Materials (default)"
+
+msgid "Re-convert Model"
+msgstr "Re-convert Model"
 
 msgid "Re-date to first open day"
 msgstr "Re-date to first open day"
@@ -17514,6 +17753,9 @@ msgstr "Results"
 msgid "Results per page"
 msgstr "Results per page"
 
+msgid "Resume"
+msgstr "Resume"
+
 msgid "Resume Receiving"
 msgstr "Resume Receiving"
 
@@ -17612,6 +17854,9 @@ msgstr "Returns:"
 
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
+
+msgid "Rev {revisionId}"
+msgstr "Rev {revisionId}"
 
 msgid "Reveal account number"
 msgstr "Reveal account number"
@@ -18242,6 +18487,9 @@ msgstr "Saved"
 msgid "Saved view"
 msgstr "Saved view"
 
+msgid "Saved views"
+msgstr "Saved views"
+
 msgid "Saved Views"
 msgstr "Saved Views"
 
@@ -18347,6 +18595,10 @@ msgstr "Scopes"
 msgid "Scrap"
 msgstr "Scrap"
 
+#. placeholder {0}: getScrapQuantity(operation)
+msgid "Scrap {0}"
+msgstr "Scrap {0}"
+
 msgid "Scrap / Cost of Quality"
 msgstr "Scrap / Cost of Quality"
 
@@ -18388,6 +18640,9 @@ msgstr "Search"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "Search {gaugeTypeName}..."
+
+msgid "Search {title}"
+msgstr "Search {title}"
 
 msgid "Search accounts"
 msgstr "Search accounts"
@@ -18500,9 +18755,6 @@ msgstr "Secret copied to clipboard"
 msgid "Section"
 msgstr "Section"
 
-msgid "Sections"
-msgstr "Sections"
-
 msgid "Secure your account with 2FA"
 msgstr "Secure your account with 2FA"
 
@@ -18511,6 +18763,10 @@ msgstr "Security"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
+
+#. placeholder {0}: lines.length
+msgid "See all {0}"
+msgstr "See all {0}"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segments that drive customer pricing and terms"
@@ -18707,6 +18963,9 @@ msgstr "Select Quantities"
 
 msgid "Select Reason"
 msgstr "Select Reason"
+
+msgid "Select row"
+msgstr "Select row"
 
 msgid "Select Row"
 msgstr "Select Row"
@@ -19275,6 +19534,9 @@ msgstr "Show {0}"
 msgid "Show {0} more"
 msgstr "Show {0} more"
 
+msgid "Show {count} results"
+msgstr "Show {count} results"
+
 msgid "Show {label}"
 msgstr "Show {label}"
 
@@ -19351,6 +19613,9 @@ msgstr "Showing {0} of {totalCount} — refine your search"
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Showing {0} of {totalFiltered} — refine your search"
+
+msgid "Showing {firstShown}–{lastShown} of {total}"
+msgstr "Showing {firstShown}–{lastShown} of {total}"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Showing in {parentCurrency}"
@@ -19714,6 +19979,9 @@ msgstr "Start with"
 msgid "Started"
 msgstr "Started"
 
+msgid "Starting"
+msgstr "Starting"
+
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -19874,6 +20142,9 @@ msgstr "Stops new purchase suggestions for the old part after this date."
 msgid "Storage client not available"
 msgstr "Storage client not available"
 
+msgid "Storage Rule"
+msgstr "Storage Rule"
+
 msgid "Storage Rules"
 msgstr "Storage Rules"
 
@@ -19939,6 +20210,9 @@ msgstr "Stripe has no customer for this Carbon customer yet. Confirming will cre
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+
+msgid "Structure"
+msgstr "Structure"
 
 msgid "Style default"
 msgstr "Style default"
@@ -20007,9 +20281,6 @@ msgstr "Submit Inspection"
 
 msgid "Submitted By"
 msgstr "Submitted By"
-
-msgid "Submodules"
-msgstr "Submodules"
 
 msgid "substance"
 msgstr "substance"
@@ -20287,6 +20558,9 @@ msgstr "Suppliers"
 msgid "Supply"
 msgstr "Supply"
 
+msgid "Supply / demand"
+msgstr "Supply / demand"
+
 msgid "Supply & Demand"
 msgstr "Supply & Demand"
 
@@ -20324,6 +20598,9 @@ msgstr "Switch"
 
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
+
+msgid "Switch company"
+msgstr "Switch company"
 
 msgid "Switch to pan mode"
 msgstr "Switch to pan mode"
@@ -21278,6 +21555,18 @@ msgstr "The provider offers no dimension targets. Enable the feature in the prov
 msgid "The purchase order"
 msgstr "The purchase order"
 
+msgid "The push to Mount did not start. Try again."
+msgstr "The push to Mount did not start. Try again."
+
+msgid "The push to Mount failed"
+msgstr "The push to Mount failed"
+
+msgid "The push to Mount finished"
+msgstr "The push to Mount finished"
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr "The push to Mount finished. Some records need attention"
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 
@@ -21688,6 +21977,9 @@ msgstr "This backup could not be completed."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "This backup hasn't been checked yet. Any differences are found when the restore runs."
+
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
@@ -22148,6 +22440,9 @@ msgstr "To Location"
 msgid "To next week"
 msgstr "To next week"
 
+msgid "To pick"
+msgstr "To pick"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 
@@ -22492,6 +22787,9 @@ msgstr "Transit & Institution"
 msgid "Trash"
 msgstr "Trash"
 
+msgid "Tree View"
+msgstr "Tree View"
+
 msgid "Trial Balance"
 msgstr "Trial Balance"
 
@@ -22718,6 +23016,9 @@ msgstr "unknown error"
 
 msgid "Unknown gauge"
 msgstr "Unknown gauge"
+
+msgid "Unknown Job"
+msgstr "Unknown Job"
 
 msgid "unknown location"
 msgstr "unknown location"
@@ -23233,6 +23534,12 @@ msgstr "Verify your email"
 
 msgid "Version"
 msgstr "Version"
+
+#. placeholder {0}: current.versionNumber
+#. placeholder {0}: instruction.version
+#. placeholder {0}: v.versionNumber
+msgid "Version {0}"
+msgstr "Version {0}"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -24197,6 +24504,9 @@ msgstr "Working sessions on configuration and data"
 
 msgid "Worst Performing Machines"
 msgstr "Worst Performing Machines"
+
+msgid "Write a note…"
+msgstr "Write a note…"
 
 msgid "Write missing journals"
 msgstr "Write missing journals"

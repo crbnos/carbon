@@ -21,13 +21,15 @@ import {
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
-  useMode
+  useMode,
+  ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
   getPreferenceHeaders,
+  getViewportHint,
   isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
@@ -168,6 +170,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         XERO_CLIENT_ID
       },
       ...getMode(request),
+      viewport: getViewportHint(request),
       preferences: getPreferenceHeaders(request),
       result: context.get(flashResultContext),
       theme: getTheme(request)
@@ -255,7 +258,10 @@ export function Document({
     >
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         {/* Before any paint: records the OS color scheme for a `system` user
             and reloads once if the server rendered the wrong mode. */}
         <script
@@ -327,24 +333,26 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <OperatingSystemContextProvider platform={prefs.platform}>
-        <LocaleProvider locale={appLanguage} catalog={catalog}>
-          <I18nProvider locale={prefs.locale}>
-            <TooltipProvider>
-              <MotionConfig reducedMotion="user">
-                <Document
-                  mode={mode}
-                  theme={theme}
-                  lang={appLanguage}
-                  env={env}
-                >
-                  <Outlet />
-                  {/* Renders nothing outside development; the package strips itself. */}
-                  <ReactQueryDevtools buttonPosition="bottom-right" />
-                </Document>
-              </MotionConfig>
-            </TooltipProvider>
-          </I18nProvider>
-        </LocaleProvider>
+        <ViewportProvider initialViewport={loaderData?.viewport ?? "desktop"}>
+          <LocaleProvider locale={appLanguage} catalog={catalog}>
+            <I18nProvider locale={prefs.locale}>
+              <TooltipProvider>
+                <MotionConfig reducedMotion="user">
+                  <Document
+                    mode={mode}
+                    theme={theme}
+                    lang={appLanguage}
+                    env={env}
+                  >
+                    <Outlet />
+                    {/* Renders nothing outside development; the package strips itself. */}
+                    <ReactQueryDevtools buttonPosition="bottom-right" />
+                  </Document>
+                </MotionConfig>
+              </TooltipProvider>
+            </I18nProvider>
+          </LocaleProvider>
+        </ViewportProvider>
       </OperatingSystemContextProvider>
     </QueryClientProvider>
   );

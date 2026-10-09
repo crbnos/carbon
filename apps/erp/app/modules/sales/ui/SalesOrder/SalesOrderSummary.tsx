@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getSalesOrderLineTotal } from "@carbon/documents/utils";
 import {
   Badge,
   Button,
@@ -23,6 +24,7 @@ import {
   Tr,
   TruncatedTooltipText,
   useDisclosure,
+  useViewport,
   VStack
 } from "@carbon/react";
 import type { SalesOrderForProductionCheck } from "@carbon/utils";
@@ -57,6 +59,7 @@ import {
   MotionMoney
 } from "~/components";
 import { Confirm } from "~/components/Modals";
+import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -83,6 +86,7 @@ const SalesOrderSummary = ({
   onEditShippingCost: () => void;
 }) => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -198,11 +202,11 @@ const SalesOrderSummary = ({
         )}
       <Card>
         <CardHeader>
-          <HStack className="justify-between items-center">
-            <div className="flex flex-col gap-1">
+          <HStack className="justify-between items-center max-md:min-w-0">
+            <div className="flex flex-col gap-1 max-md:hidden">
               <CardTitle>{routeData?.salesOrder.salesOrderId}</CardTitle>
             </div>
-            <div className="flex flex-col gap-1 items-end">
+            <div className="flex flex-col gap-1 items-end max-md:w-full max-md:min-w-0 max-md:items-start max-md:[&>*]:max-w-full max-md:[&_span]:truncate">
               <CustomerAvatar
                 customerId={routeData?.salesOrder.customerId ?? null}
               />
@@ -266,39 +270,63 @@ const SalesOrderSummary = ({
                 decimalPlaces={currencyDecimals}
               />
             </HStack>
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
-              {convertedShippingCost > 0 ? (
-                <>
-                  <VStack spacing={0}>
-                    <span>
-                      <Trans>Shipping:</Trans>
-                    </span>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="text-muted-foreground"
-                      onClick={onEditShippingCost}
-                    >
-                      <Trans>Edit Shipping</Trans>
-                    </Button>
-                  </VStack>
-                  <MotionMoney
-                    value={convertedShippingCost}
-                    currency={routeData?.salesOrder?.currencyCode ?? "USD"}
-                    decimalPlaces={currencyDecimals}
-                  />
-                </>
-              ) : isEditable ? (
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="text-primary"
+            {isPhone ? (
+              // Phones: one tappable Shipping row in place of the Add / Edit
+              // Shipping links.
+              convertedShippingCost > 0 || isEditable ? (
+                <button
+                  type="button"
+                  className="flex min-h-11 w-full items-center justify-between text-sm text-muted-foreground"
                   onClick={onEditShippingCost}
                 >
-                  <Trans>Add Shipping</Trans>
-                </Button>
-              ) : null}
-            </HStack>
+                  <span>
+                    <Trans>Shipping:</Trans>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MotionMoney
+                      value={convertedShippingCost}
+                      currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                      decimalPlaces={currencyDecimals}
+                    />
+                    <LuChevronRight className="size-4" />
+                  </span>
+                </button>
+              ) : null
+            ) : (
+              <HStack className="justify-between text-sm text-muted-foreground w-full">
+                {convertedShippingCost > 0 ? (
+                  <>
+                    <VStack spacing={0}>
+                      <span>
+                        <Trans>Shipping:</Trans>
+                      </span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="text-muted-foreground"
+                        onClick={onEditShippingCost}
+                      >
+                        <Trans>Edit Shipping</Trans>
+                      </Button>
+                    </VStack>
+                    <MotionMoney
+                      value={convertedShippingCost}
+                      currency={routeData?.salesOrder?.currencyCode ?? "USD"}
+                      decimalPlaces={currencyDecimals}
+                    />
+                  </>
+                ) : isEditable ? (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-primary"
+                    onClick={onEditShippingCost}
+                  >
+                    <Trans>Add Shipping</Trans>
+                  </Button>
+                ) : null}
+              </HStack>
+            )}
             <HStack className="justify-between text-xl font-semibold w-full">
               <span>
                 <Trans>Total:</Trans>
@@ -363,6 +391,8 @@ function LineItems({
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
   const percentFormatter = usePercentFormatter();
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -374,6 +404,47 @@ function LineItems({
       prev.includes(id) ? prev.filter?.((item) => item !== id) : [...prev, id]
     );
   };
+
+  // Phones: one row per line that opens the line page (its Edit link, the
+  // badges and the breakdown stay on desktop).
+  if (isPhone) {
+    return (
+      <SummaryLineList>
+        {lines.map((line) =>
+          line.id ? (
+            <SummaryLineRow
+              key={line.id}
+              to={path.to.salesOrderLine(orderId, line.id)}
+              title={
+                line.salesOrderLineType === "Fixed Asset"
+                  ? line.assetReadableId || t`Fixed Asset`
+                  : line.itemReadableId
+              }
+              value={
+                <MotionMoney
+                  value={getSalesOrderLineTotal(line)}
+                  currency={currencyCode}
+                  decimalPlaces={currencyDecimals}
+                />
+              }
+              description={distinctItemText(
+                line.salesOrderLineType === "Fixed Asset"
+                  ? line.assetReadableId || t`Fixed Asset`
+                  : line.itemReadableId,
+                line.description
+              )}
+              meta={
+                <>
+                  {line.saleQuantity} × {formatter.format(line.unitPrice ?? 0)}{" "}
+                  {line.unitOfMeasureCode}
+                </>
+              }
+            />
+          ) : null
+        )}
+      </SummaryLineList>
+    );
+  }
 
   return (
     <VStack spacing={8} className="w-full overflow-hidden">
@@ -455,14 +526,7 @@ function LineItems({
                       <HStack spacing={4}>
                         <MotionMoney
                           className="font-semibold text-xl whitespace-nowrap"
-                          value={
-                            ((line?.convertedUnitPrice ?? 0) *
-                              (line?.saleQuantity ?? 0) +
-                              (line?.convertedAddOnCost ?? 0) +
-                              (line?.convertedShippingCost ?? 0)) *
-                              (1 + (line?.taxPercent ?? 0)) +
-                            (line?.convertedNonTaxableAddOnCost ?? 0)
-                          }
+                          value={getSalesOrderLineTotal(line)}
                           currency={currencyCode}
                           decimalPlaces={currencyDecimals}
                         />
@@ -667,14 +731,7 @@ function LineItems({
                       <Td>Total</Td>
                       <Td className="text-right">
                         <MotionMoney
-                          value={
-                            ((line.convertedUnitPrice ?? 0) *
-                              (line.saleQuantity ?? 0) +
-                              (line.convertedAddOnCost ?? 0) +
-                              (line.convertedShippingCost ?? 0)) *
-                              (1 + (line.taxPercent ?? 0)) +
-                            (line.convertedNonTaxableAddOnCost ?? 0)
-                          }
+                          value={getSalesOrderLineTotal(line)}
                           currency={currencyCode}
                           decimalPlaces={currencyDecimals}
                         />

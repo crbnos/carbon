@@ -11,6 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUser } from "~/hooks";
 import {
   insertWarehouseTransfer,
@@ -89,7 +90,7 @@ export default function WarehouseTransferNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <Card>
         <CardHeader>
           <Heading as="h1" size="h3" className="font-sans">
@@ -101,6 +102,6 @@ export default function WarehouseTransferNewRoute() {
           <WarehouseTransferForm initialValues={initialValues} />
         </CardContent>
       </Card>
-    </div>
+    </NewRecordPage>
   );
 }

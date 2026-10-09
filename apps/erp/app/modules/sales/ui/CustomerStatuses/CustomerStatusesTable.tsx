@@ -40,6 +40,7 @@ const CustomerStatusesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuStar />
           }
         }

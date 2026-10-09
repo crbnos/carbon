@@ -572,7 +572,7 @@
     {"name":"people_getAttribute","classification":"READ","paramCount":1,"schema":"437fb5c5c303","response":"9c635d811516","injectAuth":"companyId","permission":"people:view","paginates":false},
     {"name":"people_getAttributeCategories","classification":"READ","paramCount":1,"schema":"ed8b79d0644f","response":"64bbb296aaa1","injectAuth":"companyId","permission":"people:view","paginates":true,"defaults":"always"},
     {"name":"people_getAttributeCategory","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"a52b87433b3b","injectAuth":"companyId","permission":"people:view","paginates":false},
-    {"name":"people_getAttributeDataTypes","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"885ca485a3b9","injectAuth":"companyId","permission":"people:view","paginates":false},
+    {"name":"people_getAttributeDataTypes","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"dd6f3a6f89d0","injectAuth":"companyId","permission":"people:view","paginates":false},
     {"name":"people_getClockedInEmployees","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"579660621675","injectAuth":"companyId","permission":"people:view","paginates":false},
     {"name":"people_getContacts","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"de41996ed14c","injectAuth":"companyId","permission":"people:view","paginates":true,"defaults":"always"},
     {"name":"people_getDepartment","classification":"READ","paramCount":1,"schema":"01883d2055a5","response":"10600fcaa49e","injectAuth":"companyId","permission":"people:view","paginates":false},

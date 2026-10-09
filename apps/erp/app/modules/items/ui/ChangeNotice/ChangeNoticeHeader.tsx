@@ -4,31 +4,23 @@
 
 import {
   Button,
-  Copy,
   cn,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
-  useDisclosure,
-  VStack
+  useDisclosure
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import {
   LuCircleCheck,
   LuCircleStop,
-  LuEllipsisVertical,
   LuLoaderCircle,
   LuStepForward,
   LuTrash
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -71,151 +63,147 @@ const ChangeNoticeHeader = () => {
       status as (typeof changeNoticeStatus)[number]
     ]?.[0] ?? null;
 
+  const statusBadge = (
+    <span className={cn(isLocked && "line-through")}>
+      <ChangeNoticeStatus status={routeData?.changeNotice?.status} />
+    </span>
+  );
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      {status === "Cancelled" && (
+        <DropdownMenuItem
+          disabled={
+            statusFetcher.state !== "idle" ||
+            !permissions.can("update", "parts")
+          }
+          onClick={() => {
+            statusFetcher.submit(
+              { id, fromStatus: status, status: "Draft" },
+              {
+                method: "post",
+                action: path.to.changeNoticeStatus(id)
+              }
+            );
+          }}
+        >
+          <DropdownMenuIcon icon={<LuLoaderCircle />} />
+          {t`Reopen`}
+        </DropdownMenuItem>
+      )}
+      {/* Reopen from Implementation goes back one stage so the
+          engineering content unlocks without losing progress. */}
+      {status === "Implementation" && (
+        <DropdownMenuItem
+          disabled={
+            statusFetcher.state !== "idle" ||
+            !permissions.can("update", "parts")
+          }
+          onClick={() => {
+            statusFetcher.submit(
+              {
+                id,
+                fromStatus: status,
+                status: "Engineering Complete"
+              },
+              {
+                method: "post",
+                action: path.to.changeNoticeStatus(id)
+              }
+            );
+          }}
+        >
+          <DropdownMenuIcon icon={<LuLoaderCircle />} />
+          {t`Reopen`}
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        destructive
+        disabled={
+          !permissions.can("delete", "parts") || !permissions.is("employee")
+        }
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        {t`Delete Change Notice`}
+      </DropdownMenuItem>
+    </>
+  );
+
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <VStack spacing={0}>
-          <HStack>
-            <Link to={path.to.changeNoticeDetails(id)}>
-              <Heading size="h4" className="flex items-center gap-2">
-                <span>{routeData?.changeNotice?.changeOrderId}</span>
-              </Heading>
-            </Link>
-            <span className={cn(isLocked && "line-through")}>
-              <ChangeNoticeStatus status={routeData?.changeNotice?.status} />
-            </span>
-            <Copy text={routeData?.changeNotice?.changeOrderId ?? ""} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
+      <RecordHeader
+        title={routeData?.changeNotice?.changeOrderId}
+        titleTo={path.to.changeNoticeDetails(id)}
+        copyValue={routeData?.changeNotice?.changeOrderId ?? ""}
+        menu={menuItems}
+        status={statusBadge}
+        actions={
+          <>
+            {/* The full stage flow (green-dot progress) lives in the middle pane
+            (ChangeNoticeStatusFlow); the header keeps only the canonical status
+            badge (above) + the advance/release action. */}
+
+            {/* Cancel — a header action (opens the confirm modal) sitting beside the
+            advance/release primary action. Reopen (from Cancelled) stays in the
+            ⋮ menu. */}
+            {status !== "Cancelled" && !isLocked && (
+              <RecordAction slot="secondary">
+                <Button
+                  leftIcon={<LuCircleStop />}
                   variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {auditLogTrigger}
-                {status === "Cancelled" && (
-                  <DropdownMenuItem
-                    disabled={
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "parts")
-                    }
-                    onClick={() => {
-                      statusFetcher.submit(
-                        { id, fromStatus: status, status: "Draft" },
-                        {
-                          method: "post",
-                          action: path.to.changeNoticeStatus(id)
-                        }
-                      );
-                    }}
-                  >
-                    <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                    {t`Reopen`}
-                  </DropdownMenuItem>
-                )}
-                {/* Reopen from Implementation goes back one stage so the
-                    engineering content unlocks without losing progress. */}
-                {status === "Implementation" && (
-                  <DropdownMenuItem
-                    disabled={
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "parts")
-                    }
-                    onClick={() => {
-                      statusFetcher.submit(
-                        {
-                          id,
-                          fromStatus: status,
-                          status: "Engineering Complete"
-                        },
-                        {
-                          method: "post",
-                          action: path.to.changeNoticeStatus(id)
-                        }
-                      );
-                    }}
-                  >
-                    <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                    {t`Reopen`}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={
-                    !permissions.can("delete", "parts") ||
-                    !permissions.is("employee")
-                  }
-                  onClick={deleteModal.onOpen}
+                  isDisabled={!permissions.can("update", "parts")}
+                  onClick={cancelModal.onOpen}
                 >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  {t`Delete Change Notice`}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </HStack>
-        </VStack>
+                  {t`Cancel`}
+                </Button>
+              </RecordAction>
+            )}
 
-        <HStack spacing={2}>
-          {/* The full stage flow (green-dot progress) lives in the middle pane
-              (ChangeNoticeStatusFlow); the header keeps only the canonical status
-              badge (above) + the advance/release action. */}
+            {/* Implementation → Done is a release: it opens the review + confirm
+            dialog (which carries the merge resolution), not a one-click stage
+            advance. The header only auto-advances the earlier stages. */}
+            {nextStatus && nextStatus !== "Done" && !isLocked && (
+              <RecordAction slot="primary">
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.changeNoticeStatus(id)}
+                >
+                  <input type="hidden" name="id" value={id} />
+                  <input type="hidden" name="fromStatus" value={status} />
+                  <input type="hidden" name="status" value={nextStatus} />
+                  <Button
+                    type="submit"
+                    rightIcon={<LuStepForward />}
+                    variant="primary"
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "parts")
+                    }
+                    isLoading={statusFetcher.state !== "idle"}
+                  >
+                    {t`Advance to ${nextStatus}`}
+                  </Button>
+                </statusFetcher.Form>
+              </RecordAction>
+            )}
 
-          {/* Cancel — a header action (opens the confirm modal) sitting beside the
-              advance/release primary action. Reopen (from Cancelled) stays in the
-              ⋮ menu. */}
-          {status !== "Cancelled" && !isLocked && (
-            <Button
-              leftIcon={<LuCircleStop />}
-              variant="secondary"
-              isDisabled={!permissions.can("update", "parts")}
-              onClick={cancelModal.onOpen}
-            >
-              {t`Cancel`}
-            </Button>
-          )}
-
-          {/* Implementation → Done is a release: it opens the review + confirm
-              dialog (which carries the merge resolution), not a one-click stage
-              advance. The header only auto-advances the earlier stages. */}
-          {nextStatus && nextStatus !== "Done" && !isLocked && (
-            <statusFetcher.Form
-              method="post"
-              action={path.to.changeNoticeStatus(id)}
-            >
-              <input type="hidden" name="id" value={id} />
-              <input type="hidden" name="fromStatus" value={status} />
-              <input type="hidden" name="status" value={nextStatus} />
-              <Button
-                type="submit"
-                rightIcon={<LuStepForward />}
-                variant="primary"
-                isDisabled={
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "parts")
-                }
-                isLoading={statusFetcher.state !== "idle"}
-              >
-                {t`Advance to ${nextStatus}`}
-              </Button>
-            </statusFetcher.Form>
-          )}
-
-          {status === "Implementation" && !isLocked && (
-            <Button
-              leftIcon={<LuCircleCheck />}
-              variant="primary"
-              isDisabled={!permissions.can("update", "parts")}
-              onClick={() => setReleaseDialogOpen(true)}
-            >
-              {t`Release`}
-            </Button>
-          )}
-        </HStack>
-      </div>
+            {status === "Implementation" && !isLocked && (
+              <RecordAction slot="primary">
+                <Button
+                  leftIcon={<LuCircleCheck />}
+                  variant="primary"
+                  isDisabled={!permissions.can("update", "parts")}
+                  onClick={() => setReleaseDialogOpen(true)}
+                >
+                  {t`Release`}
+                </Button>
+              </RecordAction>
+            )}
+          </>
+        }
+      />
       {deleteModal.isOpen && (
         <ConfirmDelete
           action={path.to.deleteChangeNotice(id)}

@@ -91,6 +91,7 @@ const MaintenanceDispatchesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -115,6 +116,7 @@ const MaintenanceDispatchesTable = memo(
             );
           },
           meta: {
+            mobile: "P3",
             icon: <LuBuilding />,
             filter: {
               type: "static",
@@ -133,6 +135,7 @@ const MaintenanceDispatchesTable = memo(
             return <MaintenanceSource source={source} />;
           },
           meta: {
+            mobile: "P2",
             icon: <LuDna />,
             filter: {
               type: "static",
@@ -152,6 +155,7 @@ const MaintenanceDispatchesTable = memo(
             return <MaintenanceStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             icon: <LuStar />,
             filter: {
               type: "static",

@@ -85,7 +85,9 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   accounts, currencies, dimensions).
 - Skip/scope sets: `SECRET_TABLES` (`apiKey`, `apiKeyRateLimit`,
   `companyIntegration`, `employeePin`, `webhook`, `oauthClient`, `oauthCode`, `oauthToken`,
-  `ssoConnection`, `ssoDomain` — never travel; SSO rows carry values unique across all
+  `ssoConnection`, `ssoDomain`, `pushSubscription` — never travel; `pushSubscription` is a
+  browser's push endpoint and its encryption keys, so a restore must neither bring back
+  signed-out browsers nor wipe the current ones; SSO rows carry values unique across all
   companies (`providerId`, a verified `domain`), so a cross-company copy collided;
   `employeePin` holds console-PIN bcrypt hashes, a credential for a 4-digit PIN, and
   stays in place on restore alongside `employee` (`IN_PLACE_SKIPPED_TABLES`), which is

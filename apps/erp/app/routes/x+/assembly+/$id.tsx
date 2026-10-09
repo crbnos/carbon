@@ -13,7 +13,8 @@ import {
   Spinner,
   toast,
   useInterval,
-  useMode
+  useMode,
+  useViewport
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type {
@@ -61,7 +62,9 @@ import {
 } from "~/modules/production";
 import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
-import AssemblyInstructionHeader from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
+import AssemblyInstructionHeader, {
+  AssemblyInstructionOverviewHero
+} from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
 import AssemblyInstructionProperties from "~/modules/production/ui/Assemblies/AssemblyInstructionProperties";
 import { SUB_ASSEMBLY_PARAM } from "~/modules/production/ui/Assemblies/AssemblyStepList";
 import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
@@ -367,6 +370,7 @@ export default function AssemblyInstructionRoute() {
 
   // An opened sub-assembly (?subAssembly=) scopes the player to its steps.
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const [searchParams] = useSearchParams();
   const requestedSubAssembly = searchParams.get(SUB_ASSEMBLY_PARAM);
   const openSubAssemblyId =
@@ -689,6 +693,7 @@ export default function AssemblyInstructionRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Steps`}
               explorer={
                 <AssemblyInstructionExplorer
                   steps={steps}
@@ -715,120 +720,123 @@ export default function AssemblyInstructionRoute() {
                 />
               }
               content={
-                <div className="relative bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full">
-                  {glbPath && graphPath && isPlanning && (
-                    <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
-                      <Spinner className="h-3.5 w-3.5" />
-                      <span className="whitespace-nowrap text-xs font-medium text-foreground">
-                        Planning motion…
-                      </span>
-                      <cancelPlanFetcher.Form
-                        method="post"
-                        action={path.to.assemblyJobsCancel(id!)}
-                      >
-                        <input type="hidden" name="kind" value="plan" />
-                        <button
-                          type="submit"
-                          disabled={cancelPlanFetcher.state !== "idle"}
-                          className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+                <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full flex-col">
+                  {isPhone ? <AssemblyInstructionOverviewHero /> : null}
+                  <div className="relative min-h-0 w-full flex-1 bg-card">
+                    {glbPath && graphPath && isPlanning && (
+                      <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
+                        <Spinner className="h-3.5 w-3.5" />
+                        <span className="whitespace-nowrap text-xs font-medium text-foreground">
+                          Planning motion…
+                        </span>
+                        <cancelPlanFetcher.Form
+                          method="post"
+                          action={path.to.assemblyJobsCancel(id!)}
                         >
-                          Cancel
-                        </button>
-                      </cancelPlanFetcher.Form>
-                    </div>
-                  )}
-                  {glbPath && graphPath ? (
-                    <ClientOnly
-                      fallback={
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Spinner className="h-10 w-10" />
-                        </div>
-                      }
-                    >
-                      {() => (
-                        <AssemblyPlayer
-                          ref={playerRef}
-                          glbUrl={getPrivateUrl(glbPath)}
-                          graphUrl={getPrivateUrl(graphPath)}
-                          steps={viewerSteps}
-                          scopeStepIds={scopeStepIds}
-                          isolationLabel={isolationLabel}
-                          carryInLabel={carryInLabel}
-                          activeStepIndex={Math.max(playerStepIndex, 0)}
-                          playFromStepIndex={playFromStepIndex}
-                          playStepNonce={playStepNonce}
-                          onStepChange={(index) => {
-                            const step = steps[index];
-                            if (step)
-                              onSelectStep(step.id, {
-                                selectComponents: false
-                              });
-                          }}
-                          onSelectComponents={onSelectComponents}
-                          onGraphLoaded={setGraph}
-                          highlightedNodeIds={selectedNodeIds}
-                          focusedNodeIds={focusedNodeIds}
-                          readOnly={isDisabled}
-                          editMotion={
-                            editingStepId &&
-                            selectedStep?.id === editingStepId &&
-                            draftMotion
-                              ? { stepId: editingStepId, motion: draftMotion }
-                              : null
-                          }
-                          onMotionChange={onMotionChange}
-                          units={namedUnits}
-                          suppressFallbackMotions={isPlanning}
-                          componentPickerActive={isAddingComponents}
-                          autoPlay={false}
-                          mode={mode}
-                          className="h-full"
-                        />
-                      )}
-                    </ClientOnly>
-                  ) : (isActivelyConverting || isAwaitingPickup) &&
-                    modelUpload?.id ? (
-                    <ModelConvertProgress
-                      modelUploadId={modelUpload.id}
-                      instructionId={id!}
-                    />
-                  ) : modelUpload?.processingStatus === "Failed" ? (
-                    <Empty>
-                      <p className="text-sm font-medium text-foreground">
-                        Couldn't prepare this model
-                      </p>
-                      <p className="max-w-[320px] text-center text-sm text-muted-foreground">
-                        {modelUpload?.processingError ??
-                          "Something went wrong converting the CAD file for 3D viewing."}
-                      </p>
-                      <retryFetcher.Form
-                        method="post"
-                        action={path.to.assemblyModelConvert(id!)}
+                          <input type="hidden" name="kind" value="plan" />
+                          <button
+                            type="submit"
+                            disabled={cancelPlanFetcher.state !== "idle"}
+                            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </cancelPlanFetcher.Form>
+                      </div>
+                    )}
+                    {glbPath && graphPath ? (
+                      <ClientOnly
+                        fallback={
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Spinner className="h-10 w-10" />
+                          </div>
+                        }
                       >
-                        <Button
-                          type="submit"
-                          variant="secondary"
-                          isLoading={retryFetcher.state !== "idle"}
-                          isDisabled={
-                            retryFetcher.state !== "idle" ||
-                            !permissions.can("update", "production")
-                          }
+                        {() => (
+                          <AssemblyPlayer
+                            ref={playerRef}
+                            glbUrl={getPrivateUrl(glbPath)}
+                            graphUrl={getPrivateUrl(graphPath)}
+                            steps={viewerSteps}
+                            scopeStepIds={scopeStepIds}
+                            isolationLabel={isolationLabel}
+                            carryInLabel={carryInLabel}
+                            activeStepIndex={Math.max(playerStepIndex, 0)}
+                            playFromStepIndex={playFromStepIndex}
+                            playStepNonce={playStepNonce}
+                            onStepChange={(index) => {
+                              const step = steps[index];
+                              if (step)
+                                onSelectStep(step.id, {
+                                  selectComponents: false
+                                });
+                            }}
+                            onSelectComponents={onSelectComponents}
+                            onGraphLoaded={setGraph}
+                            highlightedNodeIds={selectedNodeIds}
+                            focusedNodeIds={focusedNodeIds}
+                            readOnly={isDisabled}
+                            editMotion={
+                              editingStepId &&
+                              selectedStep?.id === editingStepId &&
+                              draftMotion
+                                ? { stepId: editingStepId, motion: draftMotion }
+                                : null
+                            }
+                            onMotionChange={onMotionChange}
+                            units={namedUnits}
+                            suppressFallbackMotions={isPlanning}
+                            componentPickerActive={isAddingComponents}
+                            autoPlay={false}
+                            mode={mode}
+                            className="h-full"
+                          />
+                        )}
+                      </ClientOnly>
+                    ) : (isActivelyConverting || isAwaitingPickup) &&
+                      modelUpload?.id ? (
+                      <ModelConvertProgress
+                        modelUploadId={modelUpload.id}
+                        instructionId={id!}
+                      />
+                    ) : modelUpload?.processingStatus === "Failed" ? (
+                      <Empty>
+                        <p className="text-sm font-medium text-foreground">
+                          Couldn't prepare this model
+                        </p>
+                        <p className="max-w-[320px] text-center text-sm text-muted-foreground">
+                          {modelUpload?.processingError ??
+                            "Something went wrong converting the CAD file for 3D viewing."}
+                        </p>
+                        <retryFetcher.Form
+                          method="post"
+                          action={path.to.assemblyModelConvert(id!)}
                         >
-                          Try again
-                        </Button>
-                      </retryFetcher.Form>
-                    </Empty>
-                  ) : (
-                    <Empty>
-                      <p className="text-sm font-medium text-foreground">
-                        Model not ready yet
-                      </p>
-                      <p className="max-w-[320px] text-center text-sm text-muted-foreground">
-                        This model hasn't been prepared for 3D viewing. It'll
-                        appear here once processing starts.
-                      </p>
-                    </Empty>
-                  )}
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            isLoading={retryFetcher.state !== "idle"}
+                            isDisabled={
+                              retryFetcher.state !== "idle" ||
+                              !permissions.can("update", "production")
+                            }
+                          >
+                            Try again
+                          </Button>
+                        </retryFetcher.Form>
+                      </Empty>
+                    ) : (
+                      <Empty>
+                        <p className="text-sm font-medium text-foreground">
+                          Model not ready yet
+                        </p>
+                        <p className="max-w-[320px] text-center text-sm text-muted-foreground">
+                          This model hasn't been prepared for 3D viewing. It'll
+                          appear here once processing starts.
+                        </p>
+                      </Empty>
+                    )}
+                  </div>
                 </div>
               }
               properties={

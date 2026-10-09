@@ -26,6 +26,7 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Picking List`,
   realtime: [
     { table: "pickingList", column: "id", param: "pickingListId" },
     {

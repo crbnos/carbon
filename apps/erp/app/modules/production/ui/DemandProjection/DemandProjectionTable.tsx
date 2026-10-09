@@ -13,6 +13,7 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   useUrlParams,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
@@ -57,6 +58,7 @@ const DemandProjectionsTable = memo(
     });
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const { isPhone } = useViewport();
     const permissions = usePermissions();
     const locations = useLocations();
     const [selectedItem, setSelectedItem] = useState<DemandProjection | null>(
@@ -116,7 +118,7 @@ const DemandProjectionsTable = memo(
             <Hyperlink
               to={path.to.demandProjection(row.original.id!, locationId)}
             >
-              <HStack className="py-1 cursor-pointer">
+              <HStack className="py-1 cursor-pointer max-md:min-w-0">
                 <ItemThumbnail
                   size="sm"
                   thumbnailPath={row.original.thumbnailPath}
@@ -124,8 +126,10 @@ const DemandProjectionsTable = memo(
                   type={row.original.type}
                 />
 
-                <VStack spacing={0} className="font-medium">
-                  {row.original.readableIdWithRevision}
+                <VStack spacing={0} className="font-medium max-md:min-w-0">
+                  <span className="max-md:block max-md:w-full max-md:truncate">
+                    {row.original.readableIdWithRevision}
+                  </span>
                   {distinctItemText(
                     row.original.readableIdWithRevision,
                     row.original.name
@@ -139,6 +143,7 @@ const DemandProjectionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -200,6 +205,7 @@ const DemandProjectionsTable = memo(
     return (
       <>
         <Table<DemandProjection>
+          mobileLayout="table"
           data={data}
           columns={columns}
           count={count}
@@ -207,7 +213,7 @@ const DemandProjectionsTable = memo(
           title={t`Demand Forecasts`}
           table="demand-projection"
           withSavedView
-          withSelectableRows
+          withSelectableRows={!isPhone}
           withSimpleSorting
           primaryAction={
             <div className="flex items-center gap-2">

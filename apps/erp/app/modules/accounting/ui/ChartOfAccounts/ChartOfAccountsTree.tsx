@@ -163,7 +163,7 @@ const ChartOfAccountsTree = memo(
             <Trans>Account</Trans>
           </div>
           {showBalances && (
-            <span className="w-32 text-right px-4">
+            <span className="w-32 text-right px-4 max-md:w-24 max-md:pl-0">
               {params.get("startDate") ? t`Net Change` : t`Balance`}
             </span>
           )}
@@ -188,7 +188,7 @@ const ChartOfAccountsTree = memo(
             return (
               <div
                 className={cn(
-                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row",
+                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:h-11",
                   state.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent",
@@ -259,13 +259,13 @@ const ChartOfAccountsTree = memo(
                 {/* Balance */}
                 {showBalances &&
                   (isGroup ? (
-                    <span className="w-32 text-right tabular-nums shrink-0 text-muted-foreground">
+                    <span className="w-32 text-right tabular-nums shrink-0 text-muted-foreground max-md:w-24">
                       {formatCurrency(balance)}
                     </span>
                   ) : (
                     <button
                       type="button"
-                      className="w-32 text-right tabular-nums shrink-0 text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                      className="w-32 max-md:w-24 text-right tabular-nums shrink-0 text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
                       onClick={(e) => {
                         e.stopPropagation();
                         openLedger(account.id as string);
@@ -279,10 +279,10 @@ const ChartOfAccountsTree = memo(
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      className="ml-1 shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100"
+                      className="ml-1 shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100 max-md:-mr-3 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <LuEllipsisVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                      <LuEllipsisVertical className="h-3.5 w-3.5 text-muted-foreground max-md:size-5" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">

@@ -71,6 +71,7 @@ const ActionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -79,6 +80,7 @@ const ActionsTable = memo(
           header: t`Action Type`,
           cell: ({ row }) => <Enumerable value={row.original.actionType} />,
           meta: {
+            mobile: "P2",
             icon: <LuFileText />,
             filter: {
               type: "static",
@@ -94,6 +96,7 @@ const ActionsTable = memo(
           header: t`Action Status`,
           cell: ({ row }) => <ActionStatus status={row.original.status} />,
           meta: {
+            mobile: "P2",
             icon: <LuCircleGauge />,
             filter: {
               type: "static",
@@ -111,6 +114,7 @@ const ActionsTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -167,6 +171,7 @@ const ActionsTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "dateRange"
             },

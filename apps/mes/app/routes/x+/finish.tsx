@@ -13,6 +13,7 @@ import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { finishValidator } from "~/services/models";
 import { finishJobOperation } from "~/services/operations.service";
+import { readOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -48,7 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.operations,
+    readOrigin(formData) ?? path.to.operations,
     await flash(request, success("Operation finished successfully"))
   );
 }

@@ -82,7 +82,7 @@ Each attribute defines:
   <Field name="Self Managed" type="boolean">When on, employees can edit this value on their own profile; otherwise only admins can.</Field>
 </FieldTable>
 
-The <Term id="attribute-data-type">Data Type</Term> comes from a fixed set: **"Text"**, **"Numeric"**, **"Yes/No"**, **"Date"**, **"List"**, and **"User"** (the same list also powers customer and supplier custom fields, which add **"Customer"**, **"Supplier"**, and **"File"**). A **"List"** attribute pulls its choices from its <Term id="attribute-list-options">List Options</Term>.
+The <Term id="attribute-data-type">Data Type</Term> comes from a fixed set: **"Text"**, **"Numeric"**, **"Yes/No"**, **"Date"**, **"List"**, and **"User"** (the same list also powers customer and supplier custom fields, which add **"Customer"**, **"Supplier"**, and **"File"**). A **"List"** attribute pulls its choices from its <Term id="attribute-list-options">List Options</Term>. The **"Link"** type is offered on custom fields only, not on attributes.
 
 <Callout type="note">
 Pick the data type when you create the attribute — it's fixed once the attribute has recorded values. Category and attribute deletes are soft deletes (marked inactive), so an attribute you retire won't erase the values already collected against it.

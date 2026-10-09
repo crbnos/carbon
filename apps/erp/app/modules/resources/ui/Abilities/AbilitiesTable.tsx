@@ -51,6 +51,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuAward />
         }
       },
@@ -63,6 +64,8 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P3",
+          mobileLabel: true,
           icon: <LuCalendarClock />
         }
       },

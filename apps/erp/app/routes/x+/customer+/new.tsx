@@ -10,6 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUser } from "~/hooks";
 import { customerValidator, upsertCustomer } from "~/modules/sales";
 import { CustomerForm } from "~/modules/sales/ui/Customer";
@@ -83,8 +84,8 @@ export default function CustomersNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage className="max-md:p-0">
       <CustomerForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

@@ -32,6 +32,11 @@ import { ConfirmDelete } from "~/components/Modals";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
+import {
+  SheetNavGroup,
+  SheetNavRow,
+  useSidebarPresentation
+} from "./SidebarPresentation";
 
 type GroupedRoute = RouteGroup["routes"][number];
 
@@ -90,6 +95,63 @@ const GroupedContentSidebar = ({
     }));
   };
 
+  const presentation = useSidebarPresentation();
+  const search = `${location.pathname}${location.search}`;
+  const isViewActive = (view: { id: string }) =>
+    search.includes(`view=${view.id}`);
+  // While a saved view is open (view= in the URL), it holds the highlight.
+  const isActive = (route: GroupedRoute) =>
+    matchesRoute(route, location.pathname, exactMatch) &&
+    (Boolean(route.isActive) || exactMatch || !search.includes("view="));
+
+  if (presentation === "title") {
+    // Compact app bar title: the item the switcher sheet below ticks.
+    for (const route of groups.flatMap((group) => group.routes)) {
+      if (!matchesRoute(route, location.pathname, exactMatch)) continue;
+      const view = route.views?.find(isViewActive);
+      if (view) return <>{view.name}</>;
+      if (isActive(route)) return <>{route.name}</>;
+    }
+    return null;
+  }
+  if (presentation === "sheet") {
+    // Compact section switcher: the same groups, order and active rule as
+    // the panel below. Saved views open from here; reordering and deleting
+    // them stays on desktop.
+    return (
+      <div className="flex flex-col">
+        {groups.map((group) => (
+          <SheetNavGroup key={group.name} title={group.name}>
+            {group.routes.map((route) => {
+              const views = [...(route.views ?? [])].sort(
+                (a, b) => a.sortOrder - b.sortOrder
+              );
+              return (
+                <div key={route.name} className="flex flex-col">
+                  <SheetNavRow
+                    to={route.to + (route.q ? `?q=${route.q}` : "")}
+                    icon={route.icon}
+                    label={route.name}
+                    isActive={isActive(route)}
+                  />
+                  {views.map((view) => (
+                    <SheetNavRow
+                      key={view.to}
+                      to={view.to}
+                      label={view.name}
+                      isActive={isViewActive(view)}
+                      inset
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </SheetNavGroup>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
       <SidebarLinks>
@@ -103,13 +165,7 @@ const GroupedContentSidebar = ({
                 {group.name}
               </Subheading>
               {group.routes.map((route) => {
-                const isActive =
-                  matchesRoute(route, location.pathname, exactMatch) &&
-                  (Boolean(route.isActive) ||
-                    exactMatch ||
-                    !`${location.pathname}${location.search}`.includes(
-                      "view="
-                    ));
+                const active = isActive(route);
 
                 const hasViews = route.views && route.views.length > 0;
                 const isExpanded = expandedViews[route.name];
@@ -130,10 +186,10 @@ const GroupedContentSidebar = ({
                       <Button
                         asChild
                         leftIcon={route.icon}
-                        variant={isActive ? "active" : "ghost"}
+                        variant={active ? "active" : "ghost"}
                         className={cn(
                           "justify-start flex-grow truncate",
-                          isActive
+                          active
                             ? "shadow-none dark:shadow-button-base"
                             : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
                         )}
@@ -160,7 +216,7 @@ const GroupedContentSidebar = ({
                     {hasViews && isExpanded && (
                       <ViewsReorderGroup
                         views={route.views ?? []}
-                        location={location}
+                        isViewActive={isViewActive}
                         onReorder={(updates) => {
                           const formData = new FormData();
                           formData.append("updates", JSON.stringify(updates));
@@ -198,12 +254,12 @@ const GroupedContentSidebar = ({
 
 const ViewsReorderGroup = ({
   views,
-  location,
+  isViewActive,
   onReorder,
   onDelete
 }: {
   views: { id: string; name: string; to: string; sortOrder: number }[];
-  location: ReturnType<typeof useSidebarLocation>;
+  isViewActive: (view: { id: string }) => boolean;
   onReorder: (
     updates: { id: string; name: string; to: string; sortOrder: number }[]
   ) => void;
@@ -252,10 +308,7 @@ const ViewsReorderGroup = ({
       className="flex flex-col gap-y-0.5 my-0.5"
     >
       {sortedViews.map((view) => {
-        const isViewActive = `${location.pathname}${location.search}`.includes(
-          `view=${view.id}`
-        );
-
+        const active = isViewActive(view);
         return (
           <Reorder.Item key={view.to} value={view} className="w-full">
             <div
@@ -264,10 +317,10 @@ const ViewsReorderGroup = ({
             >
               <Button
                 asChild
-                variant={isViewActive ? "active" : "ghost"}
+                variant={active ? "active" : "ghost"}
                 className={cn(
                   "justify-start text-sm pl-7 pr-7 truncate flex-grow !shadow-none",
-                  isViewActive
+                  active
                     ? "shadow-none border-active-foreground/30 dark:border-none dark:shadow-button-base"
                     : "hover:bg-transparent hover:text-active-foreground"
                 )}
@@ -279,7 +332,7 @@ const ViewsReorderGroup = ({
                 icon={<LuGripVertical />}
                 variant="ghost"
                 size="sm"
-                className="flex-shrink-0 opacity-0 group-hover/view:opacity-100 absolute left-1"
+                className="flex-shrink-0 md:opacity-0 group-hover/view:opacity-100 absolute left-1"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -288,7 +341,7 @@ const ViewsReorderGroup = ({
                     icon={<LuEllipsisVertical />}
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 flex-shrink-0 opacity-0 group-hover/view:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                    className="absolute right-1 flex-shrink-0 md:opacity-0 group-hover/view:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>

@@ -80,7 +80,7 @@ function CompanyNodeComponent({ data }: NodeProps & { data: CompanyNodeData }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="ml-auto shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100"
+              className="ml-auto shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100 max-md:hit-area"
               aria-label="Actions"
             >
               <LuEllipsisVertical className="size-3.5 text-muted-foreground" />

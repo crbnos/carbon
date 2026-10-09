@@ -646,12 +646,13 @@ const InspectionMeasurementGrid = ({
         header: t`Characteristic`,
         cell: ({ row }) => (
           <span
-            className="line-clamp-2 max-w-[180px] text-xs"
+            className="line-clamp-2 max-w-[180px] text-xs max-md:whitespace-normal"
             title={row.original.description ?? undefined}
           >
             {row.original.description ?? "—"}
           </span>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         accessorKey: "specLabel",
@@ -943,6 +944,7 @@ const InspectionMeasurementGrid = ({
       className="flex h-full min-h-0 w-full flex-col"
     >
       <Table<FeatureGridRow>
+        mobileLayout="table"
         compact
         columns={columns}
         data={rows}
