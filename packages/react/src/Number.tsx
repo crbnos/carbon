@@ -60,13 +60,15 @@ const NumberField = ({
 
 // `relative` anchors the absolutely positioned NumberInputStepper to the input;
 // without it the arrows attach to the nearest positioned ancestor (e.g. a modal).
+// `isolate` keeps the stepper's z-10 inside the group, so it cannot paint over a
+// sticky header the field scrolls under.
 const NumberInputGroup = ({ className, ...props }: ReactAria.GroupProps) => {
   return (
     <ReactAria.Group
       className={
         typeof className === "function"
-          ? (values) => cn("relative", className(values))
-          : cn("relative", className)
+          ? (values) => cn("relative isolate", className(values))
+          : cn("relative isolate", className)
       }
       {...props}
     />
