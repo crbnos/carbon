@@ -15,6 +15,7 @@ export type ProjectState = Tables["projectState"]["Row"];
 export type ProjectLabel = Tables["projectLabel"]["Row"];
 export type ProjectMilestone = Tables["projectMilestone"]["Row"];
 export type ProjectElement = Tables["projectElement"]["Row"];
+export type ProjectElementLink = Tables["projectElementLink"]["Row"];
 export type ProjectElementLabel = Tables["projectElementLabel"]["Row"];
 export type ProjectElementComment = Tables["projectElementComment"]["Row"];
 export type ProjectElementMaterial = Tables["projectElementMaterial"]["Row"];

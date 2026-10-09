@@ -49,7 +49,7 @@
 - [x] Task 11: Post late costs to the Active asset and fix the void guards
 - [x] Task 12: Move Straight Line depreciation to a remaining-life basis
 - [x] Task 13: Add the capital project fields to the project and element UI
-- [ ] Task 14: Add the trace link and suspect service functions
+- [x] Task 14: Add the trace link and suspect service functions
 - [ ] Task 15: Add the Requirement, Test Case and Parameter fields and the verification read
 - [ ] Task 16: Add the trace link, verification and parameter sections to the element page
 - [ ] Task 17: Build the Tree layout
@@ -1492,3 +1492,5 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 13: `projects-validator.test.ts` adds the Capitalize class case. `erp` typechecks green and its projects tests pass.
 - Tasks 6–13: the new UI strings get their translations in the end-of-plan `/translate` pass, as in Phase 1a.
 - After Task 13: the full `@carbon/server-functions` suite passes (429). One run failed `get-accounting-period.test.ts` ("period creation uses the fiscal start…"), which passes alone and in the next full run. This plan does not touch it; it is another shared-database race. The full `erp` suite passes (1974). `@carbon/jobs`, `@carbon/server-functions`, `erp`, `mes` and `@carbon/database` typecheck green, and `check:workflow-catalog` passes.
+- Task 14: `canLink` returns `{ ok: true }` or `{ ok: false, reason }`, so the route can show why a link is refused. `deleteProjectElementLink` refuses a `feeds` link, because only the formula save writes them.
+- Task 14: `updateProjectElementField` reads the old values of a `suspectLinkFields` field first and marks only the links of the elements whose value changed. A save with the same value (a blur commit) marks nothing. A link that is already suspect keeps its first `suspectSince`.

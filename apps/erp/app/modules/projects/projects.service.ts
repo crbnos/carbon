@@ -23,6 +23,7 @@ import type {
   ProjectStatus,
   projectElementCostValidator,
   projectElementLaborValidator,
+  projectElementLinkValidator,
   projectElementMaterialValidator,
   projectLabelValidator,
   projectMilestoneValidator,
@@ -30,7 +31,8 @@ import type {
   projectValidator,
   timesheetCellValidator
 } from "./projects.models";
-import { weekStartOf } from "./projects.models";
+import { canLink, suspectLinkFields, weekStartOf } from "./projects.models";
+import type { ProjectElementLink } from "./types";
 
 type Client = SupabaseClient<Database>;
 
@@ -1010,9 +1012,14 @@ export async function getProjectElement(
   return { data: { ...element.data, parent: parent.data }, error: null };
 }
 
+/** The element columns `suspectLinkFields` compares before a change. */
+const SUSPECT_FIELD_COLUMNS =
+  "id, name, description, targetOperator, targetValue, targetUpperValue, targetUnit, parameterValue, parameterUnit" as const;
+
 /**
  * Sets one field on one or more elements. Moving into a Completed state
- * stamps `completedAt`; moving to any other state clears it.
+ * stamps `completedAt`; moving to any other state clears it. A change to a
+ * field in `suspectLinkFields` makes the incoming trace links suspect.
  * @mcp update
  */
 export async function updateProjectElementField(
@@ -1135,12 +1142,46 @@ export async function updateProjectElementField(
       break;
   }
 
-  return client
+  // A change to a reviewed field makes the incoming links suspect. Read the
+  // old values first, so a save with the same value marks nothing.
+  const marksSuspect = suspectLinkFields.includes(args.field);
+  let changedIds: string[] = [];
+  if (marksSuspect) {
+    const before = await client
+      .from("projectElement")
+      .select(SUSPECT_FIELD_COLUMNS)
+      .in("id", args.ids)
+      .eq("companyId", args.companyId);
+    if (before.error) return { data: null, error: before.error };
+    const field = args.field as keyof typeof update;
+    const next = JSON.stringify(update[field] ?? null);
+    changedIds = before.data
+      .filter(
+        (row) => JSON.stringify(row[field as keyof typeof row] ?? null) !== next
+      )
+      .map((row) => row.id);
+  }
+
+  const result = await client
     .from("projectElement")
     .update(update)
     .in("id", args.ids)
     .eq("companyId", args.companyId)
     .select("id");
+  if (result.error || changedIds.length === 0) return result;
+
+  // A `feeds` link never turns suspect: a formula recomputes live. A link
+  // that is already suspect keeps the time it first turned suspect.
+  const suspect = await client
+    .from("projectElementLink")
+    .update({ suspectSince: datetime.timestamp() })
+    .in("toElementId", changedIds)
+    .neq("linkType", "feeds")
+    .is("suspectSince", null)
+    .eq("companyId", args.companyId);
+  if (suspect.error) return { data: null, error: suspect.error };
+
+  return result;
 }
 
 /**
@@ -1317,6 +1358,129 @@ export async function deleteProjectElement(
     .delete()
     .eq("id", id)
     .eq("companyId", companyId);
+}
+
+// --- Trace links -------------------------------------------------------------
+
+/**
+ * Lists every trace link of a project. Pages through the rows, because a
+ * large project can have more than 1000 links.
+ * @mcp read
+ */
+export async function getProjectElementLinks(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return fetchAll<ProjectElementLink>(() =>
+    client
+      .from("projectElementLink")
+      .select("*")
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+      .order("id", { ascending: true })
+  );
+}
+
+/**
+ * Adds a trace link between two elements of one project. `canLink` decides,
+ * with the project's links loaded once: a `feeds` link is refused, because
+ * only a formula save writes them.
+ * @mcp create
+ */
+export async function upsertProjectElementLink(
+  client: Client,
+  args: z.infer<typeof projectElementLinkValidator> & {
+    projectId: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const [elements, links] = await Promise.all([
+    client
+      .from("projectElement")
+      .select("id, type")
+      .in("id", [args.fromElementId, args.toElementId])
+      .eq("projectId", args.projectId)
+      .eq("companyId", args.companyId),
+    getProjectElementLinks(client, args.projectId, args.companyId)
+  ]);
+  if (elements.error) return { data: null, error: elements.error };
+  if (links.error) {
+    return { data: null, error: links.error as unknown as PostgrestError };
+  }
+
+  const from = elements.data.find((e) => e.id === args.fromElementId);
+  const to = elements.data.find((e) => e.id === args.toElementId);
+  if (!from || !to) return refusal("Both elements must be in this project");
+
+  const check = canLink(from, to, args.linkType, links.data ?? []);
+  if (!check.ok) return refusal(check.reason);
+
+  return client
+    .from("projectElementLink")
+    .insert({
+      projectId: args.projectId,
+      fromElementId: args.fromElementId,
+      toElementId: args.toElementId,
+      linkType: args.linkType,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    })
+    .select("id")
+    .single();
+}
+
+/**
+ * Deletes a trace link. A `feeds` link belongs to a formula and is refused:
+ * edit the formula instead.
+ * @mcp delete
+ */
+export async function deleteProjectElementLink(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  const link = await client
+    .from("projectElementLink")
+    .select("linkType")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (link.error) return { data: null, error: link.error };
+  if (link.data.linkType === "feeds") {
+    return refusal("A formula writes this link. Edit the formula instead.");
+  }
+
+  return client
+    .from("projectElementLink")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+/**
+ * Marks a suspect link reviewed: clears `suspectSince` and records who
+ * reviewed it and when.
+ * @mcp update
+ */
+export async function clearSuspectLink(
+  client: Client,
+  args: { id: string; companyId: string; userId: string }
+) {
+  const now = datetime.timestamp();
+  return client
+    .from("projectElementLink")
+    .update({
+      suspectSince: null,
+      reviewedAt: now,
+      reviewedBy: args.userId,
+      updatedBy: args.userId,
+      updatedAt: now
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("id");
 }
 
 // --- Element comments --------------------------------------------------------

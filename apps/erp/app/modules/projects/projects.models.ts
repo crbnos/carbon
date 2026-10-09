@@ -332,6 +332,151 @@ export const projectElementFieldUpdateValidator = z.object({
   value: zfd.text(z.string().optional())
 });
 
+// --- Trace links -------------------------------------------------------------
+
+export type ProjectElementLinkType = Enums["projectElementLinkType"];
+
+export const projectElementLinkTypes = [
+  "satisfies",
+  "verifies",
+  "derives",
+  "implements",
+  "blocks",
+  "precedes",
+  "relates to",
+  "feeds"
+] as const satisfies readonly ProjectElementLinkType[];
+
+/** How a link reads from its "to" end ("A verifies B" → "B verified by A"). */
+export const linkReverseLabel: Record<ProjectElementLinkType, string> = {
+  satisfies: "satisfied by",
+  verifies: "verified by",
+  derives: "derived from",
+  implements: "implemented by",
+  blocks: "blocked by",
+  precedes: "follows",
+  "relates to": "relates to",
+  feeds: "fed by"
+};
+
+/** The element types each end of a link may have. */
+export const allowedLinkEnds: Record<
+  ProjectElementLinkType,
+  { from: readonly ProjectElementType[]; to: readonly ProjectElementType[] }
+> = {
+  satisfies: { from: ["System", "Function"], to: ["Requirement"] },
+  verifies: { from: ["Test Case"], to: ["Requirement"] },
+  derives: { from: ["Requirement"], to: ["Requirement"] },
+  implements: {
+    from: ["Task"],
+    to: ["System", "Function", "Requirement"]
+  },
+  blocks: { from: projectElementTypes, to: projectElementTypes },
+  precedes: { from: projectElementTypes, to: projectElementTypes },
+  "relates to": { from: projectElementTypes, to: projectElementTypes },
+  feeds: { from: ["Parameter"], to: ["Parameter"] }
+};
+
+export type ProjectElementLinkEnd = { id: string; type: ProjectElementType };
+
+export type ProjectElementLinkRef = {
+  fromElementId: string;
+  toElementId: string;
+  linkType: ProjectElementLinkType;
+};
+
+/** Whether `from` reaches `to` over the `precedes` links. */
+function precedesReaches(
+  links: ProjectElementLinkRef[],
+  from: string,
+  to: string
+): boolean {
+  const next = new Map<string, string[]>();
+  for (const link of links) {
+    if (link.linkType !== "precedes") continue;
+    const targets = next.get(link.fromElementId) ?? [];
+    targets.push(link.toElementId);
+    next.set(link.fromElementId, targets);
+  }
+  const seen = new Set<string>();
+  const stack = [from];
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    if (id === to) return true;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    stack.push(...(next.get(id) ?? []));
+  }
+  return false;
+}
+
+/**
+ * Whether a user may add a link of `type` from `from` to `to`. It refuses a
+ * `feeds` link (only a formula save writes them), a self link, ends that
+ * `allowedLinkEnds` does not allow, a duplicate, and a cycle of `precedes`.
+ */
+export function canLink(
+  from: ProjectElementLinkEnd,
+  to: ProjectElementLinkEnd,
+  type: ProjectElementLinkType,
+  existingLinks: ProjectElementLinkRef[]
+): { ok: true } | { ok: false; reason: string } {
+  if (type === "feeds") {
+    return {
+      ok: false,
+      reason: "A formula writes its feeds links. Edit the formula instead."
+    };
+  }
+  if (from.id === to.id) {
+    return { ok: false, reason: "An element cannot link to itself" };
+  }
+  const ends = allowedLinkEnds[type];
+  if (!ends.from.includes(from.type) || !ends.to.includes(to.type)) {
+    return {
+      ok: false,
+      reason: `A ${from.type} cannot ${type} a ${to.type}`
+    };
+  }
+  if (
+    existingLinks.some(
+      (link) =>
+        link.fromElementId === from.id &&
+        link.toElementId === to.id &&
+        link.linkType === type
+    )
+  ) {
+    return { ok: false, reason: "This link already exists" };
+  }
+  if (type === "precedes" && precedesReaches(existingLinks, to.id, from.id)) {
+    return {
+      ok: false,
+      reason: "This link would make a loop of precedes links"
+    };
+  }
+  return { ok: true };
+}
+
+export const projectElementLinkValidator = z.object({
+  fromElementId: z.string().min(1, { message: "Element is required" }),
+  toElementId: z.string().min(1, { message: "Element is required" }),
+  linkType: z.enum(projectElementLinkTypes, { error: "Link type is required" })
+});
+
+/**
+ * The element fields whose change makes the incoming trace links suspect: the
+ * linked element was reviewed against the old value.
+ */
+export const suspectLinkFields: readonly string[] = [
+  "name",
+  "description",
+  "targetOperator",
+  "targetValue",
+  "targetUpperValue",
+  "targetUnit",
+  "parameterValue",
+  "parameterUnit"
+];
+
 export const projectElementCommentValidator = z.object({
   projectElementId: z.string().min(1, { message: "Element is required" }),
   content: z.string().min(1, { message: "Comment is required" })
