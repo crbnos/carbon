@@ -13,6 +13,7 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
 import { lockContractPositions } from "../lib/contract-ledger";
+import { assertAccountingCutover } from "../lib/require-accounting-cutover";
 import {
   claimScheduleRows,
   lockRecognitionProposals,
@@ -39,6 +40,7 @@ const recalculateRevenueRecognitionRun = defineServerFn({
   input: recalculateRevenueRecognitionRunInput,
   permissions: { update: "accounting" },
   async run({ db, companyId, userId }, { runId }): Promise<RunRecalculation> {
+    await assertAccountingCutover(db, companyId);
     return db.transaction().execute(async (trx) => {
       const run = await trx
         .selectFrom("revenueRecognitionRun")

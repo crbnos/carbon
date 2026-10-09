@@ -34,6 +34,7 @@ import {
   lockContractPositions
 } from "../lib/contract-ledger";
 import { syncDraftRecognitionRuns } from "../lib/draft-recognition-run";
+import { assertAccountingCutover } from "../lib/require-accounting-cutover";
 
 export type RunProposalContext = {
   companyId: string;
@@ -641,6 +642,7 @@ const proposeRevenueRecognitionRun = defineServerFn({
   input: proposeRevenueRecognitionRunInput,
   permissions: { create: "accounting" },
   async run({ db, companyId, userId }, { periodEnd }) {
+    await assertAccountingCutover(db, companyId);
     // A run may cover the current month or an earlier one, never a month that
     // has not started (the ERP's isFutureRunPeriod; this package cannot import
     // it). Guards the monthly job as well as the routes.

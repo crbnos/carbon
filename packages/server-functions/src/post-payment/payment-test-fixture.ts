@@ -102,12 +102,19 @@ export async function paymentFixture() {
          )}::text))).*`.execute(trx);
     await trx
       .insertInto("companySettings")
+      // A company keeping its ledger in Carbon: it has an accounting cutover,
+      // so its journals post as Posted. No activation stamp, so the fixture
+      // can still change the cutover (the one-way lock keys on it).
       .values({
         id: companyId,
-        accountingEnabled: true
+        accountingEnabled: true,
+        accountingCutoverDate: "2000-01-01"
       })
       .onConflict((oc) =>
-        oc.column("id").doUpdateSet({ accountingEnabled: true })
+        oc.column("id").doUpdateSet({
+          accountingEnabled: true,
+          accountingCutoverDate: "2000-01-01"
+        })
       )
       .execute();
     await trx

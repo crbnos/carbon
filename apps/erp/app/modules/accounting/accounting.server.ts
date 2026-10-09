@@ -23,6 +23,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
+  ACCOUNTING_NOT_STARTED,
   applyCtaToReportPeriodSeries,
   getAccountLedger,
   getAccountLedgerSummary,
@@ -199,6 +200,21 @@ export async function getConsolidatedAccountLedger(
   return { ledger, summary };
 }
 
+/** Throwing form of `requireAccountingCutover` for the Kysely posting paths. */
+async function assertAccountingCutover(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string
+) {
+  const settings = await db
+    .selectFrom("companySettings")
+    .select("accountingCutoverDate")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (!settings?.accountingCutoverDate) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
+}
+
 export async function postDisposal(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -238,6 +254,8 @@ export async function postDisposal(
     companyId,
     userId
   } = args;
+
+  await assertAccountingCutover(db, companyId);
 
   const nbv = acquisitionCost - accumulatedDepreciation;
   const now = datetime.timestamp();
@@ -767,6 +785,7 @@ export async function postDepreciationRun(
     userId
   } = args;
 
+  await assertAccountingCutover(db, companyId);
   const now = datetime.timestamp();
 
   const periodOf = (monthEnd: string) => {
@@ -1254,6 +1273,7 @@ export async function postRevenueRecognitionRun(
   }
 ) {
   const { runId, companyId, userId, periods, dimensionIds } = args;
+  await assertAccountingCutover(db, companyId);
   const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {

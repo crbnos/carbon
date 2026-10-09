@@ -1306,6 +1306,54 @@ export async function upsertReportPin(
 // In `columnKeys` the null column (lines with no tag for the column
 // dimension — the Unassigned bucket) is represented by this string sentinel.
 // Group rows keep their `columnKey` as returned by the RPC (null stays null).
+// Manual accounting work — journal entries, period lock and close,
+// depreciation and recognition runs, intercompany matching and eliminations —
+// runs only after the company's accounting cutover. Before it, journals are
+// Provisional and count nowhere, so this work would have no effect
+// (.ai/specs/2026-10-08-accounting-cutover.md section 1).
+export const ACCOUNTING_NOT_STARTED =
+  "Set up accounting before you post journals, runs or period closes.";
+
+export async function requireAccountingCutover(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ error: { message: string } | null }> {
+  const settings = await client
+    .from("companySettings")
+    .select("accountingCutoverDate")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return { error: settings.error };
+  if (!settings.data?.accountingCutoverDate) {
+    return { error: { message: ACCOUNTING_NOT_STARTED } };
+  }
+  return { error: null };
+}
+
+/** The group form: every company of the group must have a cutover. */
+export async function requireGroupAccountingCutover(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+): Promise<{ error: { message: string } | null }> {
+  const companies = await client
+    .from("company")
+    .select("id")
+    .eq("companyGroupId", companyGroupId);
+  if (companies.error) return { error: companies.error };
+  const ids = (companies.data ?? []).map((company) => company.id);
+  if (ids.length === 0) return { error: null };
+  const withoutCutover = await client
+    .from("companySettings")
+    .select("id", { count: "exact", head: true })
+    .in("id", ids)
+    .is("accountingCutoverDate", null);
+  if (withoutCutover.error) return { error: withoutCutover.error };
+  if ((withoutCutover.count ?? 0) > 0) {
+    return { error: { message: ACCOUNTING_NOT_STARTED } };
+  }
+  return { error: null };
+}
+
 export const UNASSIGNED_COLUMN_KEY = "__unassigned__";
 
 type DimensionPivotGroup = {
@@ -2643,6 +2691,8 @@ export async function lockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
 ) {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const period = await getAccountingPeriodById(
     client,
     args.periodId,
@@ -2721,6 +2771,8 @@ export async function closeAccountingPeriod(
   },
   previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args)
 ) {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const period = await getAccountingPeriodById(
     client,
     args.periodId,
@@ -5603,6 +5655,8 @@ export async function runIntercompanyMatching(
   client: SupabaseClient<Database>,
   companyGroupId: string
 ) {
+  const cutover = await requireGroupAccountingCutover(client, companyGroupId);
+  if (cutover.error) return { data: null, error: cutover.error };
   return client.rpc("matchIntercompanyTransactions", {
     p_company_group_id: companyGroupId
   });
@@ -5615,6 +5669,8 @@ export async function generateEliminations(
   userId: string,
   regenerate = false
 ) {
+  const cutover = await requireGroupAccountingCutover(client, companyGroupId);
+  if (cutover.error) return { data: null, error: cutover.error };
   return client.rpc("generateEliminationEntries", {
     p_company_group_id: companyGroupId,
     p_user_id: userId,
@@ -6392,6 +6448,8 @@ export async function postJournalEntry(
   // 1. Fetch entry + lines
   const entry = await getJournalEntry(client, id);
   if (entry.error) return entry;
+  const cutover = await requireAccountingCutover(client, entry.data.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   if (entry.data.status !== "Draft") {
     return {
       data: null,
@@ -6675,6 +6733,9 @@ export async function reverseJournalEntry(
     userId: string;
   }
 ) {
+  const cutover = await requireAccountingCutover(client, data.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
+
   // 1. Fetch original
   const original = await getJournalEntry(client, id);
   if (original.error) return original;
@@ -7386,6 +7447,8 @@ export async function createDepreciationRun(
   | { data: { id: string; depreciationRunId: string }; error: null }
   | { data: null; error: { message: string } }
 > {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const proposal = await buildDepreciationRunLines(client, args);
   if (!proposal.data) {
     return {
