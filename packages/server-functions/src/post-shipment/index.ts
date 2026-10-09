@@ -10,6 +10,7 @@ import {
 } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import {
   contains,
   deleteRows,
@@ -217,58 +218,48 @@ const postShipment = defineServerFn({
               });
               if (customer.error) throw new Error("Failed to fetch customer");
 
-              const [companyRecord, accountingSettings] = await inOrder([
-                () =>
-                  single(
-                    db,
-                    "company",
-                    { id: companyId },
-                    { columns: ["companyGroupId"] }
-                  ),
-                () =>
-                  single(
-                    db,
-                    "companySettings",
-                    { id: companyId },
-                    { columns: ["accountingEnabled"] }
-                  )
-              ]);
+              const companyRecord = await single(
+                db,
+                "company",
+                { id: companyId },
+                { columns: ["companyGroupId"] }
+              );
               if (companyRecord.error)
                 throw new Error("Failed to fetch company");
               const companyGroupId = companyRecord.data.companyGroupId;
-              const accountingEnabled =
-                accountingSettings.data?.accountingEnabled ?? false;
 
-              const accountDefaults = accountingEnabled
-                ? await getDefaultPostingGroup(db, companyId)
-                : null;
-              if (
-                accountingEnabled &&
-                (accountDefaults?.error || !accountDefaults?.data)
-              ) {
+              // Every shipment posts its journal: Provisional before the
+              // company's accounting cutover, Posted after it. Read here to
+              // decide whether to resolve a period, and again inside the
+              // transaction.
+              const postingStatus = await journalPostingStatus(db, companyId);
+
+              const accountDefaults = await getDefaultPostingGroup(
+                db,
+                companyId
+              );
+              if (accountDefaults.error || !accountDefaults.data) {
                 throw new Error("Error getting account defaults");
               }
 
-              const dimensions = accountingEnabled
-                ? await many(
-                    db,
-                    "dimension",
-                    {
-                      companyGroupId: companyGroupId!,
-                      active: true,
-                      entityType: [
-                        "Customer",
-                        "CustomerType",
-                        "Item",
-                        "ItemPostingGroup",
-                        "Location",
-                        "CostCenter",
-                        "FixedAssetClass"
-                      ]
-                    },
-                    { columns: ["id", "entityType"] }
-                  )
-                : null;
+              const dimensions = await many(
+                db,
+                "dimension",
+                {
+                  companyGroupId: companyGroupId!,
+                  active: true,
+                  entityType: [
+                    "Customer",
+                    "CustomerType",
+                    "Item",
+                    "ItemPostingGroup",
+                    "Location",
+                    "CostCenter",
+                    "FixedAssetClass"
+                  ]
+                },
+                { columns: ["id", "entityType"] }
+              );
 
               const dimensionMap = new Map<string, string>();
               if (dimensions?.data) {
@@ -502,8 +493,6 @@ const postShipment = defineServerFn({
 
                 // COGS journal entries for this shipment line
                 if (
-                  accountingEnabled &&
-                  accountDefaults?.data &&
                   shipmentLine.itemId &&
                   shippedQuantity > 0 &&
                   itemTrackingType !== "Non-Inventory"
@@ -657,7 +646,7 @@ const postShipment = defineServerFn({
               );
 
               for (const faSoLine of faSalesOrderLines) {
-                if (accountingEnabled && accountDefaults?.data) {
+                {
                   const assetRecord = await single<
                     "fixedAsset",
                     Pick<
@@ -933,14 +922,21 @@ const postShipment = defineServerFn({
               // it mid-transaction parks the pg connection in idle-in-transaction
               // (ClientRead) while the REST hop runs, and any hang there leaves
               // an orphan that exhausts the pool (size 1) for every subsequent
-              // post-shipment invocation.
-              const accountingPeriodId = await getCurrentAccountingPeriod(
-                companyId,
-                db,
-                today
-              );
+              // post-shipment invocation. A Provisional journal has no
+              // accounting period.
+              const accountingPeriodId =
+                postingStatus === "Posted"
+                  ? await getCurrentAccountingPeriod(companyId, db, today)
+                  : null;
 
               await db.transaction().execute(async (trx) => {
+                if (
+                  (await journalPostingStatus(trx, companyId)) !== postingStatus
+                ) {
+                  throw new Error(
+                    "Accounting was just set up. Post the document again."
+                  );
+                }
                 await fixedAssetWrites.apply(trx, companyId);
                 for await (const [salesOrderLineId, update] of Object.entries(
                   salesOrderLineUpdates
@@ -1220,7 +1216,7 @@ const postShipment = defineServerFn({
                 }
 
                 // Calculate COGS and create journal entries
-                if (accountingEnabled && journalLineInserts.length > 0) {
+                if (journalLineInserts.length > 0) {
                   const itemShipmentQuantities = new Map<
                     string,
                     { totalQuantity: number; lineIndices: number[] }
@@ -1311,7 +1307,7 @@ const postShipment = defineServerFn({
                       postingDate: today,
                       companyId,
                       sourceType: "Sales Shipment",
-                      status: "Posted",
+                      status: postingStatus,
                       postedAt: datetime.timestamp(),
                       postedBy: userId,
                       createdBy: userId
@@ -2017,58 +2013,53 @@ const postShipment = defineServerFn({
                   `Cannot ship against a return order in ${salesReturnOrder.data.status} status`
                 );
 
-              const accountingSettings = await single(
-                db,
-                "companySettings",
-                { id: companyId },
-                { columns: ["accountingEnabled"] }
-              );
-              const accountingEnabled =
-                accountingSettings.data?.accountingEnabled ?? false;
+              // Every shipment posts its journal: Provisional before the
+              // company's accounting cutover, Posted after it. Read here to
+              // decide whether to resolve a period, and again inside the
+              // transaction.
+              const postingStatus = await journalPostingStatus(db, companyId);
 
-              const accountDefaults = accountingEnabled
-                ? await getDefaultPostingGroup(db, companyId)
-                : null;
+              const accountDefaults = await getDefaultPostingGroup(
+                db,
+                companyId
+              );
 
               // GL dimensions for the return shipment journal (item, item group,
               // customer, customer type, location).
-              const [company, customer] = accountingEnabled
-                ? await inOrder([
-                    () =>
-                      single(
-                        db,
-                        "company",
-                        { id: companyId },
-                        { columns: ["companyGroupId"] }
-                      ),
-                    () =>
-                      single(
-                        db,
-                        "customer",
-                        { id: salesReturnOrder.data.customerId, companyId },
-                        { columns: ["id", "customerTypeId"] }
-                      )
-                  ])
-                : [null, null];
-              const dimensions =
-                accountingEnabled && company?.data?.companyGroupId
-                  ? await many(
-                      db,
-                      "dimension",
-                      {
-                        companyGroupId: company.data.companyGroupId,
-                        active: true,
-                        entityType: [
-                          "CustomerType",
-                          "Customer",
-                          "ItemPostingGroup",
-                          "Item",
-                          "Location"
-                        ]
-                      },
-                      { columns: ["id", "entityType"] }
-                    )
-                  : null;
+              const [company, customer] = await inOrder([
+                () =>
+                  single(
+                    db,
+                    "company",
+                    { id: companyId },
+                    { columns: ["companyGroupId"] }
+                  ),
+                () =>
+                  single(
+                    db,
+                    "customer",
+                    { id: salesReturnOrder.data.customerId, companyId },
+                    { columns: ["id", "customerTypeId"] }
+                  )
+              ]);
+              const dimensions = company?.data?.companyGroupId
+                ? await many(
+                    db,
+                    "dimension",
+                    {
+                      companyGroupId: company.data.companyGroupId,
+                      active: true,
+                      entityType: [
+                        "CustomerType",
+                        "Customer",
+                        "ItemPostingGroup",
+                        "Item",
+                        "Location"
+                      ]
+                    },
+                    { columns: ["id", "entityType"] }
+                  )
+                : null;
               const dimensionMap = new Map<string, string>();
               for (const dim of dimensions?.data ?? []) {
                 if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
@@ -2171,9 +2162,11 @@ const postShipment = defineServerFn({
                 }
               }
 
-              const accountingPeriodId = accountingEnabled
-                ? await getCurrentAccountingPeriod(companyId, db, today)
-                : null;
+              // A Provisional journal has no accounting period.
+              const accountingPeriodId =
+                postingStatus === "Posted"
+                  ? await getCurrentAccountingPeriod(companyId, db, today)
+                  : null;
 
               await db.transaction().execute(async (trx) => {
                 // Double-post guard: serialize on the shipment row — a second
@@ -2191,6 +2184,14 @@ const postShipment = defineServerFn({
                 ) {
                   throw new Error(
                     `Shipment is already ${lockedShipment.status}`
+                  );
+                }
+
+                if (
+                  (await journalPostingStatus(trx, companyId)) !== postingStatus
+                ) {
+                  throw new Error(
+                    "Accounting was just set up. Post the document again."
                   );
                 }
 
@@ -2235,11 +2236,7 @@ const postShipment = defineServerFn({
                     })
                     .execute();
 
-                  if (
-                    accountingEnabled &&
-                    accountDefaults?.data &&
-                    cogsResult.totalCost > 0
-                  ) {
+                  if (accountDefaults.data && cogsResult.totalCost > 0) {
                     const journalLineReference = nanoid();
                     const item = items.data.find((i) => i.id === itemId);
                     const inventoryAccount = resolveInventoryAccount(
@@ -2287,11 +2284,7 @@ const postShipment = defineServerFn({
                   }
                 }
 
-                if (
-                  accountingEnabled &&
-                  journalLineInserts.length > 0 &&
-                  accountingPeriodId
-                ) {
+                if (journalLineInserts.length > 0) {
                   const journalEntryId = await getNextSequence(
                     trx,
                     "journalEntry",
@@ -2311,7 +2304,7 @@ const postShipment = defineServerFn({
                       // journal through the always-on external-sync policy
                       // instead of the opt-in return types.
                       sourceType: "Sales Return Shipment",
-                      status: "Posted",
+                      status: postingStatus,
                       postedAt: datetime.timestamp(),
                       postedBy: userId,
                       createdBy: userId
@@ -2440,62 +2433,57 @@ const postShipment = defineServerFn({
                   `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
                 );
 
-              const accountingSettings = await single(
-                db,
-                "companySettings",
-                { id: companyId },
-                { columns: ["accountingEnabled"] }
-              );
-              const accountingEnabled =
-                accountingSettings.data?.accountingEnabled ?? false;
+              // Every shipment posts its journal: Provisional before the
+              // company's accounting cutover, Posted after it. Read here to
+              // decide whether to resolve a period, and again inside the
+              // transaction.
+              const postingStatus = await journalPostingStatus(db, companyId);
 
               const returnLineById = new Map(
                 (purchaseReturnOrderLines.data ?? []).map((l) => [l.id, l])
               );
 
-              const accountDefaults = accountingEnabled
-                ? await getDefaultPostingGroup(db, companyId)
-                : null;
+              const accountDefaults = await getDefaultPostingGroup(
+                db,
+                companyId
+              );
 
               // GL dimensions for the return shipment journal (item, item group,
               // supplier, supplier type, location).
-              const [company, supplier] = accountingEnabled
-                ? await inOrder([
-                    () =>
-                      single(
-                        db,
-                        "company",
-                        { id: companyId },
-                        { columns: ["companyGroupId"] }
-                      ),
-                    () =>
-                      single(
-                        db,
-                        "supplier",
-                        { id: purchaseReturnOrder.data.supplierId, companyId },
-                        { columns: ["id", "supplierTypeId"] }
-                      )
-                  ])
-                : [null, null];
-              const dimensions =
-                accountingEnabled && company?.data?.companyGroupId
-                  ? await many(
-                      db,
-                      "dimension",
-                      {
-                        companyGroupId: company.data.companyGroupId,
-                        active: true,
-                        entityType: [
-                          "SupplierType",
-                          "Supplier",
-                          "ItemPostingGroup",
-                          "Item",
-                          "Location"
-                        ]
-                      },
-                      { columns: ["id", "entityType"] }
-                    )
-                  : null;
+              const [company, supplier] = await inOrder([
+                () =>
+                  single(
+                    db,
+                    "company",
+                    { id: companyId },
+                    { columns: ["companyGroupId"] }
+                  ),
+                () =>
+                  single(
+                    db,
+                    "supplier",
+                    { id: purchaseReturnOrder.data.supplierId, companyId },
+                    { columns: ["id", "supplierTypeId"] }
+                  )
+              ]);
+              const dimensions = company?.data?.companyGroupId
+                ? await many(
+                    db,
+                    "dimension",
+                    {
+                      companyGroupId: company.data.companyGroupId,
+                      active: true,
+                      entityType: [
+                        "SupplierType",
+                        "Supplier",
+                        "ItemPostingGroup",
+                        "Item",
+                        "Location"
+                      ]
+                    },
+                    { columns: ["id", "entityType"] }
+                  )
+                : null;
               const dimensionMap = new Map<string, string>();
               for (const dim of dimensions?.data ?? []) {
                 if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
@@ -2645,9 +2633,11 @@ const postShipment = defineServerFn({
                 }
               }
 
-              const accountingPeriodId = accountingEnabled
-                ? await getCurrentAccountingPeriod(companyId, db, today)
-                : null;
+              // A Provisional journal has no accounting period.
+              const accountingPeriodId =
+                postingStatus === "Posted"
+                  ? await getCurrentAccountingPeriod(companyId, db, today)
+                  : null;
 
               await db.transaction().execute(async (trx) => {
                 // Double-post guard: serialize on the shipment row — a second
@@ -2665,6 +2655,14 @@ const postShipment = defineServerFn({
                 ) {
                   throw new Error(
                     `Shipment is already ${lockedShipment.status}`
+                  );
+                }
+
+                if (
+                  (await journalPostingStatus(trx, companyId)) !== postingStatus
+                ) {
+                  throw new Error(
+                    "Accounting was just set up. Post the document again."
                   );
                 }
 
@@ -2816,11 +2814,7 @@ const postShipment = defineServerFn({
                     })
                     .execute();
 
-                  if (
-                    accountingEnabled &&
-                    accountDefaults?.data &&
-                    cogsResult.totalCost > 0
-                  ) {
+                  if (accountDefaults.data && cogsResult.totalCost > 0) {
                     const journalLineReference = nanoid();
                     const item = items.data.find((i) => i.id === itemId);
                     const inventoryAccount = resolveInventoryAccount(
@@ -2869,11 +2863,7 @@ const postShipment = defineServerFn({
                   }
                 }
 
-                if (
-                  accountingEnabled &&
-                  journalLineInserts.length > 0 &&
-                  accountingPeriodId
-                ) {
+                if (journalLineInserts.length > 0) {
                   const journalEntryId = await getNextSequence(
                     trx,
                     "journalEntry",
@@ -2888,7 +2878,7 @@ const postShipment = defineServerFn({
                       postingDate: today,
                       companyId,
                       sourceType: "Purchase Return Shipment",
-                      status: "Posted",
+                      status: postingStatus,
                       postedAt: datetime.timestamp(),
                       postedBy: userId,
                       createdBy: userId
@@ -3076,49 +3066,38 @@ const postShipment = defineServerFn({
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
-              const [
-                salesOrder,
-                salesOrderLines,
-                originalJournalLines,
-                accountingSettings
-              ] = await inOrder([
-                () =>
-                  single(db, "salesOrder", {
-                    id: shipmentHeader.sourceDocumentId
-                  }),
-                () =>
-                  many(db, "salesOrderLine", {
-                    salesOrderId: shipmentHeader.sourceDocumentId
-                  }),
-                () =>
-                  db
-                    .selectFrom("journalLine")
-                    .innerJoin("journal", (join) =>
-                      join
-                        .onRef("journal.id", "=", "journalLine.journalId")
-                        .onRef(
-                          "journal.companyId",
-                          "=",
-                          "journalLine.companyId"
-                        )
-                    )
-                    .selectAll("journalLine")
-                    .where("journalLine.documentId", "=", shipmentId)
-                    .where("journalLine.documentType", "=", "Sales Shipment")
-                    .where("journalLine.companyId", "=", companyId)
-                    .where("journal.status", "in", [
-                      ...DOCUMENT_JOURNAL_STATUSES
-                    ])
-                    .execute()
-                    .then((data) => ({ data, error: null })),
-                () =>
-                  single(
-                    db,
-                    "companySettings",
-                    { id: companyId },
-                    { columns: ["accountingEnabled"] }
-                  )
-              ]);
+              const [salesOrder, salesOrderLines, originalJournalLines] =
+                await inOrder([
+                  () =>
+                    single(db, "salesOrder", {
+                      id: shipmentHeader.sourceDocumentId
+                    }),
+                  () =>
+                    many(db, "salesOrderLine", {
+                      salesOrderId: shipmentHeader.sourceDocumentId
+                    }),
+                  () =>
+                    db
+                      .selectFrom("journalLine")
+                      .innerJoin("journal", (join) =>
+                        join
+                          .onRef("journal.id", "=", "journalLine.journalId")
+                          .onRef(
+                            "journal.companyId",
+                            "=",
+                            "journalLine.companyId"
+                          )
+                      )
+                      .selectAll("journalLine")
+                      .where("journalLine.documentId", "=", shipmentId)
+                      .where("journalLine.documentType", "=", "Sales Shipment")
+                      .where("journalLine.companyId", "=", companyId)
+                      .where("journal.status", "in", [
+                        ...DOCUMENT_JOURNAL_STATUSES
+                      ])
+                      .execute()
+                      .then((data) => ({ data, error: null }))
+                ]);
               if (salesOrder.error)
                 throw new Error("Failed to fetch sales order");
               if (salesOrderLines.error)
@@ -3126,29 +3105,30 @@ const postShipment = defineServerFn({
               if (originalJournalLines.error)
                 throw new Error("Failed to fetch journal lines");
 
-              const accountingEnabled =
-                accountingSettings.data?.accountingEnabled ?? false;
+              // Every void posts its reversal: Provisional before the
+              // company's accounting cutover, Posted after it. Read here to
+              // decide whether to resolve a period, and again inside the
+              // transaction.
+              const postingStatus = await journalPostingStatus(db, companyId);
 
               const reversingJournalLines: Omit<
                 Database["public"]["Tables"]["journalLine"]["Insert"],
                 "journalId"
-              >[] = accountingEnabled
-                ? originalJournalLines.data.map((entry) => ({
-                    accountId: entry.accountId,
-                    accrual: entry.accrual,
-                    description: `VOID: ${entry.description}`,
-                    // A reversal is a sign flip of an already-posted value, which
-                    // is exact — no rounding to do.
-                    amount: -entry.amount,
-                    quantity: -entry.quantity,
-                    documentType: entry.documentType,
-                    documentId: entry.documentId,
-                    externalDocumentId: entry.externalDocumentId,
-                    documentLineReference: entry.documentLineReference,
-                    journalLineReference: entry.journalLineReference,
-                    companyId
-                  }))
-                : [];
+              >[] = originalJournalLines.data.map((entry) => ({
+                accountId: entry.accountId,
+                accrual: entry.accrual,
+                description: `VOID: ${entry.description}`,
+                // A reversal is a sign flip of an already-posted value, which
+                // is exact — no rounding to do.
+                amount: -entry.amount,
+                quantity: -entry.quantity,
+                documentType: entry.documentType,
+                documentId: entry.documentId,
+                externalDocumentId: entry.externalDocumentId,
+                documentLineReference: entry.documentLineReference,
+                journalLineReference: entry.journalLineReference,
+                companyId
+              }));
 
               const customer = await single(db, "customer", {
                 id: salesOrder.data.customerId,
@@ -3445,12 +3425,20 @@ const postShipment = defineServerFn({
                   return acc;
                 }, {}) ?? {};
 
+              // A Provisional journal has no accounting period.
               const accountingPeriodId =
-                accountingEnabled && reversingJournalLines.length > 0
+                postingStatus === "Posted" && reversingJournalLines.length > 0
                   ? await getCurrentAccountingPeriod(companyId, db, today)
                   : null;
 
               await db.transaction().execute(async (trx) => {
+                if (
+                  (await journalPostingStatus(trx, companyId)) !== postingStatus
+                ) {
+                  throw new Error(
+                    "Accounting was just set up. Post the document again."
+                  );
+                }
                 await fixedAssetWrites.apply(trx, companyId);
                 // Update sales order lines to reverse shipped quantities
                 for await (const [salesOrderLineId, update] of Object.entries(
@@ -3597,11 +3585,7 @@ const postShipment = defineServerFn({
                 }
 
                 // Create reversing journal entries
-                if (
-                  accountingEnabled &&
-                  reversingJournalLines.length > 0 &&
-                  accountingPeriodId
-                ) {
+                if (reversingJournalLines.length > 0) {
                   const voidJournalEntryId = await getNextSequence(
                     trx,
                     "journalEntry",
@@ -3617,7 +3601,7 @@ const postShipment = defineServerFn({
                       postingDate: today,
                       companyId,
                       sourceType: "Sales Shipment",
-                      status: "Posted",
+                      status: postingStatus,
                       postedAt: datetime.timestamp(),
                       postedBy: userId,
                       createdBy: userId
@@ -4122,14 +4106,11 @@ const postShipment = defineServerFn({
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
-              const accountingSettings = await single(
-                db,
-                "companySettings",
-                { id: companyId },
-                { columns: ["accountingEnabled"] }
-              );
-              const accountingEnabled =
-                accountingSettings.data?.accountingEnabled ?? false;
+              // Every void posts its reversal: Provisional before the
+              // company's accounting cutover, Posted after it. Read here to
+              // decide whether to resolve a period, and again inside the
+              // transaction.
+              const postingStatus = await journalPostingStatus(db, companyId);
 
               const [
                 originalJournalLines,
@@ -4180,13 +4161,21 @@ const postShipment = defineServerFn({
               if (originalCostRows.error)
                 throw new Error("Failed to fetch cost ledger rows to reverse");
 
+              // A Provisional journal has no accounting period.
               const accountingPeriodId =
-                accountingEnabled &&
+                postingStatus === "Posted" &&
                 (originalJournalLines.data ?? []).length > 0
                   ? await getCurrentAccountingPeriod(companyId, db, today)
                   : null;
 
               await db.transaction().execute(async (trx) => {
+                if (
+                  (await journalPostingStatus(trx, companyId)) !== postingStatus
+                ) {
+                  throw new Error(
+                    "Accounting was just set up. Post the document again."
+                  );
+                }
                 const reversingItemLedger = (originalItemLedger.data ?? []).map(
                   (entry) => ({
                     postingDate: today,
@@ -4237,11 +4226,7 @@ const postShipment = defineServerFn({
                     .execute();
                 }
 
-                if (
-                  accountingEnabled &&
-                  (originalJournalLines.data ?? []).length > 0 &&
-                  accountingPeriodId
-                ) {
+                if ((originalJournalLines.data ?? []).length > 0) {
                   const originalLines = originalJournalLines.data ?? [];
                   // Carry the original lines' GL dimensions onto the reversing
                   // lines so the void mirrors the posting.
@@ -4281,7 +4266,7 @@ const postShipment = defineServerFn({
                       postingDate: today,
                       companyId,
                       sourceType: "Sales Return Shipment",
-                      status: "Posted",
+                      status: postingStatus,
                       postedAt: datetime.timestamp(),
                       postedBy: userId,
                       createdBy: userId
@@ -4422,14 +4407,11 @@ const postShipment = defineServerFn({
                 );
               }
 
-              const accountingSettings = await single(
-                db,
-                "companySettings",
-                { id: companyId },
-                { columns: ["accountingEnabled"] }
-              );
-              const accountingEnabled =
-                accountingSettings.data?.accountingEnabled ?? false;
+              // Every void posts its reversal: Provisional before the
+              // company's accounting cutover, Posted after it. Read here to
+              // decide whether to resolve a period, and again inside the
+              // transaction.
+              const postingStatus = await journalPostingStatus(db, companyId);
 
               const [
                 originalJournalLines,
@@ -4498,13 +4480,21 @@ const postShipment = defineServerFn({
                 );
               }
 
+              // A Provisional journal has no accounting period.
               const accountingPeriodId =
-                accountingEnabled &&
+                postingStatus === "Posted" &&
                 (originalJournalLines.data ?? []).length > 0
                   ? await getCurrentAccountingPeriod(companyId, db, today)
                   : null;
 
               await db.transaction().execute(async (trx) => {
+                if (
+                  (await journalPostingStatus(trx, companyId)) !== postingStatus
+                ) {
+                  throw new Error(
+                    "Accounting was just set up. Post the document again."
+                  );
+                }
                 const reversingItemLedger = (originalItemLedger.data ?? []).map(
                   (entry) => ({
                     postingDate: today,
@@ -4555,11 +4545,7 @@ const postShipment = defineServerFn({
                     .execute();
                 }
 
-                if (
-                  accountingEnabled &&
-                  (originalJournalLines.data ?? []).length > 0 &&
-                  accountingPeriodId
-                ) {
+                if ((originalJournalLines.data ?? []).length > 0) {
                   const originalLines = originalJournalLines.data ?? [];
                   // Carry the original lines' GL dimensions onto the reversing
                   // lines so the void mirrors the posting.
@@ -4599,7 +4585,7 @@ const postShipment = defineServerFn({
                       postingDate: today,
                       companyId,
                       sourceType: "Purchase Return Shipment",
-                      status: "Posted",
+                      status: postingStatus,
                       postedAt: datetime.timestamp(),
                       postedBy: userId,
                       createdBy: userId
