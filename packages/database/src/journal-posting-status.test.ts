@@ -9,6 +9,11 @@ import {
   OPEN_ITEM_JOURNAL_STATUSES
 } from "./accounting-posting.ts";
 import {
+  assertPostingStatusUnchanged,
+  configuredDefaultAccount,
+  MissingAccountDefaultError,
+  OPTIONAL_DEFAULT_ROLES,
+  POSTING_STATUS_CHANGED_ERROR,
   postingStatusFor,
   resolveDefaultAccount
 } from "./journal-posting-status.ts";
@@ -35,8 +40,11 @@ describe("journal status lists", () => {
 describe("resolveDefaultAccount", () => {
   const defaults = {
     retainedEarningsAccount: "acct-retained",
+    salesAccount: "acct-sales",
+    inventoryAdjustmentVarianceAccount: "acct-variance",
     scrapAccount: "acct-scrap",
-    salesReturnsAccount: null
+    salesReturnsAccount: null,
+    laborAbsorptionAccount: null
   };
 
   it("uses a set default as is", () => {
@@ -48,16 +56,89 @@ describe("resolveDefaultAccount", () => {
 
   it("stands in retained earnings for an empty default before the cutover", () => {
     expect(
-      resolveDefaultAccount(defaults, "salesReturnsAccount", "Provisional")
+      resolveDefaultAccount(defaults, "laborAbsorptionAccount", "Provisional")
     ).toEqual({
       accountId: "acct-retained",
-      accountDefaultRole: "salesReturnsAccount"
+      accountDefaultRole: "laborAbsorptionAccount"
     });
   });
 
-  it("refuses an empty default after the cutover", () => {
-    expect(() =>
-      resolveDefaultAccount(defaults, "salesReturnsAccount", "Posted")
-    ).toThrow("Set the salesReturnsAccount account default");
+  it("uses the fallback of an empty default in both states, with no stand-in", () => {
+    for (const status of ["Provisional", "Posted"] as const) {
+      expect(
+        resolveDefaultAccount(defaults, "salesReturnsAccount", status)
+      ).toEqual({ accountId: "acct-sales", accountDefaultRole: null });
+      expect(
+        resolveDefaultAccount(
+          { ...defaults, scrapAccount: null },
+          "scrapAccount",
+          status
+        )
+      ).toEqual({ accountId: "acct-variance", accountDefaultRole: null });
+    }
+    expect(
+      configuredDefaultAccount(
+        { ...defaults, payablesAccount: "acct-ap" },
+        "intercompanyPayablesAccount"
+      )
+    ).toBe("acct-ap");
+    expect(configuredDefaultAccount(defaults, "laborAbsorptionAccount")).toBe(
+      null
+    );
+  });
+
+  it("refuses an empty default after the cutover with a 400 that names it as the page does", () => {
+    let error: unknown;
+    try {
+      resolveDefaultAccount(defaults, "laborAbsorptionAccount", "Posted");
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(MissingAccountDefaultError);
+    expect(error).toMatchObject({
+      status: 400,
+      role: "laborAbsorptionAccount",
+      message:
+        "Set the Labor & Machine Absorption account in Accounting → Default Accounts."
+    });
+  });
+
+  it("names every optional default in plain words", () => {
+    for (const role of OPTIONAL_DEFAULT_ROLES) {
+      expect(new MissingAccountDefaultError(role).message).not.toContain(role);
+    }
+  });
+});
+
+describe("assertPostingStatusUnchanged", () => {
+  // A transaction stand-in whose companySettings read returns `cutoverDate`.
+  const trxReading = (cutoverDate: string | null) =>
+    ({
+      selectFrom: () => ({
+        select: () => ({
+          where: () => ({
+            forShare: () => ({
+              executeTakeFirst: async () => ({
+                accountingCutoverDate: cutoverDate
+              })
+            })
+          })
+        })
+      })
+    }) as unknown as Parameters<typeof assertPostingStatusUnchanged>[0];
+
+  it("passes when the status inside the transaction is the one read before it", async () => {
+    await expect(
+      assertPostingStatusUnchanged(trxReading(null), "c", "Provisional")
+    ).resolves.toBeUndefined();
+    await expect(
+      assertPostingStatusUnchanged(trxReading("2026-10-01"), "c", "Posted")
+    ).resolves.toBeUndefined();
+  });
+
+  it("refuses when the enable committed between the two reads", async () => {
+    await expect(
+      assertPostingStatusUnchanged(trxReading("2026-10-01"), "c", "Provisional")
+    ).rejects.toThrow(POSTING_STATUS_CHANGED_ERROR);
   });
 });

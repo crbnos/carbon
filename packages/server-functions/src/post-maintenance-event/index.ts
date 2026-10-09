@@ -12,14 +12,16 @@ import { credit, datetime, debit, indexBy } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError } from "../errors";
+import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "../lib/cutover-void";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
 import {
   diffLaborGroups,
   type LaborDimension,
   type LaborGroup,
-  maintenanceLaborCost
+  maintenanceLaborCost,
+  withoutSupersededEntries
 } from "./plan";
 
 export const postMaintenanceEventInput = z.object({
@@ -62,7 +64,7 @@ const postMaintenanceEvent = defineServerFn({
         throw new NotFoundError("Maintenance dispatch not found");
       }
 
-      const [events, priorLines, accountDefaults, dimensions] =
+      const [events, priorLines, supersededLines, accountDefaults, dimensions] =
         await Promise.all([
           trx
             .selectFrom("maintenanceDispatchEvent")
@@ -95,6 +97,25 @@ const postMaintenanceEvent = defineServerFn({
             .where("journalLine.documentId", "in", dispatchIds)
             .where("journalLine.companyId", "=", companyId)
             .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+            .execute(),
+          // Lines the enable superseded: posted before the cutover.
+          trx
+            .selectFrom("journalLine")
+            .innerJoin("journal", (join) =>
+              join
+                .onRef("journal.id", "=", "journalLine.journalId")
+                .onRef("journal.companyId", "=", "journalLine.companyId")
+            )
+            .select([
+              "journalLine.documentId",
+              "journalLine.documentLineReference",
+              "journalLine.accountId",
+              "journalLine.amount"
+            ])
+            .where("journalLine.documentType", "=", "Maintenance Event")
+            .where("journalLine.documentId", "in", dispatchIds)
+            .where("journalLine.companyId", "=", companyId)
+            .where("journal.status", "=", "Superseded")
             .execute(),
           trx
             .selectFrom("accountDefault")
@@ -228,10 +249,21 @@ const postMaintenanceEvent = defineServerFn({
 
       for (const dispatch of dispatches) {
         const prior = priorByDispatch.get(dispatch.id) ?? [];
-        const delta = diffLaborGroups(
+        const desired = withoutSupersededEntries(
           desiredByDispatch.get(dispatch.id) ?? [],
-          prior
+          supersededLines
+            .filter((line) => line.documentId === dispatch.id)
+            .map((line) => ({
+              reference: line.documentLineReference ?? "",
+              accountId: line.accountId ?? "",
+              amount: Number(line.amount)
+            })),
+          accountDefaults.maintenanceAccount
         );
+        if (desired.changed.length > 0) {
+          throw new InvalidInputError(TIME_ENTRY_BEFORE_CUTOVER_ERROR);
+        }
+        const delta = diffLaborGroups(desired.desired, prior);
         if (delta.length === 0) continue;
 
         // A Provisional journal has no accounting period.

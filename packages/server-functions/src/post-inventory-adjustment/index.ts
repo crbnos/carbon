@@ -5,6 +5,7 @@
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  assertPostingStatusUnchanged,
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
@@ -255,36 +256,34 @@ const postInventoryAdjustment = defineServerFn({
     // Active dimensions for the company group (post-shipment precedent) —
     // journal lines get Item / ItemPostingGroup / Location tags.
     const dimensionMap: Record<string, string> = {};
-    {
-      const companyRecord = await single(
-        db,
-        "company",
-        { id: companyId },
-        { columns: ["companyGroupId"] }
-      );
-      if (companyRecord.error) throw new Error("Failed to fetch company");
-      const dimensions = await many(
-        db,
-        "dimension",
-        {
-          companyGroupId: companyRecord.data.companyGroupId!,
-          active: true,
-          entityType: [
-            "Item",
-            "ItemPostingGroup",
-            "Location",
-            "ScrapReason",
-            "WorkCenter",
-            "Employee"
-          ]
-        },
-        { columns: ["id", "entityType"] }
-      );
-      // Fail closed: journal lines must not silently lose dimension tags.
-      if (dimensions.error) throw new Error("Failed to fetch dimensions");
-      for (const dim of dimensions.data ?? []) {
-        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
-      }
+    const companyRecord = await single(
+      db,
+      "company",
+      { id: companyId },
+      { columns: ["companyGroupId"] }
+    );
+    if (companyRecord.error) throw new Error("Failed to fetch company");
+    const dimensions = await many(
+      db,
+      "dimension",
+      {
+        companyGroupId: companyRecord.data.companyGroupId!,
+        active: true,
+        entityType: [
+          "Item",
+          "ItemPostingGroup",
+          "Location",
+          "ScrapReason",
+          "WorkCenter",
+          "Employee"
+        ]
+      },
+      { columns: ["id", "entityType"] }
+    );
+    // Fail closed: journal lines must not silently lose dimension tags.
+    if (dimensions.error) throw new Error("Failed to fetch dimensions");
+    for (const dim of dimensions.data ?? []) {
+      if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
     }
     // Resolved before the posting transaction opens: given `db`, it runs and
     // commits its own short transaction. A Provisional journal has no period.
@@ -418,26 +417,17 @@ const postInventoryAdjustment = defineServerFn({
     // Scrap/Unscrap offset to the company's scrapAccount so cost of quality is
     // separable on the P&L; analysis slices by dimension (ScrapReason /
     // Employee + the standard trio) instead of by account. Resolved only for a
-    // Scrap or Unscrap: before the cutover an empty scrapAccount becomes a
-    // stand-in line; after it, an empty scrapAccount falls back to the
-    // variance account, as it always has.
+    // Scrap or Unscrap. An empty scrapAccount falls back to the variance
+    // account.
     const scrapAccountingFor = (description: string) => {
-      const scrapOffset = resolveDefaultAccount(
-        {
-          ...accountDefaults.data,
-          scrapAccount:
-            accountDefaults.data.scrapAccount ??
-            (postingStatus === "Posted"
-              ? accountDefaults.data.inventoryAdjustmentVarianceAccount
-              : null)
-        },
+      const scrapAccountId = resolveDefaultAccount(
+        accountDefaults.data,
         "scrapAccount",
         postingStatus
-      );
+      ).accountId;
       return {
         ...accounting,
-        offsetAccount: scrapOffset.accountId,
-        offsetAccountDefaultRole: scrapOffset.accountDefaultRole,
+        offsetAccount: scrapAccountId,
         offsetDescription: "Scrap Account",
         description,
         extraDimensions: [
@@ -450,9 +440,7 @@ const postInventoryAdjustment = defineServerFn({
     };
 
     await db.transaction().execute(async (trx) => {
-      if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-        throw new Error("Accounting was just set up. Post the document again.");
-      }
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
       if (adjustmentType === "Scrap") {
         const scrapLedgerBase = {

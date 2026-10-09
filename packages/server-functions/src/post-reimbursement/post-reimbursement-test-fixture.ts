@@ -157,12 +157,10 @@ export async function reimbursementFixture(
       .insertInto("companySettings")
       .values({
         id: companyId,
-        accountingEnabled: true,
         accountingCutoverDate: "2000-01-01"
       })
       .onConflict((oc) =>
         oc.column("id").doUpdateSet({
-          accountingEnabled: true,
           accountingCutoverDate: "2000-01-01"
         })
       )

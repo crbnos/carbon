@@ -11,10 +11,16 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import {
+  configuredDefaultAccount,
+  MissingAccountDefaultError,
+  OPTIONAL_DEFAULT_ROLES,
+  type OptionalDefaultRole
+} from "@carbon/database/journal-posting-status";
 import { datetime } from "@carbon/utils";
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import { sql } from "kysely";
-import { InvalidInputError } from "../errors";
+import { ServerFnError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
@@ -74,10 +80,6 @@ export async function assignPeriods(
     );
     periods.push({ ...month, periodId: period.id });
   }
-  const inScope =
-    "cutoverDate" in scope
-      ? sql`j."postingDate" >= ${scope.cutoverDate}`
-      : sql`j."id" = ANY(${[...scope.journalIds]})`;
   await sql`
     UPDATE "journal" AS j
     SET "accountingPeriodId" = v."periodId"
@@ -88,15 +90,21 @@ export async function assignPeriods(
       )
     )}) AS v("start", "end", "periodId")
     WHERE j."companyId" = ${companyId}
-      AND j."status" = 'Provisional'
-      AND ${inScope}
+      AND j."id" IN (${scopedJournals(trx, companyId, scope)})
       AND j."postingDate" BETWEEN v."start" AND v."end"
   `.execute(trx);
 }
 
+const OPTIONAL_DEFAULTS: ReadonlySet<string> = new Set(OPTIONAL_DEFAULT_ROLES);
+const isOptionalDefaultRole = (role: string): role is OptionalDefaultRole =>
+  OPTIONAL_DEFAULTS.has(role);
+
 /**
- * Step 13. A stand-in line sits on retained earnings and names the default it
- * wanted. Before promotion it moves to that default, one UPDATE per role.
+ * Step 12. A stand-in line sits on retained earnings and names the default it
+ * wanted. Before promotion it moves to that default, one UPDATE per role. An
+ * intercompany elimination line copies the account of the journal line it
+ * mirrors (post-sales-invoice and post-purchase-invoice copy it when they
+ * post), so it moves with its line.
  */
 export async function repointStandInLines(
   trx: KyselyTx,
@@ -115,10 +123,27 @@ export async function repointStandInLines(
     .execute();
   for (const { accountDefaultRole: role } of roles) {
     if (!role) continue;
-    const accountId = (defaults as Record<string, unknown>)[role];
-    if (typeof accountId !== "string" || !accountId) {
-      throw new InvalidInputError(`Set the ${role} account default.`);
+    if (!isOptionalDefaultRole(role)) {
+      throw new ServerFnError(
+        `A journal line names ${role}, which is not an account default a stand-in line can wait for.`
+      );
     }
+    // A role with a fallback resolves to it, as a posting today would.
+    const accountId = configuredDefaultAccount(defaults, role);
+    if (!accountId) throw new MissingAccountDefaultError(role);
+    const standIns = trx
+      .selectFrom("journalLine")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("accountDefaultRole", "=", role)
+      .where("journalId", "in", staying);
+    await trx
+      .updateTable("intercompanyEliminationLine")
+      .set({ accountId })
+      .where("companyId", "=", companyId)
+      .where("journalLineId", "in", standIns)
+      .where("accountId", "=", defaults.retainedEarningsAccount)
+      .execute();
     await trx
       .updateTable("journalLine")
       .set({ accountId, accountDefaultRole: null })
@@ -129,7 +154,7 @@ export async function repointStandInLines(
   }
 }
 
-/** Step 14. Promotes the Provisional journals in the scope to Posted. */
+/** Step 13. Promotes the Provisional journals in the scope to Posted. */
 export async function promoteJournals(
   trx: KyselyTx,
   companyId: string,

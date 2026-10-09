@@ -13,6 +13,8 @@ import {
   type OpenItem,
   type OpeningJournalLine,
   planInventoryReset,
+  type RecostEvent,
+  type RecostLayer,
   recostOutbound,
   type TrialBalanceLine,
   unitCostAtCutover
@@ -291,12 +293,12 @@ describe("buildOpeningJournalLines", () => {
 describe("planInventoryReset", () => {
   it("refuses stock with no unit cost", () => {
     expect(() =>
-      planInventoryReset([{ itemId: "item-a", quantity: 1 }], new Map(), [])
+      planInventoryReset([{ itemId: "item-a", quantity: 1 }], new Map())
     ).toThrow(/no unit cost/);
   });
 
-  it("closes every layer before the cutover and opens one layer per item with stock", () => {
-    const plan = planInventoryReset(
+  it("opens one layer per item with stock", () => {
+    const openingLayers = planInventoryReset(
       [
         { itemId: "item-a", quantity: 4 },
         { itemId: "item-b", quantity: 0 }
@@ -304,125 +306,143 @@ describe("planInventoryReset", () => {
       new Map([
         ["item-a", 2.5],
         ["item-b", 9]
-      ]),
-      [
-        { id: "layer-1", itemId: "item-a" },
-        { id: "layer-2", itemId: "item-a" },
-        { id: "layer-3", itemId: "item-b" }
-      ]
+      ])
     );
 
-    expect(plan.layerIdsToClose).toEqual(["layer-1", "layer-2", "layer-3"]);
-    expect(plan.openingLayers).toEqual([
-      { itemId: "item-a", quantity: 4, cost: 10, remainingQuantity: 4 }
+    expect(openingLayers).toEqual([
+      { itemId: "item-a", quantity: 4, cost: 10 }
     ]);
   });
 });
 
 describe("recostOutbound", () => {
+  const layer = (
+    id: string,
+    quantity: number,
+    cost: number,
+    children: RecostLayer["children"] = []
+  ): RecostEvent => ({
+    layer: {
+      id,
+      itemId: "item-a",
+      quantity,
+      cost,
+      remainingQuantity: quantity,
+      trackedEntityId: null,
+      children
+    }
+  });
+  const ship = (id: string, quantity: number, cost: number): RecostEvent => ({
+    outbound: {
+      costLedgerId: id,
+      itemId: "item-a",
+      quantity,
+      cost,
+      trackedEntityIds: []
+    }
+  });
+  const fifo = new Map([["item-a", "FIFO" as const]]);
+
   it("relieves the opening layer first, then the next inbound layer", () => {
     const result = recostOutbound(
-      [
-        {
-          key: "opening",
-          itemId: "item-a",
-          postingDate: "2026-10-01",
-          quantity: 2,
-          cost: 20,
-          remainingQuantity: 2
-        },
-        {
-          key: "receipt",
-          itemId: "item-a",
-          postingDate: "2026-10-02",
-          quantity: 5,
-          cost: 75,
-          remainingQuantity: 5
-        }
-      ],
-      [
-        {
-          costLedgerId: "ship-1",
-          itemId: "item-a",
-          postingDate: "2026-10-03",
-          quantity: 3,
-          cost: 33
-        }
-      ],
-      new Map()
+      [layer("opening", 2, 20), layer("receipt", 5, 75), ship("ship-1", 3, 33)],
+      fifo,
+      new Map([["item-a", 0]])
     );
 
     // 2 × 10 from the opening layer + 1 × 15 from the receipt.
     expect(result.movements).toEqual([
       { costLedgerId: "ship-1", newCost: 35, delta: 2 }
     ]);
-    expect(result.remainingByLayer.get("opening")).toBe(0);
-    expect(result.remainingByLayer.get("receipt")).toBe(4);
+    expect(result.remainingById.get("opening")).toBe(0);
+    expect(result.remainingById.get("receipt")).toBe(4);
   });
 
-  const layers = [
-    {
-      key: "opening",
-      itemId: "item-a",
-      postingDate: "2026-10-01",
-      quantity: 2,
-      cost: 20,
-      remainingQuantity: 2
-    },
-    {
-      key: "receipt",
-      itemId: "item-a",
-      postingDate: "2026-10-05",
-      quantity: 5,
-      cost: 75,
-      remainingQuantity: 5
-    }
-  ];
-
-  it("never takes a layer dated after the movement", () => {
+  it("never takes a layer posted after the movement", () => {
     const result = recostOutbound(
-      layers,
-      [
-        {
-          costLedgerId: "ship-1",
-          itemId: "item-a",
-          postingDate: "2026-10-03",
-          quantity: 3,
-          cost: 30
-        }
-      ],
+      [layer("opening", 2, 20), ship("ship-1", 3, 30), layer("receipt", 5, 75)],
+      fifo,
       new Map([["item-a", 11]])
     );
 
     // 2 × 10 from the opening layer + 1 × 11 at the fallback: the receipt
-    // on the 5th was not in stock on the 3rd.
+    // posted after the shipment was not in stock for it.
     expect(result.movements).toEqual([
       { costLedgerId: "ship-1", newCost: 31, delta: 1 }
     ]);
-    expect(result.remainingByLayer.get("receipt")).toBe(5);
+    expect(result.remainingById.get("receipt")).toBe(5);
   });
 
   it("takes the newest layer first for a LIFO item", () => {
     const result = recostOutbound(
-      layers,
-      [
-        {
-          costLedgerId: "ship-1",
-          itemId: "item-a",
-          postingDate: "2026-10-06",
-          quantity: 3,
-          cost: 30
-        }
-      ],
-      new Map(),
-      new Map([["item-a", "LIFO"]])
+      [layer("opening", 2, 20), layer("receipt", 5, 75), ship("ship-1", 3, 30)],
+      new Map([["item-a", "LIFO" as const]]),
+      new Map([["item-a", 0]])
     );
 
     expect(result.movements).toEqual([
       { costLedgerId: "ship-1", newCost: 45, delta: 15 }
     ]);
-    expect(result.remainingByLayer.get("opening")).toBe(2);
-    expect(result.remainingByLayer.get("receipt")).toBe(2);
+    expect(result.remainingById.get("opening")).toBe(2);
+    expect(result.remainingById.get("receipt")).toBe(2);
+  });
+
+  it("costs a layer's units with its invoice write-up, replayed from its full quantity", () => {
+    // 5 at 15 after the cutover, written up by 1 on each of its 5 units.
+    const result = recostOutbound(
+      [
+        layer("receipt", 5, 75, [
+          { id: "write-up", quantity: 5, cost: 5, remainingQuantity: 5 }
+        ]),
+        ship("ship-1", 2, 30),
+        ship("ship-2", 2, 30)
+      ],
+      fifo,
+      new Map([["item-a", 0]])
+    );
+
+    expect(result.movements).toEqual([
+      { costLedgerId: "ship-1", newCost: 32, delta: 2 },
+      { costLedgerId: "ship-2", newCost: 32, delta: 2 }
+    ]);
+    expect(result.remainingById.get("receipt")).toBe(1);
+    expect(result.remainingById.get("write-up")).toBe(1);
+  });
+
+  it("relieves a serial unit from its own layer", () => {
+    const result = recostOutbound(
+      [
+        layer("opening", 2, 20),
+        {
+          layer: {
+            id: "unit-layer",
+            itemId: "item-a",
+            quantity: 1,
+            cost: 60,
+            remainingQuantity: 1,
+            trackedEntityId: "unit-1",
+            children: []
+          }
+        },
+        {
+          outbound: {
+            costLedgerId: "ship-1",
+            itemId: "item-a",
+            quantity: 1,
+            cost: 10,
+            trackedEntityIds: ["unit-1"]
+          }
+        }
+      ],
+      fifo,
+      new Map([["item-a", 0]])
+    );
+
+    expect(result.movements).toEqual([
+      { costLedgerId: "ship-1", newCost: 60, delta: 50 }
+    ]);
+    expect(result.remainingById.get("opening")).toBe(2);
+    expect(result.remainingById.get("unit-layer")).toBe(0);
   });
 });
 

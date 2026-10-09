@@ -186,61 +186,58 @@ const recostSerialUnit = defineServerFn({
         ])
         .execute();
 
-      let journalId: string | null = null;
-      {
-        const inventoryAccount = resolveInventoryAccount(
-          item.replenishmentSystem,
-          accounting.accountDefaults
-        );
-        journalId = await createAdjustmentJournal(trx, {
-          companyId,
-          accountingPeriodId: accounting.accountingPeriodId,
-          status: postingStatus,
-          description: `Recost ${item.readableId} ${serial}`,
-          postingDate: input.postingDate,
-          userId,
-          sourceType: "Inventory Adjustment"
-        });
-        const journalLineReference = nanoid();
-        const lines = await trx
-          .insertInto("journalLine")
-          .values(
-            buildOffsetLines({
-              amount: delta,
-              accountId: inventoryAccount.account,
-              description: inventoryAccount.description,
-              offsetAccountId: accounting.offsetAccount.id,
-              offsetDescription: "Inventory Recost",
-              offsetAccountType: accounting.offsetAccount.type,
-              label: "Inventory recost journal"
-            }).map((line) => ({
-              journalId: journalId as string,
-              accountId: line.accountId,
-              description: line.description,
-              amount: line.amount,
-              quantity: 1,
-              documentType: "Inventory Adjustment" as const,
-              documentId: entity.id,
-              journalLineReference,
-              companyId
-            }))
-          )
-          .returning(["id"])
+      const inventoryAccount = resolveInventoryAccount(
+        item.replenishmentSystem,
+        accounting.accountDefaults
+      );
+      const journalId = await createAdjustmentJournal(trx, {
+        companyId,
+        accountingPeriodId: accounting.accountingPeriodId,
+        status: postingStatus,
+        description: `Recost ${item.readableId} ${serial}`,
+        postingDate: input.postingDate,
+        userId,
+        sourceType: "Inventory Adjustment"
+      });
+      const journalLineReference = nanoid();
+      const lines = await trx
+        .insertInto("journalLine")
+        .values(
+          buildOffsetLines({
+            amount: delta,
+            accountId: inventoryAccount.account,
+            description: inventoryAccount.description,
+            offsetAccountId: accounting.offsetAccount.id,
+            offsetDescription: "Inventory Recost",
+            offsetAccountType: accounting.offsetAccount.type,
+            label: "Inventory recost journal"
+          }).map((line) => ({
+            journalId,
+            accountId: line.accountId,
+            description: line.description,
+            amount: line.amount,
+            quantity: 1,
+            documentType: "Inventory Adjustment" as const,
+            documentId: entity.id,
+            journalLineReference,
+            companyId
+          }))
+        )
+        .returning(["id"])
+        .execute();
+      const dimensions = buildJournalLineDimensions({
+        journalLineIds: lines.map((line) => line.id),
+        dimensions: accounting.dimensions,
+        itemId,
+        itemPostingGroupId: itemCost.itemPostingGroupId,
+        locationId,
+        companyId
+      });
+      if (dimensions.length > 0) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(dimensions)
           .execute();
-        const dimensions = buildJournalLineDimensions({
-          journalLineIds: lines.map((line) => line.id),
-          dimensions: accounting.dimensions,
-          itemId,
-          itemPostingGroupId: itemCost.itemPostingGroupId,
-          locationId,
-          companyId
-        });
-        if (dimensions.length > 0) {
-          await trx
-            .insertInto("journalLineDimension")
-            .values(dimensions)
-            .execute();
-        }
       }
 
       return { previousCost, unitCost, journalId };

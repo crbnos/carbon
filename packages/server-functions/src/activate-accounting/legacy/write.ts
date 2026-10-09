@@ -9,9 +9,10 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
+import { toJson } from "@carbon/database/json";
 import { getNextSequences } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { datetime, formatPeriodLabel } from "@carbon/utils";
+import { chunkArray, datetime, formatPeriodLabel } from "@carbon/utils";
 import { sql } from "kysely";
 import { InvalidInputError } from "../../errors";
 
@@ -47,31 +48,13 @@ export type LegacyDocumentJournal = LegacyJournal & {
   payableAccountId?: string;
 };
 
+/** A rebuilt movement journal. `fromStoredCost` is true when it is built
+ *  from a cost row the posting stored, not one the enable wrote: see
+ *  `keepOutOfProviderSync`. */
+export type LegacyMovementJournal = LegacyJournal & { fromStoredCost: boolean };
+
 /** Rows per statement, well inside Postgres's 65,535 bind parameters. */
-const CHUNK_SIZE = 1000;
-
-export function chunks<T>(rows: T[]): T[][] {
-  const result: T[][] = [];
-  for (let start = 0; start < rows.length; start += CHUNK_SIZE) {
-    result.push(rows.slice(start, start + CHUNK_SIZE));
-  }
-  return result;
-}
-
-/** The rows by key, each list in the order given. */
-export function groupBy<T>(
-  rows: T[],
-  key: (row: T) => string
-): Map<string, T[]> {
-  const map = new Map<string, T[]>();
-  for (const row of rows) {
-    const k = key(row);
-    const list = map.get(k);
-    if (list) list.push(row);
-    else map.set(k, [row]);
-  }
-  return map;
-}
+export const ROWS_PER_STATEMENT = 1000;
 
 /** Runs `read` once per chunk of the distinct ids and concatenates the rows. */
 export async function readByIds<T>(
@@ -82,8 +65,17 @@ export async function readByIds<T>(
     ...new Set([...ids].filter((id): id is string => Boolean(id)))
   ];
   const rows: T[] = [];
-  for (const chunk of chunks(unique)) rows.push(...(await read(chunk)));
+  for (const chunk of chunkArray(unique, ROWS_PER_STATEMENT)) {
+    rows.push(...(await read(chunk)));
+  }
   return rows;
+}
+
+/** A received or shipped quantity as the posting reads it: null and NaN are
+ *  0. */
+export function postedQuantity(value: number | null): number {
+  const quantity = Number(value ?? 0);
+  return Number.isNaN(quantity) ? 0 : quantity;
 }
 
 /** Items by id, with what the movement journals read. */
@@ -214,8 +206,9 @@ export async function insertProvisionalJournals(
   );
   const postedAt = datetime.timestamp();
   const journalIdByEntry = new Map<string, string>();
-  for (const rows of chunks(
-    writable.map((journal, index) => ({ journal, entryId: entryIds[index]! }))
+  for (const rows of chunkArray(
+    writable.map((journal, index) => ({ journal, entryId: entryIds[index]! })),
+    ROWS_PER_STATEMENT
   )) {
     const inserted = await trx
       .insertInto("journal")
@@ -259,7 +252,7 @@ export async function insertProvisionalJournals(
       })
     );
   });
-  for (const rows of chunks(lines)) {
+  for (const rows of chunkArray(lines, ROWS_PER_STATEMENT)) {
     // Returned in insert order, as every posting reads them back.
     const inserted = await trx
       .insertInto("journalLine")
@@ -285,7 +278,10 @@ export async function insertProvisionalJournals(
         companyId
       }));
     });
-    for (const dimensionRows of chunks(dimensionInserts)) {
+    for (const dimensionRows of chunkArray(
+      dimensionInserts,
+      ROWS_PER_STATEMENT
+    )) {
       await trx
         .insertInto("journalLineDimension")
         .values(dimensionRows)
@@ -330,7 +326,7 @@ export async function attachJournalIds(
 ): Promise<void> {
   const attached = rows.filter((row) => row.journalId !== null);
   const updatedAt = datetime.timestamp();
-  for (const chunk of chunks(attached)) {
+  for (const chunk of chunkArray(attached, ROWS_PER_STATEMENT)) {
     const values = sql`jsonb_to_recordset(${JSON.stringify(chunk)}::jsonb)
       AS v("id" text, "journalId" text, "payableAccountId" text)`;
     if (table === "reimbursement") {
@@ -347,5 +343,72 @@ export async function attachJournalIds(
         FROM ${values}
         WHERE d."id" = v."id" AND d."companyId" = ${companyId}`.execute(trx);
     }
+  }
+}
+
+export const CUTOVER_REBUILT_SYNC_CODE = "CUTOVER_REBUILT";
+
+/**
+ * Records an Excluded `journalEntry` sync operation for each journal and
+ * each accounting integration of the company, active or not. The reconciler
+ * (events and the outbound sweep) and the journal backfill skip a journal
+ * that has any operation, so none of them pushes it; the period close counts
+ * Excluded as settled. Re-send in Sync Activity still pushes one on purpose.
+ *
+ * For a journal written again of a document that had one before the reset:
+ * the reset deleted the journal and its sync records, not the provider's copy,
+ * so pushing it again would post it twice there. That is every run journal
+ * (a run always wrote one), and every movement journal built from a cost row
+ * the posting stored (`LegacyMovementJournal.fromStoredCost`): a sales
+ * shipment or a job movement stored it only with accounting on, and the
+ * other movements store it in every company state, so the row cannot tell
+ * and the journal is kept out rather than risk a second post. A movement
+ * journal built on a row the enable wrote (`writeLegacyMovementCosts`) is of
+ * a document posted with accounting off: it never had a journal, the
+ * provider holds nothing for it, and it syncs like any posting.
+ */
+export async function keepOutOfProviderSync(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    journals
+  }: {
+    companyId: string;
+    userId: string;
+    journals: { id: string; sourceType: Enums["journalEntrySourceType"] }[];
+  }
+) {
+  if (journals.length === 0) return;
+  // The accounting providers, by the role the integration declares.
+  const integrations = await trx
+    .selectFrom("companyIntegration")
+    .innerJoin("integration", "integration.id", "companyIntegration.id")
+    .select("companyIntegration.id")
+    .where("companyIntegration.companyId", "=", companyId)
+    .where("integration.providerRole", "=", "accounting")
+    .execute();
+  if (integrations.length === 0) return;
+  const completedAt = datetime.timestamp();
+  const rows = integrations.flatMap((integration) =>
+    journals.map((journal) => ({
+      companyId,
+      integration: integration.id,
+      entityType: "journalEntry",
+      entityId: journal.id,
+      direction: "push-to-accounting",
+      trigger: "posting",
+      status: "Excluded" as const,
+      idempotencyKey: `journalEntry:${journal.id}:push-to-accounting:cutover-rebuilt`,
+      errorCode: CUTOVER_REBUILT_SYNC_CODE,
+      errorMessage:
+        "Written again when accounting was set up; the original may already be in the accounting system",
+      metadata: toJson({ sourceType: journal.sourceType }),
+      completedAt,
+      createdBy: userId
+    }))
+  );
+  for (const chunk of chunkArray(rows, ROWS_PER_STATEMENT)) {
+    await trx.insertInto("accountingSyncOperation").values(chunk).execute();
   }
 }

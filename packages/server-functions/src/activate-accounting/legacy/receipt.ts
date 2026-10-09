@@ -7,18 +7,19 @@
 // defaults (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
 // Mirrors post-receipt/index.ts:
-// - a purchase order receipt (~1641-1985, header ~2432-2550): per receipt
-//   line, inventory (indirect cost for a Non-Inventory item, WIP for outside
-//   processing) against GR/IR, on `receipt:<poLineId>` with the received
+// - a purchase order receipt: per receipt line, inventory (indirect cost for
+//   a Non-Inventory item, WIP for outside processing) against GR/IR, on
+//   `receipt:<poLineId>` with the received
 //   quantity, which the purchase invoice's GR/IR walk reads. A negative line
 //   reverses the pair. A line that stored cost rows books what they stored;
 //   one that stored none (Non-Inventory, outside processing) books its PO
 //   cost with its share of the order's shipping, as the posting costs it.
 //   A fixed asset line has no receipt line and no cost row, and is not
 //   rebuilt: the asset register and the opening fixed asset lines carry it;
-// - a sales return receipt (~2826-3075, header ~3165-3210): inventory
-//   against COGS at the cost its cost row stored, per receipt line with a
-//   positive cost.
+// - a sales return receipt: inventory against COGS at the cost its cost row
+//   stored, per receipt line with a positive cost. The detection leaves out
+//   a return with none (`legacyReceipts`), as the posting books no
+//   zero-value re-entry.
 //
 // Cost rows are stored per receipt line but carry no line id. The rows of
 // one item and sign are shared across that item's lines: by PO cost for a
@@ -38,9 +39,9 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import {
-  groupBy,
-  type LegacyJournal,
   type LegacyJournalLine,
+  type LegacyMovementJournal,
+  postedQuantity,
   readByIds,
   readItems,
   readPostingGroups
@@ -52,12 +53,6 @@ type Args = {
   cutoverDate: string;
   defaults: AccountDefaults;
 };
-
-/** A received quantity as the posting reads it: NaN and null are 0. */
-function receivedQuantity(value: number | null): number {
-  const quantity = Number(value ?? 0);
-  return Number.isNaN(quantity) ? 0 : quantity;
-}
 
 /** Shares `total` across the weights; equal weights when they sum to 0. */
 function share(total: number, weights: number[]): number[] {
@@ -146,7 +141,7 @@ function storedCosts(
 export async function buildLegacyPurchaseReceiptJournals(
   trx: KyselyTx,
   { companyId, cutoverDate, defaults }: Args
-): Promise<LegacyJournal[]> {
+): Promise<LegacyMovementJournal[]> {
   const receipts = await legacyReceipts(
     trx,
     { companyId, cutoverDate },
@@ -234,7 +229,7 @@ export async function buildLegacyPurchaseReceiptJournals(
   const processByOperation = new Map(
     jobOperations.map((row) => [row.id, row.processId])
   );
-  const linesByReceipt = groupBy(lines, (line) => line.receiptId);
+  const linesByReceipt = Map.groupBy(lines, (line) => line.receiptId);
 
   return receipts.map((receipt) => {
     const order = receipt.sourceDocumentId
@@ -251,14 +246,14 @@ export async function buildLegacyPurchaseReceiptJournals(
     const totalLinesCost = receiptLineRows.reduce(
       (sum, line) =>
         sum +
-        Math.abs(receivedQuantity(line.receivedQuantity)) *
+        Math.abs(postedQuantity(line.receivedQuantity)) *
           Number(line.unitPrice ?? 0),
       0
     );
     // The PO cost of a line: price × quantity and its share of shipping.
     const poCost = (line: (typeof receiptLineRows)[number]) => {
       const lineCost =
-        Math.abs(receivedQuantity(line.receivedQuantity)) *
+        Math.abs(postedQuantity(line.receivedQuantity)) *
         Number(line.unitPrice ?? 0);
       const percentage = totalLinesCost === 0 ? 0 : lineCost / totalLinesCost;
       return lineCost + shippingCost * percentage;
@@ -271,20 +266,20 @@ export async function buildLegacyPurchaseReceiptJournals(
         trackingType !== "Non-Inventory" &&
         !isOutsideProcessing &&
         Boolean(line.itemId) &&
-        receivedQuantity(line.receivedQuantity) !== 0
+        postedQuantity(line.receivedQuantity) !== 0
       );
     };
 
     // The cost each layer line stored, shared across its item and sign.
     const costByLine = new Map<string, number>();
-    const layerGroups = groupBy(
+    const layerGroups = Map.groupBy(
       receiptLineRows.filter(createsLayers),
       (line) =>
-        `${line.itemId}:${receivedQuantity(line.receivedQuantity) > 0 ? "in" : "out"}`
+        `${line.itemId}:${postedQuantity(line.receivedQuantity) > 0 ? "in" : "out"}`
     );
     for (const group of layerGroups.values()) {
       const first = group[0]!;
-      const inbound = receivedQuantity(first.receivedQuantity) > 0;
+      const inbound = postedQuantity(first.receivedQuantity) > 0;
       const rows = stored.get(`${receipt.id}:${first.itemId}`);
       // The posting stores the cost it relieved, its PO cost fallback
       // included; a line with no stored row books its PO cost.
@@ -301,7 +296,7 @@ export async function buildLegacyPurchaseReceiptJournals(
 
     const journalLines: LegacyJournalLine[] = [];
     for (const line of receiptLineRows) {
-      const quantity = receivedQuantity(line.receivedQuantity);
+      const quantity = postedQuantity(line.receivedQuantity);
       const absQuantity = Math.abs(quantity);
       if (absQuantity <= 0) continue;
       const item = line.itemId ? itemById.get(line.itemId) : undefined;
@@ -384,7 +379,8 @@ export async function buildLegacyPurchaseReceiptJournals(
       description: `Purchase Receipt ${receipt.receiptId}`,
       postingDate: String(receipt.postingDate),
       sourceType: "Purchase Receipt" as const,
-      lines: journalLines
+      lines: journalLines,
+      fromStoredCost: true
     };
   });
 }
@@ -392,7 +388,7 @@ export async function buildLegacyPurchaseReceiptJournals(
 export async function buildLegacySalesReturnReceiptJournals(
   trx: KyselyTx,
   { companyId, cutoverDate, defaults }: Args
-): Promise<LegacyJournal[]> {
+): Promise<LegacyMovementJournal[]> {
   const receipts = await legacyReceipts(
     trx,
     { companyId, cutoverDate },
@@ -438,7 +434,7 @@ export async function buildLegacySalesReturnReceiptJournals(
   const customerTypeById = new Map(
     customers.map((row) => [row.id, row.customerTypeId])
   );
-  const linesByReceipt = groupBy(lines, (line) => line.receiptId);
+  const linesByReceipt = Map.groupBy(lines, (line) => line.receiptId);
 
   return receipts.map((receipt) => {
     const customerId = receipt.sourceDocumentId
@@ -450,19 +446,19 @@ export async function buildLegacySalesReturnReceiptJournals(
       (line) =>
         line.itemId &&
         line.lineId &&
-        receivedQuantity(line.receivedQuantity) > 0 &&
+        postedQuantity(line.receivedQuantity) > 0 &&
         (itemById.get(line.itemId)?.itemTrackingType ?? "Inventory") !==
           "Non-Inventory"
     );
     const costByLine = new Map<string, number>();
-    for (const group of groupBy(layerLines, (line) =>
+    for (const group of Map.groupBy(layerLines, (line) =>
       String(line.itemId)
     ).values()) {
       const total =
         stored.get(`${receipt.id}:${group[0]!.itemId}`)?.inbound ?? 0;
       const shares = share(
         total,
-        group.map((line) => receivedQuantity(line.receivedQuantity))
+        group.map((line) => postedQuantity(line.receivedQuantity))
       );
       for (const [index, line] of group.entries()) {
         costByLine.set(line.id, shares[index]!);
@@ -474,7 +470,7 @@ export async function buildLegacySalesReturnReceiptJournals(
       const cost = costByLine.get(line.id) ?? 0;
       // A zero-value re-entry posts no journal.
       if (!(cost > 0)) continue;
-      const quantity = receivedQuantity(line.receivedQuantity);
+      const quantity = postedQuantity(line.receivedQuantity);
       const itemId = line.itemId as string;
       const inventory = resolveInventoryAccount(
         itemById.get(itemId)?.replenishmentSystem ?? null,
@@ -519,7 +515,8 @@ export async function buildLegacySalesReturnReceiptJournals(
       description: `Sales Return Receipt ${receipt.receiptId}`,
       postingDate: String(receipt.postingDate),
       sourceType: "Sales Return Receipt" as const,
-      lines: journalLines
+      lines: journalLines,
+      fromStoredCost: true
     };
   });
 }

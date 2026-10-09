@@ -9,6 +9,7 @@ import { type AccountClass, isAccountClass } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
+import { costCenterAndProjectDimensions } from "../lib/cost-center-project-dimensions";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { buildChargeJournal } from "./build-charge-journal";
 import { allocateJournalLineIds } from "./journal-line-ids";
@@ -43,7 +44,7 @@ export type ChargeContext = {
 
 export async function postChargeJournal(
   context: ChargeContext
-): Promise<{ journalId: string | null }> {
+): Promise<{ journalId: string }> {
   const { trx, charge, company, postingStatus, companyId, userId, timestamp } =
     context;
   // The parent lock serializes line writes. Locking line tuples too would
@@ -139,7 +140,6 @@ export async function postChargeJournal(
   }
 
   let postingDate = charge.postingDate ?? charge.transactionDate;
-  let journalId: string | null = null;
   // A Provisional journal has no accounting period, and no posting creates a
   // period before the cutover.
   let accountingPeriodId: string | null = null;
@@ -173,35 +173,13 @@ export async function postChargeJournal(
     documentId: charge.id,
     documentReadableId: charge.chargeId
   });
-  const dimensions = costCenterIds.length
-    ? await trx
-        .selectFrom("dimension")
-        .select("id")
-        .where("companyGroupId", "=", company.companyGroupId)
-        .where("active", "=", true)
-        .where("entityType", "=", "CostCenter")
-        .orderBy("createdAt")
-        .orderBy("id")
-        .limit(1)
-        .execute()
-    : [];
-  const costCenterDimensionId = dimensions[0]?.id ?? null;
+  const { costCenter: costCenterDimensionId, project: projectDimensionId } =
+    costCenterIds.length || projectIds.length
+      ? await costCenterAndProjectDimensions(trx, company.companyGroupId)
+      : { costCenter: null, project: null };
   if (costCenterIds.length && !costCenterDimensionId) {
     throw new Error("Company group has no active Cost Center dimension");
   }
-  const projectDimensions = projectIds.length
-    ? await trx
-        .selectFrom("dimension")
-        .select("id")
-        .where("companyGroupId", "=", company.companyGroupId)
-        .where("active", "=", true)
-        .where("entityType", "=", "Project")
-        .orderBy("createdAt")
-        .orderBy("id")
-        .limit(1)
-        .execute()
-    : [];
-  const projectDimensionId = projectDimensions[0]?.id ?? null;
   if (projectIds.length && !projectDimensionId) {
     throw new Error("Company group has no active Project dimension");
   }
@@ -222,8 +200,7 @@ export async function postChargeJournal(
     })
     .returning("id")
     .executeTakeFirstOrThrow();
-  const createdJournalId = journal.id;
-  journalId = createdJournalId;
+  const journalId = journal.id;
   const journalLineReference = nanoid();
   const journalLineIds = await allocateJournalLineIds(
     trx,
@@ -234,7 +211,7 @@ export async function postChargeJournal(
     .values(
       built.journalLines.map((line, index) => ({
         id: journalLineIds[index],
-        journalId: createdJournalId,
+        journalId,
         accountId: line.accountId,
         amount: line.amount,
         quantity: 1,

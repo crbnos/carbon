@@ -520,7 +520,7 @@ async function withAccounting(
 ) {
   await f.db
     .updateTable("companySettings")
-    .set({ accountingEnabled: true, accountingCutoverDate: "2000-01-01" })
+    .set({ accountingCutoverDate: "2000-01-01" })
     .where("id", "=", f.companyId)
     .execute();
   return { retainedEarnings: c.retainedEarnings };

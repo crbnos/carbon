@@ -107,12 +107,10 @@ export async function paymentFixture() {
       // can still change the cutover (the one-way lock keys on it).
       .values({
         id: companyId,
-        accountingEnabled: true,
         accountingCutoverDate: "2000-01-01"
       })
       .onConflict((oc) =>
         oc.column("id").doUpdateSet({
-          accountingEnabled: true,
           accountingCutoverDate: "2000-01-01"
         })
       )

@@ -24,8 +24,11 @@ export {
   updateCutoverAccumulatedDepreciation
 } from "./accounting-cutover/fixed-assets";
 export {
+  type CutoverInventoryAccountValue,
   type CutoverInventoryItem,
-  getCutoverInventory
+  type CutoverInventoryValuedItem,
+  getCutoverInventory,
+  getCutoverInventoryValuation
 } from "./accounting-cutover/inventory";
 export { getLegacyDocumentCounts } from "./accounting-cutover/legacy-counts";
 export { getCutoverOpenItems } from "./accounting-cutover/open-items";

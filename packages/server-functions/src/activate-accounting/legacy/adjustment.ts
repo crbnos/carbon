@@ -3,34 +3,35 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The journals of legacy movements booked through the adjustment core
-// (`bookAdjustment` / `valueMovement`, lib/post-adjustment.ts ~326-487): one
-// pair per cost row, inventory against the offset the posting used, at the
-// cost the row stored (.ai/specs/implemented/2026-10-08-accounting-cutover.md section
+// (`bookAdjustment` / `valueMovement`, lib/post-adjustment.ts): one pair per
+// cost row, inventory against the offset the posting used, at the cost the
+// row stored, zero included for an outbound row, so the enable's re-cost
+// finds it (.ai/specs/implemented/2026-10-08-accounting-cutover.md section
 // 5a). The pair is `buildAdjustmentJournalLines`, so the document type,
 // sides and descriptions are the core's own.
 //
 // Per family, as each posting calls the core:
-// - a manual adjustment (post-inventory-adjustment ~293-306): one journal per
+// - a manual adjustment (post-inventory-adjustment): one journal per
 //   movement, "Inventory Adjustment[ — comment]", the variance account;
-// - the CSV stock import (import-csv/stock-quantity-import.ts ~290-310,
-//   ~480-545): one journal per file, "Inventory Adjustment — CSV import".
-//   A file is the movements one transaction wrote, found by their shared
+// - the CSV stock import (import-csv/stock-quantity-import.ts,
+//   `importStockQuantities`): one journal per file, "Inventory Adjustment —
+//   CSV import". A file is the movements one transaction wrote, found by their shared
 //   `createdAt`; a file of one row reads as a manual adjustment;
-// - scrap and unscrap (post-inventory-adjustment ~419-447): "Scrap[ —
-//   comment]" or "Unscrap[ — comment]", the scrap account, with the
-//   ScrapReason and Employee dimensions. A scrap from a job (issue
-//   ~3495-3537) is "Scrap — <item>" on the job; its WorkCenter dimension
+// - scrap and unscrap (post-inventory-adjustment): "Scrap[ — comment]" or
+//   "Unscrap[ — comment]", the scrap account, with the ScrapReason and
+//   Employee dimensions. A scrap from a job (`issue`, `scrapTrackedEntity`) is
+//   "Scrap — <item>" on the job; its WorkCenter dimension
 //   (the material's operation) is not stored on the movement and is left off;
-// - an inventory count (post-inventory-count ~216-258): one journal per count,
+// - an inventory count (post-inventory-count): one journal per count,
 //   "Inventory Count <id>", the variance account;
-// - a non-conformance disposition or inspection reject (post-nonconformance
-//   ~226-327, called from quality-disposition.server.ts and
+// - a non-conformance disposition or inspection reject (post-nonconformance,
+//   called from quality-disposition.server.ts and
 //   inspection+/$id.reject.tsx): one journal per call, "NC <id> disposition"
 //   or "Inbound inspection lot rejected", the scrap account as "Scrap / Cost
 //   of Quality", sourceType the document type;
-// - maintenance parts (issue ~1180-1330): one journal per call, "Maintenance
-//   Consumption <id>", the maintenance account, with the WorkCenter
-//   dimension of the dispatch.
+// - maintenance parts (`issue`, `valueMaintenanceMovements`): one journal
+//   per call, "Maintenance Consumption <id>", the maintenance account, with
+//   the WorkCenter dimension of the dispatch.
 // A scrap offset before the cutover is a stand-in line when the scrap
 // account is empty, as `resolveDefaultAccount` makes it; the enable
 // re-points it.
@@ -53,9 +54,8 @@ import { nanoid } from "nanoid";
 import { buildAdjustmentJournalLines } from "../../lib/plan-adjustment";
 import {
   type DimensionEntityType,
-  groupBy,
-  type LegacyJournal,
   type LegacyJournalLine,
+  type LegacyMovementJournal,
   readByIds,
   readItems,
   readPostingGroups
@@ -64,10 +64,10 @@ import {
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 
 export type LegacyAdjustmentJournals = {
-  inventoryAdjustments: LegacyJournal[];
-  inventoryCounts: LegacyJournal[];
-  nonConformances: LegacyJournal[];
-  maintenanceConsumptions: LegacyJournal[];
+  inventoryAdjustments: LegacyMovementJournal[];
+  inventoryCounts: LegacyMovementJournal[];
+  nonConformances: LegacyMovementJournal[];
+  maintenanceConsumptions: LegacyMovementJournal[];
 };
 
 type Offset = {
@@ -134,7 +134,7 @@ export async function buildLegacyAdjustmentJournals(
   );
   const ownLedgerById = new Map(ownLedgers.map((row) => [row.id, row]));
   const ownLedger = (row: (typeof rows)[number]) => {
-    const ledger = ownLedgerById.get(row.documentId as string);
+    const ledger = ownLedgerById.get(row.documentId);
     return ledger && ledger.documentType === row.documentType
       ? ledger
       : undefined;
@@ -173,10 +173,7 @@ export async function buildLegacyAdjustmentJournals(
     quantity: number;
   }) =>
     `${row.documentType}|${row.documentId}|${row.itemId}|${row.createdAt}|${sign(Number(row.quantity))}`;
-  const ledgerQueues = groupBy<(typeof documentLedgers)[number]>(
-    documentLedgers,
-    pairKey
-  );
+  const ledgerQueues = Map.groupBy(documentLedgers, (row) => pairKey(row));
   const pairedLedger = new Map<string, (typeof documentLedgers)[number]>();
   for (const row of documentRows) {
     const next = ledgerQueues.get(pairKey(row))?.shift();
@@ -269,11 +266,10 @@ export async function buildLegacyAdjustmentJournals(
 
   const groups = new Map<
     string,
-    { family: keyof LegacyAdjustmentJournals; journal: LegacyJournal }
+    { family: keyof LegacyAdjustmentJournals; journal: LegacyMovementJournal }
   >();
   for (const row of rows) {
-    const itemId = row.itemId as string;
-    const documentId = row.documentId as string;
+    const { itemId, documentId } = row;
     const quantity = Number(row.quantity);
     const own = ownLedger(row);
     const ledger = own ?? pairedLedger.get(row.id);
@@ -282,7 +278,8 @@ export async function buildLegacyAdjustmentJournals(
     // counts and these journals agree.
     const family: keyof LegacyAdjustmentJournals = row.family;
     let description: string;
-    let sourceType: LegacyJournal["sourceType"] = "Inventory Adjustment";
+    let sourceType: LegacyMovementJournal["sourceType"] =
+      "Inventory Adjustment";
     let offset = variance;
     let locationId = ledger?.locationId ?? null;
     let extra: Partial<Record<DimensionEntityType, string | null>> = {};
@@ -392,7 +389,9 @@ export async function buildLegacyAdjustmentJournals(
           description,
           postingDate: String(row.postingDate),
           sourceType,
-          lines
+          lines,
+          // Every posting through the core stores its cost row.
+          fromStoredCost: true
         }
       });
     }

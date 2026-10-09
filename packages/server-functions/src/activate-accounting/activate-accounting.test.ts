@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The accounting enable against the live database. A company with no cutover
-// receives stock and invoices a customer before the cutover date, ships and
-// scraps after it, enters a trial balance that ties, and enables. The
+// receives stock and invoices a customer before the cutover date, ships,
+// scraps and invoices shipping with no shipping revenue default after it,
+// enters a trial balance that ties, and enables. The
 // Provisional ledger then splits at the cutover: Superseded before it, Posted
 // in a period after it, with one Posted opening journal between them.
 
@@ -12,14 +13,17 @@ import {
   getCutoverInventory,
   saveOpeningTrialBalance
 } from "@carbon/database/accounting-cutover-reads";
+import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
 import postInventoryAdjustment from "../post-inventory-adjustment";
 import postPayment from "../post-payment";
+import postSalesInvoice from "../post-sales-invoice";
 import activateAccounting from ".";
 import {
   activationFixture,
   debitOf,
+  type Fixture,
   glBalance,
   moveBeforeCutover,
   pay,
@@ -65,9 +69,20 @@ databaseTest(
           scrapReasonId: scrapReason.id
         })
       );
+      // And invoice 15 of shipping while the shipping revenue default is
+      // empty: the shipping line stands in on retained earnings.
       await f.db
         .updateTable("accountDefault")
-        .set({ scrapAccount: f.account("scrap") })
+        .set({ salesShippingRevenueAccount: null })
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await postShippingInvoice(f);
+      await f.db
+        .updateTable("accountDefault")
+        .set({
+          scrapAccount: f.account("scrap"),
+          salesShippingRevenueAccount: f.account("shipping-revenue")
+        })
         .where("companyId", "=", f.companyId)
         .execute();
 
@@ -180,10 +195,14 @@ databaseTest(
       );
       expect(imbalance).toBeCloseTo(0, 6);
       expect(await glBalance(f, "migration-clearing")).toBeCloseTo(0, 6);
-      expect(await glBalance(f, "receivables")).toBeCloseTo(60, 6);
+      // 60 open at the cutover, and the shipping invoice after it.
+      expect(await glBalance(f, "receivables")).toBeCloseTo(175, 6);
       expect(await glBalance(f, "grni")).toBeCloseTo(100, 6);
 
-      // No Posted line is a stand-in: the scrap moved to the scrap account.
+      // No Posted line is a stand-in: the shipping moved to the shipping
+      // revenue account. An empty scrap default falls back to the variance
+      // account when the scrap posts (`DEFAULT_FALLBACKS`), so setting it
+      // afterwards moves nothing.
       const standIns = await f.db
         .selectFrom("journalLine as line")
         .innerJoin("journal", (join) =>
@@ -197,7 +216,8 @@ databaseTest(
         .where("line.accountDefaultRole", "is not", null)
         .execute();
       expect(standIns).toEqual([]);
-      expect(await glBalance(f, "scrap")).toBeCloseTo(unitCost, 6);
+      expect(await glBalance(f, "shipping-revenue")).toBeCloseTo(15, 6);
+      expect(await glBalance(f, "scrap")).toBeCloseTo(0, 6);
 
       // The shipment after the cutover costs 5 at the reset unit cost, in
       // its cost layer row and in its journals.
@@ -267,15 +287,15 @@ databaseTest(
         accountingActivatedBy: USER
       });
 
-      // A payment of the rest posts against the opening line, and the
-      // receivable nets to zero.
+      // A payment of the rest posts against the opening line, and leaves
+      // the shipping invoice open.
       unwrap(
         await postPayment(f.ctx, {
           type: "post",
           paymentId: await pay(f, { id: "pay-2", invoiceId, amount: 60 })
         })
       );
-      expect(await glBalance(f, "receivables")).toBeCloseTo(0, 6);
+      expect(await glBalance(f, "receivables")).toBeCloseTo(115, 6);
 
       // The enable is one-way.
       const again = await activateAccounting(f.ctx, {
@@ -288,3 +308,50 @@ databaseTest(
     }
   }
 );
+
+/** A posted sales invoice dated today: a service line of 100 and 15 of
+ *  header shipping. */
+async function postShippingInvoice(f: Fixture) {
+  const invoiceId = `${f.prefix}-shipping-invoice`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("salesInvoice")
+      .values({
+        id: invoiceId,
+        invoiceId: "INV-SHIP",
+        customerId: f.customerId,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        status: "Draft",
+        postingDate: f.today,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesInvoiceShipment")
+      .values({
+        id: invoiceId,
+        shippingCost: 15,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesInvoiceLine")
+      .values({
+        invoiceId,
+        invoiceLineType: "Service",
+        itemId: f.serviceId,
+        quantity: 1,
+        unitPrice: 100,
+        exchangeRate: 1,
+        unitOfMeasureCode: "EA",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  unwrap(await postSalesInvoice(f.ctx, { type: "post", invoiceId }));
+}

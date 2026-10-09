@@ -15,14 +15,13 @@
 //
 // Ported from apps/erp/app/modules/accounting/accounting.server.ts, which the
 // server function cannot import:
-// - `postDepreciationRun` (~819-1284): one journal per line with a book
-//   amount (~955-1042), and one deferred tax journal per run and month
-//   (~1091-1271), with today's tax settings;
-// - `postDisposal` (~283-457): the scrap journal;
-// - `postRevenueRecognitionRun` (~1328-1853): one journal per run and month,
-//   two lines per row, signed by account class (~1563-1750), and the journal
+// - `postDepreciationRun`: one journal per line with a book amount, and one
+//   deferred tax journal per run and month, with today's tax settings;
+// - `postDisposal`: the scrap journal;
+// - `postRevenueRecognitionRun`: one journal per run and month, two lines per
+//   row, signed by account class, and the journal
 //   columns of the run, the contract ledger entries and the lease schedule
-//   lines (~1752-1846).
+//   lines.
 // The ERP dates a month in a Closed period on the run's period end; there is
 // no period yet, so every journal takes its own month.
 //
@@ -41,7 +40,6 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
-import { toJson } from "@carbon/database/json";
 import {
   type LegacyDocumentCounts,
   legacyDepreciationRunLines,
@@ -51,7 +49,7 @@ import {
 } from "@carbon/database/legacy-documents";
 import {
   type AccountClass,
-  datetime,
+  chunkArray,
   equals,
   isAccountClass,
   round,
@@ -60,13 +58,14 @@ import {
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
+import { InvalidInputError } from "../../errors";
 import {
-  chunks,
   type DimensionEntityType,
-  groupBy,
   insertProvisionalJournals,
+  keepOutOfProviderSync,
   type LegacyJournal,
   type LegacyJournalLine,
+  ROWS_PER_STATEMENT,
   readByIds
 } from "./write";
 
@@ -133,7 +132,7 @@ function assetDimensions(row: {
 }
 
 /** One journal per line with a book amount and no journal, as
- *  `postDepreciationRun` writes it (accounting.server.ts ~955-1042). */
+ *  `postDepreciationRun` writes it (accounting.server.ts). */
 export function buildDepreciationJournals(
   lines: DepreciationRunLineRow[]
 ): Built<{ runId: string; lineIds: string[] }>[] {
@@ -171,7 +170,7 @@ export type DeferredTaxSettings = {
 
 /**
  * One deferred tax journal per run and month with no deferred tax journal,
- * as `postDepreciationRun` writes it (accounting.server.ts ~1091-1271), with
+ * as `postDepreciationRun` writes it (accounting.server.ts), with
  * today's settings. A month whose lines all have no tax amount was built
  * with tax depreciation off, so it had no deferred tax journal.
  */
@@ -181,7 +180,7 @@ export function buildDeferredTaxJournals(
 ): Built<{ runId: string; lineIds: string[] }>[] {
   if (!settings) return [];
   const { taxRate, dtlAccountId, dtExpenseAccountId } = settings;
-  const months = groupBy(
+  const months = Map.groupBy(
     lines.filter((row) => row.deferredTaxJournalId === null),
     (row) => `${row.depreciationRunId}|${row.monthEnd}`
   );
@@ -291,8 +290,8 @@ export type DisposalRow = {
   lossOnDisposalAccountId: string;
 };
 
-/** The scrap journal, as `postDisposal` writes it (accounting.server.ts
- *  ~325-427): proceeds are 0, so the whole net book value is a loss. */
+/** The scrap journal, as `postDisposal` writes it (accounting.server.ts):
+ *  proceeds are 0, so the whole net book value is a loss. */
 export function buildDisposalJournal(row: DisposalRow): LegacyJournal {
   const nbv = row.acquisitionCost - row.accumulatedDepreciation;
   const dimensions = assetDimensions(row);
@@ -388,7 +387,7 @@ export type RecognitionRow = {
 
 /**
  * One journal per run and month, two lines per row with an amount, as
- * `postRevenueRecognitionRun` writes it (accounting.server.ts ~1563-1742). A
+ * `postRevenueRecognitionRun` writes it (accounting.server.ts). A
  * negative row (a credit memo's deferral) reverses the legs.
  */
 export function buildRecognitionJournals(
@@ -400,7 +399,7 @@ export function buildRecognitionJournals(
   monthEnd: string;
   scheduleIds: string[];
 }>[] {
-  const groups = groupBy(
+  const groups = Map.groupBy(
     rows,
     (row) => `${row.runId}|${monthEndOf(row.scheduledDate)}`
   );
@@ -417,8 +416,8 @@ export function buildRecognitionJournals(
       const debitClass = classById.get(row.debitAccountId);
       const creditClass = classById.get(row.creditAccountId);
       if (!debitClass || !creditClass) {
-        throw new Error(
-          `Account ${debitClass ? row.creditAccountId : row.debitAccountId} on the revenue schedule has no class`
+        throw new InvalidInputError(
+          `Account ${debitClass ? row.creditAccountId : row.debitAccountId} on the revenue schedule has no class. Set its class in Accounting → Chart of Accounts.`
         );
       }
       const debitAmount =
@@ -466,8 +465,8 @@ export function buildRecognitionJournals(
 /**
  * Schedule rows a Posted run recognized on or after the cutover, with no
  * journal, and the source each row's journal lines reference: the invoice,
- * else the rental agreement, else the contract (accounting.server.ts
- * ~1461-1658).
+ * else the rental agreement, else the contract, as
+ * `postRevenueRecognitionRun` references them.
  */
 async function loadRecognitionRows(
   trx: KyselyTx,
@@ -652,7 +651,7 @@ async function setJournalColumn(
     rows: { id: string; journalId: string }[];
   }
 ) {
-  for (const chunk of chunks(rows)) {
+  for (const chunk of chunkArray(rows, ROWS_PER_STATEMENT)) {
     await sql`UPDATE ${sql.table(table)} AS t
       SET ${sql.ref(column)} = v."journalId"
       FROM jsonb_to_recordset(${JSON.stringify(chunk)}::jsonb)
@@ -660,61 +659,6 @@ async function setJournalColumn(
       WHERE t.${sql.ref(key)} = v."id"
         AND t."companyId" = ${companyId}
         AND t.${sql.ref(column)} IS NULL`.execute(trx);
-  }
-}
-
-export const CUTOVER_REBUILT_SYNC_CODE = "CUTOVER_REBUILT";
-
-/**
- * Records an Excluded `journalEntry` sync operation for each journal and
- * each accounting integration of the company, active or not. The reconciler
- * (events and the outbound sweep) and the journal backfill skip a journal
- * that has any operation, so none of them pushes it; the period close counts
- * Excluded as settled. Re-send in Sync Activity still pushes one on purpose.
- */
-export async function keepOutOfProviderSync(
-  trx: KyselyTx,
-  {
-    companyId,
-    userId,
-    journals
-  }: {
-    companyId: string;
-    userId: string;
-    journals: { id: string; sourceType: Enums["journalEntrySourceType"] }[];
-  }
-) {
-  if (journals.length === 0) return;
-  // The accounting providers, by the role the integration declares.
-  const integrations = await trx
-    .selectFrom("companyIntegration")
-    .innerJoin("integration", "integration.id", "companyIntegration.id")
-    .select("companyIntegration.id")
-    .where("companyIntegration.companyId", "=", companyId)
-    .where("integration.providerRole", "=", "accounting")
-    .execute();
-  if (integrations.length === 0) return;
-  const completedAt = datetime.timestamp();
-  const rows = integrations.flatMap((integration) =>
-    journals.map((journal) => ({
-      companyId,
-      integration: integration.id,
-      entityType: "journalEntry",
-      entityId: journal.id,
-      direction: "push-to-accounting",
-      trigger: "posting",
-      status: "Excluded" as const,
-      idempotencyKey: `journalEntry:${journal.id}:push-to-accounting:cutover-rebuilt`,
-      errorCode: CUTOVER_REBUILT_SYNC_CODE,
-      errorMessage:
-        "Written again when accounting was set up; the original may already be in the accounting system",
-      metadata: toJson({ sourceType: journal.sourceType }),
-      completedAt,
-      createdBy: userId
-    }))
-  );
-  for (const chunk of chunks(rows)) {
-    await trx.insertInto("accountingSyncOperation").values(chunk).execute();
   }
 }
 
@@ -738,7 +682,7 @@ export async function journalLegacyRuns(
     cutoverDate: string;
     defaults: AccountDefaults;
   }
-): Promise<LegacyRunCounts> {
+): Promise<{ counts: LegacyRunCounts; journalIds: string[] }> {
   const settings = await trx
     .selectFrom("companySettings")
     .select(["assetTaxDepreciationEnabled", "assetTaxRate"])
@@ -859,7 +803,7 @@ export async function journalLegacyRuns(
   await setJournalColumn(trx, {
     companyId,
     table: "revenueRecognitionRun",
-    rows: [...groupBy(recognitionIds, ({ item }) => item.attach.runId)].map(
+    rows: [...Map.groupBy(recognitionIds, ({ item }) => item.attach.runId)].map(
       ([runId, journals]) => {
         const byMonth = [...journals].sort((a, b) =>
           a.item.attach.monthEnd.localeCompare(b.item.attach.monthEnd)
@@ -872,29 +816,30 @@ export async function journalLegacyRuns(
     )
   });
 
-  await keepOutOfProviderSync(trx, {
-    companyId,
-    userId,
-    journals: [
-      ...depreciationIds,
-      ...deferredTaxIds,
-      ...disposalIds,
-      ...recognitionIds
-    ].map(({ item, journalId }) => ({
-      id: journalId,
-      sourceType: item.journal.sourceType
-    }))
-  });
+  const journals = [
+    ...depreciationIds,
+    ...deferredTaxIds,
+    ...disposalIds,
+    ...recognitionIds
+  ].map(({ item, journalId }) => ({
+    id: journalId,
+    sourceType: item.journal.sourceType
+  }));
+  // A run always wrote its journal, so the provider may hold the original.
+  await keepOutOfProviderSync(trx, { companyId, userId, journals });
 
   return {
-    depreciationRuns: new Set(
-      [...depreciationIds, ...deferredTaxIds].map(
-        ({ item }) => item.attach.runId
-      )
-    ).size,
-    assetDisposals: disposalIds.length,
-    revenueRecognitionRuns: new Set(
-      recognitionIds.map(({ item }) => item.attach.runId)
-    ).size
+    counts: {
+      depreciationRuns: new Set(
+        [...depreciationIds, ...deferredTaxIds].map(
+          ({ item }) => item.attach.runId
+        )
+      ).size,
+      assetDisposals: disposalIds.length,
+      revenueRecognitionRuns: new Set(
+        recognitionIds.map(({ item }) => item.attach.runId)
+      ).size
+    },
+    journalIds: journals.map((journal) => journal.id)
   };
 }

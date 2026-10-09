@@ -23,8 +23,9 @@ import type { KyselyTx } from "@carbon/database/client";
 import { legacyReimbursements } from "@carbon/database/legacy-documents";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import { nanoid } from "nanoid";
+import { InvalidInputError } from "../../errors";
+import { costCenterAndProjectDimensions } from "../../lib/cost-center-project-dimensions";
 import { buildReimbursementJournal } from "../../post-reimbursement/build-reimbursement-journal";
-import { costCenterAndProjectDimensions } from "./charge";
 import { type LegacyDocumentJournal, readByIds } from "./write";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
@@ -68,8 +69,8 @@ export async function buildLegacyReimbursementJournals(
       defaults.employeeReimbursementsPayableAccount ??
       defaults.payablesAccount;
     if (!accountId) {
-      throw new Error(
-        "No employee reimbursements payable account and no payables account is configured"
+      throw new InvalidInputError(
+        "Set the Employee Reimbursements Payable or the Accounts Payable account in Accounting → Default Accounts."
       );
     }
     return accountId;
@@ -118,18 +119,14 @@ export async function buildLegacyReimbursementJournals(
         .execute()
   );
 
-  const linesByReimbursement = new Map<string, typeof lines>();
-  for (const line of lines) {
-    const list = linesByReimbursement.get(line.reimbursementId) ?? [];
-    list.push(line);
-    linesByReimbursement.set(line.reimbursementId, list);
-  }
-  const dimensionsByLine = new Map<string, typeof lineDimensions>();
-  for (const row of lineDimensions) {
-    const list = dimensionsByLine.get(row.reimbursementLineId) ?? [];
-    list.push(row);
-    dimensionsByLine.set(row.reimbursementLineId, list);
-  }
+  const linesByReimbursement = Map.groupBy(
+    lines,
+    (line) => line.reimbursementId
+  );
+  const dimensionsByLine = Map.groupBy(
+    lineDimensions,
+    (row) => row.reimbursementLineId
+  );
 
   return reimbursements.map((reimbursement) => {
     const codingLines = linesByReimbursement.get(reimbursement.id) ?? [];

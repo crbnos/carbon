@@ -54,6 +54,13 @@ msgstr "(निष्क्रिय खाता)"
 msgid "(Inactive)"
 msgstr "(निष्क्रिय)"
 
+msgid "(not an Equity posting account)"
+msgstr ""
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {# blocking record} other {# blocking records}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {इस समूह में # घटक} other {इस समूह में # घटक}}"
@@ -81,6 +88,14 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# सप्ताह} other {# सप्ताह}}"
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
+msgstr ""
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
+msgstr ""
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -113,10 +128,6 @@ msgstr "{0} पहले से शुरू हो गया है"
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} संपत्तियों का मूल्यह्रास करने के लिए · {amount}"
-
-#. placeholder {0}: check.count
-msgid "{0} blocking records"
-msgstr "{0} ब्लॉकिंग रिकॉर्ड"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -621,9 +632,6 @@ msgstr "1 संपत्ति का मूल्यह्रास करन�
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 बैचेबल ऑपरेशन बैच में नहीं है — जब तक बैच न हो जाए, यह अलग-अलग चलता है"
-
-msgid "1 blocking record"
-msgstr "1 ब्लॉकिंग रिकॉर्ड"
 
 msgid "1 can't be scheduled"
 msgstr "1 को शेड्यूल नहीं किया जा सकता"
@@ -1402,6 +1410,9 @@ msgstr "{0} को स्वीकृत"
 
 msgid "Account"
 msgstr "खाता"
+
+msgid "Account {accountNumber} is not an active posting account."
+msgstr ""
 
 msgid "Account & Details"
 msgstr "खाता और विवरण"
@@ -3452,6 +3463,9 @@ msgstr "अवतार url"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "<0>{0}</0> से अवतार, {1} द्वारा, <1>{2}</1> के तहत लाइसेंस प्राप्त।"
 
+msgid "Average"
+msgstr ""
+
 msgid "Avg Days to Close"
 msgstr "बंद करने के लिए औसत दिन"
 
@@ -4460,6 +4474,9 @@ msgstr "इस रिटर्न में पंक्तियाँ कै�
 msgid "Choose Return To for {unitName}"
 msgstr "{unitName} के लिए रिटर्न स्थान चुनें"
 
+msgid "Choose the first day of the current period or of one of the 3 periods before it."
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "उन फ्लीट इकाइयों को चुनें जो यह समझौता किराए पर देता है। प्रत्येक आवृत्ति के लिए फ़ाइल पर अपनी दर से शुरू होता है; इसे ग्रिड में बदलें।"
 
@@ -4746,10 +4763,6 @@ msgstr "कानबान पूर्ण स्कैन पर सभी म�
 
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
-
-#. placeholder {0}: check.count
-msgid "Complete or cancel the {0} job(s) created before Carbon recorded their costs."
-msgstr "{0} जॉब(ओं) को पूर्ण करें या रद्द करें जो Carbon द्वारा उनकी लागत दर्ज करने से पहले बनाई गई थीं।"
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "इस जॉब को पूर्ण करने से पहले MES में सीरियल नंबर/बैच पूर्ण करें, या इसे स्वचालित रूप से पूर्ण करने के लिए हर ऑपरेशन को हो गया के रूप में चिह्नित करें।"
@@ -7404,8 +7417,8 @@ msgstr "दस्तावेज़"
 msgid "Documents and activity"
 msgstr "दस्तावेज़ और गतिविधि"
 
-msgid "Documents posted before Carbon kept journals"
-msgstr "Carbon द्वारा रखी गई जर्नलों से पहले पोस्ट किए गए दस्तावेज़"
+msgid "Documents Posted Before Carbon Kept Journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "दस्तावेज़ चालान, बिल और भुगतान को नेटिव प्रदाता दस्तावेज़ के रूप में पुश करता है; उनकी जर्नल दस्तावेज़ द्वारा कवर किए गए के रूप में रिकॉर्ड की जाती है। यह प्रदाता में रिकॉर्ड किए गए भुगतान को Carbon में वापस पुल करता है, मिलान किए गए चालान या बिल को बंद करता है और एक Carbon सामान्य खाता बही जर्नल की पोस्टिंग करता है। बंद होने पर यह उन्हें जानबूझकर बाहर रखे जाने के रूप में रिकॉर्ड करता है।"
@@ -9344,6 +9357,9 @@ msgstr "फील्ड मैपिंग"
 msgid "Fields"
 msgstr "फील्ड्स"
 
+msgid "FIFO"
+msgstr ""
+
 msgid "File deleted successfully"
 msgstr "फ़ाइल सफलतापूर्वक हटा दी गई"
 
@@ -9513,9 +9529,6 @@ msgstr "परिसंपत्ति वर्ग"
 
 msgid "Fixed Asset Class"
 msgstr "अचल संपत्ति वर्ग"
-
-msgid "Fixed assets"
-msgstr "अचल संपत्ति"
 
 msgid "Fixed Assets"
 msgstr "अचल संपत्तियाँ"
@@ -11634,6 +11647,9 @@ msgstr "जीवनकाल उपयोग (इकाइयां)"
 msgid "Lifetime Usage (Units)"
 msgstr "जीवनकाल उपयोग (इकाइयां)"
 
+msgid "LIFO"
+msgstr ""
+
 msgid "Light"
 msgstr "हल्का"
 
@@ -11652,6 +11668,24 @@ msgstr "लाइन"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "लाइन {0}"
+
+msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
+msgstr ""
+
+msgid "Line {line} has no account number."
+msgstr ""
+
+msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "पंक्ति विवरण (वैकल्पिक)"
@@ -12461,8 +12495,8 @@ msgstr "दूसरे सिस्टम से माइग्रेट क�
 msgid "Migration Clearing"
 msgstr "माइग्रेशन साफी"
 
-msgid "Migration Clearing must total zero. <0>Go to Trial balance</0>"
-msgstr "माइग्रेशन साफी शून्य होनी चाहिए। <0>ट्रायल बैलेंस पर जाएँ</0>"
+msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
+msgstr ""
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "न्यूनतम {minimumBatchQuantity} — पूरा किया गया"
@@ -15506,10 +15540,6 @@ msgstr "चालान पोस्ट करें"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "उचित खाता और विवरण कोड के साथ जर्नल प्रविष्टियां पोस्ट करें"
-
-#. placeholder {0}: check.count
-msgid "Post or delete the {0} document(s) dated before the cutover."
-msgstr "कटऑवर से पहले की {0} दस्तावेज़(ों) को पोस्ट करें या हटाएँ।"
 
 msgid "Post Receipt"
 msgstr "रसीद पोस्ट करें"
@@ -18907,6 +18937,12 @@ msgstr "मात्रा निर्धारित करें"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "लेखांकन उपचार देखने के लिए समझौते की प्रारंभ तिथि निर्धारित करें।"
 
+msgid "Set the fiscal year settings and the base currency."
+msgstr ""
+
+msgid "Set the Migration Clearing account to an active Equity account that is not a group."
+msgstr ""
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "आप काम बंद करने का समय निर्धारित करें, या स्वीकार करें कि आप अभी भी काम कर रहे हैं।"
 
@@ -20590,6 +20626,9 @@ msgstr "Onshape में प्राधिकरण अस्वीकार �
 msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Ramp में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
 
+msgid "The average cost of the item. Changing it needs permission to edit parts."
+msgstr ""
+
 msgid "The backup job reported this error."
 msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"
 
@@ -20680,6 +20719,9 @@ msgstr "यह कोड अंतर्राष्ट्रीय स्तर
 msgid "The company already has a posted opening balance journal."
 msgstr "कंपनी के पास पहले से एक पोस्ट किया गया ओपनिंग शेष राशि जर्नल है।"
 
+msgid "The company has no account defaults."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "अनुबंध को तब रद्द नहीं किया जा सकता"
 
@@ -20697,6 +20739,12 @@ msgstr "ठेकेदार की अपेक्षित साप्ता
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "इस लॉट/सीरीज़ के लिए सही की गई समाप्ति तिथि; परिवर्तन के बाद मौजूदा ऑन-हैंड स्टॉक को शेल्फ-लाइफ नीति के विरुद्ध पुनः मूल्यांकन किया जाता है।"
+
+msgid "The CSV file is empty."
+msgstr ""
+
+msgid "The CSV has no {columns} column."
+msgstr ""
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "CSV को accountNumber, नामे और जमा कॉलम की आवश्यकता है। आयात पूरे trial balance को बदल देता है।"
@@ -21103,7 +21151,7 @@ msgstr "Onshape कनेक्शन समाप्त हो गया"
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government कनेक्शन समाप्त हो गया"
 
-#. placeholder {0}: formatDate( parseDate(cutoverDate).subtract({ days: 1 }).toString() )
+#. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."
 msgstr "शेष राशि {0} के अंत तक की हैं।"
 
@@ -22404,9 +22452,6 @@ msgstr "ट्रांजिट और संस्था"
 
 msgid "Trash"
 msgstr "ट्रैश"
-
-msgid "Trial balance"
-msgstr "Trial Balance"
 
 msgid "Trial Balance"
 msgstr "परीक्षण शेष"

@@ -11,6 +11,7 @@ import { sql } from "kysely";
 import { toBaseAmount } from "../accounting-currency";
 import {
   dayBeforeCutover,
+  type JournalLineDocumentType,
   type OpenItem,
   type OpenItemType
 } from "../accounting-cutover";
@@ -48,7 +49,7 @@ export type DraftItem = {
   basis: "debit" | "natural";
   original: number;
   settled: number;
-  documentType: string | null;
+  documentType: JournalLineDocumentType | null;
   documentId: string | null;
   documentLineReference: string | null;
   description: string;

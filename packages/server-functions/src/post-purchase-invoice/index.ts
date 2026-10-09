@@ -9,6 +9,7 @@ import {
 } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
+  assertPostingStatusUnchanged,
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
@@ -42,6 +43,7 @@ import {
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   refuseVoidBeforeCutover
 } from "../lib/cutover-void";
+import { documentJournalLines } from "../lib/document-journal-lines";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
@@ -84,15 +86,6 @@ const postPurchaseInvoice = defineServerFn({
       // resolve a period, and again inside each transaction, where FOR SHARE
       // holds the status until commit.
       const postingStatus = await journalPostingStatus(db, companyId);
-      const assertPostingStatus = async (
-        trx: Parameters<typeof journalPostingStatus>[0]
-      ) => {
-        if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-          throw new Error(
-            "Accounting was just set up. Post the document again."
-          );
-        }
-      };
 
       if (type === "void") {
         // The client is service-role: authorization proved the caller may
@@ -135,20 +128,10 @@ const postPurchaseInvoice = defineServerFn({
           await inOrder([
             () => many(db, "itemLedger", { documentId: invoiceId, companyId }),
             () =>
-              db
-                .selectFrom("journalLine")
-                .innerJoin("journal", (join) =>
-                  join
-                    .onRef("journal.id", "=", "journalLine.journalId")
-                    .onRef("journal.companyId", "=", "journalLine.companyId")
-                )
-                .selectAll("journalLine")
-                .where("journalLine.documentId", "=", invoiceId)
-                .where("journalLine.documentType", "=", "Invoice")
-                .where("journalLine.companyId", "=", companyId)
-                .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-                .execute()
-                .then((data) => ({ data, error: null })),
+              documentJournalLines(db, companyId, {
+                documentId: invoiceId,
+                documentType: "Invoice"
+              }),
             () =>
               many(db, "costLedger", {
                 documentId: invoiceId,
@@ -159,8 +142,6 @@ const postPurchaseInvoice = defineServerFn({
 
         if (originalItemLedger.error)
           throw new Error("Failed to fetch item ledger entries");
-        if (originalJournalLines.error)
-          throw new Error("Failed to fetch journal lines");
         if (originalCostLedger.error)
           throw new Error("Failed to fetch cost ledger entries");
 
@@ -403,7 +384,7 @@ const postPurchaseInvoice = defineServerFn({
         const reversingJournalLines: Omit<
           Database["public"]["Tables"]["journalLine"]["Insert"],
           "journalId"
-        >[] = originalJournalLines.data.map((entry) => ({
+        >[] = originalJournalLines.map((entry) => ({
           accountId: entry.accountId,
           // A reversed stand-in line names the same default, so the enable
           // re-points both sides together.
@@ -486,7 +467,7 @@ const postPurchaseInvoice = defineServerFn({
             : null;
 
         await db.transaction().execute(async (trx) => {
-          await assertPostingStatus(trx);
+          await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           for await (const [purchaseOrderLineId, update] of Object.entries(
             purchaseOrderLineUpdatesVoid
           )) {
@@ -951,31 +932,11 @@ const postPurchaseInvoice = defineServerFn({
         },
         []
       );
-      const journalLines =
-        receiptReferences.length > 0
-          ? await db
-              .selectFrom("journalLine")
-              .innerJoin("journal", (join) =>
-                join
-                  .onRef("journal.id", "=", "journalLine.journalId")
-                  .onRef("journal.companyId", "=", "journalLine.companyId")
-              )
-              .selectAll("journalLine")
-              .where(
-                "journalLine.documentLineReference",
-                "in",
-                receiptReferences
-              )
-              .where("journalLine.companyId", "=", companyId)
-              .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-              .execute()
-              .then((data) => ({ data, error: null }))
-          : { data: [], error: null };
-      if (journalLines.error) {
-        throw new Error("Failed to fetch journal entries to reverse");
-      }
+      const journalLines = await documentJournalLines(db, companyId, {
+        documentLineReference: receiptReferences
+      });
 
-      const journalLinesByPurchaseOrderLine = journalLines.data.reduce<
+      const journalLinesByPurchaseOrderLine = journalLines.reduce<
         Record<string, Database["public"]["Tables"]["journalLine"]["Row"][]>
       >((acc, journalEntry) => {
         // A "receipt:" reference always carries the line id after the colon.
@@ -1003,28 +964,15 @@ const postPurchaseInvoice = defineServerFn({
 
       // For IC transactions, book the payable to Inter-Company Payables instead of
       // regular AP — the mirror of post-sales-invoice's IC Receivables swap. Resolve
-      // it from accountDefault (stable id), not by account number. Before the
-      // cutover an empty IC default becomes a stand-in line; after it, an empty
-      // IC default falls back to regular payables, as it always has.
-      const payables = isIntercompany
+      // it from accountDefault (stable id), not by account number. An empty IC
+      // default falls back to regular payables.
+      const payablesAccountId = isIntercompany
         ? resolveDefaultAccount(
-            {
-              ...accountDefaults.data,
-              intercompanyPayablesAccount:
-                accountDefaults.data.intercompanyPayablesAccount ??
-                (postingStatus === "Posted"
-                  ? accountDefaults.data.payablesAccount
-                  : null)
-            },
+            accountDefaults.data,
             "intercompanyPayablesAccount",
             postingStatus
-          )
-        : {
-            accountId: accountDefaults.data.payablesAccount,
-            accountDefaultRole: null
-          };
-      const payablesAccountId = payables.accountId;
-      const payablesAccountDefaultRole = payables.accountDefaultRole;
+          ).accountId
+        : accountDefaults.data.payablesAccount;
 
       for await (const invoiceLine of purchaseInvoiceLines.data) {
         if (invoiceLine.invoiceLineType === "Comment") continue;
@@ -1164,7 +1112,6 @@ const postPurchaseInvoice = defineServerFn({
 
                 journalLineInserts.push({
                   accountId: payablesAccountId,
-                  accountDefaultRole: payablesAccountDefaultRole,
                   description: "Accounts Payable",
                   amount: round(
                     credit("liability", totalLineCostWithWeightedShipping)
@@ -1551,7 +1498,6 @@ const postPurchaseInvoice = defineServerFn({
                   // CR Accounts Payable at invoice cost
                   journalLineInserts.push({
                     accountId: payablesAccountId,
-                    accountDefaultRole: payablesAccountDefaultRole,
                     description: "Accounts Payable",
                     amount: round(
                       credit("liability", invoiceCostForReversedQty)
@@ -1650,7 +1596,6 @@ const postPurchaseInvoice = defineServerFn({
                   // CR Accounts Payable
                   journalLineInserts.push({
                     accountId: payablesAccountId,
-                    accountDefaultRole: payablesAccountDefaultRole,
                     description: "Accounts Payable",
                     accrual: isService ? undefined : true,
                     amount: round(credit("liability", accrualCost)),
@@ -1814,7 +1759,6 @@ const postPurchaseInvoice = defineServerFn({
               // CR Payables at invoice cost
               journalLineInserts.push({
                 accountId: payablesAccountId,
-                accountDefaultRole: payablesAccountDefaultRole,
                 description: "Accounts Payable",
                 amount: round(credit("liability", invoiceCost)),
                 quantity: round(invoiceLineQuantityInInventoryUnit),
@@ -1937,7 +1881,6 @@ const postPurchaseInvoice = defineServerFn({
 
               journalLineInserts.push({
                 accountId: payablesAccountId,
-                accountDefaultRole: payablesAccountDefaultRole,
                 description: "Accounts Payable",
                 amount: round(
                   credit("liability", totalLineCostWithWeightedShipping)
@@ -2052,7 +1995,6 @@ const postPurchaseInvoice = defineServerFn({
 
             journalLineInserts.push({
               accountId: payablesAccountId,
-              accountDefaultRole: payablesAccountDefaultRole,
               description: "Accounts Payable",
               amount: round(
                 credit("liability", totalLineCostWithWeightedShipping)
@@ -2097,7 +2039,7 @@ const postPurchaseInvoice = defineServerFn({
       const createdReceiptIds: string[] = [];
 
       await db.transaction().execute(async (trx) => {
-        await assertPostingStatus(trx);
+        await assertPostingStatusUnchanged(trx, companyId, postingStatus);
         await fixedAssetWrites.apply(trx, companyId);
         if (receiptLineInserts.length > 0) {
           const receiptLinesGroupedByLocationId = receiptLineInserts.reduce<

@@ -3,10 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
-import {
-  DOCUMENT_JOURNAL_STATUSES,
-  OPEN_ITEM_JOURNAL_STATUSES
-} from "@carbon/database/accounting-posting";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   type InvoiceDocumentIds,
@@ -14,50 +11,43 @@ import {
   loadSalesInvoiceDocumentIds
 } from "@carbon/database/deposit-scope";
 import {
-  type AutomaticJournalStatus,
-  journalPostingStatus,
-  type OptionalDefaultRole,
-  readAccountingCutoverDate,
-  resolveDefaultAccount
+  postingStatusFor,
+  readAccountingCutoverDate
 } from "@carbon/database/journal-posting-status";
-import {
-  buildPaymentJournal,
-  type PaymentJournalFeeInput,
-  type PaymentJournalLine
-} from "@carbon/database/posting";
+import type { PaymentJournalFeeInput } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   allocatePaymentFunding,
   assertCurrencyDecimals,
   assertExchangeRate,
-  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
-  CUSTOMER_DEPOSIT_DESCRIPTION,
   datetime,
-  EPSILON,
-  equals,
   type FundingRequest,
   fundingScopeOf,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
-  onAccountCreditDescription,
-  PAYABLE_POSTING_DESCRIPTIONS,
-  RECEIVABLE_POSTING_DESCRIPTIONS,
-  REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
   remainingFundingSources,
   round,
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/utils";
-import { type Kysely, type Selectable, sql, type Transaction } from "kysely";
+import { type Kysely, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
-import { assertNoMigrationClearing } from "../lib/cutover-void";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import { loadPartyDimensions } from "../lib/party-dimensions";
 import {
-  loadPartyDimensions,
-  partyDimensionValues,
-  partyDimensionValuesFrom
-} from "../lib/party-dimensions";
+  assemblePaymentJournal,
+  foldSourceControls,
+  foldTargetControls,
+  paymentControlAccount,
+  paymentDimensions,
+  paymentKind,
+  readDiscountAccountClasses,
+  readPaymentParties,
+  readSourceControlLines,
+  readTargetControlLines
+} from "./journal-input";
+import { rebuildPaymentJournal } from "./rebuild-journal";
 
 export type PostPaymentArgs = {
   type: "post" | "void";
@@ -128,9 +118,10 @@ export function postPaymentTransaction(
     }
 
     // Every payment posts a journal: Provisional before the company's
-    // accounting cutover, Posted after it. FOR SHARE holds the status until
+    // accounting cutover, Posted after it. FOR SHARE holds the cutover until
     // commit. A Provisional journal has no accounting period.
-    const postingStatus = await journalPostingStatus(trx, companyId);
+    const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+    const postingStatus = postingStatusFor(cutoverDate);
     const timestamp = datetime.timestamp();
     let accountingPeriodId: string | null = null;
     if (postingStatus === "Posted") {
@@ -199,12 +190,16 @@ export function postPaymentTransaction(
       // opening journal carries what the payment left open. The void builds
       // the payment's posting again and negates it, today, so it nets those
       // opening lines.
-      const cutoverDate = await readAccountingCutoverDate(trx, companyId);
       if (
         payment.postingDate &&
         isBeforeCutover(payment.postingDate, cutoverDate)
       ) {
-        const rebuilt = await rebuildPaymentJournal(trx, payment, companyId);
+        const rebuilt = await rebuildPaymentJournal(
+          trx,
+          payment,
+          companyId,
+          postingStatus
+        );
         if (rebuilt.lines.length) {
           reversalId = await insertVoidJournal();
           const lines = await trx
@@ -220,6 +215,7 @@ export function postPaymentTransaction(
                 documentId: paymentId,
                 documentLineReference: line.documentLineReference ?? null,
                 journalLineReference: line.journalLineReference,
+                accountDefaultRole: line.accountDefaultRole,
                 companyId
               }))
             )
@@ -319,41 +315,12 @@ export function postPaymentTransaction(
       return { journalId: reversalId };
     }
 
-    const isAR = payment.customerId !== null;
-    // An employee payee is a reimbursement payout: always cash OUT against the
-    // employee-payable control account, so it is neither AR nor a refund, has
-    // no trade-party row, and has no on-account credit history to draw on.
-    // Resolved before the party check, which a three-way party can no longer
-    // satisfy as a boolean XOR.
-    const isReimbursement = payment.employeeId !== null;
-    const partyId = isReimbursement
-      ? payment.employeeId
-      : isAR
-        ? payment.customerId
-        : payment.supplierId;
-    if (
-      !partyId ||
-      [payment.customerId, payment.supplierId, payment.employeeId].filter(
-        Boolean
-      ).length !== 1
-    ) {
-      throw new Error(
-        "A payment requires exactly one party (customer, supplier, or employee)"
-      );
-    }
-    const cashIn = payment.paymentType === "Receipt";
+    const kind = paymentKind(payment);
+    const { isAR, isReimbursement, cashIn, isRefund, isDeposit, partyId } =
+      kind;
     if (isReimbursement && cashIn) {
       throw new Error("An employee payment must be a disbursement");
     }
-    const isRefund = !isReimbursement && cashIn !== isAR;
-    // A payment that references a sales order or rental agreement is a
-    // customer deposit: its unapplied cash is a liability on the prepayment
-    // account rather than on-account receivable credit, and a Disbursement
-    // carrying the reference refunds it from there. The builder ignores the
-    // flag for supplier payments; applications are unaffected either way.
-    const isDeposit = Boolean(
-      payment.rentalAgreementId ?? payment.salesOrderId
-    );
     assertExchangeRate(Number(payment.exchangeRate));
     const company = await trx
       .selectFrom("company")
@@ -392,13 +359,7 @@ export function postPaymentTransaction(
       )
       .orderBy("id")
       .execute();
-    const targetColumn = isReimbursement
-      ? "targetReimbursementId"
-      : isRefund
-        ? "targetMemoId"
-        : isAR
-          ? "targetSalesInvoiceId"
-          : "targetPurchaseInvoiceId";
+    const targetColumn = kind.targetColumn;
     for (const draft of drafts) {
       if (
         !draft[targetColumn] ||
@@ -563,81 +524,11 @@ export function postPaymentTransaction(
             .execute()
         ).filter(isEffectiveSettlement)
       : [];
-    const controls = targetIds.length
-      ? await trx
-          .selectFrom("journalLine as line")
-          .innerJoin("journal as journal", (join) =>
-            join
-              .onRef("journal.id", "=", "line.journalId")
-              .onRef("journal.companyId", "=", "line.companyId")
-          )
-          .select([
-            "line.documentId",
-            "line.amount",
-            "line.accountId",
-            "line.accountDefaultRole"
-          ])
-          .where("line.companyId", "=", companyId)
-          .where(
-            "line.documentType",
-            "=",
-            isReimbursement ? "Reimbursement" : isRefund ? "Memo" : "Invoice"
-          )
-          .where("line.documentId", "in", targetIds)
-          .where(
-            "line.description",
-            "in",
-            isReimbursement
-              ? [REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION]
-              : isAR
-                ? RECEIVABLE_POSTING_DESCRIPTIONS
-                : PAYABLE_POSTING_DESCRIPTIONS
-          )
-          // A target open at the accounting cutover carries its control line
-          // in the opening journal, with the same document keys.
-          .where("journal.sourceType", "in", [
-            isReimbursement
-              ? "Reimbursement"
-              : isRefund
-                ? isAR
-                  ? "Credit Memo"
-                  : "Debit Memo"
-                : isAR
-                  ? "Sales Invoice"
-                  : "Purchase Invoice",
-            "Opening Balance"
-          ])
-          .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
-          .execute()
-      : [];
-    const carryingById = new Map<string, number>();
-    const targetControlById = new Map<string, string>();
-    // Before the cutover a control line may be a stand-in: booked on retained
-    // earnings, naming the default it wanted. The payment's lines on that
-    // account carry the same role, so the enable re-points them together.
-    const standInRoleByAccount = new Map<string, OptionalDefaultRole>();
-    for (const line of controls) {
-      if (line.documentId) {
-        if (!line.accountId) {
-          throw new Error("Invoice is missing its original control account");
-        }
-        if (line.accountDefaultRole) {
-          standInRoleByAccount.set(
-            line.accountId,
-            line.accountDefaultRole as OptionalDefaultRole
-          );
-        }
-        const originalAccount = targetControlById.get(line.documentId);
-        if (originalAccount && originalAccount !== line.accountId) {
-          throw new Error("Invoice has conflicting original control accounts");
-        }
-        targetControlById.set(line.documentId, line.accountId);
-        carryingById.set(
-          line.documentId,
-          round((carryingById.get(line.documentId) ?? 0) + Number(line.amount))
-        );
-      }
-    }
+    const targetControls = foldTargetControls(
+      kind,
+      await readTargetControlLines(trx, companyId, targetIds)
+    );
+    const { carryingById, controlById: targetControlById } = targetControls;
     // The reimbursement row's `payableAccountId` is checked AGAINST the booked
     // journal, never used in place of it. The map is seeded by the journal read
     // above and by nothing else — exactly as the AR/AP arms are — so the
@@ -873,57 +764,10 @@ export function postPaymentTransaction(
             .forUpdate()
             .execute();
     const sourceIds = sources.map((source) => source.id);
-    const sourceControls = sourceIds.length
-      ? await trx
-          .selectFrom("journalLine as line")
-          .innerJoin("journal as journal", (join) =>
-            join
-              .onRef("journal.id", "=", "line.journalId")
-              .onRef("journal.companyId", "=", "line.companyId")
-          )
-          .select(["line.documentId", "line.accountId", "line.description"])
-          .where("line.companyId", "=", companyId)
-          .where("line.documentType", "=", "Payment")
-          .where("line.documentId", "in", sourceIds)
-          // A source's unapplied cash was booked EITHER as on-account credit or,
-          // for a deposit, on the prepayment account; the description says which.
-          .where(
-            "line.description",
-            "in",
-            isAR
-              ? [onAccountCreditDescription(isAR), CUSTOMER_DEPOSIT_DESCRIPTION]
-              : [onAccountCreditDescription(isAR)]
-          )
-          .where("journal.sourceType", "in", ["Payment", "Opening Balance"])
-          .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
-          .execute()
-      : [];
-    const sourceControlById = new Map<string, string>();
-    // Sources whose credit is a deposit (booked on the prepayment account):
-    // released as a liability under the deposit description, never as
-    // receivables — the class check below expects Liability for them.
-    const depositSourceIds = new Set<string>();
-    for (const line of sourceControls) {
-      if (!line.documentId) continue;
-      if (!line.accountId) {
-        throw new Error(
-          "Funding source is missing its original control account"
-        );
-      }
-      const lineIsDeposit = line.description === CUSTOMER_DEPOSIT_DESCRIPTION;
-      const originalAccount = sourceControlById.get(line.documentId);
-      if (
-        originalAccount &&
-        (originalAccount !== line.accountId ||
-          depositSourceIds.has(line.documentId) !== lineIsDeposit)
-      ) {
-        throw new Error(
-          "Funding source has conflicting original control accounts"
-        );
-      }
-      sourceControlById.set(line.documentId, line.accountId);
-      if (lineIsDeposit) depositSourceIds.add(line.documentId);
-    }
+    const sourceControls = foldSourceControls(
+      kind,
+      await readSourceControlLines(trx, companyId, sourceIds)
+    );
     const consumed = sourceIds.length
       ? (
           await settlementQuery(trx, companyId)
@@ -1031,16 +875,10 @@ export function postPaymentTransaction(
       .selectAll()
       .where("companyId", "=", companyId)
       .executeTakeFirst();
-    // An employee is neither a customer nor a supplier, so there is no trade
-    // party row and no party type to tag journal lines with — the same reason
-    // post-reimbursement writes no party dimension on the document's own
-    // journal.
-    const party = await loadPaymentParty(trx, {
-      companyId,
-      partyId,
-      isAR,
-      isReimbursement
-    });
+    if (!defaults) {
+      throw new Error("Accounting defaults are required before posting");
+    }
+    const party = (await readPaymentParties(trx, companyId, [kind]))(kind);
     const normalized = allocation.applications.map((application) => ({
       ...application,
       targetSalesInvoiceId:
@@ -1050,101 +888,39 @@ export function postPaymentTransaction(
       targetMemoId: isRefund && !isReimbursement ? application.targetId : null,
       targetReimbursementId: isReimbursement ? application.targetId : null
     }));
+    const assembled = assemblePaymentJournal({
+      payment,
+      kind,
+      companyId,
+      defaults,
+      control: paymentControlAccount(kind, party, defaults, postingStatus),
+      discountClasses: await readDiscountAccountClasses(
+        trx,
+        company.companyGroupId,
+        defaults
+      ),
+      targets: targetControls,
+      sources: sourceControls,
+      applications: normalized,
+      newOnAccountBase: allocation.sourceRemainders[0]!.remainingBase,
+      fee,
+      journalLineReference: nanoid()
+    });
+    const { accounts } = assembled.input;
+    const journalLines = assembled.lines;
     const expectedAccountClasses: Array<[string | null | undefined, string]> = [
-      [payment.bankAccount, "Asset"]
-    ];
-    if (!defaults) {
-      throw new Error("Accounting defaults are required before posting");
-    }
-    // Resolve the discount account's class so buildPaymentJournal signs the
-    // discount line by the account's real natural balance (customer discount
-    // -> Revenue/contra-revenue; supplier discount -> Expense/contra-COGS),
-    // mirroring how post-memo resolves its reason account's class.
-    const discountAccountId = isAR
-      ? defaults.customerPaymentDiscountAccount
-      : defaults.supplierPaymentDiscountAccount;
-    let discountAccountClass: string | null = null;
-    if (discountAccountId) {
-      const discountAccount = await trx
-        .selectFrom("account")
-        .select("class")
-        .where("id", "=", discountAccountId)
-        .where("companyGroupId", "=", company.companyGroupId)
-        .executeTakeFirst();
-      if (!discountAccount) {
-        throw new Error("Failed to fetch the payment discount account class");
-      }
-      discountAccountClass = discountAccount.class;
-    }
-    // An intercompany party books to the intercompany control default. Before
-    // the cutover an empty one becomes a stand-in line; after it, an empty one
-    // reaches the builder as before.
-    const intercompanyRole: OptionalDefaultRole = isAR
-      ? "intercompanyReceivablesAccount"
-      : "intercompanyPayablesAccount";
-    const intercompanyControl =
-      !isReimbursement && party.intercompanyCompanyId
-        ? postingStatus === "Provisional"
-          ? resolveDefaultAccount(defaults, intercompanyRole, postingStatus)
-          : { accountId: defaults[intercompanyRole], accountDefaultRole: null }
-        : null;
-    if (intercompanyControl?.accountDefaultRole) {
-      standInRoleByAccount.set(
-        intercompanyControl.accountId,
-        intercompanyControl.accountDefaultRole
-      );
-    }
-    const accounts = {
-      // For a reimbursement this drives ONLY the new on-account remainder
-      // (cash paid beyond what the payout applies) — every application
-      // carries its own `targetControlAccountId` from the payable line of the
-      // reimbursement's own posted journal.
-      // A brand-new employee credit has no prior document to read an account
-      // off, so the default is the right source here, with the same AP
-      // fallback post-reimbursement uses when the column is unset.
-      controlAccountId: isReimbursement
-        ? (defaults.employeeReimbursementsPayableAccount ??
-          defaults.payablesAccount)
-        : intercompanyControl
-          ? intercompanyControl.accountId
-          : isAR
-            ? defaults.receivablesAccount
-            : defaults.payablesAccount,
-      discountAccountId,
-      discountAccountClass,
-      writeOffAccountId: isAR
-        ? defaults.customerWriteOffAccount
-        : defaults.supplierWriteOffAccount,
-      fxGainAccountId: defaults.realizedExchangeGainAccount,
-      fxLossAccountId: defaults.realizedExchangeLossAccount
-    };
-    expectedAccountClasses.push(
+      [payment.bankAccount, "Asset"],
       [accounts.controlAccountId, isAR ? "Asset" : "Liability"],
       [accounts.discountAccountId, isAR ? "Revenue" : "Expense"],
       [accounts.writeOffAccountId, isAR ? "Expense" : "Revenue"],
       [accounts.fxGainAccountId, "Revenue"],
       [accounts.fxLossAccountId, "Expense"],
       [fee?.accountId, "Expense"]
-    );
+    ];
     if (isDeposit && isAR) {
       expectedAccountClasses.push([defaults.prepaymentAccount, "Liability"]);
     }
-    const journalApplications = normalized.map((application) => ({
-      ...application,
-      // Before the cutover a target posted with no journal has no control
-      // line: the default control account stands in for it.
-      targetControlAccountId:
-        targetControlById.get(application.targetId) ??
-        accounts.controlAccountId ??
-        undefined,
-      sourceControlAccountId: application.sourcePaymentId
-        ? sourceControlById.get(application.sourcePaymentId)
-        : undefined,
-      sourceIsDeposit: application.sourcePaymentId
-        ? depositSourceIds.has(application.sourcePaymentId)
-        : undefined
-    }));
-    for (const application of journalApplications) {
+    for (const application of assembled.input.applications) {
       expectedAccountClasses.push(
         [application.targetControlAccountId, isAR ? "Asset" : "Liability"],
         [
@@ -1157,23 +933,6 @@ export function postPaymentTransaction(
         ]
       );
     }
-    const journalLines = buildPaymentJournal({
-      paymentId,
-      companyId,
-      isAR,
-      isReimbursement,
-      cashIn,
-      totalAmount: Number(payment.totalAmount),
-      exchangeRate: Number(payment.exchangeRate),
-      bankAccount: payment.bankAccount,
-      journalLineReference: nanoid(),
-      applications: journalApplications,
-      newOnAccountBase: allocation.sourceRemainders[0]!.remainingBase,
-      fee,
-      accounts,
-      isDeposit,
-      depositAccountId: defaults.prepaymentAccount
-    }).lines;
     const accountIds = [
       ...new Set([
         payment.bankAccount,
@@ -1202,11 +961,16 @@ export function postPaymentTransaction(
     );
     // A stand-in account is not the account its role wants, so its class is
     // not checked; the enable re-points it to the default.
+    const standInAccounts = new Set(
+      journalLines.flatMap((line) =>
+        line.accountDefaultRole ? [line.accountId] : []
+      )
+    );
     if (
       expectedAccountClasses.some(
         ([id, expected]) =>
           id &&
-          !standInRoleByAccount.has(id) &&
+          !standInAccounts.has(id) &&
           classById.has(id) &&
           classById.get(id) !== expected
       )
@@ -1268,8 +1032,6 @@ export function postPaymentTransaction(
         .values(
           journalLines.map((line) => ({
             ...line,
-            accountDefaultRole:
-              standInRoleByAccount.get(line.accountId) ?? null,
             journalId: journal.id
           }))
         )
@@ -1281,12 +1043,11 @@ export function postPaymentTransaction(
       // dimension the liability it clears never had.
       const dimensions = isReimbursement
         ? []
-        : await partyDimensionValues(trx, {
-            companyGroupId: company.companyGroupId,
-            isAR,
-            partyId,
-            typeId: party.typeId
-          });
+        : paymentDimensions(
+            await loadPartyDimensions(trx, company.companyGroupId),
+            kind,
+            party
+          );
       const values = dimensions.flatMap((dimension) =>
         lines.map((line) => ({
           journalLineId: line.id,
@@ -1313,631 +1074,5 @@ export function postPaymentTransaction(
       .where("companyId", "=", companyId)
       .execute();
     return { journalId };
-  });
-}
-
-/**
- * The payment's counterparty: its type, for the party dimension, and its
- * intercompany link. An employee is neither a customer nor a supplier, so
- * it has no trade party type to tag journal lines with.
- */
-async function loadPaymentParty(
-  trx: Transaction<KyselyDatabase>,
-  args: {
-    companyId: string;
-    partyId: string;
-    isAR: boolean;
-    isReimbursement: boolean;
-  }
-): Promise<{ typeId: string | null; intercompanyCompanyId: string | null }> {
-  const { companyId, partyId, isAR, isReimbursement } = args;
-  const party = isReimbursement
-    ? await trx
-        .selectFrom("employee")
-        .select([
-          sql<string | null>`NULL`.as("typeId"),
-          sql<string | null>`NULL`.as("intercompanyCompanyId")
-        ])
-        .where("id", "=", partyId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst()
-    : isAR
-      ? await trx
-          .selectFrom("customer")
-          .select(["customerTypeId as typeId", "intercompanyCompanyId"])
-          .where("id", "=", partyId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst()
-      : await trx
-          .selectFrom("supplier")
-          .select(["supplierTypeId as typeId", "intercompanyCompanyId"])
-          .where("id", "=", partyId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
-  if (!party) throw new NotFoundError("Payment counterparty not found");
-  return party;
-}
-
-/** Every description `buildPaymentJournal` writes, except the processor fee's. */
-const PAYMENT_BUILDER_DESCRIPTIONS = new Set([
-  "Bank / Cash",
-  "Accounts Receivable",
-  "Accounts Payable",
-  "Employee Reimbursements Payable",
-  "Customer Payment Discount",
-  "Supplier Payment Discount",
-  "Bad Debt Expense",
-  "Vendor Write-Off Income",
-  "Accounts Receivable (credit applied)",
-  "Accounts Payable (credit applied)",
-  "Realized FX Gain",
-  "Realized FX Loss",
-  onAccountCreditDescription(true),
-  onAccountCreditDescription(false),
-  CUSTOMER_DEPOSIT_DESCRIPTION,
-  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
-]);
-
-/**
- * The processor fee the payment withheld when it posted. The fee is not
- * stored on the payment, so it is read off the payment's own journal: the
- * bank line is short of the gross cash by the fee, and the fee line is the
- * one line the builder does not describe.
- */
-async function postedProcessorFee(
-  trx: Transaction<KyselyDatabase>,
-  payment: Selectable<KyselyDatabase["payment"]>,
-  companyId: string,
-  grossBase: number
-): Promise<PaymentJournalFeeInput | undefined> {
-  if (!payment.journalId) return undefined;
-  const lines = await trx
-    .selectFrom("journalLine")
-    .select(["accountId", "amount", "description"])
-    .where("companyId", "=", companyId)
-    .where("journalId", "=", payment.journalId)
-    .where("documentType", "=", "Payment")
-    .where("documentId", "=", payment.id)
-    .execute();
-  const bank = lines.find((line) => line.description === "Bank / Cash");
-  if (!bank) return undefined;
-  const feeBase = round(grossBase - Math.abs(Number(bank.amount)));
-  if (Math.abs(feeBase) <= EPSILON) return undefined;
-  const fees = lines.filter(
-    (line) => !PAYMENT_BUILDER_DESCRIPTIONS.has(line.description ?? "")
-  );
-  if (
-    fees.length !== 1 ||
-    !fees[0]!.accountId ||
-    !equals(Math.abs(Number(fees[0]!.amount)), feeBase)
-  ) {
-    throw new Error(
-      "The payment's processor fee cannot be read from its journal"
-    );
-  }
-  return {
-    // The builder converts the fee at the payment's rate; this is its inverse.
-    amount: round(feeBase * Number(payment.exchangeRate)),
-    accountId: fees[0]!.accountId,
-    description: fees[0]!.description ?? undefined
-  };
-}
-
-type PaymentRow = Selectable<KyselyDatabase["payment"]>;
-
-/** A payment's journal built again: its lines, each with the stand-in role
- *  its posting gives it, and the party dimensions every line carries. */
-export type RebuiltPaymentJournal = {
-  lines: (PaymentJournalLine & {
-    accountDefaultRole: OptionalDefaultRole | null;
-  })[];
-  dimensions: { dimensionId: string; valueId: string }[];
-};
-
-/** What decides the shape of a payment's journal, from the stored row. */
-function paymentKind(payment: PaymentRow) {
-  const isReimbursement = payment.employeeId !== null;
-  const isAR = payment.customerId !== null;
-  const cashIn = payment.paymentType === "Receipt";
-  const isRefund = !isReimbursement && cashIn !== isAR;
-  const partyId = isReimbursement
-    ? payment.employeeId
-    : isAR
-      ? payment.customerId
-      : payment.supplierId;
-  if (!partyId) {
-    throw new Error(
-      "A payment requires exactly one party (customer, supplier, or employee)"
-    );
-  }
-  const targetColumn = isReimbursement
-    ? ("targetReimbursementId" as const)
-    : isRefund
-      ? ("targetMemoId" as const)
-      : isAR
-        ? ("targetSalesInvoiceId" as const)
-        : ("targetPurchaseInvoiceId" as const);
-  return {
-    isReimbursement,
-    isAR,
-    cashIn,
-    isRefund,
-    isDeposit: Boolean(payment.rentalAgreementId ?? payment.salesOrderId),
-    partyId,
-    targetColumn,
-    // The control line of a target, as `postPaymentTransaction` reads it.
-    targetDocumentType: isReimbursement
-      ? "Reimbursement"
-      : isRefund
-        ? "Memo"
-        : "Invoice",
-    targetDescriptions: (isReimbursement
-      ? [REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION]
-      : isAR
-        ? RECEIVABLE_POSTING_DESCRIPTIONS
-        : PAYABLE_POSTING_DESCRIPTIONS) as readonly string[],
-    targetSourceTypes: [
-      isReimbursement
-        ? "Reimbursement"
-        : isRefund
-          ? isAR
-            ? "Credit Memo"
-            : "Debit Memo"
-          : isAR
-            ? "Sales Invoice"
-            : "Purchase Invoice",
-      "Opening Balance"
-    ] as string[],
-    sourceDescriptions: [
-      onAccountCreditDescription(isAR),
-      CUSTOMER_DEPOSIT_DESCRIPTION
-    ] as string[]
-  };
-}
-
-/**
- * The journal a payment dated before the cutover posted, built again with
- * `buildPaymentJournal` from its stored settlements and today's account
- * defaults. A target or funding source books to the control account of its
- * line in a Provisional or Posted journal (the opening journal for a
- * document open at the cutover), else to the default control account, as
- * the opening journal does. The caller negates the lines.
- */
-async function rebuildPaymentJournal(
-  trx: Transaction<KyselyDatabase>,
-  payment: PaymentRow,
-  companyId: string
-): Promise<RebuiltPaymentJournal> {
-  const grossBase = toBaseAmount(
-    Number(payment.totalAmount),
-    Number(payment.exchangeRate)
-  );
-  const fee = await postedProcessorFee(trx, payment, companyId, grossBase);
-  const [rebuilt] = await rebuildPaymentJournals(trx, [payment], companyId, {
-    postingStatus: "Posted",
-    feeByPaymentId: new Map(fee ? [[payment.id, fee]] : [])
-  });
-  return rebuilt!;
-}
-
-/**
- * The journals of many payments, built again as `rebuildPaymentJournal`
- * builds one, in a fixed number of reads. The accounting enable uses it for
- * the payments posted with no journal (spec section 5a).
- *
- * - `postingStatus` is the status the journal posts with. Before the cutover
- *   (`Provisional`) an empty intercompany default becomes a stand-in line,
- *   and a target's control line that is a stand-in gives its role to the
- *   payment's lines on that account, as `postPaymentTransaction` does.
- * - `feeByPaymentId` is the processor fee each payment withheld.
- * - Payments are built in the order given. A payment that an earlier one in
- *   the list funds from on-account credit books that credit to the control
- *   account the earlier one was just built with, as its posting read it from
- *   the earlier payment's journal.
- */
-export async function rebuildPaymentJournals(
-  trx: Transaction<KyselyDatabase>,
-  payments: PaymentRow[],
-  companyId: string,
-  options: {
-    postingStatus: AutomaticJournalStatus;
-    feeByPaymentId: Map<string, PaymentJournalFeeInput>;
-  }
-): Promise<RebuiltPaymentJournal[]> {
-  if (payments.length === 0) return [];
-  const { postingStatus, feeByPaymentId } = options;
-  const kinds = payments.map(paymentKind);
-  const company = await trx
-    .selectFrom("company")
-    .select("companyGroupId")
-    .where("id", "=", companyId)
-    .executeTakeFirstOrThrow();
-  if (!company.companyGroupId) {
-    throw new Error("Payment currency configuration is missing");
-  }
-  const companyGroupId = company.companyGroupId;
-  const defaults = await trx
-    .selectFrom("accountDefault")
-    .selectAll()
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!defaults) {
-    throw new Error("Accounting defaults are required before posting");
-  }
-
-  // The counterparties: type (for the party dimension) and intercompany link.
-  const partyIds = (predicate: (kind: (typeof kinds)[number]) => boolean) => [
-    ...new Set(kinds.filter(predicate).map((kind) => kind.partyId))
-  ];
-  const customerIds = partyIds((kind) => !kind.isReimbursement && kind.isAR);
-  const supplierIds = partyIds((kind) => !kind.isReimbursement && !kind.isAR);
-  const employeeIds = partyIds((kind) => kind.isReimbursement);
-  const customers = customerIds.length
-    ? await trx
-        .selectFrom("customer")
-        .select(["id", "customerTypeId as typeId", "intercompanyCompanyId"])
-        .where("companyId", "=", companyId)
-        .where("id", "in", customerIds)
-        .execute()
-    : [];
-  const suppliers = supplierIds.length
-    ? await trx
-        .selectFrom("supplier")
-        .select(["id", "supplierTypeId as typeId", "intercompanyCompanyId"])
-        .where("companyId", "=", companyId)
-        .where("id", "in", supplierIds)
-        .execute()
-    : [];
-  const employees = employeeIds.length
-    ? await trx
-        .selectFrom("employee")
-        .select("id")
-        .where("companyId", "=", companyId)
-        .where("id", "in", employeeIds)
-        .execute()
-    : [];
-  const customerById = new Map(customers.map((row) => [row.id, row]));
-  const supplierById = new Map(suppliers.map((row) => [row.id, row]));
-  const employeeIdSet = new Set(employees.map((row) => row.id));
-
-  const discountAccountIds = [
-    defaults.customerPaymentDiscountAccount,
-    defaults.supplierPaymentDiscountAccount
-  ].filter((id): id is string => !!id);
-  const discountAccounts = discountAccountIds.length
-    ? await trx
-        .selectFrom("account")
-        .select(["id", "class"])
-        .where("id", "in", discountAccountIds)
-        .where("companyGroupId", "=", companyGroupId)
-        .execute()
-    : [];
-  const classByAccount = new Map(
-    discountAccounts.map((row) => [row.id, row.class])
-  );
-
-  const settlements = await trx
-    .selectFrom("invoiceSettlement")
-    .selectAll()
-    .where("companyId", "=", companyId)
-    .where(
-      "paymentId",
-      "in",
-      payments.map((payment) => payment.id)
-    )
-    .orderBy("id")
-    .execute();
-  const settlementsByPayment = new Map<string, typeof settlements>();
-  for (const row of settlements) {
-    const list = settlementsByPayment.get(row.paymentId!) ?? [];
-    list.push(row);
-    settlementsByPayment.set(row.paymentId!, list);
-  }
-
-  // Every target's control lines, filtered per payment below by the
-  // document type, description and source type its posting reads.
-  const targetIds = [
-    ...new Set(
-      payments.flatMap((payment, index) =>
-        (settlementsByPayment.get(payment.id) ?? []).flatMap((row) => {
-          const target = row[kinds[index]!.targetColumn];
-          return target ? [target] : [];
-        })
-      )
-    )
-  ];
-  const targetControls = targetIds.length
-    ? await trx
-        .selectFrom("journalLine as line")
-        .innerJoin("journal as journal", (join) =>
-          join
-            .onRef("journal.id", "=", "line.journalId")
-            .onRef("journal.companyId", "=", "line.companyId")
-        )
-        .select([
-          "line.documentId",
-          "line.documentType",
-          "line.description",
-          "line.accountId",
-          "line.accountDefaultRole",
-          "journal.sourceType"
-        ])
-        .where("line.companyId", "=", companyId)
-        .where("line.documentType", "in", ["Invoice", "Memo", "Reimbursement"])
-        .where("line.documentId", "in", targetIds)
-        .where("line.description", "in", [
-          ...new Set([
-            REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
-            ...RECEIVABLE_POSTING_DESCRIPTIONS,
-            ...PAYABLE_POSTING_DESCRIPTIONS
-          ])
-        ])
-        .where("journal.sourceType", "in", [
-          "Reimbursement",
-          "Credit Memo",
-          "Debit Memo",
-          "Sales Invoice",
-          "Purchase Invoice",
-          "Opening Balance"
-        ])
-        .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
-        .execute()
-    : [];
-  const targetControlsByDocument = new Map<string, typeof targetControls>();
-  for (const line of targetControls) {
-    if (!line.documentId) continue;
-    const list = targetControlsByDocument.get(line.documentId) ?? [];
-    list.push(line);
-    targetControlsByDocument.set(line.documentId, list);
-  }
-
-  const sourceIds = [
-    ...new Set(
-      settlements
-        .map((row) => row.sourcePaymentId)
-        .filter((id): id is string => !!id)
-    )
-  ];
-  const sources = sourceIds.length
-    ? await trx
-        .selectFrom("payment")
-        .select(["id", "rentalAgreementId", "salesOrderId"])
-        .where("companyId", "=", companyId)
-        .where("id", "in", sourceIds)
-        .execute()
-    : [];
-  const sourceById = new Map(sources.map((row) => [row.id, row]));
-  const sourceControls = sourceIds.length
-    ? await trx
-        .selectFrom("journalLine as line")
-        .innerJoin("journal as journal", (join) =>
-          join
-            .onRef("journal.id", "=", "line.journalId")
-            .onRef("journal.companyId", "=", "line.companyId")
-        )
-        .select(["line.documentId", "line.accountId", "line.description"])
-        .where("line.companyId", "=", companyId)
-        .where("line.documentType", "=", "Payment")
-        .where("line.documentId", "in", sourceIds)
-        .where("line.description", "in", [
-          onAccountCreditDescription(true),
-          onAccountCreditDescription(false),
-          CUSTOMER_DEPOSIT_DESCRIPTION
-        ])
-        .where("journal.sourceType", "in", ["Payment", "Opening Balance"])
-        .where("journal.status", "in", [...OPEN_ITEM_JOURNAL_STATUSES])
-        .execute()
-    : [];
-  // The on-account and deposit lines of the payments built here, for the
-  // later payments they fund.
-  const builtSourceControls: {
-    documentId: string;
-    accountId: string;
-    description: string;
-  }[] = [];
-
-  const dimensions = payments.some((_, index) => !kinds[index]!.isReimbursement)
-    ? await loadPartyDimensions(trx, companyGroupId)
-    : [];
-
-  return payments.map((payment, index) => {
-    const kind = kinds[index]!;
-    const { isReimbursement, isAR, cashIn, isDeposit, partyId } = kind;
-    const party = isReimbursement
-      ? employeeIdSet.has(partyId)
-        ? { typeId: null, intercompanyCompanyId: null }
-        : undefined
-      : (isAR ? customerById : supplierById).get(partyId);
-    if (!party) throw new NotFoundError("Payment counterparty not found");
-
-    // Before the cutover a control line may be a stand-in: booked on
-    // retained earnings, naming the default it wanted. The payment's lines
-    // on that account carry the same role.
-    const standInRoleByAccount = new Map<string, OptionalDefaultRole>();
-    const discountAccountId = isAR
-      ? defaults.customerPaymentDiscountAccount
-      : defaults.supplierPaymentDiscountAccount;
-    let controlAccountId: string | null;
-    if (isReimbursement) {
-      controlAccountId =
-        defaults.employeeReimbursementsPayableAccount ??
-        defaults.payablesAccount;
-    } else if (party.intercompanyCompanyId) {
-      const resolved = resolveDefaultAccount(
-        defaults,
-        isAR ? "intercompanyReceivablesAccount" : "intercompanyPayablesAccount",
-        postingStatus
-      );
-      controlAccountId = resolved.accountId;
-      if (resolved.accountDefaultRole) {
-        standInRoleByAccount.set(
-          resolved.accountId,
-          resolved.accountDefaultRole
-        );
-      }
-    } else {
-      controlAccountId = isAR
-        ? defaults.receivablesAccount
-        : defaults.payablesAccount;
-    }
-
-    const rows = settlementsByPayment.get(payment.id) ?? [];
-    const targetControlById = new Map<string, string>();
-    for (const row of rows) {
-      const target = row[kind.targetColumn];
-      for (const line of target
-        ? (targetControlsByDocument.get(target) ?? [])
-        : []) {
-        if (
-          !line.documentId ||
-          !line.accountId ||
-          line.documentType !== kind.targetDocumentType ||
-          !kind.targetDescriptions.includes(line.description ?? "") ||
-          !kind.targetSourceTypes.includes(line.sourceType ?? "")
-        ) {
-          continue;
-        }
-        targetControlById.set(line.documentId, line.accountId);
-        if (line.accountDefaultRole) {
-          standInRoleByAccount.set(
-            line.accountId,
-            line.accountDefaultRole as OptionalDefaultRole
-          );
-        }
-      }
-    }
-
-    const sourceControlById = new Map<
-      string,
-      { accountId: string | null; isDeposit: boolean }
-    >();
-    for (const line of [...sourceControls, ...builtSourceControls]) {
-      if (
-        line.documentId &&
-        line.accountId &&
-        kind.sourceDescriptions.includes(line.description ?? "") &&
-        rows.some((row) => row.sourcePaymentId === line.documentId)
-      ) {
-        sourceControlById.set(line.documentId, {
-          accountId: line.accountId,
-          isDeposit: line.description === CUSTOMER_DEPOSIT_DESCRIPTION
-        });
-      }
-    }
-    for (const row of rows) {
-      const source = row.sourcePaymentId
-        ? sourceById.get(row.sourcePaymentId)
-        : undefined;
-      if (!source || sourceControlById.has(source.id)) continue;
-      const sourceIsDeposit =
-        isAR && Boolean(source.rentalAgreementId ?? source.salesOrderId);
-      sourceControlById.set(source.id, {
-        accountId: sourceIsDeposit
-          ? defaults.prepaymentAccount
-          : controlAccountId,
-        isDeposit: sourceIsDeposit
-      });
-    }
-
-    const applications = rows.map((row) => {
-      const target = row[kind.targetColumn];
-      const source = row.sourcePaymentId
-        ? sourceControlById.get(row.sourcePaymentId)
-        : undefined;
-      return {
-        targetSalesInvoiceId: row.targetSalesInvoiceId,
-        targetPurchaseInvoiceId: row.targetPurchaseInvoiceId,
-        targetMemoId: row.targetMemoId,
-        targetReimbursementId: row.targetReimbursementId,
-        sourceAmount: principal(row.sourceAmount, row.id),
-        sourcePaymentId: row.sourcePaymentId,
-        fxGainLossAmount: Number(row.fxGainLossAmount),
-        appliedAmount: Number(row.appliedAmount),
-        discountAmount: Number(row.discountAmount),
-        writeOffAmount: Number(row.writeOffAmount),
-        targetExchangeRate: Number(row.targetExchangeRate),
-        sourceExchangeRate: Number(row.sourceExchangeRate),
-        targetControlAccountId:
-          (target ? targetControlById.get(target) : undefined) ??
-          controlAccountId ??
-          undefined,
-        sourceControlAccountId: source?.accountId ?? undefined,
-        sourceIsDeposit: source?.isDeposit
-      };
-    });
-
-    // What the current cash did not apply stayed on account (or as a
-    // deposit), exactly as the funding allocation left it at posting.
-    const grossBase = toBaseAmount(
-      Number(payment.totalAmount),
-      Number(payment.exchangeRate)
-    );
-    const currentCashReleased = applications
-      .filter((application) => !application.sourcePaymentId)
-      .reduce(
-        (sum, application) =>
-          sum +
-          round(
-            application.appliedAmount +
-              (cashIn
-                ? application.fxGainLossAmount
-                : -application.fxGainLossAmount)
-          ),
-        0
-      );
-
-    const { lines } = buildPaymentJournal({
-      paymentId: payment.id,
-      companyId,
-      isAR,
-      isReimbursement,
-      cashIn,
-      totalAmount: Number(payment.totalAmount),
-      exchangeRate: Number(payment.exchangeRate),
-      bankAccount: payment.bankAccount,
-      journalLineReference: nanoid(),
-      applications,
-      newOnAccountBase: round(grossBase - currentCashReleased),
-      fee: feeByPaymentId.get(payment.id),
-      accounts: {
-        controlAccountId,
-        discountAccountId,
-        discountAccountClass: discountAccountId
-          ? (classByAccount.get(discountAccountId) ?? null)
-          : null,
-        writeOffAccountId: isAR
-          ? defaults.customerWriteOffAccount
-          : defaults.supplierWriteOffAccount,
-        fxGainAccountId: defaults.realizedExchangeGainAccount,
-        fxLossAccountId: defaults.realizedExchangeLossAccount
-      },
-      isDeposit,
-      depositAccountId: defaults.prepaymentAccount
-    });
-    assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
-
-    for (const line of lines) {
-      if (kind.sourceDescriptions.includes(line.description)) {
-        builtSourceControls.push({
-          documentId: payment.id,
-          accountId: line.accountId,
-          description: line.description
-        });
-      }
-    }
-
-    return {
-      lines: lines.map((line) => ({
-        ...line,
-        accountDefaultRole: standInRoleByAccount.get(line.accountId) ?? null
-      })),
-      dimensions: isReimbursement
-        ? []
-        : partyDimensionValuesFrom(dimensions, {
-            isAR,
-            partyId,
-            typeId: party.typeId
-          })
-    };
   });
 }

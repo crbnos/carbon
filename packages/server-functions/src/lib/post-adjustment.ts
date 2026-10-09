@@ -4,10 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
-import type {
-  AutomaticJournalStatus,
-  OptionalDefaultRole
-} from "@carbon/database/journal-posting-status";
+import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import { getNextSequence } from "@carbon/database/sequence";
 import { datetime } from "@carbon/utils";
 import type { Transaction } from "kysely";
@@ -79,9 +76,6 @@ export interface BookAdjustmentArgs {
     // write-offs pass the company's scrapAccount so cost of quality is separable
     // on the P&L.
     offsetAccount?: string | null;
-    // The optional account default the offset account stands in for, when
-    // resolveDefaultAccount returned a stand-in (journalLine.accountDefaultRole).
-    offsetAccountDefaultRole?: OptionalDefaultRole | null;
     offsetDescription?: string;
     // journal.sourceType for a header this call creates (default
     // 'Inventory Adjustment'). Ignored when getJournalId supplies a shared journal.
@@ -457,13 +451,7 @@ export async function valueMovement(
   });
   const journalLines = await trx
     .insertInto("journalLine")
-    .values([
-      inventoryLine,
-      {
-        ...offsetLine,
-        accountDefaultRole: accounting.offsetAccountDefaultRole ?? null
-      }
-    ])
+    .values([inventoryLine, offsetLine])
     .returning(["id"])
     .execute();
 

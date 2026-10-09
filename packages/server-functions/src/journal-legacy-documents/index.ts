@@ -7,13 +7,13 @@
 // before the enable wrote them (step 1a) still has posted documents dated on
 // or after its cutover with no journal, and a payment against one fails with
 // "Target is missing its original control account". The enable is one-way,
-// so this runs its step 1a again, in one transaction: the same builders,
-// except that an outbound FIFO or LIFO movement with no cost row relieves the
-// layers open now (there is no re-cost after the enable to value it). The
-// journals it wrote then get their periods, their stand-in lines re-pointed
-// and are promoted to Posted, scoped to those journals by id. A journal dated
-// in a Closed or Locked period refuses the whole call, naming the period,
-// before any journal is written (`insertProvisionalJournals`).
+// so this runs its step 1a again, in one transaction: the same builders. An
+// outbound FIFO or LIFO movement with no cost row relieves the layers open
+// now, as in the enable; there is no re-cost after it. The journals it wrote
+// then get their periods, their stand-in lines re-pointed and are promoted
+// to Posted, scoped to those journals by id. A journal dated in a Closed or
+// Locked period refuses the whole call, naming the period, before any
+// journal is written (`insertProvisionalJournals`).
 
 import { getLogger } from "@carbon/logger";
 import { sql } from "kysely";
@@ -30,6 +30,7 @@ import {
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import { ACCOUNTING_NOT_STARTED } from "../lib/require-accounting-cutover";
 
 const logger = getLogger("server-functions", "journal-legacy-documents");
 
@@ -39,8 +40,6 @@ export type JournalLegacyDocumentsResult = {
   /** The legacy documents that got their journal, per family. */
   legacyJournals: LegacyJournalCounts;
 };
-
-export const ACCOUNTING_NOT_SET_UP = "Set up accounting first.";
 
 const journalLegacyDocumentsFn = defineServerFn({
   name: "journal-legacy-documents",
@@ -54,64 +53,51 @@ const journalLegacyDocumentsFn = defineServerFn({
         // journal while this runs.
         const settings = await trx
           .selectFrom("companySettings")
-          .select(
-            sql<string | null>`"accountingCutoverDate"::text`.as("cutover")
-          )
-          .where("id", "=", companyId)
-          .forUpdate()
+          .innerJoin("company", "company.id", "companySettings.id")
+          .select([
+            sql<string | null>`"accountingCutoverDate"::text`.as("cutover"),
+            "company.companyGroupId"
+          ])
+          .where("companySettings.id", "=", companyId)
+          .forUpdate("companySettings")
           .executeTakeFirst();
-        if (!settings) {
-          logger.warn("Company settings not found", { companyId });
-          throw new NotFoundError("Company settings not found");
+        if (!settings?.companyGroupId) {
+          logger.warn("Company not found", { companyId });
+          throw new NotFoundError("Company not found");
         }
         const cutoverDate = settings.cutover;
         if (!cutoverDate) {
           logger.warn("Refused: accounting is not set up", { companyId });
-          throw new InvalidInputError(ACCOUNTING_NOT_SET_UP);
+          throw new InvalidInputError(ACCOUNTING_NOT_STARTED);
         }
-
-        // After the enable every posting writes Posted, so a Provisional
-        // journal this transaction did not find here is one it wrote.
-        const provisional = () =>
-          trx
-            .selectFrom("journal")
-            .select("id")
-            .where("companyId", "=", companyId)
-            .where("status", "=", "Provisional")
-            .execute();
-        const before = new Set((await provisional()).map((row) => row.id));
-
-        const legacyJournals = await journalLegacyDocuments(trx, {
-          companyId,
-          userId,
-          cutoverDate,
-          outboundCosting: "open-layers"
-        });
-
-        const journalIds = (await provisional())
-          .map((row) => row.id)
-          .filter((id) => !before.has(id));
-        if (journalIds.length === 0) return { legacyJournals };
-        const scope = { journalIds };
-
-        await assignPeriods(trx, companyId, scope);
         const defaults = await trx
           .selectFrom("accountDefault")
           .selectAll()
           .where("companyId", "=", companyId)
           .executeTakeFirstOrThrow();
-        await repointStandInLines(trx, companyId, scope, defaults);
-        await promoteJournals(trx, companyId, userId, scope);
 
-        // The period that holds today Active, as the enable leaves it.
-        await getCurrentAccountingPeriod(companyId, trx);
+        const legacy = await journalLegacyDocuments(trx, {
+          companyId,
+          companyGroupId: settings.companyGroupId,
+          userId,
+          cutoverDate,
+          defaults
+        });
+        if (legacy.journalIds.length > 0) {
+          const scope = { journalIds: legacy.journalIds };
+          await assignPeriods(trx, companyId, scope);
+          await repointStandInLines(trx, companyId, scope, defaults);
+          await promoteJournals(trx, companyId, userId, scope);
+          // The period that holds today Active, as the enable leaves it.
+          await getCurrentAccountingPeriod(companyId, trx);
+        }
 
         logger.info("Wrote the journals of legacy documents", {
           companyId,
-          journals: journalIds.length,
-          legacyJournals
+          journals: legacy.journalIds.length,
+          legacyJournals: legacy.counts
         });
-        return { legacyJournals };
+        return { legacyJournals: legacy.counts };
       });
   }
 });

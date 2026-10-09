@@ -54,6 +54,13 @@ msgstr "(비활성 계정)"
 msgid "(Inactive)"
 msgstr "(비활성)"
 
+msgid "(not an Equity posting account)"
+msgstr ""
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {# blocking record} other {# blocking records}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {이 그룹의 # 부품} other {이 그룹의 # 부품}}"
@@ -81,6 +88,14 @@ msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#주}}"
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
+msgstr ""
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
+msgstr ""
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -113,10 +128,6 @@ msgstr "{0}은 이미 시작됨"
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0}개의 감가상각 자산 · {amount}"
-
-#. placeholder {0}: check.count
-msgid "{0} blocking records"
-msgstr "{0}개의 차단 레코드"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -621,9 +632,6 @@ msgstr "1개의 감가상각 자산 · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1개 배치 가능한 공정은 배치에 포함되지 않음 — 배치될 때까지 개별적으로 실행됨"
-
-msgid "1 blocking record"
-msgstr "1개의 차단 레코드"
 
 msgid "1 can't be scheduled"
 msgstr "1개는 일정을 짤 수 없습니다"
@@ -1402,6 +1410,9 @@ msgstr "수락됨 {0}"
 
 msgid "Account"
 msgstr "계정"
+
+msgid "Account {accountNumber} is not an active posting account."
+msgstr ""
 
 msgid "Account & Details"
 msgstr "계정 및 세부정보"
@@ -3452,6 +3463,9 @@ msgstr "아바타 URL"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "아바타 출처: {1}의 <0>{0}</0>, <1>{2}</1> 라이선스."
 
+msgid "Average"
+msgstr ""
+
 msgid "Avg Days to Close"
 msgstr "평균 마감 소요일"
 
@@ -4460,6 +4474,9 @@ msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
 msgid "Choose Return To for {unitName}"
 msgstr "{unitName}을(를) 반환할 위치 선택"
 
+msgid "Choose the first day of the current period or of one of the 3 periods before it."
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "이 계약이 렌트하는 플릿 단위를 선택하세요. 각 단위는 빈도에 따라 파일에 저장된 요율부터 시작됩니다. 그리드에서 변경할 수 있습니다."
 
@@ -4746,10 +4763,6 @@ msgstr "칸반 완료 스캔에서 모든 수량을 완료 처리"
 
 msgid "Complete Job"
 msgstr "작업 완료"
-
-#. placeholder {0}: check.count
-msgid "Complete or cancel the {0} job(s) created before Carbon recorded their costs."
-msgstr "Carbon가 원가를 기록하기 전에 생성된 {0}개의 작업 지시를 완료 처리하거나 취소하세요."
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "이 작업 지시를 완료하기 전에 MES에서 일련번호/배치를 완료하거나, 모든 공정을 완료로 표시하여 자동으로 완료되도록 하세요."
@@ -7404,8 +7417,8 @@ msgstr "문서"
 msgid "Documents and activity"
 msgstr "문서 및 활동"
 
-msgid "Documents posted before Carbon kept journals"
-msgstr "Carbon가 전표를 기록하기 전에 전기된 문서"
+msgid "Documents Posted Before Carbon Kept Journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "문서는 송장, 청구서 및 지불을 기본 제공자 문서로 푸시합니다. 해당 전표는 문서로 커버되는 것으로 기록됩니다. 또한 제공자에 기록된 지불을 Carbon으로 다시 가져와 일치하는 송장 또는 청구서를 닫고 Carbon 총계정원장 전표를 전기합니다. 끄기는 이를 의도적으로 제외된 것으로 기록합니다."
@@ -9344,6 +9357,9 @@ msgstr "필드 매핑"
 msgid "Fields"
 msgstr "필드"
 
+msgid "FIFO"
+msgstr ""
+
 msgid "File deleted successfully"
 msgstr "파일이 삭제되었습니다"
 
@@ -9513,9 +9529,6 @@ msgstr "자산 클래스"
 
 msgid "Fixed Asset Class"
 msgstr "고정자산 클래스"
-
-msgid "Fixed assets"
-msgstr "고정자산"
 
 msgid "Fixed Assets"
 msgstr "고정자산"
@@ -11634,6 +11647,9 @@ msgstr "누적 사용량(단위)"
 msgid "Lifetime Usage (Units)"
 msgstr "누적 사용량(단위)"
 
+msgid "LIFO"
+msgstr ""
+
 msgid "Light"
 msgstr "라이트"
 
@@ -11652,6 +11668,24 @@ msgstr "라인"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "라인 {0}"
+
+msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
+msgstr ""
+
+msgid "Line {line} has no account number."
+msgstr ""
+
+msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "행 설명 (선택 사항)"
@@ -12461,8 +12495,8 @@ msgstr "다른 시스템에서 마이그레이션 중입니까?"
 msgid "Migration Clearing"
 msgstr "마이그레이션 정산"
 
-msgid "Migration Clearing must total zero. <0>Go to Trial balance</0>"
-msgstr "마이그레이션 정산의 합계가 0이어야 합니다. <0>시산표로 이동</0>"
+msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
+msgstr ""
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "최소 {minimumBatchQuantity} — 충족"
@@ -15506,10 +15540,6 @@ msgstr "송장 전기"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "올바른 계정 및 설명 코드로 전표를 전기"
-
-#. placeholder {0}: check.count
-msgid "Post or delete the {0} document(s) dated before the cutover."
-msgstr "정산일 이전 날짜의 {0}개 문서를 전기하거나 삭제하십시오."
 
 msgid "Post Receipt"
 msgstr "입고 전기"
@@ -18907,6 +18937,12 @@ msgstr "수량 설정"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "회계 처리를 확인하려면 계약의 시작일을 설정하세요."
 
+msgid "Set the fiscal year settings and the base currency."
+msgstr ""
+
+msgid "Set the Migration Clearing account to an active Equity account that is not a group."
+msgstr ""
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "작업을 중단한 시간을 설정하거나 여전히 작업 중임을 확인하세요."
 
@@ -20590,6 +20626,9 @@ msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세�
 msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Ramp에서 인증이 거부되었습니다. 다시 연결해 보세요."
 
+msgid "The average cost of the item. Changing it needs permission to edit parts."
+msgstr ""
+
 msgid "The backup job reported this error."
 msgstr "백업 작업이 이 오류를 보고했습니다."
 
@@ -20680,6 +20719,9 @@ msgstr "국제적으로 은행을 식별하는 코드이며 8자리 또는 11자
 msgid "The company already has a posted opening balance journal."
 msgstr "회사에 이미 전기된 개시잔액 전표가 있습니다."
 
+msgid "The company has no account defaults."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."
 
@@ -20697,6 +20739,12 @@ msgstr "외주 인력의 예상 주간 가용성; 이 외주 인력을 주 동�
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "이 로트/일련번호의 수정된 유효기한으로, 변경 후 기존 보유 재고가 유통기한 정책에 따라 재평가됩니다."
+
+msgid "The CSV file is empty."
+msgstr ""
+
+msgid "The CSV has no {columns} column."
+msgstr ""
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "CSV에는 accountNumber, 차변, 대변 열이 필요합니다. 가져오기는 전체 시산표를 교체합니다."
@@ -21103,7 +21151,7 @@ msgstr "Onshape 연동이 만료되었습니다"
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government 연동이 만료되었습니다."
 
-#. placeholder {0}: formatDate( parseDate(cutoverDate).subtract({ days: 1 }).toString() )
+#. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."
 msgstr "개시잔액은 {0} 말 현재입니다."
 
@@ -22404,9 +22452,6 @@ msgstr "운송 및 기관"
 
 msgid "Trash"
 msgstr "휴지통"
-
-msgid "Trial balance"
-msgstr "시산표"
 
 msgid "Trial Balance"
 msgstr "시산표"

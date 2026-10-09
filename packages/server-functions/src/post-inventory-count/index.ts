@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
-import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import { many, notNull, single } from "@carbon/database/rows";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
@@ -181,29 +184,27 @@ const postInventoryCount = defineServerFn({
     // Active dimensions for the company group (post-shipment precedent) —
     // journal lines get Item / ItemPostingGroup / Location tags.
     const dimensionMap: Record<string, string> = {};
-    {
-      const companyRecord = await single(
-        db,
-        "company",
-        { id: companyId },
-        { columns: ["companyGroupId"] }
-      );
-      if (companyRecord.error) throw new Error("Failed to fetch company");
-      const dimensions = await many(
-        db,
-        "dimension",
-        {
-          companyGroupId: companyRecord.data.companyGroupId!,
-          active: true,
-          entityType: ["Item", "ItemPostingGroup", "Location"]
-        },
-        { columns: ["id", "entityType"] }
-      );
-      // Fail closed: journal lines must not silently lose dimension tags.
-      if (dimensions.error) throw new Error("Failed to fetch dimensions");
-      for (const dim of dimensions.data ?? []) {
-        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
-      }
+    const companyRecord = await single(
+      db,
+      "company",
+      { id: companyId },
+      { columns: ["companyGroupId"] }
+    );
+    if (companyRecord.error) throw new Error("Failed to fetch company");
+    const dimensions = await many(
+      db,
+      "dimension",
+      {
+        companyGroupId: companyRecord.data.companyGroupId!,
+        active: true,
+        entityType: ["Item", "ItemPostingGroup", "Location"]
+      },
+      { columns: ["id", "entityType"] }
+    );
+    // Fail closed: journal lines must not silently lose dimension tags.
+    if (dimensions.error) throw new Error("Failed to fetch dimensions");
+    for (const dim of dimensions.data ?? []) {
+      if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
     }
 
     const accounting = {
@@ -237,9 +238,7 @@ const postInventoryCount = defineServerFn({
       if (locked.status !== "Pending") {
         throw new Error("Inventory count is no longer pending");
       }
-      if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-        throw new Error("Accounting was just set up. Post the document again.");
-      }
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
       // ONE journal per count post: created lazily on the first variance that
       // carries value, then shared by every line's journal-line pair.

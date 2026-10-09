@@ -4,6 +4,7 @@
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import {
+  assertPostingStatusUnchanged,
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
@@ -171,30 +172,28 @@ const postNonConformance = defineServerFn({
     // Active dimensions for the company group — journal lines get
     // Item / ItemPostingGroup / Location tags (post-adjustment precedent).
     const dimensionMap: Record<string, string> = {};
-    {
-      const companyRecord = await single(
+    const companyRecord = await single(
+      db,
+      "company",
+      { id: companyId },
+      { columns: ["companyGroupId"] }
+    );
+    if (companyRecord.error) throw new Error("Failed to fetch company");
+    const companyGroupId = companyRecord.data.companyGroupId;
+    if (companyGroupId) {
+      const dimensions = await many(
         db,
-        "company",
-        { id: companyId },
-        { columns: ["companyGroupId"] }
+        "dimension",
+        {
+          companyGroupId,
+          active: true,
+          entityType: ["Item", "ItemPostingGroup", "Location"]
+        },
+        { columns: ["id", "entityType"] }
       );
-      if (companyRecord.error) throw new Error("Failed to fetch company");
-      const companyGroupId = companyRecord.data.companyGroupId;
-      if (companyGroupId) {
-        const dimensions = await many(
-          db,
-          "dimension",
-          {
-            companyGroupId,
-            active: true,
-            entityType: ["Item", "ItemPostingGroup", "Location"]
-          },
-          { columns: ["id", "entityType"] }
-        );
-        if (dimensions.error) throw new Error("Failed to fetch dimensions");
-        for (const dim of dimensions.data ?? []) {
-          if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
-        }
+      if (dimensions.error) throw new Error("Failed to fetch dimensions");
+      for (const dim of dimensions.data ?? []) {
+        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
       }
     }
 
@@ -230,27 +229,17 @@ const postNonConformance = defineServerFn({
         .executeTakeFirst();
       if (alreadyPosted) return;
 
-      if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-        throw new Error("Accounting was just set up. Post the document again.");
-      }
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
       // One shared journal per call (per reject / per disposition close), a line
       // pair per movement — created lazily so an all-zero-value run posts none.
-      // Cost of quality: offset to scrapAccount. Before the cutover an empty
-      // scrapAccount becomes a stand-in line; after it, an empty scrapAccount
-      // falls back to the variance account, as it always has.
-      const scrapOffset = resolveDefaultAccount(
-        {
-          ...accountDefaults.data,
-          scrapAccount:
-            accountDefaults.data.scrapAccount ??
-            (postingStatus === "Posted"
-              ? accountDefaults.data.inventoryAdjustmentVarianceAccount
-              : null)
-        },
+      // Cost of quality: offset to scrapAccount, or to the variance account
+      // when it is empty.
+      const scrapAccountId = resolveDefaultAccount(
+        accountDefaults.data,
         "scrapAccount",
         postingStatus
-      );
+      ).accountId;
       const accounting = {
         postingStatus,
         accountingPeriodId,
@@ -260,8 +249,7 @@ const postNonConformance = defineServerFn({
           inventoryAdjustmentVarianceAccount:
             accountDefaults.data.inventoryAdjustmentVarianceAccount
         },
-        offsetAccount: scrapOffset.accountId,
-        offsetAccountDefaultRole: scrapOffset.accountDefaultRole,
+        offsetAccount: scrapAccountId,
         offsetDescription: "Scrap / Cost of Quality",
         sourceType: documentType,
         description: journalDescription,

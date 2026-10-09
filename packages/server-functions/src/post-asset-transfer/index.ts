@@ -7,6 +7,7 @@ import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase as DB, Kysely } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
+  assertPostingStatusUnchanged,
   journalPostingStatus
 } from "@carbon/database/journal-posting-status";
 import { inOrder } from "@carbon/database/rows";
@@ -154,21 +155,6 @@ async function loadAccounting(
     },
     dimensions
   };
-}
-
-// The status was read before the transaction opened. Re-read it inside, with
-// FOR SHARE held until commit: an accounting cutover in between would leave
-// the journal with the wrong status and period.
-async function assertPostingStatus(
-  trx: Trx,
-  companyId: string,
-  accounting: AccountingContext
-): Promise<void> {
-  if (
-    (await journalPostingStatus(trx, companyId)) !== accounting.postingStatus
-  ) {
-    throw new Error("Accounting was just set up. Post the document again.");
-  }
 }
 
 // One 'Asset Transfer' journal from already-balanced lines (Provisional before
@@ -556,7 +542,11 @@ async function capitalize(
     : ("Active" as const);
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
-    await assertPostingStatus(trx, companyId, accounting);
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // Net on-hand per bin at the location, read inside the transaction so the
     // consumption below books against the same snapshot.
     const stockRows = await trx
@@ -862,7 +852,11 @@ async function returnToInventory(
   const itemId = item.id;
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
-    await assertPostingStatus(trx, companyId, accounting);
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // A unit reserved or on rent belongs to that agreement until it comes
     // back: the live-line statuses are the ones the fleetAssets view and the
     // rentalAgreementLine_asset_live_idx unique index key on.
@@ -1101,7 +1095,11 @@ async function attachJob(
   const accounting = await loadAccounting(db, companyId, today);
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
-    await assertPostingStatus(trx, companyId, accounting);
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // The job's WIP balance so far: cost leaves WIP at attachment (SAP AuC).
     // Before the cutover it sits in Provisional journals and is swept by one.
     const wip = await trx
@@ -1309,7 +1307,11 @@ async function capitalizeCip(
   const accounting = await loadAccounting(db, companyId, inServiceDate);
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
-    await assertPostingStatus(trx, companyId, accounting);
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // Lock the asset before summing its cost rows: an attachment or a
     // receipt adding a row after the sum would be left out of the
     // capitalized cost while the asset leaves Under Construction.
@@ -1464,7 +1466,11 @@ async function adjustCost(
   );
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
-    await assertPostingStatus(trx, companyId, accounting);
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // Re-read under a row lock: a concurrent run, disposal or adjustment
     // changes the values the new status is derived from.
     const current = await trx

@@ -27,7 +27,10 @@
 
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import { many, single } from "@carbon/database/rows";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -271,29 +274,27 @@ export async function importStockQuantities(
   // Active dimensions for the company group — journal lines get Item /
   // ItemPostingGroup / Location tags.
   const dimensionMap: Record<string, string> = {};
-  {
-    const companyRecord = await single(
-      db,
-      "company",
-      { id: companyId },
-      { columns: ["companyGroupId"] }
-    );
-    if (companyRecord.error) throw new Error("Failed to fetch company");
-    const dimensions = await many(
-      db,
-      "dimension",
-      {
-        companyGroupId: companyRecord.data.companyGroupId!,
-        active: true,
-        entityType: ["Item", "ItemPostingGroup", "Location"]
-      },
-      { columns: ["id", "entityType"] }
-    );
-    // Fail closed: journal lines must not silently lose dimension tags.
-    if (dimensions.error) throw new Error("Failed to fetch dimensions");
-    for (const dim of dimensions.data ?? []) {
-      if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
-    }
+  const companyRecord = await single(
+    db,
+    "company",
+    { id: companyId },
+    { columns: ["companyGroupId"] }
+  );
+  if (companyRecord.error) throw new Error("Failed to fetch company");
+  const dimensions = await many(
+    db,
+    "dimension",
+    {
+      companyGroupId: companyRecord.data.companyGroupId!,
+      active: true,
+      entityType: ["Item", "ItemPostingGroup", "Location"]
+    },
+    { columns: ["id", "entityType"] }
+  );
+  // Fail closed: journal lines must not silently lose dimension tags.
+  if (dimensions.error) throw new Error("Failed to fetch dimensions");
+  for (const dim of dimensions.data ?? []) {
+    if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
   }
 
   const accounting = {
@@ -332,9 +333,7 @@ export async function importStockQuantities(
   // cost layers are valued by replaying the per-row read (see
   // `planIncreaseUnitCosts`). Nothing here re-derives a field.
   await db.transaction().execute(async (trx) => {
-    if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-      throw new Error("Accounting was just set up. Post the document again.");
-    }
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
     // A tracked entity's id is ours to choose, so the ledger rows can name it
     // before anything is inserted.
@@ -365,8 +364,7 @@ export async function importStockQuantities(
     const rowPlans = planStockRows({
       rows: planInputs,
       itemCosts: itemCostByItem,
-      openLayersByItem,
-      hasAccounting: true
+      openLayersByItem
     });
 
     // Tracked entities first: the ledger rows reference them.

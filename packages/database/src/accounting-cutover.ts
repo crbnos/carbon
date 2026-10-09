@@ -10,8 +10,19 @@
 // they return.
 
 import { parseDate } from "@internationalized/date";
+import {
+  type CostingMethod,
+  type ReliefEvent,
+  type ReliefLayer,
+  replayReliefs
+} from "./cost-relief";
 import { type AccountClass, debitSigned } from "./ledger";
 import { assertBalanced, EPSILON, equals, round } from "./precision";
+import type { Database } from "./types";
+
+/** The document type a journal line carries. */
+export type JournalLineDocumentType =
+  Database["public"]["Enums"]["journalLineDocumentType"];
 
 export type { AccountClass } from "./ledger";
 
@@ -71,7 +82,7 @@ export type OpenItem = {
   amount: number;
   originalAmount: number;
   settledBeforeCutover: number;
-  documentType: string | null;
+  documentType: JournalLineDocumentType | null;
   documentId: string | null;
   documentLineReference: string | null;
   description: string;
@@ -104,7 +115,7 @@ export type OpeningJournalLine = {
   /** Natural-balance-signed, as every journal line in Carbon. */
   amount: number;
   description: string;
-  documentType: string | null;
+  documentType: JournalLineDocumentType | null;
   documentId: string | null;
   documentLineReference: string | null;
   quantity: number | null;
@@ -136,32 +147,8 @@ export function buildOpeningJournalLines(
   items: OpenItem[],
   trialBalance: TrialBalanceLine[],
   controlAccountIds: ReadonlySet<string>,
-  migrationClearing: MigrationClearingAccount
-): OpeningJournalLine[];
-/**
- * @deprecated Pass the Migration Clearing account with its class. The id
- * alone takes the class readiness requires (`MIGRATION_CLEARING_ACCOUNT_CLASS`);
- * the enable re-runs readiness before it builds the opening journal.
- */
-export function buildOpeningJournalLines(
-  items: OpenItem[],
-  trialBalance: TrialBalanceLine[],
-  controlAccountIds: ReadonlySet<string>,
-  migrationClearingAccountId: string
-): OpeningJournalLine[];
-export function buildOpeningJournalLines(
-  items: OpenItem[],
-  trialBalance: TrialBalanceLine[],
-  controlAccountIds: ReadonlySet<string>,
-  migrationClearingAccount: MigrationClearingAccount | string
+  clearing: MigrationClearingAccount
 ): OpeningJournalLine[] {
-  const clearing =
-    typeof migrationClearingAccount === "string"
-      ? {
-          accountId: migrationClearingAccount,
-          accountClass: MIGRATION_CLEARING_ACCOUNT_CLASS
-        }
-      : migrationClearingAccount;
   if (clearing.accountClass !== MIGRATION_CLEARING_ACCOUNT_CLASS) {
     throw new Error(
       `Migration Clearing must be an ${MIGRATION_CLEARING_ACCOUNT_CLASS} account, not ${clearing.accountClass}`
@@ -331,44 +318,34 @@ export function migrationClearingByAccount(
   return { rows, total: total === 0 ? 0 : total };
 }
 
-export type CostLayerBeforeCutover = { id: string; itemId: string };
+/** The layer that opens an item's stock at the cutover. */
 export type OpeningLayer = {
   itemId: string;
   quantity: number;
   cost: number;
-  remainingQuantity: number;
 };
 
 /**
- * The inventory reset as of the cutover date: close every cost layer dated
- * before it and open one layer per item with stock, at the reviewed unit
- * cost. Cost layers have no location, so on-hand is per item.
+ * The inventory reset as of the cutover date: one opening layer per item with
+ * stock, at the reviewed unit cost. The caller closes every layer dated
+ * before the cutover. Cost layers have no location, so on-hand is per item.
  */
 export function planInventoryReset(
   onHandAtCutover: { itemId: string; quantity: number }[],
-  unitCostByItem: ReadonlyMap<string, number>,
-  layersBeforeCutover: CostLayerBeforeCutover[]
-): { layerIdsToClose: string[]; openingLayers: OpeningLayer[] } {
-  const openingLayers: OpeningLayer[] = [];
-  for (const { itemId, quantity } of onHandAtCutover) {
-    if (quantity <= EPSILON) continue;
+  unitCostByItem: ReadonlyMap<string, number>
+): OpeningLayer[] {
+  return onHandAtCutover.flatMap(({ itemId, quantity }) => {
+    if (quantity <= EPSILON) return [];
     const unitCost = unitCostByItem.get(itemId);
     if (unitCost === undefined) {
       throw new Error(
         `Item ${itemId} has stock at the cutover but no unit cost`
       );
     }
-    openingLayers.push({
-      itemId,
-      quantity: round(quantity),
-      cost: round(quantity * unitCost),
-      remainingQuantity: round(quantity)
-    });
-  }
-  return {
-    layerIdsToClose: layersBeforeCutover.map((layer) => layer.id),
-    openingLayers
-  };
+    return [
+      { itemId, quantity: round(quantity), cost: round(quantity * unitCost) }
+    ];
+  });
 }
 
 /** A cost layer dated before the cutover, with its cost adjustments included. */
@@ -403,85 +380,69 @@ export function unitCostAtCutover(
   return round(value / onHandAtCutover);
 }
 
-/**
- * A layer a re-cost draws from: the opening layer or an inbound layer after
- * the cutover. `postingDate` is `YYYY-MM-DD`; the opening layer carries the
- * cutover date.
- */
-export type RecostLayer = {
-  key: string;
-  itemId: string;
-  postingDate: string;
-  quantity: number;
-  cost: number;
-  remainingQuantity: number;
-};
+/** A layer the re-cost opens: the opening layer or an inbound layer after
+ *  the cutover, at its full quantity, with its adjustment children. */
+export type RecostLayer = ReliefLayer & { itemId: string };
 
 /** An outbound movement after the cutover; quantity and cost are positive. */
-export type OutboundMovement = {
+export type RecostOutbound = {
   costLedgerId: string;
   itemId: string;
-  postingDate: string;
   quantity: number;
   cost: number;
+  /** The serial units leaving with it. */
+  trackedEntityIds: readonly string[];
 };
+
+/** The re-cost's ledger, in order: the opening layers first, then every
+ *  inbound layer and outbound movement after the cutover as it was posted. */
+export type RecostEvent = { layer: RecostLayer } | { outbound: RecostOutbound };
 
 /**
  * Re-costs the outbound movements dated on or after the cutover against the
- * reset layers. Pass layers oldest first and movements in date then entry
- * order. A movement draws only from layers dated on or before it: the oldest
- * first for a FIFO item, the newest first for a LIFO item. Only FIFO/LIFO
- * items relieve layers — the caller passes those only; Standard and Average
- * cost from `itemCost`. A quantity no layer covers is costed at
- * `fallbackUnitCostByItem`, as `calculateCOGS` costs negative inventory.
+ * reset layers: the events run in order, each outbound movement relieving the
+ * layers open at that point as `calculateCOGS` relieves them
+ * (`replayReliefs`). Only FIFO and LIFO items relieve layers; the caller
+ * passes those only, as Standard and Average cost from `itemCost`. Returns
+ * each movement's new cost and its difference from the stored one, and the
+ * remaining quantity of every layer and child.
  */
 export function recostOutbound(
-  layers: RecostLayer[],
-  outbound: OutboundMovement[],
-  fallbackUnitCostByItem: ReadonlyMap<string, number>,
-  costingMethodByItem: ReadonlyMap<string, "FIFO" | "LIFO"> = new Map()
+  events: readonly RecostEvent[],
+  methodByItem: ReadonlyMap<string, CostingMethod>,
+  fallbackUnitCostByItem: ReadonlyMap<string, number>
 ): {
   movements: { costLedgerId: string; newCost: number; delta: number }[];
-  remainingByLayer: Map<string, number>;
+  remainingById: Map<string, number>;
 } {
-  const open = layers.map((layer) => ({ ...layer }));
-  // Each item's layers, oldest first, grouped once.
-  const openByItem = new Map<string, typeof open>();
-  for (const layer of open) {
-    const list = openByItem.get(layer.itemId);
-    if (list) list.push(layer);
-    else openByItem.set(layer.itemId, [layer]);
-  }
-  const movements = outbound.map((movement) => {
-    let toRelieve = movement.quantity;
-    let newCost = 0;
-    const eligible = (openByItem.get(movement.itemId) ?? []).filter(
-      (layer) => layer.postingDate <= movement.postingDate
-    );
-    if (costingMethodByItem.get(movement.itemId) === "LIFO") eligible.reverse();
-    for (const layer of eligible) {
-      if (toRelieve <= EPSILON) break;
-      if (layer.remainingQuantity <= EPSILON) continue;
-      const unitCost = layer.quantity > 0 ? layer.cost / layer.quantity : 0;
-      const take = Math.min(toRelieve, layer.remainingQuantity);
-      newCost += take * unitCost;
-      layer.remainingQuantity -= take;
-      toRelieve -= take;
-    }
-    if (toRelieve > EPSILON) {
-      newCost += toRelieve * (fallbackUnitCostByItem.get(movement.itemId) ?? 0);
-    }
-    const rounded = round(newCost);
-    return {
-      costLedgerId: movement.costLedgerId,
-      newCost: rounded,
-      delta: round(rounded - movement.cost)
-    };
+  const outbound = events.flatMap((event) =>
+    "outbound" in event ? [event.outbound] : []
+  );
+  const { costByKey, remainingById } = replayReliefs({
+    events: events.map(
+      (event): ReliefEvent =>
+        "layer" in event
+          ? { kind: "layer", itemId: event.layer.itemId, layer: event.layer }
+          : {
+              kind: "relief",
+              key: event.outbound.costLedgerId,
+              itemId: event.outbound.itemId,
+              quantity: event.outbound.quantity,
+              trackedEntityIds: event.outbound.trackedEntityIds
+            }
+    ),
+    methodByItem,
+    fallbackUnitCostByItem
   });
   return {
-    movements,
-    remainingByLayer: new Map(
-      open.map((layer) => [layer.key, round(layer.remainingQuantity)])
-    )
+    movements: outbound.map((movement) => {
+      const newCost = costByKey.get(movement.costLedgerId) ?? 0;
+      return {
+        costLedgerId: movement.costLedgerId,
+        newCost,
+        delta: round(newCost - movement.cost)
+      };
+    }),
+    remainingById
   };
 }

@@ -546,7 +546,8 @@ async function commenceSalesTypeLines(
           assetAccountId: assetClass.assetAccountId,
           accumulatedDepreciationAccountId:
             assetClass.accumulatedDepreciationAccountId
-        }
+        },
+        accountDefaultRoles: accounting.accountDefaultRoles
       }),
       rentalAgreementId: agreement.id,
       rentalAgreementLineId: plan.lineId,

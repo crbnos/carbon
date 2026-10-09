@@ -6,18 +6,17 @@
 // stored memo, with today's account defaults
 // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
-// Built by `rebuildMemoJournals` (post-memo/post-memo-transaction.ts), the
-// builder the void of a memo dated before the cutover uses, with the status
-// of a posting before the cutover: a memo with no reason account and an
-// empty Sales Returns default gets a stand-in reason line, as
-// `postMemoTransaction` writes it. A contract or rental credit memo books
-// as a plain memo on the sales account: its contract and deferral legs came
-// from positions and schedule rows that are not journal lines.
+// Built by `rebuildMemoJournals` (post-memo/rebuild-journal.ts), the builder
+// the void of a memo dated before the cutover uses, with the status of a
+// posting before the cutover. At that status a contract or rental credit
+// memo books as a plain memo on the sales account: its contract and deferral
+// legs came from positions and schedule rows that are not journal lines.
 
 import type { KyselyTx } from "@carbon/database/client";
 import { legacyMemos } from "@carbon/database/legacy-documents";
-import { rebuildMemoJournals } from "../../post-memo/post-memo-transaction";
-import { chunks, type LegacyDocumentJournal } from "./write";
+import { chunkArray } from "@carbon/utils";
+import { rebuildMemoJournals } from "../../post-memo/rebuild-journal";
+import { type LegacyDocumentJournal, ROWS_PER_STATEMENT } from "./write";
 
 export async function buildLegacyMemoJournals(
   trx: KyselyTx,
@@ -28,10 +27,9 @@ export async function buildLegacyMemoJournals(
     cutoverDate
   }).execute();
   const journals: LegacyDocumentJournal[] = [];
-  for (const batch of chunks(memos)) {
+  for (const batch of chunkArray(memos, ROWS_PER_STATEMENT)) {
     const rebuilt = await rebuildMemoJournals(trx, batch, companyId, {
-      postingStatus: "Provisional",
-      contractCredit: "sales"
+      postingStatus: "Provisional"
     });
     batch.forEach((memo, index) => {
       const { lines, dimensions } = rebuilt[index]!;

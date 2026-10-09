@@ -27,13 +27,19 @@ import postSalesInvoice from "../../post-sales-invoice";
 import activateAccounting from "..";
 import {
   activationFixture,
+  deleteJournals,
+  enableWithStockAtTen,
   type Fixture,
   glBalance,
+  jobFixture,
   journaledFamilies,
   legacyDocumentCounts,
+  legacyShipmentWithNoCostRow,
   moveBeforeCutover,
+  openLayersValue,
   pay,
   postServiceInvoice,
+  provisionalJournals,
   receiveFiveParts,
   shipFiveParts,
   USER,
@@ -770,8 +776,9 @@ databaseTest(
         .where("itemLedgerType", "=", "Purchase")
         .execute();
       await deleteJournals(f, ["Job Consumption", "Job Receipt"]);
-      // Today's unit cost of the part is 9: the re-cost moves the issue to
-      // the opening layer's 10.
+      // Today's unit cost of the part is 9, but the issue relieves the FIFO
+      // layer open at 8, as calculateCOGS would have; the re-cost then moves
+      // it to the opening layer's 10.
       await f.db
         .updateTable("itemCost")
         .set({ unitCost: 9 })
@@ -788,7 +795,7 @@ databaseTest(
       });
 
       // The issue, re-costed against the opening layer; the output layer at
-      // the material cost the issue had when the job completed.
+      // the material cost the issue had when the job completed (2 at 8).
       const rows = await f.db
         .selectFrom("costLedger")
         .select([
@@ -827,7 +834,7 @@ databaseTest(
           documentId: job.jobId,
           itemId: job.assemblyId,
           quantity: 1,
-          cost: 18,
+          cost: 16,
           remainingQuantity: 1
         }
       ]);
@@ -866,12 +873,12 @@ databaseTest(
       ]);
 
       // Stock on the GL equals the open layers: 8 parts at 10 and the
-      // assembly at 18. The 2 the re-cost added after the completion stay
+      // assembly at 16. The 4 the re-cost added after the completion stay
       // in WIP: the output layer is not valued again.
       expect(await glBalance(f, "inventory")).toBeCloseTo(80, 6);
-      expect(await glBalance(f, "finished-goods")).toBeCloseTo(18, 6);
-      expect(await glBalance(f, "wip")).toBeCloseTo(2, 6);
-      expect(await openLayersValue(f)).toBeCloseTo(98, 4);
+      expect(await glBalance(f, "finished-goods")).toBeCloseTo(16, 6);
+      expect(await glBalance(f, "wip")).toBeCloseTo(4, 6);
+      expect(await openLayersValue(f)).toBeCloseTo(96, 4);
       expect(await provisionalJournals(f)).toEqual([]);
       expect(await glBalance(f, "migration-clearing")).toBeCloseTo(0, 6);
     } finally {
@@ -879,30 +886,6 @@ databaseTest(
     }
   }
 );
-
-/**
- * Before the cutover: 5 parts at 8 and 5 at 12 received. After it: 5
- * shipped, then the shipment's "Sale" cost row, its relief of the layer and
- * its journal undone, as main left a shipment with accounting off.
- */
-async function legacyShipmentWithNoCostRow(f: Fixture) {
-  await receiveFiveParts(f, { id: "po-1", unitPrice: 8 });
-  await receiveFiveParts(f, { id: "po-2", unitPrice: 12 });
-  await moveBeforeCutover(f);
-  await shipFiveParts(f);
-  await f.db
-    .deleteFrom("costLedger")
-    .where("companyId", "=", f.companyId)
-    .where("itemLedgerType", "=", "Sale")
-    .execute();
-  await f.db
-    .updateTable("costLedger")
-    .set({ remainingQuantity: sql`"quantity"` })
-    .where("companyId", "=", f.companyId)
-    .where("itemLedgerType", "=", "Purchase")
-    .execute();
-  await deleteJournals(f, ["Sales Shipment"]);
-}
 
 /** A posted sales invoice with no sales order: 5 parts at 25. */
 async function postDirectPartInvoice(f: Fixture): Promise<string> {
@@ -954,33 +937,6 @@ async function postDirectPartInvoice(f: Fixture): Promise<string> {
   return invoiceId;
 }
 
-/** Enables with the opening stock (10 parts at 10) against GR/IR. */
-async function enableWithStockAtTen(f: Fixture) {
-  await f.db
-    .updateTable("accountDefault")
-    .set({ scrapAccount: f.account("scrap") })
-    .where("companyId", "=", f.companyId)
-    .execute();
-  const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
-  const [part] = await getCutoverInventory(f.db, args);
-  expect(part!.unitCost).toBe(10);
-  await saveOpeningTrialBalance(f.db, {
-    ...args,
-    userId: USER,
-    lines: [
-      { accountId: f.account("inventory"), debit: 100, credit: 0 },
-      { accountId: f.account("grni"), debit: 0, credit: 100 }
-    ]
-  });
-  // The wizard counts the documents before the enable journals them.
-  const counted = await legacyDocumentCounts(f);
-  const result = unwrap(
-    await activateAccounting(f.ctx, { ...args, confirmation: f.companyName })
-  );
-  expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
-  return result;
-}
-
 /** The 5 shipped cost 50 from the opening layer, which keeps 5 at 10. */
 async function expectShipmentCostedFromOpeningLayer(f: Fixture) {
   const sale = await f.db
@@ -995,121 +951,6 @@ async function expectShipmentCostedFromOpeningLayer(f: Fixture) {
   expect(await openLayersValue(f)).toBeCloseTo(50, 4);
   expect(await provisionalJournals(f)).toEqual([]);
   expect(await glBalance(f, "migration-clearing")).toBeCloseTo(0, 6);
-}
-
-/** The value of the cost layers still open. */
-async function openLayersValue(f: Fixture) {
-  const row = await f.db
-    .selectFrom("costLedger")
-    .select(
-      sql<number>`coalesce(sum("cost" * "remainingQuantity" / "quantity"), 0)`.as(
-        "value"
-      )
-    )
-    .where("companyId", "=", f.companyId)
-    .where("remainingQuantity", ">", 0)
-    .where("adjustment", "=", false)
-    .executeTakeFirstOrThrow();
-  return Number(row.value);
-}
-
-function provisionalJournals(f: Fixture) {
-  return f.db
-    .selectFrom("journal")
-    .select(["description", "sourceType"])
-    .where("companyId", "=", f.companyId)
-    .where("status", "=", "Provisional")
-    .execute();
-}
-
-/** A made assembly and a job for one of it: one operation, and two of the
- *  part planned. */
-async function jobFixture(f: Fixture) {
-  const assemblyId = `${f.prefix}-assembly`;
-  const jobId = `${f.prefix}-job`;
-  const processId = `${f.prefix}-process`;
-  await f.db.transaction().execute(async (trx) => {
-    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
-    await trx
-      .insertInto("item")
-      .values({
-        id: assemblyId,
-        readableId: `${f.prefix}-ASSY`,
-        name: "Assembly",
-        type: "Part",
-        itemTrackingType: "Inventory",
-        replenishmentSystem: "Make",
-        companyId: f.companyId,
-        createdBy: USER
-      })
-      .execute();
-    await trx
-      .insertInto("job")
-      .values({
-        id: jobId,
-        jobId: "J-1",
-        itemId: assemblyId,
-        quantity: 1,
-        unitOfMeasureCode: "EA",
-        locationId: f.locationId,
-        companyId: f.companyId,
-        createdBy: USER
-      })
-      .execute();
-    await trx
-      .insertInto("process")
-      .values({
-        id: processId,
-        name: "Assemble",
-        defaultStandardFactor: "Hours/Piece",
-        companyId: f.companyId,
-        createdBy: USER
-      })
-      .execute();
-  });
-  // The job insert creates its top-level make method.
-  const makeMethod = await f.db
-    .selectFrom("jobMakeMethod")
-    .select("id")
-    .where("jobId", "=", jobId)
-    .where("companyId", "=", f.companyId)
-    .executeTakeFirstOrThrow();
-  const operation = await f.db
-    .insertInto("jobOperation")
-    .values({
-      jobId,
-      jobMakeMethodId: makeMethod.id,
-      processId,
-      description: "Assemble",
-      companyId: f.companyId,
-      createdBy: USER
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  const material = await f.db
-    .insertInto("jobMaterial")
-    .values({
-      jobId,
-      jobMakeMethodId: makeMethod.id,
-      jobOperationId: operation.id,
-      itemId: f.partId,
-      itemType: "Part",
-      methodType: "Pull from Inventory",
-      description: "Bracket",
-      quantity: 2,
-      estimatedQuantity: 2,
-      unitOfMeasureCode: "EA",
-      companyId: f.companyId,
-      createdBy: USER
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  return {
-    assemblyId,
-    jobId,
-    operationId: operation.id,
-    materialId: material.id
-  };
 }
 
 /** A posted credit memo of `amount` for the customer, dated today. */
@@ -1393,47 +1234,5 @@ async function documentJournals(f: Fixture, sourceTypes: SourceType[]) {
         .map((group) => group.sort((a, b) => key(a).localeCompare(key(b))))
         .sort((a, b) => key(a).localeCompare(key(b)))
     };
-  });
-}
-
-/** Deletes the journals of the given source types, as the reset did: the
- *  documents' journalId first, past the charge's draft guard. */
-async function deleteJournals(f: Fixture, sourceTypes: SourceType[]) {
-  await f.db.transaction().execute(async (trx) => {
-    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
-    await sql`SET LOCAL session_replication_role = replica`.execute(trx);
-    for (const table of ["payment", "memo", "charge"] as const) {
-      await trx
-        .updateTable(table)
-        .set({ journalId: null })
-        .where("companyId", "=", f.companyId)
-        .execute();
-    }
-    await sql`SET LOCAL session_replication_role = origin`.execute(trx);
-    const journalIds = trx
-      .selectFrom("journal")
-      .select("id")
-      .where("companyId", "=", f.companyId)
-      .where("sourceType", "in", sourceTypes);
-    const lineIds = trx
-      .selectFrom("journalLine")
-      .select("id")
-      .where("companyId", "=", f.companyId)
-      .where("journalId", "in", journalIds);
-    await trx
-      .deleteFrom("journalLineDimension")
-      .where("companyId", "=", f.companyId)
-      .where("journalLineId", "in", lineIds)
-      .execute();
-    await trx
-      .deleteFrom("journalLine")
-      .where("companyId", "=", f.companyId)
-      .where("journalId", "in", journalIds)
-      .execute();
-    await trx
-      .deleteFrom("journal")
-      .where("companyId", "=", f.companyId)
-      .where("sourceType", "in", sourceTypes)
-      .execute();
   });
 }

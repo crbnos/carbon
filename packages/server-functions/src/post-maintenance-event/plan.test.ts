@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, it } from "vitest";
-import { diffLaborGroups, type LaborGroup, maintenanceLaborCost } from "./plan";
+import {
+  diffLaborGroups,
+  type LaborGroup,
+  maintenanceLaborCost,
+  withoutSupersededEntries
+} from "./plan";
 
 const WC_A = { dimensionId: "dim-wc", valueId: "wc-a" };
 const WC_B = { dimensionId: "dim-wc", valueId: "wc-b" };
@@ -74,4 +79,32 @@ it("a posting later reversed nets to nothing to undo", () => {
     ...posting("e1", 60).map((g) => ({ ...g, amount: -g.amount }))
   ];
   expect(diffLaborGroups([], prior)).toEqual([]);
+});
+
+it("an entry posted before the cutover is not posted again, and an edit of it is refused", () => {
+  // The enable superseded the journal of ev-1 (60 of expense) and opened it.
+  const superseded = posting("ev-1", 60).map(
+    ({ reference, accountId, amount }) => ({
+      reference,
+      accountId,
+      amount
+    })
+  );
+
+  // Unchanged: ev-1 drops out, ev-2 (after the cutover) still posts.
+  const unchanged = withoutSupersededEntries(
+    [...posting("ev-1", 60), ...posting("ev-2", 30)],
+    superseded,
+    "6010"
+  );
+  expect(unchanged.changed).toEqual([]);
+  expect(diffLaborGroups(unchanged.desired, [])).toEqual(posting("ev-2", 30));
+
+  // Edited to 90, or deleted: the caller refuses.
+  expect(
+    withoutSupersededEntries(posting("ev-1", 90), superseded, "6010").changed
+  ).toEqual(["ev-1"]);
+  expect(withoutSupersededEntries([], superseded, "6010").changed).toEqual([
+    "ev-1"
+  ]);
 });

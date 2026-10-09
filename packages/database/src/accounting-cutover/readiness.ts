@@ -9,6 +9,7 @@ import { parseDate, startOfMonth, today } from "@internationalized/date";
 import { sql } from "kysely";
 import { MIGRATION_CLEARING_ACCOUNT_CLASS } from "../accounting-cutover";
 import { PRE_CUTOVER_JOURNAL_STATUSES } from "../accounting-posting";
+import { hasDefaultFallback } from "../journal-posting-status";
 import { getCompanyTimeZone } from "../timezone";
 import {
   ACCOUNT_DEFAULT_COLUMNS,
@@ -93,7 +94,8 @@ export async function getActivationReadiness(
 
   // account-defaults: every account column set, to an active account; the
   // Migration Clearing account an Equity posting account, since the opening
-  // journal signs its lines as equity.
+  // journal signs its lines as equity. A default with a fallback
+  // (DEFAULT_FALLBACKS) may stay empty: every posting uses the fallback.
   const emptyDefaults: ActivationCheckItem[] = [];
   let clearingIsWrongKind = false;
   if (defaults) {
@@ -106,6 +108,7 @@ export async function getActivationReadiness(
     );
     for (const column of ACCOUNT_DEFAULT_COLUMNS) {
       const accountId = defaults[column];
+      if (!accountId && hasDefaultFallback(column)) continue;
       const account = accountId ? accounts.get(accountId) : undefined;
       if (!account || !account.active) {
         emptyDefaults.push({

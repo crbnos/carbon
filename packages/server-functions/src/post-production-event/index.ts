@@ -5,7 +5,9 @@
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
+  assertPostingStatusUnchanged,
   journalPostingStatus,
+  MissingAccountDefaultError,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
 import {
@@ -22,7 +24,8 @@ import { credit, datetime, debit, round } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError } from "../errors";
+import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "../lib/cutover-void";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 
@@ -133,9 +136,7 @@ const postProductionEvent = defineServerFn({
       postingStatus === "Posted" &&
       !accountDefaults.data.laborAbsorptionAccount
     ) {
-      throw new Error(
-        "laborAbsorptionAccount not configured in account defaults"
-      );
+      throw new MissingAccountDefaultError("laborAbsorptionAccount");
     }
 
     const event = productionEvent.data;
@@ -192,15 +193,37 @@ const postProductionEvent = defineServerFn({
         overheadCost > 0 &&
         !accountDefaults.data.overheadAbsorptionAccount
       ) {
-        throw new Error(
-          "overheadAbsorptionAccount not configured in account defaults"
-        );
+        throw new MissingAccountDefaultError("overheadAbsorptionAccount");
       }
     }
 
     // Net amount already posted for this specific event, grouped by account.
     const eventReference =
       journalReference.to.productionEvent(productionEventId);
+
+    // The enable superseded the journal of an event posted before the
+    // cutover and opened the job's WIP with its cost, so the reads below see
+    // nothing to reverse: a re-post would add the cost again and a reversal
+    // would leave it. The re-post is dated today, after the cutover, so no
+    // closed period refuses it.
+    if (event.postedToGL) {
+      const superseded = await db
+        .selectFrom("journalLine")
+        .innerJoin("journal", (join) =>
+          join
+            .onRef("journal.id", "=", "journalLine.journalId")
+            .onRef("journal.companyId", "=", "journalLine.companyId")
+        )
+        .select("journalLine.id")
+        .where("journalLine.documentLineReference", "=", eventReference)
+        .where("journalLine.companyId", "=", companyId)
+        .where("journal.status", "=", "Superseded")
+        .limit(1)
+        .executeTakeFirst();
+      if (superseded) {
+        throw new InvalidInputError(TIME_ENTRY_BEFORE_CUTOVER_ERROR);
+      }
+    }
     const priorLines = event.postedToGL
       ? await db
           .selectFrom("journalLine")
@@ -412,9 +435,7 @@ const postProductionEvent = defineServerFn({
         : null;
 
     await db.transaction().execute(async (trx) => {
-      if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-        throw new Error("Accounting was just set up. Post the document again.");
-      }
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
       const journalEntryId = await getNextSequence(
         trx,

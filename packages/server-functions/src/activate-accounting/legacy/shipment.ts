@@ -7,16 +7,17 @@
 // account defaults (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
 // Mirrors post-shipment/index.ts:
-// - a sales order shipment with its "Sale" cost row (the company had
-//   accounting on before the reset; ~490-536, ~1216-1422): per shipment line,
-//   COGS against inventory on `shipment:<shipmentLineId>`. An item's stored
+// - a sales order shipment with its "Sale" cost row (stored by a posting with
+//   accounting on, or written by the enable first, movement-cost.ts): per
+//   shipment line, COGS against inventory on `shipment:<shipmentLineId>`. An item's stored
 //   cost is shared across its lines by quantity, the last line taking the
 //   remainder, as the posting shares `calculateCOGS`. The enable's re-cost
 //   finds the inventory credit and its COGS pair by journal line reference.
 //   A fixed asset line is not rebuilt: the asset register carries it;
-// - a sales return shipment (~2205-2345): COGS against inventory, and a
-//   purchase return shipment (~2785-2918): GR/IR against inventory, one pair
-//   per cost row with a positive cost, on `shipment:<shipmentId>`.
+// - a sales return shipment: COGS against inventory, and a purchase return
+//   shipment: GR/IR against inventory, one pair per cost row
+//   (`shipmentCostRows`), at zero too, on `shipment:<shipmentId>`, so the
+//   enable's re-cost finds the pair of a return it re-costs.
 
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
@@ -25,16 +26,18 @@ import {
   LEGACY_PURCHASE_RETURN_SHIPMENT,
   LEGACY_SALES_RETURN_SHIPMENT,
   LEGACY_SALES_SHIPMENT,
-  legacyShipments
+  type LegacyShipmentKind,
+  legacyShipments,
+  shipmentCostRows
 } from "@carbon/database/legacy-documents";
 import { credit, debit, round } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import {
-  groupBy,
-  type LegacyJournal,
   type LegacyJournalLine,
+  type LegacyMovementJournal,
+  postedQuantity,
   readByIds,
   readItems,
   readPostingGroups
@@ -47,10 +50,17 @@ type Args = {
   defaults: AccountDefaults;
 };
 
+/** `backfilledSaleDocumentIds`: the shipments whose "Sale" row the enable
+ *  wrote (`writeLegacyMovementCosts`), posted with accounting off. */
 export async function buildLegacySalesShipmentJournals(
   trx: KyselyTx,
-  { companyId, cutoverDate, defaults }: Args
-): Promise<LegacyJournal[]> {
+  {
+    companyId,
+    cutoverDate,
+    defaults,
+    backfilledSaleDocumentIds
+  }: Args & { backfilledSaleDocumentIds: ReadonlySet<string> }
+): Promise<LegacyMovementJournal[]> {
   const shipments = await legacyShipments(
     trx,
     { companyId, cutoverDate },
@@ -95,17 +105,14 @@ export async function buildLegacySalesShipmentJournals(
   const postingGroupByItem = await readPostingGroups(trx, companyId, itemIds);
   // The cost the shipment relieved per item, stored negative.
   const sales = await readByIds(shipmentIds, (ids) =>
-    trx
-      .selectFrom("costLedger")
-      .select(["documentId", "itemId", sql<number>`sum("cost")`.as("cost")])
-      .where("companyId", "=", companyId)
-      .where("documentType", "=", "Sales Shipment")
-      .where("itemLedgerType", "=", "Sale")
-      .where("costLedgerType", "=", "Direct Cost")
-      .where("adjustment", "=", false)
-      .where("appliesToCostLedgerId", "is", null)
-      .where("documentId", "in", ids)
-      .groupBy(["documentId", "itemId"])
+    shipmentCostRows(trx, companyId, LEGACY_SALES_SHIPMENT)
+      .select([
+        "cost.documentId",
+        "cost.itemId",
+        sql<number>`sum("cost"."cost")`.as("cost")
+      ])
+      .where("cost.documentId", "in", ids)
+      .groupBy(["cost.documentId", "cost.itemId"])
       .execute()
   );
 
@@ -116,7 +123,7 @@ export async function buildLegacySalesShipmentJournals(
   const costByShipmentItem = new Map(
     sales.map((row) => [`${row.documentId}:${row.itemId}`, -Number(row.cost)])
   );
-  const linesByShipment = groupBy(lines, (line) => line.shipmentId);
+  const linesByShipment = Map.groupBy(lines, (line) => line.shipmentId);
 
   return shipments.map((shipment) => {
     const order = shipment.sourceDocumentId
@@ -126,20 +133,20 @@ export async function buildLegacySalesShipmentJournals(
     const shippedLines = (linesByShipment.get(shipment.id) ?? []).filter(
       (line) =>
         line.itemId &&
-        shippedQuantity(line.shippedQuantity) > 0 &&
+        postedQuantity(line.shippedQuantity) > 0 &&
         (itemById.get(line.itemId)?.itemTrackingType ?? "Inventory") !==
           "Non-Inventory"
     );
 
     // Each item's cost, shared by quantity; the last line takes the rest.
     const costByLine = new Map<string, number>();
-    for (const group of groupBy(shippedLines, (line) =>
+    for (const group of Map.groupBy(shippedLines, (line) =>
       String(line.itemId)
     ).values()) {
       const total =
         costByShipmentItem.get(`${shipment.id}:${group[0]!.itemId}`) ?? 0;
       const totalQuantity = group.reduce(
-        (sum, line) => sum + round(shippedQuantity(line.shippedQuantity)),
+        (sum, line) => sum + round(postedQuantity(line.shippedQuantity)),
         0
       );
       let assigned = 0;
@@ -147,7 +154,7 @@ export async function buildLegacySalesShipmentJournals(
         const lineCost =
           index === group.length - 1
             ? total - assigned
-            : (round(shippedQuantity(line.shippedQuantity)) / totalQuantity) *
+            : (round(postedQuantity(line.shippedQuantity)) / totalQuantity) *
               total;
         assigned += lineCost;
         costByLine.set(line.id, lineCost);
@@ -163,7 +170,7 @@ export async function buildLegacySalesShipmentJournals(
         defaults
       );
       const keys = {
-        quantity: round(shippedQuantity(line.shippedQuantity)),
+        quantity: round(postedQuantity(line.shippedQuantity)),
         documentType: "Sales Shipment" as const,
         documentId: shipment.id,
         externalDocumentId: order?.customerReference ?? null,
@@ -199,7 +206,8 @@ export async function buildLegacySalesShipmentJournals(
       description: `Sales Shipment ${shipment.shipmentId}`,
       postingDate: String(shipment.postingDate),
       sourceType: "Sales Shipment" as const,
-      lines: journalLines
+      lines: journalLines,
+      fromStoredCost: !backfilledSaleDocumentIds.has(shipment.id)
     };
   });
 }
@@ -208,7 +216,7 @@ export async function buildLegacySalesShipmentJournals(
 export async function buildLegacyReturnShipmentJournals(
   trx: KyselyTx,
   { companyId, cutoverDate, defaults }: Args
-): Promise<LegacyJournal[]> {
+): Promise<LegacyMovementJournal[]> {
   const salesReturns = await legacyShipments(
     trx,
     { companyId, cutoverDate },
@@ -220,36 +228,26 @@ export async function buildLegacyReturnShipmentJournals(
     LEGACY_PURCHASE_RETURN_SHIPMENT
   ).execute();
   if (salesReturns.length === 0 && purchaseReturns.length === 0) return [];
-  const shipmentIds = [...salesReturns, ...purchaseReturns].map(
-    (shipment) => shipment.id
-  );
 
   // The cost rows, in the order the posting wrote them.
-  const rows = await readByIds(shipmentIds, (ids) =>
-    trx
-      .selectFrom("costLedger")
-      .select(["documentId", "documentType", "itemId", "quantity", "cost"])
-      .where("companyId", "=", companyId)
-      .where((eb) =>
-        eb.or([
-          eb.and([
-            eb("documentType", "=", "Sales Return Shipment"),
-            eb("itemLedgerType", "=", "Sale")
-          ]),
-          eb.and([
-            eb("documentType", "=", "Purchase Return Shipment"),
-            eb("itemLedgerType", "=", "Purchase")
-          ])
-        ])
-      )
-      .where("costLedgerType", "=", "Direct Cost")
-      .where("adjustment", "=", false)
-      .where("appliesToCostLedgerId", "is", null)
-      .where("quantity", "<", 0)
-      .where("documentId", "in", ids)
-      .orderBy("entryNumber")
-      .execute()
-  );
+  const costRows = (ids: string[], kind: LegacyShipmentKind) =>
+    shipmentCostRows(trx, companyId, kind)
+      .select(["cost.documentId", "cost.itemId", "cost.quantity", "cost.cost"])
+      .where("cost.documentId", "in", ids)
+      .where("cost.itemId", "is not", null)
+      .$narrowType<{ documentId: string; itemId: string }>()
+      .orderBy("cost.entryNumber")
+      .execute();
+  const rows = [
+    ...(await readByIds(
+      salesReturns.map((shipment) => shipment.id),
+      (ids) => costRows(ids, LEGACY_SALES_RETURN_SHIPMENT)
+    )),
+    ...(await readByIds(
+      purchaseReturns.map((shipment) => shipment.id),
+      (ids) => costRows(ids, LEGACY_PURCHASE_RETURN_SHIPMENT)
+    ))
+  ];
   const itemIds = rows.map((row) => row.itemId);
   const itemById = await readItems(trx, companyId, itemIds);
   const postingGroupByItem = await readPostingGroups(trx, companyId, itemIds);
@@ -306,12 +304,12 @@ export async function buildLegacyReturnShipmentJournals(
   const supplierTypeById = new Map(
     suppliers.map((row) => [row.id, row.supplierTypeId])
   );
-  const rowsByShipment = groupBy(rows, (row) => String(row.documentId));
+  const rowsByShipment = Map.groupBy(rows, (row) => row.documentId);
 
   const build = (
     shipment: (typeof salesReturns)[number],
     isSalesReturn: boolean
-  ): LegacyJournal => {
+  ): LegacyMovementJournal => {
     const party = isSalesReturn
       ? (() => {
           const customerId = shipment.sourceDocumentId
@@ -338,9 +336,7 @@ export async function buildLegacyReturnShipmentJournals(
     const journalLines: LegacyJournalLine[] = [];
     for (const row of rowsByShipment.get(shipment.id) ?? []) {
       const cost = -Number(row.cost);
-      // A return carried at nothing posts no journal.
-      if (!(cost > 0)) continue;
-      const itemId = row.itemId as string;
+      const { itemId } = row;
       const inventory = resolveInventoryAccount(
         itemById.get(itemId)?.replenishmentSystem ?? null,
         defaults
@@ -385,13 +381,15 @@ export async function buildLegacyReturnShipmentJournals(
           description: `Return Shipment ${shipment.shipmentId}`,
           postingDate: String(shipment.postingDate),
           sourceType: "Sales Return Shipment",
-          lines: journalLines
+          lines: journalLines,
+          fromStoredCost: true
         }
       : {
           description: `Purchase Return Shipment ${shipment.shipmentId}`,
           postingDate: String(shipment.postingDate),
           sourceType: "Purchase Return Shipment",
-          lines: journalLines
+          lines: journalLines,
+          fromStoredCost: true
         };
   };
 
@@ -399,10 +397,4 @@ export async function buildLegacyReturnShipmentJournals(
     ...salesReturns.map((shipment) => build(shipment, true)),
     ...purchaseReturns.map((shipment) => build(shipment, false))
   ];
-}
-
-/** A shipped quantity as the posting reads it: NaN and null are 0. */
-function shippedQuantity(value: number | null): number {
-  const quantity = Number(value ?? 0);
-  return Number.isNaN(quantity) ? 0 : quantity;
 }

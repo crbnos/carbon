@@ -8,9 +8,11 @@ import {
   type Json,
   journalReference
 } from "@carbon/database";
-import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import {
   contains,
   deleteRows,
@@ -47,6 +49,7 @@ import {
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   refuseVoidBeforeCutover
 } from "../lib/cutover-void";
+import { documentJournalLines } from "../lib/document-journal-lines";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
@@ -650,133 +653,68 @@ const postShipment = defineServerFn({
               );
 
               for (const faSoLine of faSalesOrderLines) {
-                {
-                  const assetRecord = await single<
-                    "fixedAsset",
-                    Pick<
-                      Tables["fixedAsset"]["Row"],
-                      | "id"
-                      | "status"
-                      | "acquisitionCost"
-                      | "accumulatedDepreciation"
-                      | "locationId"
-                      | "fixedAssetClassId"
-                    > & {
-                      fixedAssetClass: Pick<
-                        Tables["fixedAssetClass"]["Row"],
-                        | "assetAccountId"
-                        | "accumulatedDepreciationAccountId"
-                        | "writeOffAccountId"
-                      > | null;
-                    }
-                  >(
-                    db,
-                    "fixedAsset",
-                    { id: faSoLine.assetId! },
-                    {
-                      columns: [
-                        "id",
-                        "status",
-                        "acquisitionCost",
-                        "accumulatedDepreciation",
-                        "locationId",
-                        "fixedAssetClassId"
-                      ],
-                      embed: {
-                        fixedAssetClass: {
-                          table: "fixedAssetClass",
-                          via: "fixedAssetClassId",
-                          columns: [
-                            "assetAccountId",
-                            "accumulatedDepreciationAccountId",
-                            "writeOffAccountId"
-                          ]
-                        }
+                const assetRecord = await single<
+                  "fixedAsset",
+                  Pick<
+                    Tables["fixedAsset"]["Row"],
+                    | "id"
+                    | "status"
+                    | "acquisitionCost"
+                    | "accumulatedDepreciation"
+                    | "locationId"
+                    | "fixedAssetClassId"
+                  > & {
+                    fixedAssetClass: Pick<
+                      Tables["fixedAssetClass"]["Row"],
+                      | "assetAccountId"
+                      | "accumulatedDepreciationAccountId"
+                      | "writeOffAccountId"
+                    > | null;
+                  }
+                >(
+                  db,
+                  "fixedAsset",
+                  { id: faSoLine.assetId! },
+                  {
+                    columns: [
+                      "id",
+                      "status",
+                      "acquisitionCost",
+                      "accumulatedDepreciation",
+                      "locationId",
+                      "fixedAssetClassId"
+                    ],
+                    embed: {
+                      fixedAssetClass: {
+                        table: "fixedAssetClass",
+                        via: "fixedAssetClassId",
+                        columns: [
+                          "assetAccountId",
+                          "accumulatedDepreciationAccountId",
+                          "writeOffAccountId"
+                        ]
                       }
                     }
-                  );
-
-                  if (assetRecord.error)
-                    throw new Error("Failed to fetch fixed asset for disposal");
-                  fixedAssetWrites.overlay(faSoLine.assetId!, assetRecord.data);
-
-                  const assetClass = assetRecord.data.fixedAssetClass as any;
-                  const acquisitionCost =
-                    Number(assetRecord.data.acquisitionCost) ?? 0;
-                  const accumulatedDepreciation =
-                    Number(assetRecord.data.accumulatedDepreciation) ?? 0;
-                  const nbv = acquisitionCost - accumulatedDepreciation;
-
-                  if (accumulatedDepreciation > 0) {
-                    const jlRef = nanoid();
-                    journalLineInserts.push({
-                      accountId: assetClass.accumulatedDepreciationAccountId,
-                      description: "Clear accumulated depreciation",
-                      amount: round(debit("asset", accumulatedDepreciation)),
-                      quantity: 1,
-                      documentType: "Sales Shipment",
-                      documentId: shipmentHeader.id,
-                      externalDocumentId:
-                        salesOrder.data?.customerReference ?? undefined,
-                      documentLineReference: journalReference.to.shipment(
-                        faSoLine.id
-                      ),
-                      journalLineReference: jlRef,
-                      companyId
-                    });
-
-                    journalLineDimensionsMeta.push({
-                      customerTypeId: customer.data.customerTypeId ?? null,
-                      itemId: null,
-                      itemPostingGroupId: null,
-                      locationId:
-                        locationId ?? assetRecord.data.locationId ?? null,
-                      costCenterId: null,
-                      fixedAssetClassId:
-                        assetRecord.data.fixedAssetClassId ?? null
-                    });
                   }
+                );
 
-                  if (nbv > 0) {
-                    const nbvJlRef = nanoid();
-                    journalLineInserts.push({
-                      accountId: assetClass.writeOffAccountId,
-                      // writeOffAccountId is used here as a disposal clearing /
-                      // holding account: the NBV parks here (a balance-sheet
-                      // holding, not a P&L loss) until the invoice recognizes
-                      // proceeds and clears it back to zero — no interim full loss.
-                      description:
-                        "Transfer net book value to disposal clearing",
-                      amount: round(debit("expense", nbv)),
-                      quantity: 1,
-                      documentType: "Sales Shipment",
-                      documentId: shipmentHeader.id,
-                      externalDocumentId:
-                        salesOrder.data?.customerReference ?? undefined,
-                      documentLineReference: journalReference.to.shipment(
-                        faSoLine.id
-                      ),
-                      journalLineReference: nbvJlRef,
-                      companyId
-                    });
+                if (assetRecord.error)
+                  throw new Error("Failed to fetch fixed asset for disposal");
+                fixedAssetWrites.overlay(faSoLine.assetId!, assetRecord.data);
 
-                    journalLineDimensionsMeta.push({
-                      customerTypeId: customer.data.customerTypeId ?? null,
-                      itemId: null,
-                      itemPostingGroupId: null,
-                      locationId:
-                        locationId ?? assetRecord.data.locationId ?? null,
-                      costCenterId: null,
-                      fixedAssetClassId:
-                        assetRecord.data.fixedAssetClassId ?? null
-                    });
-                  }
+                const assetClass = assetRecord.data.fixedAssetClass as any;
+                const acquisitionCost =
+                  Number(assetRecord.data.acquisitionCost) ?? 0;
+                const accumulatedDepreciation =
+                  Number(assetRecord.data.accumulatedDepreciation) ?? 0;
+                const nbv = acquisitionCost - accumulatedDepreciation;
 
-                  const removeJlRef = nanoid();
+                if (accumulatedDepreciation > 0) {
+                  const jlRef = nanoid();
                   journalLineInserts.push({
-                    accountId: assetClass.assetAccountId,
-                    description: "Remove asset at cost",
-                    amount: round(credit("asset", acquisitionCost)),
+                    accountId: assetClass.accumulatedDepreciationAccountId,
+                    description: "Clear accumulated depreciation",
+                    amount: round(debit("asset", accumulatedDepreciation)),
                     quantity: 1,
                     documentType: "Sales Shipment",
                     documentId: shipmentHeader.id,
@@ -785,7 +723,7 @@ const postShipment = defineServerFn({
                     documentLineReference: journalReference.to.shipment(
                       faSoLine.id
                     ),
-                    journalLineReference: removeJlRef,
+                    journalLineReference: jlRef,
                     companyId
                   });
 
@@ -799,32 +737,92 @@ const postShipment = defineServerFn({
                     fixedAssetClassId:
                       assetRecord.data.fixedAssetClassId ?? null
                   });
+                }
 
-                  fixedAssetWrites.patch(faSoLine.assetId!, {
-                    status: "Disposed",
-                    disposalDate: today,
-                    disposalMethod: "Sale",
-                    updatedBy: userId
+                if (nbv > 0) {
+                  const nbvJlRef = nanoid();
+                  journalLineInserts.push({
+                    accountId: assetClass.writeOffAccountId,
+                    // writeOffAccountId is used here as a disposal clearing /
+                    // holding account: the NBV parks here (a balance-sheet
+                    // holding, not a P&L loss) until the invoice recognizes
+                    // proceeds and clears it back to zero — no interim full loss.
+                    description: "Transfer net book value to disposal clearing",
+                    amount: round(debit("expense", nbv)),
+                    quantity: 1,
+                    documentType: "Sales Shipment",
+                    documentId: shipmentHeader.id,
+                    externalDocumentId:
+                      salesOrder.data?.customerReference ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      faSoLine.id
+                    ),
+                    journalLineReference: nbvJlRef,
+                    companyId
                   });
 
-                  const disposal: Database["public"]["Tables"]["fixedAssetDisposal"]["Insert"] =
-                    {
-                      fixedAssetId: faSoLine.assetId!,
-                      disposalMethod: "Sale",
-                      disposalDate: today,
-                      saleProceeds: 0,
-                      netBookValueAtDisposal: nbv,
-                      // Gain/loss is unknown until proceeds are invoiced; the NBV is
-                      // held in the disposal clearing account, not expensed, so we
-                      // record 0 here (the invoice sets the real gain/loss).
-                      gainLoss: 0,
-                      companyId,
-                      createdBy: userId
-                    };
-                  fixedAssetWrites.defer((trx) =>
-                    insertRows(trx, "fixedAssetDisposal", disposal)
-                  );
+                  journalLineDimensionsMeta.push({
+                    customerTypeId: customer.data.customerTypeId ?? null,
+                    itemId: null,
+                    itemPostingGroupId: null,
+                    locationId:
+                      locationId ?? assetRecord.data.locationId ?? null,
+                    costCenterId: null,
+                    fixedAssetClassId:
+                      assetRecord.data.fixedAssetClassId ?? null
+                  });
                 }
+
+                const removeJlRef = nanoid();
+                journalLineInserts.push({
+                  accountId: assetClass.assetAccountId,
+                  description: "Remove asset at cost",
+                  amount: round(credit("asset", acquisitionCost)),
+                  quantity: 1,
+                  documentType: "Sales Shipment",
+                  documentId: shipmentHeader.id,
+                  externalDocumentId:
+                    salesOrder.data?.customerReference ?? undefined,
+                  documentLineReference: journalReference.to.shipment(
+                    faSoLine.id
+                  ),
+                  journalLineReference: removeJlRef,
+                  companyId
+                });
+
+                journalLineDimensionsMeta.push({
+                  customerTypeId: customer.data.customerTypeId ?? null,
+                  itemId: null,
+                  itemPostingGroupId: null,
+                  locationId: locationId ?? assetRecord.data.locationId ?? null,
+                  costCenterId: null,
+                  fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null
+                });
+
+                fixedAssetWrites.patch(faSoLine.assetId!, {
+                  status: "Disposed",
+                  disposalDate: today,
+                  disposalMethod: "Sale",
+                  updatedBy: userId
+                });
+
+                const disposal: Database["public"]["Tables"]["fixedAssetDisposal"]["Insert"] =
+                  {
+                    fixedAssetId: faSoLine.assetId!,
+                    disposalMethod: "Sale",
+                    disposalDate: today,
+                    saleProceeds: 0,
+                    netBookValueAtDisposal: nbv,
+                    // Gain/loss is unknown until proceeds are invoiced; the NBV is
+                    // held in the disposal clearing account, not expensed, so we
+                    // record 0 here (the invoice sets the real gain/loss).
+                    gainLoss: 0,
+                    companyId,
+                    createdBy: userId
+                  };
+                fixedAssetWrites.defer((trx) =>
+                  insertRows(trx, "fixedAssetDisposal", disposal)
+                );
 
                 salesOrderLineUpdates[faSoLine.id] = {
                   quantitySent: faSoLine.saleQuantity,
@@ -934,13 +932,11 @@ const postShipment = defineServerFn({
                   : null;
 
               await db.transaction().execute(async (trx) => {
-                if (
-                  (await journalPostingStatus(trx, companyId)) !== postingStatus
-                ) {
-                  throw new Error(
-                    "Accounting was just set up. Post the document again."
-                  );
-                }
+                await assertPostingStatusUnchanged(
+                  trx,
+                  companyId,
+                  postingStatus
+                );
                 await fixedAssetWrites.apply(trx, companyId);
                 for await (const [salesOrderLineId, update] of Object.entries(
                   salesOrderLineUpdates
@@ -2027,6 +2023,9 @@ const postShipment = defineServerFn({
                 db,
                 companyId
               );
+              if (accountDefaults.error || !accountDefaults.data) {
+                throw new Error("Error getting account defaults");
+              }
 
               // GL dimensions for the return shipment journal (item, item group,
               // customer, customer type, location).
@@ -2191,13 +2190,11 @@ const postShipment = defineServerFn({
                   );
                 }
 
-                if (
-                  (await journalPostingStatus(trx, companyId)) !== postingStatus
-                ) {
-                  throw new Error(
-                    "Accounting was just set up. Post the document again."
-                  );
-                }
+                await assertPostingStatusUnchanged(
+                  trx,
+                  companyId,
+                  postingStatus
+                );
 
                 const journalLineInserts: Omit<
                   Database["public"]["Tables"]["journalLine"]["Insert"],
@@ -2240,7 +2237,7 @@ const postShipment = defineServerFn({
                     })
                     .execute();
 
-                  if (accountDefaults.data && cogsResult.totalCost > 0) {
+                  if (cogsResult.totalCost > 0) {
                     const journalLineReference = nanoid();
                     const item = items.data.find((i) => i.id === itemId);
                     const inventoryAccount = resolveInventoryAccount(
@@ -2451,6 +2448,9 @@ const postShipment = defineServerFn({
                 db,
                 companyId
               );
+              if (accountDefaults.error || !accountDefaults.data) {
+                throw new Error("Error getting account defaults");
+              }
 
               // GL dimensions for the return shipment journal (item, item group,
               // supplier, supplier type, location).
@@ -2662,13 +2662,11 @@ const postShipment = defineServerFn({
                   );
                 }
 
-                if (
-                  (await journalPostingStatus(trx, companyId)) !== postingStatus
-                ) {
-                  throw new Error(
-                    "Accounting was just set up. Post the document again."
-                  );
-                }
+                await assertPostingStatusUnchanged(
+                  trx,
+                  companyId,
+                  postingStatus
+                );
 
                 // cancelPurchaseReturnOrder locks this same order row — re-check
                 // the status under the lock so a cancel committed after our
@@ -2818,7 +2816,7 @@ const postShipment = defineServerFn({
                     })
                     .execute();
 
-                  if (accountDefaults.data && cogsResult.totalCost > 0) {
+                  if (cogsResult.totalCost > 0) {
                     const journalLineReference = nanoid();
                     const item = items.data.find((i) => i.id === itemId);
                     const inventoryAccount = resolveInventoryAccount(
@@ -3088,33 +3086,15 @@ const postShipment = defineServerFn({
                       salesOrderId: shipmentHeader.sourceDocumentId
                     }),
                   () =>
-                    db
-                      .selectFrom("journalLine")
-                      .innerJoin("journal", (join) =>
-                        join
-                          .onRef("journal.id", "=", "journalLine.journalId")
-                          .onRef(
-                            "journal.companyId",
-                            "=",
-                            "journalLine.companyId"
-                          )
-                      )
-                      .selectAll("journalLine")
-                      .where("journalLine.documentId", "=", shipmentId)
-                      .where("journalLine.documentType", "=", "Sales Shipment")
-                      .where("journalLine.companyId", "=", companyId)
-                      .where("journal.status", "in", [
-                        ...DOCUMENT_JOURNAL_STATUSES
-                      ])
-                      .execute()
-                      .then((data) => ({ data, error: null }))
+                    documentJournalLines(db, companyId, {
+                      documentId: shipmentId,
+                      documentType: "Sales Shipment"
+                    })
                 ]);
               if (salesOrder.error)
                 throw new Error("Failed to fetch sales order");
               if (salesOrderLines.error)
                 throw new Error("Failed to fetch sales order lines");
-              if (originalJournalLines.error)
-                throw new Error("Failed to fetch journal lines");
 
               // Every void posts its reversal: Provisional before the
               // company's accounting cutover, Posted after it. Read here to
@@ -3125,7 +3105,7 @@ const postShipment = defineServerFn({
               const reversingJournalLines: Omit<
                 Database["public"]["Tables"]["journalLine"]["Insert"],
                 "journalId"
-              >[] = originalJournalLines.data.map((entry) => ({
+              >[] = originalJournalLines.map((entry) => ({
                 accountId: entry.accountId,
                 accrual: entry.accrual,
                 description: `VOID: ${entry.description}`,
@@ -3389,7 +3369,7 @@ const postShipment = defineServerFn({
               );
 
               for (const faSoLine of faSoLinesForVoid) {
-                const hasShipmentEntries = originalJournalLines.data.some(
+                const hasShipmentEntries = originalJournalLines.some(
                   (jl) =>
                     jl.documentLineReference ===
                     journalReference.to.shipment(faSoLine.id)
@@ -3443,13 +3423,11 @@ const postShipment = defineServerFn({
                   : null;
 
               await db.transaction().execute(async (trx) => {
-                if (
-                  (await journalPostingStatus(trx, companyId)) !== postingStatus
-                ) {
-                  throw new Error(
-                    "Accounting was just set up. Post the document again."
-                  );
-                }
+                await assertPostingStatusUnchanged(
+                  trx,
+                  companyId,
+                  postingStatus
+                );
                 await fixedAssetWrites.apply(trx, companyId);
                 // Update sales order lines to reverse shipped quantities
                 for await (const [salesOrderLineId, update] of Object.entries(
@@ -4129,26 +4107,10 @@ const postShipment = defineServerFn({
                 originalCostRows
               ] = await inOrder([
                 () =>
-                  db
-                    .selectFrom("journalLine")
-                    .innerJoin("journal", (join) =>
-                      join
-                        .onRef("journal.id", "=", "journalLine.journalId")
-                        .onRef(
-                          "journal.companyId",
-                          "=",
-                          "journalLine.companyId"
-                        )
-                    )
-                    .selectAll("journalLine")
-                    .where("journalLine.documentId", "=", shipmentId)
-                    .where("journalLine.documentType", "=", "Return Order")
-                    .where("journalLine.companyId", "=", companyId)
-                    .where("journal.status", "in", [
-                      ...DOCUMENT_JOURNAL_STATUSES
-                    ])
-                    .execute()
-                    .then((data) => ({ data, error: null })),
+                  documentJournalLines(db, companyId, {
+                    documentId: shipmentId,
+                    documentType: "Return Order"
+                  }),
                 () =>
                   many(db, "itemLedger", {
                     documentId: shipmentId,
@@ -4165,8 +4127,6 @@ const postShipment = defineServerFn({
               // A failed read here must abort: treating data:null as "nothing
               // to reverse" would mark the shipment Voided while its journal
               // and ledger rows stand.
-              if (originalJournalLines.error)
-                throw new Error("Failed to fetch journal lines to reverse");
               if (originalItemLedger.error)
                 throw new Error("Failed to fetch item ledger rows to reverse");
               if (originalCostRows.error)
@@ -4174,19 +4134,16 @@ const postShipment = defineServerFn({
 
               // A Provisional journal has no accounting period.
               const accountingPeriodId =
-                postingStatus === "Posted" &&
-                (originalJournalLines.data ?? []).length > 0
+                postingStatus === "Posted" && originalJournalLines.length > 0
                   ? await getCurrentAccountingPeriod(companyId, db, today)
                   : null;
 
               await db.transaction().execute(async (trx) => {
-                if (
-                  (await journalPostingStatus(trx, companyId)) !== postingStatus
-                ) {
-                  throw new Error(
-                    "Accounting was just set up. Post the document again."
-                  );
-                }
+                await assertPostingStatusUnchanged(
+                  trx,
+                  companyId,
+                  postingStatus
+                );
                 const reversingItemLedger = (originalItemLedger.data ?? []).map(
                   (entry) => ({
                     postingDate: today,
@@ -4237,8 +4194,8 @@ const postShipment = defineServerFn({
                     .execute();
                 }
 
-                if ((originalJournalLines.data ?? []).length > 0) {
-                  const originalLines = originalJournalLines.data ?? [];
+                if (originalJournalLines.length > 0) {
+                  const originalLines = originalJournalLines;
                   // Carry the original lines' GL dimensions onto the reversing
                   // lines so the void mirrors the posting.
                   const originalDimensions = await many(
@@ -4431,26 +4388,10 @@ const postShipment = defineServerFn({
                 originalCostRows
               ] = await inOrder([
                 () =>
-                  db
-                    .selectFrom("journalLine")
-                    .innerJoin("journal", (join) =>
-                      join
-                        .onRef("journal.id", "=", "journalLine.journalId")
-                        .onRef(
-                          "journal.companyId",
-                          "=",
-                          "journalLine.companyId"
-                        )
-                    )
-                    .selectAll("journalLine")
-                    .where("journalLine.documentId", "=", shipmentId)
-                    .where("journalLine.documentType", "=", "Return Order")
-                    .where("journalLine.companyId", "=", companyId)
-                    .where("journal.status", "in", [
-                      ...DOCUMENT_JOURNAL_STATUSES
-                    ])
-                    .execute()
-                    .then((data) => ({ data, error: null })),
+                  documentJournalLines(db, companyId, {
+                    documentId: shipmentId,
+                    documentType: "Return Order"
+                  }),
                 () =>
                   many(db, "itemLedger", {
                     documentId: shipmentId,
@@ -4472,8 +4413,6 @@ const postShipment = defineServerFn({
               // A failed read here must abort: treating data:null as "nothing
               // to reverse" would mark the shipment Voided while its journal
               // and ledger rows stand.
-              if (originalJournalLines.error)
-                throw new Error("Failed to fetch journal lines to reverse");
               if (originalItemLedger.error)
                 throw new Error("Failed to fetch item ledger rows to reverse");
               if (returnLinesVoid.error)
@@ -4493,19 +4432,16 @@ const postShipment = defineServerFn({
 
               // A Provisional journal has no accounting period.
               const accountingPeriodId =
-                postingStatus === "Posted" &&
-                (originalJournalLines.data ?? []).length > 0
+                postingStatus === "Posted" && originalJournalLines.length > 0
                   ? await getCurrentAccountingPeriod(companyId, db, today)
                   : null;
 
               await db.transaction().execute(async (trx) => {
-                if (
-                  (await journalPostingStatus(trx, companyId)) !== postingStatus
-                ) {
-                  throw new Error(
-                    "Accounting was just set up. Post the document again."
-                  );
-                }
+                await assertPostingStatusUnchanged(
+                  trx,
+                  companyId,
+                  postingStatus
+                );
                 const reversingItemLedger = (originalItemLedger.data ?? []).map(
                   (entry) => ({
                     postingDate: today,
@@ -4556,8 +4492,8 @@ const postShipment = defineServerFn({
                     .execute();
                 }
 
-                if ((originalJournalLines.data ?? []).length > 0) {
-                  const originalLines = originalJournalLines.data ?? [];
+                if (originalJournalLines.length > 0) {
+                  const originalLines = originalJournalLines;
                   // Carry the original lines' GL dimensions onto the reversing
                   // lines so the void mirrors the posting.
                   const originalDimensions = await many(

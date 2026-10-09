@@ -11,7 +11,6 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
   journalPostingStatus,
-  type OptionalDefaultRole,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
 import { round } from "@carbon/database/precision";
@@ -24,7 +23,7 @@ import { nanoid } from "nanoid";
 import { InvalidInputError, NotFoundError } from "../errors";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
-import type { PostingLine } from "./lessor";
+import type { LeaseStandInRoles, PostingLine } from "./lessor";
 
 export type Db = Kysely<KyselyDatabase>;
 export type Trx = Transaction<KyselyDatabase>;
@@ -154,9 +153,9 @@ export type LeaseAccounting = {
     finishedGoodsAccount: string;
     rawMaterialsAccount: string;
   };
-  // journalLine.accountDefaultRole of a stand-in line, keyed by the line
-  // description the lessor builders give it
-  accountDefaultRoles: Partial<Record<string, OptionalDefaultRole>>;
+  // The default each lease account stands in for; the lessor builders put
+  // it on the line that uses the account (journalLine.accountDefaultRole).
+  accountDefaultRoles: LeaseStandInRoles;
   // The accounts a Planned Interest recognition row names. A schedule row is
   // not re-pointed at the cutover, so it never takes a stand-in: null when
   // either default is empty.
@@ -212,14 +211,6 @@ export async function loadLeaseAccounting(
     "leaseRevenueAccount",
     postingStatus
   );
-  const accountDefaultRoles: Partial<Record<string, OptionalDefaultRole>> = {};
-  if (netInvestment.accountDefaultRole) {
-    accountDefaultRoles["Net Investment in Leases"] =
-      netInvestment.accountDefaultRole;
-  }
-  if (leaseRevenue.accountDefaultRole) {
-    accountDefaultRoles["Lease Revenue"] = leaseRevenue.accountDefaultRole;
-  }
 
   // Dimensions are configured per company group; a company outside one
   // tags nothing.
@@ -251,7 +242,10 @@ export async function loadLeaseAccounting(
       finishedGoodsAccount: defaults.finishedGoodsAccount,
       rawMaterialsAccount: defaults.rawMaterialsAccount
     },
-    accountDefaultRoles,
+    accountDefaultRoles: {
+      netInvestmentInLeases: netInvestment.accountDefaultRole,
+      leaseRevenue: leaseRevenue.accountDefaultRole
+    },
     interestAccounts:
       netInvestmentInLeasesAccount && leaseInterestIncomeAccount
         ? {
@@ -309,8 +303,7 @@ export async function postLeaseJournal(
         documentId: args.rentalAgreementId,
         documentLineReference: args.rentalAgreementLineId,
         journalLineReference,
-        accountDefaultRole:
-          accounting.accountDefaultRoles[line.description] ?? null,
+        accountDefaultRole: line.accountDefaultRole ?? null,
         companyId
       }))
     )

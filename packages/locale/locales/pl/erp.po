@@ -54,6 +54,13 @@ msgstr "(nieaktywne konto)"
 msgid "(Inactive)"
 msgstr "(Nieaktywny)"
 
+msgid "(not an Equity posting account)"
+msgstr ""
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {# blocking record} other {# blocking records}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# składnik w tej grupie} other {# składników w tej grupie}}"
@@ -81,6 +88,14 @@ msgstr "{0, plural, one {# wiersz łączy się z danymi spoza tej firmy, dlatego
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# tydzień} few {# tygodnie} many {# tygodni} other {# tygodnia}}"
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
+msgstr ""
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
+msgstr ""
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -113,10 +128,6 @@ msgstr "{0} już uruchomiono"
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} aktywów do amortyzacji · {amount}"
-
-#. placeholder {0}: check.count
-msgid "{0} blocking records"
-msgstr "{0} rekordów blokujących"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -621,9 +632,6 @@ msgstr "1 aktywo do amortyzacji · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 operacja możliwa do tworzenia partii nie należy do partii — uruchamia się indywidualnie do czasu jej pogrupowania"
-
-msgid "1 blocking record"
-msgstr "1 rekord blokujący"
 
 msgid "1 can't be scheduled"
 msgstr "Nie można zaplanować 1"
@@ -1402,6 +1410,9 @@ msgstr "Zaakceptowano {0}"
 
 msgid "Account"
 msgstr "Konto"
+
+msgid "Account {accountNumber} is not an active posting account."
+msgstr ""
 
 msgid "Account & Details"
 msgstr "Konto i szczegóły"
@@ -3452,6 +3463,9 @@ msgstr "URL avatara"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Awatary z <0>{0}</0> autorstwa {1}, na licencji <1>{2}</1>."
 
+msgid "Average"
+msgstr ""
+
 msgid "Avg Days to Close"
 msgstr "Średnia liczba dni do zamknięcia"
 
@@ -4460,6 +4474,9 @@ msgstr "Wybierz sposób dodania pozycji do tego zwrotu."
 msgid "Choose Return To for {unitName}"
 msgstr "Wybierz lokalizację zwrotu dla {unitName}"
 
+msgid "Choose the first day of the current period or of one of the 3 periods before it."
+msgstr ""
+
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Wybierz sztuki floty wynajmowanej w ramach tej umowy. Każda rozpoczyna się z jej zapisaną stawką dla okresu; zmień ją w tabeli."
 
@@ -4746,10 +4763,6 @@ msgstr "Zakończ wszystkie ilości podczas skanowania zakończenia kanban"
 
 msgid "Complete Job"
 msgstr "Ukończ zadanie"
-
-#. placeholder {0}: check.count
-msgid "Complete or cancel the {0} job(s) created before Carbon recorded their costs."
-msgstr "Zakończ lub anuluj {0} zlecenie(nia) produkcyjne(e) utworzone przed nagraniem ich kosztów przez Carbon."
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Zakończ produkcję sztuk z numerami seryjnymi/partii w MES przed zakończeniem tego zlecenia produkcyjnego lub oznacz każdą operację jako zakończoną, aby zakończyć je automatycznie."
@@ -7404,8 +7417,8 @@ msgstr "Dokumenty"
 msgid "Documents and activity"
 msgstr "Dokumenty i aktywność"
 
-msgid "Documents posted before Carbon kept journals"
-msgstr "Dokumenty zaksięgowane zanim Carbon prowadził dowody księgowe"
+msgid "Documents Posted Before Carbon Kept Journals"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Dokumenty wysyłają faktury, rachunki i płatności jako natywne dokumenty dostawcy; ich dowody księgowe są zapisywane jako objęte dokumentem. Pobiera również płatności zarejestrowane u dostawcy z powrotem do Carbon, zamykając pasującą fakturę lub rachunek i księgując dowód księgowy w Księdze głównej Carbon. Off je zapisuje jako celowo wykluczone."
@@ -9344,6 +9357,9 @@ msgstr "Mapowanie pól"
 msgid "Fields"
 msgstr "Pola"
 
+msgid "FIFO"
+msgstr ""
+
 msgid "File deleted successfully"
 msgstr "Plik został pomyślnie usunięty"
 
@@ -9513,9 +9529,6 @@ msgstr "Klasa środków trwałych"
 
 msgid "Fixed Asset Class"
 msgstr "Klasa środków trwałych"
-
-msgid "Fixed assets"
-msgstr "Środki trwałe"
 
 msgid "Fixed Assets"
 msgstr "Środki trwałe"
@@ -11634,6 +11647,9 @@ msgstr "Użycie Całożycia (jednostki)"
 msgid "Lifetime Usage (Units)"
 msgstr "Użycie Całożycia (Jednostki)"
 
+msgid "LIFO"
+msgstr ""
+
 msgid "Light"
 msgstr "Jasne"
 
@@ -11652,6 +11668,24 @@ msgstr "Linia"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Linia {0}"
+
+msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
+msgstr ""
+
+msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
+msgstr ""
+
+msgid "Line {line} has no account number."
+msgstr ""
+
+msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "Opis linii (opcjonalnie)"
@@ -12461,8 +12495,8 @@ msgstr "Migracja z innego systemu?"
 msgid "Migration Clearing"
 msgstr "Rozliczenie migracji"
 
-msgid "Migration Clearing must total zero. <0>Go to Trial balance</0>"
-msgstr "Rozliczenie migracji musi wynosić zero. <0>Przejdź do Saldo próbne</0>"
+msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
+msgstr ""
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — osiągnięto"
@@ -15506,10 +15540,6 @@ msgstr "Zaksięguj fakturę"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Zaksięguj wpisy dowodu księgowego z odpowiednimi kodami konta i opisu"
-
-#. placeholder {0}: check.count
-msgid "Post or delete the {0} document(s) dated before the cutover."
-msgstr "Zaksięguj lub usuń {0} dokument(ów) datowanych przed datą przejścia."
 
 msgid "Post Receipt"
 msgstr "Zaksięguj Paragon"
@@ -18907,6 +18937,12 @@ msgstr "Ustaw ilość"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Ustaw datę rozpoczęcia umowy, aby zobaczyć traktowanie księgowe."
 
+msgid "Set the fiscal year settings and the base currency."
+msgstr ""
+
+msgid "Set the Migration Clearing account to an active Equity account that is not a group."
+msgstr ""
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Ustaw czas, w którym przestałeś pracować, lub potwierdź, że nadal pracujesz."
 
@@ -20590,6 +20626,9 @@ msgstr "Autoryzacja została odrzucona w Onshape. Spróbuj połączyć się pono
 msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Autoryzacja została odrzucona w Ramp. Spróbuj połączyć się ponownie."
 
+msgid "The average cost of the item. Changing it needs permission to edit parts."
+msgstr ""
+
 msgid "The backup job reported this error."
 msgstr "Zadanie kopii zapasowej zgłosiło ten błąd."
 
@@ -20680,6 +20719,9 @@ msgstr "Kod identyfikujący bank na arenie międzynarodowej, 8 lub 11 znaków. P
 msgid "The company already has a posted opening balance journal."
 msgstr "Firma ma już zaksięgowany dowód księgowy saldo otwarcia."
 
+msgid "The company has no account defaults."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "Umowa nie może być wówczas anulowana"
 
@@ -20697,6 +20739,12 @@ msgstr "Oczekiwana dostępność pracownika zewnętrznego co tydzień; planowani
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Poprawiona data wygaśnięcia dla tego lotu/numeru seryjnego; istniejące zapasy w ręce są ponownie oceniane na podstawie polityki żywotności przechowywania po zmianie."
+
+msgid "The CSV file is empty."
+msgstr ""
+
+msgid "The CSV has no {columns} column."
+msgstr ""
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "CSV wymaga kolumn accountNumber, Winien i Ma. Import zastępuje cały bilans próbny."
@@ -21103,7 +21151,7 @@ msgstr "Połączenie Onshape wygasło"
 msgid "The Onshape Government connection expired"
 msgstr "Połączenie Onshape Government wygasło."
 
-#. placeholder {0}: formatDate( parseDate(cutoverDate).subtract({ days: 1 }).toString() )
+#. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."
 msgstr "Salda otwarcia są na {0}."
 
@@ -22404,9 +22452,6 @@ msgstr "Tranzyt i Instytucja"
 
 msgid "Trash"
 msgstr "Kosz"
-
-msgid "Trial balance"
-msgstr "Bilans próbny"
 
 msgid "Trial Balance"
 msgstr "Bilans próbny"

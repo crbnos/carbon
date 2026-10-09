@@ -210,9 +210,11 @@ databaseTest(
         .selectFrom("accountingSyncOperation")
         .select(["integration", "entityId", "status", "errorCode"])
         .where("companyId", "=", f.companyId)
-        .orderBy("entityId")
         .execute();
-      expect(operations).toEqual(
+      // Sorted here: the database collation orders ids by another rule.
+      expect(
+        operations.sort((a, b) => (a.entityId < b.entityId ? -1 : 1))
+      ).toEqual(
         [depreciationJournalId!, disposal.journalId!].sort().map((id) => ({
           integration: "xero",
           entityId: id,

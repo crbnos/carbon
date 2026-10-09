@@ -9,36 +9,33 @@
 // invoice line relieved its layers but wrote no row, and a job completion
 // wrote no output layer. This step writes the missing rows, then:
 //
-// - a sale row (post-shipment ~1216-1300; post-sales-invoice ~1861-1915:
-//   "Sale", "Direct Cost", "Sales Shipment", the shipment's or the invoice's
-//   id) gets its COGS pair from the builder that already reads that row: the
-//   shipment journal (shipment.ts) or the direct line of the invoice journal
+// - a sale row ("Sale", "Direct Cost", "Sales Shipment", the shipment's or
+//   the invoice's id, as post-shipment and post-sales-invoice write it) gets
+//   its COGS pair from the builder that already reads that row: the shipment
+//   journal (shipment.ts) or the direct line of the invoice journal
 //   (sales-invoice.ts). So this step runs before them;
-// - a job issue or return (issue/index.ts ~440-505 backflush, ~690-795
-//   manual and tracked issue; backflush_job_materials, migration
-//   20261009010412 ~100-440): one "Consumption", "Direct Cost", "Job
+// - a job issue or return (`issue`'s backflush, manual and tracked issue; the
+//   SQL `backflush_job_materials`): one "Consumption", "Direct Cost", "Job
 //   Consumption" row per ledger row, and a WIP/inventory pair on
 //   `material-issue:<operationId>`, or `job:<jobId>` when the ledger row
 //   names no operation (the SQL backflush). A return books inventory against
 //   WIP. One journal per job and posting date;
-// - a job completion (complete_job_to_inventory, same migration ~1290-1430):
-//   one "Output", "Direct Cost", "Job Receipt" layer, and an inventory/WIP
-//   pair on `job:<jobId>`, "Job Completion <job>". One journal per
-//   completion.
+// - a job completion (`complete_job_to_inventory`): one "Output", "Direct
+//   Cost", "Job Receipt" layer, and an inventory/WIP pair on `job:<jobId>`,
+//   "Job Completion <job>". One journal per completion.
 //
-// An outbound row costs at today's unit cost: the standard cost of a
-// Standard item, else `itemCost.unitCost`. The enable's re-cost then values
-// FIFO and LIFO rows against the opening and inbound layers. After the
-// enable there is no re-cost, so `journal-legacy-documents` passes the
-// "open-layers" costing: an outbound row of a FIFO or LIFO item relieves the
-// layers open now, as `calculateCOGS` does (`relieveOpenLayers`). An outbound
-// pair is written even at zero, as post-shipment and the backflush write it,
-// so the re-cost finds the pair to adjust. A completion takes the material
-// cost its job issued on or after the cutover up to that completion, as the
-// posting takes the job's whole WIP balance. Labor and machine absorption are
-// not rebuilt (no stored rate), and the re-cost moves the material cost
-// without re-valuing the output layer. A completion with no material cost
-// gets its layer at zero and no journal, as the posting writes none.
+// An outbound row of a FIFO or LIFO item relieves the layers open now, as
+// `calculateCOGS` does (`replayReliefs`, one read of the layers for every
+// movement); a Standard item costs at its standard cost and an Average one at
+// `itemCost.unitCost`, as `calculateCOGS` costs them. The enable then re-costs
+// the FIFO and LIFO rows against the reset layers; a repair after it keeps
+// what the open layers gave. A return costs at today's unit cost. Every pair
+// is written, at zero too, so each movement the detection finds gets its
+// journal and the re-cost finds the pair to adjust. A completion takes the
+// material cost its job issued on or after the cutover up to that
+// completion, as the posting takes the job's whole WIP balance. Labor and
+// machine absorption are not rebuilt (no stored rate), and the re-cost moves
+// the material cost without re-valuing the output layer.
 //
 // A job issue or completion that stored its cost row (the company had
 // accounting on) but lost its journal in the reset gets the journal at the
@@ -49,19 +46,24 @@ import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import {
+  type CostingMethod,
+  isCostLayer,
+  type ReliefEvent,
+  replayReliefs
+} from "@carbon/database/cost-relief";
+import {
   legacyJobMovements,
   legacySaleMovements
 } from "@carbon/database/legacy-documents";
-import { credit, debit, EPSILON, round } from "@carbon/utils";
+import { chunkArray, credit, debit, EPSILON, round } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
-import { orderLayersForConsumption } from "../../lib/cost-layer-order";
+import { InvalidInputError } from "../../errors";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import {
-  chunks,
-  groupBy,
-  type LegacyJournal,
   type LegacyJournalLine,
+  type LegacyMovementJournal,
+  ROWS_PER_STATEMENT,
   readByIds,
   readItems,
   readPostingGroups
@@ -70,26 +72,23 @@ import {
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 type CostLedgerInsert = Database["public"]["Tables"]["costLedger"]["Insert"];
 
-/**
- * How an outbound movement of a FIFO or LIFO item that stored no cost row is
- * costed. A Standard or Average item costs at `itemCost` either way.
- *
- * - "unit-cost": at today's unit cost. The enable re-costs the row against
- *   the reset layers afterwards.
- * - "open-layers": by relieving the layers open now, as `calculateCOGS`
- *   does. For a repair after the enable, which has no re-cost.
- */
-export type OutboundCosting = "unit-cost" | "open-layers";
-
 export type LegacyMovementCosts = {
   /** Cost rows written: sales, job issues and returns, job output layers. */
   costRows: number;
-  jobConsumptions: LegacyJournal[];
-  jobOutputs: LegacyJournal[];
+  /**
+   * The shipments and invoices whose "Sale" row this step wrote: posted with
+   * accounting off, which stored none. A posting stores every line's row or
+   * none, so a document is in here whole or not at all.
+   */
+  backfilledSaleDocumentIds: Set<string>;
+  jobConsumptions: LegacyMovementJournal[];
+  jobOutputs: LegacyMovementJournal[];
 };
 
 /** A job movement: one issue or return ledger row, or one completion. */
 export type JobMovement = {
+  /** The ledger row of an issue or return; the rows of a completion. */
+  key: string;
   kind: "Consumption" | "Output";
   jobId: string;
   itemId: string;
@@ -100,6 +99,8 @@ export type JobMovement = {
   createdAt: string;
   documentLineId: string | null;
   locationId: string | null;
+  /** The serial unit an issue relieves first. */
+  trackedEntityIds: string[];
 };
 
 /** A cost row a posting stored for a job movement. Signed. */
@@ -111,38 +112,40 @@ export type StoredJobCost = {
   cost: number;
 };
 
-export type PlannedJobMovement = {
+/** A movement, and the part of it stored cost rows cover. */
+export type CoveredJobMovement = {
   movement: JobMovement;
+  coveredQuantity: number;
+  coveredCost: number;
   /** The quantity no stored row covers, unsigned. A new row books it. */
   missingQuantity: number;
+};
+
+export type PlannedJobMovement = CoveredJobMovement & {
   /** The new row's cost, unsigned. */
   missingCost: number;
-  /** The pair to write, unsigned; null when the movement needs none. */
+  /** The pair to write, unsigned; null when the day kept its journal. */
   journal: { quantity: number; cost: number } | null;
 };
 
+const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+const instantOf = (movement: { postingDate: string; createdAt: string }) =>
+  `${movement.postingDate}|${movement.createdAt}`;
+
 /**
- * Plans the cost rows and journal pairs of job movements, in order. Stored
- * cost rows cover the earliest movements of a job, item and direction; the
- * rest costs at `unitCostByItem` for an issue or return, and at the job's
- * material cost not yet received for a completion. `journaledDays` holds
- * `<kind>:<jobId>:<postingDate>` for a job and date that has a journal.
- * `missingCostByMovement` replaces the unit-cost price of an issue's missing
- * quantity (the "open-layers" costing), keyed by the movement itself.
+ * Splits each movement into what the stored cost rows cover and what is
+ * missing, in the order the postings ran: by time, and at one instant the
+ * issues before the completions (the posting backflushes the material, then
+ * receives the output, in one transaction). Stored rows cover the earliest
+ * movements of a job, item and direction.
  */
-export function planLegacyJobCosts({
+export function coverJobMovements({
   movements,
-  stored,
-  journaledDays,
-  unitCostByItem,
-  missingCostByMovement
+  stored
 }: {
   movements: JobMovement[];
   stored: StoredJobCost[];
-  journaledDays: ReadonlySet<string>;
-  unitCostByItem: ReadonlyMap<string, number>;
-  missingCostByMovement?: ReadonlyMap<JobMovement, number>;
-}): PlannedJobMovement[] {
+}): CoveredJobMovement[] {
   const coverKey = (row: {
     kind: string;
     jobId: string;
@@ -157,7 +160,12 @@ export function planLegacyJobCosts({
     list.push({ quantity, unitCost: Math.abs(row.cost) / quantity });
     budgets.set(coverKey(row), list);
   }
-  const cover = (movement: JobMovement) => {
+  const ordered = [...movements].sort(
+    (a, b) =>
+      byText(instantOf(a), instantOf(b)) ||
+      (a.kind === b.kind ? 0 : a.kind === "Consumption" ? -1 : 1)
+  );
+  return ordered.map((movement) => {
     let wanted = Math.abs(movement.quantity);
     let coveredQuantity = 0;
     let coveredCost = 0;
@@ -171,276 +179,85 @@ export function planLegacyJobCosts({
       coveredCost += take * budget.unitCost;
     }
     return {
+      movement,
       coveredQuantity,
       coveredCost: round(coveredCost),
       missingQuantity: wanted > EPSILON ? round(wanted) : 0
     };
-  };
+  });
+}
 
-  const ordered = [...movements].sort((a, b) =>
-    byText(`${a.postingDate}|${a.createdAt}`, `${b.postingDate}|${b.createdAt}`)
-  );
+/**
+ * Plans the cost rows and journal pairs of the covered job movements, in
+ * their order. An issue's or return's missing quantity costs what
+ * `missingCostByKey` gives it; a completion takes the job's material cost
+ * not yet received. `journaledDays` holds `<kind>:<jobId>:<postingDate>` for
+ * a job and date that kept its journal: only what is missing there gets a
+ * pair. Every other movement gets its pair, at zero too.
+ */
+export function planLegacyJobCosts({
+  covered,
+  journaledDays,
+  missingCostByKey
+}: {
+  covered: CoveredJobMovement[];
+  journaledDays: ReadonlySet<string>;
+  missingCostByKey: ReadonlyMap<string, number>;
+}): PlannedJobMovement[] {
   // The material cost each job has in WIP and no completion has taken.
   const wipByJob = new Map<string, number>();
-  const planned: PlannedJobMovement[] = [];
-  // Issues before completions at the same instant: the posting backflushes
-  // the material, then receives the output, in one transaction.
-  const atInstant = groupBy(
-    ordered,
-    (movement) => `${movement.postingDate}|${movement.createdAt}`
-  );
-  for (const group of atInstant.values()) {
-    for (const movement of [
-      ...group.filter((row) => row.kind === "Consumption"),
-      ...group.filter((row) => row.kind === "Output")
-    ]) {
-      const { coveredQuantity, coveredCost, missingQuantity } = cover(movement);
-      const journaled = journaledDays.has(
-        `${movement.kind}:${movement.jobId}:${movement.postingDate}`
-      );
-      const wip = wipByJob.get(movement.jobId) ?? 0;
-      if (movement.kind === "Consumption") {
-        const outbound = movement.quantity < 0;
-        const missingCost =
-          missingCostByMovement?.get(movement) ??
-          round(missingQuantity * (unitCostByItem.get(movement.itemId) ?? 0));
-        const value = coveredCost + missingCost;
-        wipByJob.set(movement.jobId, outbound ? wip + value : wip - value);
-        const quantity = journaled
-          ? missingQuantity
-          : coveredQuantity + missingQuantity;
-        const cost = journaled ? missingCost : value;
-        // An issue's pair is written at zero, so the re-cost finds it; a
-        // return at zero books nothing, as the manual issue skips it.
-        const writes = quantity > EPSILON && (outbound || cost > EPSILON);
-        planned.push({
-          movement,
-          missingQuantity,
-          missingCost,
-          journal: writes ? { quantity: round(quantity), cost } : null
-        });
-      } else {
-        const afterCovered = wip - coveredCost;
-        const missingCost =
-          missingQuantity > 0 ? round(Math.max(afterCovered, 0)) : 0;
-        wipByJob.set(movement.jobId, afterCovered - missingCost);
-        const cost = (journaled ? 0 : coveredCost) + missingCost;
-        planned.push({
-          movement,
-          missingQuantity,
-          missingCost,
-          // The posting writes no journal for a completion with no WIP.
-          journal:
-            cost > EPSILON
-              ? { quantity: round(Math.abs(movement.quantity)), cost }
-              : null
-        });
-      }
-    }
-  }
-  return planned;
-}
-
-/** An open cost layer, with its open invoice adjustment children. */
-export type OpenCostLayer = {
-  id: string;
-  quantity: number;
-  cost: number;
-  remainingQuantity: number;
-  /** Oldest first, as `calculateCOGS` reads them. */
-  children: {
-    id: string;
-    quantity: number;
-    cost: number;
-    remainingQuantity: number;
-  }[];
-};
-
-/** An outbound quantity to relieve, unsigned. */
-export type LayerRelief = { key: string; itemId: string; quantity: number };
-
-/**
- * Relieves open cost layers for outbound movements, in the order given, with
- * the arithmetic of `calculateCOGS`: each layer in the item's order at its
- * unit cost, plus the per-unit bump of each child the units carry, and a
- * quantity no layer covers at the item's fallback unit cost. Pure, so one
- * read of the layers serves every movement. Returns each relief's cost
- * (unsigned, rounded) and the new remaining quantity of every layer and
- * child it touched.
- */
-export function relieveOpenLayers({
-  layersByItem,
-  reliefs,
-  fallbackUnitCostByItem
-}: {
-  /** Each item's layers in the order `calculateCOGS` relieves them. */
-  layersByItem: ReadonlyMap<string, OpenCostLayer[]>;
-  reliefs: LayerRelief[];
-  fallbackUnitCostByItem: ReadonlyMap<string, number>;
-}): { costByKey: Map<string, number>; remainingById: Map<string, number> } {
-  const open = new Map(
-    [...layersByItem].map(([itemId, layers]) => [
-      itemId,
-      layers.map((layer) => ({
-        ...layer,
-        children: layer.children.map((child) => ({ ...child }))
-      }))
-    ])
-  );
-  const costByKey = new Map<string, number>();
-  const remainingById = new Map<string, number>();
-  for (const relief of reliefs) {
-    let toRelieve = relief.quantity;
-    let cost = 0;
-    for (const layer of open.get(relief.itemId) ?? []) {
-      if (toRelieve <= EPSILON) break;
-      if (layer.remainingQuantity <= EPSILON) continue;
-      const unitCost = layer.quantity > 0 ? layer.cost / layer.quantity : 0;
-      const take = Math.min(toRelieve, layer.remainingQuantity);
-      cost += take * unitCost;
-      layer.remainingQuantity -= take;
-      toRelieve -= take;
-      remainingById.set(layer.id, round(layer.remainingQuantity));
-      let unapplied = take;
-      for (const child of layer.children) {
-        if (unapplied <= EPSILON) break;
-        if (child.remainingQuantity <= EPSILON) continue;
-        const bump = child.quantity > 0 ? child.cost / child.quantity : 0;
-        const apply = Math.min(child.remainingQuantity, unapplied);
-        cost += apply * bump;
-        child.remainingQuantity -= apply;
-        unapplied -= apply;
-        remainingById.set(child.id, round(child.remainingQuantity));
-      }
-    }
-    if (toRelieve > EPSILON) {
-      cost += toRelieve * (fallbackUnitCostByItem.get(relief.itemId) ?? 0);
-    }
-    costByKey.set(relief.key, round(cost));
-  }
-  return { costByKey, remainingById };
-}
-
-/**
- * The "open-layers" costing: reads the open layers of the FIFO and LIFO
- * items once (FOR UPDATE, as `calculateCOGS` locks them), relieves them for
- * the reliefs in order and writes the new remaining quantities. A layer this
- * step writes (a job's output) is not open to a relief in the same step; its
- * quantity costs at the fallback, as negative stock does.
- */
-async function relieveOutboundLayers(
-  trx: KyselyTx,
-  {
-    companyId,
-    reliefs,
-    lifoItems,
-    fallbackUnitCostByItem
-  }: {
-    companyId: string;
-    reliefs: LayerRelief[];
-    lifoItems: ReadonlySet<string>;
-    fallbackUnitCostByItem: ReadonlyMap<string, number>;
-  }
-): Promise<Map<string, number>> {
-  if (reliefs.length === 0) return new Map();
-  // The layers calculateCOGS relieves: not an adjustment child, not a PO
-  // artifact.
-  const layers = await readByIds(
-    reliefs.map((relief) => relief.itemId),
-    (ids) =>
-      trx
-        .selectFrom("costLedger")
-        .select([
-          "id",
-          "itemId",
-          "quantity",
-          "cost",
-          "remainingQuantity",
-          "trackedEntityId"
-        ])
-        .where("companyId", "=", companyId)
-        .where("itemId", "in", ids)
-        .where("remainingQuantity", ">", 0)
-        .where("adjustment", "=", false)
-        .where("appliesToCostLedgerId", "is", null)
-        .where((eb) =>
-          eb.or([
-            eb("documentType", "is", null),
-            eb("documentType", "!=", "Purchase Order")
-          ])
-        )
-        .orderBy("itemId")
-        .orderBy("postingDate")
-        .orderBy("createdAt")
-        .forUpdate()
-        .execute()
-  );
-  const children = await readByIds(
-    layers.map((layer) => layer.id),
-    (ids) =>
-      trx
-        .selectFrom("costLedger")
-        .select([
-          "id",
-          "appliesToCostLedgerId",
-          "quantity",
-          "cost",
-          "remainingQuantity"
-        ])
-        .where("companyId", "=", companyId)
-        .where("appliesToCostLedgerId", "in", ids)
-        .where("remainingQuantity", ">", 0)
-        .orderBy("createdAt")
-        .forUpdate()
-        .execute()
-  );
-  const childrenByLayer = groupBy(children, (child) =>
-    String(child.appliesToCostLedgerId)
-  );
-  const layersByItem = new Map(
-    [...groupBy(layers, (layer) => String(layer.itemId))].map(
-      ([itemId, rows]) => {
-        // FIFO oldest first, LIFO newest first; a layer stamped for a serial
-        // unit last, as calculateCOGS orders them with no unit leaving.
-        const ordered = orderLayersForConsumption(
-          lifoItems.has(itemId) ? [...rows].reverse() : rows
+  return covered.map((cover) => {
+    const { movement, coveredQuantity, coveredCost, missingQuantity } = cover;
+    const journaled = journaledDays.has(
+      `${movement.kind}:${movement.jobId}:${movement.postingDate}`
+    );
+    const wip = wipByJob.get(movement.jobId) ?? 0;
+    if (movement.kind === "Consumption") {
+      const missingCost =
+        missingQuantity > 0 ? missingCostByKey.get(movement.key) : 0;
+      if (missingCost === undefined) {
+        throw new Error(
+          `The missing cost of job movement ${movement.key} was not computed`
         );
-        return [
-          itemId,
-          ordered.map(
-            (layer): OpenCostLayer => ({
-              id: layer.id,
-              quantity: Number(layer.quantity),
-              cost: Number(layer.cost),
-              remainingQuantity: Number(layer.remainingQuantity),
-              children: (childrenByLayer.get(layer.id) ?? []).map((child) => ({
-                id: child.id,
-                quantity: Number(child.quantity),
-                cost: Number(child.cost),
-                remainingQuantity: Number(child.remainingQuantity)
-              }))
-            })
-          )
-        ];
       }
-    )
-  );
-  const { costByKey, remainingById } = relieveOpenLayers({
-    layersByItem,
-    reliefs,
-    fallbackUnitCostByItem
+      const value = coveredCost + missingCost;
+      wipByJob.set(
+        movement.jobId,
+        movement.quantity < 0 ? wip + value : wip - value
+      );
+      const quantity = journaled
+        ? missingQuantity
+        : coveredQuantity + missingQuantity;
+      return {
+        ...cover,
+        missingCost,
+        journal:
+          quantity > EPSILON
+            ? {
+                quantity: round(quantity),
+                cost: journaled ? missingCost : value
+              }
+            : null
+      };
+    }
+    const afterCovered = wip - coveredCost;
+    const missingCost =
+      missingQuantity > 0 ? round(Math.max(afterCovered, 0)) : 0;
+    wipByJob.set(movement.jobId, afterCovered - missingCost);
+    return {
+      ...cover,
+      missingCost,
+      journal:
+        !journaled || missingQuantity > 0
+          ? {
+              quantity: round(
+                journaled ? missingQuantity : Math.abs(movement.quantity)
+              ),
+              cost: (journaled ? 0 : coveredCost) + missingCost
+            }
+          : null
+    };
   });
-  for (const rows of chunks([...remainingById])) {
-    await sql`
-      UPDATE "costLedger" AS c
-      SET "remainingQuantity" = v."remaining"
-      FROM (VALUES ${sql.join(
-        rows.map(([id, remaining]) => sql`(${id}, ${remaining}::numeric)`)
-      )}) AS v("id", "remaining")
-      WHERE c."id" = v."id" AND c."companyId" = ${companyId}
-    `.execute(trx);
-  }
-  return costByKey;
 }
 
 /**
@@ -453,20 +270,19 @@ export async function writeLegacyMovementCosts(
   {
     companyId,
     cutoverDate,
-    defaults,
-    outboundCosting = "unit-cost"
-  }: {
-    companyId: string;
-    cutoverDate: string;
-    defaults: AccountDefaults;
-    outboundCosting?: OutboundCosting;
-  }
+    defaults
+  }: { companyId: string; cutoverDate: string; defaults: AccountDefaults }
 ): Promise<LegacyMovementCosts> {
   const args = { companyId, cutoverDate };
   const sales = await legacySaleMovements(trx, args).execute();
   const ledgerRows = await legacyJobMovements(trx, args).execute();
   if (sales.length === 0 && ledgerRows.length === 0) {
-    return { costRows: 0, jobConsumptions: [], jobOutputs: [] };
+    return {
+      costRows: 0,
+      backfilledSaleDocumentIds: new Set(),
+      jobConsumptions: [],
+      jobOutputs: []
+    };
   }
 
   const jobs = await readByIds(
@@ -480,8 +296,7 @@ export async function writeLegacyMovementCosts(
         .execute()
   );
   const jobById = new Map(jobs.map((job) => [job.id, job]));
-  const jobIds = [...jobById.keys()];
-  const storedRows = await readByIds(jobIds, (ids) =>
+  const storedRows = await readByIds(jobById.keys(), (ids) =>
     trx
       .selectFrom("costLedger")
       .select(["itemLedgerType", "documentId", "itemId", "quantity", "cost"])
@@ -521,18 +336,30 @@ export async function writeLegacyMovementCosts(
       .where("itemId", "in", ids)
       .execute()
   );
+  const itemCostById = new Map(itemCosts.map((row) => [row.itemId, row]));
+  const itemCostOf = (itemId: string) => {
+    const itemCost = itemCostById.get(itemId);
+    if (!itemCost) {
+      throw new InvalidInputError(
+        `Item ${itemById.get(itemId)?.readableIdWithRevision ?? itemId} has no cost record, so its movements after the cutover cannot be costed.`
+      );
+    }
+    return itemCost;
+  };
   // Today's unit cost, as calculateCOGS reads it for a Standard or Average
-  // item. For a FIFO or LIFO item the enable's re-cost replaces it, or the
-  // "open-layers" costing below does.
-  const unitCostByItem = new Map(
-    itemCosts.map((row) => [
-      row.itemId,
-      Number(
-        (row.costingMethod === "Standard" ? row.standardCost : row.unitCost) ??
-          0
-      )
-    ])
-  );
+  // item.
+  const unitCostOf = (itemId: string) => {
+    const itemCost = itemCostOf(itemId);
+    return Number(
+      (itemCost.costingMethod === "Standard"
+        ? itemCost.standardCost
+        : itemCost.unitCost) ?? 0
+    );
+  };
+  const layeredMethod = (itemId: string): CostingMethod | null => {
+    const method = itemCostOf(itemId).costingMethod;
+    return method === "FIFO" || method === "LIFO" ? method : null;
+  };
 
   // One movement per issue or return ledger row, and one per completion: the
   // rows of one completion (a unit each, when serialized) share an instant.
@@ -544,6 +371,7 @@ export async function writeLegacyMovementCosts(
   );
   const movements: JobMovement[] = [
     ...consumptionRows.map((row) => ({
+      key: row.id,
       kind: "Consumption" as const,
       jobId: row.documentId!,
       itemId: row.itemId,
@@ -551,15 +379,17 @@ export async function writeLegacyMovementCosts(
       postingDate: row.postingDate,
       createdAt: row.createdAt,
       documentLineId: row.documentLineId,
-      locationId: row.locationId
+      locationId: row.locationId,
+      trackedEntityIds: row.trackedEntityId ? [row.trackedEntityId] : []
     })),
     ...[
-      ...groupBy(
+      ...Map.groupBy(
         outputRows,
         (row) =>
           `${row.documentId}:${row.itemId}:${row.postingDate}:${row.createdAt}`
-      ).values()
-    ].map((group) => ({
+      )
+    ].map(([key, group]) => ({
+      key,
       kind: "Output" as const,
       jobId: group[0]!.documentId!,
       itemId: group[0]!.itemId,
@@ -567,10 +397,11 @@ export async function writeLegacyMovementCosts(
       postingDate: group[0]!.postingDate,
       createdAt: group[0]!.createdAt,
       documentLineId: null,
-      locationId: group[0]!.locationId
+      locationId: group[0]!.locationId,
+      trackedEntityIds: []
     }))
   ];
-  const planArgs = {
+  const covered = coverJobMovements({
     movements,
     stored: storedRows.map((row) => ({
       kind:
@@ -581,8 +412,72 @@ export async function writeLegacyMovementCosts(
       itemId: String(row.itemId),
       quantity: Number(row.quantity),
       cost: Number(row.cost)
+    }))
+  });
+
+  // The outbound quantities with no cost row, in movement order: the sales,
+  // and the missing quantity of each issue.
+  const saleKey = (row: (typeof sales)[number]) =>
+    `sale:${row.documentId}:${row.itemId}`;
+  const saleQuantity = (row: (typeof sales)[number]) =>
+    round(Number(row.quantity) - Number(row.covered));
+  const outbound = [
+    ...sales.map((row) => ({
+      order: instantOf(row),
+      key: saleKey(row),
+      itemId: row.itemId,
+      quantity: saleQuantity(row),
+      trackedEntityIds: row.trackedEntityIds
     })),
-    // The days with a job journal, as the detection reads them.
+    ...covered
+      .filter(
+        ({ movement, missingQuantity }) =>
+          movement.kind === "Consumption" &&
+          movement.quantity < 0 &&
+          missingQuantity > 0
+      )
+      .map(({ movement, missingQuantity }) => ({
+        order: instantOf(movement),
+        key: movement.key,
+        itemId: movement.itemId,
+        quantity: missingQuantity,
+        trackedEntityIds: movement.trackedEntityIds
+      }))
+  ].sort((a, b) => byText(a.order, b.order));
+  const relievedCostByKey = await relieveOpenLayers(trx, {
+    companyId,
+    reliefs: outbound.filter((relief) => layeredMethod(relief.itemId)),
+    methodByItem: new Map(
+      outbound.flatMap((relief) => {
+        const method = layeredMethod(relief.itemId);
+        return method ? [[relief.itemId, method] as const] : [];
+      })
+    ),
+    // calculateCOGS costs a quantity no layer covers at the unit cost.
+    fallbackUnitCostByItem: new Map(
+      outbound.map((relief) => [
+        relief.itemId,
+        Number(itemCostOf(relief.itemId).unitCost ?? 0)
+      ])
+    )
+  });
+  const outboundCost = (relief: (typeof outbound)[number]) =>
+    relievedCostByKey.get(relief.key) ??
+    round(relief.quantity * unitCostOf(relief.itemId));
+  const costByKey = new Map(
+    outbound.map((relief) => [relief.key, outboundCost(relief)])
+  );
+  // A return costs at today's unit cost.
+  for (const { movement, missingQuantity } of covered) {
+    if (movement.kind === "Consumption" && movement.quantity > 0) {
+      costByKey.set(
+        movement.key,
+        round(missingQuantity * unitCostOf(movement.itemId))
+      );
+    }
+  }
+  const planned = planLegacyJobCosts({
+    covered,
     journaledDays: new Set(
       ledgerRows
         .filter((row) => row.journaled)
@@ -591,93 +486,23 @@ export async function writeLegacyMovementCosts(
             `${row.entryType === "Consumption" ? "Consumption" : "Output"}:${row.documentId}:${row.postingDate}`
         )
     ),
-    unitCostByItem
-  };
-  let planned = planLegacyJobCosts(planArgs);
-
-  const saleQuantity = (row: (typeof sales)[number]) =>
-    round(Number(row.quantity) - Number(row.covered));
-  const saleKey = (row: (typeof sales)[number]) =>
-    `sale:${row.documentId}:${row.itemId}`;
-  let saleCostByKey = new Map<string, number>();
-  if (outboundCosting === "open-layers") {
-    // The outbound quantities of FIFO and LIFO items with no cost row, in
-    // movement order: the sales, and the missing quantity of each issue
-    // (the plan's quantities do not depend on its costs).
-    const methodByItem = new Map(
-      itemCosts.map((row) => [row.itemId, row.costingMethod])
-    );
-    const layered = (itemId: string) =>
-      methodByItem.get(itemId) === "FIFO" ||
-      methodByItem.get(itemId) === "LIFO";
-    const issueKey = new Map<JobMovement, string>();
-    const reliefs = [
-      ...sales
-        .filter((row) => layered(row.itemId))
-        .map((row) => ({
-          order: `${row.postingDate}|${row.createdAt}`,
-          key: saleKey(row),
-          itemId: row.itemId,
-          quantity: saleQuantity(row)
-        })),
-      ...planned
-        .filter(
-          ({ movement, missingQuantity }) =>
-            movement.kind === "Consumption" &&
-            movement.quantity < 0 &&
-            missingQuantity > 0 &&
-            layered(movement.itemId)
-        )
-        .map(({ movement, missingQuantity }, index) => {
-          const key = `issue:${index}`;
-          issueKey.set(movement, key);
-          return {
-            order: `${movement.postingDate}|${movement.createdAt}`,
-            key,
-            itemId: movement.itemId,
-            quantity: missingQuantity
-          };
-        })
-    ].sort((a, b) => byText(a.order, b.order));
-    const costByKey = await relieveOutboundLayers(trx, {
-      companyId,
-      reliefs,
-      lifoItems: new Set(
-        itemCosts
-          .filter((row) => row.costingMethod === "LIFO")
-          .map((row) => row.itemId)
-      ),
-      // calculateCOGS costs a quantity no layer covers at the unit cost.
-      fallbackUnitCostByItem: new Map(
-        itemCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)])
-      )
-    });
-    saleCostByKey = costByKey;
-    const missingCostByMovement = new Map<JobMovement, number>();
-    for (const [movement, key] of issueKey) {
-      const cost = costByKey.get(key);
-      if (cost !== undefined) missingCostByMovement.set(movement, cost);
-    }
-    planned = planLegacyJobCosts({ ...planArgs, missingCostByMovement });
-  }
+    missingCostByKey: costByKey
+  });
 
   // The rows, in the order of their movements, so the re-cost relieves
   // the layers in that order.
   const inserts: (CostLedgerInsert & { order: string })[] = [
     ...sales.map((row) => {
-      const quantity = saleQuantity(row);
-      const cost =
-        saleCostByKey.get(saleKey(row)) ??
-        round(quantity * (unitCostByItem.get(row.itemId) ?? 0));
+      const cost = costByKey.get(saleKey(row))!;
       return {
-        order: `${row.postingDate}|${row.createdAt}`,
+        order: instantOf(row),
         itemLedgerType: "Sale" as const,
         costLedgerType: "Direct Cost" as const,
         adjustment: false,
         documentType: "Sales Shipment" as const,
         documentId: row.documentId,
         itemId: row.itemId,
-        quantity: -quantity,
+        quantity: -saleQuantity(row),
         cost: -cost,
         remainingQuantity: 0,
         postingDate: row.postingDate,
@@ -691,7 +516,7 @@ export async function writeLegacyMovementCosts(
         const sign = movement.quantity < 0 ? -1 : 1;
         const isOutput = movement.kind === "Output";
         return {
-          order: `${movement.postingDate}|${movement.createdAt}`,
+          order: instantOf(movement),
           itemLedgerType: movement.kind,
           costLedgerType: "Direct Cost" as const,
           adjustment: false,
@@ -710,10 +535,10 @@ export async function writeLegacyMovementCosts(
         };
       })
   ].sort((a, b) => byText(a.order, b.order));
-  for (const rows of chunks(inserts)) {
+  for (const rows of chunkArray(inserts, ROWS_PER_STATEMENT)) {
     await trx
       .insertInto("costLedger")
-      .values(rows.map(({ order, ...row }) => row))
+      .values(rows.map(({ order: _order, ...row }) => row))
       .execute();
   }
 
@@ -729,20 +554,23 @@ export async function writeLegacyMovementCosts(
       itemById.get(itemId)?.replenishmentSystem ?? null,
       defaults
     );
-  const withPair = planned.filter((plan) => plan.journal);
+  const jobNumber = (jobId: string) => jobById.get(jobId)!.jobId;
+  const withPair = planned.flatMap((plan) =>
+    plan.journal ? [{ ...plan, journal: plan.journal }] : []
+  );
 
   const jobConsumptions = [
-    ...groupBy(
+    ...Map.groupBy(
       withPair.filter((plan) => plan.movement.kind === "Consumption"),
       (plan) => `${plan.movement.jobId}:${plan.movement.postingDate}`
     ).values()
-  ].map((group): LegacyJournal => {
+  ].map((group): LegacyMovementJournal => {
     const { jobId, postingDate } = group[0]!.movement;
     const lines = group.flatMap(
       ({ movement, journal }): LegacyJournalLine[] => {
         const inventory = inventoryOf(movement.itemId);
         const keys = {
-          quantity: journal!.quantity,
+          quantity: journal.quantity,
           documentType: "Job Consumption" as const,
           documentId: jobId,
           documentLineReference: movement.documentLineId
@@ -763,29 +591,30 @@ export async function writeLegacyMovementCosts(
         };
         return movement.quantity < 0
           ? [
-              { ...wip, amount: round(debit("asset", journal!.cost)) },
-              { ...stock, amount: round(credit("asset", journal!.cost)) }
+              { ...wip, amount: round(debit("asset", journal.cost)) },
+              { ...stock, amount: round(credit("asset", journal.cost)) }
             ]
           : [
-              { ...stock, amount: round(debit("asset", journal!.cost)) },
-              { ...wip, amount: round(credit("asset", journal!.cost)) }
+              { ...stock, amount: round(debit("asset", journal.cost)) },
+              { ...wip, amount: round(credit("asset", journal.cost)) }
             ];
       }
     );
     return {
-      description: `Material Issue to Job ${jobById.get(jobId)?.jobId ?? jobId}`,
+      description: `Material Issue to Job ${jobNumber(jobId)}`,
       postingDate,
       sourceType: "Job Consumption",
-      lines
+      lines,
+      fromStoredCost: group.some((plan) => plan.coveredQuantity > 0)
     };
   });
 
   const jobOutputs = withPair
     .filter((plan) => plan.movement.kind === "Output")
-    .map(({ movement, journal }): LegacyJournal => {
+    .map(({ movement, journal, coveredQuantity }): LegacyMovementJournal => {
       const inventory = inventoryOf(movement.itemId);
       const keys = {
-        quantity: journal!.quantity,
+        quantity: journal.quantity,
         documentType: "Job Receipt" as const,
         documentId: movement.jobId,
         documentLineReference: journalReference.to.job(movement.jobId),
@@ -793,7 +622,7 @@ export async function writeLegacyMovementCosts(
         dimensions: dimensions(movement)
       };
       return {
-        description: `Job Completion ${jobById.get(movement.jobId)?.jobId ?? movement.jobId}`,
+        description: `Job Completion ${jobNumber(movement.jobId)}`,
         postingDate: movement.postingDate,
         sourceType: "Job Receipt",
         lines: [
@@ -801,22 +630,146 @@ export async function writeLegacyMovementCosts(
             ...keys,
             accountId: inventory.account,
             description: inventory.description,
-            amount: round(debit("asset", journal!.cost))
+            amount: round(debit("asset", journal.cost))
           },
           {
             ...keys,
             accountId: defaults.workInProgressAccount,
             description: "WIP Account",
-            amount: round(credit("asset", journal!.cost))
+            amount: round(credit("asset", journal.cost))
           }
-        ]
+        ],
+        fromStoredCost: coveredQuantity > 0
       };
     });
 
-  return { costRows: inserts.length, jobConsumptions, jobOutputs };
+  return {
+    costRows: inserts.length,
+    backfilledSaleDocumentIds: new Set(sales.map((row) => row.documentId)),
+    jobConsumptions,
+    jobOutputs
+  };
 }
 
-/** Code-point order: dates and UTC instants sort as written. */
-function byText(a: string, b: string) {
-  return a < b ? -1 : a > b ? 1 : 0;
+/**
+ * Relieves the open layers of FIFO and LIFO items for the reliefs, in order,
+ * as successive `calculateCOGS` calls would: reads the layers and their open
+ * children once, locked as `calculateCOGS` locks them, replays the reliefs
+ * (`replayReliefs`) and writes the remaining quantities that changed. A layer
+ * this step writes (a job's output) is not open to a relief in the same
+ * step; its quantity costs at the fallback, as negative stock does. Returns
+ * each relief's cost by key.
+ */
+async function relieveOpenLayers(
+  trx: KyselyTx,
+  {
+    companyId,
+    reliefs,
+    methodByItem,
+    fallbackUnitCostByItem
+  }: {
+    companyId: string;
+    reliefs: {
+      key: string;
+      itemId: string;
+      quantity: number;
+      trackedEntityIds: readonly string[];
+    }[];
+    methodByItem: ReadonlyMap<string, CostingMethod>;
+    fallbackUnitCostByItem: ReadonlyMap<string, number>;
+  }
+): Promise<Map<string, number>> {
+  if (reliefs.length === 0) return new Map();
+  const layers = await readByIds(
+    reliefs.map((relief) => relief.itemId),
+    (ids) =>
+      trx
+        .selectFrom("costLedger")
+        .select([
+          "id",
+          "itemId",
+          "quantity",
+          "cost",
+          "remainingQuantity",
+          "trackedEntityId"
+        ])
+        .where("companyId", "=", companyId)
+        .where("itemId", "in", ids)
+        .where("remainingQuantity", ">", 0)
+        .where(isCostLayer)
+        .orderBy("itemId")
+        .orderBy("postingDate")
+        .orderBy("createdAt")
+        .forUpdate()
+        .execute()
+  );
+  const children = await readByIds(
+    layers.map((layer) => layer.id),
+    (ids) =>
+      trx
+        .selectFrom("costLedger")
+        .select([
+          "id",
+          "appliesToCostLedgerId",
+          "quantity",
+          "cost",
+          "remainingQuantity"
+        ])
+        .where("companyId", "=", companyId)
+        .where("appliesToCostLedgerId", "in", ids)
+        .where("remainingQuantity", ">", 0)
+        .orderBy("createdAt")
+        .forUpdate()
+        .execute()
+  );
+  const childrenByLayer = Map.groupBy(
+    children,
+    (child) => child.appliesToCostLedgerId
+  );
+  const loaded = new Map<string, number>();
+  const events: ReliefEvent[] = [
+    ...layers.map((layer): ReliefEvent => {
+      loaded.set(layer.id, Number(layer.remainingQuantity));
+      return {
+        kind: "layer",
+        itemId: layer.itemId!,
+        layer: {
+          id: layer.id,
+          quantity: Number(layer.quantity),
+          cost: Number(layer.cost),
+          remainingQuantity: Number(layer.remainingQuantity),
+          trackedEntityId: layer.trackedEntityId,
+          children: (childrenByLayer.get(layer.id) ?? []).map((child) => {
+            loaded.set(child.id, Number(child.remainingQuantity));
+            return {
+              id: child.id,
+              quantity: Number(child.quantity),
+              cost: Number(child.cost),
+              remainingQuantity: Number(child.remainingQuantity)
+            };
+          })
+        }
+      };
+    }),
+    ...reliefs.map((relief): ReliefEvent => ({ kind: "relief", ...relief }))
+  ];
+  const { costByKey, remainingById } = replayReliefs({
+    events,
+    methodByItem,
+    fallbackUnitCostByItem
+  });
+  const changed = [...remainingById].filter(
+    ([id, remaining]) => loaded.get(id) !== remaining
+  );
+  for (const rows of chunkArray(changed, ROWS_PER_STATEMENT)) {
+    await sql`
+      UPDATE "costLedger" AS c
+      SET "remainingQuantity" = v."remaining"
+      FROM (VALUES ${sql.join(
+        rows.map(([id, remaining]) => sql`(${id}, ${remaining}::numeric)`)
+      )}) AS v("id", "remaining")
+      WHERE c."id" = v."id" AND c."companyId" = ${companyId}
+    `.execute(trx);
+  }
+  return costByKey;
 }

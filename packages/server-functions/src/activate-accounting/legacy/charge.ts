@@ -9,8 +9,8 @@
 //
 // Mirrors post-charge/post-charge-post.ts (`postChargeJournal`): the lines of
 // `buildChargeJournal`, quantity 1, one journal line reference per charge,
-// the Cost Center and Project dimensions (the oldest active dimension of
-// each type), dated `postingDate`, else `transactionDate`. The posting's
+// the Cost Center and Project dimensions (`costCenterAndProjectDimensions`),
+// dated `postingDate`, else `transactionDate`. The posting's
 // account checks (active, posting, class) are not repeated: the charge
 // passed them when it posted, and the builder still refuses an account with
 // no class.
@@ -19,6 +19,7 @@ import type { KyselyTx } from "@carbon/database/client";
 import { legacyCharges } from "@carbon/database/legacy-documents";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import { nanoid } from "nanoid";
+import { costCenterAndProjectDimensions } from "../../lib/cost-center-project-dimensions";
 import { buildChargeJournal } from "../../post-charge/build-charge-journal";
 import { type LegacyDocumentJournal, readByIds } from "./write";
 
@@ -76,12 +77,7 @@ export async function buildLegacyChargeJournals(
     companyGroupId
   );
 
-  const linesByCharge = new Map<string, typeof lines>();
-  for (const line of lines) {
-    const list = linesByCharge.get(line.chargeId) ?? [];
-    list.push(line);
-    linesByCharge.set(line.chargeId, list);
-  }
+  const linesByCharge = Map.groupBy(lines, (line) => line.chargeId);
 
   return charges.map((charge) => {
     const built = buildChargeJournal({
@@ -135,29 +131,4 @@ export async function buildLegacyChargeJournals(
       }))
     };
   });
-}
-
-/** The oldest active Cost Center and Project dimension, as the charge and
- *  reimbursement postings pick them. */
-export async function costCenterAndProjectDimensions(
-  trx: KyselyTx,
-  companyGroupId: string
-): Promise<{ costCenter: string | null; project: string | null }> {
-  const dimensions = await trx
-    .selectFrom("dimension")
-    .select(["id", "entityType"])
-    .where("companyGroupId", "=", companyGroupId)
-    .where("active", "=", true)
-    .where("entityType", "in", ["CostCenter", "Project"])
-    .orderBy("createdAt")
-    .orderBy("id")
-    .execute();
-  return {
-    costCenter:
-      dimensions.find((dimension) => dimension.entityType === "CostCenter")
-        ?.id ?? null,
-    project:
-      dimensions.find((dimension) => dimension.entityType === "Project")?.id ??
-      null
-  };
 }

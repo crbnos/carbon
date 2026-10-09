@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import { readAccountingCutoverDate } from "@carbon/database/journal-posting-status";
 import type { Kysely, Transaction } from "kysely";
 import { InvalidInputError } from "../errors";
 
@@ -17,12 +18,7 @@ export async function assertAccountingCutover(
   db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
   companyId: string
 ) {
-  const settings = await db
-    .selectFrom("companySettings")
-    .select("accountingCutoverDate")
-    .where("id", "=", companyId)
-    .executeTakeFirst();
-  if (!settings?.accountingCutoverDate) {
+  if (!(await readAccountingCutoverDate(db, companyId))) {
     throw new InvalidInputError(ACCOUNTING_NOT_STARTED);
   }
 }

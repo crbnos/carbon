@@ -10,13 +10,15 @@
 //
 // Mirrors post-purchase-invoice/index.ts:
 // - a stock line with no PO: inventory (indirect cost for Non-Inventory, WIP
-//   when no receipt was posted with it) against payables (~1130-1194);
+//   when no receipt was posted with it) against payables;
 // - a PO line: GR/IR Clearing at the receipt cost of the units it clears,
 //   the variance on inventory and purchase variance, payables at invoice
-//   cost (~1201-1594); the units it does not clear accrue GR/IR, or indirect
-//   cost for a service (~1596-1693). All on `purchase-invoice:<poLineId>`;
-// - a fixed asset line (~1698-2019) and a G/L line (~2021-2084);
-// - the dimensions of every line (~2268-2361).
+//   cost; the units it does not clear accrue GR/IR, or indirect cost for a
+//   service. All on `purchase-invoice:<poLineId>`;
+// - a fixed asset line and a G/L line;
+// - the dimensions of every line.
+// Every line but a comment is written, at zero too, so an invoice with one
+// is journaled (`legacyPurchaseInvoices` leaves out a comment-only one).
 //
 // The GR/IR walk of the posting reads the receipts' journals, which a legacy
 // receipt does not have. So a receipt's cost is its cost layers, else its
@@ -43,6 +45,7 @@ import {
 import { credit, debit, EPSILON, round } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
+import { InvalidInputError } from "../../errors";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import { calculatePurchasePostingAmounts } from "../../post-purchase-invoice/purchase-posting-amounts";
 import { type LegacyJournal, type LegacyJournalLine, readByIds } from "./write";
@@ -278,13 +281,22 @@ export async function buildLegacyPurchaseInvoiceJournals(
         .execute()
   );
 
-  const linesByInvoice = groupBy(lines, (line) => line.invoiceId);
+  const linesByInvoice = Map.groupBy(lines, (line) => line.invoiceId);
   const shippingByInvoice = new Map(
     deliveries.map((row) => [row.id, Number(row.supplierShippingCost ?? 0)])
   );
   const supplierById = new Map(suppliers.map((row) => [row.id, row]));
   const itemById = new Map(items.map((row) => [row.id, row]));
   const itemCostByItem = new Map(itemCosts.map((row) => [row.itemId, row]));
+  const costingMethodOf = (itemId: string) => {
+    const itemCost = itemCostByItem.get(itemId);
+    if (!itemCost) {
+      throw new InvalidInputError(
+        `Item ${itemId} on a purchase invoice has no cost record, so its invoice cannot be journaled.`
+      );
+    }
+    return itemCost.costingMethod;
+  };
   const purchaseOrderLineById = new Map(
     purchaseOrderLines.map((row) => [row.id, row])
   );
@@ -337,9 +349,9 @@ export async function buildLegacyPurchaseInvoiceJournals(
 
   // What the invoices posted before an invoice invoiced on a PO line, in
   // inventory units. A PO line's rows are in posting order.
-  const invoicedRowsByLine = groupBy(
+  const invoicedRowsByLine = Map.groupBy(
     invoicedLines,
-    (row) => row.purchaseOrderLineId ?? ""
+    (row) => row.purchaseOrderLineId
   );
   const invoicedBefore = (invoiceId: string, purchaseOrderLineId: string) => {
     let sum = 0;
@@ -556,8 +568,8 @@ export async function buildLegacyPurchaseInvoiceJournals(
             const usesLayers =
               !purchaseOrderLine?.jobOperationId &&
               trackingType !== "Non-Inventory" &&
-              (itemCost?.costingMethod ?? "FIFO") !== "Standard" &&
-              Boolean(invoiceLine.itemId);
+              Boolean(invoiceLine.itemId) &&
+              costingMethodOf(invoiceLine.itemId!) !== "Standard";
             const apply = (inventoryShare: number) => {
               const ppvShare = variance - inventoryShare;
               if (Math.abs(inventoryShare) > VARIANCE_THRESHOLD) {
@@ -642,13 +654,15 @@ export async function buildLegacyPurchaseInvoiceJournals(
         }
         case "Fixed Asset": {
           if (!invoiceLine.assetId) {
-            throw new Error(
-              `Fixed Asset invoice line ${invoiceLine.id} has no asset selected`
+            throw new InvalidInputError(
+              `Purchase invoice ${invoice.invoiceId} has a fixed asset line with no asset selected.`
             );
           }
           const asset = assetById.get(invoiceLine.assetId);
           if (!asset) {
-            throw new Error(`Fixed asset ${invoiceLine.assetId} was not found`);
+            throw new InvalidInputError(
+              `Purchase invoice ${invoice.invoiceId} names fixed asset ${invoiceLine.assetId}, which no longer exists.`
+            );
           }
           const receipts = purchaseOrderLineId
             ? (receiptsByLine.get(purchaseOrderLineId) ?? []).filter(
@@ -719,9 +733,15 @@ export async function buildLegacyPurchaseInvoiceJournals(
           const glAccount = invoiceLine.accountId
             ? glAccountById.get(invoiceLine.accountId)
             : undefined;
-          if (!glAccount) throw new Error("Failed to fetch account");
+          if (!glAccount) {
+            throw new InvalidInputError(
+              `Purchase invoice ${invoice.invoiceId} has a G/L line on account ${invoiceLine.accountId ?? "(none)"}, which is not in the chart of accounts.`
+            );
+          }
           if (glAccount.isGroup) {
-            throw new Error("Cannot post to a group account");
+            throw new InvalidInputError(
+              `Purchase invoice ${invoice.invoiceId} has a G/L line on ${glAccount.name}, a group account. Move the line to a posting account.`
+            );
           }
           const meta: Dimensions = {
             supplierTypeId: null,
@@ -778,15 +798,4 @@ export async function buildLegacyPurchaseInvoiceJournals(
       lines: journalLines
     };
   });
-}
-
-function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {
-  const map = new Map<string, T[]>();
-  for (const row of rows) {
-    const k = key(row);
-    const list = map.get(k);
-    if (list) list.push(row);
-    else map.set(k, [row]);
-  }
-  return map;
 }

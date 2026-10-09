@@ -7,7 +7,11 @@ import { $ } from "execa";
 
 import { client } from "./client";
 import type { LedgerDatabase } from "./one-off-scripts";
-import { selectPendingScripts } from "./one-off-scripts";
+import {
+  oneOffScriptEnv,
+  oneOffScriptOutcome,
+  selectPendingScripts
+} from "./one-off-scripts";
 import {
   SUPABASE_ACCESS_TOKEN,
   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
@@ -78,7 +82,9 @@ export type Workspace = {
  * already pushed and correct. Returns false instead of throwing so the caller
  * can mark the run errored without the failure being re-reported as a failed
  * migration; because nothing is recorded in the ledger, the next deploy
- * retries it.
+ * retries it. A script that exits with `ONE_OFF_SCRIPT_DEFERRED` is not ready
+ * for this workspace: it is not recorded either, and does not count as a
+ * failure.
  */
 async function runPendingScripts(
   workspace: Workspace,
@@ -104,8 +110,22 @@ async function runPendingScripts(
   for (const script of pending) {
     console.log(`✅ 📜 Running ${script.name} for ${workspace.id}`);
     try {
-      const { stdout } = await $$`tsx ${script.path}`;
-      const tail = stdout.trim().split("\n").slice(-20).join("\n");
+      // reject: false, so a deferral (ONE_OFF_SCRIPT_DEFERRED) is read
+      // rather than thrown.
+      const result = await $$({ reject: false })`tsx ${script.path}`;
+      const outcome = oneOffScriptOutcome(result.exitCode);
+      if (outcome === "deferred") {
+        console.warn(
+          `⏭️  📜 ${script.name} deferred for ${workspace.id}; it runs again on the next deploy.\n${result.stderr.trim()}`
+        );
+        continue;
+      }
+      if (outcome === "failed") {
+        throw new Error(
+          `exited with ${result.exitCode ?? "a signal"}\n${result.stderr.trim()}`
+        );
+      }
+      const tail = result.stdout.trim().split("\n").slice(-20).join("\n");
 
       // ignoreDuplicates: a row for this name may already exist — a retried
       // insert whose first attempt landed, or an earlier run that recorded it.
@@ -284,19 +304,14 @@ async function migrate(): Promise<void> {
       // After the success log: the schema is pushed and correct regardless of
       // how the scripts go, so a script failure must not read as a failed
       // migration. It still fails the overall run via `hasErrors`.
-      // A script that needs Postgres (not only the API) gets the URL the app
-      // gets (deploy.ts), or the self-hosted connection string. Only the
-      // scripts get it: `$(options)` replaces `env` rather than merging it.
+      // `$(options)` replaces `env` rather than merging it, so the scripts get
+      // their own (`oneOffScriptEnv`).
       const scripts$ = $$({
         // @ts-ignore
-        env: {
-          ...env,
-          SUPABASE_DB_URL:
-            database_connection_pooler_url ??
-            (connection_string?.startsWith("postgresql://")
-              ? connection_string
-              : undefined),
-        },
+        env: oneOffScriptEnv(env, {
+          poolerUrl: database_connection_pooler_url,
+          connectionString: connection_string,
+        }),
       });
       if (!(await runPendingScripts(workspace, scripts$))) {
         hasErrors = true;

@@ -16,12 +16,16 @@
 // closed period, an empty account default, no user) is skipped: it is listed
 // at the end, the run goes on, and the script still exits 0, so one company
 // cannot fail every deploy. Settings → Accounting offers the same repair for
-// it once its data is fixed. The script exits non-zero only when the database
-// stops answering, so the ledger row is not written and the next deploy
-// retries.
+// it once its data is fixed. Any other failure (a server error, a bug, a lost
+// connection) is `failed`: the script exits 1, so the ledger row is not
+// written and the next deploy retries.
 //
 // Needs a Postgres connection: SUPABASE_DB_URL, which the migrations runner
 // passes to one-off scripts (the workspace's pooler URL, as the app gets it).
+// A workspace with no Postgres URL defers the script: it logs why and exits
+// with ONE_OFF_SCRIPT_DEFERRED (75, ci/src/one-off-scripts.ts), so the runner
+// records nothing and runs it again on the next deploy, without failing this
+// one.
 //
 // Safe to remove once every deployment has run it.
 //
@@ -33,11 +37,21 @@ import { createRequire } from "node:module";
 import { readLocalScriptConfig } from "../lib/local-script-config";
 
 const isDryRun = process.argv.includes("--dry-run");
+/** ONE_OFF_SCRIPT_DEFERRED in ci/src/one-off-scripts.ts. */
+const DEFERRED = 75;
 
-const { SUPABASE_DB_URL } = readLocalScriptConfig(
-  ["SUPABASE_DB_URL"],
-  process.env
-);
+let SUPABASE_DB_URL: string;
+try {
+  ({ SUPABASE_DB_URL } = readLocalScriptConfig(
+    ["SUPABASE_DB_URL"],
+    process.env
+  ));
+} catch (error) {
+  console.warn(
+    `journal-legacy-documents deferred: ${error instanceof Error ? error.message : String(error)} The workspace has no Postgres URL (a pooler URL or a postgresql:// connection string); add one and the next deploy runs it.`
+  );
+  process.exit(DEFERRED);
+}
 // The process pool reads it from the environment.
 process.env.SUPABASE_DB_URL = SUPABASE_DB_URL;
 

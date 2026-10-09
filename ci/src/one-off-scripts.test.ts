@@ -3,11 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { discoverOneOffScripts, selectPendingScripts } from "./one-off-scripts";
+import { fileURLToPath } from "node:url";
+import {
+  discoverOneOffScripts,
+  ONE_OFF_SCRIPT_DEFERRED,
+  oneOffScriptEnv,
+  oneOffScriptOutcome,
+  selectPendingScripts
+} from "./one-off-scripts";
 
 function withFiles<T>(names: string[], fn: (dir: string) => T): T {
   const dir = mkdtempSync(join(tmpdir(), "one-off-"));
@@ -112,4 +120,63 @@ test("does not query the ledger when there are no scripts", async () => {
     from: () => assert.fail("must not query the ledger for an empty script list")
   } as unknown as Parameters<typeof selectPendingScripts>[0];
   assert.deepEqual(await selectPendingScripts(exploding, []), []);
+});
+
+test("reads a script's exit code as completed, deferred or failed", () => {
+  assert.equal(oneOffScriptOutcome(0), "completed");
+  assert.equal(oneOffScriptOutcome(ONE_OFF_SCRIPT_DEFERRED), "deferred");
+  assert.equal(oneOffScriptOutcome(1), "failed");
+  // Killed by a signal: no exit code.
+  assert.equal(oneOffScriptOutcome(undefined), "failed");
+});
+
+test("passes a script the Postgres URL and not the database password", () => {
+  const env = {
+    SUPABASE_URL: "https://example.supabase.co",
+    SUPABASE_DB_PASSWORD: "secret"
+  };
+  assert.deepEqual(
+    oneOffScriptEnv(env, {
+      poolerUrl: "postgresql://pooler",
+      connectionString: null
+    }),
+    {
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_DB_URL: "postgresql://pooler"
+    }
+  );
+  assert.equal(
+    oneOffScriptEnv(env, {
+      poolerUrl: null,
+      connectionString: "postgresql://self-hosted"
+    }).SUPABASE_DB_URL,
+    "postgresql://self-hosted"
+  );
+  // Neither: no URL, and the script that needs one defers.
+  assert.equal(
+    oneOffScriptEnv(env, { poolerUrl: null, connectionString: "db.example" })
+      .SUPABASE_DB_URL,
+    undefined
+  );
+});
+
+// The runner records nothing for a deferred script and does not fail the
+// deploy, so a workspace with no Postgres URL retries it on a later deploy.
+test("journal-legacy-documents defers when it has no Postgres URL", () => {
+  const script = fileURLToPath(
+    new URL("../../scripts/one-off/journal-legacy-documents.ts", import.meta.url)
+  );
+  const cwd = mkdtempSync(join(tmpdir(), "one-off-env-"));
+  try {
+    const { SUPABASE_DB_URL: _url, ...env } = process.env;
+    const result = spawnSync("tsx", [script, "--dry-run"], {
+      cwd,
+      env,
+      encoding: "utf8"
+    });
+    assert.equal(result.status, ONE_OFF_SCRIPT_DEFERRED, result.stderr);
+    assert.match(result.stderr, /deferred/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
 });

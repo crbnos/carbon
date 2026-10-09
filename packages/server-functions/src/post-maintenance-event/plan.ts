@@ -82,3 +82,57 @@ export function diffLaborGroups(
   }
   return delta;
 }
+
+/** A line of a journal the enable superseded (posted before the cutover). */
+export interface SupersededLaborLine {
+  reference: string;
+  accountId: string;
+  amount: number;
+}
+
+/**
+ * The enable superseded the labor journals posted before the cutover and
+ * opened their expense in retained earnings, so the reconcile no longer sees
+ * them as posted. An entry they cover is dropped from `desired` while its
+ * expense is unchanged; an entry whose expense changed (edited or deleted) is
+ * returned in `changed`, and the caller refuses: its correction is a journal
+ * entry, not a re-post dated today.
+ */
+export function withoutSupersededEntries(
+  desired: LaborGroup[],
+  superseded: SupersededLaborLine[],
+  maintenanceAccountId: string
+): { desired: LaborGroup[]; changed: string[] } {
+  if (superseded.length === 0) return { desired, changed: [] };
+  const expense = (
+    lines: Array<Pick<LaborGroup, "reference" | "accountId" | "amount">>
+  ) => {
+    const byReference = new Map<string, number>();
+    for (const line of lines) {
+      if (line.accountId !== maintenanceAccountId) continue;
+      byReference.set(
+        line.reference,
+        (byReference.get(line.reference) ?? 0) + line.amount
+      );
+    }
+    return byReference;
+  };
+  const opened = new Map<string, number>();
+  for (const line of superseded) {
+    opened.set(line.reference, opened.get(line.reference) ?? 0);
+  }
+  for (const [reference, amount] of expense(superseded)) {
+    opened.set(reference, amount);
+  }
+  const wanted = expense(desired);
+  const changed = [...opened]
+    .filter(
+      ([reference, amount]) =>
+        Math.abs(round((wanted.get(reference) ?? 0) - amount)) >= EPSILON
+    )
+    .map(([reference]) => reference);
+  return {
+    desired: desired.filter((group) => !opened.has(group.reference)),
+    changed
+  };
+}

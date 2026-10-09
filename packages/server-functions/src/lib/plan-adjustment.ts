@@ -332,8 +332,6 @@ export function planStockRows(args: {
   rows: StockRowPlanInput[];
   itemCosts: ReadonlyMap<string, AdjustmentItemCost>;
   openLayersByItem: ReadonlyMap<string, OpenCostLayer[]>;
-  /** false ⇒ accounting disabled: no journal at all. */
-  hasAccounting: boolean;
 }): StockRowPlan[] {
   const plans: StockRowPlan[] = args.rows.map((row) => ({
     carriesValue: carriesAdjustmentValue(row.quantity, row.itemTrackingType),
@@ -364,7 +362,7 @@ export function planStockRows(args: {
       plans[rowIndex]!.cost = cost;
       // A zero-value movement posts no journal — `bookAdjustment`'s
       // `!accounting || cost === 0` guard, per row.
-      plans[rowIndex]!.postsJournal = args.hasAccounting && cost !== 0;
+      plans[rowIndex]!.postsJournal = cost !== 0;
     });
   }
 

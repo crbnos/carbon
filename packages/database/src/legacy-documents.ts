@@ -12,10 +12,18 @@
 // and journals the rows, and `getLegacyDocumentCounts`
 // (accounting-cutover-reads.ts) counts the same rows for the wizard.
 // Server-only.
+//
+// A document is legacy only when its journal has a line: the detection leaves
+// out what the builders write nothing for (a comment-only invoice, a receipt
+// with no received line, a return received at no cost, a depreciation line
+// with no book amount), so every document it finds gets a journal and is not
+// found again. A movement whose cost is zero is the exception the other way:
+// its builder writes the pair at zero, as post-shipment writes a sale's pair,
+// so the enable's re-cost finds the pair to adjust.
 
 import { type Kysely, sql } from "kysely";
 import type { KyselyDatabase } from "./client";
-import { EPSILON } from "./precision";
+import { EPSILON, SCALE } from "./precision";
 import type { Database } from "./types";
 import { journalReference } from "./utils";
 
@@ -61,7 +69,13 @@ const NOT_POSTED = ["Draft", "Pending", "Voided"] as const;
 
 export const POSTED_INVOICE_EXCLUDED_STATUSES = NOT_POSTED;
 
-/** Posted sales invoices dated on or after the cutover with no journal. */
+/**
+ * Posted sales invoices dated on or after the cutover with no journal. An
+ * invoice whose posting writes no line is left out: one with only comment
+ * lines, or whose lines and header shipping carry no amount
+ * (`buildSalesPostingLines` skips a zero amount) and no direct line that
+ * moved stock (its cost of goods pair is written even at zero).
+ */
 export function legacySalesInvoices(db: Db, { companyId, cutoverDate }: Args) {
   return db
     .selectFrom("salesInvoice as invoice")
@@ -86,11 +100,68 @@ export function legacySalesInvoices(db: Db, { companyId, cutoverDate }: Args) {
         )
       )
     )
+    .where((eb) =>
+      eb.or([
+        eb.exists(
+          eb
+            .selectFrom("salesInvoiceLine as line")
+            .select("line.id")
+            .whereRef("line.companyId", "=", "invoice.companyId")
+            .whereRef("line.invoiceId", "=", "invoice.id")
+            .where(sql<boolean>`"line"."invoiceLineType" <> 'Comment' AND (
+              round("line"."quantity" * coalesce("line"."unitPrice", 0)
+                * (1 - coalesce("line"."discountPercent", 0)), ${SCALE}) <> 0
+              OR round(coalesce("line"."shippingCost", 0), ${SCALE}) <> 0
+              OR round(coalesce("line"."addOnCost", 0), ${SCALE}) <> 0
+              OR round(coalesce("line"."nonTaxableAddOnCost", 0), ${SCALE}) <> 0
+              OR EXISTS (
+                SELECT 1 FROM "costLedger" AS "cost"
+                WHERE "cost"."companyId" = "line"."companyId"
+                  AND "cost"."documentId" = "line"."invoiceId"
+                  AND "cost"."itemId" = "line"."itemId"
+                  AND "cost"."documentType" = 'Sales Shipment'
+                  AND "cost"."adjustment" = false
+                  AND "cost"."quantity" < 0
+              )
+              OR EXISTS (
+                SELECT 1 FROM "itemLedger" AS "ledger"
+                WHERE "ledger"."companyId" = "line"."companyId"
+                  AND "ledger"."documentId" = "line"."invoiceId"
+                  AND "ledger"."itemId" = "line"."itemId"
+                  AND "ledger"."documentType" = 'Sales Shipment'
+                  AND "ledger"."quantity" < 0
+              )
+            )`)
+        ),
+        eb.and([
+          eb.exists(
+            eb
+              .selectFrom("salesInvoiceShipment as shipping")
+              .select("shipping.id")
+              .whereRef("shipping.companyId", "=", "invoice.companyId")
+              .whereRef("shipping.id", "=", "invoice.id")
+              .where(
+                sql<boolean>`round(coalesce("shipping"."shippingCost", 0), ${SCALE}) <> 0`
+              )
+          ),
+          eb.exists(
+            eb
+              .selectFrom("salesInvoiceLine as line")
+              .select("line.id")
+              .whereRef("line.companyId", "=", "invoice.companyId")
+              .whereRef("line.invoiceId", "=", "invoice.id")
+              .where("line.invoiceLineType", "!=", "Comment")
+          )
+        ])
+      ])
+    )
     .orderBy("invoice.postingDate")
     .orderBy("invoice.createdAt");
 }
 
-/** Posted purchase invoices dated on or after the cutover with no journal. */
+/** Posted purchase invoices dated on or after the cutover with no journal,
+ *  and a line that is not a comment: the builder writes every other line,
+ *  at zero too. */
 export function legacyPurchaseInvoices(
   db: Db,
   { companyId, cutoverDate }: Args
@@ -118,6 +189,15 @@ export function legacyPurchaseInvoices(
             .whereRef("line.documentId", "=", "invoice.id")
             .where("line.documentType", "=", "Invoice")
         )
+      )
+    )
+    .where(({ exists, selectFrom }) =>
+      exists(
+        selectFrom("purchaseInvoiceLine as line")
+          .select("line.id")
+          .whereRef("line.companyId", "=", "invoice.companyId")
+          .whereRef("line.invoiceId", "=", "invoice.id")
+          .where("line.invoiceLineType", "!=", "Comment")
       )
     )
     .orderBy("invoice.postingDate")
@@ -247,7 +327,8 @@ export function legacyReimbursements(db: Db, { companyId, cutoverDate }: Args) {
 
 /**
  * Posted receipts of one source document dated on or after the cutover with
- * no 'Receipt' journal line. A voided receipt is left out: its post and its
+ * no 'Receipt' journal line, and a line the builder journals
+ * (`receiptJournalsALine`). A voided receipt is left out: its post and its
  * void net to zero.
  */
 export function legacyReceipts(
@@ -282,9 +363,55 @@ export function legacyReceipts(
         )
       )
     )
+    .where(({ exists, selectFrom }) =>
+      exists(
+        selectFrom("receiptLine as line")
+          .select("line.id")
+          .whereRef("line.companyId", "=", "receipt.companyId")
+          .whereRef("line.receiptId", "=", "receipt.id")
+          .where(receiptJournalsALine(sourceDocument))
+      )
+    )
     .orderBy("receipt.postingDate")
     .orderBy("receipt.createdAt")
     .orderBy("receipt.id");
+}
+
+/**
+ * The receipt lines the builder journals (legacy/receipt.ts):
+ * - a purchase order receipt: every line with a received quantity, as the
+ *   posting books each one at its cost, zero included. A fixed asset line has
+ *   no receipt line;
+ * - a sales return receipt: a positive line of a stocked item whose return
+ *   stored a positive cost, as the posting books no zero-value re-entry.
+ */
+function receiptJournalsALine(
+  sourceDocument: "Purchase Order" | "Sales Return Order"
+) {
+  return sourceDocument === "Purchase Order"
+    ? sql<boolean>`coalesce("line"."receivedQuantity", 0) NOT IN (0, 'NaN')`
+    : sql<boolean>`"line"."lineId" IS NOT NULL
+        AND "line"."receivedQuantity" > 0
+        AND "line"."receivedQuantity" <> 'NaN'
+        AND EXISTS (
+          SELECT 1 FROM "item"
+          WHERE "item"."companyId" = "line"."companyId"
+            AND "item"."id" = "line"."itemId"
+            AND "item"."itemTrackingType" <> 'Non-Inventory'
+        )
+        AND (
+          SELECT sum("cost"."cost")
+          FROM "costLedger" AS "cost"
+          WHERE "cost"."companyId" = "line"."companyId"
+            AND "cost"."documentId" = "line"."receiptId"
+            AND "cost"."itemId" = "line"."itemId"
+            AND "cost"."documentType" = 'Sales Return Receipt'
+            AND "cost"."itemLedgerType" = 'Sale'
+            AND "cost"."costLedgerType" = 'Direct Cost'
+            AND "cost"."adjustment" = false
+            AND "cost"."appliesToCostLedgerId" IS NULL
+            AND "cost"."quantity" > 0
+        ) > 0`;
 }
 
 /** Which shipments `legacyShipments` reads, and the keys of their rows. */
@@ -320,23 +447,40 @@ export const LEGACY_PURCHASE_RETURN_SHIPMENT: LegacyShipmentKind = {
 };
 
 /**
+ * The outbound cost rows of one kind of shipment, the rows its journal is
+ * built from: one pair per row for a return (legacy/shipment.ts), the cost of
+ * each item for a sales order shipment.
+ */
+export function shipmentCostRows(
+  db: Db,
+  companyId: string,
+  { costDocumentType, itemLedgerType }: LegacyShipmentKind
+) {
+  return db
+    .selectFrom("costLedger as cost")
+    .where("cost.companyId", "=", companyId)
+    .where("cost.documentType", "=", costDocumentType)
+    .where("cost.itemLedgerType", "=", itemLedgerType)
+    .where("cost.costLedgerType", "=", "Direct Cost")
+    .where("cost.adjustment", "=", false)
+    .where("cost.appliesToCostLedgerId", "is", null)
+    .where("cost.quantity", "<", 0);
+}
+
+/**
  * Posted shipments of one source document dated on or after the cutover
  * that stored a cost row and have no journal line under `journalDocumentType`.
  * A sales shipment stored its "Sale" cost row only when the company had
  * accounting on; the enable writes the row of one without it first
  * (`legacySaleMovements`). `withUncostedSales` also takes a sales shipment
  * whose row the enable will write, so a count before the enable finds what
- * the enable journals.
+ * the enable journals. A sales order shipment also needs a line the builder
+ * journals: a stocked item shipped.
  */
 export function legacyShipments(
   db: Db,
   args: Args,
-  {
-    sourceDocument,
-    journalDocumentType,
-    costDocumentType,
-    itemLedgerType
-  }: LegacyShipmentKind,
+  kind: LegacyShipmentKind,
   { withUncostedSales = false }: { withUncostedSales?: boolean } = {}
 ) {
   const { companyId, cutoverDate } = args;
@@ -351,17 +495,13 @@ export function legacyShipments(
     ])
     .where("shipment.companyId", "=", companyId)
     .where("shipment.status", "=", "Posted")
-    .where("shipment.sourceDocument", "=", sourceDocument)
+    .where("shipment.sourceDocument", "=", kind.sourceDocument)
     .where("shipment.postingDate", ">=", cutoverDate)
     .where((eb) => {
       const costed = eb.exists(
-        eb
-          .selectFrom("costLedger as cost")
+        shipmentCostRows(db, companyId, kind)
           .select("cost.id")
-          .whereRef("cost.companyId", "=", "shipment.companyId")
-          .whereRef("cost.documentId", "=", "shipment.id")
-          .where("cost.documentType", "=", costDocumentType)
-          .where("cost.itemLedgerType", "=", itemLedgerType)
+          .where(sql<boolean>`"cost"."documentId" = "shipment"."id"`)
       );
       return withUncostedSales
         ? eb.or([
@@ -373,11 +513,28 @@ export function legacyShipments(
                 .clearSelect()
                 .clearOrderBy()
                 .select("movement.documentId")
-                .$narrowType<{ documentId: string }>()
             )
           ])
         : costed;
     })
+    .where((eb) =>
+      kind.sourceDocument === "Sales Order"
+        ? eb.exists(
+            eb
+              .selectFrom("shipmentLine as line")
+              .innerJoin("item", (join) =>
+                join
+                  .onRef("item.id", "=", "line.itemId")
+                  .onRef("item.companyId", "=", "line.companyId")
+              )
+              .select("line.id")
+              .whereRef("line.companyId", "=", "shipment.companyId")
+              .whereRef("line.shipmentId", "=", "shipment.id")
+              .where("line.shippedQuantity", ">", 0)
+              .where("item.itemTrackingType", "!=", "Non-Inventory")
+          )
+        : eb.val(true)
+    )
     .where(({ not, exists, selectFrom }) =>
       not(
         exists(
@@ -385,7 +542,7 @@ export function legacyShipments(
             .select("line.id")
             .whereRef("line.companyId", "=", "shipment.companyId")
             .whereRef("line.documentId", "=", "shipment.id")
-            .where("line.documentType", "=", journalDocumentType)
+            .where("line.documentType", "=", kind.journalDocumentType)
         )
       )
     )
@@ -398,9 +555,10 @@ export function legacyShipments(
  * The cost rows of the adjustment core dated on or after the cutover whose
  * document has no journal line on that date: manual adjustments and the CSV
  * stock import (no document type), scrap and unscrap, inventory counts,
- * non-conformance and inspection write-offs, and maintenance parts. A
- * zero-cost row is left out, as the core posts no journal for it. `family`
- * is the count each row's journal is reported under.
+ * non-conformance and inspection write-offs, and maintenance parts. An
+ * inbound row at zero cost is left out, as the core posts no journal for it;
+ * an outbound one gets its pair at zero, so the enable's re-cost finds it.
+ * `family` is the count each row's journal is reported under.
  *
  * Left out: a stock movement correction (it carries the original's document
  * keys), found as an item ledger row with `correctionOfItemLedgerId` written
@@ -446,10 +604,13 @@ export function legacyAdjustmentCostRows(
     .where("cost.adjustment", "=", false)
     .where("cost.appliesToCostLedgerId", "is", null)
     .where("cost.costLedgerType", "=", "Direct Cost")
-    .where("cost.cost", "!=", 0)
     .where("cost.quantity", "!=", 0)
+    .where((eb) =>
+      eb.or([eb("cost.cost", "!=", 0), eb("cost.quantity", "<", 0)])
+    )
     .where("cost.documentId", "is not", null)
     .where("cost.itemId", "is not", null)
+    .$narrowType<{ documentId: string; itemId: string }>()
     .where((eb) =>
       eb.or([
         eb.and([
@@ -553,6 +714,11 @@ export function legacySaleMovements(db: Db, { companyId, cutoverDate }: Args) {
       sql<number>`-sum("ledger"."quantity")`.as("quantity"),
       sql<string>`min("ledger"."postingDate")::text`.as("postingDate"),
       sql<string>`min(${utcInstant("ledger.createdAt")})`.as("createdAt"),
+      // The serial units that left, relieved from their own layers first.
+      sql<string[]>`coalesce(array_agg(DISTINCT "ledger"."trackedEntityId")
+        FILTER (WHERE "ledger"."trackedEntityId" IS NOT NULL), '{}')`.as(
+        "trackedEntityIds"
+      ),
       sql<number>`coalesce((
         SELECT -sum("cost"."quantity")
         FROM "costLedger" AS "cost"
@@ -594,18 +760,22 @@ export function legacySaleMovements(db: Db, { companyId, cutoverDate }: Args) {
       ])
     )
     .groupBy(["ledger.companyId", "ledger.documentId", "ledger.itemId"]);
-  return db
-    .selectFrom(movements.as("movement"))
-    .selectAll("movement")
-    .where(
-      sql<number>`"movement"."quantity" - "movement"."covered"`,
-      ">",
-      EPSILON
-    )
-    .orderBy("movement.postingDate")
-    .orderBy("movement.createdAt")
-    .orderBy("movement.documentId")
-    .orderBy("movement.itemId");
+  return (
+    db
+      .selectFrom(movements.as("movement"))
+      .selectAll("movement")
+      // The EXISTS above names a shipment or an invoice by this id.
+      .$narrowType<{ documentId: string }>()
+      .where(
+        sql<number>`"movement"."quantity" - "movement"."covered"`,
+        ">",
+        EPSILON
+      )
+      .orderBy("movement.postingDate")
+      .orderBy("movement.createdAt")
+      .orderBy("movement.documentId")
+      .orderBy("movement.itemId")
+  );
 }
 
 /**
@@ -627,6 +797,7 @@ export function legacyJobMovements(db: Db, { companyId, cutoverDate }: Args) {
       "ledger.itemId",
       "ledger.quantity",
       "ledger.locationId",
+      "ledger.trackedEntityId",
       sql<string>`"ledger"."postingDate"::text`.as("postingDate"),
       utcInstant("ledger.createdAt").as("createdAt"),
       eb
@@ -794,10 +965,15 @@ export function assetsLeavingWithoutJournal(
 
 /**
  * The lines of Posted depreciation runs for months on or after the cutover
- * with no journal or no deferred tax journal. A line from before per-month
- * lines has no month: it is the run's. The depreciation of an asset that
- * leaves the books with no journal (`assetsLeavingWithoutJournal`) is left
- * out: the opening fixed assets leave it out too.
+ * that miss a journal the builder writes (legacy/runs.ts): a line with a book
+ * amount and no journal, or a line of a run's month with no deferred tax
+ * journal when that month books one. A month books one when tax depreciation
+ * is set up today (on, with a rate and both deferred tax accounts), a line of
+ * it has a tax amount, and its deferred tax is more than 0.01, as
+ * `postDepreciationRun` writes it. A line from before per-month lines has no
+ * month: it is the run's. The depreciation of an asset that leaves the books
+ * with no journal (`assetsLeavingWithoutJournal`) is left out: the opening
+ * fixed assets leave it out too.
  */
 export function legacyDepreciationRunLines(db: Db, args: Args) {
   const { companyId, cutoverDate } = args;
@@ -845,13 +1021,45 @@ export function legacyDepreciationRunLines(db: Db, args: Args) {
     )
     .where((eb) =>
       eb.or([
-        eb("line.journalId", "is", null),
-        eb("line.deferredTaxJournalId", "is", null)
+        eb.and([eb("line.journalId", "is", null), eb("line.amount", "!=", 0)]),
+        eb.and([
+          eb("line.deferredTaxJournalId", "is", null),
+          eb.exists(deferredTaxMonth(db, companyId))
+        ])
       ])
     )
     .where("line.fixedAssetId", "not in", assetsLeavingWithoutJournal(db, args))
     .orderBy("run.periodEnd")
     .orderBy("line.id");
+}
+
+/** The deferred tax a line's run and month book, when they book one: as an
+ *  EXISTS on the outer `line` and `run`. */
+function deferredTaxMonth(db: Db, companyId: string) {
+  return db
+    .selectFrom("depreciationRunLine as monthLine")
+    .innerJoin("companySettings as settings", (join) =>
+      join.on("settings.id", "=", companyId)
+    )
+    .innerJoin("accountDefault as defaults", (join) =>
+      join.on("defaults.companyId", "=", companyId)
+    )
+    .select(sql<number>`1`.as("books"))
+    .where("monthLine.companyId", "=", companyId)
+    .where("monthLine.deferredTaxJournalId", "is", null)
+    .where(
+      sql<boolean>`"monthLine"."depreciationRunId" = "line"."depreciationRunId"
+        AND "monthLine"."periodEnd" IS NOT DISTINCT FROM "line"."periodEnd"`
+    )
+    .where("settings.assetTaxDepreciationEnabled", "=", true)
+    .where("settings.assetTaxRate", "!=", 0)
+    .where("defaults.deferredTaxLiabilityAccountId", "is not", null)
+    .where("defaults.deferredTaxExpenseAccountId", "is not", null)
+    .groupBy("settings.assetTaxRate")
+    .having(sql<boolean>`bool_or("monthLine"."taxAmount" IS NOT NULL)`)
+    .having(
+      sql<boolean>`abs(sum(coalesce("monthLine"."taxAmount", 0) - "monthLine"."amount") * "settings"."assetTaxRate" / 100) > 0.01`
+    );
 }
 
 /** Scrap disposals on or after the cutover with no journal. The asset's
@@ -890,44 +1098,48 @@ export function legacyDisposals(db: Db, { companyId, cutoverDate }: Args) {
 }
 
 /** The Posted revenue recognition schedule rows dated on or after the
- *  cutover with no journal, with their Posted run. */
+ *  cutover with no journal and an amount, with their Posted run. */
 export function legacyRecognitionSchedule(
   db: Db,
   { companyId, cutoverDate }: Args
 ) {
-  return db
-    .selectFrom("revenueRecognitionSchedule as schedule")
-    .innerJoin("revenueRecognitionRunLine as runLine", (join) =>
-      join
-        .onRef("runLine.id", "=", "schedule.runLineId")
-        .onRef("runLine.companyId", "=", "schedule.companyId")
-    )
-    .innerJoin("revenueRecognitionRun as run", (join) =>
-      join
-        .onRef("run.id", "=", "runLine.runId")
-        .onRef("run.companyId", "=", "runLine.companyId")
-    )
-    .select([
-      "schedule.id as scheduleId",
-      "run.id as runId",
-      "run.runId as runReadableId",
-      sql<string>`"run"."periodEnd"::text`.as("runPeriodEnd"),
-      sql<string>`"schedule"."scheduledDate"::text`.as("scheduledDate"),
-      "schedule.type",
-      "runLine.amount",
-      "schedule.debitAccountId",
-      "schedule.creditAccountId",
-      "schedule.salesInvoiceLineId",
-      "schedule.rentalAgreementLineId",
-      "schedule.rentalLeaseScheduleLineId",
-      "schedule.customerContractLineId"
-    ])
-    .where("schedule.companyId", "=", companyId)
-    .where("schedule.status", "=", "Posted")
-    .where("schedule.journalId", "is", null)
-    .where("schedule.scheduledDate", ">=", cutoverDate)
-    .where("run.status", "=", "Posted")
-    .orderBy("run.periodEnd")
-    .orderBy("schedule.scheduledDate")
-    .orderBy("schedule.id");
+  return (
+    db
+      .selectFrom("revenueRecognitionSchedule as schedule")
+      .innerJoin("revenueRecognitionRunLine as runLine", (join) =>
+        join
+          .onRef("runLine.id", "=", "schedule.runLineId")
+          .onRef("runLine.companyId", "=", "schedule.companyId")
+      )
+      .innerJoin("revenueRecognitionRun as run", (join) =>
+        join
+          .onRef("run.id", "=", "runLine.runId")
+          .onRef("run.companyId", "=", "runLine.companyId")
+      )
+      .select([
+        "schedule.id as scheduleId",
+        "run.id as runId",
+        "run.runId as runReadableId",
+        sql<string>`"run"."periodEnd"::text`.as("runPeriodEnd"),
+        sql<string>`"schedule"."scheduledDate"::text`.as("scheduledDate"),
+        "schedule.type",
+        "runLine.amount",
+        "schedule.debitAccountId",
+        "schedule.creditAccountId",
+        "schedule.salesInvoiceLineId",
+        "schedule.rentalAgreementLineId",
+        "schedule.rentalLeaseScheduleLineId",
+        "schedule.customerContractLineId"
+      ])
+      .where("schedule.companyId", "=", companyId)
+      .where("schedule.status", "=", "Posted")
+      .where("schedule.journalId", "is", null)
+      .where("schedule.scheduledDate", ">=", cutoverDate)
+      .where("run.status", "=", "Posted")
+      // A row with no amount writes no line.
+      .where("runLine.amount", "!=", 0)
+      .orderBy("run.periodEnd")
+      .orderBy("schedule.scheduledDate")
+      .orderBy("schedule.id")
+  );
 }

@@ -464,7 +464,8 @@ async function returnResidual(
           debitAccountId: assetClass.assetAccountId,
           debitDescription: "Fixed Asset Acquisition",
           netInvestmentInLeasesAccountId:
-            accounting.accounts.netInvestmentInLeasesAccount
+            accounting.accounts.netInvestmentInLeasesAccount,
+          accountDefaultRoles: accounting.accountDefaultRoles
         }),
         rentalAgreementId: agreement.id,
         rentalAgreementLineId: line.id,
@@ -597,7 +598,8 @@ async function returnResidual(
           debitAccountId: inventoryAccount.account,
           debitDescription: inventoryAccount.description,
           netInvestmentInLeasesAccountId:
-            accounting.accounts.netInvestmentInLeasesAccount
+            accounting.accounts.netInvestmentInLeasesAccount,
+          accountDefaultRoles: accounting.accountDefaultRoles
         }),
         rentalAgreementId: agreement.id,
         rentalAgreementLineId: line.id,

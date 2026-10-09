@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import {
   inOrder,
   many,
@@ -258,30 +261,28 @@ const correctStockMovement = defineServerFn({
     }
 
     const dimensionMap: Record<string, string> = {};
-    {
-      const companyRecord = await single(
+    const companyRecord = await single(
+      db,
+      "company",
+      { id: companyId },
+      { columns: ["companyGroupId"] }
+    );
+    if (companyRecord.error) throw new Error("Failed to fetch company");
+    const companyGroupId = companyRecord.data.companyGroupId;
+    if (companyGroupId) {
+      const dimensions = await many(
         db,
-        "company",
-        { id: companyId },
-        { columns: ["companyGroupId"] }
+        "dimension",
+        {
+          companyGroupId,
+          active: true,
+          entityType: ["Item", "ItemPostingGroup", "Location"]
+        },
+        { columns: ["id", "entityType"] }
       );
-      if (companyRecord.error) throw new Error("Failed to fetch company");
-      const companyGroupId = companyRecord.data.companyGroupId;
-      if (companyGroupId) {
-        const dimensions = await many(
-          db,
-          "dimension",
-          {
-            companyGroupId,
-            active: true,
-            entityType: ["Item", "ItemPostingGroup", "Location"]
-          },
-          { columns: ["id", "entityType"] }
-        );
-        if (dimensions.error) throw new Error("Failed to fetch dimensions");
-        for (const dim of dimensions.data ?? []) {
-          if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
-        }
+      if (dimensions.error) throw new Error("Failed to fetch dimensions");
+      for (const dim of dimensions.data ?? []) {
+        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
       }
     }
 
@@ -311,9 +312,7 @@ const correctStockMovement = defineServerFn({
     let resultLedgerId: string | null = null;
 
     await db.transaction().execute(async (trx) => {
-      if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-        throw new Error("Accounting was just set up. Post the document again.");
-      }
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
       if (root.trackedEntityId) {
         const updated = await trx

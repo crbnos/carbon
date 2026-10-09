@@ -11,6 +11,7 @@ import {
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
+  assertPostingStatusUnchanged,
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
@@ -135,7 +136,7 @@ async function issueJobOperationMaterials(
     userId: string;
     // Provisional before the company's accounting cutover, Posted after it.
     postingStatus: AutomaticJournalStatus;
-    accountDefaults: any;
+    accountDefaults: ConsumeAccountDefaults;
     dimensionMap: Map<string, string>;
     db: Kysely<KyselyDatabase>;
   }
@@ -386,7 +387,7 @@ async function issueJobOperationMaterials(
     }
   }
 
-  if (accountDefaults?.data && itemLedgerInserts.length > 0) {
+  if (itemLedgerInserts.length > 0) {
     const journalLineInserts: {
       accountId: string;
       description: string;
@@ -452,7 +453,7 @@ async function issueJobOperationMaterials(
       const journalLineReference = nanoid();
 
       journalLineInserts.push({
-        accountId: accountDefaults.data.workInProgressAccount,
+        accountId: accountDefaults.workInProgressAccount,
         description: "WIP Account",
         amount: debit("asset", cogsResult.totalCost),
         quantity: materialQuantity,
@@ -466,7 +467,7 @@ async function issueJobOperationMaterials(
 
       const inventoryAccount = resolveInventoryAccount(
         consumedReplenishmentMap.get(ledger.itemId) ?? null,
-        accountDefaults.data
+        accountDefaults
       );
       journalLineInserts.push({
         accountId: inventoryAccount.account,
@@ -1156,8 +1157,12 @@ async function loadConsumeAccountingContext(
     }
   }
 
-  return { accountDefaults, dimensionMap };
+  return { accountDefaults: accountDefaults.data, dimensionMap };
 }
+
+type ConsumeAccountDefaults = Awaited<
+  ReturnType<typeof loadConsumeAccountingContext>
+>["accountDefaults"];
 
 // Spare parts issued to a maintenance dispatch are an expense the moment they
 // leave stock. The caller writes the item ledger rows; this values them: each
@@ -1235,82 +1240,69 @@ async function valueMaintenanceMovements(
     bookedByItem.set(row.itemId as string, list);
   }
 
-  let accounting: Parameters<typeof valueMovement>[1]["accounting"];
-  {
-    const accountDefaults = await trx
-      .selectFrom("accountDefault")
-      .selectAll()
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (!accountDefaults) throw new Error("Error getting account defaults");
+  const accountDefaults = await trx
+    .selectFrom("accountDefault")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!accountDefaults) throw new Error("Error getting account defaults");
 
-    const dimensions = await trx
-      .selectFrom("dimension")
-      .innerJoin(
-        "company",
-        "company.companyGroupId",
-        "dimension.companyGroupId"
-      )
-      .select(["dimension.id", "dimension.entityType"])
-      .where("company.id", "=", companyId)
-      .where("dimension.active", "=", true)
-      .where("dimension.entityType", "in", [
-        "Item",
-        "ItemPostingGroup",
-        "Location",
-        "WorkCenter"
-      ])
-      .execute();
+  const dimensions = await trx
+    .selectFrom("dimension")
+    .innerJoin("company", "company.companyGroupId", "dimension.companyGroupId")
+    .select(["dimension.id", "dimension.entityType"])
+    .where("company.id", "=", companyId)
+    .where("dimension.active", "=", true)
+    .where("dimension.entityType", "in", [
+      "Item",
+      "ItemPostingGroup",
+      "Location",
+      "WorkCenter"
+    ])
+    .execute();
 
-    // A Provisional journal has no accounting period.
-    const accountingPeriodId =
-      postingStatus === "Posted"
-        ? (
-            await resolveAccountingPeriod(
-              trx,
-              companyId,
-              postingDate,
-              "current"
-            )
-          ).id
-        : null;
-    const description = `Maintenance Consumption ${dispatch.maintenanceDispatchId}`;
-    let journalId: string | null = null;
+  // A Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? (await resolveAccountingPeriod(trx, companyId, postingDate, "current"))
+          .id
+      : null;
+  const description = `Maintenance Consumption ${dispatch.maintenanceDispatchId}`;
+  let journalId: string | null = null;
 
-    accounting = {
-      postingStatus,
-      accountingPeriodId,
-      accountDefaults: {
-        rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
-        finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
-        inventoryAdjustmentVarianceAccount:
-          accountDefaults.inventoryAdjustmentVarianceAccount
-      },
-      offsetAccount: accountDefaults.maintenanceAccount,
-      offsetDescription: "Maintenance Expense",
-      description,
-      userId,
-      dimensions: Object.fromEntries(
-        dimensions
-          .filter((dim) => dim.entityType)
-          .map((dim) => [dim.entityType as string, dim.id])
-      ),
-      extraDimensions: dispatch.workCenterId
-        ? [{ entityType: "WorkCenter", valueId: dispatch.workCenterId }]
-        : [],
-      getJournalId: async () => {
-        journalId ??= await createAdjustmentJournal(trx, {
-          companyId,
-          accountingPeriodId,
-          status: postingStatus,
-          description,
-          postingDate,
-          userId
-        });
-        return journalId;
-      }
-    };
-  }
+  const accounting: Parameters<typeof valueMovement>[1]["accounting"] = {
+    postingStatus,
+    accountingPeriodId,
+    accountDefaults: {
+      rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
+      finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
+      inventoryAdjustmentVarianceAccount:
+        accountDefaults.inventoryAdjustmentVarianceAccount
+    },
+    offsetAccount: accountDefaults.maintenanceAccount,
+    offsetDescription: "Maintenance Expense",
+    description,
+    userId,
+    dimensions: Object.fromEntries(
+      dimensions
+        .filter((dim) => dim.entityType)
+        .map((dim) => [dim.entityType as string, dim.id])
+    ),
+    extraDimensions: dispatch.workCenterId
+      ? [{ entityType: "WorkCenter", valueId: dispatch.workCenterId }]
+      : [],
+    getJournalId: async () => {
+      journalId ??= await createAdjustmentJournal(trx, {
+        companyId,
+        accountingPeriodId,
+        status: postingStatus,
+        description,
+        postingDate,
+        userId
+      });
+      return journalId;
+    }
+  };
 
   for (const movement of movements) {
     let quantity = Number(movement.quantity);
@@ -1395,7 +1387,7 @@ async function consumeTrackedEntitiesIntoOperation(
     db: Kysely<KyselyDatabase>;
     // Provisional before the company's accounting cutover, Posted after it.
     postingStatus: AutomaticJournalStatus;
-    accountDefaults: any;
+    accountDefaults: ConsumeAccountDefaults;
     dimensionMap: Map<string, string>;
   }
 ): Promise<{
@@ -1848,7 +1840,7 @@ async function consumeTrackedEntitiesIntoOperation(
     }
   }
 
-  if (accountDefaultsTracked?.data && itemLedgerInserts.length > 0) {
+  if (itemLedgerInserts.length > 0) {
     const consumptionEntries = itemLedgerInserts
       .filter((l) => l.entryType === "Consumption")
       .map((l) => ({
@@ -1863,9 +1855,9 @@ async function consumeTrackedEntitiesIntoOperation(
         jobId: job?.id!,
         operationId: jobMaterial?.jobOperationId ?? actualMaterialId!,
         description: "Tracked Entity Material Issue",
-        wipAccount: accountDefaultsTracked.data.workInProgressAccount,
-        rawMaterialsAccount: accountDefaultsTracked.data.rawMaterialsAccount,
-        finishedGoodsAccount: accountDefaultsTracked.data.finishedGoodsAccount,
+        wipAccount: accountDefaultsTracked.workInProgressAccount,
+        rawMaterialsAccount: accountDefaultsTracked.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaultsTracked.finishedGoodsAccount,
         dimensionMap: dimensionMapTracked,
 
         jobLocationId: job?.locationId ?? null,
@@ -2585,7 +2577,7 @@ const issue = defineServerFn({
             companyId,
             userId,
             postingStatus,
-            accountDefaults: accountDefaultsScrapOp,
+            accountDefaults: accountDefaultsScrapOp.data,
             dimensionMap: dimensionMapScrapOp,
             db
           });
@@ -2731,166 +2723,148 @@ const issue = defineServerFn({
           //    (jobMaterial per-unit quantity × itemCost.unitCost). Labor and
           //    overhead already absorbed stay in WIP and settle via close-job
           //    variance (spec decision 6).
-          if (accountDefaultsScrapOp.data) {
-            let priorUnitMaterialCost = 0;
-            const priorOperations = await trx
-              .selectFrom("jobOperation")
-              .select(["id"])
-              .where("jobMakeMethodId", "=", operation.jobMakeMethodId!)
-              .where("order", "<", operation.order)
+          let priorUnitMaterialCost = 0;
+          const priorOperations = await trx
+            .selectFrom("jobOperation")
+            .select(["id"])
+            .where("jobMakeMethodId", "=", operation.jobMakeMethodId!)
+            .where("order", "<", operation.order)
+            .execute();
+          if (priorOperations.length > 0) {
+            const priorMaterials = await trx
+              .selectFrom("jobMaterial")
+              .select(["itemId", "quantity"])
+              .where(
+                "jobOperationId",
+                "in",
+                priorOperations.map((op) => op.id)
+              )
+              .where("methodType", "!=", "Make to Order")
               .execute();
-            if (priorOperations.length > 0) {
-              const priorMaterials = await trx
-                .selectFrom("jobMaterial")
-                .select(["itemId", "quantity"])
+            if (priorMaterials.length > 0) {
+              const priorCosts = await trx
+                .selectFrom("itemCost")
+                .select(["itemId", "unitCost"])
                 .where(
-                  "jobOperationId",
+                  "itemId",
                   "in",
-                  priorOperations.map((op) => op.id)
+                  priorMaterials.map((m) => m.itemId)
                 )
-                .where("methodType", "!=", "Make to Order")
+                .where("companyId", "=", companyId)
                 .execute();
-              if (priorMaterials.length > 0) {
-                const priorCosts = await trx
-                  .selectFrom("itemCost")
-                  .select(["itemId", "unitCost"])
-                  .where(
-                    "itemId",
-                    "in",
-                    priorMaterials.map((m) => m.itemId)
-                  )
-                  .where("companyId", "=", companyId)
-                  .execute();
-                const unitCostByItem = new Map(
-                  priorCosts.map((c) => [c.itemId, Number(c.unitCost) || 0])
-                );
-                for (const material of priorMaterials) {
-                  priorUnitMaterialCost +=
-                    (Number(material.quantity) || 0) *
-                    (unitCostByItem.get(material.itemId) ?? 0);
-                }
+              const unitCostByItem = new Map(
+                priorCosts.map((c) => [c.itemId, Number(c.unitCost) || 0])
+              );
+              for (const material of priorMaterials) {
+                priorUnitMaterialCost +=
+                  (Number(material.quantity) || 0) *
+                  (unitCostByItem.get(material.itemId) ?? 0);
               }
             }
+          }
 
-            const scrapCost =
-              backflush.totalMaterialCost + priorUnitMaterialCost * quantity;
-            if (scrapCost > 0) {
-              // A Provisional journal has no accounting period.
-              const accountingPeriodId =
-                postingStatus === "Posted"
-                  ? await getCurrentAccountingPeriod(
-                      companyId,
-                      trx,
-                      todayScrapOp
-                    )
-                  : null;
-              const journalEntryId = await getNextSequence(
-                trx,
-                "journalEntry",
-                companyId
-              );
-              const journalResult = await trx
-                .insertInto("journal")
-                .values({
-                  journalEntryId,
-                  accountingPeriodId,
-                  description: `Scrap — Job ${job.jobId ?? job.id}`,
-                  postingDate: todayScrapOp,
-                  companyId,
-                  sourceType: "Job Consumption",
-                  status: postingStatus,
-                  postedAt: datetime.timestamp(),
-                  postedBy: userId,
-                  createdBy: userId
-                })
-                .returning(["id"])
-                .executeTakeFirstOrThrow();
-
-              // Before the cutover an empty scrapAccount becomes a stand-in
-              // line; after it, an empty scrapAccount falls back to the
-              // variance account, as it always has.
-              const scrapAccount = resolveDefaultAccount(
-                {
-                  ...accountDefaultsScrapOp.data,
-                  scrapAccount:
-                    accountDefaultsScrapOp.data.scrapAccount ??
-                    (postingStatus === "Posted"
-                      ? accountDefaultsScrapOp.data
-                          .inventoryAdjustmentVarianceAccount
-                      : null)
-                },
-                "scrapAccount",
-                postingStatus
-              );
-              const journalLineReference = nanoid();
-              const journalLineResults = await trx
-                .insertInto("journalLine")
-                .values([
-                  {
-                    journalId: journalResult.id,
-                    accountId: scrapAccount.accountId,
-                    accountDefaultRole: scrapAccount.accountDefaultRole,
-                    description: "Scrap Account",
-                    amount: debit("expense", scrapCost),
-                    quantity,
-                    documentType: "Scrap",
-                    documentId: job.id,
-                    documentLineReference: `jobOperationScrap:${jobOperationId}`,
-                    journalLineReference,
-                    companyId
-                  },
-                  {
-                    journalId: journalResult.id,
-                    accountId:
-                      accountDefaultsScrapOp.data.workInProgressAccount,
-                    description: "WIP Account",
-                    amount: credit("asset", scrapCost),
-                    quantity,
-                    documentType: "Scrap",
-                    documentId: job.id,
-                    documentLineReference: `jobOperationScrap:${jobOperationId}`,
-                    journalLineReference,
-                    companyId
-                  }
-                ])
-                .returning(["id"])
-                .execute();
-
-              const itemCostRow = makeMethod.itemId
-                ? await trx
-                    .selectFrom("itemCost")
-                    .select(["itemPostingGroupId"])
-                    .where("itemId", "=", makeMethod.itemId)
-                    .where("companyId", "=", companyId)
-                    .executeTakeFirst()
+          const scrapCost =
+            backflush.totalMaterialCost + priorUnitMaterialCost * quantity;
+          if (scrapCost > 0) {
+            // A Provisional journal has no accounting period.
+            const accountingPeriodId =
+              postingStatus === "Posted"
+                ? await getCurrentAccountingPeriod(companyId, trx, todayScrapOp)
                 : null;
-              const scrapDimensionValues: Array<[string, string | null]> = [
-                ["Item", makeMethod.itemId ?? null],
-                ["ItemPostingGroup", itemCostRow?.itemPostingGroupId ?? null],
-                ["Location", job.locationId ?? null],
-                ["ScrapReason", scrapReasonId],
-                ["WorkCenter", operation.workCenterId ?? null],
-                ["Employee", userId]
-              ];
-              const dimensionInserts = journalLineResults.flatMap((line) =>
-                scrapDimensionValues
-                  .filter(
-                    ([entityType, valueId]) =>
-                      dimensionMapScrapOp.has(entityType) && valueId
-                  )
-                  .map(([entityType, valueId]) => ({
-                    journalLineId: line.id,
-                    dimensionId: dimensionMapScrapOp.get(entityType)!,
-                    valueId: valueId as string,
-                    companyId
-                  }))
-              );
-              if (dimensionInserts.length > 0) {
-                await trx
-                  .insertInto("journalLineDimension")
-                  .values(dimensionInserts)
-                  .execute();
-              }
+            const journalEntryId = await getNextSequence(
+              trx,
+              "journalEntry",
+              companyId
+            );
+            const journalResult = await trx
+              .insertInto("journal")
+              .values({
+                journalEntryId,
+                accountingPeriodId,
+                description: `Scrap — Job ${job.jobId ?? job.id}`,
+                postingDate: todayScrapOp,
+                companyId,
+                sourceType: "Job Consumption",
+                status: postingStatus,
+                postedAt: datetime.timestamp(),
+                postedBy: userId,
+                createdBy: userId
+              })
+              .returning(["id"])
+              .executeTakeFirstOrThrow();
+
+            // An empty scrapAccount falls back to the variance account.
+            const scrapAccountId = resolveDefaultAccount(
+              accountDefaultsScrapOp.data,
+              "scrapAccount",
+              postingStatus
+            ).accountId;
+            const journalLineReference = nanoid();
+            const journalLineResults = await trx
+              .insertInto("journalLine")
+              .values([
+                {
+                  journalId: journalResult.id,
+                  accountId: scrapAccountId,
+                  description: "Scrap Account",
+                  amount: debit("expense", scrapCost),
+                  quantity,
+                  documentType: "Scrap",
+                  documentId: job.id,
+                  documentLineReference: `jobOperationScrap:${jobOperationId}`,
+                  journalLineReference,
+                  companyId
+                },
+                {
+                  journalId: journalResult.id,
+                  accountId: accountDefaultsScrapOp.data.workInProgressAccount,
+                  description: "WIP Account",
+                  amount: credit("asset", scrapCost),
+                  quantity,
+                  documentType: "Scrap",
+                  documentId: job.id,
+                  documentLineReference: `jobOperationScrap:${jobOperationId}`,
+                  journalLineReference,
+                  companyId
+                }
+              ])
+              .returning(["id"])
+              .execute();
+
+            const itemCostRow = makeMethod.itemId
+              ? await trx
+                  .selectFrom("itemCost")
+                  .select(["itemPostingGroupId"])
+                  .where("itemId", "=", makeMethod.itemId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst()
+              : null;
+            const scrapDimensionValues: Array<[string, string | null]> = [
+              ["Item", makeMethod.itemId ?? null],
+              ["ItemPostingGroup", itemCostRow?.itemPostingGroupId ?? null],
+              ["Location", job.locationId ?? null],
+              ["ScrapReason", scrapReasonId],
+              ["WorkCenter", operation.workCenterId ?? null],
+              ["Employee", userId]
+            ];
+            const dimensionInserts = journalLineResults.flatMap((line) =>
+              scrapDimensionValues
+                .filter(
+                  ([entityType, valueId]) =>
+                    dimensionMapScrapOp.has(entityType) && valueId
+                )
+                .map(([entityType, valueId]) => ({
+                  journalLineId: line.id,
+                  dimensionId: dimensionMapScrapOp.get(entityType)!,
+                  valueId: valueId as string,
+                  companyId
+                }))
+            );
+            if (dimensionInserts.length > 0) {
+              await trx
+                .insertInto("journalLineDimension")
+                .values(dimensionInserts)
+                .execute();
             }
           }
         });
@@ -3196,7 +3170,7 @@ const issue = defineServerFn({
             }
           }
 
-          if (accountDefaults.data && itemLedgerInserts.length > 0) {
+          if (itemLedgerInserts.length > 0) {
             const jobOperation = await trx
               .selectFrom("jobOperation")
               .where("id", "=", id)
@@ -3220,9 +3194,9 @@ const issue = defineServerFn({
               jobId: jobOperation?.jobId!,
               operationId: id,
               description: "Manual Material Issue",
-              wipAccount: accountDefaults.data.workInProgressAccount,
-              rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
-              finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+              wipAccount: accountDefaults.workInProgressAccount,
+              rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
+              finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
               dimensionMap,
 
               jobLocationId: jobRecord?.locationId ?? null,
@@ -3331,33 +3305,22 @@ const issue = defineServerFn({
           postingStatusScrap === "Posted"
             ? await getCurrentAccountingPeriod(companyId, db, todayScrap)
             : null;
-        // Before the cutover an empty scrapAccount becomes a stand-in line;
-        // after it, an empty scrapAccount falls back to the variance account,
-        // as it always has.
-        const scrapAccountScrap = resolveDefaultAccount(
-          {
-            ...accountDefaultsScrap.data,
-            scrapAccount:
-              accountDefaultsScrap.data.scrapAccount ??
-              (postingStatusScrap === "Posted"
-                ? accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount
-                : null)
-          },
+        // An empty scrapAccount falls back to the variance account.
+        const scrapAccountIdScrap = resolveDefaultAccount(
+          accountDefaultsScrap.data,
           "scrapAccount",
           postingStatusScrap
-        );
+        ).accountId;
 
         let didReplace = false;
         await db.transaction().execute(async (trx) => {
           // Re-read inside the transaction: its FOR SHARE lock holds the
           // status until commit, and the period above was resolved for it.
-          if (
-            (await journalPostingStatus(trx, companyId)) !== postingStatusScrap
-          ) {
-            throw new Error(
-              "Accounting was just set up. Post the document again."
-            );
-          }
+          await assertPostingStatusUnchanged(
+            trx,
+            companyId,
+            postingStatusScrap
+          );
           const entity = trackedEntity.data!;
           const material = jobMaterial.data!;
           const quantity = Number(entity.quantity);
@@ -3528,8 +3491,7 @@ const issue = defineServerFn({
                   inventoryAdjustmentVarianceAccount:
                     accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount
                 },
-                offsetAccount: scrapAccountScrap.accountId,
-                offsetAccountDefaultRole: scrapAccountScrap.accountDefaultRole,
+                offsetAccount: scrapAccountIdScrap,
                 offsetDescription: "Scrap Account",
                 description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
                 userId,
@@ -3572,8 +3534,7 @@ const issue = defineServerFn({
                 .values([
                   {
                     journalId: journalResult.id,
-                    accountId: scrapAccountScrap.accountId,
-                    accountDefaultRole: scrapAccountScrap.accountDefaultRole,
+                    accountId: scrapAccountIdScrap,
                     description: "Scrap Account",
                     amount: debit("expense", scrapCost),
                     quantity,
@@ -3865,11 +3826,7 @@ const issue = defineServerFn({
         const batchResult = await db.transaction().execute(async (trx) => {
           // Re-read inside the transaction: its FOR SHARE lock holds the
           // status until commit, and the period above was resolved for it.
-          if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-            throw new Error(
-              "Accounting was just set up. Post the document again."
-            );
-          }
+          await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           const batch = await trx
             .selectFrom("jobOperationBatch")
             .select(["id", "status"])
@@ -4415,31 +4372,28 @@ const issue = defineServerFn({
               );
             }
 
-            if (accountDefaultsUnconsume.data) {
-              const returnEntries = itemLedgerInserts.map((l) => ({
-                itemId: l.itemId as string,
-                quantity: Number(l.quantity)
-              }));
+            const returnEntries = itemLedgerInserts.map((l) => ({
+              itemId: l.itemId as string,
+              quantity: Number(l.quantity)
+            }));
 
-              await createMaterialWipEntries(trx, {
-                consumptionLedgers: returnEntries,
-                jobId: job?.id!,
-                operationId: jobMaterial?.jobOperationId ?? materialId,
-                description: "Unconsume Material Return",
-                wipAccount: accountDefaultsUnconsume.data.workInProgressAccount,
-                rawMaterialsAccount:
-                  accountDefaultsUnconsume.data.rawMaterialsAccount,
-                finishedGoodsAccount:
-                  accountDefaultsUnconsume.data.finishedGoodsAccount,
-                dimensionMap: dimensionMapUnconsume,
+            await createMaterialWipEntries(trx, {
+              consumptionLedgers: returnEntries,
+              jobId: job?.id!,
+              operationId: jobMaterial?.jobOperationId ?? materialId,
+              description: "Unconsume Material Return",
+              wipAccount: accountDefaultsUnconsume.workInProgressAccount,
+              rawMaterialsAccount: accountDefaultsUnconsume.rawMaterialsAccount,
+              finishedGoodsAccount:
+                accountDefaultsUnconsume.finishedGoodsAccount,
+              dimensionMap: dimensionMapUnconsume,
 
-                jobLocationId: job?.locationId ?? null,
-                db,
-                companyId,
-                userId,
-                postingStatus
-              });
-            }
+              jobLocationId: job?.locationId ?? null,
+              db,
+              companyId,
+              userId,
+              postingStatus
+            });
           }
 
           const totalChildQuantity = roundedChildTotal(children);

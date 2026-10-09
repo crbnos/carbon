@@ -6,12 +6,18 @@
 // with no cutover, documents it posts before and after the cutover date, and
 // the reads the tests assert with.
 
-import { getLegacyDocumentCounts } from "@carbon/database/accounting-cutover-reads";
+import type { Database } from "@carbon/database";
+import {
+  getCutoverInventory,
+  getLegacyDocumentCounts,
+  saveOpeningTrialBalance
+} from "@carbon/database/accounting-cutover-reads";
 import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { OPTIONAL_DEFAULT_ROLES } from "@carbon/database/journal-posting-status";
 import { datetime } from "@carbon/utils";
 import { type Insertable, sql } from "kysely";
+import { expect } from "vitest";
 import create from "../create";
 import { connectLocalTestDatabase } from "../local-database-test-fixture";
 import postReceipt from "../post-receipt";
@@ -19,7 +25,10 @@ import { FILLER_ACCOUNT_DEFAULTS } from "../post-reimbursement/post-reimbursemen
 import postSalesInvoice from "../post-sales-invoice";
 import postShipment from "../post-shipment";
 import { ServerFnContext } from "../server-fn-context";
+import activateAccounting from ".";
 import type { LegacyJournalCounts } from "./legacy";
+
+type SourceType = Database["public"]["Enums"]["journalEntrySourceType"];
 
 export const USER = "system";
 export const TIME_ZONE = "America/New_York";
@@ -37,6 +46,7 @@ export const ACCOUNTS = [
   { name: "retained-earnings", class: "Equity" },
   { name: "migration-clearing", class: "Equity" },
   { name: "sales", class: "Revenue" },
+  { name: "shipping-revenue", class: "Revenue" },
   { name: "cogs", class: "Expense" },
   { name: "scrap", class: "Expense" },
   { name: "fixed-assets", class: "Asset" },
@@ -157,7 +167,8 @@ export async function activationFixture() {
         salesAccount: account("sales"),
         costOfGoodsSoldAccount: account("cogs"),
         migrationClearingAccount: account("migration-clearing"),
-        // Empty, so the scrap after the cutover date posts a stand-in line.
+        // Empty: a scrap falls back to the variance account, and the enable
+        // refuses until it is set.
         scrapAccount: null
       } as unknown as Insertable<KyselyDatabase["accountDefault"]>)
       .execute();
@@ -592,4 +603,212 @@ export async function glBalance(f: Fixture, name: AccountName) {
     .where("journal.status", "in", [...GL_JOURNAL_STATUSES])
     .executeTakeFirstOrThrow();
   return Number(row.balance);
+}
+
+/**
+ * Before the cutover: 5 parts at 8 and 5 at 12 received. After it: 5
+ * shipped, then the shipment's "Sale" cost row, its relief of the layer and
+ * its journal undone, as main left a shipment with accounting off.
+ */
+export async function legacyShipmentWithNoCostRow(f: Fixture) {
+  await receiveFiveParts(f, { id: "po-1", unitPrice: 8 });
+  await receiveFiveParts(f, { id: "po-2", unitPrice: 12 });
+  await moveBeforeCutover(f);
+  await shipFiveParts(f);
+  await f.db
+    .deleteFrom("costLedger")
+    .where("companyId", "=", f.companyId)
+    .where("itemLedgerType", "=", "Sale")
+    .execute();
+  await f.db
+    .updateTable("costLedger")
+    .set({ remainingQuantity: sql`"quantity"` })
+    .where("companyId", "=", f.companyId)
+    .where("itemLedgerType", "=", "Purchase")
+    .execute();
+  await deleteJournals(f, ["Sales Shipment"]);
+}
+
+/** Enables with the opening stock (10 parts at 10) against GR/IR. */
+export async function enableWithStockAtTen(f: Fixture) {
+  await f.db
+    .updateTable("accountDefault")
+    .set({ scrapAccount: f.account("scrap") })
+    .where("companyId", "=", f.companyId)
+    .execute();
+  const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+  const [part] = await getCutoverInventory(f.db, args);
+  expect(part!.unitCost).toBe(10);
+  await saveOpeningTrialBalance(f.db, {
+    ...args,
+    userId: USER,
+    lines: [
+      { accountId: f.account("inventory"), debit: 100, credit: 0 },
+      { accountId: f.account("grni"), debit: 0, credit: 100 }
+    ]
+  });
+  // The wizard counts the documents before the enable journals them.
+  const counted = await legacyDocumentCounts(f);
+  const result = unwrap(
+    await activateAccounting(f.ctx, { ...args, confirmation: f.companyName })
+  );
+  expect(journaledFamilies(result.legacyJournals)).toEqual(counted);
+  return result;
+}
+
+/** The value of the cost layers still open. */
+export async function openLayersValue(f: Fixture) {
+  const row = await f.db
+    .selectFrom("costLedger")
+    .select(
+      sql<number>`coalesce(sum("cost" * "remainingQuantity" / "quantity"), 0)`.as(
+        "value"
+      )
+    )
+    .where("companyId", "=", f.companyId)
+    .where("remainingQuantity", ">", 0)
+    .where("adjustment", "=", false)
+    .executeTakeFirstOrThrow();
+  return Number(row.value);
+}
+
+export function provisionalJournals(f: Fixture) {
+  return f.db
+    .selectFrom("journal")
+    .select(["description", "sourceType"])
+    .where("companyId", "=", f.companyId)
+    .where("status", "=", "Provisional")
+    .execute();
+}
+
+/** A made assembly and a job for one of it: one operation, and two of the
+ *  part planned. */
+export async function jobFixture(f: Fixture) {
+  const assemblyId = `${f.prefix}-assembly`;
+  const jobId = `${f.prefix}-job`;
+  const processId = `${f.prefix}-process`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("item")
+      .values({
+        id: assemblyId,
+        readableId: `${f.prefix}-ASSY`,
+        name: "Assembly",
+        type: "Part",
+        itemTrackingType: "Inventory",
+        replenishmentSystem: "Make",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("job")
+      .values({
+        id: jobId,
+        jobId: "J-1",
+        itemId: assemblyId,
+        quantity: 1,
+        unitOfMeasureCode: "EA",
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("process")
+      .values({
+        id: processId,
+        name: "Assemble",
+        defaultStandardFactor: "Hours/Piece",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  // The job insert creates its top-level make method.
+  const makeMethod = await f.db
+    .selectFrom("jobMakeMethod")
+    .select("id")
+    .where("jobId", "=", jobId)
+    .where("companyId", "=", f.companyId)
+    .executeTakeFirstOrThrow();
+  const operation = await f.db
+    .insertInto("jobOperation")
+    .values({
+      jobId,
+      jobMakeMethodId: makeMethod.id,
+      processId,
+      description: "Assemble",
+      companyId: f.companyId,
+      createdBy: USER
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  const material = await f.db
+    .insertInto("jobMaterial")
+    .values({
+      jobId,
+      jobMakeMethodId: makeMethod.id,
+      jobOperationId: operation.id,
+      itemId: f.partId,
+      itemType: "Part",
+      methodType: "Pull from Inventory",
+      description: "Bracket",
+      quantity: 2,
+      estimatedQuantity: 2,
+      unitOfMeasureCode: "EA",
+      companyId: f.companyId,
+      createdBy: USER
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return {
+    assemblyId,
+    jobId,
+    operationId: operation.id,
+    materialId: material.id
+  };
+}
+
+/** Deletes the journals of the given source types, as the reset did: the
+ *  documents' journalId first, past the charge's draft guard. */
+export async function deleteJournals(f: Fixture, sourceTypes: SourceType[]) {
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+    for (const table of ["payment", "memo", "charge"] as const) {
+      await trx
+        .updateTable(table)
+        .set({ journalId: null })
+        .where("companyId", "=", f.companyId)
+        .execute();
+    }
+    await sql`SET LOCAL session_replication_role = origin`.execute(trx);
+    const journalIds = trx
+      .selectFrom("journal")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .where("sourceType", "in", sourceTypes);
+    const lineIds = trx
+      .selectFrom("journalLine")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .where("journalId", "in", journalIds);
+    await trx
+      .deleteFrom("journalLineDimension")
+      .where("companyId", "=", f.companyId)
+      .where("journalLineId", "in", lineIds)
+      .execute();
+    await trx
+      .deleteFrom("journalLine")
+      .where("companyId", "=", f.companyId)
+      .where("journalId", "in", journalIds)
+      .execute();
+    await trx
+      .deleteFrom("journal")
+      .where("companyId", "=", f.companyId)
+      .where("sourceType", "in", sourceTypes)
+      .execute();
+  });
 }

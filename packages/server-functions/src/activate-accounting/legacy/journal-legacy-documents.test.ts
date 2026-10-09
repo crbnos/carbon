@@ -19,6 +19,7 @@ import {
   findCompaniesWithLegacyDocuments,
   journalLegacyDocumentsForAllCompanies
 } from "../../journal-legacy-documents/companies";
+import { ACCOUNTING_NOT_STARTED } from "../../lib/require-accounting-cutover";
 import { databaseTest } from "../../local-database-test-fixture";
 import postPayment from "../../post-payment";
 import postPurchaseInvoice from "../../post-purchase-invoice";
@@ -29,8 +30,10 @@ import {
   glBalance,
   journaledFamilies,
   legacyDocumentCounts,
+  openLayersValue,
   pay,
   postServiceInvoice,
+  provisionalJournals,
   receiveFiveParts,
   shipFiveParts,
   USER,
@@ -53,7 +56,7 @@ databaseTest(
     try {
       // Nothing to repair before accounting is set up.
       const notSetUp = await journalLegacyDocuments(f.ctx, {});
-      expect(notSetUp.error?.message).toBe("Set up accounting first.");
+      expect(notSetUp.error?.message).toBe(ACCOUNTING_NOT_STARTED);
 
       // Enabled with no legacy documents.
       await f.db
@@ -126,6 +129,16 @@ databaseTest(
         }
       ]);
       expect(await legacyDocumentCounts(f)).toEqual(counted);
+
+      // So does a Locked one.
+      await setPeriodCloseStatus(f, "Locked");
+      const locked = await journalLegacyDocuments(f.ctx, {});
+      expect(locked.error?.message).toBe(
+        `The period ${formatPeriodLabel(f.cutoverDate)} is locked. Unlock it, then write the missing journals.`
+      );
+      expect(locked.error?.status).toBe(400);
+      expect(await legacyDocumentCounts(f)).toEqual(counted);
+      expect(await provisionalJournals(f)).toEqual([]);
       await setPeriodCloseStatus(f, "Open");
 
       const result = unwrap(await journalLegacyDocuments(f.ctx, {}));
@@ -329,7 +342,10 @@ async function forgetJournalsAndSaleCost(f: Fixture) {
   });
 }
 
-async function setPeriodCloseStatus(f: Fixture, status: "Open" | "Closed") {
+async function setPeriodCloseStatus(
+  f: Fixture,
+  status: "Open" | "Locked" | "Closed"
+) {
   await f.db
     .updateTable("accountingPeriod")
     .set({
@@ -338,30 +354,5 @@ async function setPeriodCloseStatus(f: Fixture, status: "Open" | "Closed") {
     })
     .where("companyId", "=", f.companyId)
     .where("startDate", "=", f.cutoverDate)
-    .execute();
-}
-
-/** The value of the cost layers still open. */
-async function openLayersValue(f: Fixture) {
-  const row = await f.db
-    .selectFrom("costLedger")
-    .select(
-      sql<number>`coalesce(sum("cost" * "remainingQuantity" / "quantity"), 0)`.as(
-        "value"
-      )
-    )
-    .where("companyId", "=", f.companyId)
-    .where("remainingQuantity", ">", 0)
-    .where("adjustment", "=", false)
-    .executeTakeFirstOrThrow();
-  return Number(row.value);
-}
-
-function provisionalJournals(f: Fixture) {
-  return f.db
-    .selectFrom("journal")
-    .select(["description", "sourceType"])
-    .where("companyId", "=", f.companyId)
-    .where("status", "=", "Provisional")
     .execute();
 }

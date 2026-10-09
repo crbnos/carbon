@@ -7,9 +7,11 @@ import {
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
-import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import {
   contains,
   inOrder,
@@ -49,6 +51,7 @@ import {
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   refuseVoidBeforeCutover
 } from "../lib/cutover-void";
+import { documentJournalLines } from "../lib/document-journal-lines";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
@@ -101,15 +104,6 @@ const postReceipt = defineServerFn({
       // whether to resolve a period, and again inside each transaction, where
       // FOR SHARE holds the status until commit.
       const postingStatus = await journalPostingStatus(db, companyId);
-      const assertPostingStatus = async (
-        trx: Parameters<typeof journalPostingStatus>[0]
-      ) => {
-        if ((await journalPostingStatus(trx, companyId)) !== postingStatus) {
-          throw new Error(
-            "Accounting was just set up. Post the document again."
-          );
-        }
-      };
 
       const [receipt, receiptLines, receiptLineTracking, dimensions] =
         await inOrder([
@@ -353,20 +347,10 @@ const postReceipt = defineServerFn({
                   companyId
                 }),
               () =>
-                db
-                  .selectFrom("journalLine")
-                  .innerJoin("journal", (join) =>
-                    join
-                      .onRef("journal.id", "=", "journalLine.journalId")
-                      .onRef("journal.companyId", "=", "journalLine.companyId")
-                  )
-                  .selectAll("journalLine")
-                  .where("journalLine.documentId", "=", receiptId)
-                  .where("journalLine.documentType", "=", "Receipt")
-                  .where("journalLine.companyId", "=", companyId)
-                  .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-                  .execute()
-                  .then((data) => ({ data, error: null })),
+                documentJournalLines(db, companyId, {
+                  documentId: receiptId,
+                  documentType: "Receipt"
+                }),
               () =>
                 many(db, "salesReturnOrderLine", {
                   salesReturnOrderId,
@@ -375,8 +359,6 @@ const postReceipt = defineServerFn({
             ]);
           if (originalItemLedger.error)
             throw new Error("Failed to fetch original item ledger entries");
-          if (originalJournalLines.error)
-            throw new Error("Failed to fetch original journal lines");
           if (returnLinesVoid.error)
             throw new Error("Failed to fetch return order lines");
 
@@ -400,20 +382,18 @@ const postReceipt = defineServerFn({
             })
           );
 
-          const reversingJournalLines = (originalJournalLines.data ?? []).map(
-            (line) => ({
-              accountId: line.accountId,
-              description: `VOID: ${line.description ?? ""}`,
-              amount: -line.amount,
-              quantity: line.quantity == null ? undefined : -line.quantity,
-              documentType: line.documentType,
-              documentId: line.documentId,
-              externalDocumentId: line.externalDocumentId ?? undefined,
-              documentLineReference: line.documentLineReference ?? undefined,
-              journalLineReference: line.journalLineReference,
-              companyId
-            })
-          );
+          const reversingJournalLines = originalJournalLines.map((line) => ({
+            accountId: line.accountId,
+            description: `VOID: ${line.description ?? ""}`,
+            amount: -line.amount,
+            quantity: line.quantity == null ? undefined : -line.quantity,
+            documentType: line.documentType,
+            documentId: line.documentId,
+            externalDocumentId: line.externalDocumentId ?? undefined,
+            documentLineReference: line.documentLineReference ?? undefined,
+            journalLineReference: line.journalLineReference,
+            companyId
+          }));
 
           const receivedByLine = new Map<string, number>();
           for (const receiptLine of receiptLines.data ?? []) {
@@ -432,7 +412,7 @@ const postReceipt = defineServerFn({
               : null;
 
           await db.transaction().execute(async (trx) => {
-            await assertPostingStatus(trx);
+            await assertPostingStatusUnchanged(trx, companyId, postingStatus);
             // Refuse to void when this receipt's cost layers were already
             // (partially) consumed — the returned stock moved on (dispositioned,
             // sold, scrapped), so reversing the full receipt would drive stock
@@ -618,20 +598,10 @@ const postReceipt = defineServerFn({
               companyId
             }),
           () =>
-            db
-              .selectFrom("journalLine")
-              .innerJoin("journal", (join) =>
-                join
-                  .onRef("journal.id", "=", "journalLine.journalId")
-                  .onRef("journal.companyId", "=", "journalLine.companyId")
-              )
-              .selectAll("journalLine")
-              .where("journalLine.documentId", "=", receiptId)
-              .where("journalLine.documentType", "=", "Receipt")
-              .where("journalLine.companyId", "=", companyId)
-              .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-              .execute()
-              .then((data) => ({ data, error: null })),
+            documentJournalLines(db, companyId, {
+              documentId: receiptId,
+              documentType: "Receipt"
+            }),
           () =>
             many(db, "purchaseOrderLine", {
               purchaseOrderId: receiptHeader.sourceDocumentId
@@ -640,8 +610,6 @@ const postReceipt = defineServerFn({
 
         if (originalItemLedger.error)
           throw new Error("Failed to fetch item ledger entries");
-        if (originalJournalLines.error)
-          throw new Error("Failed to fetch journal lines");
         if (purchaseOrderLinesVoid.error)
           throw new Error("Failed to fetch purchase order lines");
 
@@ -669,7 +637,7 @@ const postReceipt = defineServerFn({
         const reversingJournalLines: Omit<
           Database["public"]["Tables"]["journalLine"]["Insert"],
           "journalId"
-        >[] = originalJournalLines.data.map((entry) => ({
+        >[] = originalJournalLines.map((entry) => ({
           accountId: entry.accountId,
           accrual: entry.accrual,
           description: `VOID: ${entry.description}`,
@@ -772,7 +740,7 @@ const postReceipt = defineServerFn({
         const cipAssetUpdatesVoid = new Map<string, number>();
 
         for (const faPoLine of faPoLinesForVoid) {
-          const hasReceiptEntries = originalJournalLines.data.some(
+          const hasReceiptEntries = originalJournalLines.some(
             (jl) =>
               jl.documentLineReference ===
               journalReference.to.receipt(faPoLine.id)
@@ -784,7 +752,7 @@ const postReceipt = defineServerFn({
               receivedComplete: false
             };
 
-            const receiptCost = originalJournalLines.data
+            const receiptCost = originalJournalLines
               .filter(
                 (jl) =>
                   jl.documentLineReference ===
@@ -949,7 +917,7 @@ const postReceipt = defineServerFn({
             : null;
 
         await db.transaction().execute(async (trx) => {
-          await assertPostingStatus(trx);
+          await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           // The cost layers this receipt wrote. Without this, a voided
           // receipt's layer stayed open and later issues consumed stock that
           // was never there.
@@ -1571,29 +1539,14 @@ const postReceipt = defineServerFn({
               (id) => journalReference.to.purchaseInvoice(id)
             );
 
-            const accrualJournalLines = await db
-              .selectFrom("journalLine")
-              .innerJoin("journal", (join) =>
-                join
-                  .onRef("journal.id", "=", "journalLine.journalId")
-                  .onRef("journal.companyId", "=", "journalLine.companyId")
-              )
-              .select([
-                "journalLine.documentLineReference",
-                "journalLine.amount",
-                "journalLine.quantity",
-                "journalLine.accountId"
-              ])
-              .where("journalLine.documentLineReference", "in", accrualDocRefs)
-              .where("journalLine.accrual", "=", true)
-              .where("journalLine.companyId", "=", companyId)
-              .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-              .execute()
-              .then((data) => ({ data, error: null }));
-
-            if (accrualJournalLines.error) {
-              throw new Error("Failed to fetch accrual journal lines");
-            }
+            const accrualJournalLines = await documentJournalLines(
+              db,
+              companyId,
+              {
+                documentLineReference: accrualDocRefs,
+                accrual: true
+              }
+            );
 
             // GR/IR debit entries have non-positive amounts (debit on a
             // liability; zero-priced invoices accrue at exactly 0). Matching
@@ -1603,7 +1556,7 @@ const postReceipt = defineServerFn({
               string,
               { totalCost: number; totalQty: number }
             > = {};
-            for (const jl of accrualJournalLines.data ?? []) {
+            for (const jl of accrualJournalLines) {
               if (
                 (jl.amount ?? 0) <= 0 &&
                 (jl.quantity ?? 0) > 0 &&
@@ -2182,7 +2135,7 @@ const postReceipt = defineServerFn({
               : null;
 
           await db.transaction().execute(async (trx) => {
-            await assertPostingStatus(trx);
+            await assertPostingStatusUnchanged(trx, companyId, postingStatus);
             await fixedAssetWrites.apply(trx, companyId);
             // Negative receipts: consume layers at layer cost (FIFO/LIFO with
             // adjustment children) and patch the placeholder GL amounts so the
@@ -2811,6 +2764,9 @@ const postReceipt = defineServerFn({
           }
 
           const accountDefaults = await getDefaultPostingGroup(db, companyId);
+          if (accountDefaults.error || !accountDefaults.data) {
+            throw new Error("Error getting account defaults");
+          }
 
           // Customer type for the return-receipt journal's GL dimensions.
           const customer = await single(
@@ -3015,7 +2971,7 @@ const postReceipt = defineServerFn({
 
             // Journal: Dr Inventory / Cr COGS at the re-entry value. Zero-value
             // re-entries post no journal.
-            if (accountDefaults.data && cost > 0) {
+            if (cost > 0) {
               const journalLineReference = nanoid();
               const inventoryAccount = resolveInventoryAccount(
                 item?.replenishmentSystem ?? null,
@@ -3083,7 +3039,7 @@ const postReceipt = defineServerFn({
               : null;
 
           await db.transaction().execute(async (trx) => {
-            await assertPostingStatus(trx);
+            await assertPostingStatusUnchanged(trx, companyId, postingStatus);
             // Double-post guard: serialize on the receipt row — a second
             // concurrent post waits here, then sees Posted and aborts, so
             // ledger rows, journals, and quantityReceived can never double.
@@ -3284,11 +3240,13 @@ const postReceipt = defineServerFn({
           const [warehouseTransfer, warehouseTransferLines] = await inOrder([
             () =>
               single(db, "warehouseTransfer", {
-                id: receiptHeader.sourceDocumentId
+                id: receiptHeader.sourceDocumentId,
+                companyId
               }),
             () =>
               many(db, "warehouseTransferLine", {
-                transferId: receiptHeader.sourceDocumentId
+                transferId: receiptHeader.sourceDocumentId,
+                companyId
               })
           ]);
 
@@ -3306,7 +3264,7 @@ const postReceipt = defineServerFn({
               many(
                 db,
                 "itemCost",
-                { itemId: transferItemIds },
+                { itemId: transferItemIds, companyId },
                 { columns: ["itemId", "itemPostingGroupId", "unitCost"] }
               ),
             () =>
@@ -3483,7 +3441,7 @@ const postReceipt = defineServerFn({
               : null;
 
           await db.transaction().execute(async (trx) => {
-            await assertPostingStatus(trx);
+            await assertPostingStatusUnchanged(trx, companyId, postingStatus);
             // Update warehouse transfer lines
             for await (const [lineId, update] of Object.entries(
               warehouseTransferLineUpdates
