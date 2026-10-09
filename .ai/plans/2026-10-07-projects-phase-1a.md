@@ -80,7 +80,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 41: Add charge numbers to the job, PO line and purchase invoice line forms
 - [x] Task 42: Add the account defaults and project settings UI
 - [x] Task 43: Add keyboard shortcuts for the Elements page and element page
-- [ ] Task 44: Register the MCP namespace and regenerate tools
+- [x] Task 44: Register the MCP namespace and regenerate tools
 - [ ] Task 45: Add projects to the demo datasets
 - [ ] Task 46: Write the module AGENTS.md, the rule file and the docs page
 - [ ] Task 47: Verify in the browser
@@ -2562,3 +2562,4 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 43: on the List layout, `s`/`a`/`p`/`l` act on the one checked row, and only while no element is open (the open element's page answers then). A pill the Display settings hide cannot open. `t` and `i` work on the element page (peek and full page) only: Log time and Issue material need the labor categories and the element page's data, which the list does not load. `c` (in `ElementsHeader`) focuses the quick-add input on every layout.
 - Task 43: `g` then a letter still goes to a module: the go-to listener handles the second key and the page then unmounts, so a pill that opened for the same key closes with it.
 - Task 43: `ShortcutHelp` lists the seven keys under **Project elements**.
+- Task 44: the digest has no `accounting_*Project*` tools left to drop; Task 12 already dropped them. `projects` adds 51 tools (1590 in total, 16 modules). `dispatch-parity.test.ts` mocks every module service the registry imports, so it gains an empty `projects.service` mock. Without it the test imports the real service and fails on the glossary's Lingui macros.

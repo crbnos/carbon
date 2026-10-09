@@ -77,6 +77,7 @@ vi.mock("~/modules/production/production.service", () => ({
   getActiveJobOperationsByLocation: spies.getActiveJobOperationsByLocation,
   upsertJobMaterial: spies.upsertJobMaterial
 }));
+vi.mock("~/modules/projects/projects.service", () => ({}));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder,
   upsertPurchaseOrderLine: spies.upsertPurchaseOrderLine,
