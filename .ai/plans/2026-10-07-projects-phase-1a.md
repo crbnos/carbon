@@ -60,7 +60,7 @@ Phase 1c gets baselines and change requests.
 - [ ] Task 21: Route PO receipts to the project account
 - [ ] Task 22: Route purchase invoice lines to the project account
 - [ ] Task 23: Route charges and reimbursements to the project account
-- [ ] Task 24: Add Project and Project Element to the journal dimension builder
+- [x] Task 24: Add Project and Project Element to the journal dimension builder
 - [x] Task 25: Add the new enum values to the TS mirrors
 - [ ] Task 26: Move the accounting Projects screens into the new module
 - [ ] Task 27: Add module navigation, layout and paths
@@ -2429,3 +2429,4 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 15: `ProjectPostingProject` gains optional `identifier` and `name`, and `ProjectPostingElement` an optional `readableId`. They are for the refusal messages only ("Project ST is Closed…"). `loadProjectPostingContexts` fills them. The file also exports `projectPostingKey(projectId, projectElementId)`, the map key, so callers do not rebuild it by hand.
 - Task 15: an explicit account comes from the same node that sets the treatment (the element or ancestor override, else the project), as in the SQL `project_posting_account`. An account on an element that has no treatment of its own is ignored.
 - Task 15: 11 pure tests pass. A throwaway database test (rolled back) checked `loadProjectPostingContexts` on a two-level tree: the ancestor override, the `stateGroup` join and a missing project. `resolveProjectPostingAccount` and the SQL `project_posting_account` gave the same account. The full `@carbon/server-functions` suite passes (398) with `SUPABASE_DB_URL` on port 60387.
+- Task 24: `packages/utils/src` has no `journal-dimensions` test file, so step 3 adds no case. `@carbon/utils` tests (606) and typecheck pass.
