@@ -3385,6 +3385,9 @@ msgstr "在 {locationName}"
 msgid "At Commencement"
 msgstr "在开始时"
 
+msgid "At Depot"
+msgstr ""
+
 msgid "At each gate"
 msgstr "在每个关卡"
 
@@ -5015,6 +5018,9 @@ msgstr "完成进行中 — 请在生产车间重试"
 
 msgid "Completion Time"
 msgstr "完成时间"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -9603,6 +9609,9 @@ msgstr "调整图像大小失败：{errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "未能检索 CSV 列数据。"
 
+msgid "Failed to save"
+msgstr ""
+
 msgid "Failed to save configuration rule"
 msgstr "保存配置规则失败"
 
@@ -10558,6 +10567,12 @@ msgstr "历史汇率（所有者权益）"
 msgid "History"
 msgstr "历史记录"
 
+msgid "History by Component"
+msgstr ""
+
+msgid "History by Order"
+msgstr ""
+
 msgid "Hold the journal as a warning to fix."
 msgstr "保留凭证作为需要修正的警告"
 
@@ -10974,6 +10989,9 @@ msgstr "在范围内"
 msgid "in selected period"
 msgstr "在选定的时间段内"
 
+msgid "In Service"
+msgstr ""
+
 msgid "In stock"
 msgstr "有库存"
 
@@ -10991,6 +11009,9 @@ msgstr "在此步骤中"
 
 msgid "In use"
 msgstr "使用中"
+
+msgid "In warranty"
+msgstr ""
 
 msgid "In your company's time zone ({companyTimeZone})."
 msgstr "在您公司的时区({companyTimeZone})。"
@@ -11201,6 +11222,9 @@ msgid "Installed"
 msgstr "已安装"
 
 msgid "Installed Base"
+msgstr ""
+
+msgid "Installed Components"
 msgstr ""
 
 msgid "Installed on this step, so it can't be hidden here."
@@ -11905,6 +11929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "人工成本"
 
+msgid "Labor ended"
+msgstr ""
+
 msgid "Labor Hours"
 msgstr "人工小时"
 
@@ -11928,6 +11955,9 @@ msgstr "人工单位"
 
 msgid "Labor Unit"
 msgstr "人工单位"
+
+msgid "Labor Warranty Ends"
+msgstr ""
 
 msgid "Language"
 msgstr "语言"
@@ -11979,6 +12009,9 @@ msgstr ""
 
 msgid "Last Run"
 msgstr "最后运行"
+
+msgid "Last Service"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "上次同步: <0/>"
@@ -13476,6 +13509,9 @@ msgstr "新建自定义字段"
 msgid "New Customer"
 msgstr "新客户"
 
+msgid "New Customer Asset"
+msgstr ""
+
 msgid "New Customer Part"
 msgstr "新客户零件"
 
@@ -13697,6 +13733,9 @@ msgstr "新序列号"
 
 msgid "New Service"
 msgstr "新服务"
+
+msgid "New Service Order"
+msgstr ""
 
 msgid "New Shift"
 msgstr "新班次"
@@ -14462,11 +14501,20 @@ msgstr ""
 msgid "No serial numbers selected yet."
 msgstr "尚未选择序列号。"
 
+msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service work has been charged to this asset yet."
+msgstr ""
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "还没有服务。添加此合同开票的服务。"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
+
+msgid "No ship date"
+msgstr ""
 
 msgid "No shipments yet"
 msgstr "尚无发货"
@@ -14877,6 +14925,9 @@ msgstr "出租中"
 
 msgid "On Sales Order"
 msgstr "在销售订单上"
+
+msgid "On Site"
+msgstr ""
 
 msgid "On Storage Unit"
 msgstr "在存储单元上"
@@ -15704,11 +15755,17 @@ msgstr "零件"
 msgid "Parts & items"
 msgstr "零件和物料"
 
+msgid "Parts fitted by a service order, with their own parts warranty."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "零件逐一运行 — 例如锯床或激光台。"
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "零件在一个负荷中一起运行 — 例如炉、烤箱或电镀槽。"
+
+msgid "Parts Warranty Ends"
+msgstr ""
 
 msgid "Parts, materials, and how you classify them."
 msgstr "零件、原材料及其分类方式"
@@ -17599,6 +17656,9 @@ msgstr "正在重新生成缩略图…"
 
 msgid "Register"
 msgstr "注册现有资产"
+
+msgid "Register a unit sold before Carbon. A unit Carbon ships becomes an asset when it ships."
+msgstr ""
 
 msgid "Register Existing Asset"
 msgstr "已注册"
@@ -19661,6 +19721,9 @@ msgstr "服务行"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Order"
+msgstr ""
+
 msgid "Service Orders"
 msgstr ""
 
@@ -19871,6 +19934,9 @@ msgstr "分配给此工作站的班次"
 msgid "Ship"
 msgstr "发货"
 
+msgid "Ship Date"
+msgstr ""
+
 msgid "Ship some, stock some"
 msgstr "发货一些，库存一些"
 
@@ -19909,6 +19975,9 @@ msgstr "发货单"
 
 msgid "Shipped"
 msgstr "已发货"
+
+msgid "Shipped <0/>"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "该客户已发货行项中剩余待退货的数量"
@@ -20174,6 +20243,9 @@ msgstr "单点登录"
 
 msgid "Single sign-on (SSO)"
 msgstr "单点登录 (SSO)"
+
+msgid "Site"
+msgstr ""
 
 msgid "Sites & locations"
 msgstr "站点和位置"
@@ -22525,6 +22597,9 @@ msgstr "此合同的发票自动过账，所以确认它需要创建发票的权
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"
 
+msgid "This customer has no registered assets yet."
+msgstr ""
+
 msgid "This customer type's rate"
 msgstr "此客户类型的费率"
 
@@ -22742,6 +22817,9 @@ msgstr "当变更通知 {activationLockId} 已下达时，这个刀具被激活�
 
 msgid "This unit has no cost in inventory"
 msgstr "该件在库存中没有成本"
+
+msgid "This unit has no service orders yet."
+msgstr ""
 
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
@@ -23320,6 +23398,9 @@ msgstr "中转与机构"
 
 msgid "Trash"
 msgstr "垃圾桶"
+
+msgid "Traveling"
+msgstr ""
 
 msgid "Treatment"
 msgstr ""
@@ -24436,6 +24517,12 @@ msgstr "当检验入库物料的人与收货人相同时发出警告。"
 msgid "Warning"
 msgstr "警告"
 
+msgid "Warranty"
+msgstr ""
+
+msgid "Warranty and Site"
+msgstr ""
+
 msgid "Watch"
 msgstr "观看"
 
@@ -24575,6 +24662,9 @@ msgstr "什么数据"
 
 msgid "What drove inventory up or down, by any dimension"
 msgstr "什么驱动库存管理增加或减少，按任何维度"
+
+msgid "What each component has cost across every service order."
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "发票创建后会发生什么"

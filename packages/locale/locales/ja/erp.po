@@ -3385,6 +3385,9 @@ msgstr "{locationName}で"
 msgid "At Commencement"
 msgstr "開始時に"
 
+msgid "At Depot"
+msgstr ""
+
 msgid "At each gate"
 msgstr "各ゲートで"
 
@@ -5015,6 +5018,9 @@ msgstr "完了処理進行中 — 製造現場で再試行してください"
 
 msgid "Completion Time"
 msgstr "完了時間"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -9603,6 +9609,9 @@ msgstr "画像のリサイズに失敗しました: {errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "CSVの列データの取得に失敗しました。"
 
+msgid "Failed to save"
+msgstr ""
+
 msgid "Failed to save configuration rule"
 msgstr "設定ルールの保存に失敗しました"
 
@@ -10558,6 +10567,12 @@ msgstr "取得時レート(純資産)"
 msgid "History"
 msgstr "履歴"
 
+msgid "History by Component"
+msgstr ""
+
+msgid "History by Order"
+msgstr ""
+
 msgid "Hold the journal as a warning to fix."
 msgstr "修正が必要な警告として仕訳を保留"
 
@@ -10974,6 +10989,9 @@ msgstr "対象内"
 msgid "in selected period"
 msgstr "選択された期間内"
 
+msgid "In Service"
+msgstr ""
+
 msgid "In stock"
 msgstr "在庫あり"
 
@@ -10991,6 +11009,9 @@ msgstr "このステップで"
 
 msgid "In use"
 msgstr "使用中"
+
+msgid "In warranty"
+msgstr ""
 
 msgid "In your company's time zone ({companyTimeZone})."
 msgstr "お客様の会社のタイムゾーン({companyTimeZone})です。"
@@ -11201,6 +11222,9 @@ msgid "Installed"
 msgstr "インストール済み"
 
 msgid "Installed Base"
+msgstr ""
+
+msgid "Installed Components"
 msgstr ""
 
 msgid "Installed on this step, so it can't be hidden here."
@@ -11905,6 +11929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "労務費"
 
+msgid "Labor ended"
+msgstr ""
+
 msgid "Labor Hours"
 msgstr "労務時間"
 
@@ -11928,6 +11955,9 @@ msgstr "労務単位"
 
 msgid "Labor Unit"
 msgstr "労務単位"
+
+msgid "Labor Warranty Ends"
+msgstr ""
 
 msgid "Language"
 msgstr "言語"
@@ -11979,6 +12009,9 @@ msgstr ""
 
 msgid "Last Run"
 msgstr "最終実行"
+
+msgid "Last Service"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "最後に同期: <0/>"
@@ -13476,6 +13509,9 @@ msgstr "新しいカスタムフィールド"
 msgid "New Customer"
 msgstr "新規得意先"
 
+msgid "New Customer Asset"
+msgstr ""
+
 msgid "New Customer Part"
 msgstr "新規得意先部品"
 
@@ -13697,6 +13733,9 @@ msgstr "新しいシリアル番号"
 
 msgid "New Service"
 msgstr "新規サービス"
+
+msgid "New Service Order"
+msgstr ""
 
 msgid "New Shift"
 msgstr "新しいシフト"
@@ -14462,11 +14501,20 @@ msgstr ""
 msgid "No serial numbers selected yet."
 msgstr "シリアル番号がまだ選択されていません。"
 
+msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service work has been charged to this asset yet."
+msgstr ""
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "まだサービスがありません。このプラクティスの外注サービスを追加します。"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "シフトが構成されていません — 月～金、8時間営業を想定"
+
+msgid "No ship date"
+msgstr ""
 
 msgid "No shipments yet"
 msgstr "出荷がまだありません"
@@ -14877,6 +14925,9 @@ msgstr "レンタル中"
 
 msgid "On Sales Order"
 msgstr "受注に対して"
+
+msgid "On Site"
+msgstr ""
 
 msgid "On Storage Unit"
 msgstr "保管ユニット上"
@@ -15704,11 +15755,17 @@ msgstr "部品"
 msgid "Parts & items"
 msgstr "部品・品目"
 
+msgid "Parts fitted by a service order, with their own parts warranty."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "部品が1台のマシン上で順番に実行されます。例：ソーまたはレーザーテーブル。"
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "部品が単一の負荷でまとめて実行されます。例：炉、オーブン、またはめっき槽。"
+
+msgid "Parts Warranty Ends"
+msgstr ""
 
 msgid "Parts, materials, and how you classify them."
 msgstr "部品、材料、およびそれらの分類方法。"
@@ -17599,6 +17656,9 @@ msgstr "サムネイルを再生成中…"
 
 msgid "Register"
 msgstr "既存資産を登録"
+
+msgid "Register a unit sold before Carbon. A unit Carbon ships becomes an asset when it ships."
+msgstr ""
 
 msgid "Register Existing Asset"
 msgstr "登録済み"
@@ -19661,6 +19721,9 @@ msgstr "外注サービス明細"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Order"
+msgstr ""
+
 msgid "Service Orders"
 msgstr ""
 
@@ -19871,6 +19934,9 @@ msgstr "このステーションに割り当てられたシフト"
 msgid "Ship"
 msgstr "出荷"
 
+msgid "Ship Date"
+msgstr ""
+
 msgid "Ship some, stock some"
 msgstr "一部を出荷し、一部を在庫に"
 
@@ -19909,6 +19975,9 @@ msgstr "出荷"
 
 msgid "Shipped"
 msgstr "出荷済み"
+
+msgid "Shipped <0/>"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "この得意先の出荷済明細のうち、返品待ち数量がある行"
@@ -20174,6 +20243,9 @@ msgstr "シングルサインオン"
 
 msgid "Single sign-on (SSO)"
 msgstr "シングルサインオン（SSO）"
+
+msgid "Site"
+msgstr ""
 
 msgid "Sites & locations"
 msgstr "サイトと場所"
@@ -22525,6 +22597,9 @@ msgstr "この契約の請求書は自動的に転記されるため、確認に
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
 
+msgid "This customer has no registered assets yet."
+msgstr ""
+
 msgid "This customer type's rate"
 msgstr "この得意先タイプのレート"
 
@@ -22742,6 +22817,9 @@ msgstr "この工具は、変更通知 {activationLockId} がリリースされ�
 
 msgid "This unit has no cost in inventory"
 msgstr "この品目は在庫に原価がありません。"
+
+msgid "This unit has no service orders yet."
+msgstr ""
 
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
@@ -23320,6 +23398,9 @@ msgstr "トランジット・機関番号"
 
 msgid "Trash"
 msgstr "ゴミ箱"
+
+msgid "Traveling"
+msgstr ""
 
 msgid "Treatment"
 msgstr ""
@@ -24436,6 +24517,12 @@ msgstr "受け取った人と同じ人が受け入れ品を検査する場合に
 msgid "Warning"
 msgstr "警告"
 
+msgid "Warranty"
+msgstr ""
+
+msgid "Warranty and Site"
+msgstr ""
+
 msgid "Watch"
 msgstr "見る"
 
@@ -24575,6 +24662,9 @@ msgstr "どのデータ"
 
 msgid "What drove inventory up or down, by any dimension"
 msgstr "在庫の増減を駆動した要因（ディメンション別）"
+
+msgid "What each component has cost across every service order."
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "請求書が作成されたら何が起こるか"

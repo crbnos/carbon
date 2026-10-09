@@ -3385,6 +3385,9 @@ msgstr "À {locationName}"
 msgid "At Commencement"
 msgstr "À la date de commencement"
 
+msgid "At Depot"
+msgstr ""
+
 msgid "At each gate"
 msgstr "À chaque étape"
 
@@ -5015,6 +5018,9 @@ msgstr "Achèvement en cours — réessayer dans l'Atelier"
 
 msgid "Completion Time"
 msgstr "Temps d'exécution"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -9603,6 +9609,9 @@ msgstr "Échec du redimensionnement de l'image : {errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "Impossible de récupérer les données de colonne CSV."
 
+msgid "Failed to save"
+msgstr ""
+
 msgid "Failed to save configuration rule"
 msgstr "Échec de l'enregistrement de la règle de configuration"
 
@@ -10558,6 +10567,12 @@ msgstr "Taux Historique (Capitaux Propres)"
 msgid "History"
 msgstr "Historique"
 
+msgid "History by Component"
+msgstr ""
+
+msgid "History by Order"
+msgstr ""
+
 msgid "Hold the journal as a warning to fix."
 msgstr "Mettre l'écriture en attente comme avertissement à corriger."
 
@@ -10974,6 +10989,9 @@ msgstr "Dans le périmètre"
 msgid "in selected period"
 msgstr "dans la période sélectionnée"
 
+msgid "In Service"
+msgstr ""
+
 msgid "In stock"
 msgstr "En stock"
 
@@ -10991,6 +11009,9 @@ msgstr "À cette étape"
 
 msgid "In use"
 msgstr "En cours d'utilisation"
+
+msgid "In warranty"
+msgstr ""
 
 msgid "In your company's time zone ({companyTimeZone})."
 msgstr "Dans le fuseau horaire de votre Société ({companyTimeZone})."
@@ -11201,6 +11222,9 @@ msgid "Installed"
 msgstr "Installé"
 
 msgid "Installed Base"
+msgstr ""
+
+msgid "Installed Components"
 msgstr ""
 
 msgid "Installed on this step, so it can't be hidden here."
@@ -11905,6 +11929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "Coûts de Main-d'œuvre"
 
+msgid "Labor ended"
+msgstr ""
+
 msgid "Labor Hours"
 msgstr "Heures de main-d'œuvre"
 
@@ -11928,6 +11955,9 @@ msgstr "Unité de main-d'œuvre"
 
 msgid "Labor Unit"
 msgstr "Unité de main-d'œuvre"
+
+msgid "Labor Warranty Ends"
+msgstr ""
 
 msgid "Language"
 msgstr "Langue"
@@ -11979,6 +12009,9 @@ msgstr ""
 
 msgid "Last Run"
 msgstr "Dernière exécution"
+
+msgid "Last Service"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Dernière synchronisation : <0/>"
@@ -13476,6 +13509,9 @@ msgstr "Nouveau champ personnalisé"
 msgid "New Customer"
 msgstr "Nouveau Client"
 
+msgid "New Customer Asset"
+msgstr ""
+
 msgid "New Customer Part"
 msgstr "Nouvelle pièce client"
 
@@ -13697,6 +13733,9 @@ msgstr "Nouveau numéro de série"
 
 msgid "New Service"
 msgstr "Nouveau service"
+
+msgid "New Service Order"
+msgstr ""
 
 msgid "New Shift"
 msgstr "Nouvelle équipe"
@@ -14462,11 +14501,20 @@ msgstr ""
 msgid "No serial numbers selected yet."
 msgstr "Aucun numéro de série sélectionné pour l'instant."
 
+msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service work has been charged to this asset yet."
+msgstr ""
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "Aucune prestation pour le moment. Ajoutez les prestations que ce contrat facture."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Aucune équipe configurée — en supposant lun.–ven., jours de 8h"
+
+msgid "No ship date"
+msgstr ""
 
 msgid "No shipments yet"
 msgstr "Pas encore d'expéditions"
@@ -14877,6 +14925,9 @@ msgstr "En location"
 
 msgid "On Sales Order"
 msgstr "Sur commande client"
+
+msgid "On Site"
+msgstr ""
 
 msgid "On Storage Unit"
 msgstr "Sur l'unité de stockage"
@@ -15704,11 +15755,17 @@ msgstr "Pièces"
 msgid "Parts & items"
 msgstr "Pièces & articles"
 
+msgid "Parts fitted by a service order, with their own parts warranty."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "Les pièces s'exécutent l'une après l'autre — par ex. une scie ou une table laser."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "Les pièces s'exécutent ensemble dans une charge unique — par ex. un four, une étuve ou un bain de placage."
+
+msgid "Parts Warranty Ends"
+msgstr ""
 
 msgid "Parts, materials, and how you classify them."
 msgstr "Pièces, matériaux et comment vous les classez."
@@ -17599,6 +17656,9 @@ msgstr "Régénération de la miniature en cours…"
 
 msgid "Register"
 msgstr "Enregistrer un Actif Existant"
+
+msgid "Register a unit sold before Carbon. A unit Carbon ships becomes an asset when it ships."
+msgstr ""
 
 msgid "Register Existing Asset"
 msgstr "Enregistré"
@@ -19661,6 +19721,9 @@ msgstr "Lignes de prestation"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Order"
+msgstr ""
+
 msgid "Service Orders"
 msgstr ""
 
@@ -19871,6 +19934,9 @@ msgstr "Équipes assignées à cette station"
 msgid "Ship"
 msgstr "Expédier"
 
+msgid "Ship Date"
+msgstr ""
+
 msgid "Ship some, stock some"
 msgstr "Expédier une partie, stocker une partie"
 
@@ -19909,6 +19975,9 @@ msgstr "Expéditions"
 
 msgid "Shipped"
 msgstr "Expédié"
+
+msgid "Shipped <0/>"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Lignes expédiées pour ce client avec quantité restante à retourner"
@@ -20174,6 +20243,9 @@ msgstr "Authentification unique"
 
 msgid "Single sign-on (SSO)"
 msgstr "Authentification unique (SSO)"
+
+msgid "Site"
+msgstr ""
 
 msgid "Sites & locations"
 msgstr "Sites et emplacements"
@@ -22525,6 +22597,9 @@ msgstr "Les factures de ce contrat se comptabilisent automatiquement, donc confi
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Ce tiers n'a rien en suspens — le paiement sera enregistré en compte courant."
 
+msgid "This customer has no registered assets yet."
+msgstr ""
+
 msgid "This customer type's rate"
 msgstr "Le tarif de ce type de client"
 
@@ -22742,6 +22817,9 @@ msgstr "Cet outil est activé lorsque l'avis de modification {activationLockId} 
 
 msgid "This unit has no cost in inventory"
 msgstr "Cette unité n'a pas de coût en stock"
+
+msgid "This unit has no service orders yet."
+msgstr ""
 
 msgid "This updates the theme for all users of the application"
 msgstr "Ceci met à jour le thème pour tous les utilisateurs de l'application."
@@ -23320,6 +23398,9 @@ msgstr "Transit et institution"
 
 msgid "Trash"
 msgstr "Corbeille"
+
+msgid "Traveling"
+msgstr ""
 
 msgid "Treatment"
 msgstr ""
@@ -24436,6 +24517,12 @@ msgstr "Avertir lorsque la personne inspectant un article entrant est la même p
 msgid "Warning"
 msgstr "Avertissement"
 
+msgid "Warranty"
+msgstr ""
+
+msgid "Warranty and Site"
+msgstr ""
+
 msgid "Watch"
 msgstr "Regarder"
 
@@ -24575,6 +24662,9 @@ msgstr "Quelles données"
 
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Ce qui a fait monter ou descendre les stocks, selon un quelconque axe analytique"
+
+msgid "What each component has cost across every service order."
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Ce qui se passe pour une facture une fois créée"

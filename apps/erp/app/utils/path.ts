@@ -641,8 +641,7 @@ export const path = {
     customerAccounting: (id: string) =>
       generatePath(`${x}/customer/${id}/accounting`),
     customerAccounts: `${x}/users/customers`,
-    customerAsset: (id: string) =>
-      generatePath(`${x}/service-orders/assets/${id}`),
+    customerAsset: (id: string) => generatePath(`${x}/customer-asset/${id}`),
     customerAssets: `${x}/service-orders/assets`,
     customerAssetsTab: (customerId: string) =>
       generatePath(`${x}/customer/${customerId}/assets`),

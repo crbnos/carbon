@@ -3385,6 +3385,9 @@ msgstr "В {locationName}"
 msgid "At Commencement"
 msgstr "При начислении"
 
+msgid "At Depot"
+msgstr ""
+
 msgid "At each gate"
 msgstr "На каждом этапе"
 
@@ -5015,6 +5018,9 @@ msgstr "Завершение выполняется — повторите по�
 
 msgid "Completion Time"
 msgstr "Время завершения"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -9603,6 +9609,9 @@ msgstr "Не удалось изменить размер изображения
 msgid "Failed to retrieve CSV column data."
 msgstr "Не удалось получить данные столбцов CSV."
 
+msgid "Failed to save"
+msgstr ""
+
 msgid "Failed to save configuration rule"
 msgstr "Ошибка при сохранении правила конфигурации"
 
@@ -10558,6 +10567,12 @@ msgstr "Исторический курс (Собственный капитал
 msgid "History"
 msgstr "История"
 
+msgid "History by Component"
+msgstr ""
+
+msgid "History by Order"
+msgstr ""
+
 msgid "Hold the journal as a warning to fix."
 msgstr "Удержать операцию как предупреждение для исправления."
 
@@ -10974,6 +10989,9 @@ msgstr "В области"
 msgid "in selected period"
 msgstr "в выбранном периоде"
 
+msgid "In Service"
+msgstr ""
+
 msgid "In stock"
 msgstr "В наличии"
 
@@ -10991,6 +11009,9 @@ msgstr "На этом шаге"
 
 msgid "In use"
 msgstr "В использовании"
+
+msgid "In warranty"
+msgstr ""
 
 msgid "In your company's time zone ({companyTimeZone})."
 msgstr "В часовом поясе вашей организации ({companyTimeZone})."
@@ -11201,6 +11222,9 @@ msgid "Installed"
 msgstr "Установлено"
 
 msgid "Installed Base"
+msgstr ""
+
+msgid "Installed Components"
 msgstr ""
 
 msgid "Installed on this step, so it can't be hidden here."
@@ -11905,6 +11929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "Стоимость труда"
 
+msgid "Labor ended"
+msgstr ""
+
 msgid "Labor Hours"
 msgstr "Часы труда"
 
@@ -11928,6 +11955,9 @@ msgstr "Единица труда"
 
 msgid "Labor Unit"
 msgstr "Единица труда"
+
+msgid "Labor Warranty Ends"
+msgstr ""
 
 msgid "Language"
 msgstr "Язык"
@@ -11979,6 +12009,9 @@ msgstr ""
 
 msgid "Last Run"
 msgstr "Последний запуск"
+
+msgid "Last Service"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Последняя синхронизация: <0/>"
@@ -13476,6 +13509,9 @@ msgstr "Новое пользовательское поле"
 msgid "New Customer"
 msgstr "Новый покупатель"
 
+msgid "New Customer Asset"
+msgstr ""
+
 msgid "New Customer Part"
 msgstr "Новая деталь покупателя"
 
@@ -13697,6 +13733,9 @@ msgstr "Новый серийный номер"
 
 msgid "New Service"
 msgstr "Новая услуга"
+
+msgid "New Service Order"
+msgstr ""
 
 msgid "New Shift"
 msgstr "Новая смена"
@@ -14462,11 +14501,20 @@ msgstr ""
 msgid "No serial numbers selected yet."
 msgstr "Серийные номера ещё не выбраны."
 
+msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service work has been charged to this asset yet."
+msgstr ""
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "Услуг нет. Добавьте услуги, которые выставляет этот контракт."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Смены не настроены — предполагается Пн–Пт, 8ч дни"
+
+msgid "No ship date"
+msgstr ""
 
 msgid "No shipments yet"
 msgstr "Пока нет отгрузок"
@@ -14877,6 +14925,9 @@ msgstr "В аренде"
 
 msgid "On Sales Order"
 msgstr "На заказе покупателя"
+
+msgid "On Site"
+msgstr ""
 
 msgid "On Storage Unit"
 msgstr "На единице хранения"
@@ -15704,11 +15755,17 @@ msgstr "Детали"
 msgid "Parts & items"
 msgstr "Детали и товары"
 
+msgid "Parts fitted by a service order, with their own parts warranty."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "Детали работают одна за другой — например, на пиле или лазерном столе."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "Детали работают вместе в одной загрузке — например, в печи, духовке или гальванической ванне."
+
+msgid "Parts Warranty Ends"
+msgstr ""
 
 msgid "Parts, materials, and how you classify them."
 msgstr "Детали, материалы и способы их классификации."
@@ -17599,6 +17656,9 @@ msgstr "Создание миниатюры…"
 
 msgid "Register"
 msgstr "Зарегистрировать существующий актив"
+
+msgid "Register a unit sold before Carbon. A unit Carbon ships becomes an asset when it ships."
+msgstr ""
 
 msgid "Register Existing Asset"
 msgstr "Зарегистрирован"
@@ -19661,6 +19721,9 @@ msgstr "Строки услуг"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Order"
+msgstr ""
+
 msgid "Service Orders"
 msgstr ""
 
@@ -19871,6 +19934,9 @@ msgstr "Смены, назначенные на эту станцию"
 msgid "Ship"
 msgstr "Отправить"
 
+msgid "Ship Date"
+msgstr ""
+
 msgid "Ship some, stock some"
 msgstr "Отправить часть, оставить часть на складе"
 
@@ -19909,6 +19975,9 @@ msgstr "Отгрузки"
 
 msgid "Shipped"
 msgstr "Отправлено"
+
+msgid "Shipped <0/>"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Отгруженные строки для этого покупателя с количеством, оставшимся для возврата"
@@ -20174,6 +20243,9 @@ msgstr "Single Sign-On"
 
 msgid "Single sign-on (SSO)"
 msgstr "Single sign-on (SSO)"
+
+msgid "Site"
+msgstr ""
 
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
@@ -22525,6 +22597,9 @@ msgstr "Счета-фактуры этого контракта проводят
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."
 
+msgid "This customer has no registered assets yet."
+msgstr ""
+
 msgid "This customer type's rate"
 msgstr "Ставка этого типа покупателя"
 
@@ -22742,6 +22817,9 @@ msgstr "Этот инструмент активизируется при зап
 
 msgid "This unit has no cost in inventory"
 msgstr "У этой единицы нет стоимости в запасах"
+
+msgid "This unit has no service orders yet."
+msgstr ""
 
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
@@ -23320,6 +23398,9 @@ msgstr "Транзит и учреждение"
 
 msgid "Trash"
 msgstr "Корзина"
+
+msgid "Traveling"
+msgstr ""
 
 msgid "Treatment"
 msgstr ""
@@ -24436,6 +24517,12 @@ msgstr "Предупреждать, когда лицо, проверяющее 
 msgid "Warning"
 msgstr "Предупреждение"
 
+msgid "Warranty"
+msgstr ""
+
+msgid "Warranty and Site"
+msgstr ""
+
 msgid "Watch"
 msgstr "Смотреть"
 
@@ -24575,6 +24662,9 @@ msgstr "Какие данные"
 
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Что повлияло на инвентаризацию вверх или вниз, по любому измерению"
+
+msgid "What each component has cost across every service order."
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Что происходит со счетом-фактурой после его создания"

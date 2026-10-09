@@ -3385,6 +3385,9 @@ msgstr "{locationName} पर"
 msgid "At Commencement"
 msgstr "आरंभ पर"
 
+msgid "At Depot"
+msgstr ""
+
 msgid "At each gate"
 msgstr "हर गेट पर"
 
@@ -5015,6 +5018,9 @@ msgstr "समापन प्रगति में है — शॉप फ्
 
 msgid "Completion Time"
 msgstr "पूर्ण होने का समय"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -9603,6 +9609,9 @@ msgstr "छवि को पुनः आकार देने में वि
 msgid "Failed to retrieve CSV column data."
 msgstr "CSV कॉलम डेटा प्राप्त करने में विफल।"
 
+msgid "Failed to save"
+msgstr ""
+
 msgid "Failed to save configuration rule"
 msgstr "कॉन्फ़िगरेशन नियम सहेजने में विफल"
 
@@ -10558,6 +10567,12 @@ msgstr "ऐतिहासिक दर (इक्विटी)"
 msgid "History"
 msgstr "इतिहास"
 
+msgid "History by Component"
+msgstr ""
+
+msgid "History by Order"
+msgstr ""
+
 msgid "Hold the journal as a warning to fix."
 msgstr "जर्नल को ठीक करने के लिए एक चेतावनी के रूप में रखें।"
 
@@ -10974,6 +10989,9 @@ msgstr "दायरे में"
 msgid "in selected period"
 msgstr "चयनित अवधि में"
 
+msgid "In Service"
+msgstr ""
+
 msgid "In stock"
 msgstr "स्टॉक में"
 
@@ -10991,6 +11009,9 @@ msgstr "इस चरण में"
 
 msgid "In use"
 msgstr "उपयोग में"
+
+msgid "In warranty"
+msgstr ""
 
 msgid "In your company's time zone ({companyTimeZone})."
 msgstr "आपकी कंपनी के समय क्षेत्र ({companyTimeZone}) में।"
@@ -11201,6 +11222,9 @@ msgid "Installed"
 msgstr "स्थापित"
 
 msgid "Installed Base"
+msgstr ""
+
+msgid "Installed Components"
 msgstr ""
 
 msgid "Installed on this step, so it can't be hidden here."
@@ -11905,6 +11929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "श्रम लागत"
 
+msgid "Labor ended"
+msgstr ""
+
 msgid "Labor Hours"
 msgstr "श्रम घंटे"
 
@@ -11928,6 +11955,9 @@ msgstr "श्रम इकाई"
 
 msgid "Labor Unit"
 msgstr "श्रम इकाई"
+
+msgid "Labor Warranty Ends"
+msgstr ""
 
 msgid "Language"
 msgstr "भाषा"
@@ -11979,6 +12009,9 @@ msgstr ""
 
 msgid "Last Run"
 msgstr "अंतिम रन"
+
+msgid "Last Service"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "अंतिम सिंक: <0/>"
@@ -13476,6 +13509,9 @@ msgstr "नया कस्टम फील्ड"
 msgid "New Customer"
 msgstr "नया ग्राहक"
 
+msgid "New Customer Asset"
+msgstr ""
+
 msgid "New Customer Part"
 msgstr "नया ग्राहक भाग"
 
@@ -13697,6 +13733,9 @@ msgstr "नया सीरियल नंबर"
 
 msgid "New Service"
 msgstr "नई सेवा"
+
+msgid "New Service Order"
+msgstr ""
 
 msgid "New Shift"
 msgstr "नई शिफ्ट"
@@ -14462,11 +14501,20 @@ msgstr ""
 msgid "No serial numbers selected yet."
 msgstr "अभी तक कोई सीरियल नंबर चयनित नहीं।"
 
+msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service work has been charged to this asset yet."
+msgstr ""
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "अभी तक कोई सेवा नहीं है। इस अनुबंध के बिलिंग सेवा जोड़ें।"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "कोई शिफ्ट कॉन्फ़िगर नहीं किया गया — मान लिया गया सोम–शुक्र, 8h दिन"
+
+msgid "No ship date"
+msgstr ""
 
 msgid "No shipments yet"
 msgstr "अभी कोई शिपमेंट नहीं"
@@ -14877,6 +14925,9 @@ msgstr "किराये पर"
 
 msgid "On Sales Order"
 msgstr "विक्रय आदेश पर"
+
+msgid "On Site"
+msgstr ""
 
 msgid "On Storage Unit"
 msgstr "भंडारण इकाई पर"
@@ -15704,11 +15755,17 @@ msgstr "पार्ट्स"
 msgid "Parts & items"
 msgstr "पार्ट्स और आइटम्स"
 
+msgid "Parts fitted by a service order, with their own parts warranty."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "पार्ट्स एक के बाद एक चलते हैं — उदा. आरा या लेजर टेबल।"
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "पार्ट्स एक ही लोड में एक साथ चलते हैं — उदा. भट्टी, ओवन, या प्लेटिंग बाथ।"
+
+msgid "Parts Warranty Ends"
+msgstr ""
 
 msgid "Parts, materials, and how you classify them."
 msgstr "पार्ट्स, सामग्री, और आप उन्हें कैसे वर्गीकृत करते हैं।"
@@ -17599,6 +17656,9 @@ msgstr "थंबनेल को पुनः उत्पन्न किय�
 
 msgid "Register"
 msgstr "मौजूदा संपत्ति पंजीकृत करें"
+
+msgid "Register a unit sold before Carbon. A unit Carbon ships becomes an asset when it ships."
+msgstr ""
 
 msgid "Register Existing Asset"
 msgstr "पंजीकृत"
@@ -19661,6 +19721,9 @@ msgstr "सेवा पंक्तियां"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Order"
+msgstr ""
+
 msgid "Service Orders"
 msgstr ""
 
@@ -19871,6 +19934,9 @@ msgstr "इस स्टेशन को सौंपी गई शिफ्ट"
 msgid "Ship"
 msgstr "भेजें"
 
+msgid "Ship Date"
+msgstr ""
+
 msgid "Ship some, stock some"
 msgstr "कुछ भेजें, कुछ स्टॉक करें"
 
@@ -19909,6 +19975,9 @@ msgstr "शिपमेंट"
 
 msgid "Shipped"
 msgstr "भेजी गई"
+
+msgid "Shipped <0/>"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "इस ग्राहक के लिए भेजी गई लाइनें जिनमें वापसी के लिए मात्रा बाकी है"
@@ -20174,6 +20243,9 @@ msgstr "सिंगल साइन-ऑन"
 
 msgid "Single sign-on (SSO)"
 msgstr "सिंगल साइन-ऑन (SSO)"
+
+msgid "Site"
+msgstr ""
 
 msgid "Sites & locations"
 msgstr "साइटें और स्थान"
@@ -22525,6 +22597,9 @@ msgstr "इस अनुबंध के चालान स्वचालि�
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"
 
+msgid "This customer has no registered assets yet."
+msgstr ""
+
 msgid "This customer type's rate"
 msgstr "इस ग्राहक प्रकार की दर"
 
@@ -22742,6 +22817,9 @@ msgstr "यह उपकरण तब सक्रिय होता है ज
 
 msgid "This unit has no cost in inventory"
 msgstr "इस इकाई की इन्वेंटरी में कोई लागत नहीं है"
+
+msgid "This unit has no service orders yet."
+msgstr ""
 
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम अपडेट करता है"
@@ -23320,6 +23398,9 @@ msgstr "ट्रांजिट और संस्था"
 
 msgid "Trash"
 msgstr "ट्रैश"
+
+msgid "Traveling"
+msgstr ""
 
 msgid "Treatment"
 msgstr ""
@@ -24436,6 +24517,12 @@ msgstr "चेतावनी दें जब आने वाली वस्�
 msgid "Warning"
 msgstr "चेतावनी"
 
+msgid "Warranty"
+msgstr ""
+
+msgid "Warranty and Site"
+msgstr ""
+
 msgid "Watch"
 msgstr "देखें"
 
@@ -24575,6 +24662,9 @@ msgstr "कौन सा डेटा"
 
 msgid "What drove inventory up or down, by any dimension"
 msgstr "किस चीज़ ने इन्वेंटरी को किसी भी आयाम द्वारा ऊपर या नीचे ले जाया"
+
+msgid "What each component has cost across every service order."
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "एक चालान बनाए जाने के बाद क्या होता है"

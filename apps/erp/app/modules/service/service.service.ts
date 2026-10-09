@@ -141,6 +141,24 @@ export async function upsertCustomerAsset(
     .single();
 }
 
+/** Saves an asset's notes, from the autosaved editor on its page. */
+export async function updateCustomerAssetNotes(
+  client: Client,
+  asset: { id: string; notes: Json; companyId: string; updatedBy: string }
+) {
+  return client
+    .from("customerAsset")
+    .update({
+      notes: asset.notes,
+      updatedBy: asset.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", asset.id)
+    .eq("companyId", asset.companyId)
+    .select("id")
+    .single();
+}
+
 /** The parts installed in an asset, current first, then the removed ones. */
 export async function getCustomerAssetComponents(
   client: Client,
@@ -281,7 +299,11 @@ export async function getServiceOrders(
 
   let query = client
     .from("serviceOrder")
-    .select(columns, { count: LIST_COUNT })
+    // The technician filter adds an inner-joined embed; the row type stays
+    // the list columns, which is all the list reads.
+    .select(columns as typeof SERVICE_ORDER_LIST_COLUMNS, {
+      count: LIST_COUNT
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -321,6 +343,37 @@ export async function getServiceOrder(
     .eq("id", serviceOrderId)
     .eq("companyId", companyId)
     .single();
+}
+
+/**
+ * The posted cost of each order's work, keyed by project id: the sum of its
+ * project's ledger amounts (a reversal nets its original out). One query
+ * for every project.
+ */
+export async function getServiceOrderCosts(
+  client: Client,
+  projectIds: string[],
+  companyId: string
+): Promise<{
+  data: Record<string, number> | null;
+  error: PostgrestError | null;
+}> {
+  if (projectIds.length === 0) return { data: {}, error: null };
+  const ledger = await client
+    .from("projectLedger")
+    .select("projectId, amount")
+    .eq("companyId", companyId)
+    .in("projectId", projectIds);
+  if (ledger.error) return { data: null, error: ledger.error };
+
+  const costs: Record<string, number> = {};
+  for (const row of ledger.data ?? []) {
+    costs[row.projectId] = (costs[row.projectId] ?? 0) + Number(row.amount);
+  }
+  for (const projectId of Object.keys(costs)) {
+    costs[projectId] = round(costs[projectId]!);
+  }
+  return { data: costs, error: null };
 }
 
 /** The fields of an order that change only while it is Draft. */

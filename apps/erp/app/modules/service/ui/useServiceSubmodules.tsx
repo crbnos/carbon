@@ -74,7 +74,8 @@ export default function useServiceSubmodules() {
           icon: <LuServer />,
           table: "customerAsset",
           isActive: (pathname: string) =>
-            pathname.startsWith(path.to.customerAssets)
+            pathname.startsWith(path.to.customerAssets) ||
+            pathname.startsWith(path.to.customerAsset(""))
         }
       ]
     },

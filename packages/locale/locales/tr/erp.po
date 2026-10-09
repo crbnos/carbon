@@ -3385,6 +3385,9 @@ msgstr "{locationName}'da"
 msgid "At Commencement"
 msgstr "Başlangıçta"
 
+msgid "At Depot"
+msgstr ""
+
 msgid "At each gate"
 msgstr "Her kapıda"
 
@@ -5015,6 +5018,9 @@ msgstr "Tamamlama devam ediyor — Atölye'de yeniden deneyin"
 
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -9603,6 +9609,9 @@ msgstr "Görüntü yeniden boyutlandırılamadı: {errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "CSV sütun verileri alınamadı."
 
+msgid "Failed to save"
+msgstr ""
+
 msgid "Failed to save configuration rule"
 msgstr "Yapılandırma kuralını kaydetme başarısız oldu"
 
@@ -10558,6 +10567,12 @@ msgstr "Tarihsel kur (Özkaynak)"
 msgid "History"
 msgstr "Geçmiş"
 
+msgid "History by Component"
+msgstr ""
+
+msgid "History by Order"
+msgstr ""
+
 msgid "Hold the journal as a warning to fix."
 msgstr "Düzeltilmesi için uyarı olarak muhasebe fişini beklet."
 
@@ -10974,6 +10989,9 @@ msgstr "Kapsamında"
 msgid "in selected period"
 msgstr "seçilen dönemde"
 
+msgid "In Service"
+msgstr ""
+
 msgid "In stock"
 msgstr "Stokta"
 
@@ -10991,6 +11009,9 @@ msgstr "Bu adımda"
 
 msgid "In use"
 msgstr "Kullanımda"
+
+msgid "In warranty"
+msgstr ""
 
 msgid "In your company's time zone ({companyTimeZone})."
 msgstr "Şirketinizin saat diliminde ({companyTimeZone})."
@@ -11201,6 +11222,9 @@ msgid "Installed"
 msgstr "Yüklendi"
 
 msgid "Installed Base"
+msgstr ""
+
+msgid "Installed Components"
 msgstr ""
 
 msgid "Installed on this step, so it can't be hidden here."
@@ -11905,6 +11929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "İşçilik Maliyetleri"
 
+msgid "Labor ended"
+msgstr ""
+
 msgid "Labor Hours"
 msgstr "İşçilik Saatleri"
 
@@ -11928,6 +11955,9 @@ msgstr "İşçilik birimi"
 
 msgid "Labor Unit"
 msgstr "İşçilik Birimi"
+
+msgid "Labor Warranty Ends"
+msgstr ""
 
 msgid "Language"
 msgstr "Dil"
@@ -11979,6 +12009,9 @@ msgstr ""
 
 msgid "Last Run"
 msgstr "Son Çalıştırma"
+
+msgid "Last Service"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Son senkronizasyon: <0/>"
@@ -13476,6 +13509,9 @@ msgstr "Yeni Özel Alan"
 msgid "New Customer"
 msgstr "Yeni Müşteri"
 
+msgid "New Customer Asset"
+msgstr ""
+
 msgid "New Customer Part"
 msgstr "Yeni Müşteri Parçası"
 
@@ -13697,6 +13733,9 @@ msgstr "Yeni Seri Numarası"
 
 msgid "New Service"
 msgstr "Yeni Hizmet"
+
+msgid "New Service Order"
+msgstr ""
 
 msgid "New Shift"
 msgstr "Yeni Vardiya"
@@ -14462,11 +14501,20 @@ msgstr ""
 msgid "No serial numbers selected yet."
 msgstr "Henüz hiçbir seri numarası seçilmemiştir."
 
+msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service work has been charged to this asset yet."
+msgstr ""
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "Henüz hizmet yok. Bu sözleşmenin faturalaması yapılan hizmetleri ekleyin."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Vardiya yapılandırılmadı — Pzt–Cum, 8s günler varsayılıyor"
+
+msgid "No ship date"
+msgstr ""
 
 msgid "No shipments yet"
 msgstr "Henüz sevkiyat yok"
@@ -14877,6 +14925,9 @@ msgstr "Kirada"
 
 msgid "On Sales Order"
 msgstr "Satış Siparişi'nde"
+
+msgid "On Site"
+msgstr ""
 
 msgid "On Storage Unit"
 msgstr "Depolama biriminde"
@@ -15704,11 +15755,17 @@ msgstr "Parçalar"
 msgid "Parts & items"
 msgstr "Parçalar ve ürünler"
 
+msgid "Parts fitted by a service order, with their own parts warranty."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "Parçalar birbir ardına çalışır — örneğin testere veya lazer masası."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "Parçalar tek bir yükte birlikte çalışır — örneğin fırın, fırın veya elektroliz banyosu."
+
+msgid "Parts Warranty Ends"
+msgstr ""
 
 msgid "Parts, materials, and how you classify them."
 msgstr "Parçalar, malzemeler ve bunları nasıl sınıflandırdığınız."
@@ -17599,6 +17656,9 @@ msgstr "Küçük resim yenileniyor…"
 
 msgid "Register"
 msgstr "Mevcut Varlığı Kayıt Yap"
+
+msgid "Register a unit sold before Carbon. A unit Carbon ships becomes an asset when it ships."
+msgstr ""
 
 msgid "Register Existing Asset"
 msgstr "Kayıtlı"
@@ -19661,6 +19721,9 @@ msgstr "Hizmet Satırları"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Order"
+msgstr ""
+
 msgid "Service Orders"
 msgstr ""
 
@@ -19871,6 +19934,9 @@ msgstr "Bu istasyona atanan vardiyalar"
 msgid "Ship"
 msgstr "Sevk Et"
 
+msgid "Ship Date"
+msgstr ""
+
 msgid "Ship some, stock some"
 msgstr "Bazı gönder, bazı stokla"
 
@@ -19909,6 +19975,9 @@ msgstr "Sevkiyatlar"
 
 msgid "Shipped"
 msgstr "Gönderildi"
+
+msgid "Shipped <0/>"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Bu müşteriye gönderilen ve iade edilecek miktar kalan satırlar"
@@ -20174,6 +20243,9 @@ msgstr "Tekli Oturum Açma"
 
 msgid "Single sign-on (SSO)"
 msgstr "Tekli oturum açma (SSO)"
+
+msgid "Site"
+msgstr ""
 
 msgid "Sites & locations"
 msgstr "Siteler & konumlar"
@@ -22525,6 +22597,9 @@ msgstr "Bu sözleşmenin faturaları otomatik olarak muhasebeleştirilir, bu ned
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."
 
+msgid "This customer has no registered assets yet."
+msgstr ""
+
 msgid "This customer type's rate"
 msgstr "Bu müşteri türü'nün oranı"
 
@@ -22742,6 +22817,9 @@ msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında e
 
 msgid "This unit has no cost in inventory"
 msgstr "Bu adet envanterde maliyet yok"
+
+msgid "This unit has no service orders yet."
+msgstr ""
 
 msgid "This updates the theme for all users of the application"
 msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"
@@ -23320,6 +23398,9 @@ msgstr "Geçiş ve Kurum"
 
 msgid "Trash"
 msgstr "Çöp Kutusu"
+
+msgid "Traveling"
+msgstr ""
 
 msgid "Treatment"
 msgstr ""
@@ -24436,6 +24517,12 @@ msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olmas�
 msgid "Warning"
 msgstr "Uyarı"
 
+msgid "Warranty"
+msgstr ""
+
+msgid "Warranty and Site"
+msgstr ""
+
 msgid "Watch"
 msgstr "İzle"
 
@@ -24575,6 +24662,9 @@ msgstr "Hangi veri"
 
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Envanterin yükselmesine veya düşmesine neyin sebep olduğu, herhangi bir boyuta göre"
+
+msgid "What each component has cost across every service order."
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Fatura oluşturulduktan sonra ne olur"

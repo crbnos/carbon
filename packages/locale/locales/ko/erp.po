@@ -3385,6 +3385,9 @@ msgstr "{locationName}에서"
 msgid "At Commencement"
 msgstr "개시 시점에"
 
+msgid "At Depot"
+msgstr ""
+
 msgid "At each gate"
 msgstr "각 게이트마다"
 
@@ -5015,6 +5018,9 @@ msgstr "완료 진행 중 — 작업 현장에서 다시 시도하세요"
 
 msgid "Completion Time"
 msgstr "완료 시간"
+
+msgid "Component"
+msgstr ""
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -9603,6 +9609,9 @@ msgstr "이미지 크기를 조정하지 못했습니다: {errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "CSV 열 데이터를 가져오지 못했습니다."
 
+msgid "Failed to save"
+msgstr ""
+
 msgid "Failed to save configuration rule"
 msgstr "설정 규칙을 저장하지 못했습니다"
 
@@ -10558,6 +10567,12 @@ msgstr "역사적 환율(자본)"
 msgid "History"
 msgstr "이력"
 
+msgid "History by Component"
+msgstr ""
+
+msgid "History by Order"
+msgstr ""
+
 msgid "Hold the journal as a warning to fix."
 msgstr "수정할 경고로 전표를 보류하세요."
 
@@ -10974,6 +10989,9 @@ msgstr "범위 내"
 msgid "in selected period"
 msgstr "선택한 기간 내"
 
+msgid "In Service"
+msgstr ""
+
 msgid "In stock"
 msgstr "재고 있음"
 
@@ -10991,6 +11009,9 @@ msgstr "이 단계에서"
 
 msgid "In use"
 msgstr "사용 중"
+
+msgid "In warranty"
+msgstr ""
 
 msgid "In your company's time zone ({companyTimeZone})."
 msgstr "회사의 시간대({companyTimeZone})에 따릅니다."
@@ -11201,6 +11222,9 @@ msgid "Installed"
 msgstr "설치됨"
 
 msgid "Installed Base"
+msgstr ""
+
+msgid "Installed Components"
 msgstr ""
 
 msgid "Installed on this step, so it can't be hidden here."
@@ -11905,6 +11929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "노무 비용"
 
+msgid "Labor ended"
+msgstr ""
+
 msgid "Labor Hours"
 msgstr "노무 시간"
 
@@ -11928,6 +11955,9 @@ msgstr "노무 단위"
 
 msgid "Labor Unit"
 msgstr "노무 단위"
+
+msgid "Labor Warranty Ends"
+msgstr ""
 
 msgid "Language"
 msgstr "언어"
@@ -11979,6 +12009,9 @@ msgstr ""
 
 msgid "Last Run"
 msgstr "마지막 실행"
+
+msgid "Last Service"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "마지막 동기화: <0/>"
@@ -13476,6 +13509,9 @@ msgstr "신규 사용자 정의 필드"
 msgid "New Customer"
 msgstr "신규 고객"
 
+msgid "New Customer Asset"
+msgstr ""
+
 msgid "New Customer Part"
 msgstr "신규 고객 부품"
 
@@ -13697,6 +13733,9 @@ msgstr "새 시리얼 번호"
 
 msgid "New Service"
 msgstr "새 서비스"
+
+msgid "New Service Order"
+msgstr ""
 
 msgid "New Shift"
 msgstr "신규 교대조"
@@ -14462,11 +14501,20 @@ msgstr ""
 msgid "No serial numbers selected yet."
 msgstr "아직 선택된 시리얼 번호가 없습니다."
 
+msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service work has been charged to this asset yet."
+msgstr ""
+
 msgid "No services yet. Add the services this contract bills."
 msgstr "아직 서비스가 없습니다. 이 계약의 송장 관리 서비스를 추가합니다."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "구성된 교대조가 없습니다. 월–금, 8시간으로 가정합니다"
+
+msgid "No ship date"
+msgstr ""
 
 msgid "No shipments yet"
 msgstr "아직 출하가 없습니다"
@@ -14877,6 +14925,9 @@ msgstr "렌탈 중"
 
 msgid "On Sales Order"
 msgstr "수주에"
+
+msgid "On Site"
+msgstr ""
 
 msgid "On Storage Unit"
 msgstr "보관 단위에"
@@ -15704,11 +15755,17 @@ msgstr "부품"
 msgid "Parts & items"
 msgstr "부품 & 품목"
 
+msgid "Parts fitted by a service order, with their own parts warranty."
+msgstr ""
+
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "부품은 차례대로 실행됩니다 — 예: 톱 또는 레이저 테이블."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "부품은 한 로드에서 함께 실행됩니다 — 예: 용광로, 오븐 또는 도금 욕조."
+
+msgid "Parts Warranty Ends"
+msgstr ""
 
 msgid "Parts, materials, and how you classify them."
 msgstr "부품, 자재 및 이를 분류하는 방법."
@@ -17599,6 +17656,9 @@ msgstr "썸네일 재생성 중…"
 
 msgid "Register"
 msgstr "등록"
+
+msgid "Register a unit sold before Carbon. A unit Carbon ships becomes an asset when it ships."
+msgstr ""
 
 msgid "Register Existing Asset"
 msgstr "기존 자산 등록"
@@ -19661,6 +19721,9 @@ msgstr "서비스 라인"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Order"
+msgstr ""
+
 msgid "Service Orders"
 msgstr ""
 
@@ -19871,6 +19934,9 @@ msgstr "이 스테이션에 할당된 교대조"
 msgid "Ship"
 msgstr "출하"
 
+msgid "Ship Date"
+msgstr ""
+
 msgid "Ship some, stock some"
 msgstr "일부는 출하하고 일부는 재고로"
 
@@ -19909,6 +19975,9 @@ msgstr "출하"
 
 msgid "Shipped"
 msgstr "배송됨"
+
+msgid "Shipped <0/>"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "이 고객의 배송 라인 중 반품할 수량이 남아 있는 라인"
@@ -20174,6 +20243,9 @@ msgstr "Single Sign-On"
 
 msgid "Single sign-on (SSO)"
 msgstr "Single Sign-On(SSO)"
+
+msgid "Site"
+msgstr ""
 
 msgid "Sites & locations"
 msgstr "사이트 및 위치"
@@ -22525,6 +22597,9 @@ msgstr "이 계약의 송장은 자동으로 전기되므로, 확인하려면 �
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처는 미결 항목이 없으므로 지불이 외상으로 기록됩니다."
 
+msgid "This customer has no registered assets yet."
+msgstr ""
+
 msgid "This customer type's rate"
 msgstr "이 고객 유형의 요금"
 
@@ -22742,6 +22817,9 @@ msgstr "이 공구는 변경 통지 {activationLockId}이 릴리스될 때 활�
 
 msgid "This unit has no cost in inventory"
 msgstr "이 개는 재고에 원가가 없습니다."
+
+msgid "This unit has no service orders yet."
+msgstr ""
 
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
@@ -23320,6 +23398,9 @@ msgstr "운송 및 기관"
 
 msgid "Trash"
 msgstr "휴지통"
+
+msgid "Traveling"
+msgstr ""
 
 msgid "Treatment"
 msgstr ""
@@ -24436,6 +24517,12 @@ msgstr "입고 품목을 검사하는 사람이 해당 품목을 입고 처리�
 msgid "Warning"
 msgstr "경고"
 
+msgid "Warranty"
+msgstr ""
+
+msgid "Warranty and Site"
+msgstr ""
+
 msgid "Watch"
 msgstr "시청"
 
@@ -24575,6 +24662,9 @@ msgstr "어떤 데이터"
 
 msgid "What drove inventory up or down, by any dimension"
 msgstr "모든 차원별 재고를 높이거나 낮춘 요인"
+
+msgid "What each component has cost across every service order."
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "송장이 생성된 후 어떤 일이 일어나는지"
