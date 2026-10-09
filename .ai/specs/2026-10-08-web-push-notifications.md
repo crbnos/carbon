@@ -114,7 +114,7 @@ A digest from `notify` (more than one item) sends one push with the digest's `de
 | Which events push | Every notification, like in-app | Agreed with the user. In-app-only events push too, including the repeated `IntegrationSync` alert. |
 | Digests | One push per `notify` call; no push from the digest cron | Agreed with the user. The cron only regroups delivered rows. |
 | Where the VAPID keys come from | Derived from `SESSION_SECRET` with HKDF-SHA256. The subject is the app URL when it is https, else `mailto:` + `SUPPORT_EMAIL`. | Agreed with the user: env vars were too much to manage. A pair generated at build time was rejected: images are published per commit, so it would rotate on each build and ship the private key. Without `SESSION_SECRET` (a `SKIP_ENV_VALIDATION` script) there is no push channel. |
-| Dead subscription | `send-push` deletes the row on HTTP 404 or 410 | Agreed with the user. Both codes mean that the subscription is gone for good. |
+| Dead subscription | `send-push` deletes the row on HTTP 404 or 410. On 401 or 403 it logs a warning and keeps the row. | Agreed with the user. 404 and 410 mean that the subscription is gone for good. 401 and 403 usually mean another VAPID key, but Apple also sends 403 when it refuses our token, so a delete could remove every Safari row. |
 | Retries | Retry on 429 and 5xx; no retry on other 4xx | A 4xx other than 404, 410 and 429 is a bad request, and a retry fails again. |
 | Delivery options | `TTL` = 86 400 s (1 day), `urgency` = `normal` | A notification older than 1 day is old news. The bell still has it. |
 | Fan-out shape | `notify` sends one `carbon/send-push` event per subscription row | Same pattern as `carbon/send-email` and `carbon/send-slack`. Each browser retries on its own. |
