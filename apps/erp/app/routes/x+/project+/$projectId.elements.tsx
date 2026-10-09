@@ -14,14 +14,26 @@ import {
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
-import { useMemo, useRef, useState } from "react";
-import type { LinksFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useLocation, useParams } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type {
+  LinksFunction,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
+import {
+  useFetcher,
+  useLoaderData,
+  useLocation,
+  useParams,
+  useSearchParams
+} from "react-router";
 import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
   Project,
+  ProjectDisplayOptions,
+  ProjectDisplayState,
   ProjectElementType,
   ProjectLabel,
   ProjectMilestone,
@@ -30,10 +42,16 @@ import type {
   VerificationElement
 } from "~/modules/projects";
 import {
+  displayStateToParams,
+  elementFilterStateFromParams,
   getProjectCostSummary,
   getProjectElementDescriptions,
   getProjectElements,
+  getProjectUserPreference,
+  getProjectViews,
+  isBareElementsUrl,
   parseElementFilters,
+  parseProjectDisplayState,
   projectStateGroups,
   rollUpCostSummary
 } from "~/modules/projects";
@@ -44,16 +62,14 @@ import {
   ElementList,
   QuickAddRow
 } from "~/modules/projects/ui/Elements/ElementList";
-import {
-  useElementDisplay,
-  useElementGrouping
+import type {
+  ElementDisplayProperty,
+  ElementGrouping
 } from "~/modules/projects/ui/Elements/ElementProperties";
+import { resolveElementDisplay } from "~/modules/projects/ui/Elements/ElementProperties";
 import { ElementReader } from "~/modules/projects/ui/Elements/ElementReader";
-import type { ElementLayout } from "~/modules/projects/ui/Elements/ElementsHeader";
-import {
-  ElementsHeader,
-  elementLayouts
-} from "~/modules/projects/ui/Elements/ElementsHeader";
+import type { ElementViewOption } from "~/modules/projects/ui/Elements/ElementsHeader";
+import { ElementsHeader } from "~/modules/projects/ui/Elements/ElementsHeader";
 import { ElementTable } from "~/modules/projects/ui/Elements/ElementTable";
 import { ElementTimeline } from "~/modules/projects/ui/Elements/ElementTimeline";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
@@ -66,21 +82,80 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: XYFlowStyle }
 ];
 
+const defaultState = parseProjectDisplayState({});
+
+/** Keeping the preference changes nothing this page shows: skip the reload. */
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  formData,
+  defaultShouldRevalidate
+}) => {
+  if (
+    formAction?.endsWith("/views") &&
+    formData?.get("intent") === "savePreference"
+  ) {
+    return false;
+  }
+  return defaultShouldRevalidate;
+};
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "projects"
   });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const searchParams = new URL(request.url).searchParams;
-  const layoutParam = searchParams.get("layout");
-  const layout: ElementLayout = elementLayouts.includes(
-    layoutParam as ElementLayout
-  )
-    ? (layoutParam as ElementLayout)
-    : "list";
+  const url = new URL(request.url);
+  const searchParams = url.searchParams;
+  const viewId = searchParams.get("view");
+
+  const [preference, views] = await Promise.all([
+    getProjectUserPreference(client, { projectId, companyId, userId }),
+    getProjectViews(client, { projectId, companyId, userId })
+  ]);
+  if (preference.error) {
+    logger.error("Failed to load the element page preference", {
+      companyId,
+      projectId,
+      error: preference.error
+    });
+  }
+  if (views.error) {
+    logger.error("Failed to load project views", {
+      companyId,
+      projectId,
+      error: views.error
+    });
+  }
+  const viewOptions: ElementViewOption[] = (views.data ?? []).map((view) => ({
+    id: view.id,
+    name: view.name,
+    isShared: view.isShared,
+    isOwn: view.createdBy === userId,
+    state: parseProjectDisplayState(view)
+  }));
+  const activeView = viewOptions.find((view) => view.id === viewId) ?? null;
+  const preferenceState = preference.data
+    ? parseProjectDisplayState(preference.data)
+    : null;
+
+  // The page always writes `layout` into the URL. A URL without it is a link
+  // from outside the page: it takes the view it names, else the preference.
+  if (!searchParams.has("layout")) {
+    const source = activeView?.state ?? preferenceState;
+    let next: URLSearchParams;
+    if (source && isBareElementsUrl(searchParams)) {
+      next = displayStateToParams(source, activeView?.id);
+    } else {
+      next = new URLSearchParams(searchParams);
+      next.set("layout", source?.layout ?? "list");
+    }
+    throw redirect(`${url.pathname}?${next}`);
+  }
+
+  const { layout } = elementFilterStateFromParams(searchParams);
   const {
     filters: elementFilters,
     type,
@@ -148,7 +223,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (descriptions.data ?? []).map((row) => [row.id, row.description])
     ),
     layout,
-    type
+    type,
+    views: viewOptions,
+    activeViewId: activeView?.id ?? null,
+    // The active view's display options, else the user's last ones.
+    displayOptions: (activeView?.state ?? preferenceState ?? defaultState)
+      .displayOptions
   };
 }
 
@@ -165,7 +245,10 @@ export default function ProjectElementsRoute() {
     verification,
     descriptions,
     layout,
-    type
+    type,
+    views,
+    activeViewId,
+    displayOptions: loadedDisplayOptions
   } = useLoaderData<typeof loader>();
   const routeData = useRouteData<{
     project: Project;
@@ -176,8 +259,79 @@ export default function ProjectElementsRoute() {
 
   const permissions = usePermissions();
   const { search } = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [people] = usePeople();
-  const [display, setDisplayProperty] = useElementDisplay(projectId);
+
+  // Only the user's own display changes are state, kept with the view they
+  // were made in; otherwise the loaded view or preference shows.
+  const [localDisplay, setLocalDisplay] = useState<{
+    projectId: string;
+    viewId: string | null;
+    options: ProjectDisplayOptions;
+  } | null>(null);
+  const displayOptions =
+    localDisplay?.projectId === projectId &&
+    localDisplay.viewId === activeViewId
+      ? localDisplay.options
+      : loadedDisplayOptions;
+  const keepDisplay = (viewId: string | null, options: ProjectDisplayOptions) =>
+    setLocalDisplay({ projectId, viewId, options });
+  const changeDisplayOptions = (patch: Partial<ProjectDisplayOptions>) =>
+    keepDisplay(activeViewId, { ...displayOptions, ...patch });
+  const display = resolveElementDisplay(displayOptions.properties);
+  const setDisplayProperty = (
+    property: ElementDisplayProperty,
+    shown: boolean
+  ) =>
+    changeDisplayOptions({
+      properties: { ...displayOptions.properties, [property]: shown }
+    });
+  const grouping = displayOptions.grouping;
+  const setGrouping = (next: ElementGrouping) =>
+    changeDisplayOptions({ grouping: next });
+
+  const currentState: ProjectDisplayState = useMemo(
+    () => ({ ...elementFilterStateFromParams(searchParams), displayOptions }),
+    [searchParams, displayOptions]
+  );
+
+  // Every change keeps the user's preference, 1 s after the last one.
+  const preferenceFetcher = useFetcher({
+    key: `project-preference:${projectId}`
+  });
+  const serializedState = JSON.stringify(currentState);
+  const savedState = useRef(serializedState);
+  const submitPreference = preferenceFetcher.submit;
+  useEffect(() => {
+    if (serializedState === savedState.current) return;
+    const timer = setTimeout(() => {
+      savedState.current = serializedState;
+      submitPreference(
+        { intent: "savePreference", state: serializedState },
+        { method: "post", action: path.to.projectViews(projectId) }
+      );
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [serializedState, submitPreference, projectId]);
+
+  const selectView = (view: ElementViewOption | null) => {
+    if (view) {
+      keepDisplay(view.id, view.state.displayOptions);
+      setSearchParams(displayStateToParams(view.state, view.id));
+      return;
+    }
+    // Leaving a view keeps what it shows.
+    keepDisplay(null, displayOptions);
+    const next = new URLSearchParams(searchParams);
+    next.delete("view");
+    setSearchParams(next);
+  };
+  const viewSaved = (id: string) => {
+    keepDisplay(id, displayOptions);
+    const next = new URLSearchParams(searchParams);
+    next.set("view", id);
+    setSearchParams(next);
+  };
   const [newType, setNewType] = useState<ProjectElementType>("Task");
   const quickAddRef = useRef<HTMLInputElement>(null);
 
@@ -186,7 +340,6 @@ export default function ProjectElementsRoute() {
   const milestones = routeData?.milestones ?? [];
   const isClosed = routeData?.project?.status === "Closed";
 
-  const [grouping, setGrouping] = useElementGrouping(projectId);
   const { costByElement, actualByElement } = useMemo(() => {
     const { byElement } = rollUpCostSummary(elements, costSummary);
     return {
@@ -325,6 +478,12 @@ export default function ProjectElementsRoute() {
           }
           grouping={layout === "table" ? grouping : undefined}
           onGroupingChange={layout === "table" ? setGrouping : undefined}
+          projectId={projectId}
+          views={views}
+          activeViewId={activeViewId}
+          currentState={currentState}
+          onSelectView={selectView}
+          onViewSaved={viewSaved}
         />
         <div className="min-h-0 flex-1">
           {layout === "table" ? (
@@ -367,6 +526,10 @@ export default function ProjectElementsRoute() {
               projectId={projectId}
               elements={elements}
               links={links}
+              zoom={displayOptions.timelineZoom}
+              onZoomChange={(timelineZoom) =>
+                changeDisplayOptions({ timelineZoom })
+              }
             />
           ) : layout === "board" ? (
             <ElementBoard

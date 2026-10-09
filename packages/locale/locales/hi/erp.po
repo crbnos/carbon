@@ -8884,6 +8884,9 @@ msgstr "प्रत्येक इकाई की एक दर है।"
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "इस कंपनी को खोलने से पहले सभी को प्रमाणकर्ता ऐप सेट अप करना होगा।"
 
+msgid "Everyone who can see this project can use the view"
+msgstr ""
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
 
@@ -9479,6 +9482,9 @@ msgstr "स्लाइड्स को सहेजने में विफ�
 
 msgid "Failed to save the change"
 msgstr "परिवर्तन को सहेजने में विफल"
+
+msgid "Failed to save the view"
+msgstr ""
 
 msgid "Failed to save tools"
 msgstr "उपकरणों को सहेजने में विफल"
@@ -11884,6 +11890,9 @@ msgstr "MRP द्वारा योजनाबद्ध सब कुछ द�
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
 
+msgid "Leave view"
+msgstr ""
+
 msgid "Left item"
 msgstr "बाईं ओर की वस्तु"
 
@@ -13104,6 +13113,9 @@ msgstr "मेरा सहेजा गया दृश्य"
 msgid "My Timesheet"
 msgstr ""
 
+msgid "My views"
+msgstr ""
+
 msgid "Name"
 msgstr "नाम"
 
@@ -14227,6 +14239,9 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
+
+msgid "No saved views"
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
@@ -19550,6 +19565,9 @@ msgstr "साझा चैनल"
 msgid "Shared Sections"
 msgstr "साझा अनुभाग"
 
+msgid "Shared views"
+msgstr ""
+
 msgid "Shelf life"
 msgstr "शेल्फ लाइफ"
 
@@ -23448,6 +23466,9 @@ msgstr "स्कैन-आधारित पुनः भरण के लि�
 msgid "Update the purchase order quantities"
 msgstr "क्रय आदेश मात्रा अपडेट करें"
 
+msgid "Update view"
+msgstr ""
+
 msgid "Updated"
 msgstr "अपडेट किया गया"
 
@@ -24001,6 +24022,9 @@ msgstr "ट्रेसेबिलिटी ग्राफ देखें"
 
 msgid "View Transfer"
 msgstr "ट्रांसफर देखें"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "दृश्यता"

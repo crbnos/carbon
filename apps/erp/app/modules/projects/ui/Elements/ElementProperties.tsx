@@ -27,8 +27,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  toast,
-  useLocalStorage
+  toast
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -73,25 +72,17 @@ import type {
   ProjectStateGroup
 } from "../../projects.models";
 import {
+  elementDisplayProperties,
+  elementGroupings,
   projectElementPriorities,
   projectStateGroups
 } from "../../projects.models";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import { StateIcon } from "../Project/StateIcon";
 
-// --- Display settings ---------------------------------------------------------
+export { elementDisplayProperties, elementGroupings };
 
-export const elementDisplayProperties = [
-  "state",
-  "owner",
-  "priority",
-  "labels",
-  "dates",
-  "milestone",
-  "hours",
-  "budget",
-  "actual"
-] as const;
+// --- Display settings ---------------------------------------------------------
 
 export type ElementDisplayProperty = (typeof elementDisplayProperties)[number];
 export type ElementDisplay = Record<ElementDisplayProperty, boolean>;
@@ -108,23 +99,11 @@ export const defaultElementDisplay: ElementDisplay = {
   actual: false
 };
 
-/** The shown properties of the Elements page, kept per project. */
-export function useElementDisplay(projectId: string) {
-  const [stored, setStored] = useLocalStorage<Partial<ElementDisplay>>(
-    `project-display-${projectId}`,
-    defaultElementDisplay
-  );
-  const display = useMemo(
-    () => ({ ...defaultElementDisplay, ...stored }),
-    [stored]
-  );
-  const setProperty = (property: ElementDisplayProperty, shown: boolean) =>
-    setStored((previous) => ({
-      ...defaultElementDisplay,
-      ...previous,
-      [property]: shown
-    }));
-  return [display, setProperty] as const;
+/** The shown properties, with every property a view leaves out at its default. */
+export function resolveElementDisplay(
+  properties: Partial<ElementDisplay>
+): ElementDisplay {
+  return { ...defaultElementDisplay, ...properties };
 }
 
 export function useElementDisplayLabels(): Record<
@@ -145,24 +124,7 @@ export function useElementDisplayLabels(): Record<
   };
 }
 
-/** How the Table layout groups its rows. */
-export const elementGroupings = [
-  "none",
-  "state",
-  "type",
-  "owner",
-  "milestone"
-] as const;
 export type ElementGrouping = (typeof elementGroupings)[number];
-
-export function useElementGrouping(projectId: string) {
-  const [stored, setStored] = useLocalStorage<ElementGrouping>(
-    `project-group-${projectId}`,
-    "none"
-  );
-  const grouping = elementGroupings.includes(stored) ? stored : "none";
-  return [grouping, setStored] as const;
-}
 
 export function useElementGroupingLabels(): Record<ElementGrouping, string> {
   const { t } = useLingui();

@@ -22,6 +22,7 @@ import { createPortal } from "react-dom";
 import {
   Link,
   useFetchers,
+  useLocation,
   useNavigate,
   useParams,
   useSubmit
@@ -352,7 +353,9 @@ const ElementCardBody = memo(function ElementCardBody({
 }) {
   const navigate = useNavigate();
   const { elementId: openElementId } = useParams();
-  const to = path.to.projectElement(projectId, element.id);
+  // Opening an element keeps the layout and filters in the URL.
+  const { search } = useLocation();
+  const to = `${path.to.projectElement(projectId, element.id)}${search}`;
 
   return (
     <div

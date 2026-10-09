@@ -6,7 +6,7 @@ import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { EmployeeAvatar, Table } from "~/components";
 import {
   EditableDate,
@@ -82,6 +82,8 @@ export function ElementTable({
   canUpdate
 }: ElementTableProps) {
   const { t } = useLingui();
+  // Opening an element keeps the layout and filters in the URL.
+  const { search } = useLocation();
   const save = useCellSave();
   const { company } = useUser();
   const currency = company.baseCurrencyCode;
@@ -259,7 +261,7 @@ export function ElementTable({
           >
             <ElementTypeIcon type={row.original.type} />
             <Link
-              to={path.to.projectElement(projectId, row.original.id)}
+              to={`${path.to.projectElement(projectId, row.original.id)}${search}`}
               className="flex min-w-0 items-center gap-2"
             >
               <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
@@ -411,6 +413,7 @@ export function ElementTable({
     [
       t,
       projectId,
+      search,
       typeLabels,
       priorityLabels,
       statesById,

@@ -46,7 +46,7 @@ import {
   LuTrash,
   LuX
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useLocation, useParams } from "react-router";
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
@@ -122,6 +122,8 @@ export function ElementList({
   suspectIds
 }: ElementListProps) {
   const { t } = useLingui();
+  // Opening an element keeps the layout and filters in the URL.
+  const { search } = useLocation();
   const { elementId: openElementId } = useParams();
   const parentRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -240,7 +242,7 @@ export function ElementList({
                     ))}
                   </div>
                   <Link
-                    to={path.to.projectElement(projectId, element.id)}
+                    to={`${path.to.projectElement(projectId, element.id)}${search}`}
                     tabIndex={-1}
                     className="flex shrink-0 items-center gap-2 self-stretch"
                   >
@@ -264,7 +266,7 @@ export function ElementList({
                     </button>
                   )}
                   <Link
-                    to={path.to.projectElement(projectId, element.id)}
+                    to={`${path.to.projectElement(projectId, element.id)}${search}`}
                     className="flex min-w-0 flex-1 items-center self-stretch"
                   >
                     <span className="truncate font-medium">{element.name}</span>

@@ -8884,6 +8884,9 @@ msgstr "Chaque unité a un taux."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Tout le monde doit configurer une application d'authentification avant d'ouvrir cette société."
 
+msgid "Everyone who can see this project can use the view"
+msgstr ""
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Tous ceux qui travaillent n'importe quel jour de la semaine que vous choisissez restent après leur équipe pendant les heures que vous réglez. Seuls les départements et les équipes que vous filtrez sont affectés."
 
@@ -9479,6 +9482,9 @@ msgstr "Échec de l'enregistrement des diapositives"
 
 msgid "Failed to save the change"
 msgstr "Impossible d'enregistrer la modification"
+
+msgid "Failed to save the view"
+msgstr ""
 
 msgid "Failed to save tools"
 msgstr "Échec de l'enregistrement des outils"
@@ -11884,6 +11890,9 @@ msgstr "Laisser vide ou entrer 0 pour afficher tout ce que le MRP planifie."
 msgid "Leave this page"
 msgstr "Quitter cette page"
 
+msgid "Leave view"
+msgstr ""
+
 msgid "Left item"
 msgstr "Élément de gauche"
 
@@ -13104,6 +13113,9 @@ msgstr "Ma vue enregistrée"
 msgid "My Timesheet"
 msgstr ""
 
+msgid "My views"
+msgstr ""
+
 msgid "Name"
 msgstr "Nom"
 
@@ -14227,6 +14239,9 @@ msgstr "Pas de lignes ici."
 
 msgid "No rules assigned"
 msgstr "Aucune règle assignée"
+
+msgid "No saved views"
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "Aucun travail prévu dans cette fenêtre"
@@ -19550,6 +19565,9 @@ msgstr "Canal partagé"
 msgid "Shared Sections"
 msgstr "Sections partagées"
 
+msgid "Shared views"
+msgstr ""
+
 msgid "Shelf life"
 msgstr "Durée de conservation"
 
@@ -23448,6 +23466,9 @@ msgstr "Mettez à jour les informations du kanban pour le réapprovisionnement b
 msgid "Update the purchase order quantities"
 msgstr "Mettre à jour les quantités du bon de commande"
 
+msgid "Update view"
+msgstr ""
+
 msgid "Updated"
 msgstr "Mis à jour"
 
@@ -24001,6 +24022,9 @@ msgstr "Afficher le graphique de traçabilité"
 
 msgid "View Transfer"
 msgstr "Afficher le transfert"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Visibilités"

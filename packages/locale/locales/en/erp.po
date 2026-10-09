@@ -8884,6 +8884,9 @@ msgstr "Every unit has a rate."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Everyone must set up an authenticator app before opening this company."
 
+msgid "Everyone who can see this project can use the view"
+msgstr "Everyone who can see this project can use the view"
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 
@@ -9479,6 +9482,9 @@ msgstr "Failed to save slides"
 
 msgid "Failed to save the change"
 msgstr "Failed to save the change"
+
+msgid "Failed to save the view"
+msgstr "Failed to save the view"
 
 msgid "Failed to save tools"
 msgstr "Failed to save tools"
@@ -11884,6 +11890,9 @@ msgstr "Leave empty, or enter 0, to show everything MRP plans."
 msgid "Leave this page"
 msgstr "Leave this page"
 
+msgid "Leave view"
+msgstr "Leave view"
+
 msgid "Left item"
 msgstr "Left item"
 
@@ -13104,6 +13113,9 @@ msgstr "My Saved View"
 msgid "My Timesheet"
 msgstr "My Timesheet"
 
+msgid "My views"
+msgstr "My views"
+
 msgid "Name"
 msgstr "Name"
 
@@ -14227,6 +14239,9 @@ msgstr "No rows here."
 
 msgid "No rules assigned"
 msgstr "No rules assigned"
+
+msgid "No saved views"
+msgstr "No saved views"
 
 msgid "No scheduled work in this window"
 msgstr "No scheduled work in this window"
@@ -19550,6 +19565,9 @@ msgstr "Shared channel"
 msgid "Shared Sections"
 msgstr "Shared Sections"
 
+msgid "Shared views"
+msgstr "Shared views"
+
 msgid "Shelf life"
 msgstr "Shelf life"
 
@@ -23448,6 +23466,9 @@ msgstr "Update the kanban information for scan-based replenishment."
 msgid "Update the purchase order quantities"
 msgstr "Update the purchase order quantities"
 
+msgid "Update view"
+msgstr "Update view"
+
 msgid "Updated"
 msgstr "Updated"
 
@@ -24001,6 +24022,9 @@ msgstr "View Traceability Graph"
 
 msgid "View Transfer"
 msgstr "View Transfer"
+
+msgid "Views"
+msgstr "Views"
 
 msgid "Visibilities"
 msgstr "Visibilities"

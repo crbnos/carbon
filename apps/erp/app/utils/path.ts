@@ -2010,6 +2010,7 @@ export const path = {
     projectTimesheetCorrect: `${x}/projects/timesheet/correct`,
     projectTimesheetSubmit: `${x}/projects/timesheet/submit`,
     projectTimesheetUpdate: `${x}/projects/timesheet/update`,
+    projectViews: (id: string) => generatePath(`${x}/project/${id}/views`),
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDelivery: (id: string) =>

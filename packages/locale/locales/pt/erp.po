@@ -8884,6 +8884,9 @@ msgstr "Cada unidade tem uma taxa."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Todos devem configurar um aplicativo autenticador antes de abrir esta empresa."
 
+msgid "Everyone who can see this project can use the view"
+msgstr ""
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Todos que trabalham em qualquer dia da semana que você escolher ficam além do seu turno pelas horas que você definir. Apenas os departamentos e turnos que você está filtrando são afetados."
 
@@ -9479,6 +9482,9 @@ msgstr "Falha ao salvar slides"
 
 msgid "Failed to save the change"
 msgstr "Falha ao salvar a alteração"
+
+msgid "Failed to save the view"
+msgstr ""
 
 msgid "Failed to save tools"
 msgstr "Falha ao salvar ferramentas"
@@ -11884,6 +11890,9 @@ msgstr "Deixe vazio ou digite 0 para mostrar tudo que o MRP planeja."
 msgid "Leave this page"
 msgstr "Sair desta página"
 
+msgid "Leave view"
+msgstr ""
+
 msgid "Left item"
 msgstr "Item esquerdo"
 
@@ -13104,6 +13113,9 @@ msgstr "Minha Visualização Salva"
 msgid "My Timesheet"
 msgstr ""
 
+msgid "My views"
+msgstr ""
+
 msgid "Name"
 msgstr "Nome"
 
@@ -14227,6 +14239,9 @@ msgstr "Nenhuma linha aqui."
 
 msgid "No rules assigned"
 msgstr "Nenhuma regra atribuída"
+
+msgid "No saved views"
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "Nenhum trabalho programado nesta janela"
@@ -19550,6 +19565,9 @@ msgstr "Canal compartilhado"
 msgid "Shared Sections"
 msgstr "Seções Compartilhadas"
 
+msgid "Shared views"
+msgstr ""
+
 msgid "Shelf life"
 msgstr "Vida de prateleira"
 
@@ -23448,6 +23466,9 @@ msgstr "Atualize as informações do kanban para reabastecimento baseado em varr
 msgid "Update the purchase order quantities"
 msgstr "Atualizar as quantidades do pedido de compra"
 
+msgid "Update view"
+msgstr ""
+
 msgid "Updated"
 msgstr "Atualizado"
 
@@ -24001,6 +24022,9 @@ msgstr "Ver Gráfico de Rastreabilidade"
 
 msgid "View Transfer"
 msgstr "Ver Transferência"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "Visibilidades"

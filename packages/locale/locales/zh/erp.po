@@ -8884,6 +8884,9 @@ msgstr "每件都有费率。"
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "每个人在打开此公司之前都必须设置身份验证器应用程序。"
 
+msgid "Everyone who can see this project can use the view"
+msgstr ""
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "您选择的该周任何一天工作的所有人都将在他们的班次后延长您设置的小时数。只有您筛选的部门和班次会受到影响。"
 
@@ -9479,6 +9482,9 @@ msgstr "保存幻灯片失败"
 
 msgid "Failed to save the change"
 msgstr "保存更改失败"
+
+msgid "Failed to save the view"
+msgstr ""
 
 msgid "Failed to save tools"
 msgstr "保存工具失败"
@@ -11884,6 +11890,9 @@ msgstr "留空或输入 0 以显示 MRP 计划的所有内容。"
 msgid "Leave this page"
 msgstr "离开此页面"
 
+msgid "Leave view"
+msgstr ""
+
 msgid "Left item"
 msgstr "左项"
 
@@ -13104,6 +13113,9 @@ msgstr "我的保存视图"
 msgid "My Timesheet"
 msgstr ""
 
+msgid "My views"
+msgstr ""
+
 msgid "Name"
 msgstr "名称"
 
@@ -14227,6 +14239,9 @@ msgstr "这里没有行。"
 
 msgid "No rules assigned"
 msgstr "没有已分配的规则"
+
+msgid "No saved views"
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
@@ -19550,6 +19565,9 @@ msgstr "共享频道"
 msgid "Shared Sections"
 msgstr "共享部分"
 
+msgid "Shared views"
+msgstr ""
+
 msgid "Shelf life"
 msgstr "保质期"
 
@@ -23448,6 +23466,9 @@ msgstr "更新看板信息以进行扫描式补货。"
 msgid "Update the purchase order quantities"
 msgstr "更新采购订单数量"
 
+msgid "Update view"
+msgstr ""
+
 msgid "Updated"
 msgstr "已更新"
 
@@ -24001,6 +24022,9 @@ msgstr "查看可追溯性图表"
 
 msgid "View Transfer"
 msgstr "查看转移"
+
+msgid "Views"
+msgstr ""
 
 msgid "Visibilities"
 msgstr "可见性"

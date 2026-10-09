@@ -25,7 +25,7 @@ import { useMemo, useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { path } from "~/utils/path";
-import { buildElementTree } from "../../projects.models";
+import { buildElementTree, timelineZooms } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectElementLink } from "../../types";
 import { ElementTypeIcon } from "./ElementTypeIcon";
@@ -41,7 +41,6 @@ const ROW_HEIGHT = 44;
 const HEADER_HEIGHT = 36;
 const LEFT_WIDTH = 360;
 
-export const timelineZooms = ["day", "week", "month"] as const;
 export type TimelineZoom = (typeof timelineZooms)[number];
 
 const DAY_WIDTH: Record<TimelineZoom, number> = {
@@ -50,10 +49,14 @@ const DAY_WIDTH: Record<TimelineZoom, number> = {
   month: 4
 };
 
+export { timelineZooms };
+
 type ElementTimelineProps = {
   projectId: string;
   elements: ProjectElementListItem[];
   links: ProjectElementLink[];
+  zoom: TimelineZoom;
+  onZoomChange: (zoom: TimelineZoom) => void;
 };
 
 /**
@@ -65,14 +68,15 @@ type ElementTimelineProps = {
 export function ElementTimeline({
   projectId,
   elements,
-  links
+  links,
+  zoom,
+  onZoomChange
 }: ElementTimelineProps) {
   const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { elementId: openElementId } = useParams();
-  const [zoom, setZoom] = useState<TimelineZoom>("week");
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const dayWidth = DAY_WIDTH[zoom];
   const todayDate = today(getLocalTimeZone()).toString();
@@ -182,7 +186,7 @@ export function ElementTimeline({
           <DropdownMenuContent align="end">
             <DropdownMenuRadioGroup
               value={zoom}
-              onValueChange={(next) => setZoom(next as TimelineZoom)}
+              onValueChange={(next) => onZoomChange(next as TimelineZoom)}
             >
               {timelineZooms.map((value) => (
                 <DropdownMenuRadioItem key={value} value={value}>

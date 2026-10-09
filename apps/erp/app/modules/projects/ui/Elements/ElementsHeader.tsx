@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -11,22 +13,35 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
   IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   Popover,
   PopoverContent,
   PopoverTrigger,
   Switch,
+  toast,
   useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useRef, useState } from "react";
 import type { IconType } from "react-icons";
 import {
+  LuBookmark,
+  LuBookmarkPlus,
   LuBookOpenText,
   LuChartGantt,
   LuChevronDown,
@@ -35,16 +50,35 @@ import {
   LuListTree,
   LuNetwork,
   LuPlus,
+  LuRefreshCw,
   LuSettings2,
-  LuSheet
+  LuSheet,
+  LuTrash,
+  LuX
 } from "react-icons/lu";
 import { SearchFilter } from "~/components";
+import {
+  Boolean as BooleanField,
+  Hidden,
+  Input,
+  Submit
+} from "~/components/Form";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
+import type { ProjectViewsActionData } from "~/routes/x+/project+/$projectId.views";
 import { PROJECT_SHORTCUTS } from "~/shortcuts";
-import type { ProjectElementType } from "../../projects.models";
-import { projectElementTypes } from "../../projects.models";
+import { path } from "~/utils/path";
+import type {
+  ProjectDisplayState,
+  ProjectElementType,
+  ProjectLayout
+} from "../../projects.models";
+import {
+  projectElementTypes,
+  projectLayouts,
+  projectViewValidator
+} from "../../projects.models";
 import type {
   ElementDisplay,
   ElementDisplayProperty,
@@ -58,15 +92,17 @@ import {
 } from "./ElementProperties";
 import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
 
-export const elementLayouts = [
-  "list",
-  "board",
-  "table",
-  "tree",
-  "timeline",
-  "reader"
-] as const;
-export type ElementLayout = (typeof elementLayouts)[number];
+export const elementLayouts = projectLayouts;
+export type ElementLayout = ProjectLayout;
+
+/** A saved view the user can pick: their own, or one someone shared. */
+export type ElementViewOption = {
+  id: string;
+  name: string;
+  isShared: boolean;
+  isOwn: boolean;
+  state: ProjectDisplayState;
+};
 
 const layoutIcons: Record<ElementLayout, IconType> = {
   list: LuListTree,
@@ -92,6 +128,15 @@ type ElementsHeaderProps = {
   onGroupingChange?: (grouping: ElementGrouping) => void;
   /** The Reader's PDF, with the current filters; shown when set. */
   exportHref?: string;
+  projectId: string;
+  views: ElementViewOption[];
+  activeViewId: string | null;
+  /** The page's current state, which Save view and Update view store. */
+  currentState: ProjectDisplayState;
+  /** Applies a view, or leaves the active one when `null`. */
+  onSelectView: (view: ElementViewOption | null) => void;
+  /** A new view was saved from the current state. */
+  onViewSaved: (id: string) => void;
 };
 
 export function ElementsHeader({
@@ -105,7 +150,13 @@ export function ElementsHeader({
   canCreate,
   grouping,
   onGroupingChange,
-  exportHref
+  exportHref,
+  projectId,
+  views,
+  activeViewId,
+  currentState,
+  onSelectView,
+  onViewSaved
 }: ElementsHeaderProps) {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -148,7 +199,7 @@ export function ElementsHeader({
           <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto scrollbar-hide">
             <TypeButton
               isActive={type === null}
-              onClick={() => setParams({ type: null })}
+              onClick={() => setParams({ type: null, layout })}
             >
               <Trans>All</Trans>
             </TypeButton>
@@ -156,7 +207,7 @@ export function ElementsHeader({
               <TypeButton
                 key={value}
                 isActive={type === value}
-                onClick={() => setParams({ type: value })}
+                onClick={() => setParams({ type: value, layout })}
               >
                 <ElementTypeIcon type={value} className="size-3.5" />
                 {typeLabels[value]}
@@ -167,6 +218,14 @@ export function ElementsHeader({
 
         <HStack spacing={2} className="shrink-0">
           <SearchFilter param="search" size="sm" placeholder={t`Search`} />
+          <ElementViewsMenu
+            projectId={projectId}
+            views={views}
+            activeViewId={activeViewId}
+            currentState={currentState}
+            onSelectView={onSelectView}
+            onViewSaved={onViewSaved}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -180,9 +239,7 @@ export function ElementsHeader({
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuRadioGroup
                 value={layout}
-                onValueChange={(next) =>
-                  setParams({ layout: next === "list" ? null : next })
-                }
+                onValueChange={(next) => setParams({ layout: next })}
               >
                 {elementLayouts.map((value) => {
                   const Icon = layoutIcons[value];
@@ -307,5 +364,217 @@ function TypeButton({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * The saved views of the Elements page: the user's own and the shared ones.
+ * Picking one applies its layout, filters and display options.
+ */
+function ElementViewsMenu({
+  projectId,
+  views,
+  activeViewId,
+  currentState,
+  onSelectView,
+  onViewSaved
+}: Pick<
+  ElementsHeaderProps,
+  | "projectId"
+  | "views"
+  | "activeViewId"
+  | "currentState"
+  | "onSelectView"
+  | "onViewSaved"
+>) {
+  const { t } = useLingui();
+  const [isSaving, setIsSaving] = useState(false);
+  const activeView = views.find((view) => view.id === activeViewId) ?? null;
+  const ownViews = views.filter((view) => view.isOwn);
+  const sharedViews = views.filter((view) => !view.isOwn);
+
+  // The fetcher's form data is gone when it settles, so a delete is noted here.
+  const deletedView = useRef(false);
+  const fetcher = useAction<ProjectViewsActionData>({
+    onSuccess: (data) => {
+      if (data.message) toast.success(data.message);
+      if (deletedView.current) onSelectView(null);
+      deletedView.current = false;
+    },
+    onError: (data) => toast.error(data.message ?? t`Failed to save the view`)
+  });
+  const action = path.to.projectViews(projectId);
+
+  const updateView = (view: ElementViewOption) => {
+    const formData = new FormData();
+    formData.set("intent", "upsertView");
+    formData.set("id", view.id);
+    formData.set("name", view.name);
+    // A checkbox posts "on" when checked and nothing when not.
+    if (view.isShared) formData.set("isShared", "on");
+    formData.set("state", JSON.stringify(currentState));
+    fetcher.submit(formData, { method: "post", action });
+  };
+  const deleteView = (view: ElementViewOption) => {
+    deletedView.current = true;
+    fetcher.submit(
+      { intent: "deleteView", id: view.id },
+      { method: "post", action }
+    );
+  };
+
+  const viewItems = (list: ElementViewOption[]) =>
+    list.map((view) => (
+      <DropdownMenuRadioItem key={view.id} value={view.id}>
+        <span className="truncate">{view.name}</span>
+      </DropdownMenuRadioItem>
+    ));
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant={activeView ? "active" : "secondary"}
+            leftIcon={<LuBookmark />}
+            rightIcon={<LuChevronDown />}
+            className="max-w-48"
+          >
+            <span className="truncate">
+              {activeView ? activeView.name : <Trans>Views</Trans>}
+            </span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-60">
+          <DropdownMenuRadioGroup
+            value={activeViewId ?? ""}
+            onValueChange={(id) => {
+              const view = views.find((v) => v.id === id);
+              if (view) onSelectView(view);
+            }}
+          >
+            {views.length === 0 && (
+              <DropdownMenuItem disabled>
+                <Trans>No saved views</Trans>
+              </DropdownMenuItem>
+            )}
+            {ownViews.length > 0 && (
+              <DropdownMenuLabel>
+                <Trans>My views</Trans>
+              </DropdownMenuLabel>
+            )}
+            {viewItems(ownViews)}
+            {sharedViews.length > 0 && (
+              <DropdownMenuLabel>
+                <Trans>Shared views</Trans>
+              </DropdownMenuLabel>
+            )}
+            {viewItems(sharedViews)}
+          </DropdownMenuRadioGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setIsSaving(true)}>
+            <DropdownMenuIcon icon={<LuBookmarkPlus />} />
+            <Trans>Save view</Trans>
+          </DropdownMenuItem>
+          {activeView?.isOwn && (
+            <>
+              <DropdownMenuItem onClick={() => updateView(activeView)}>
+                <DropdownMenuIcon icon={<LuRefreshCw />} />
+                <Trans>Update view</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                destructive
+                onClick={() => deleteView(activeView)}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete view</Trans>
+              </DropdownMenuItem>
+            </>
+          )}
+          {activeView && (
+            <DropdownMenuItem onClick={() => onSelectView(null)}>
+              <DropdownMenuIcon icon={<LuX />} />
+              <Trans>Leave view</Trans>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {isSaving && (
+        <SaveViewModal
+          projectId={projectId}
+          currentState={currentState}
+          onClose={() => setIsSaving(false)}
+          onSaved={(id) => {
+            setIsSaving(false);
+            onViewSaved(id);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function SaveViewModal({
+  projectId,
+  currentState,
+  onClose,
+  onSaved
+}: {
+  projectId: string;
+  currentState: ProjectDisplayState;
+  onClose: () => void;
+  onSaved: (id: string) => void;
+}) {
+  const { t } = useLingui();
+  const fetcher = useAction<ProjectViewsActionData>({
+    onSuccess: (data) => {
+      if (data.id) onSaved(data.id);
+    },
+    onError: (data) => toast.error(data.message ?? t`Failed to save the view`)
+  });
+
+  return (
+    <Modal open onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <ValidatedForm
+          validator={projectViewValidator}
+          method="post"
+          action={path.to.projectViews(projectId)}
+          fetcher={fetcher}
+          defaultValues={{
+            name: "",
+            isShared: false,
+            state: JSON.stringify(currentState)
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Save view</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <Hidden name="intent" value="upsertView" />
+            <Hidden name="state" />
+            <VStack spacing={4}>
+              <Input name="name" label={t`Name`} autoFocus />
+              <BooleanField
+                name="isShared"
+                label={t`Shared`}
+                description={t`Everyone who can see this project can use the view`}
+              />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit withBlocker={false}>
+              <Trans>Save</Trans>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
   );
 }
