@@ -1,0 +1,224 @@
+---
+title: Projects
+description: Break engineering and contract work into elements, charge time, material and purchases to them, and compare plan with actual cost.
+---
+
+A **project** holds a tree of <Term id="element">elements</Term>: the systems, requirements, tasks and tests that make up the work. Jobs, purchase order lines, purchase invoice lines, timesheets and material issues charge their cost to a project or to one of its elements. The <Term>project ledger</Term> records each charge, so you can compare it with the plan.
+
+Open **Projects** in the sidebar. The module has **Projects**, **My Timesheet** and **Labor Categories**, plus **Approvals** when timesheet approval is on.
+
+<Screenshot label="A project's Elements tab in the List layout, with the element tree, state and owner pills, and the tabs Elements, Milestones, Costs, Time & materials, Settings and Details" caption="Each project opens on its Elements tab." />
+
+## The project
+
+Click **New Project** on the project list. A new project starts in **"Draft"**.
+
+<FieldTable>
+  <Field name="Name" type="text" required>What the project is called.</Field>
+  <Field name="Identifier" type="text">2 to 6 capital letters or digits that start with a letter, such as `SNS`. It is unique in the company. If you leave it empty, Carbon makes one from the initials of the name. You cannot change it after you save, because every element id starts with it.</Field>
+  <Field name="Cost Treatment" type="enum" required>Where the project's cost posts: `Statistical`, `Expense` or `Contract`. See [cost treatment](#cost-treatment).</Field>
+  <Field name="Cost Account" type="reference">An account that replaces the account default for this project. Leave it empty to use the default.</Field>
+  <Field name="Customer" type="reference">The customer the work is for, if any.</Field>
+  <Field name="Owner" type="reference">The person responsible for the project.</Field>
+  <Field name="Location" type="reference">The site the project belongs to.</Field>
+  <Field name="Priority" type="enum">`Urgent`, `High`, `Medium`, `Low` or `None`.</Field>
+  <Field name="Start Date / End Date" type="date">The planned window of the project.</Field>
+</FieldTable>
+
+Edit these fields later on the **Details** tab.
+
+## Status lifecycle
+
+The project status controls which charges the project accepts. The buttons in the project header move it.
+
+| Status | Button that sets it | What the project accepts |
+| --- | --- | --- |
+| **"Draft"** | (new project) | Structure, plan lines and budget. No charges. |
+| **"Released"** | **Release**, **Resume**, **Reopen** | New charges and postings. |
+| **"On Hold"** | **Put on hold** | Postings against existing purchase order lines and jobs. No new charges. |
+| **"Technically Complete"** | **Technically complete** | Late receipts, invoices and job completions, and reversals. No new charges. |
+| **"Closed"** | **Close** | Nothing. The project is read-only. |
+
+<Callout type="warn" title="Close is final.">
+A Closed project cannot go back to any other status, and there is no project delete. Carbon refuses **Close** while the project has an open purchase order or an open job.
+</Callout>
+
+## Cost treatment
+
+The <Term>cost treatment</Term> decides which account a project charge posts to. Carbon reads it when each charge posts.
+
+| Treatment | Where the cost posts |
+| --- | --- |
+| **Statistical** | The charge keeps its own account, and the project is only a dimension on the journal line. Time posts no cost. An issue goes to **Indirect Materials & Services**. |
+| **Expense** | The project's **Cost Account**, else the **Project Expense** account default. |
+| **Contract** | The project's **Cost Account**, else the **Project WIP** account default. |
+
+Set **Project WIP** and **Project Expense** at **Accounting → Default Accounts**. If an Expense or Contract project has no account, Carbon refuses its charges.
+
+<Callout type="note" title="Statistical projects show no actual cost for time and issues.">
+A Statistical project has no project account, so its time and issues write no project ledger rows. Its posted hours still count. Use Expense or Contract when you want the Costs tab to show actual cost.
+</Callout>
+
+## Elements
+
+An element is one node of the project tree. It has a type, a state, an owner, a priority, labels, dates, a milestone, an hours estimate and a budget.
+
+- **Types:** `System`, `Requirement`, `Function`, `Task`, `Test Case`, `Folder` and `Parameter`. A Parameter cannot have children.
+- **Readable id:** the project identifier and a sequence number, such as `ST-12`. The id stays the same when you move the element.
+- **Chargeable:** on for a new element, except a Folder or a Parameter. A Parameter can never take charges.
+
+Deleting an element also deletes every element below it. Carbon refuses the delete if that branch has costs, time, a job or a purchase order line.
+
+### States
+
+Each project has its own states, and each state belongs to a state group: **Backlog**, **Unstarted**, **Started**, **Completed** or **Cancelled**. A new project starts with Backlog, Todo, In Progress, In Review, Done and Cancelled. Manage states and labels on the project's **Settings** tab. The first charge to an Unstarted element moves it to the default Started state.
+
+<Callout type="info" title="The state group decides whether an element takes charges.">
+A new charge needs a Released project and an Unstarted or Started element. A posting against an existing commitment, such as a receipt or an invoice, also accepts a Completed element. Backlog and Cancelled elements accept nothing.
+</Callout>
+
+### Layouts and the element page
+
+The **Elements** tab has three layouts. **List** shows the tree with a pill per property. **Board** has one column per state, and you drag a card to change its state. **Table** adds hours and cost columns, and only it has **Group by**. Use **Display** to choose the properties you see.
+
+Click an element to open it beside the list, or click **Open as a page**. The page has the sections **Children**, **Plan**, **Time & materials**, **Budget** and **Activity**. **Plan** holds three kinds of plan line:
+
+- **Materials:** an item, a method (Pull from Inventory, Purchase to Order or Make to Order), a quantity, a unit cost and a required date.
+- **Labor:** a <Term>labor category</Term>, hours and dates.
+- **Other Costs:** a description and an amount.
+
+### Milestones
+
+A <Term>milestone</Term> is a dated window, such as a design review or a phase. Each element can belong to one milestone. The **Milestones** tab groups them as **Active**, **Upcoming** and **Completed**, with element progress, hours and cost on each row.
+
+## Charge numbers
+
+A <Term>charge number</Term> is a project, or a project and one of its elements. The picker lists Released projects and their chargeable elements in an Unstarted or Started state. A **Charge Number** field is on:
+
+- **Jobs.** You can change it while the job is Draft or Planned. After release it is fixed.
+- **Purchase order lines.** On the item tab and on the G/L Account tab. An outside processing order has no picker, because its job decides the charge.
+- **Purchase invoice lines.** A line converted from a purchase order copies the charge number of its PO line.
+
+**Settings → Projects → Require an element on every project charge** is off by default. Turn it on to make every charge name an element.
+
+### Consume to project
+
+A new job with a charge number has a **Consume to project** switch. When it is on, the job's material, labor and overhead post to the project account. When the job completes, nothing goes into stock, because the project consumes the output.
+
+The switch turns on by itself for an Expense or Contract project. It is not available for a Statistical project, a job that does not complete to inventory, or a job for a sales order line.
+
+## Time
+
+Employees record hours against a charge number and a labor category. Each hour costs the category's rate on the entry date.
+
+- **Log time** on the element page records hours on one date.
+- **My Timesheet** shows a week, with one row per charge number and labor category. A **Timecard** row shows your clocked hours, in orange when they differ. Click **Submit week** to send the Draft hours.
+- **My Timesheet** in the MES shows the same week for operators on the shop floor.
+
+A <Term>timesheet</Term> entry moves through **"Draft"**, **"Submitted"**, **"Approved"** and **"Posted"**. A **"Rejected"** entry is editable again.
+
+<Callout type="warn" title="You correct posted time. You do not edit it.">
+A Posted entry is locked. Open its cell in the ERP timesheet and use **Correct** to give the new hours and a reason. Carbon reverses the posted hours and charges the new hours instead.
+</Callout>
+
+### Approvals
+
+**Settings → Projects → Require approval of timesheets** is off by default, so submitted time posts at once. Turn it on to hold submitted time in **Approvals**. Approve or reject each entry, or use **Approve all** and **Reject all** for an employee's week. An approved entry posts at once, and a rejection needs a note. Approving needs the Projects update permission.
+
+### Labor categories
+
+A labor category is the cost class of an hour, such as Engineer II. Create them at **Projects → Labor Categories**, each with a history of **Cost Rate per Hour** and **Effective From** date. Expense and Contract time cannot post without a rate on its date. Set a person's default category on their **Job** tab in [People](/docs/reference/people).
+
+## Issue material
+
+**Issue material** on the element page takes stock from a storage unit and charges it to the element. **Return to stock** brings it back. **Inventory → Issue to Project** does the same with a charge number picker. The stock leaves at its carrying cost.
+
+Log time and Issue material are not available on a Closed project or an element that does not take charges.
+
+## Costs and the project ledger
+
+The **Costs** tab rolls each element up with its children, and adds a **Project total** row:
+
+- **Plan:** material, labor and other plan lines.
+- **Budget:** the budgets set on the element and below it.
+- **Committed:** the value of purchase order lines not yet received.
+- **Actual:** the project ledger total.
+- **Remaining:** budget less committed and actual.
+- **Estimate:** the element's estimate at completion, else the larger of plan and committed plus actual.
+
+Click an element to see its ledger rows. The **Time & materials** tab lists unposted time, then the whole project ledger. The ledger only grows: a void or a correction adds a negative row.
+
+<Callout type="note" title="Some actual cost needs accounting.">
+Time, issues, receipts, charges and reimbursements write ledger rows in every company. Job material, job time and purchase invoices write ledger rows only when accounting is on.
+</Callout>
+
+## Keyboard shortcuts
+
+**⌘⇧E**, **⌘⇧M**, **⌘⇧C**, **⌘⇧H**, **⌘⇧S** and **⌘⇧D** open the project tabs in order (Ctrl instead of ⌘ on Windows). On the Elements tab and the element page, **C** adds an element, and **S**, **A**, **P** and **L** change the state, owner, priority and labels. On the element page, **T** logs time and **I** issues material. Press **?** for the [full list](/docs/reference/keyboard-shortcuts).
+
+## Related
+
+<Cards>
+  <Card title="Jobs" href="/docs/reference/jobs">
+    The production orders that carry a charge number and can consume to a project.
+  </Card>
+  <Card title="Purchase orders" href="/docs/reference/purchase-orders">
+    The lines that charge purchases to a project.
+  </Card>
+  <Card title="Dimensions" href="/docs/reference/dimensions">
+    The project dimensions on every project journal line.
+  </Card>
+  <Card title="Accounting" href="/docs/reference/accounting">
+    Where Project WIP and Project Expense post.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Project XX is Draft. Only a Released project takes new charges."
+New time, issues and other new charges need a Released project. Release the project from its header. The same message names On Hold, Technically Complete or Closed for those statuses.
+
+### "Element XX-12 of project XX is Backlog. Only an Unstarted or Started element takes new charges."
+Move the element to an Unstarted or Started state. A Completed element still accepts postings against existing commitments (receipts, invoices, job completions, reversals), but no new charges.
+
+### "Element XX-12 of project XX does not take charges."
+The element's Chargeable property is off. Folder and Parameter elements start with it off. A Parameter can never be chargeable ("A Parameter cannot take charges").
+
+### "Set Project Expense in Account Defaults before you charge an Expense project" / "Set Project Work in Progress in Account Defaults before you charge a Contract project"
+The project has no Cost Account and the account default is empty. Set it at Accounting → Default Accounts. The UI label for Project Work in Progress is "Project WIP".
+
+### "Set Indirect Cost in Account Defaults before you issue to a Statistical project"
+An issue to a Statistical project posts to the Indirect Materials & Services account default. Set it at Accounting → Default Accounts.
+
+### "The labor category of a timesheet entry has no cost rate on YYYY-MM-DD"
+Expense and Contract time needs a cost rate effective on or before the entry date. Add one on the labor category (Projects → Labor Categories). Rates cannot be deleted; add a new one with a later Effective From date to change it.
+
+### "This time is posted. Use a correction to change posted hours."
+Posted timesheet entries are locked. Use Correct on the cell in the ERP My Timesheet. A correction writes a negative reversal and a replacement entry, both Submitted. An entry can be corrected once ("Only a posted entry needs a correction" for anything else).
+
+### "The time is logged but did not post: ..."
+Log time saved the entry as Submitted, but posting refused it with the reason shown. The entry stays Submitted and does not post.
+
+### "The project has N open purchase order line(s). Receive or close them before you close the project."
+Close refuses while any purchase order of the project is not Completed, Closed or Rejected, or any job is not Completed, Cancelled or Closed.
+
+### "A Closed project cannot change"
+Element create, update, move, delete and plan routes refuse a Closed project. Closed has no transition back.
+
+### "The charge number is fixed once the job is released"
+A job's charge number can change only while the job is Draft or Planned.
+
+### "Project XX is Statistical. A job cannot consume to a Statistical project."
+Consume to project needs an Expense or Contract project. It also cannot be combined with a fixed asset target or a sales order line.
+
+### Approvals is missing from the Projects menu
+The Approvals item shows only when Settings → Projects → "Require approval of timesheets" is on. Approving needs the Projects update permission; an approver sees time on every project.
+
+### The Costs tab shows no actual cost
+Actual is the sum of the project ledger. A Statistical project writes no ledger rows for time or issues. Job material, job time and purchase invoice rows are written only when accounting is enabled. Committed is the unreceived value of PO lines on purchase orders in Planned, To Receive, To Receive and Invoice or To Invoice.
+
+## Internals
+
+Tables: `project` (`identifier` matches `^[A-Z][A-Z0-9]{1,5}$`, `status` enum `projectStatus`, `costTreatment` enum `projectCostTreatment`: Statistical, Expense, Capitalize, Contract; Capitalize is refused in Phase 1a), `projectElement` (`readableId`, `type` enum `projectElementType`, `stateId`, `isChargeable`), `projectState` (`group` enum `projectStateGroup`), `projectLabel`, `projectMilestone`, `projectElementMaterial` / `projectElementLabor` / `projectElementCost` (plan lines), `laborCategory`, `laborCategoryRate`, `timesheetEntry` (status enum `timesheetEntryStatus`), `projectLedger` (`costType` enum `projectCostType`, `reversalOfId`). Charge number columns: `projectId` + `projectElementId` on `job`, `purchaseOrderLine`, `purchaseInvoiceLine`, `chargeLine`, `reimbursementLine`; `job.consumeToProject`. Settings: `companySettings.timesheetApprovalRequired`, `companySettings.requireProjectElement`. Account defaults: `projectWorkInProgressAccount`, `projectExpenseAccount`. Server functions: `post-timesheet`, `post-project-issue`. Journal sources: `Timesheet`, `Project Issue`. Routes: `/x/projects`, `/x/projects/timesheet`, `/x/projects/approvals`, `/x/projects/labor-categories`, `/x/projects/issue`, `/x/project/:id/elements|milestones|costs|time|settings|details`, `/x/settings/projects`; MES `/x/timesheet`. Not in Phase 1a: Capitalize, element cost-treatment overrides in the UI, Tree/Timeline/Reader layouts, trace links, baselines, change requests, element templates, attachments on elements.
+</AgentContext>

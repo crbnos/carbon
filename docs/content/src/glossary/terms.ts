@@ -2256,5 +2256,41 @@ export const terms = {
   "swift-bic": {
     term: msg`SWIFT / BIC`,
     definition: msg`The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead.`
+  },
+  // Projects (projects.models.ts, migrations 20261009*_projects-*.sql)
+  "charge-number": {
+    term: msg`Charge number`,
+    definition: msg`A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked.`,
+    href: "/docs/reference/projects#charge-numbers"
+  },
+  element: {
+    term: msg`Element`,
+    definition: msg`One node of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number.`,
+    href: "/docs/reference/projects#elements"
+  },
+  milestone: {
+    term: msg`Milestone`,
+    definition: msg`A dated window in a project, such as a design review or a phase. Each element can belong to one milestone.`,
+    href: "/docs/reference/projects#milestones"
+  },
+  timesheet: {
+    term: msg`Timesheet`,
+    definition: msg`An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction.`,
+    href: "/docs/reference/projects#time"
+  },
+  "labor-category": {
+    term: msg`Labor category`,
+    definition: msg`The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts.`,
+    href: "/docs/reference/projects#labor-categories"
+  },
+  "cost-treatment": {
+    term: msg`Cost treatment`,
+    definition: msg`Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP.`,
+    href: "/docs/reference/projects#cost-treatment"
+  },
+  "project-ledger": {
+    term: msg`Project ledger`,
+    definition: msg`The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one.`,
+    href: "/docs/reference/projects#costs-and-the-project-ledger"
   }
 } as const satisfies Record<string, GlossaryEntry>;

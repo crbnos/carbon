@@ -853,6 +853,9 @@ msgstr "활성 계약에 대한 날짜 변경으로, 이유와 계약 유형이 
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "계측기가 추적 가능한 표준에 대해 확인되었음을 증명하는 날짜가 있는 기록입니다. 조치 필요, 조정 필요 또는 수리 필요 플래그가 체크되지 않으면 합격이며, 계측기의 다음 만료일을 재설정합니다."
 
+msgid "A dated window in a project, such as a design review or a phase. Each element can belong to one milestone."
+msgstr ""
+
 msgid "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
 msgstr "전기가 속하는 날짜 기간으로서, 그 종료 상태는 열림 → 잠김 → 종료로 이동하며, 종료된 기간은 새로운 전기에 대해 고정됩니다."
 
@@ -1038,6 +1041,9 @@ msgstr "고객이 장비를 구매할 수 있는 임차료 계약상의 가격�
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "가격이 책정된 판매 견적으로 초안 → 전송됨 → 발주됨 또는 실주, 만료됨, 취소됨으로 끝납니다."
+
+msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
+msgstr ""
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "매입 송장은 고객이 구매한 제품 또는 서비스와 해당 원가를 명시한 문서입니다."
@@ -2285,6 +2291,9 @@ msgstr "자산의 취득원가에서 감가상각누계액을 뺀 값 — 장부
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "캔버스에서 빌드하는 자동화: 하나의 트리거와 조건을 확인하고 레코드를 조회한 후 누군가에게 알림을 보내거나 레코드를 생성 또는 업데이트하거나 외부 URL을 호출하는 단계들."
+
+msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
+msgstr ""
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "설계 변경: 초안에서 방법이 수정되고 함께 릴리스되어 대체하는 버전을 대체하는 영향을 받는 품목"
@@ -5637,6 +5646,9 @@ msgid "Cost Rate per Hour"
 msgstr ""
 
 msgid "Cost rates"
+msgstr ""
+
+msgid "Cost treatment"
 msgstr ""
 
 msgid "Cost Treatment"
@@ -11574,6 +11586,9 @@ msgstr "노무 및 기계 차이(기본값)"
 msgid "Labor Categories"
 msgstr ""
 
+msgid "Labor category"
+msgstr ""
+
 msgid "Labor Category"
 msgstr ""
 
@@ -14498,6 +14513,9 @@ msgstr "1 {0}은(는) 몇 {1}입니까?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "워크플로의 한 번 실행으로, 각 단계가 사용하고 생성한 값을 단계별로 기록하며 워크플로 책임자의 권한으로 전체적으로 작동합니다."
 
+msgid "One node of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "하나 이상의 수량이 이 날짜를 충족할 수 없습니다"
 
@@ -16137,6 +16155,9 @@ msgid "Project elements"
 msgstr ""
 
 msgid "Project Expense"
+msgstr ""
+
+msgid "Project ledger"
 msgstr ""
 
 msgid "Project owner"
@@ -19182,6 +19203,9 @@ msgstr "각 주별 소요량 예측값 설정"
 msgid "Set due date"
 msgstr "마감일 설정"
 
+msgid "Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP."
+msgstr ""
+
 msgid "Set Pricing"
 msgstr "가격 책정 설정"
 
@@ -20874,6 +20898,9 @@ msgstr "계산 방법 이후 현금 할인을 사용할 수 있는 일수"
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "계산 방법 이후 지불이 만기되는 일수"
 
+msgid "The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one."
+msgstr ""
+
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보유 수량은 부호가 있는 항목들의 합이며 최종 근거 데이터입니다."
 
@@ -20996,6 +21023,9 @@ msgstr "외주 인력의 예상 주간 가용성; 이 외주 인력을 주 동�
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "이 로트/일련번호의 수정된 유효기한으로, 변경 후 기존 보유 재고가 유통기한 정책에 따라 재평가됩니다."
+
+msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
+msgstr ""
 
 msgid "The currencies you trade in and their rates"
 msgstr "거래에 사용하는 통화와 환율"
@@ -22335,6 +22365,9 @@ msgstr "타임카드가 활성화됨"
 
 msgid "Timer running"
 msgstr "타이머 실행 중"
+
+msgid "Timesheet"
+msgstr ""
 
 msgid "Timesheet Approval"
 msgstr ""

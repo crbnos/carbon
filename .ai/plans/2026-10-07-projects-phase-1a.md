@@ -82,7 +82,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 43: Add keyboard shortcuts for the Elements page and element page
 - [x] Task 44: Register the MCP namespace and regenerate tools
 - [x] Task 45: Add projects to the demo datasets
-- [ ] Task 46: Write the module AGENTS.md, the rule file and the docs page
+- [x] Task 46: Write the module AGENTS.md, the rule file and the docs page
 - [ ] Task 47: Verify in the browser
 
 ## Dependencies
@@ -2564,10 +2564,15 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 43: `ShortcutHelp` lists the seven keys under **Project elements**.
 - Task 44: the digest has no `accounting_*Project*` tools left to drop; Task 12 already dropped them. `projects` adds 51 tools (1590 in total, 16 modules). `dispatch-parity.test.ts` mocks every module service the registry imports, so it gains an empty `projects.service` mock. Without it the test imports the real service and fails on the glossary's Lingui macros.
 - Task 45: each dataset's two existing projects became the Contract project (the one that codes the purchase invoice line) and the Expense R&D project. No third or fourth project was added. Each has an identifier, is Released, and has 9 or 10 elements in 3 levels and 2 milestones.
-- Task 45: the timesheet entries are data (`accounting.timesheetEntries`), not built in the tier. Each names a week (0 or −1) and a weekday. `resolveTimesheetDay` (`dates.ts`) resolves them on the Monday-start week of `weekStartOf`, and pulls a week-0 day after the anchor back to the anchor, so no seeded hours are in the future. The Draft entries fill this week's timesheet and the Submitted entries fill last week's approvals.
+- Task 45: the timesheet entries are data (`accounting.timesheetEntries`), not built in the tier. Each names a week (0 or −1) and a weekday. `resolveTimesheetDay` (`dates.ts`) resolves them on the Monday-start week of `weekStartOf`. It pulls a week-0 day after the anchor back to the anchor, so no seeded hours are in the future. The Draft entries fill this week's timesheet and the Submitted entries fill last week's approvals.
 - Task 45: each labor category has one rate, effective from `LABOR_RATE_EFFECTIVE_OFFSET` (−365). The first category becomes the applying user's `employeeJob.laborCategoryId`, so Log time and the MES timesheet have a default.
 - Task 45 (not in the plan): an element can name a `milestone`. A milestone whose end is in the past gets `completedAt`, and a Done or Cancelled element gets `completedAt`, as the app sets them.
 - Task 45: the tier copies the six default states as `PROJECT_STATES`, because `@carbon/database` cannot import the ERP's `defaultProjectStates`.
 - Task 45: the validator checks the identifiers, the milestones and the labor categories. It also checks that a parent comes before its child and that each tree has 3 levels and at least 8 elements. Each timesheet entry must name a known element of a Released project. Two week-0 entries on one timesheet row are refused, because the pull-back could put them in one cell.
 - Task 45: the floors are `projectState` 12, `projectMilestone` 4, `projectElement` 15 (min 19), `laborCategory` 3, `laborCategoryRate` 3 and `timesheetEntry` 6 (min 8). `db:check:datasets` passes ×4.
 - Task 45: a throwaway script (rolled back) applied satellite, then robotics with `wipeFirst`, and the wipe removed every project row. That run first failed in the wipe's FK-nulling pass on `customerContractInvoiceLine_parent_check`, which the contracts feature causes, not this plan. The script deleted those rows by hand to continue. Re-applying a dataset over a company with contract invoice lines fails today.
+- Task 46: the spec items of step 4 were already in the spec's 2026-10-07 planning entry. A new 2026-10-09 changelog entry lists the main implementation deviations, and the status line says Phase 1a is implemented.
+- Task 46: the rule file opens with `---` frontmatter, as most rules do. It names one gap in the code. The SQL `project_posting_account` returns NULL for a missing account default as well as for Statistical. Job completion then reports a Statistical project.
+- Task 46: the docs page also needed `docs/app/docs/layout.tsx`, which groups the Reference sidebar. Without a `Projects` group the page shows ungrouped at the bottom. `meta.json` lists the page after `assembly-instructions`.
+- Task 46: the docs page shows the status lifecycle as a table. `PROJECT_STATUS_COLOR_MAP` is not in `statusColorMaps` (`@carbon/utils`), so the docs lifecycle widget cannot render project statuses.
+- Task 46: `docs` typecheck, `@carbon/content` tests (17, with the glossary link test) and a full `docs` build pass. The license-header fixer changes nothing.

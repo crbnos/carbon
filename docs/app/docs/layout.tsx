@@ -95,6 +95,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
       "assembly-instructions",
     ],
   },
+  { label: "Projects", slugs: ["projects"] },
   {
     label: "Inventory",
     slugs: [

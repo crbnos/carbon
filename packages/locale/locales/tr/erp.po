@@ -853,6 +853,9 @@ msgstr "Aktif bir sözleşmeye tarihli bir değişiklik, bir neden ve sözleşme
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "Ölçüm aletinin izlenebilir bir standarda karşı kontrol edildiğini kanıtlayan tarihli kayıt; eylem, ayarlama veya onarım gerektiren bayrak işaretlenmediği sürece uygun bulunur ve ölçüm aletinin bir sonraki kontrol tarihini sıfırlar."
 
+msgid "A dated window in a project, such as a design review or a phase. Each element can belong to one milestone."
+msgstr ""
+
 msgid "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
 msgstr "Muhasebeleştirmelerin girdiği tarihli pencere; kapatma durumu Açık → Kilitli → Kapatıldı şeklinde ilerler ve kapatılan dönem yeni muhasebeleştirmelere karşı kilitlenir."
 
@@ -1038,6 +1041,9 @@ msgstr "Müşterinin birimi satın alabileceği bir kiralama sözleşmesi üzeri
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Fiyatlandırılmış satış teklifi; Taslak → Gönderilen → Sipariş edildi, ya da Kaybedildi, Süresi doldu veya İptal edildi ile sonlanır."
+
+msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
+msgstr ""
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Alış faturası, bir müşteri tarafından satın alınan ürün veya hizmetleri ve bunlara karşılık gelen maliyeti belirten belgedir."
@@ -2285,6 +2291,9 @@ msgstr "Bir varlığın edinme maliyeti eksi birikmiş amortisman — defterler 
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Bir kanvas üzerinde oluşturduğunuz bir otomasyon: bir tetikleyici, ardından koşulları kontrol eden, kayıtları arayan ve hareket eden adımlar — birini bilgilendiren, bir kaydı oluşturan veya güncelleyen veya dış bir URL çağırma."
+
+msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
+msgstr ""
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Bir mühendislik değişikliği: yöntemleri taslak üzerinde revize edilen ve birlikte yayınlanan, yerini aldıkları sürümlerin yerine geçen etkilenen öğeler."
@@ -5637,6 +5646,9 @@ msgid "Cost Rate per Hour"
 msgstr ""
 
 msgid "Cost rates"
+msgstr ""
+
+msgid "Cost treatment"
 msgstr ""
 
 msgid "Cost Treatment"
@@ -11574,6 +11586,9 @@ msgstr "İşçilik ve Makine Sapması (varsayılan)"
 msgid "Labor Categories"
 msgstr ""
 
+msgid "Labor category"
+msgstr ""
+
 msgid "Labor Category"
 msgstr ""
 
@@ -14498,6 +14513,9 @@ msgstr "1 {0} kaç {1} eder?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
 
+msgid "One node of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "Bir veya daha fazla miktar bu tarihi karşılayamıyor"
 
@@ -16137,6 +16155,9 @@ msgid "Project elements"
 msgstr ""
 
 msgid "Project Expense"
+msgstr ""
+
+msgid "Project ledger"
 msgstr ""
 
 msgid "Project owner"
@@ -19182,6 +19203,9 @@ msgstr "Her hafta için talep tahmin değerlerini ayarlayın"
 msgid "Set due date"
 msgstr "Son son tarihi belirle"
 
+msgid "Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP."
+msgstr ""
+
 msgid "Set Pricing"
 msgstr "Fiyatlandırmayı Ayarla"
 
@@ -20874,6 +20898,9 @@ msgstr "Hesaplama yöntemi sonrası nakit iskontosunun kullanılabilir olduğu g
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "Ödeme vadesinin hesaplama yönteminden sonraki gün sayısı"
 
+msgid "The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one."
+msgstr ""
+
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı girdilerinin toplamı ve gerçeğin kaynağıdır."
 
@@ -20996,6 +21023,9 @@ msgstr "Taşeronun beklenen haftalık kullanılabilirliği; planlama bu taşeron
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Bu lot/seri numarası için düzeltilmiş son kullanma tarihi; mevcut eldeki stok, değişiklikten sonra raf ömrü politikasına göre yeniden değerlendirilir."
+
+msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
+msgstr ""
 
 msgid "The currencies you trade in and their rates"
 msgstr "Ticaret yaptığınız para birimleri ve bunların oranları"
@@ -22335,6 +22365,9 @@ msgstr "Puantaj etkin"
 
 msgid "Timer running"
 msgstr "Zamanlayıcı çalışıyor"
+
+msgid "Timesheet"
+msgstr ""
 
 msgid "Timesheet Approval"
 msgstr ""

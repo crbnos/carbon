@@ -853,6 +853,9 @@ msgstr "Un cambio fechado en un contrato activo, con una razón y un tipo de con
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "Un registro fechado que prueba que un instrumento de medición fue verificado contra un estándar rastreable; pasa a menos que se marque una bandera de requiere-acción, -ajuste o -reparación, y reinicia la fecha de próximo vencimiento del instrumento."
 
+msgid "A dated window in a project, such as a design review or a phase. Each element can belong to one milestone."
+msgstr ""
+
 msgid "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
 msgstr "Una ventana fechada en la que caen las Contabilizaciones; su estado de cierre se mueve Abierto → Bloqueado → Cerrado, y un período Cerrado está congelado contra nuevas Contabilizaciones."
 
@@ -1038,6 +1041,9 @@ msgstr "Un precio en un contrato de arrendamiento por el cual el cliente puede c
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Una cotización de venta con precio; Borrador → Enviado → Pedido, o termina Perdido, Vencido o Cancelado."
+
+msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
+msgstr ""
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Una factura de compra es un documento que especifica los productos o servicios comprados por un cliente y el costo correspondiente."
@@ -2285,6 +2291,9 @@ msgstr "El costo de adquisición de un activo menos la depreciación acumulada �
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Una automatización que construyes en un lienzo: un desencadenante, luego pasos que verifican condiciones, buscan registros y actúan — notificando a alguien, creando o actualizando un registro, o llamando a una URL externa."
+
+msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
+msgstr ""
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Un cambio de ingeniería: los elementos afectados cuyos métodos se revisan en un borrador y se lanzan juntos, reemplazando las versiones que sustituyen."
@@ -5637,6 +5646,9 @@ msgid "Cost Rate per Hour"
 msgstr ""
 
 msgid "Cost rates"
+msgstr ""
+
+msgid "Cost treatment"
 msgstr ""
 
 msgid "Cost Treatment"
@@ -11574,6 +11586,9 @@ msgstr "Desviación de mano de obra y máquina (predeterminada)"
 msgid "Labor Categories"
 msgstr ""
 
+msgid "Labor category"
+msgstr ""
+
 msgid "Labor Category"
 msgstr ""
 
@@ -14498,6 +14513,9 @@ msgstr "¿A cuántos {1} equivale 1 {0}?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Una ejecución de un flujo de trabajo, registrada paso a paso con los valores que cada paso usó y produjo, actuando en todo momento con los permisos del propietario del flujo de trabajo."
 
+msgid "One node of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "Una o más cantidades no pueden cumplir esta fecha"
 
@@ -16137,6 +16155,9 @@ msgid "Project elements"
 msgstr ""
 
 msgid "Project Expense"
+msgstr ""
+
+msgid "Project ledger"
 msgstr ""
 
 msgid "Project owner"
@@ -19182,6 +19203,9 @@ msgstr "Establecer valores de pronóstico de demanda para cada semana"
 msgid "Set due date"
 msgstr "Establecer fecha de vencimiento"
 
+msgid "Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP."
+msgstr ""
+
 msgid "Set Pricing"
 msgstr "Establecer precios"
 
@@ -20874,6 +20898,9 @@ msgstr "La cantidad de días después del método de cálculo en que el descuent
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "La cantidad de días después del método de cálculo en que vence el pago"
 
+msgid "The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one."
+msgstr ""
+
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "El registro de solo adición de cada movimiento de inventario; la cantidad disponible es la suma de sus entradas firmadas y la fuente confiable."
 
@@ -20996,6 +21023,9 @@ msgstr "La disponibilidad semanal esperada del contratista; la programación usa
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "La fecha de vencimiento corregida para este lote/número de serie; el inventario existente se reevalúa contra la política de vida útil después del cambio."
+
+msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
+msgstr ""
 
 msgid "The currencies you trade in and their rates"
 msgstr "Las monedas en las que comercias y sus tasas"
@@ -22335,6 +22365,9 @@ msgstr "Registro de tiempos habilitado"
 
 msgid "Timer running"
 msgstr "Temporizador en ejecución"
+
+msgid "Timesheet"
+msgstr ""
 
 msgid "Timesheet Approval"
 msgstr ""

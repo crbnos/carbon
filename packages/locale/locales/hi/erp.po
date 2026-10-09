@@ -853,6 +853,9 @@ msgstr "एक सक्रिय अनुबंध में एक दिन�
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "एक दिनांकित रिकॉर्ड यह साबित करता है कि एक गेज को एक ट्रेसेबल मानक के विरुद्ध जांचा गया था; यह तब तक पास होता है जब तक कि कोई कार्रवाई की आवश्यकता, समायोजन, या मरम्मत का झंडा चिन्हित नहीं किया जाता है, और गेज की अगली देय तारीख को रीसेट करता है।"
 
+msgid "A dated window in a project, such as a design review or a phase. Each element can belong to one milestone."
+msgstr ""
+
 msgid "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
 msgstr "एक दिनांकित विंडो जिसमें पोस्टिंग आती हैं; इसकी बंद स्थिति खुली → लॉक की गई → बंद चली जाती है, और एक बंद अवधि नई पोस्टिंग के विरुद्ध जमी हुई है।"
 
@@ -1038,6 +1041,9 @@ msgstr "एक किराये के समझौते पर एक मू
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "एक मूल्यवान बिक्री कोटेशन; ड्राफ्ट → भेजा गया → ऑर्डर किया गया, या खोया, समाप्त, या रद्द में समाप्त होता है।"
+
+msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
+msgstr ""
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "एक क्रय चालान एक दस्तावेज है जो किसी ग्राहक द्वारा खरीदे गए उत्पादों या सेवाओं और संबंधित लागत को निर्दिष्ट करता है।"
@@ -2285,6 +2291,9 @@ msgstr "किसी संपत्ति की अधिग्रहण ल�
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "एक स्वचालन जो आप कैनवास पर बनाते हैं: एक ट्रिगर, फिर चरण जो शर्तों की जांच करते हैं, रिकॉर्ड देखते हैं, और कार्य करते हैं — किसी को सूचित करना, एक रिकॉर्ड बनाना या अपडेट करना, या बाहरी URL को कॉल करना।"
+
+msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
+msgstr ""
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "एक इंजीनियरिंग परिवर्तन: प्रभावित आइटम जिनकी विधियों को ड्राफ्ट पर संशोधित किया गया है और एक साथ जारी किया गया है, जो वे संस्करणों को प्रतिस्थापित करते हैं।"
@@ -5637,6 +5646,9 @@ msgid "Cost Rate per Hour"
 msgstr ""
 
 msgid "Cost rates"
+msgstr ""
+
+msgid "Cost treatment"
 msgstr ""
 
 msgid "Cost Treatment"
@@ -11574,6 +11586,9 @@ msgstr "श्रम और मशीन विचलन (डिफ़ॉल्�
 msgid "Labor Categories"
 msgstr ""
 
+msgid "Labor category"
+msgstr ""
+
 msgid "Labor Category"
 msgstr ""
 
@@ -14498,6 +14513,9 @@ msgstr "1 {0} कितने {1} के बराबर है?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "एक वर्कफ़्लो का एक निष्पादन, चरण दर चरण रिकॉर्ड किया गया जिसमें प्रत्येक चरण द्वारा उपयोग किए गए और उत्पादित मान शामिल हैं, वर्कफ़्लो के स्वामी की अनुमतियों के साथ पूरे समय कार्य करते हुए।"
 
+msgid "One node of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr ""
+
 msgid "One or more quantities cannot meet this date"
 msgstr "एक या अधिक मात्रा इस तारीख को पूरी नहीं कर सकती है"
 
@@ -16137,6 +16155,9 @@ msgid "Project elements"
 msgstr ""
 
 msgid "Project Expense"
+msgstr ""
+
+msgid "Project ledger"
 msgstr ""
 
 msgid "Project owner"
@@ -19182,6 +19203,9 @@ msgstr "प्रत्येक सप्ताह के लिए मां�
 msgid "Set due date"
 msgstr "नियत तिथि सेट करें"
 
+msgid "Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP."
+msgstr ""
+
 msgid "Set Pricing"
 msgstr "मूल्य निर्धारण सेट करें"
 
@@ -20874,6 +20898,9 @@ msgstr "गणना विधि के बाद के दिनों की
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "गणना विधि के बाद दिनों की संख्या जिसके बाद भुगतान देय है"
 
+msgid "The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one."
+msgstr ""
+
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "प्रत्येक स्टॉक आंदोलन का केवल-परिशिष्ट रिकॉर्ड; हाथ में राशि इसकी हस्ताक्षरित प्रविष्टियों का योग है और सत्य का स्रोत है।"
 
@@ -20996,6 +21023,9 @@ msgstr "ठेकेदार की अपेक्षित साप्ता
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "इस लॉट/सीरीज़ के लिए सही की गई समाप्ति तिथि; परिवर्तन के बाद मौजूदा ऑन-हैंड स्टॉक को शेल्फ-लाइफ नीति के विरुद्ध पुनः मूल्यांकन किया जाता है।"
+
+msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
+msgstr ""
 
 msgid "The currencies you trade in and their rates"
 msgstr "आप जिन मुद्राओं में व्यापार करते हैं और उनकी दरें"
@@ -22335,6 +22365,9 @@ msgstr "टाइमकार्ड सक्षम हैं"
 
 msgid "Timer running"
 msgstr "टाइमर चल रहा है"
+
+msgid "Timesheet"
+msgstr ""
 
 msgid "Timesheet Approval"
 msgstr ""

@@ -853,6 +853,9 @@ msgstr "A dated change to an active contract, with a reason and a contract type:
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 
+msgid "A dated window in a project, such as a design review or a phase. Each element can belong to one milestone."
+msgstr "A dated window in a project, such as a design review or a phase. Each element can belong to one milestone."
+
 msgid "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
 msgstr "A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings."
 
@@ -1038,6 +1041,9 @@ msgstr "A price on a rental agreement at which the customer can buy the unit, co
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
+
+msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
+msgstr "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
@@ -2285,6 +2291,9 @@ msgstr "An asset's acquisition cost minus accumulated depreciation — what it's
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
+
+msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
+msgstr "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
@@ -5638,6 +5647,9 @@ msgstr "Cost Rate per Hour"
 
 msgid "Cost rates"
 msgstr "Cost rates"
+
+msgid "Cost treatment"
+msgstr "Cost treatment"
 
 msgid "Cost Treatment"
 msgstr "Cost Treatment"
@@ -11574,6 +11586,9 @@ msgstr "Labor & Machine Variance (default)"
 msgid "Labor Categories"
 msgstr "Labor Categories"
 
+msgid "Labor category"
+msgstr "Labor category"
+
 msgid "Labor Category"
 msgstr "Labor Category"
 
@@ -14498,6 +14513,9 @@ msgstr "One {0} is equal to how many {1}?"
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 
+msgid "One node of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+msgstr "One node of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number."
+
 msgid "One or more quantities cannot meet this date"
 msgstr "One or more quantities cannot meet this date"
 
@@ -16138,6 +16156,9 @@ msgstr "Project elements"
 
 msgid "Project Expense"
 msgstr "Project Expense"
+
+msgid "Project ledger"
+msgstr "Project ledger"
 
 msgid "Project owner"
 msgstr "Project owner"
@@ -19182,6 +19203,9 @@ msgstr "Set demand forecast values for each week"
 msgid "Set due date"
 msgstr "Set due date"
 
+msgid "Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP."
+msgstr "Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP."
+
 msgid "Set Pricing"
 msgstr "Set Pricing"
 
@@ -20874,6 +20898,9 @@ msgstr "The amount of days after the calculation method that the cash discount i
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "The amount of days after the calculation method that the payment is due"
 
+msgid "The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one."
+msgstr "The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one."
+
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 
@@ -20996,6 +21023,9 @@ msgstr "The contractor's expected weekly availability; scheduling uses this as t
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
+
+msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
+msgstr "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
 
 msgid "The currencies you trade in and their rates"
 msgstr "The currencies you trade in and their rates"
@@ -22335,6 +22365,9 @@ msgstr "Timecards are enabled"
 
 msgid "Timer running"
 msgstr "Timer running"
+
+msgid "Timesheet"
+msgstr "Timesheet"
 
 msgid "Timesheet Approval"
 msgstr "Timesheet Approval"
