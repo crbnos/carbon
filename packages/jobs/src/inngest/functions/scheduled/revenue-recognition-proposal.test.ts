@@ -35,7 +35,7 @@ describe("priorMonthEnd", () => {
 });
 
 describe("companiesToPropose", () => {
-  it("leaves out companies with accounting off", () => {
+  it("leaves out companies with no accounting cutover", () => {
     const companies = [
       { id: "on", name: "Books On" },
       { id: "off", name: "Books Off" }
@@ -46,7 +46,7 @@ describe("companiesToPropose", () => {
     ]);
   });
 
-  it("proposes for nobody when no company has accounting on", () => {
+  it("proposes for nobody when no company has a cutover", () => {
     expect(companiesToPropose([{ id: "off", name: "Books Off" }], [])).toEqual(
       []
     );

@@ -7,6 +7,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  type AutomaticJournalStatus,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
 import {
@@ -397,7 +401,9 @@ export async function postAssetRegistration(
       // Equity offset for a direct (non-purchase) registration — owner equity
       // / retained earnings. Brings the asset onto the books at NBV.
       offsetAccountId: string;
-      accountingPeriodId: string;
+      // Provisional before the accounting cutover (no period), Posted after.
+      postingStatus: AutomaticJournalStatus;
+      accountingPeriodId: string | null;
       locationDimensionId: string | undefined;
       assetClassDimensionId: string | undefined;
     } | null;
@@ -442,6 +448,13 @@ export async function postAssetRegistration(
         locationDimensionId,
         assetClassDimensionId
       } = posting;
+      // The route read the status before this transaction to resolve the
+      // period; read it again under the lock the enable takes.
+      if (
+        (await journalPostingStatus(trx, companyId)) !== posting.postingStatus
+      ) {
+        throw new Error("Accounting was just set up. Post the document again.");
+      }
       const journalEntryId = await getNextSequence(
         trx,
         "journalEntry",
@@ -457,7 +470,7 @@ export async function postAssetRegistration(
           description: `Asset Registration: ${fixedAssetReadableId}`,
           postingDate: acquisitionDate,
           sourceType: "Manual",
-          status: "Posted",
+          status: posting.postingStatus,
           postedAt: now,
           postedBy: userId,
           createdBy: userId

@@ -250,27 +250,21 @@ export async function recordStripeConnectPayment({
     const feeAmount = Number(meta.feeAmount ?? 0);
     const feeCurrency = (meta.feeCurrency as string | null) ?? null;
     if (feeAmount > 0 && feeCurrency === currencyCode) {
-      const companySettings = await serviceRole
-        .from("companySettings")
-        .select("accountingEnabled")
-        .eq("id", companyId)
-        .single();
-
-      if (companySettings.data?.accountingEnabled) {
-        const feeAccount =
-          (integrationMetadata.paymentFeeAccount as string | undefined) ||
-          accountDefaults.data?.serviceChargeAccount;
-        if (!feeAccount) {
-          throw new Error(
-            "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
-          );
-        }
-        journalFee = {
-          amount: feeAmount,
-          accountId: feeAccount,
-          description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
-        };
+      // Every company books the fee: Provisional before the accounting
+      // cutover, Posted after it.
+      const feeAccount =
+        (integrationMetadata.paymentFeeAccount as string | undefined) ||
+        accountDefaults.data?.serviceChargeAccount;
+      if (!feeAccount) {
+        throw new Error(
+          "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
+        );
       }
+      journalFee = {
+        amount: feeAmount,
+        accountId: feeAccount,
+        description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
+      };
     }
   } else {
     // Round through Stripe's own minor-unit conversion (the same one
@@ -302,11 +296,9 @@ export async function recordStripeConnectPayment({
     // Resolved BEFORE the payment is created (like bankAccount above) so a
     // missing service-charge account throws before any row is written — a
     // retry after the admin fixes it starts clean instead of leaving behind an
-    // orphaned Draft payment. Gated on accountingEnabled: `post-payment` only
-    // ever builds a GL journal (fee included) when accounting is on, so a
-    // company that hasn't configured a service-charge account because they
-    // don't use Carbon's accounting at all must not have Stripe payments
-    // start failing over it.
+    // orphaned Draft payment. `serviceChargeAccount` is a required account
+    // default, so every company resolves it; `post-payment` books the fee in
+    // a Provisional journal before the accounting cutover.
     const feeDetails = await getConnectInvoicePaymentDetails(
       stripeAccountId,
       stripeInvoiceId
@@ -348,27 +340,21 @@ export async function recordStripeConnectPayment({
           }
         );
       } else {
-        const companySettings = await serviceRole
-          .from("companySettings")
-          .select("accountingEnabled")
-          .eq("id", companyId)
-          .single();
-
-        if (companySettings.data?.accountingEnabled) {
-          const feeAccount =
-            (integrationMetadata.paymentFeeAccount as string | undefined) ||
-            accountDefaults.data?.serviceChargeAccount;
-          if (!feeAccount) {
-            throw new Error(
-              "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
-            );
-          }
-          journalFee = {
-            amount: feeAmount,
-            accountId: feeAccount,
-            description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
-          };
+        // Every company books the fee: Provisional before the accounting
+        // cutover, Posted after it.
+        const feeAccount =
+          (integrationMetadata.paymentFeeAccount as string | undefined) ||
+          accountDefaults.data?.serviceChargeAccount;
+        if (!feeAccount) {
+          throw new Error(
+            "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
+          );
         }
+        journalFee = {
+          amount: feeAmount,
+          accountId: feeAccount,
+          description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
+        };
       }
     }
 

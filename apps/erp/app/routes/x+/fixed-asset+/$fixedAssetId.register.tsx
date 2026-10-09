@@ -5,6 +5,7 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -96,9 +97,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
+  // Every company posts the registration journal: Provisional before the
+  // accounting cutover (no period), Posted after it
+  // (.ai/specs/2026-10-08-accounting-cutover.md section 1).
+  const postingStatus = await journalPostingStatus(
+    getDatabaseClient(),
+    companyId
+  );
 
   const assetClass = asset.data.fixedAssetClass as {
     assetAccountId: string;
@@ -113,124 +118,107 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? "Under Construction"
     : "Active";
 
-  // With accounting on, capitalize the asset with a real GL entry
-  // (Dr asset / Cr owner equity) rather than a bare status flip, so no
-  // capitalized asset exists without a journal.
-  if (accountingEnabled) {
-    const [defaults, dimensionsResult, accountingPeriod] = await Promise.all([
-      getDefaultAccounts(client, companyId),
-      client
-        .from("dimension")
-        .select("id, entityType")
-        .eq("companyGroupId", companyGroupId)
-        .eq("active", true),
-      getOrCreateAccountingPeriod(
-        client,
-        companyId,
-        registration.acquisitionDate,
-        "accounting"
-      )
-    ]);
-
-    if (accountingPeriod.error || !accountingPeriod.data) {
-      throw redirect(
-        path.to.fixedAsset(fixedAssetId),
-        await flash(
-          request,
-          error(accountingPeriod.error, "Failed to get accounting period")
+  // Capitalize the asset with a GL entry (Dr asset / Cr owner equity) rather
+  // than a bare status flip, so no capitalized asset exists without a journal.
+  const [defaults, dimensionsResult, accountingPeriod] = await Promise.all([
+    getDefaultAccounts(client, companyId),
+    client
+      .from("dimension")
+      .select("id, entityType")
+      .eq("companyGroupId", companyGroupId)
+      .eq("active", true),
+    postingStatus === "Posted"
+      ? getOrCreateAccountingPeriod(
+          client,
+          companyId,
+          registration.acquisitionDate,
+          "accounting"
         )
-      );
-    }
-    if (dimensionsResult.error) {
-      throw redirect(
-        path.to.fixedAsset(fixedAssetId),
-        await flash(
-          request,
-          error(dimensionsResult.error, "Failed to resolve dimensions")
-        )
-      );
-    }
+      : Promise.resolve({ data: null, error: null })
+  ]);
 
-    const assetAccountId = assetClass?.assetAccountId;
-    const accumulatedDepreciationAccountId =
-      assetClass?.accumulatedDepreciationAccountId;
-    const offsetAccountId = defaults.data?.retainedEarningsAccount;
-
-    if (
-      !assetAccountId ||
-      !accumulatedDepreciationAccountId ||
-      !offsetAccountId
-    ) {
-      throw redirect(
-        path.to.fixedAsset(fixedAssetId),
-        await flash(
-          request,
-          error(
-            defaults.error,
-            "Missing GL accounts for asset registration. Configure the asset class and default accounts."
-          )
-        )
-      );
-    }
-
-    const locationDimensionId = (dimensionsResult.data ?? []).find(
-      (d) => d.entityType === "Location"
-    )?.id;
-    const assetClassDimensionId = (dimensionsResult.data ?? []).find(
-      (d) => d.entityType === "FixedAssetClass"
-    )?.id;
-
-    if (!locationDimensionId || !assetClassDimensionId) {
-      throw redirect(
-        path.to.fixedAsset(fixedAssetId),
-        await flash(
-          request,
-          error(null, "Missing dimensions required for asset registration")
-        )
-      );
-    }
-
-    try {
-      await postAssetRegistration(getDatabaseClient(), {
-        fixedAssetId,
-        fixedAssetReadableId: asset.data.fixedAssetId,
-        registration,
-        posting: {
-          locationId: asset.data.locationId,
-          fixedAssetClassId: asset.data.fixedAssetClassId,
-          assetAccountId,
-          accumulatedDepreciationAccountId,
-          offsetAccountId,
-          accountingPeriodId: accountingPeriod.data,
-          locationDimensionId,
-          assetClassDimensionId
-        },
-        status: registeredStatus,
-        companyId,
-        userId
-      });
-    } catch (err) {
-      throw redirect(
-        path.to.fixedAsset(fixedAssetId),
-        await flash(request, error(err, "Failed to register asset"))
-      );
-    }
-
+  if (
+    postingStatus === "Posted" &&
+    (accountingPeriod.error || !accountingPeriod.data)
+  ) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(request, success("Asset registered successfully"))
+      await flash(
+        request,
+        error(accountingPeriod.error, "Failed to get accounting period")
+      )
+    );
+  }
+  if (dimensionsResult.error) {
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(
+        request,
+        error(dimensionsResult.error, "Failed to resolve dimensions")
+      )
     );
   }
 
-  // Accounting disabled — no journal, but the status flip and a CIP class's
-  // cost row are still one transaction, and the Draft guard inside it treats a
-  // concurrent registration as a failure rather than a false success.
+  const assetAccountId = assetClass?.assetAccountId;
+  const accumulatedDepreciationAccountId =
+    assetClass?.accumulatedDepreciationAccountId;
+  const offsetAccountId = defaults.data?.retainedEarningsAccount;
+
+  if (
+    !assetAccountId ||
+    !accumulatedDepreciationAccountId ||
+    !offsetAccountId
+  ) {
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(
+        request,
+        error(
+          defaults.error,
+          "Missing GL accounts for asset registration. Configure the asset class and default accounts."
+        )
+      )
+    );
+  }
+
+  const locationDimensionId = (dimensionsResult.data ?? []).find(
+    (d) => d.entityType === "Location"
+  )?.id;
+  const assetClassDimensionId = (dimensionsResult.data ?? []).find(
+    (d) => d.entityType === "FixedAssetClass"
+  )?.id;
+
+  // A Provisional journal counts nowhere, so a missing dimension does not
+  // block a company that has not set up accounting.
+  if (
+    postingStatus === "Posted" &&
+    (!locationDimensionId || !assetClassDimensionId)
+  ) {
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(
+        request,
+        error(null, "Missing dimensions required for asset registration")
+      )
+    );
+  }
+
   try {
     await postAssetRegistration(getDatabaseClient(), {
       fixedAssetId,
       fixedAssetReadableId: asset.data.fixedAssetId,
       registration,
-      posting: null,
+      posting: {
+        postingStatus,
+        locationId: asset.data.locationId,
+        fixedAssetClassId: asset.data.fixedAssetClassId,
+        assetAccountId,
+        accumulatedDepreciationAccountId,
+        offsetAccountId,
+        accountingPeriodId: accountingPeriod.data ?? null,
+        locationDimensionId,
+        assetClassDimensionId
+      },
       status: registeredStatus,
       companyId,
       userId

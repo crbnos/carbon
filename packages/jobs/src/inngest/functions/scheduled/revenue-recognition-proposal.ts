@@ -20,16 +20,17 @@ export function priorMonthEnd(today: string): string {
 }
 
 /**
- * The companies a proposal runs for: only those with accounting on. The
- * synthesizers write rental accruals and contract revenue rows for any company
- * they are pointed at, and a company with accounting off cannot post the run.
+ * The companies a proposal runs for: only those with an accounting cutover.
+ * The synthesizers write rental accruals and contract revenue rows for any
+ * company they are pointed at, and a company with no cutover cannot post the
+ * run (.ai/specs/2026-10-08-accounting-cutover.md).
  */
 export function companiesToPropose<T extends { id: string }>(
   companies: T[],
-  accountingEnabledIds: string[]
+  withCutoverIds: string[]
 ): T[] {
-  const enabled = new Set(accountingEnabledIds);
-  return companies.filter((company) => enabled.has(company.id));
+  const withCutover = new Set(withCutoverIds);
+  return companies.filter((company) => withCutover.has(company.id));
 }
 
 export const revenueRecognitionProposalFunction = inngest.createFunction(
@@ -64,23 +65,23 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
         throw companies.error;
       }
 
-      const accountingEnabled = await fetchAllFromTable<{ id: string }>(
+      const withCutover = await fetchAllFromTable<{ id: string }>(
         serviceRole,
         "companySettings",
         "id",
-        (query) => query.eq("accountingEnabled", true).order("id")
+        (query) => query.not("accountingCutoverDate", "is", null).order("id")
       );
 
-      if (accountingEnabled.error) {
+      if (withCutover.error) {
         logger.error("Failed to get company settings", {
-          error: accountingEnabled.error
+          error: withCutover.error
         });
-        throw accountingEnabled.error;
+        throw withCutover.error;
       }
 
       const proposing = companiesToPropose(
         companies.data,
-        accountingEnabled.data.map((settings) => settings.id)
+        withCutover.data.map((settings) => settings.id)
       );
 
       if (proposing.length === 0) {

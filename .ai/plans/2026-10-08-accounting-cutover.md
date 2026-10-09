@@ -20,8 +20,8 @@
 
 ### Phase B — Post journals for every company
 - [x] Task 11: Always post in the shared adjustment journal and its callers
-- [ ] Task 12: Always post in `post-receipt`
-- [ ] Task 13: Always post in `post-shipment`
+- [x] Task 12: Always post in `post-receipt`
+- [x] Task 13: Always post in `post-shipment`
 - [ ] Task 14: Always post in `post-sales-invoice`
 - [ ] Task 15: Always post in `post-purchase-invoice`
 - [ ] Task 16: Always post in `post-payment` and `post-memo`
@@ -30,7 +30,7 @@
 - [ ] Task 19: Always post in `close-job` and `post-production-event`
 - [ ] Task 20: Always post in `post-asset-transfer` and `post-rental-agreement`
 - [x] Task 21: Always post in the SQL job-costing functions
-- [ ] Task 22: Always post in the ERP fixed-asset paths, Stripe fees and the revenue recognition cron
+- [x] Task 22: Always post in the ERP fixed-asset paths, Stripe fees and the revenue recognition cron
 - [ ] Task 23: Refuse manual accounting work before the cutover
 - [ ] Task 24: Prove a company with no cutover can post every document
 
