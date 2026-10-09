@@ -6,15 +6,24 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Project } from "~/modules/projects";
-import { projectValidator, updateProject } from "~/modules/projects";
+import {
+  getProject,
+  projectValidator,
+  updateProject
+} from "~/modules/projects";
+import { ensureCapitalAssets } from "~/modules/projects/projects.server";
 import { ProjectForm } from "~/modules/projects/ui/Projects";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "project-details");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -50,6 +59,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // A released project that becomes Capitalize needs its assets under
+  // construction before it takes charges.
+  if (fields.costTreatment === "Capitalize") {
+    const project = await getProject(client, companyId, projectId);
+    if (project.data && project.data.status !== "Draft") {
+      try {
+        await ensureCapitalAssets(getDatabaseClient(), {
+          companyId,
+          userId,
+          projectId
+        });
+      } catch (err) {
+        logger.error("Failed to create the capital assets", {
+          companyId,
+          projectId,
+          error: err
+        });
+        throw redirect(
+          path.to.projectDetails(projectId),
+          await flash(
+            request,
+            error(err, "Failed to create the assets under construction")
+          )
+        );
+      }
+    }
+  }
+
   throw redirect(
     path.to.projectDetails(projectId),
     await flash(request, success("Project updated"))
@@ -76,11 +113,9 @@ export default function ProjectDetailsRoute() {
           name: project.name,
           identifier: project.identifier ?? undefined,
           description: project.description ?? undefined,
-          costTreatment:
-            project.costTreatment === "Capitalize"
-              ? "Expense"
-              : project.costTreatment,
+          costTreatment: project.costTreatment,
           costAccountId: project.costAccountId ?? undefined,
+          fixedAssetClassId: project.fixedAssetClassId ?? undefined,
           customerId: project.customerId ?? undefined,
           ownerId: project.ownerId ?? undefined,
           locationId: project.locationId ?? undefined,

@@ -4547,6 +4547,9 @@ msgstr "Escolha seu estilo"
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Escolhido quando você se conectou e fixado para esta instalação. Para alterá-lo, desinstale e reconecte em um modo diferente."
 
+msgid "CIP Class"
+msgstr ""
+
 msgid "City"
 msgstr "Cidade"
 
@@ -6061,6 +6064,9 @@ msgstr "Unidade de medida criada"
 
 msgid "Created webhook"
 msgstr "Webhook criado"
+
+msgid "Created when the project is released"
+msgstr ""
 
 msgid "Created work center"
 msgstr "Centro de trabalho criado"
@@ -7834,6 +7840,9 @@ msgstr "Cada célula mostra as pessoas atribuídas em comparação com as pessoa
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
 
+msgid "Each final asset is built in this Construction in Progress class"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Cada um é adicionado como uma linha recorrente a partir da data da alteração, para ser precificado na grade."
 
@@ -9555,6 +9564,9 @@ msgstr "Filtro"
 
 msgid "Filter by…"
 msgstr "Filtrar por…"
+
+msgid "Final asset"
+msgstr ""
 
 msgid "Finalize"
 msgstr "Finalizar"
@@ -15623,6 +15635,9 @@ msgstr "Fixar ou desafixar"
 
 msgid "Pinned"
 msgstr "Fixado"
+
+msgid "Place in service"
+msgstr ""
 
 msgid "Place in Service"
 msgstr ""

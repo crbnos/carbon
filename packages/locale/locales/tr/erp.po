@@ -4547,6 +4547,9 @@ msgstr "Stilini seçin"
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Bağlandığınızda seçildi ve bu kurulum için sabitlendi. Değiştirmek için kaldırın ve farklı bir modda yeniden bağlanın."
 
+msgid "CIP Class"
+msgstr ""
+
 msgid "City"
 msgstr "Şehir"
 
@@ -6061,6 +6064,9 @@ msgstr "Ölçü birimi oluşturuldu"
 
 msgid "Created webhook"
 msgstr "Webhook başarıyla oluşturuldu"
+
+msgid "Created when the project is released"
+msgstr ""
 
 msgid "Created work center"
 msgstr "İş merkezi oluşturuldu"
@@ -7834,6 +7840,9 @@ msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği person
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
 
+msgid "Each final asset is built in this Construction in Progress class"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Her biri değişiklik tarihinden itibaren yinelenen bir satır olarak eklenir ve tabloda fiyatlandırılır."
 
@@ -9555,6 +9564,9 @@ msgstr "Filtre"
 
 msgid "Filter by…"
 msgstr "Filtrele…"
+
+msgid "Final asset"
+msgstr ""
 
 msgid "Finalize"
 msgstr "Onayla"
@@ -15623,6 +15635,9 @@ msgstr "Sabitle veya kaldır"
 
 msgid "Pinned"
 msgstr "Sabitlenmiş"
+
+msgid "Place in service"
+msgstr ""
 
 msgid "Place in Service"
 msgstr ""

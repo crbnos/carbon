@@ -4547,6 +4547,9 @@ msgstr "选择您的风格"
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "在连接时选择并为此安装固定。要更改它，请卸载并以不同模式重新连接。"
 
+msgid "CIP Class"
+msgstr ""
+
 msgid "City"
 msgstr "城市"
 
@@ -6061,6 +6064,9 @@ msgstr "已创建计量单位"
 
 msgid "Created webhook"
 msgstr "已创建 webhook"
+
+msgid "Created when the project is released"
+msgstr ""
 
 msgid "Created work center"
 msgstr "已创建工作中心"
@@ -7834,6 +7840,9 @@ msgstr "每个单元格显示分配的人员与该天工作所需的人员对比
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
 
+msgid "Each final asset is built in this Construction in Progress class"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "每项都从变更日期起作为定期行添加，并在表格中定价。"
 
@@ -9555,6 +9564,9 @@ msgstr "筛选"
 
 msgid "Filter by…"
 msgstr "按…筛选"
+
+msgid "Final asset"
+msgstr ""
 
 msgid "Finalize"
 msgstr "完成"
@@ -15623,6 +15635,9 @@ msgstr "固定或取消固定"
 
 msgid "Pinned"
 msgstr "已固定"
+
+msgid "Place in service"
+msgstr ""
 
 msgid "Place in Service"
 msgstr ""

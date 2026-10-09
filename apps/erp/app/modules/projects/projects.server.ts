@@ -52,6 +52,7 @@ export async function createProject(
         status: "Draft",
         costTreatment: args.costTreatment,
         costAccountId: args.costAccountId ?? null,
+        fixedAssetClassId: args.fixedAssetClassId ?? null,
         customerId: args.customerId ?? null,
         ownerId: args.ownerId ?? null,
         locationId: args.locationId ?? null,
@@ -661,9 +662,21 @@ export async function getProjectElementPage(
     return { data: null, error: null };
   }
 
+  // A final asset's asset under construction (or in service), for its status.
+  const capitalAsset = element.data.fixedAssetId
+    ? await client
+        .from("fixedAsset")
+        .select("id, fixedAssetId, name, status")
+        .eq("id", element.data.fixedAssetId)
+        .eq("companyId", args.companyId)
+        .maybeSingle()
+    : null;
+  if (capitalAsset?.error) return { data: null, error: capitalAsset.error };
+
   return {
     data: {
       element: element.data,
+      capitalAsset: capitalAsset?.data ?? null,
       elements: elements.data ?? [],
       comments: comments.data ?? [],
       planLines: planLines.data ?? { materials: [], labor: [], costs: [] },

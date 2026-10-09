@@ -4,7 +4,9 @@
 
 import { Button, Copy, Heading, HStack, useDisclosure } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import {
+  LuBuilding2,
   LuCircleCheck,
   LuCirclePause,
   LuCirclePlay,
@@ -22,6 +24,7 @@ import { path } from "~/utils/path";
 import type { ProjectStatus as ProjectStatusType } from "../../projects.models";
 import { canChangeProjectStatus } from "../../projects.models";
 import type { Project } from "../../types";
+import { PlaceInServiceModal } from "../Element/PlaceInServiceModal";
 import ProjectStatus from "../Projects/ProjectStatus";
 import { useProjectNavigation } from "./useProjectNavigation";
 
@@ -31,10 +34,12 @@ const ProjectHeader = () => {
   const { projectId } = useParams();
   if (!projectId) throw new Error("projectId not found");
 
-  const routeData = useRouteData<{ project: Project }>(
-    path.to.project(projectId)
-  );
+  const routeData = useRouteData<{
+    project: Project;
+    underConstructionAssets: number;
+  }>(path.to.project(projectId));
   const project = routeData?.project;
+  const [placing, setPlacing] = useState(false);
 
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "projects");
@@ -129,6 +134,19 @@ const ProjectHeader = () => {
               <Trans>Reopen</Trans>
             </Button>
           )}
+          {project.costTreatment === "Capitalize" &&
+            (routeData?.underConstructionAssets ?? 0) > 0 && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuBuilding2 />}
+                isDisabled={
+                  !canUpdate || !permissions.can("create", "accounting")
+                }
+                onClick={() => setPlacing(true)}
+              >
+                <Trans>Place in service</Trans>
+              </Button>
+            )}
           {can("Closed") && (
             <Button
               variant="primary"
@@ -142,6 +160,12 @@ const ProjectHeader = () => {
           <DetailsTopbar links={links} />
         </HStack>
       </div>
+      {placing && (
+        <PlaceInServiceModal
+          projectId={projectId}
+          onClose={() => setPlacing(false)}
+        />
+      )}
       {closeDisclosure.isOpen && (
         <Confirm
           action={path.to.projectStatus(projectId)}

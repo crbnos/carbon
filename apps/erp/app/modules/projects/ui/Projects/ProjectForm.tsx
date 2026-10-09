@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -21,7 +22,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -33,10 +34,11 @@ import {
   InputControlled,
   Location,
   Select,
+  SelectControlled,
   Submit,
   TextArea
 } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   projectCostTreatments,
@@ -44,6 +46,7 @@ import {
   projectValidator,
   suggestProjectIdentifier
 } from "../../projects.models";
+import { getCipFixedAssetClasses } from "../../projects.service";
 
 type ProjectFormValues = z.infer<typeof projectValidator>;
 
@@ -85,6 +88,11 @@ const ProjectForm = ({
       ? suggestProjectIdentifier(name)
       : "";
 
+  const [costTreatment, setCostTreatment] = useState<string>(
+    initialValues.costTreatment
+  );
+  const cipClasses = useCipClasses(costTreatment === "Capitalize");
+
   const treatmentOptions = projectCostTreatments.map((treatment) => ({
     label: treatment,
     value: treatment
@@ -124,16 +132,30 @@ const ProjectForm = ({
         <div className="@xl:col-span-2">
           <TextArea name="description" label={t`Description`} />
         </div>
-        <Select
+        <SelectControlled
           name="costTreatment"
           label={t`Cost Treatment`}
           options={treatmentOptions}
+          value={costTreatment}
+          onChange={(option) => setCostTreatment(option?.value ?? "")}
         />
-        <Account
-          name="costAccountId"
-          label={t`Cost Account`}
-          helperText={t`Leave empty to use the account default`}
-        />
+        {costTreatment === "Capitalize" ? (
+          <Select
+            name="fixedAssetClassId"
+            label={t`CIP Class`}
+            helperText={t`Each final asset is built in this Construction in Progress class`}
+            options={cipClasses.map((assetClass) => ({
+              label: assetClass.name,
+              value: assetClass.id
+            }))}
+          />
+        ) : (
+          <Account
+            name="costAccountId"
+            label={t`Cost Account`}
+            helperText={t`Leave empty to use the account default`}
+          />
+        )}
         <Customer name="customerId" label={t`Customer`} />
         <Employee name="ownerId" label={t`Owner`} />
         <Location name="locationId" label={t`Location`} />
@@ -216,3 +238,21 @@ const ProjectForm = ({
 };
 
 export default ProjectForm;
+
+/** The company's Construction in Progress classes, read once when needed. */
+function useCipClasses(enabled: boolean) {
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!enabled || !carbon) return;
+    let cancelled = false;
+    getCipFixedAssetClasses(carbon, company.id).then((result) => {
+      if (!cancelled) setClasses(result.data ?? []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, carbon, company.id]);
+  return classes;
+}

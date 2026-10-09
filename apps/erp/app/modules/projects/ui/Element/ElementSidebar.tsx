@@ -2,11 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Combobox, Copy, cn, Subheading, Switch } from "@carbon/react";
+import { Button, Combobox, Copy, cn, Subheading, Switch } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { LuBuilding2 } from "react-icons/lu";
+import { Link } from "react-router";
+import { usePermissions } from "~/hooks";
+import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
 import { useItems } from "~/stores";
+import { path } from "~/utils/path";
+import type { ProjectCostTreatment } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import {
@@ -23,8 +29,10 @@ import {
   ElementTypeIcon,
   useElementTypeLabels
 } from "../Elements/ElementTypeIcon";
+import { PlaceInServiceModal } from "./PlaceInServiceModal";
 
 type Element = ProjectElementPage["element"];
+type CapitalAsset = ProjectElementPage["capitalAsset"];
 
 /** One property row: a 120 px label column and the value's ghost editor. */
 function Property({ label, children }: { label: string; children: ReactNode }) {
@@ -41,6 +49,8 @@ function Property({ label, children }: { label: string; children: ReactNode }) {
 export function ElementSidebar({
   projectId,
   element,
+  capitalAsset,
+  costTreatment,
   states,
   labels,
   milestones,
@@ -49,6 +59,8 @@ export function ElementSidebar({
 }: {
   projectId: string;
   element: Element;
+  capitalAsset: CapitalAsset;
+  costTreatment: ProjectCostTreatment | null;
   states: ProjectState[];
   labels: ProjectLabel[];
   milestones: ProjectMilestone[];
@@ -139,6 +151,23 @@ export function ElementSidebar({
           number={element.estimatedHours}
         />
       </Property>
+      {costTreatment === "Capitalize" && element.type !== "Parameter" && (
+        <>
+          <Property label={t`Final asset`}>
+            <FinalAssetSwitch
+              projectId={projectId}
+              elementId={element.id}
+              isFinalAsset={element.isFinalAsset}
+              isDisabled={isDisabled}
+            />
+          </Property>
+          {element.isFinalAsset && (
+            <Property label={t`Asset`}>
+              <CapitalAssetLink projectId={projectId} asset={capitalAsset} />
+            </Property>
+          )}
+        </>
+      )}
       {element.type === "System" && (
         <Property label={t`Linked part`}>
           <LinkedPart
@@ -180,6 +209,88 @@ function ChargeableSwitch({
         disabled={isDisabled}
         onCheckedChange={(next) => submit(next ? "true" : "false")}
       />
+    </div>
+  );
+}
+
+function FinalAssetSwitch({
+  projectId,
+  elementId,
+  isFinalAsset,
+  isDisabled
+}: {
+  projectId: string;
+  elementId: string;
+  isFinalAsset: boolean;
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const { pending, submit } = useElementField(
+    projectId,
+    elementId,
+    "isFinalAsset"
+  );
+  const checked = pending === undefined ? isFinalAsset : pending === "true";
+  return (
+    <div className="px-2">
+      <Switch
+        variant="small"
+        aria-label={t`Final asset`}
+        checked={checked}
+        disabled={isDisabled}
+        onCheckedChange={(next) => submit(next ? "true" : "false")}
+      />
+    </div>
+  );
+}
+
+/** The final asset's asset, its status, and Place in service. */
+function CapitalAssetLink({
+  projectId,
+  asset
+}: {
+  projectId: string;
+  asset: CapitalAsset;
+}) {
+  const permissions = usePermissions();
+  const [placing, setPlacing] = useState(false);
+  if (!asset) {
+    return (
+      <span className="px-2 text-sm text-muted-foreground">
+        <Trans>Created when the project is released</Trans>
+      </span>
+    );
+  }
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-2 px-2">
+      <Link
+        to={path.to.fixedAsset(asset.id)}
+        className="font-mono text-sm hover:underline"
+      >
+        {asset.fixedAssetId}
+      </Link>
+      <FixedAssetStatus status={asset.status} />
+      {asset.status === "Under Construction" && (
+        <Button
+          variant="secondary"
+          size="sm"
+          leftIcon={<LuBuilding2 />}
+          isDisabled={
+            !permissions.can("create", "accounting") ||
+            !permissions.can("update", "projects")
+          }
+          onClick={() => setPlacing(true)}
+        >
+          <Trans>Place in service</Trans>
+        </Button>
+      )}
+      {placing && (
+        <PlaceInServiceModal
+          projectId={projectId}
+          fixedAssetId={asset.id}
+          onClose={() => setPlacing(false)}
+        />
+      )}
     </div>
   );
 }

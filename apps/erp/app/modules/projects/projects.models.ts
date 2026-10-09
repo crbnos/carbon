@@ -27,13 +27,14 @@ export const projectStatuses = [
 ] as const satisfies readonly ProjectStatus[];
 
 /**
- * The cost treatments the UI offers in Phase 1a. `Capitalize` exists in the
- * enum but arrives in Phase 1b, so no form can submit it yet.
+ * The cost treatments the UI offers. `Capitalize` (Phase 1b) builds the
+ * project's assets under construction and needs a CIP class.
  */
 export const projectCostTreatments = [
   "Statistical",
   "Expense",
-  "Contract"
+  "Contract",
+  "Capitalize"
 ] as const satisfies readonly ProjectCostTreatment[];
 
 export const projectElementTypes = [
@@ -171,30 +172,41 @@ export function suggestProjectIdentifier(name: string): string {
   return base.slice(0, 4);
 }
 
-export const projectValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  identifier: zfd.text(
-    z
-      .string()
-      .trim()
-      .regex(PROJECT_IDENTIFIER_PATTERN, {
-        message: "Use 2 to 6 capital letters or digits, starting with a letter"
-      })
-      .optional()
-  ),
-  description: zfd.text(z.string().trim().optional()),
-  costTreatment: z.enum(projectCostTreatments, {
-    error: "Cost treatment is required"
-  }),
-  costAccountId: zfd.text(z.string().optional()),
-  customerId: zfd.text(z.string().optional()),
-  ownerId: zfd.text(z.string().optional()),
-  locationId: zfd.text(z.string().optional()),
-  startDate: zfd.text(z.string().optional()),
-  endDate: zfd.text(z.string().optional()),
-  priority: zfd.text(z.enum(projectElementPriorities).optional())
-});
+export const projectValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    identifier: zfd.text(
+      z
+        .string()
+        .trim()
+        .regex(PROJECT_IDENTIFIER_PATTERN, {
+          message:
+            "Use 2 to 6 capital letters or digits, starting with a letter"
+        })
+        .optional()
+    ),
+    description: zfd.text(z.string().trim().optional()),
+    costTreatment: z.enum(projectCostTreatments, {
+      error: "Cost treatment is required"
+    }),
+    costAccountId: zfd.text(z.string().optional()),
+    // Capitalize: the Construction in Progress class of the project's assets.
+    fixedAssetClassId: zfd.text(z.string().optional()),
+    customerId: zfd.text(z.string().optional()),
+    ownerId: zfd.text(z.string().optional()),
+    locationId: zfd.text(z.string().optional()),
+    startDate: zfd.text(z.string().optional()),
+    endDate: zfd.text(z.string().optional()),
+    priority: zfd.text(z.enum(projectElementPriorities).optional())
+  })
+  .refine(
+    (data) => data.costTreatment !== "Capitalize" || !!data.fixedAssetClassId,
+    {
+      message: "A capital project needs a Construction in Progress class",
+      path: ["fixedAssetClassId"]
+    }
+  );
 
 /**
  * The status changes the project header offers, by current status. Release

@@ -4547,6 +4547,9 @@ msgstr "스타일을 선택하세요"
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "연결할 때 선택되었으며 이 설치에 대해 고정되어 있습니다. 변경하려면 제거한 후 다른 모드로 다시 연결하세요."
 
+msgid "CIP Class"
+msgstr ""
+
 msgid "City"
 msgstr "도시"
 
@@ -6061,6 +6064,9 @@ msgstr "측정 단위 생성됨"
 
 msgid "Created webhook"
 msgstr "웹훅 생성됨"
+
+msgid "Created when the project is released"
+msgstr ""
 
 msgid "Created work center"
 msgstr "작업장 생성됨"
@@ -7834,6 +7840,9 @@ msgstr "각 셀은 그 날 일에 필요한 인원 대비 할당된 인원입니
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
 
+msgid "Each final asset is built in this Construction in Progress class"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "각 항목은 변경일부터 반복 라인으로 추가되며 그리드에서 가격을 설정합니다."
 
@@ -9555,6 +9564,9 @@ msgstr "필터"
 
 msgid "Filter by…"
 msgstr "필터링…"
+
+msgid "Final asset"
+msgstr ""
 
 msgid "Finalize"
 msgstr "확정"
@@ -15623,6 +15635,9 @@ msgstr "고정 또는 고정 해제"
 
 msgid "Pinned"
 msgstr "고정됨"
+
+msgid "Place in service"
+msgstr ""
 
 msgid "Place in Service"
 msgstr ""

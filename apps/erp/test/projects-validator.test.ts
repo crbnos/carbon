@@ -45,4 +45,20 @@ describe("projectValidator", () => {
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.description).toBeUndefined();
   });
+
+  it("needs a CIP class for a Capitalize project", () => {
+    expect(
+      projectValidator.safeParse({
+        name: "Line 4 expansion",
+        costTreatment: "Capitalize"
+      }).success
+    ).toBe(false);
+    expect(
+      projectValidator.safeParse({
+        name: "Line 4 expansion",
+        costTreatment: "Capitalize",
+        fixedAssetClassId: "fac-cip"
+      }).success
+    ).toBe(true);
+  });
 });

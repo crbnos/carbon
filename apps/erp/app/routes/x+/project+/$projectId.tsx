@@ -17,7 +17,9 @@ import {
   getProjectMilestones,
   getProjectStates
 } from "~/modules/projects";
+import { getProjectCapitalAssets } from "~/modules/projects/projects.server";
 import ProjectHeader from "~/modules/projects/ui/Project/ProjectHeader";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -59,8 +61,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // A capital project offers Place in service while an asset is under
+  // construction.
+  const underConstructionAssets =
+    project.data.costTreatment === "Capitalize"
+      ? (
+          await getProjectCapitalAssets(getDatabaseClient(), {
+            companyId,
+            projectId
+          })
+        ).filter((asset) => asset.status === "Under Construction").length
+      : 0;
+
   return {
     project: project.data,
+    underConstructionAssets,
     states: states.data ?? [],
     labels: labels.data ?? [],
     milestones: milestones.data ?? []

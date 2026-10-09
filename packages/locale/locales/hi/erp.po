@@ -4547,6 +4547,9 @@ msgstr "अपनी शैली चुनें"
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "जब आप कनेक्ट किए थे तब चुना गया था और इस इंस्टॉल के लिए तय किया गया है। इसे बदलने के लिए, अनइंस्टॉल करें और एक अलग मोड में फिर से कनेक्ट करें।"
 
+msgid "CIP Class"
+msgstr ""
+
 msgid "City"
 msgstr "शहर"
 
@@ -6061,6 +6064,9 @@ msgstr "माप की इकाई बनाई गई"
 
 msgid "Created webhook"
 msgstr "वेबहुक बनाया गया"
+
+msgid "Created when the project is released"
+msgstr ""
 
 msgid "Created work center"
 msgstr "वर्क सेंटर बनाया गया"
@@ -7834,6 +7840,9 @@ msgstr "प्रत्येक सेल उन लोगों को दर�
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
 
+msgid "Each final asset is built in this Construction in Progress class"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "प्रत्येक को परिवर्तन तिथि से एक आवर्ती पंक्ति के रूप में जोड़ा जाता है, जिसकी कीमत ग्रिड में तय की जाती है।"
 
@@ -9555,6 +9564,9 @@ msgstr "फ़िल्टर करें"
 
 msgid "Filter by…"
 msgstr "द्वारा फ़िल्टर करें…"
+
+msgid "Final asset"
+msgstr ""
 
 msgid "Finalize"
 msgstr "अंतिम रूप दें"
@@ -15623,6 +15635,9 @@ msgstr "पिन करें या अनपिन करें"
 
 msgid "Pinned"
 msgstr "पिन किया गया"
+
+msgid "Place in service"
+msgstr ""
 
 msgid "Place in Service"
 msgstr ""

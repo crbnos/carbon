@@ -4547,6 +4547,9 @@ msgstr "あなたのスタイルを選択"
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "接続時に選択され、このインストール用に固定されています。変更するには、アンインストールして別のモードで再接続してください。"
 
+msgid "CIP Class"
+msgstr ""
+
 msgid "City"
 msgstr "市区町村"
 
@@ -6061,6 +6064,9 @@ msgstr "単位が作成されました"
 
 msgid "Created webhook"
 msgstr "Webhookを作成しました"
+
+msgid "Created when the project is released"
+msgstr ""
 
 msgid "Created work center"
 msgstr "作業区を作成しました"
@@ -7834,6 +7840,9 @@ msgstr "各セルは、その日の作業に必要な人員に対して配置さ
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
 
+msgid "Each final asset is built in this Construction in Progress class"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "それぞれ変更日から定期明細として追加され、グリッドで価格を設定します。"
 
@@ -9555,6 +9564,9 @@ msgstr "絞り込み"
 
 msgid "Filter by…"
 msgstr "絞り込み…"
+
+msgid "Final asset"
+msgstr ""
 
 msgid "Finalize"
 msgstr "確定"
@@ -15623,6 +15635,9 @@ msgstr "ピン留めまたはピン留め解除"
 
 msgid "Pinned"
 msgstr "ピン留め"
+
+msgid "Place in service"
+msgstr ""
 
 msgid "Place in Service"
 msgstr ""

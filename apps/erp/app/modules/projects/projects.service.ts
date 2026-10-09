@@ -292,6 +292,23 @@ export type ChargeNumber = {
 };
 
 /**
+ * The Construction in Progress classes a capital project can build its
+ * assets in. Read directly: `getFixedAssetClassesList` drops CIP classes while
+ * `CONSTRUCTION_IN_PROGRESS_ENABLED` is false.
+ */
+export async function getCipFixedAssetClasses(
+  client: Client,
+  companyId: string
+) {
+  return client
+    .from("fixedAssetClass")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("isConstructionInProgress", true)
+    .order("name");
+}
+
+/**
  * Lists what a user can charge: each Released project, and each chargeable
  * element of a Released project whose state is Unstarted or Started. When
  * the company requires an element, the project-only rows are left out.

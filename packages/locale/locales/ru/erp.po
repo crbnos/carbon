@@ -4547,6 +4547,9 @@ msgstr "Выберите свой стиль"
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Выбрано при подключении и зафиксировано для этой установки. Чтобы изменить это, удалите и переподключитесь в другом режиме."
 
+msgid "CIP Class"
+msgstr ""
+
 msgid "City"
 msgstr "Город"
 
@@ -6061,6 +6064,9 @@ msgstr "Единица измерения создана"
 
 msgid "Created webhook"
 msgstr "Создан вебхук"
+
+msgid "Created when the project is released"
+msgstr ""
 
 msgid "Created work center"
 msgstr "Рабочий центр создан"
@@ -7834,6 +7840,9 @@ msgstr "Каждая ячейка — это назначенные сотруд
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
 
+msgid "Each final asset is built in this Construction in Progress class"
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Каждая добавляется как повторяющаяся строка с даты изменения, цена задаётся в таблице."
 
@@ -9555,6 +9564,9 @@ msgstr "Фильтровать"
 
 msgid "Filter by…"
 msgstr "Фильтровать по…"
+
+msgid "Final asset"
+msgstr ""
 
 msgid "Finalize"
 msgstr "Завершить"
@@ -15623,6 +15635,9 @@ msgstr "Прикрепить или открепить"
 
 msgid "Pinned"
 msgstr "Закреплено"
+
+msgid "Place in service"
+msgstr ""
 
 msgid "Place in Service"
 msgstr ""

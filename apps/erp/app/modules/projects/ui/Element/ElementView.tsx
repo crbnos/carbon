@@ -88,6 +88,7 @@ export function ElementView({
   projectId,
   project,
   element,
+  capitalAsset,
   elements,
   comments,
   planLines,
@@ -323,6 +324,8 @@ export function ElementView({
           <ElementSidebar
             projectId={projectId}
             element={element}
+            capitalAsset={capitalAsset}
+            costTreatment={project?.costTreatment ?? null}
             states={states}
             labels={labels}
             milestones={milestones}
