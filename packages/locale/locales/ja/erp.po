@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# 件のレコードに注意が必要です} other {# 件のレコードに注意が必要です}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -405,7 +405,7 @@ msgid "{count} units"
 msgstr "{count} 個"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} 件作成、{updated} 件更新。"
 
 msgid "{days}d"
 msgstr "{days}日"
@@ -432,7 +432,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 件の工程"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {さらに # 件のレコードがあります。} other {さらに # 件のレコードがあります。}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
@@ -3627,6 +3627,9 @@ msgstr "ターゲットから {daysBehindTarget} 日遅れています"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "段階的に廃止されます — 後継品目：<0>{0}</0>"
+
+msgid "Below level"
+msgstr "レベル以下"
 
 msgid "Below safety stock"
 msgstr "安全在庫以下"
@@ -11386,10 +11389,10 @@ msgstr "姓"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "最後のプッシュ {when} 失敗: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "最後のプッシュ {when}:"
 
 msgid "Last Quarter"
 msgstr "前四半期"
@@ -11398,7 +11401,7 @@ msgid "Last Run"
 msgstr "最終実行"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "最後のスケジュール済みプッシュ {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "最後に同期: <0/>"
@@ -12548,7 +12551,7 @@ msgid "More overtime"
 msgstr "残業を増やす"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "待機中のレコードがあります。続行するにはもう一度プッシュしてください。"
 
 msgid "Morning, {name}."
 msgstr "朝、{name}さん。"
@@ -12563,7 +12566,7 @@ msgid "Motion"
 msgstr "モーション"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount には {matches} 件の同じ識別子を持つレコードがあります。Mount で余分なレコードを削除またはマージしてから、もう一度プッシュしてください。"
 
 msgid "Move"
 msgstr "移動"
@@ -13281,7 +13284,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "まだコメントがありません。最初のコメントを追加してください。"
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "\"{query}\" に一致する会社はありません"
 
 msgid "No completed jobs within range"
 msgstr "範囲内に完了した製造指図がありません"
@@ -14041,6 +14044,9 @@ msgstr "オン"
 
 msgid "On {sentDate}"
 msgstr "{sentDate}に送信"
+
+msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+msgstr "転送かんばんでは、宛先保管ユニットの最小数量です。手持ちプラス未処理の受信転送がそれ以下に落ちると、Carbon はかんばん数量のためにリリース済の在庫転送を作成します。"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "カットオーバー日に、下のチェックリストを順番に作業してください。受け入れテストはあなたの対象要求事項から取得されます。サポートの詳細は下部にあります。"
@@ -15766,6 +15772,9 @@ msgstr "プロジェクト開始"
 msgid "Projected"
 msgstr "予測"
 
+msgid "Projected (To)"
+msgstr "予定 (To)"
+
 msgid "Projected completion"
 msgstr "予測完了"
 
@@ -17085,6 +17094,9 @@ msgstr "PDFを置き換えると、このドキュメント上のすべてのバ
 msgid "Replenishment"
 msgstr "補充"
 
+msgid "Replenishment Level"
+msgstr "補充レベル"
+
 msgid "Replenishment system"
 msgstr "調達方式"
 
@@ -18249,7 +18261,7 @@ msgid "Search fields..."
 msgstr "フィールドを検索..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "会社を検索"
 
 msgid "Search for existing or create a new one"
 msgstr "既存のものを検索するか、新しいものを作成してください"
@@ -19514,7 +19526,7 @@ msgid "Started"
 msgstr "開始"
 
 msgid "Starting"
-msgstr ""
+msgstr "開始中"
 
 msgid "Starting…"
 msgstr "開始中…"
@@ -21035,19 +21047,22 @@ msgid "The purchase order"
 msgstr "発注書"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Mount へのプッシュが開始されませんでした。もう一度試してください。"
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Mount へのプッシュが失敗しました"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Mount へのプッシュが完了しました"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Mount へのプッシュが完了しました。一部のレコードに注意が必要です"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "この明細が価格設定される数量ブレークポイント。各列は買い手と仕入先の交渉および下流文書への変換用に、独自の単価を持ちます。"
+
+msgid "The quantity moved from the From storage unit on each signal."
+msgstr "各シグナルで From 保管ユニットから移動される数量。"
 
 msgid "The quantity of the item to be reordered on scan-based replenishment."
 msgstr "スキャンベースの補充時に再注文される品目の数量。"
@@ -22260,7 +22275,7 @@ msgid "Triggers"
 msgstr "トリガー"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "別の名前を試してください。"
 
 msgid "Tuesday"
 msgstr "火曜日"
@@ -23606,6 +23621,9 @@ msgstr "商品が実際に到着した日時。入荷に記録され、仕入先
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "かんばんカードがスキャンされると、製造指図は自動的に下書きから移動され、フロアにリリース済となります。"
+
+msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
+msgstr "宛先保管ユニットの予定数量がこのレベル以下に落ちると、リリース済の在庫転送がかんばん数量で作成されます。スキャンのみの場合は空白のままにしてください。"
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "入荷拠点が在庫到着を予想する日時。目的地でのMRP在庫可用性を決定します。"

@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operas
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# kayıt dikkat gerektiriyor} other {# kayıt dikkat gerektiriyor}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -405,7 +405,7 @@ msgid "{count} units"
 msgstr "{count} adet"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} oluşturuldu, {updated} güncellendi."
 
 msgid "{days}d"
 msgstr "{days}g"
@@ -432,7 +432,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} /{count} operasyon"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {Ve # kayıt daha.} other {Ve # kayıt daha.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} daha: {hiddenNames}"
@@ -3627,6 +3627,9 @@ msgstr "Hedef {daysBehindTarget} gün geride"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Kademeli olarak kullanımdan kaldırılıyor — ardıl: <0>{0}</0>"
+
+msgid "Below level"
+msgstr "Seviyenin altında"
 
 msgid "Below safety stock"
 msgstr "Emniyet stokunun altında"
@@ -11386,10 +11389,10 @@ msgstr "Soyadı"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "Son itme {when} başarısız oldu: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "Son itme {when}:"
 
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
@@ -11398,7 +11401,7 @@ msgid "Last Run"
 msgstr "Son Çalıştırma"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "Son planlanan itme {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "Son senkronizasyon: <0/>"
@@ -12548,7 +12551,7 @@ msgid "More overtime"
 msgstr "Daha fazla fazla mesai"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "Daha fazla kayıt bekleniyor. Devam etmek için tekrar itin."
 
 msgid "Morning, {name}."
 msgstr "Sabah, {name}."
@@ -12563,7 +12566,7 @@ msgid "Motion"
 msgstr "Hareket"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount'ta bu tanımlayıcıya sahip {matches} kayıt var. Ekstra olanları Mount'ta silin veya birleştirin, ardından tekrar itin."
 
 msgid "Move"
 msgstr "Taşış"
@@ -13281,7 +13284,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "Henüz yorum yok. İlk yorumu ekleyin."
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "Hiçbir şirket \"{query}\" ile eşleşmiyor"
 
 msgid "No completed jobs within range"
 msgstr "Aralıkta tamamlanmış İş emri yok"
@@ -14041,6 +14044,9 @@ msgstr "Açık"
 
 msgid "On {sentDate}"
 msgstr "{sentDate} tarihinde"
+
+msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+msgstr "Transfer kanban'ında To depolama birimi için minimum miktar. Eldeki + açık gelen transferler bunun altına düştüğünde, Carbon kanban miktarı için Serbest bırakıldı stok transferi oluşturur."
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Geçiş gününde, aşağıdaki kontrol listesini sırayla çalışın. Kabul testleri kapsam içi gerekliliklerinizden gelir. Destek ayrıntıları altta yer alır."
@@ -15766,6 +15772,9 @@ msgstr "Proje başlangıcı"
 msgid "Projected"
 msgstr "Öngörülen"
 
+msgid "Projected (To)"
+msgstr "Tahmini (To)"
+
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
 
@@ -17085,6 +17094,9 @@ msgstr "PDF'yi değiştirmek bu belgede tüm balon yerleştirmelerini kaldırır
 msgid "Replenishment"
 msgstr "Yenileştirme"
 
+msgid "Replenishment Level"
+msgstr "Yenileme Seviyesi"
+
 msgid "Replenishment system"
 msgstr "İkmal yöntemi"
 
@@ -18249,7 +18261,7 @@ msgid "Search fields..."
 msgstr "Alanları ara..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "Şirket ara"
 
 msgid "Search for existing or create a new one"
 msgstr "Mevcut birini arayın veya yeni bir tane oluşturun"
@@ -19514,7 +19526,7 @@ msgid "Started"
 msgstr "Başlangıç"
 
 msgid "Starting"
-msgstr ""
+msgstr "Başlıyor"
 
 msgid "Starting…"
 msgstr "Başlanıyor…"
@@ -21035,19 +21047,22 @@ msgid "The purchase order"
 msgstr "Satın alma siparişi"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Mount'a itme başlamadı. Tekrar deneyin."
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Mount'a itme başarısız oldu"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Mount'a itme tamamlandı"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Mount'a itme tamamlandı. Bazı kayıtlar dikkat gerektiriyor"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Bu Satırın fiyatlandırıldığı Miktar kırılım noktaları; her sütun Satın almacı–Tedarikçi müzakereleri ve aşağı yönlü belgelere dönüştürme için kendi birim başına Fiyatını taşır."
+
+msgid "The quantity moved from the From storage unit on each signal."
+msgstr "Her sinyalde From depolama biriminden taşınan miktar."
 
 msgid "The quantity of the item to be reordered on scan-based replenishment."
 msgstr "Tarama tabanlı yenileme ile yeniden sipariş edilecek ürün miktarı."
@@ -22260,7 +22275,7 @@ msgid "Triggers"
 msgstr "Tetikleyiciler"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "Farklı bir ad deneyin."
 
 msgid "Tuesday"
 msgstr "Salı"
@@ -23606,6 +23621,9 @@ msgstr "Mallar gerçekten geldiğinde; makbuzda kaydedilmiş ve tedarikçinin za
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Kanban kartı tarandığında, iş otomatik olarak taslaktan çıkarılır ve yere yayınlanır."
+
+msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
+msgstr "To depolama birimindeki tahmini miktar bu seviyenin altına düştüğünde, kanban miktarı için Serbest bırakıldı stok transferi oluşturulur. Yalnızca tarama için boş bırakın."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Mal kabul lokasyonunun stokun teslim alınmasını beklediği zaman; varış yerinde MRP uygunluğunu belirler."

@@ -288,7 +288,13 @@ export const kanbanValidator = z
     fromStorageUnitId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
-    conversionFactor: zfd.numeric(z.number().min(0).default(1))
+    conversionFactor: zfd.numeric(z.number().min(0).default(1)),
+    replenishmentLevel: zfd.numeric(
+      z
+        .number()
+        .min(0, { message: "Replenishment level must be 0 or more" })
+        .optional()
+    )
   })
   .refine(
     (data) => (data.replenishmentSystem === "Buy" ? !!data.supplierId : true),
@@ -323,6 +329,16 @@ export const kanbanValidator = z
     {
       message: "From and to storage units must be different",
       path: ["storageUnitId"]
+    }
+  )
+  // Only a Transfer kanban has a To storage unit to watch.
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer" ||
+      data.replenishmentLevel === undefined,
+    {
+      message: "Only a transfer kanban can have a replenishment level",
+      path: ["replenishmentLevel"]
     }
   );
 

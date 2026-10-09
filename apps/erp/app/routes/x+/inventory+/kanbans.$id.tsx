@@ -84,6 +84,7 @@ export default function EditKanbanRoute() {
     supplierId: kanban?.supplierId ?? "",
     purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: kanban?.conversionFactor ?? 1,
+    replenishmentLevel: kanban?.replenishmentLevel ?? undefined,
     autoRelease: kanban?.autoRelease ?? false,
     autoStartJob: kanban?.autoStartJob ?? false,
     completedBarcodeOverride: kanban?.completedBarcodeOverride ?? ""

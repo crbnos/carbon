@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# операция не имеет временных �
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# запись требует внимания} other {# записей требуют внимания}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -405,7 +405,7 @@ msgid "{count} units"
 msgstr "{count} единиц"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} создано, {updated} обновлено."
 
 msgid "{days}d"
 msgstr "{days}д"
@@ -432,7 +432,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {И еще # запись.} other {И еще # записей.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} еще: {hiddenNames}"
@@ -3627,6 +3627,9 @@ msgstr "Отстает от целевого показателя на {daysBehi
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Снимается с производства — преемник: <0>{0}</0>"
+
+msgid "Below level"
+msgstr "Ниже уровня"
 
 msgid "Below safety stock"
 msgstr "Ниже страховой запас"
@@ -11386,10 +11389,10 @@ msgstr "Фамилия"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "Последняя попытка отправки {when} не удалась: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "Последняя попытка отправки {when}:"
 
 msgid "Last Quarter"
 msgstr "Последний квартал"
@@ -11398,7 +11401,7 @@ msgid "Last Run"
 msgstr "Последний запуск"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "Последняя запланированная отправка {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "Последняя синхронизация: <0/>"
@@ -12548,7 +12551,7 @@ msgid "More overtime"
 msgstr "Больше переработки"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "Больше записей ожидают. Отправьте снова для продолжения."
 
 msgid "Morning, {name}."
 msgstr "Доброе утро, {name}."
@@ -12563,7 +12566,7 @@ msgid "Motion"
 msgstr "Движение"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount содержит {matches} записей с этим идентификатором. Удалите или объедините лишние в Mount, затем отправьте снова."
 
 msgid "Move"
 msgstr "Переместить"
@@ -13281,7 +13284,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "Нет комментариев. Будьте первым, кто добавит комментарий."
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "Нет организаций, соответствующих \"{query}\"."
 
 msgid "No completed jobs within range"
 msgstr "Нет завершенных производственных заказов в диапазоне"
@@ -14041,6 +14044,9 @@ msgstr "Включено"
 
 msgid "On {sentDate}"
 msgstr "На {sentDate}"
+
+msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+msgstr "На канбане перемещения минимальное количество для целевой единицы хранения. Когда наличие плюс открытые входящие перемещения упадут ниже этого значения, Carbon создает перемещение запаса в объеме канбана."
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "В день переключения выполняйте контрольный список ниже по порядку. Тесты приемки основаны на ваших требованиях в области действия. Детали поддержки находятся внизу."
@@ -15766,6 +15772,9 @@ msgstr "Начало проекта"
 msgid "Projected"
 msgstr "Спрогнозировано"
 
+msgid "Projected (To)"
+msgstr "Спроецировано (целевое)"
+
 msgid "Projected completion"
 msgstr "Прогнозное завершение"
 
@@ -17085,6 +17094,9 @@ msgstr "Замена PDF удаляет все размещения выносо
 msgid "Replenishment"
 msgstr "Пополнение"
 
+msgid "Replenishment Level"
+msgstr "Уровень пополнения"
+
 msgid "Replenishment system"
 msgstr "Способ пополнения"
 
@@ -18249,7 +18261,7 @@ msgid "Search fields..."
 msgstr "Поиск полей..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "Поиск организации"
 
 msgid "Search for existing or create a new one"
 msgstr "Поиск существующей или создание новой"
@@ -19514,7 +19526,7 @@ msgid "Started"
 msgstr "Начал"
 
 msgid "Starting"
-msgstr ""
+msgstr "Запуск"
 
 msgid "Starting…"
 msgstr "Начинаю…"
@@ -21035,19 +21047,22 @@ msgid "The purchase order"
 msgstr "Заказ поставщику"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Отправка в Mount не началась. Попробуйте снова."
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Отправка в Mount не удалась"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Отправка в Mount завершена"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Отправка в Mount завершена. Некоторые записи требуют внимания"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Точки разрыва по количеству, при которых рассчитывается цена этой строки; каждый столбец содержит свою цену за единицу для переговоров между закупщиком и поставщиком и для преобразования в последующие документы."
+
+msgid "The quantity moved from the From storage unit on each signal."
+msgstr "Количество, перемещаемое с исходной единицы хранения с каждым сигналом."
 
 msgid "The quantity of the item to be reordered on scan-based replenishment."
 msgstr "Количество товара, которое будет переупорядочено при сканировании для пополнения запасов."
@@ -22260,7 +22275,7 @@ msgid "Triggers"
 msgstr "Триггеры"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "Попробуйте другое имя."
 
 msgid "Tuesday"
 msgstr "Вторник"
@@ -23606,6 +23621,9 @@ msgstr "Когда товары действительно прибыли; за�
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Когда карточка канбана сканируется, задание автоматически удаляется из черновика и выпускается на пол."
+
+msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
+msgstr "Когда спроецированное количество в целевой единице хранения упадет ниже этого уровня, создается перемещение запаса в объеме Количества. Оставьте пусто для режима только сканирования."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Когда Площадка приемки ожидает прибытия Запаса; определяет доступность MRP в пункте назначения."

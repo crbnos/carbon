@@ -18,6 +18,7 @@ export type KanbanCardItem = {
   fromStorageUnitName: string | null;
   supplierName: string | null;
   quantity: number;
+  replenishmentLevel: number | null;
   unitOfMeasureCode: string | null;
   thumbnailPath: string | null;
 };
@@ -82,6 +83,7 @@ export async function resolveKanbanData(
         fromStorageUnitName: kanban.fromStorageUnitName,
         supplierName: kanban.supplierName,
         quantity: kanban.quantity ?? 0,
+        replenishmentLevel: kanban.replenishmentLevel ?? null,
         unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
         thumbnailPath: kanban.thumbnailPath
       }

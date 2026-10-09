@@ -3363,3 +3363,23 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 **Rule:** Never put an import attribute on a JSON import in code that also runs in the browser. Make the server bundle the package instead: add it to `ssrNoExternal` in each app's `vite.config.ts` (the ERP and MES lists apply to both `ssr.noExternal` and `environments.ssr.resolve.noExternal`). To check the browser side, fetch the module from the dev server (`curl $ERP_URL/@fs<absolute path>`) and confirm the `import()` call has no second argument.
 
 **Applies to:** `packages/react/src/utils/generatedAvatar.ts`; any isomorphic code that imports JSON from a dependency.
+
+## A migration on main can carry a timestamp ahead of UTC
+
+**Context:** `supabase migration new` stamps a migration with the current UTC time. A migration merged to `main` (`20261009141827_link-custom-field-type.sql`) carried a time about 2.5 hours ahead of UTC, likely from a local clock.
+
+**Problem:** Every migration created after the pull got an older timestamp than that file. Production's `supabase db push` refuses a migration that sorts before one it already applied, so the new migrations would have failed to deploy. The clobber check and every test passed; nothing local shows it.
+
+**Rule:** After you pull `main`, compare your migrations' timestamps with the newest one on `main` (`ls packages/database/supabase/migrations | tail`). If yours sort first, rename them to sort after it, keep their order and content, and use a non-`000000` HHMMSS. Re-generate a generated `authz migration` file first, then rename it with the rest.
+
+**Applies to:** `packages/database/supabase/migrations/`; every branch that adds a migration.
+
+## The license-header fixer only sees files git tracks
+
+**Context:** `pnpm --filter @carbon/checks license-headers -- <paths>` writes the SPDX header. It walks `git ls-files --cached`.
+
+**Problem:** A new, untracked file is not in that list, so the fixer reports "0 fixed" and the file keeps no header until the `spdx-license-header` check fails at commit.
+
+**Rule:** Run `git add -N <new files>` (intent to add; it records no content) before the fixer, then run the fixer with those paths.
+
+**Applies to:** every new source file outside generated output.

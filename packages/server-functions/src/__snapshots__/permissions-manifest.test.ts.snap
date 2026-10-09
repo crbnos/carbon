@@ -280,6 +280,7 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
     },
   },
+  "kanban-replenish": "system",
   "post-asset-transfer": {
     "by": "type",
     "rules": {

@@ -1,32 +1,33 @@
 ---
 title: Kanban
-description: Scan-based pull replenishment. A kanban card ties an item to a bin, and scanning it fires a purchase order or a job.
+description: Scan-based pull replenishment. A kanban card ties an item to a bin, and a signal fires a purchase order, a job, or a stock transfer.
 ---
 
-A <Term>kanban</Term> is a physical pull signal represented by a printed card, QR code, or URL. It links an item, location, storage unit, and reorder quantity. Scanning the signal creates the purchase order or job needed to refill the bin.
+A <Term>kanban</Term> is a physical pull signal represented by a printed card, QR code, or URL. It links an item, location, storage unit, and reorder quantity. Scanning the signal creates the purchase order, job, or stock transfer needed to refill the bin.
 
-A [reordering policy](/docs/reference/reordering) calculates suggestions from on-hand quantity, demand, and reorder points. Kanban replenishment is manual: scanning creates an order immediately. Use policies for planning-driven replenishment and kanban for scan-driven shop-floor pull.
+A [reordering policy](/docs/reference/reordering) calculates suggestions from on-hand quantity, demand, and reorder points. Kanban replenishment is direct: a signal creates a real document immediately. Use policies for planning-driven replenishment and kanban for shop-floor pull.
+
+<Screenshot label="Kanbans list with the Replenishment Level and Projected (To) columns, one transfer kanban showing the Below level pill" />
 
 ## What a kanban holds
 
-Each kanban is a small record: an item, where it lives, how much to reorder, and how to reorder it.
+Each kanban is a small record: an item, where it lives, how much to reorder, and how to reorder it. For a `Transfer` kanban, the form shows Item, Replenishment System, Location, From Storage Unit, To Storage Unit, Quantity, and Replenishment Level, in that order.
 
 <FieldTable>
   <Field name="Item" required>The part, material, tool, or consumable this card replenishes.</Field>
-  <Field name="Quantity" required>How much to reorder each time the card is scanned (at least 1).</Field>
-  <Field name="Replenishment system" required>How the scan replenishes: `Buy` (raise a purchase order) or `Make` (create a job). See <Term>replenishment system</Term>.</Field>
+  <Field name="Quantity" required>How much to reorder on each signal (at least 1). On a `Transfer` kanban, this is the quantity moved from the From storage unit.</Field>
+  <Field name="Replenishment system" required>How the signal replenishes: `Buy` (raise a purchase order), `Make` (create a job), or `Transfer` (create a stock transfer between two storage units in the location). See <Term>replenishment system</Term>.</Field>
   <Field name="Location" required>The location whose stock this card refills.</Field>
-  <Field name="Storage unit">The bin the reordered stock lands in. Defaults from the item's pick method for that location if left blank.</Field>
+  <Field name="Storage unit">The bin the reordered stock lands in. Defaults from the item's pick method for that location if left blank. (`Buy` and `Make`.)</Field>
+  <Field name="From storage unit" required>The storage unit the stock moves out of. It must be in the kanban's location. (`Transfer` only.)</Field>
+  <Field name="To storage unit" required>The storage unit this card refills. It must be in the kanban's location and must be different from the From storage unit. (`Transfer` only.)</Field>
+  <Field name="Replenishment level">The <Term id="kanban-replenishment-level">replenishment level</Term> for the To storage unit, 0 or more. Leave it blank for a scan-only kanban. (`Transfer` only.)</Field>
   <Field name="Supplier">Who to buy from. **Required for `Buy` kanbans.**</Field>
-  <Field name="Purchase unit of measure / Conversion factor">The unit you buy in and how many stock units that equals — applied to the PO line. (`Buy` only.)</Field>
+  <Field name="Purchase unit of measure / Conversion factor">The unit you buy in and how many stock units that equals. Carbon applies both to the PO line. (`Buy` only.)</Field>
   <Field name="Auto Release">On a `Make` scan, release the created job to the floor immediately instead of leaving it in draft. (`Make` only.)</Field>
   <Field name="Auto Start Job">On a `Make` scan, drop the operator straight into the first operation in MES. Requires Auto Release. (`Make` only.)</Field>
   <Field name="Completion Barcode">The code operators scan to mark the job complete; auto-generated when left blank. (`Make` only.)</Field>
 </FieldTable>
-
-<Callout type="note">
-The replenishment system enum has three values (`Buy`, `Make`, `Buy and Make`), but the kanban form only offers **Buy** and **Make**. A kanban set to `Buy and Make` is rejected at scan time — a single card fires one clear action, not both.
-</Callout>
 
 ## The scan flow
 
@@ -35,15 +36,22 @@ Each kanban has scan targets for `order`, `start`, and `complete`. A scan opens 
 The **order** scan (the create signal) branches on the replenishment system:
 
 <StatusFlow>
-  <Status name="Buy" accent>The scan finds an open (`Draft` or `Planned`) purchase order for that supplier and adds a line for the kanban's quantity — or creates a new draft PO if none exists — then drops you on the purchase order. It applies the kanban's conversion factor, purchase unit, and storage unit to the line.</Status>
+  <Status name="Buy" accent>The scan finds an open (`Draft` or `Planned`) purchase order for that supplier and adds a line for the kanban's quantity. If none exists, it creates a new draft PO. It applies the kanban's conversion factor, purchase unit, and storage unit to the line, then drops you on the purchase order.</Status>
   <Status name="Make">The scan creates a <Term id="job">job</Term> for the item at the kanban's quantity, copies the item's method onto it, and links the job back to the card. With **Auto Release** on, it also runs planning and scheduling and marks the job `Ready`; with **Auto Start Job** on, it sends the operator straight into the first operation in MES.</Status>
+  <Status name="Transfer">The scan creates a `Released` stock transfer for the kanban's quantity, from the From storage unit to the To storage unit, then drops you on the transfer. A scan always creates a transfer, whether or not the kanban has a replenishment level.</Status>
 </StatusFlow>
 
 **Start** and **complete** scans only apply to `Make` kanbans. They resolve the linked job's active operation and hand off to the MES operation start / complete screens, so an operator can drive the whole build from the same card that created the job.
 
 <Callout type="warning">
-A `Make` kanban links to the job it created (`jobId`). If you scan **order** again while that job is still open, Carbon doesn't create a duplicate — it routes you to a collision screen that shows the existing job and offers to remove the link so a fresh scan can start over. Once the job is completed or cancelled, the link clears automatically and the card is free to fire again.
+A `Make` kanban links to the job it created (`jobId`). If you scan **order** again while that job is still open, Carbon doesn't create a duplicate. It routes you to a collision screen that shows the existing job and offers to remove the link so a fresh scan can start over. Once the job is completed or cancelled, the link clears automatically and the card is free to fire again.
 </Callout>
+
+## Replenishment level
+
+A `Transfer` kanban with a replenishment level refills its To storage unit without a scan. The projected quantity is the on-hand quantity at the To storage unit plus the outstanding quantity of `Released` and `In Progress` stock transfers into it. When the projected quantity is strictly below the level, Carbon creates one `Released` stock transfer for the kanban's Quantity per signal.
+
+Three events start the check: a stock movement at the To storage unit, a save of the kanban, and an hourly sweep. Each transfer has a "Kanban replenishment" note and shows `Kanban` in the **Source** column. The database sends the signals through the Vault secret `inngest_event_url`, so without it a level never fires ([environment variables](/docs/platform/self-hosting/environment-variables#jobs--cache)).
 
 ## Output format
 
@@ -52,17 +60,17 @@ How a card is rendered is a per-company setting, **Kanban Output**, with three m
 | Mode | What a card is |
 | --- | --- |
 | QR code | A scannable QR code (the default), color-coded per action. |
-| Label | A printed PDF label — six to a page — with the QR, item thumbnail, name, storage unit, quantity, and supplier. |
+| Label | A printed PDF label, six to a page, with the QR, item thumbnail, name, storage unit, quantity, and supplier. When the kanban has a replenishment level, a `MIN:` line prints under `QTY:`. |
 | URL | A copyable link that hits the same scan endpoint directly. |
 
-For `Make` kanbans, the list view also surfaces the **start** and **complete** affordances; `Buy` kanbans show only the order signal, since there's no job to start.
+For `Make` kanbans, the list view also surfaces the **start** and **complete** affordances. `Buy` and `Transfer` kanbans show only the order signal, since there's no job to start. The list also shows **Replenishment Level** and **Projected (To)** columns, with a **Below level** pill when the projected quantity is under the level.
 
 ## Kanban vs. reordering policy
 
 Both replenish stock, but they're different tools:
 
 <Callout type="info" title="A kanban is a signal, not a plan">
-A [reordering policy](/docs/reference/reordering) is evaluated by the planning engine, which computes suggested orders from on-hand, demand, and reorder points. A kanban skips all of that: a human scan creates a real purchase order or job on the spot. Reach for a kanban when the shop floor pulls material by hand and you want the refill to be one scan away.
+A [reordering policy](/docs/reference/reordering) is evaluated by the planning engine, which computes suggested orders from on-hand, demand, and reorder points. A kanban skips all of that: a scan or a replenishment level creates a real purchase order, job, or stock transfer on the spot. Reach for a kanban when the shop floor pulls material by hand and you want the refill to be one scan away.
 </Callout>
 
 ## Related
@@ -72,17 +80,17 @@ A [reordering policy](/docs/reference/reordering) is evaluated by the planning e
     Where stock lives, the storage units a kanban refills, and how on-hand is tracked.
   </Card>
   <Card title="Reordering policy" href="/docs/reference/reordering">
-    The planning-driven alternative — when and how much each part replenishes automatically.
+    The planning-driven alternative: when and how much each part replenishes automatically.
   </Card>
 </Cards>
 
 <AgentContext>
 ## Troubleshooting
 
-Exact errors from scanning kanban cards.
+Exact errors from saving and scanning kanban cards.
 
 ### "… is not supported"
-The **order** scan hit a kanban whose replenishment system is **`Buy and Make`**. A single card fires one clear action, so only `Buy` and `Make` are supported at scan. Set the kanban to `Buy` or `Make`.
+The **order** scan hit a kanban whose replenishment system is **`Buy and Make`**. A single card fires one clear action, so only `Buy`, `Make`, and `Transfer` are supported at scan. Set the kanban to one of those.
 
 ### "Supplier is required"
 A `Buy` kanban has no supplier. The order scan needs to know who to raise the purchase order against — set the supplier on the kanban.
@@ -99,6 +107,21 @@ A **start** or **complete** scan ran on a kanban that has no linked job yet. Tho
 ### "Kanban is not active"
 The scanned card isn't found or belongs to a different company. Confirm the card is current and scoped to your company.
 
+### "Kanban is missing a from or to storage unit"
+A `Transfer` scan (or level check) ran on a kanban with no From or no To storage unit. Set both on the kanban. The form also refuses to save with "From storage unit is required" or "To storage unit is required".
+
+### "Storage unit does not belong to the kanban location"
+The From or To storage unit of a `Transfer` kanban is not in the kanban's location, or does not belong to the company. Pick storage units from the kanban's own location.
+
+### "Only a transfer kanban can have a replenishment level"
+The form refuses a replenishment level on a `Buy` or `Make` kanban. Clear the level, or set the replenishment system to `Transfer`. A related save error is "From and to storage units must be different": a `Transfer` kanban cannot feed itself.
+
+### A transfer kanban with a level never fires
+The level check runs in the jobs runner, and the database sends its signals through the Vault secret `inngest_event_url`. If the secret is missing, `util.send_inngest_event` does nothing, so no transfer is created. A scan still works. Check that the projected quantity (on-hand at the To storage unit plus outstanding quantity on `Released` / `In Progress` stock transfers into it) is strictly below the level. The hourly sweep is the pg_cron job `kanban-level-sweeper`, at minute 7.
+
+### "Failed to create stock transfer"
+The `Transfer` scan failed for a reason other than the storage-unit checks above, for example a missing item. Check the kanban's item and retry.
+
 ### The list view shows no Start / Complete affordances
-Only `Make` kanbans surface **start** and **complete**; `Buy` kanbans show just the order signal, because there's no job to start. How cards render (QR code, Label, or URL) is the per-company **Kanban Output** setting.
+Only `Make` kanbans surface **start** and **complete**; `Buy` and `Transfer` kanbans show just the order signal, because there's no job to start. How cards render (QR code, Label, or URL) is the per-company **Kanban Output** setting.
 </AgentContext>

@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공�
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# 개 기록에 주의 필요} other {# 개 기록에 주의 필요}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -405,7 +405,7 @@ msgid "{count} units"
 msgstr "{count}개"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created}개 생성, {updated}개 수정"
 
 msgid "{days}d"
 msgstr "{days}일"
@@ -432,7 +432,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to}/{count} 공정"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {그리고 # 개 더} other {그리고 # 개 더}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount}개 추가: {hiddenNames}"
@@ -3627,6 +3627,9 @@ msgstr "목표 대비 {daysBehindTarget}일 뒤떨어짐"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "단계적으로 폐기 중 — 후속 품목: <0>{0}</0>"
+
+msgid "Below level"
+msgstr "레벨 이하"
 
 msgid "Below safety stock"
 msgstr "안전 재고 아래"
@@ -11386,10 +11389,10 @@ msgstr "성"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "마지막 푸시 {when} 실패: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "마지막 푸시 {when}:"
 
 msgid "Last Quarter"
 msgstr "지난 분기"
@@ -11398,7 +11401,7 @@ msgid "Last Run"
 msgstr "마지막 실행"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "마지막 예약된 푸시 {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "마지막 동기화: <0/>"
@@ -12548,7 +12551,7 @@ msgid "More overtime"
 msgstr "초과 근무 증가"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "대기 중인 기록이 더 있습니다. 계속하려면 다시 푸시하세요."
 
 msgid "Morning, {name}."
 msgstr "{name}님, 아침이군요."
@@ -12563,7 +12566,7 @@ msgid "Motion"
 msgstr "모션"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount에 이 식별자를 가진 {matches}개의 기록이 있습니다. Mount에서 중복된 기록을 삭제하거나 병합하고 다시 푸시하세요."
 
 msgid "Move"
 msgstr "이동"
@@ -13281,7 +13284,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 번째 댓글을 추가하세요."
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "\"{query}\"에 일치하는 회사가 없습니다"
 
 msgid "No completed jobs within range"
 msgstr "범위 내에 완료된 작업 지시가 없습니다"
@@ -14041,6 +14044,9 @@ msgstr "켜짐"
 
 msgid "On {sentDate}"
 msgstr "켬"
+
+msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+msgstr "이송 칸반에서 도착 보관 단위의 최소 수량입니다. 현재 재고와 미결 인바운드 이송의 합이 이 수준 아래로 내려가면, Carbon은 칸반 수량만큼의 릴리스됨 재고 이송을 생성합니다."
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "전환일 당일에는 아래 체크리스트를 순서대로 진행하세요. 승인 테스트는 범위 내 요구사항을 기준으로 하며, 지원 관련 세부 정보는 하단에 있습니다."
@@ -15766,6 +15772,9 @@ msgstr "프로젝트 시작"
 msgid "Projected"
 msgstr "예상"
 
+msgid "Projected (To)"
+msgstr "예상 (도착)"
+
 msgid "Projected completion"
 msgstr "예상 완료"
 
@@ -17085,6 +17094,9 @@ msgstr "PDF를 교체하면 이 문서의 모든 풍선 배치가 제거됩니�
 msgid "Replenishment"
 msgstr "보충"
 
+msgid "Replenishment Level"
+msgstr "보충 레벨"
+
 msgid "Replenishment system"
 msgstr "조달 방식"
 
@@ -18249,7 +18261,7 @@ msgid "Search fields..."
 msgstr "필드 검색..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "회사 검색"
 
 msgid "Search for existing or create a new one"
 msgstr "기존 항목을 검색하거나 새로 생성하세요"
@@ -19514,7 +19526,7 @@ msgid "Started"
 msgstr "시작됨"
 
 msgid "Starting"
-msgstr ""
+msgstr "시작 중"
 
 msgid "Starting…"
 msgstr "시작 중…"
@@ -21035,19 +21047,22 @@ msgid "The purchase order"
 msgstr "발주서"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Mount으로의 푸시가 시작되지 않았습니다. 다시 시도하세요."
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Mount으로의 푸시 실패"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Mount으로의 푸시 완료"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Mount으로의 푸시 완료. 일부 기록에 주의 필요"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "이 라인의 가격 책정 수량 구간점; 각 열은 구매자-공급업체 협상 및 다운스트림 문서로 변환하기 위한 자체 단가를 포함합니다."
+
+msgid "The quantity moved from the From storage unit on each signal."
+msgstr "각 신호마다 출발 보관 단위에서 이송되는 수량입니다."
 
 msgid "The quantity of the item to be reordered on scan-based replenishment."
 msgstr "스캔 기반 보충 시 재주문할 품목 수량입니다."
@@ -22260,7 +22275,7 @@ msgid "Triggers"
 msgstr "트리거"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "다른 이름을 시도하세요."
 
 msgid "Tuesday"
 msgstr "화요일"
@@ -23606,6 +23621,9 @@ msgstr "재화가 실제로 도착한 시점으로, 입고에 기록되며 공�
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "칸반 카드를 스캔하면 작업이 자동으로 초안 상태에서 벗어나 현장으로 릴리즈됩니다."
+
+msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
+msgstr "도착 보관 단위의 예상 수량이 이 레벨 아래로 내려가면 수량만큼의 릴리스됨 재고 이송이 생성됩니다. 스캔 전용인 경우 비워두세요."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "입고 사업장이 재고가 도착할 것으로 예상할 때; 목적지의 MRP 가용성을 결정합니다."

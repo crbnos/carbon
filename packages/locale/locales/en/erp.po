@@ -3628,6 +3628,9 @@ msgstr "Behind target by {daysBehindTarget} day(s)"
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Being phased out — successor: <0>{0}</0>"
 
+msgid "Below level"
+msgstr "Below level"
+
 msgid "Below safety stock"
 msgstr "Below safety stock"
 
@@ -14042,6 +14045,9 @@ msgstr "On"
 msgid "On {sentDate}"
 msgstr "On {sentDate}"
 
+msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+msgstr "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 
@@ -15766,6 +15772,9 @@ msgstr "Project start"
 msgid "Projected"
 msgstr "Projected"
 
+msgid "Projected (To)"
+msgstr "Projected (To)"
+
 msgid "Projected completion"
 msgstr "Projected completion"
 
@@ -17084,6 +17093,9 @@ msgstr "Replacing the PDF removes all balloon placements on this document. Chara
 
 msgid "Replenishment"
 msgstr "Replenishment"
+
+msgid "Replenishment Level"
+msgstr "Replenishment Level"
 
 msgid "Replenishment system"
 msgstr "Replenishment system"
@@ -21049,6 +21061,9 @@ msgstr "The push to Mount finished. Some records need attention"
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 
+msgid "The quantity moved from the From storage unit on each signal."
+msgstr "The quantity moved from the From storage unit on each signal."
+
 msgid "The quantity of the item to be reordered on scan-based replenishment."
 msgstr "The quantity of the item to be reordered on scan-based replenishment."
 
@@ -23606,6 +23621,9 @@ msgstr "When the goods actually arrived; recorded on the receipt and used for su
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
+
+msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
+msgstr "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "When the receiving location expects the stock to arrive; drives MRP availability at the destination."

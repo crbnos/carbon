@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# ऑपरेशन के लिए कोई सम�
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# रिकॉर्ड को ध्यान देने की आवश्यकता है} other {# रिकॉर्ड को ध्यान देने की आवश्यकता है}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -405,7 +405,7 @@ msgid "{count} units"
 msgstr "{count} इकाइयाँ"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} बनाई गई, {updated} अपडेट की गई।"
 
 msgid "{days}d"
 msgstr "{days}d"
@@ -432,7 +432,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{count} ऑपरेशन में से {from}–{to}"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {और # और रिकॉर्ड।} other {और # और रिकॉर्ड।}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "और {hiddenCount}: {hiddenNames}"
@@ -3627,6 +3627,9 @@ msgstr "लक्ष्य से {daysBehindTarget} दिन पीछे"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "चरणबद्ध रूप से बंद किया जा रहा है — उत्तराधिकारी: <0>{0}</0>"
+
+msgid "Below level"
+msgstr "स्तर से नीचे"
 
 msgid "Below safety stock"
 msgstr "सुरक्षा स्टॉक से नीचे"
@@ -11386,10 +11389,10 @@ msgstr "अंतिम नाम"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "अंतिम पुश {when} विफल हुआ: {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "अंतिम पुश {when}:"
 
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
@@ -11398,7 +11401,7 @@ msgid "Last Run"
 msgstr "अंतिम रन"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "अंतिम अनुसूचित पुश {when}:"
 
 msgid "Last synced: <0/>"
 msgstr "अंतिम सिंक: <0/>"
@@ -12548,7 +12551,7 @@ msgid "More overtime"
 msgstr "अधिक ओवरटाइम"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "अधिक रिकॉर्ड इंतज़ार में हैं। जारी रखने के लिए फिर से पुश करें।"
 
 msgid "Morning, {name}."
 msgstr "सुबह, {name}।"
@@ -12563,7 +12566,7 @@ msgid "Motion"
 msgstr "गति"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount में इस पहचानकर्ता के साथ {matches} रिकॉर्ड हैं। Mount में अतिरिक्त को हटाएँ या मर्ज करें, फिर फिर से पुश करें।"
 
 msgid "Move"
 msgstr "स्थानांतरित करें"
@@ -13281,7 +13284,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी कोई टिप्पणी नहीं है। पहली टिप्पणी जोड़ने वाले बनें।"
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "कोई कंपनी \"{query}\" से मेल नहीं खाती"
 
 msgid "No completed jobs within range"
 msgstr "रेंज में कोई पूर्ण जॉब नहीं"
@@ -14041,6 +14044,9 @@ msgstr "चालू"
 
 msgid "On {sentDate}"
 msgstr "{sentDate} को"
+
+msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+msgstr "एक स्थानांतरण कानबान पर, To भंडारण इकाई के लिए न्यूनतम मात्रा। जब हाथ पर प्लस खुली आने वाली स्थानांतरण इससे नीचे चली जाती है, तो Carbon कानबान मात्रा के लिए एक जारी स्टॉक स्थानांतरण बनाता है।"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "कटओवर दिन पर, नीचे दी गई चेकलिस्ट को क्रम में काम करें। स्वीकृति परीक्षण आपकी स्कोप में शामिल आवश्यकताओं से आते हैं। समर्थन विवरण नीचे हैं।"
@@ -15766,6 +15772,9 @@ msgstr "प्रोजेक्ट शुरुआत"
 msgid "Projected"
 msgstr "अनुमानित"
 
+msgid "Projected (To)"
+msgstr "अनुमानित (To)"
+
 msgid "Projected completion"
 msgstr "अनुमानित पूर्णता"
 
@@ -17085,6 +17094,9 @@ msgstr "PDF को बदलने से इस दस्तावेज़ प
 msgid "Replenishment"
 msgstr "पुनःपूर्ति"
 
+msgid "Replenishment Level"
+msgstr "पुनर्पूरण स्तर"
+
 msgid "Replenishment system"
 msgstr "पुनःपूर्ति प्रणाली"
 
@@ -18249,7 +18261,7 @@ msgid "Search fields..."
 msgstr "फ़ील्ड खोजें..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "एक कंपनी खोजें"
 
 msgid "Search for existing or create a new one"
 msgstr "मौजूदा को खोजें या नया बनाएं"
@@ -19514,7 +19526,7 @@ msgid "Started"
 msgstr "शुरू किया गया"
 
 msgid "Starting"
-msgstr ""
+msgstr "शुरुआत"
 
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
@@ -21035,19 +21047,22 @@ msgid "The purchase order"
 msgstr "क्रय आदेश"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "Mount को पुश शुरू नहीं हुआ। फिर से प्रयास करें।"
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "Mount को पुश विफल हुआ"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "Mount को पुश पूरा हुआ"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "Mount को पुश पूरा हुआ। कुछ रिकॉर्ड को ध्यान देने की आवश्यकता है"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "मात्रा विभाजन बिंदु जिन पर इस पंक्ति की कीमत है; प्रत्येक कॉलम क्रेता-आपूर्तिकर्ता बातचीत और डाउनस्ट्रीम दस्तावेजों में परिवर्तित करने के लिए अपनी स्वयं की प्रति-यूनिट कीमत रखता है।"
+
+msgid "The quantity moved from the From storage unit on each signal."
+msgstr "From भंडारण इकाई से प्रत्येक सिग्नल पर स्थानांतरित मात्रा।"
 
 msgid "The quantity of the item to be reordered on scan-based replenishment."
 msgstr "स्कैन-आधारित पुनःपूर्ति पर पुनः ऑर्डर किए जाने वाली वस्तु की मात्रा।"
@@ -22260,7 +22275,7 @@ msgid "Triggers"
 msgstr "ट्रिगर"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "कोई अलग नाम आजमाएँ।"
 
 msgid "Tuesday"
 msgstr "मंगलवार"
@@ -23606,6 +23621,9 @@ msgstr "जब सामान वास्तव में आ गए; रस�
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "जब कानबान कार्ड को स्कैन किया जाता है, तो नौकरी स्वचालित रूप से ड्राफ्ट से बाहर चली जाती है और फर्श पर रिलीज के लिए जारी की जाती है।"
+
+msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
+msgstr "जब To भंडारण इकाई में अनुमानित मात्रा इस स्तर से नीचे चली जाती है, तो मात्रा के लिए एक जारी स्टॉक स्थानांतरण बनाया जाता है। केवल स्कैन के लिए खाली छोड़ें।"
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "प्राप्ति स्थान को स्टॉक के आने की उम्मीद कब है; गंतव्य पर MRP उपलब्धता को संचालित करता है।"

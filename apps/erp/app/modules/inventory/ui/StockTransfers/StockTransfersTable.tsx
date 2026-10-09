@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Badge,
   Button,
   Combobox,
   MENU_ITEM_SHORTCUTS,
@@ -20,6 +21,7 @@ import {
   LuClock,
   LuMapPin,
   LuPencil,
+  LuScanQrCode,
   LuTrash,
   LuUser
 } from "react-icons/lu";
@@ -112,6 +114,33 @@ const StockTransfersTable = memo(
             },
             pluralHeader: t`Statuses`,
             icon: <LuClock />
+          }
+        },
+        {
+          id: "source",
+          header: t`Source`,
+          cell: ({ row }) =>
+            row.original.kanbanId ? (
+              <Badge variant="blue">
+                <Trans>Kanban</Trans>
+              </Badge>
+            ) : (
+              <Badge variant="gray">
+                <Trans>Manual</Trans>
+              </Badge>
+            ),
+          meta: {
+            icon: <LuScanQrCode />,
+            filterHeader: t`Source`,
+            filter: {
+              type: "static",
+              options: [
+                { value: "Kanban", label: t`Kanban` },
+                { value: "Manual", label: t`Manual` }
+              ]
+            },
+            exportValue: (row: StockTransfer) =>
+              row.kanbanId ? "Kanban" : "Manual"
           }
         },
         {

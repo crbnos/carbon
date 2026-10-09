@@ -4,6 +4,10 @@ paths:
   - "apps/erp/app/modules/inventory/ui/Kanbans/*.tsx"
   - "packages/documents/src/pdf/KanbanLabelPDF.tsx"
   - "packages/database/supabase/migrations/*kanban*.sql"
+  - "packages/server-functions/src/kanban-replenish/**"
+  - "packages/database/src/stock-transfer.ts"
+  - "packages/database/src/event-system/handlers/*kanban*.sql"
+  - "packages/jobs/src/inngest/functions/tasks/kanban-level-check.ts"
 ---
 
 # Kanban System
@@ -26,6 +30,12 @@ Table `kanban` (initial migration `20250909012102_kanban.sql`; current state spa
   For a `Transfer` kanban this is the **destination** (to) bin.
 - `fromStorageUnitId` FK→storageUnit (nullable) — the **source** bin for a `Transfer` kanban
   (`20260908143722_kanban-transfer.sql`)
+- `replenishmentLevel` NUMERIC (nullable, `>= 0`) — arms a `Transfer` kanban's level signal
+  (`20261009142613_kanban-replenishment-level.sql`). NULL = scan-only. `upsertKanban` writes NULL
+  when the form field is blank or the system is not Transfer (zod omits a blank optional field,
+  so a plain spread would keep the old value on update).
+- CHECK `kanban_transfer_distinct_storage_units_check` — a Transfer kanban's From and To bins
+  differ (the zod refine alone let an API write create a self-feeding kanban).
 - `supplierId` FK→supplier, `purchaseUnitOfMeasureCode` FK→unitOfMeasure, `conversionFactor` NUMERIC default 1 (Buy fields)
 - `autoRelease` BOOL, `autoStartJob` BOOL, `completedBarcodeOverride` TEXT, `jobId` FK→job ON DELETE SET NULL (Make fields; `jobId`/auto-start added in `20251001001426_kanban-jobs.sql`)
 - audit: `createdAt/By`, `updatedAt/By`
@@ -46,7 +56,7 @@ RLS: SELECT = any employee role; INSERT/UPDATE/DELETE = `inventory_create`/`inve
 ## Code surfaces
 
 - Validator `kanbanValidator`: `apps/erp/app/modules/inventory/inventory.models.ts`. Fields match columns above; enum is `kanbanReplenishmentSystemTypes` (`Buy`/`Make`/`Transfer`, distinct from the item-level `replenishmentSystemTypes`). `.refine`s require: `supplierId` when `Buy`; `fromStorageUnitId` + `storageUnitId` (and that they differ) when `Transfer`.
-- Services: `apps/erp/app/modules/inventory/inventory.service.ts` — `getKanbans(client, locationId, companyId, args)`, `getKanban(client, kanbanId)`, `upsertKanban`, `deleteKanban`. Reads go through the `kanbans` view; writes hit `kanban`.
+- Services: `apps/erp/app/modules/inventory/inventory.service.ts` — `getKanbans(client, locationId, companyId, args)`, `getKanban(client, kanbanId, companyId)`, `getKanbanProjectedQuantities(client, companyId, kanbanIds)` (RPC `get_kanban_projected_quantities`, used by the list's Projected (To) column), `upsertKanban`, `deleteKanban`. Reads go through the `kanbans` view; writes hit `kanban`. The view expands `k.*` at creation, so a new `kanban` column needs the view recreated.
 - `kanbanOutputTypes` + validator: `apps/erp/app/modules/settings/settings.models.ts`. Set via `x+/settings+/inventory.tsx`.
 - UI: `apps/erp/app/modules/inventory/ui/Kanbans/KanbanForm.tsx` and `KanbansTable.tsx`.
   Form shows Buy fields (supplier/UoM/conversion), Make fields (autoRelease, autoStartJob — gated on autoRelease, completedBarcodeOverride), or Transfer fields (From Storage Unit + the reused storage-unit field relabeled "To Storage Unit") conditionally. Dropdown offers `Buy`/`Make`/`Transfer`.
@@ -67,16 +77,43 @@ API routes in `apps/erp/app/routes/api+/`: `kanban.$id.tsx`, `kanban.collision.$
 `kanban.$id.tsx` (the "order"/create scan) branches on `replenishmentSystem`:
 - **Make** — if a job is already linked (`jobReadableId`) it redirects to the collision route (no duplicate job); otherwise creates a job from the item, links it (`updateKanbanJob`), then `autoRelease` runs MRP + schedules and `autoStartJob` redirects into MES to start the first operation.
 - **Buy** — reuses an existing draft/planned PO for the supplier (or creates one), adds a PO line with the kanban qty (applying `conversionFactor`/`purchaseUnitOfMeasureCode`/storage unit), redirects to the PO.
-- **Transfer** — creates a new stock transfer (`insertStockTransfer`, status `Released`) with one line: `itemId`, `fromStorageUnitId` → `storageUnitId` (to), `quantity` (the "original amount"), and serial/batch flags derived from `item.itemTrackingType`. Redirects to the stock transfer, where the qty can be **partially picked** (`stockTransferLine.pickedQuantity`) at pick time. Each scan makes a new transfer (no collision concept). Storage rules are NOT evaluated on scan (a QR scan can't show the acknowledge dialog the interactive wizard uses).
+- **Transfer** — calls the `kanban-replenish` server function with `mode: "scan"`, which writes a Released stock transfer with one line: `itemId`, `fromStorageUnitId` → `storageUnitId` (to), `quantity`, and serial/batch flags from `item.itemTrackingType` (a serial line of qty > 1 splits into qty-1 lines, `expandSerialTrackedLines`). The transfer carries `stockTransfer.kanbanId` and a Tiptap note "Kanban replenishment — … Signal: scan by <user>." Redirects to the stock transfer, where the qty can be **partially picked** at pick time. Each scan makes a new transfer, with no level test. Storage rules are NOT evaluated (a QR scan can't show the acknowledge dialog the interactive wizard uses). The server function re-checks that both bins belong to the company and the kanban's location (CWE-639).
 - **Buy and Make** — not a kanban option (the enum has no such value).
 
 `start`/`complete` resolve the linked job's active operation and redirect to the MES operation start/complete endpoints; `link` navigates to the job/operation.
+
+## Level signal (Transfer kanbans with `replenishmentLevel`)
+
+Spec: `.ai/specs/2026-10-06-kanban-internal-replenishment-level.md`.
+
+- **Projected quantity** = on-hand at the To bin (`item_ledger_on_hand_contribution`, so Rejected
+  tracked stock does not count) + `outstandingQuantity` of Released / In Progress stock transfer
+  lines into it, manual or kanban. One function computes it: `get_kanban_projected_quantities(company_id, kanban_ids)`.
+- Fires **strictly below** the level (`isBelowReplenishmentLevel`, `@carbon/database/stock-transfer`).
+  One signal = one transfer of `quantity`; a level above `quantity` catches up one transfer per pick.
+- The open transfer counts as supply, so a second signal for the same shortfall writes nothing, and
+  the pick moves stock from "inbound" to "on-hand" without changing the projected quantity.
+- Three wake paths, all sending `carbon/kanban.level-check` `{ companyId, kanbanIds }` and only for
+  kanbans already below level:
+  - `queue_kanban_level_checks` — statement handler on `itemLedger` (any posting at the To bin).
+  - `sync_kanban_level_check` — `after` interceptor on `kanban` (arming or editing a level).
+  - `util.sweep_kanban_levels()` — pg_cron `kanban-level-sweeper` at `7 * * * *`, over
+    `util.kanban_level_breaches()`: covers a deleted transfer, a transfer completed short, a lost event.
+  Both trigger bodies return early under `app.sync_in_progress` (seeds, restores, test fixtures).
+  All three need the Vault secret `inngest_event_url`.
+- `kanbanLevelCheckFunction` (`functions/tasks/kanban-level-check.ts`, concurrency 1 per company, no
+  `debounce`) calls `kanban-replenish` with `mode: "level"`. The server function locks the kanbans
+  `FOR UPDATE` in id order and re-reads the projected quantity inside its transaction, so a stale or
+  duplicate event is a no-op. `createdBy` is `"system"` on this path.
+- A kanban replenishment is a stock transfer with `kanbanId` set: the stock transfers list has a
+  derived **Source** column (Kanban / Manual, filtered on `kanbanId IS [NOT] NULL` in
+  `getStockTransfers`) and the header shows a Kanban badge linking to the kanban.
 
 ## Labels & QR
 
 - QR PNG route: `apps/erp/app/routes/file+/kanban+/$id.$action[.]png.tsx`, 36px modules, **color-coded by action**: order=black `#000000`, start=emerald `#059669`, complete=blue `#2563eb`. (The old doc claiming "no color differentiation" was stale.)
 - Label PDF route: `apps/erp/app/routes/file+/kanban+/labels.$action[.]pdf.tsx` — takes `?ids=` (comma-separated), fetches kanbans from the `kanbans` view, converts thumbnails to base64, renders `KanbanLabelPDF`.
-- `KanbanLabelPDF`: `packages/documents/src/pdf/KanbanLabelPDF.tsx` (exported via `@carbon/documents/pdf`). Letter page, **2×3 grid = 6 labels/page**; each shows the action-colored QR, item thumbnail, name, readable id, storage-unit/location, `QTY: {quantity} {uom}`, and supplier name. QR color matches the PNG route.
+- `KanbanLabelPDF`: `packages/documents/src/pdf/KanbanLabelPDF.tsx` (exported via `@carbon/documents/pdf`). Letter page, **2×3 grid = 6 labels/page**; each shows the action-colored QR, item thumbnail, name, readable id, storage-unit/location, `QTY: {quantity} {uom}` (plus `MIN: {replenishmentLevel} {uom}` when a level is set), and supplier name. QR color matches the PNG route.
 - `KanbansTable` renders Create/Start/Complete affordances per `kanbanOutput`: `label`→PDF links, `qrcode`→hover-card iframes, `url`→copyable API links. Start/Complete show for Make only. Bulk "Print Labels" opens the PDF for selected ids (`action: "order"`).
 
 ## Gotchas

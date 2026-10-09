@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# opération n'a pas de normes de temps} other {# opér
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# enregistrement nécessite une attention} other {# enregistrements nécessitent une attention}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -405,7 +405,7 @@ msgid "{count} units"
 msgstr "{count} unités"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "{created} créés, {updated} mis à jour."
 
 msgid "{days}d"
 msgstr "{days}j"
@@ -432,7 +432,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} sur {count} opérations"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {Et # enregistrement de plus.} other {Et # enregistrements de plus.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} autres : {hiddenNames}"
@@ -3627,6 +3627,9 @@ msgstr "En retard de {daysBehindTarget} jour(s)"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "En cours de suppression — successeur : <0>{0}</0>"
+
+msgid "Below level"
+msgstr "Sous le niveau"
 
 msgid "Below safety stock"
 msgstr "Sous stock de sécurité"
@@ -11386,10 +11389,10 @@ msgstr "Nom de famille"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "Dernier envoi {when} échoué : {0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "Dernier envoi {when} :"
 
 msgid "Last Quarter"
 msgstr "Dernier trimestre"
@@ -11398,7 +11401,7 @@ msgid "Last Run"
 msgstr "Dernière exécution"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "Dernier envoi planifié {when} :"
 
 msgid "Last synced: <0/>"
 msgstr "Dernière synchronisation : <0/>"
@@ -12548,7 +12551,7 @@ msgid "More overtime"
 msgstr "Plus d'heures supplémentaires"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "D'autres enregistrements sont en attente. Envoyez à nouveau pour continuer."
 
 msgid "Morning, {name}."
 msgstr "Bon matin, {name}."
@@ -12563,7 +12566,7 @@ msgid "Motion"
 msgstr "Motion"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount a {matches} enregistrements avec cet identifiant. Supprimez ou fusionnez les doublons dans Mount, puis envoyez à nouveau."
 
 msgid "Move"
 msgstr "Déplacer"
@@ -13281,7 +13284,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "Aucun commentaire pour le moment. Soyez le premier à ajouter un commentaire."
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "Aucune Société ne correspond à « {query} »"
 
 msgid "No completed jobs within range"
 msgstr "Aucun ordre de fabrication terminé dans cette plage"
@@ -14041,6 +14044,9 @@ msgstr "Activé"
 
 msgid "On {sentDate}"
 msgstr "Le {sentDate}"
+
+msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+msgstr "Sur un kanban de transfert, la quantité minimale pour l'unité de stockage de destination. Lorsque le stock disponible plus les transferts entrants ouverts descend au-dessous, Carbon crée un transfert de stock lancé pour la quantité du kanban."
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Le jour du basculement, travaillez la liste de contrôle ci-dessous dans l'ordre. Les tests d'acceptation proviennent de vos exigences dans le périmètre. Les détails du support se trouvent en bas."
@@ -15766,6 +15772,9 @@ msgstr "Démarrage du projet"
 msgid "Projected"
 msgstr "Prévue"
 
+msgid "Projected (To)"
+msgstr "Projeté (Vers)"
+
 msgid "Projected completion"
 msgstr "Achèvement projeté"
 
@@ -17085,6 +17094,9 @@ msgstr "Le remplacement du PDF supprime tous les placements de bulles sur ce doc
 msgid "Replenishment"
 msgstr "Réapprovisionnement"
 
+msgid "Replenishment Level"
+msgstr "Niveau de réapprovisionnement"
+
 msgid "Replenishment system"
 msgstr "Mode d'approvisionnement"
 
@@ -18249,7 +18261,7 @@ msgid "Search fields..."
 msgstr "Rechercher des champs..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "Rechercher une Société"
 
 msgid "Search for existing or create a new one"
 msgstr "Rechercher un existant ou en créer un nouveau"
@@ -19514,7 +19526,7 @@ msgid "Started"
 msgstr "Commencé"
 
 msgid "Starting"
-msgstr ""
+msgstr "Démarrage"
 
 msgid "Starting…"
 msgstr "Démarrage…"
@@ -21035,19 +21047,22 @@ msgid "The purchase order"
 msgstr "Le bon de commande"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "L'envoi vers Mount n'a pas démarré. Réessayez."
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "L'envoi vers Mount a échoué"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "L'envoi vers Mount est terminé"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "L'envoi vers Mount est terminé. Certains enregistrements nécessitent une attention"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Les points d'arrêt de quantité à laquelle cette ligne est tarifée; chaque colonne porte son propre prix par unité pour la négociation acheteur-fournisseur et la conversion en documents aval."
+
+msgid "The quantity moved from the From storage unit on each signal."
+msgstr "La quantité déplacée de l'unité de stockage source à chaque signal."
 
 msgid "The quantity of the item to be reordered on scan-based replenishment."
 msgstr "La quantité de l'article à réapprovisionner lors du réapprovisionnement basé sur la numérisation."
@@ -22260,7 +22275,7 @@ msgid "Triggers"
 msgstr "Déclencheurs"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "Essayez un nom différent."
 
 msgid "Tuesday"
 msgstr "Mardi"
@@ -23606,6 +23621,9 @@ msgstr "Quand les marchandises sont réellement arrivées ; enregistré sur le r
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Lorsque la carte kanban est scannée, le travail est automatiquement déplacé hors du brouillon et libéré à l'étage."
+
+msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
+msgstr "Lorsque la quantité projetée dans l'unité de stockage de destination descend au-dessous de ce niveau, un transfert de stock lancé pour la Quantité est créé. Laissez vide pour la numérisation uniquement."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Quand le site de réception s'attend à la réception du stock ; détermine la disponibilité du MRP à destination."

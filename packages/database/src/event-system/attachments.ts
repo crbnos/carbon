@@ -112,7 +112,11 @@ export const attachments = {
   },
   itemCost: { events: true },
   itemLedger: {
-    statement: ["apply_item_stock_quantities", "broadcast_table_changes"]
+    statement: [
+      "apply_item_stock_quantities",
+      "broadcast_table_changes",
+      "queue_kanban_level_checks"
+    ]
   },
   itemPlanning: { events: true },
   itemPostingGroup: {
@@ -165,6 +169,7 @@ export const attachments = {
   jobOperationNote: { statement: ["broadcast_table_changes"] },
   jobOperationStep: { statement: ["broadcast_table_changes"] },
   jobOperationStepRecord: { statement: ["broadcast_table_changes"] },
+  kanban: { after: ["sync_kanban_level_check"] },
   journal: { events: true, statement: ["broadcast_table_changes"] },
   journalLine: { events: true },
   location: {

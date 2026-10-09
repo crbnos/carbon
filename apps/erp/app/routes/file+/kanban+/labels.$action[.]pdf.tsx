@@ -101,6 +101,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         fromStorageUnitName: kanban.fromStorageUnitName,
         supplierName: kanban.supplierName,
         quantity: kanban.quantity ?? 0,
+        replenishmentLevel: kanban.replenishmentLevel,
         unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
         thumbnail: thumbnails[kanban.id!] || null
       };

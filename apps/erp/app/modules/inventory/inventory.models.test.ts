@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  kanbanValidator,
   receiptFixedAssetLineUpdateValidator,
   resolveStockTransferPickForward,
   shipmentFixedAssetLineUpdateValidator,
@@ -194,5 +195,54 @@ describe("receiptFixedAssetLineUpdateValidator", () => {
       value: "true"
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("kanbanValidator replenishmentLevel", () => {
+  const transfer = {
+    itemId: "item-1",
+    replenishmentSystem: "Transfer",
+    quantity: "5",
+    locationId: "loc-1",
+    fromStorageUnitId: "su-a",
+    storageUnitId: "su-b"
+  };
+
+  const errorPaths = (r: ReturnType<typeof kanbanValidator.safeParse>) =>
+    r.success ? [] : r.error.issues.map((issue) => issue.path.join("."));
+
+  it("accepts a level on a Transfer kanban", () => {
+    const r = kanbanValidator.safeParse({
+      ...transfer,
+      replenishmentLevel: "10"
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.replenishmentLevel).toBe(10);
+  });
+
+  it("accepts a Transfer kanban with no level (scan-only)", () => {
+    const r = kanbanValidator.safeParse(transfer);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.replenishmentLevel).toBeUndefined();
+  });
+
+  it("refuses a level on a Buy kanban", () => {
+    const r = kanbanValidator.safeParse({
+      itemId: "item-1",
+      replenishmentSystem: "Buy",
+      quantity: "5",
+      locationId: "loc-1",
+      supplierId: "sup-1",
+      replenishmentLevel: "10"
+    });
+    expect(errorPaths(r)).toContain("replenishmentLevel");
+  });
+
+  it("refuses a negative level", () => {
+    const r = kanbanValidator.safeParse({
+      ...transfer,
+      replenishmentLevel: "-1"
+    });
+    expect(errorPaths(r)).toContain("replenishmentLevel");
   });
 });

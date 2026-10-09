@@ -20,6 +20,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuItem,
   PulsingDot,
+  Status,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -61,6 +62,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { kanbanOutputTypes } from "~/modules/settings/settings.models";
 import { useSuppliers } from "~/stores";
@@ -74,6 +76,8 @@ type KanbansTableProps = {
   count: number;
   locationId: string;
   kanbanOutput: (typeof kanbanOutputTypes)[number];
+  /** Kanban id → projected quantity at its To storage unit (armed Transfer kanbans only). */
+  projectedQuantities: Record<string, number>;
 };
 
 const defaultColumnVisibility = {
@@ -85,9 +89,16 @@ const defaultColumnVisibility = {
 };
 
 const KanbansTable = memo(
-  ({ data, count, locationId, kanbanOutput }: KanbansTableProps) => {
+  ({
+    data,
+    count,
+    locationId,
+    kanbanOutput,
+    projectedQuantities
+  }: KanbansTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const formatQuantity = useQuantityFormatter();
 
     const permissions = usePermissions();
     const [people] = usePeople();
@@ -404,6 +415,44 @@ const KanbansTable = memo(
           }
         },
         {
+          accessorKey: "replenishmentLevel",
+          header: t`Replenishment Level`,
+          cell: ({ row }) =>
+            row.original.replenishmentLevel === null ||
+            row.original.replenishmentLevel === undefined
+              ? null
+              : formatQuantity(row.original.replenishmentLevel),
+          meta: {
+            icon: <LuHash />
+          }
+        },
+        {
+          id: "projectedQuantity",
+          header: t`Projected (To)`,
+          cell: ({ row }) => {
+            const projected = row.original.id
+              ? projectedQuantities[row.original.id]
+              : undefined;
+            if (projected === undefined) return null;
+            const level = row.original.replenishmentLevel;
+            const isBelowLevel =
+              level !== null && level !== undefined && projected < level;
+            return (
+              <HStack spacing={2}>
+                <span>{formatQuantity(projected)}</span>
+                {isBelowLevel && (
+                  <Status color="red">
+                    <Trans>Below level</Trans>
+                  </Status>
+                )}
+              </HStack>
+            );
+          },
+          meta: {
+            icon: <LuHash />
+          }
+        },
+        {
           accessorKey: "replenishmentSystem",
           header: t`Replenishment`,
           cell: ({ row }) => (
@@ -549,7 +598,16 @@ const KanbansTable = memo(
           }
         }
       ],
-      [items, kanbanOutput, params, people, suppliers, t]
+      [
+        formatQuantity,
+        items,
+        kanbanOutput,
+        params,
+        people,
+        projectedQuantities,
+        suppliers,
+        t
+      ]
     );
 
     const renderContextMenu = useCallback(

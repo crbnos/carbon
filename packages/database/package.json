@@ -42,6 +42,7 @@
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",
     "./sequence": "./src/sequence.ts",
+    "./stock-transfer": "./src/stock-transfer.ts",
     "./seed-data": "./src/seed-data.ts",
     "./seed-workflows": "./src/datasets/tiers/workflow-definitions.ts",
     "./audit.config": "./src/audit.config.ts",

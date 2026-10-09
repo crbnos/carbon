@@ -1066,6 +1066,11 @@ export const terms = {
     term: msg`Auto Release`,
     definition: msg`When the kanban card is scanned, the job is automatically moved out of draft and released to the floor.`
   },
+  "kanban-replenishment-level": {
+    term: msg`Replenishment Level`,
+    definition: msg`On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity.`,
+    href: "/docs/reference/kanban"
+  },
   "kanban-auto-start-job": {
     term: msg`Auto Start Job`,
     definition: msg`Skip the released-but-not-started state — the job starts immediately on scan.`

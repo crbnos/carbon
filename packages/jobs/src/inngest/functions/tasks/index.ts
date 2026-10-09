@@ -18,6 +18,7 @@ export {
   companyTemplateRevertFunction
 } from "./company-template";
 export { invoiceAutomateFunction } from "./invoice-automate";
+export { kanbanLevelCheckFunction } from "./kanban-level-check";
 export { modelCompactFunction } from "./model-compact";
 export { modelOptimizeFunction } from "./model-optimize";
 export { modelThumbnailFunction } from "./model-thumbnail";

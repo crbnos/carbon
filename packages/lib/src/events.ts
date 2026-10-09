@@ -569,6 +569,12 @@ export type Events = {
   "carbon/workflow-run-retention.process": {
     data: Record<string, never>;
   };
+  // Sent by the database (queue_kanban_level_checks, sync_kanban_level_check,
+  // util.sweep_kanban_levels), never by app code. Every id is a Transfer
+  // kanban whose projected quantity was below its replenishment level.
+  "carbon/kanban.level-check": {
+    data: { companyId: string; kanbanIds: string[] };
+  };
 
   // Weekly tasks
   "carbon/weekly": {

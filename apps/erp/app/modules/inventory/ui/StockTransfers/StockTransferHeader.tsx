@@ -5,6 +5,7 @@
 import type { Result } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
 import {
+  Badge,
   Button,
   DropdownMenuIcon,
   DropdownMenuItem,
@@ -17,9 +18,10 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuLoaderCircle,
+  LuScanQrCode,
   LuTrash
 } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { DocumentPageHeader } from "~/components/DocumentPage";
@@ -105,6 +107,17 @@ const StockTransferHeader = () => {
               Completed{" "}
               <DateTime value={stockTransfer.completedAt} variant="relative" />
             </Trans>
+          ) : null,
+          stockTransfer.kanbanId ? (
+            <Badge key="kanban" variant="outline">
+              <Link
+                to={path.to.kanban(stockTransfer.kanbanId)}
+                className="flex flex-row items-center gap-1"
+              >
+                <LuScanQrCode />
+                <Trans>Kanban</Trans>
+              </Link>
+            </Badge>
           ) : null
         ]}
         menuItems={
