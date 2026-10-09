@@ -678,6 +678,9 @@ msgstr "初回マイナス在庫"
 msgid "1Y"
 msgstr "1年"
 
+msgid "2 to 6 capital letters or digits, such as SNS"
+msgstr ""
+
 msgid "2 years"
 msgstr "2 年"
 
@@ -3792,6 +3795,9 @@ msgstr "BSB"
 msgid "Bucket"
 msgstr "バケット"
 
+msgid "Budget"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "蓄積期間内で消費スパイクを吸収するために需要ベースのポリシーが保有するバッファストック。"
 
@@ -4628,6 +4634,9 @@ msgstr "コメント"
 msgid "Commit a champion user for each area"
 msgstr "各エリアのチャンピオンユーザーをコミットする"
 
+msgid "Committed"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "領収書、出荷、または請求書のコミット: 数量が移動し、仕訳帳エントリが元帳に記載され、ステータスが投稿されます。"
 
@@ -5429,6 +5438,9 @@ msgstr "是正処置"
 msgid "Cost"
 msgstr "原価"
 
+msgid "Cost Account"
+msgstr ""
+
 msgid "cost center"
 msgstr "原価センター"
 
@@ -5464,6 +5476,9 @@ msgstr "売上原価（デフォルト）"
 
 msgid "Cost of Sales"
 msgstr "販売原価"
+
+msgid "Cost Treatment"
+msgstr ""
 
 msgid "Costing"
 msgstr "原価計算"
@@ -5823,9 +5838,6 @@ msgstr "支払条件を作成しました"
 
 msgid "Created process"
 msgstr "プロセスを作成しました"
-
-msgid "Created project"
-msgstr "プロジェクトを作成しました"
 
 msgid "Created required action"
 msgstr "必須アクションを作成しました"
@@ -8031,6 +8043,9 @@ msgstr "作業区を編集"
 msgid "Edited"
 msgstr "編集済み"
 
+msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "削除済み"
 
@@ -8896,10 +8911,6 @@ msgstr "支払条件を作成できませんでした: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "プロセスの作成に失敗しました: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create project: {0}"
-msgstr "プロジェクトの作成に失敗しました：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10243,6 +10254,9 @@ msgstr "アイデア、提案、または問題はありますか？"
 msgid "Idempotency key"
 msgstr "冪等性キー"
 
+msgid "Identifier"
+msgstr ""
+
 msgid "Identifiers"
 msgstr "識別子"
 
@@ -11401,6 +11415,9 @@ msgstr "空白のままにして、次のリビジョンを自動的に使用し
 
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
+
+msgid "Leave empty to use the account default"
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "空のままにするか、0を入力して、MRPが計画するすべてを表示します。"
@@ -14229,6 +14246,9 @@ msgstr "オープン注文"
 msgid "Open payables by supplier and age"
 msgstr "仕入先・日数別オープン買掛金"
 
+msgid "Open Project"
+msgstr ""
+
 msgid "Open Purchase Invoices"
 msgstr "オープン仕入先請求書"
 
@@ -15659,9 +15679,6 @@ msgstr "進捗"
 
 msgid "Project"
 msgstr "プロジェクト"
-
-msgid "Project Name"
-msgstr "プロジェクト名"
 
 msgid "Project owner"
 msgstr "プロジェクト責任者"
@@ -20233,6 +20250,9 @@ msgstr "技術詳細"
 msgid "Technical support"
 msgstr "テクニカルサポート"
 
+msgid "Technically Complete"
+msgstr ""
+
 msgid "Temperature"
 msgstr "温度"
 
@@ -22122,6 +22142,12 @@ msgstr "トランジット・機関番号"
 
 msgid "Trash"
 msgstr "ゴミ箱"
+
+msgid "Treatment"
+msgstr ""
+
+msgid "Treatments"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "試算表"

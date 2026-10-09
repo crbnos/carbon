@@ -678,6 +678,9 @@ msgstr "1. Negatif Eldeki"
 msgid "1Y"
 msgstr "1Y"
 
+msgid "2 to 6 capital letters or digits, such as SNS"
+msgstr ""
+
 msgid "2 years"
 msgstr "2 yıl"
 
@@ -3792,6 +3795,9 @@ msgstr "BSB"
 msgid "Bucket"
 msgstr "Kova"
 
+msgid "Budget"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Talep tabanlı politikanın birikme dönemi içinde tüketim artışlarını absorbe etmek için tuttuğu tampon stok."
 
@@ -4628,6 +4634,9 @@ msgstr "Yorumlar"
 msgid "Commit a champion user for each area"
 msgstr "Her alan için bir şampiyon kullanıcı atayın"
 
+msgid "Committed"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Mal kabul, Sevkiyat veya Fatura muhasebeleştirildiğinde: miktarlar hareket eder, Muhasebe fişi girişleri deftere kaydedilir ve durum Muhasebeleştirildi olur."
 
@@ -5429,6 +5438,9 @@ msgstr "Düzeltici faaliyet"
 msgid "Cost"
 msgstr "Maliyet"
 
+msgid "Cost Account"
+msgstr ""
+
 msgid "cost center"
 msgstr "maliyet merkezi"
 
@@ -5464,6 +5476,9 @@ msgstr "Satılan malın maliyeti (varsayılan)"
 
 msgid "Cost of Sales"
 msgstr "Satışların Maliyeti"
+
+msgid "Cost Treatment"
+msgstr ""
 
 msgid "Costing"
 msgstr "Maliyetlendirme"
@@ -5823,9 +5838,6 @@ msgstr "Ödeme koşulu oluşturuldu"
 
 msgid "Created process"
 msgstr "Oluşturulan süreç"
-
-msgid "Created project"
-msgstr "Proje oluşturuldu"
 
 msgid "Created required action"
 msgstr "Gerekli eylem oluşturuldu"
@@ -8031,6 +8043,9 @@ msgstr "İş Merkezi Düzenle"
 msgid "Edited"
 msgstr "Düzenlendi"
 
+msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
 
@@ -8896,10 +8911,6 @@ msgstr "Ödeme koşulu oluşturulamadı: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "İşlemi oluşturulamadı: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create project: {0}"
-msgstr "Proje oluşturulamadı: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10243,6 +10254,9 @@ msgstr "Fikirler, öneriler veya sorunlar?"
 msgid "Idempotency key"
 msgstr "İdempotentlik Anahtarı"
 
+msgid "Identifier"
+msgstr ""
+
 msgid "Identifiers"
 msgstr "Tanımlayıcılar"
 
@@ -11401,6 +11415,9 @@ msgstr "Sonraki revizyonu otomatik olarak kullanmak için boş bırakın"
 
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
+
+msgid "Leave empty to use the account default"
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Tüm MRP planlarını görmek için boş bırakın veya 0 girin."
@@ -14229,6 +14246,9 @@ msgstr "Açık Siparişler"
 msgid "Open payables by supplier and age"
 msgstr "Tedarikçi ve yaşa göre açık borçlar"
 
+msgid "Open Project"
+msgstr ""
+
 msgid "Open Purchase Invoices"
 msgstr "Açık Alış faturaları"
 
@@ -15659,9 +15679,6 @@ msgstr "İlerleme"
 
 msgid "Project"
 msgstr "Proje"
-
-msgid "Project Name"
-msgstr "Proje Adı"
 
 msgid "Project owner"
 msgstr "Proje sahibi"
@@ -20233,6 +20250,9 @@ msgstr "Teknik Ayrıntılar"
 msgid "Technical support"
 msgstr "Teknik destek"
 
+msgid "Technically Complete"
+msgstr ""
+
 msgid "Temperature"
 msgstr "Sıcaklık"
 
@@ -22122,6 +22142,12 @@ msgstr "Geçiş ve Kurum"
 
 msgid "Trash"
 msgstr "Çöp Kutusu"
+
+msgid "Treatment"
+msgstr ""
+
+msgid "Treatments"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "Mizan"

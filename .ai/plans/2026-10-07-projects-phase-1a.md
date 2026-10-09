@@ -64,7 +64,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 25: Add the new enum values to the TS mirrors
 - [x] Task 26: Move the accounting Projects screens into the new module
 - [x] Task 27: Add module navigation, layout and paths
-- [ ] Task 28: Build the project list and the new-project form
+- [x] Task 28: Build the project list and the new-project form
 - [ ] Task 29: Build the project page shell and the Details tab
 - [ ] Task 30: Build the project Settings tab (states and labels)
 - [ ] Task 31: Build the `ChargeNumberSelect` picker and its API route
@@ -2475,3 +2475,8 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 26: the moved `index.ts` barrel stays in `modules/projects/ui/Projects/`. `modules/projects/types.ts` gains `ProjectListItem` (a `getProjects` row) for the table.
 - Task 26: the moved test now imports the projects `projectValidator`, which requires `costTreatment`, so each case passes `costTreatment: "Statistical"`. 3 tests pass; the full `erp` suite passes (1958).
 - Task 26: the accounting `projects.tsx` redirect exports `middleware = [redirectBeforeLoaders(loader)]`, as the index-route precedent does.
+- Task 28: budget, committed and actual come from `getProjectCostTotals` (`projects.server.ts`). It is one Kysely query that sums `get_project_cost_summary` per project through `CROSS JOIN LATERAL` over the page's ids. Budget is plan material + labor + other. No new view or function was needed.
+- Task 28: the list's **New Project** button opens the `ProjectForm` drawer in place, as `WorkflowsTable` does, because `new.tsx` is a sibling of `_index.tsx` and cannot render over the list. `new.tsx` also renders the drawer for a direct URL; closing it goes to the list. Its action redirects to the new project's Elements page.
+- Task 28: `@carbon/utils` `status-colors.ts` gains `PROJECT_STATUS_COLOR_MAP` (Draft gray, Released blue, On Hold orange, Technically Complete green, Closed gray, after the job map). `ui/Projects/ProjectStatus.tsx` renders it.
+- Task 28: `ProjectForm` already has the Details card branch that Task 29 uses (an existing project renders as a `Card` that posts to the current route). The identifier is read-only on an existing project, because each element's stored `readableId` starts with it.
+- Task 28: the list route declares no `handle.realtime`, because `project` is not in `REALTIME_TABLES`. The table has no Delete action (Task 26 note).

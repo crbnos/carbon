@@ -189,6 +189,17 @@ export const CUSTOMER_CONTRACT_REVENUE_STATUS_COLOR_MAP = {
   "Recognized Externally": "blue"
 } as const satisfies Record<string, StatusColor>;
 
+// Project lifecycle (projectStatus). Hues mirror the job map: Released is a go
+// signal like Ready, On Hold pauses like Paused, Technically Complete is done
+// like Completed, and Closed is gray like a closed job.
+export const PROJECT_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Released: "blue",
+  "On Hold": "orange",
+  "Technically Complete": "green",
+  Closed: "gray"
+} as const satisfies Record<string, StatusColor>;
+
 // Mirrors RentalStatus.tsx (sales/ui/Rentals) — the agreement header statuses.
 export const RENTAL_AGREEMENT_STATUS_COLOR_MAP = {
   Draft: "gray",

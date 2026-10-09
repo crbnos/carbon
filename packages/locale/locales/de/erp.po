@@ -678,6 +678,9 @@ msgstr "1. Negativer Bestand"
 msgid "1Y"
 msgstr "1 Jahr"
 
+msgid "2 to 6 capital letters or digits, such as SNS"
+msgstr ""
+
 msgid "2 years"
 msgstr "2 Jahre"
 
@@ -3792,6 +3795,9 @@ msgstr "BSB"
 msgid "Bucket"
 msgstr "Bucket"
 
+msgid "Budget"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Pufferlagerbestand, den die nachfragbasierte Richtlinie während des Ansammlungszeitraums zurückhält, um Verbrauchsspitzen zu absorbieren."
 
@@ -4628,6 +4634,9 @@ msgstr "Kommentare"
 msgid "Commit a champion user for each area"
 msgstr "Verpflichten Sie einen Champion-Benutzer für jeden Bereich"
 
+msgid "Committed"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Bestätigung eines Wareneingangs, einer Lieferung oder einer Rechnung: Mengen bewegen sich, Buchungszeilen treffen das Ledger, und der Status wird Gebucht."
 
@@ -5429,6 +5438,9 @@ msgstr "Korrekturmaßnahme"
 msgid "Cost"
 msgstr "Kosten"
 
+msgid "Cost Account"
+msgstr ""
+
 msgid "cost center"
 msgstr "Kostenstelle"
 
@@ -5464,6 +5476,9 @@ msgstr "Umsatzkosten (Standard)"
 
 msgid "Cost of Sales"
 msgstr "Umsatzkosten"
+
+msgid "Cost Treatment"
+msgstr ""
 
 msgid "Costing"
 msgstr "Kalkulation"
@@ -5823,9 +5838,6 @@ msgstr "Zahlungsbedingung erstellt"
 
 msgid "Created process"
 msgstr "Prozess erstellt"
-
-msgid "Created project"
-msgstr "Projekt erstellt"
 
 msgid "Created required action"
 msgstr "Erforderliche Aktion erstellt"
@@ -8031,6 +8043,9 @@ msgstr "Arbeitsplatz bearbeiten"
 msgid "Edited"
 msgstr "Bearbeitet"
 
+msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Beseitigt"
 
@@ -8896,10 +8911,6 @@ msgstr "Zahlungsbedingung konnte nicht erstellt werden: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Fehler beim Erstellen des Prozesses: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create project: {0}"
-msgstr "Fehler beim Erstellen des Projekts: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10243,6 +10254,9 @@ msgstr "Ideen, Vorschläge oder Probleme?"
 msgid "Idempotency key"
 msgstr "Idempotenz-Schlüssel"
 
+msgid "Identifier"
+msgstr ""
+
 msgid "Identifiers"
 msgstr "Bezeichner"
 
@@ -11401,6 +11415,9 @@ msgstr "Lassen Sie das Feld leer, um die nächste Revision automatisch zu verwen
 
 msgid "Leave empty for exact match"
 msgstr "Leer lassen für exakte Übereinstimmung"
+
+msgid "Leave empty to use the account default"
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Leer lassen oder 0 eingeben, um alles anzuzeigen, das MRP plant."
@@ -14229,6 +14246,9 @@ msgstr "Offene Bestellungen"
 msgid "Open payables by supplier and age"
 msgstr "Offene Verbindlichkeiten nach Lieferant und Fälligkeitsdauer"
 
+msgid "Open Project"
+msgstr ""
+
 msgid "Open Purchase Invoices"
 msgstr "Offene Eingangsrechnungen"
 
@@ -15659,9 +15679,6 @@ msgstr "Fortschritt"
 
 msgid "Project"
 msgstr "Projekt"
-
-msgid "Project Name"
-msgstr "Projektname"
 
 msgid "Project owner"
 msgstr "Projektverantwortlicher"
@@ -20233,6 +20250,9 @@ msgstr "Technische Details"
 msgid "Technical support"
 msgstr "Technischer Support"
 
+msgid "Technically Complete"
+msgstr ""
+
 msgid "Temperature"
 msgstr "Temperatur"
 
@@ -22122,6 +22142,12 @@ msgstr "Transit & Institution"
 
 msgid "Trash"
 msgstr "Papierkorb"
+
+msgid "Treatment"
+msgstr ""
+
+msgid "Treatments"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "Rohbilanz"

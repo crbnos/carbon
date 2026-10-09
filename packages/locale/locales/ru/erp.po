@@ -678,6 +678,9 @@ msgstr "Первое отрицательное значение запаса"
 msgid "1Y"
 msgstr "1 год"
 
+msgid "2 to 6 capital letters or digits, such as SNS"
+msgstr ""
+
 msgid "2 years"
 msgstr "2 года"
 
@@ -3792,6 +3795,9 @@ msgstr "BSB"
 msgid "Bucket"
 msgstr "Хранилище"
 
+msgid "Budget"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Страховой запас, который политика на основе спроса удерживает для поглощения скачков потребления в течение периода накопления."
 
@@ -4628,6 +4634,9 @@ msgstr "Комментарии"
 msgid "Commit a champion user for each area"
 msgstr "Назначьте пользователя-чемпиона для каждой области"
 
+msgid "Committed"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Проведение поступления, отгрузки или счета-фактуры: количества перемещаются, записи операций попадают в главную книгу, и статус становится Проведено."
 
@@ -5429,6 +5438,9 @@ msgstr "Корректирующее действие"
 msgid "Cost"
 msgstr "Себестоимость"
 
+msgid "Cost Account"
+msgstr ""
+
 msgid "cost center"
 msgstr "центр затрат"
 
@@ -5464,6 +5476,9 @@ msgstr "Себестоимость реализованной продукции
 
 msgid "Cost of Sales"
 msgstr "Себестоимость продаж"
+
+msgid "Cost Treatment"
+msgstr ""
 
 msgid "Costing"
 msgstr "Калькуляция"
@@ -5823,9 +5838,6 @@ msgstr "Условие оплаты создано"
 
 msgid "Created process"
 msgstr "Процесс создан"
-
-msgid "Created project"
-msgstr "Проект создан"
 
 msgid "Created required action"
 msgstr "Требуемое действие создано"
@@ -8031,6 +8043,9 @@ msgstr "Изменить рабочий центр"
 msgid "Edited"
 msgstr "Изменено"
 
+msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Исключено"
 
@@ -8896,10 +8911,6 @@ msgstr "Ошибка при создании условий оплаты: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Ошибка при создании процесса: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create project: {0}"
-msgstr "Не удалось создать проект: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10243,6 +10254,9 @@ msgstr "Идеи, предложения или проблемы?"
 msgid "Idempotency key"
 msgstr "Ключ идемпотентности"
 
+msgid "Identifier"
+msgstr ""
+
 msgid "Identifiers"
 msgstr "Идентификаторы"
 
@@ -11401,6 +11415,9 @@ msgstr "Оставить пусто, чтобы использовать сле�
 
 msgid "Leave empty for exact match"
 msgstr "Оставьте пустым для точного совпадения"
+
+msgid "Leave empty to use the account default"
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Оставьте пусто или введите 0, чтобы показать все, что планирует MRP."
@@ -14229,6 +14246,9 @@ msgstr "Открытые заказы"
 msgid "Open payables by supplier and age"
 msgstr "Открытая кредиторская задолженность по поставщикам и срокам"
 
+msgid "Open Project"
+msgstr ""
+
 msgid "Open Purchase Invoices"
 msgstr "Открытые счета-фактуры полученные"
 
@@ -15659,9 +15679,6 @@ msgstr "Прогресс"
 
 msgid "Project"
 msgstr "Проект"
-
-msgid "Project Name"
-msgstr "Название проекта"
 
 msgid "Project owner"
 msgstr "Ответственный проекта"
@@ -20233,6 +20250,9 @@ msgstr "Технические сведения"
 msgid "Technical support"
 msgstr "Техническая поддержка"
 
+msgid "Technically Complete"
+msgstr ""
+
 msgid "Temperature"
 msgstr "Температура"
 
@@ -22122,6 +22142,12 @@ msgstr "Транзит и учреждение"
 
 msgid "Trash"
 msgstr "Корзина"
+
+msgid "Treatment"
+msgstr ""
+
+msgid "Treatments"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "Сальдовая ведомость"

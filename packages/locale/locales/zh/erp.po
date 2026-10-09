@@ -678,6 +678,9 @@ msgstr "首次出现负库存"
 msgid "1Y"
 msgstr "1年"
 
+msgid "2 to 6 capital letters or digits, such as SNS"
+msgstr ""
+
 msgid "2 years"
 msgstr "2 年"
 
@@ -3792,6 +3795,9 @@ msgstr "BSB"
 msgid "Bucket"
 msgstr "存储桶"
 
+msgid "Budget"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "基于需求的政策保留的缓冲库存，用于吸收积累期间的消耗尖峰。"
 
@@ -4628,6 +4634,9 @@ msgstr "评论"
 msgid "Commit a champion user for each area"
 msgstr "为每个领域指定一名冠军用户"
 
+msgid "Committed"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "提交收货、发货或发票：数量变动，凭证条目进入分类账，状态变为已过账。"
 
@@ -5429,6 +5438,9 @@ msgstr "纠正措施"
 msgid "Cost"
 msgstr "成本"
 
+msgid "Cost Account"
+msgstr ""
+
 msgid "cost center"
 msgstr "成本中心"
 
@@ -5464,6 +5476,9 @@ msgstr "销售成本（默认）"
 
 msgid "Cost of Sales"
 msgstr "销售成本"
+
+msgid "Cost Treatment"
+msgstr ""
 
 msgid "Costing"
 msgstr "成本核算"
@@ -5823,9 +5838,6 @@ msgstr "已创建付款条件"
 
 msgid "Created process"
 msgstr "已创建流程"
-
-msgid "Created project"
-msgstr "项目已创建"
 
 msgid "Created required action"
 msgstr "已创建必需操作"
@@ -8031,6 +8043,9 @@ msgstr "编辑工作中心"
 msgid "Edited"
 msgstr "已编辑"
 
+msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "已消除"
 
@@ -8896,10 +8911,6 @@ msgstr "创建付款条件失败：{0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "创建流程失败：{0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create project: {0}"
-msgstr "项目创建失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10243,6 +10254,9 @@ msgstr "想法、建议或问题？"
 msgid "Idempotency key"
 msgstr "幂等键"
 
+msgid "Identifier"
+msgstr ""
+
 msgid "Identifiers"
 msgstr "标识符"
 
@@ -11401,6 +11415,9 @@ msgstr "留空以自动使用下一个修订版"
 
 msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
+
+msgid "Leave empty to use the account default"
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "留空或输入 0 以显示 MRP 计划的所有内容。"
@@ -14229,6 +14246,9 @@ msgstr "未结订单"
 msgid "Open payables by supplier and age"
 msgstr "按供应商和期限打开应付款项"
 
+msgid "Open Project"
+msgstr ""
+
 msgid "Open Purchase Invoices"
 msgstr "未结采购发票"
 
@@ -15659,9 +15679,6 @@ msgstr "进度"
 
 msgid "Project"
 msgstr "项目"
-
-msgid "Project Name"
-msgstr "项目名称"
 
 msgid "Project owner"
 msgstr "项目负责人"
@@ -20233,6 +20250,9 @@ msgstr "技术细节"
 msgid "Technical support"
 msgstr "技术支持"
 
+msgid "Technically Complete"
+msgstr ""
+
 msgid "Temperature"
 msgstr "温度"
 
@@ -22122,6 +22142,12 @@ msgstr "中转与机构"
 
 msgid "Trash"
 msgstr "垃圾桶"
+
+msgid "Treatment"
+msgstr ""
+
+msgid "Treatments"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "试算平衡表"

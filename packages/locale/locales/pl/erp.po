@@ -678,6 +678,9 @@ msgstr "1. Ujemny Stan Magazynowy"
 msgid "1Y"
 msgstr "1 rok"
 
+msgid "2 to 6 capital letters or digits, such as SNS"
+msgstr ""
+
 msgid "2 years"
 msgstr "2 lata"
 
@@ -3792,6 +3795,9 @@ msgstr "BSB"
 msgid "Bucket"
 msgstr "Zasobnik"
 
+msgid "Budget"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Zapas buforowy utrzymywany przez politykę opartą na zapotrzebowaniu, aby pochłonąć skoki zużycia w ramach okresu akumulacji."
 
@@ -4628,6 +4634,9 @@ msgstr "Komentarze"
 msgid "Commit a champion user for each area"
 msgstr "Wyznacz użytkownika-lidera dla każdego obszaru"
 
+msgid "Committed"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Potwierdzenie przyjęcia, wysyłki lub faktury: ilości się przesuwają, wpisy do dowodu księgowego trafiają do ksiąg, a status zmienia się na Zaksięgowano."
 
@@ -5429,6 +5438,9 @@ msgstr "Działanie korygujące"
 msgid "Cost"
 msgstr "Koszt"
 
+msgid "Cost Account"
+msgstr ""
+
 msgid "cost center"
 msgstr "miejsce powstawania kosztów"
 
@@ -5464,6 +5476,9 @@ msgstr "Koszt własny sprzedaży (domyślny)"
 
 msgid "Cost of Sales"
 msgstr "Koszt sprzedaży"
+
+msgid "Cost Treatment"
+msgstr ""
 
 msgid "Costing"
 msgstr "Kalkulacja kosztów"
@@ -5823,9 +5838,6 @@ msgstr "Utworzono warunki płatności"
 
 msgid "Created process"
 msgstr "Proces utworzony"
-
-msgid "Created project"
-msgstr "Projekt został utworzony"
 
 msgid "Created required action"
 msgstr "Utworzono wymaganą akcję"
@@ -8031,6 +8043,9 @@ msgstr "Edytuj Stanowisko robocze"
 msgid "Edited"
 msgstr "Edytowano"
 
+msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Wyeliminowane"
 
@@ -8896,10 +8911,6 @@ msgstr "Nie udało się utworzyć warunku płatności: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Nie udało się utworzyć procesu: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create project: {0}"
-msgstr "Nie udało się utworzyć projektu: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10243,6 +10254,9 @@ msgstr "Pomysły, sugestie czy problemy?"
 msgid "Idempotency key"
 msgstr "Klucz idempotencji"
 
+msgid "Identifier"
+msgstr ""
+
 msgid "Identifiers"
 msgstr "Identyfikatory"
 
@@ -11401,6 +11415,9 @@ msgstr "Pozostaw puste, aby automatycznie użyć następnej rewizji"
 
 msgid "Leave empty for exact match"
 msgstr "Pozostaw puste dla dokładnego dopasowania"
+
+msgid "Leave empty to use the account default"
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Pozostaw puste lub wpisz 0, aby pokazać wszystko, co planuje MRP."
@@ -14229,6 +14246,9 @@ msgstr "Otwarte Zamówienia"
 msgid "Open payables by supplier and age"
 msgstr "Otwarte zobowiązania wg dostawcy i wieku"
 
+msgid "Open Project"
+msgstr ""
+
 msgid "Open Purchase Invoices"
 msgstr "Otwarte faktury zakupu"
 
@@ -15659,9 +15679,6 @@ msgstr "Postęp"
 
 msgid "Project"
 msgstr "Projekt"
-
-msgid "Project Name"
-msgstr "Nazwa projektu"
 
 msgid "Project owner"
 msgstr "Właściciel projektu"
@@ -20233,6 +20250,9 @@ msgstr "Szczegóły techniczne"
 msgid "Technical support"
 msgstr "Pomoc techniczna"
 
+msgid "Technically Complete"
+msgstr ""
+
 msgid "Temperature"
 msgstr "Temperatura"
 
@@ -22122,6 +22142,12 @@ msgstr "Tranzyt i Instytucja"
 
 msgid "Trash"
 msgstr "Kosz"
+
+msgid "Treatment"
+msgstr ""
+
+msgid "Treatments"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "Bilans próbny"

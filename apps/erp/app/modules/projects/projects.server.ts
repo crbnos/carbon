@@ -284,3 +284,47 @@ export async function startElementOnFirstCharge(
       AND started."isDefault"
   `.execute(db);
 }
+
+export type ProjectCostTotals = {
+  budget: number;
+  committed: number;
+  actual: number;
+};
+
+/**
+ * Sums `get_project_cost_summary` per project for a page of projects, in one
+ * query. Budget is the plan material, labor and other cost. A project with no
+ * rows gets zeros.
+ */
+export async function getProjectCostTotals(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; projectIds: string[] }
+): Promise<Record<string, ProjectCostTotals>> {
+  if (args.projectIds.length === 0) return {};
+
+  const result = await sql<{
+    projectId: string;
+    budget: number | null;
+    committed: number | null;
+    actual: number | null;
+  }>`
+    SELECT p."id" AS "projectId",
+      SUM(s."planMaterial" + s."planLabor" + s."planOther") AS "budget",
+      SUM(s."committed") AS "committed",
+      SUM(s."actual") AS "actual"
+    FROM unnest(${args.projectIds}::text[]) AS p("id")
+    CROSS JOIN LATERAL get_project_cost_summary(p."id", ${args.companyId}) s
+    GROUP BY p."id"
+  `.execute(db);
+
+  return Object.fromEntries(
+    result.rows.map((row) => [
+      row.projectId,
+      {
+        budget: Number(row.budget ?? 0),
+        committed: Number(row.committed ?? 0),
+        actual: Number(row.actual ?? 0)
+      }
+    ])
+  );
+}

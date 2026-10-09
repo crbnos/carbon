@@ -678,6 +678,9 @@ msgstr "1st नकारात्मक स्टॉक"
 msgid "1Y"
 msgstr "1 वर्ष"
 
+msgid "2 to 6 capital letters or digits, such as SNS"
+msgstr ""
+
 msgid "2 years"
 msgstr "2 वर्ष"
 
@@ -3792,6 +3795,9 @@ msgstr "BSB"
 msgid "Bucket"
 msgstr "बकेट"
 
+msgid "Budget"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "बफर स्टॉक जिसे मांग-आधारित नीति संचय अवधि के भीतर खपत स्पाइक्स को अवशोषित करने के लिए वापस रखती है।"
 
@@ -4628,6 +4634,9 @@ msgstr "टिप्पणियाँ"
 msgid "Commit a champion user for each area"
 msgstr "प्रत्येक क्षेत्र के लिए एक चैंपियन उपयोगकर्ता को प्रतिबद्ध करें"
 
+msgid "Committed"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "एक प्राप्ति, शिपमेंट या चालान की प्रतिबद्धता: मात्रा चलती है, जर्नल प्रविष्टियां बहीखाता को मारती हैं, और स्थिति पोस्ट की जाती है।"
 
@@ -5429,6 +5438,9 @@ msgstr "सुधारात्मक कार्रवाई"
 msgid "Cost"
 msgstr "लागत"
 
+msgid "Cost Account"
+msgstr ""
+
 msgid "cost center"
 msgstr "लागत केंद्र"
 
@@ -5464,6 +5476,9 @@ msgstr "बेचे गए माल की लागत (डिफ़ॉल्
 
 msgid "Cost of Sales"
 msgstr "बिक्री की लागत"
+
+msgid "Cost Treatment"
+msgstr ""
 
 msgid "Costing"
 msgstr "लागत निर्धारण"
@@ -5823,9 +5838,6 @@ msgstr "भुगतान शर्तें बनाई गई।"
 
 msgid "Created process"
 msgstr "प्रक्रिया बनाई गई"
-
-msgid "Created project"
-msgstr "परियोजना बना दी गई"
 
 msgid "Created required action"
 msgstr "आवश्यक कार्रवाई बनाई गई"
@@ -8031,6 +8043,9 @@ msgstr "वर्क सेंटर संपादित करें"
 msgid "Edited"
 msgstr "संपादित"
 
+msgid "Element ids start with the identifier, so it cannot change"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
 
@@ -8896,10 +8911,6 @@ msgstr "भुगतान शर्तें बनाने में वि�
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "प्रक्रिया बनाने में विफल: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create project: {0}"
-msgstr "परियोजना बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10243,6 +10254,9 @@ msgstr "विचार, सुझाव या समस्याएं?"
 msgid "Idempotency key"
 msgstr "समरूपता कुंजी"
 
+msgid "Identifier"
+msgstr ""
+
 msgid "Identifiers"
 msgstr "पहचानकर्ता"
 
@@ -11401,6 +11415,9 @@ msgstr "अगले रिवीजन को स्वचालित रू�
 
 msgid "Leave empty for exact match"
 msgstr "सटीक मिलान के लिए खाली छोड़ें"
+
+msgid "Leave empty to use the account default"
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "MRP द्वारा योजनाबद्ध सब कुछ दिखाने के लिए खाली छोड़ें, या 0 दर्ज करें।"
@@ -14229,6 +14246,9 @@ msgstr "खुले आदेश"
 msgid "Open payables by supplier and age"
 msgstr "आपूर्तिकर्ता और आयु के अनुसार खुली देय राशि"
 
+msgid "Open Project"
+msgstr ""
+
 msgid "Open Purchase Invoices"
 msgstr "खुले क्रय चालान"
 
@@ -15659,9 +15679,6 @@ msgstr "प्रगति"
 
 msgid "Project"
 msgstr "प्रोजेक्ट"
-
-msgid "Project Name"
-msgstr "परियोजना का नाम"
 
 msgid "Project owner"
 msgstr "परियोजना स्वामी"
@@ -20233,6 +20250,9 @@ msgstr "तकनीकी विवरण"
 msgid "Technical support"
 msgstr "तकनीकी समर्थन"
 
+msgid "Technically Complete"
+msgstr ""
+
 msgid "Temperature"
 msgstr "तापमान"
 
@@ -22122,6 +22142,12 @@ msgstr "ट्रांजिट और संस्था"
 
 msgid "Trash"
 msgstr "ट्रैश"
+
+msgid "Treatment"
+msgstr ""
+
+msgid "Treatments"
+msgstr ""
 
 msgid "Trial Balance"
 msgstr "परीक्षण शेष"

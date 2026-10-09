@@ -4,6 +4,12 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
   HStack,
   ModalDrawer,
   ModalDrawerBody,
@@ -12,56 +18,161 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
-  toast,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Hidden, Input, Submit } from "~/components/Form";
+import {
+  Account,
+  Customer,
+  DatePicker,
+  Employee,
+  Hidden,
+  InputControlled,
+  Location,
+  Select,
+  Submit,
+  TextArea
+} from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { projectValidator } from "../../projects.models";
+import {
+  projectCostTreatments,
+  projectElementPriorities,
+  projectValidator,
+  suggestProjectIdentifier
+} from "../../projects.models";
+
+type ProjectFormValues = z.infer<typeof projectValidator>;
 
 type ProjectFormProps = {
-  initialValues: z.infer<typeof projectValidator>;
-  type?: "modal" | "drawer";
-  open?: boolean;
-  onClose: (data?: { id: string; name: string }) => void;
+  initialValues: ProjectFormValues;
+  /** Set for a new project: the form opens in a drawer. */
+  onClose?: () => void;
+  isDisabled?: boolean;
 };
 
+/**
+ * A new project opens in a drawer and posts to `path.to.newProject`. An
+ * existing project renders as a card on its Details tab and posts to the
+ * current route. The identifier is fixed once the project exists, because
+ * every element's readable id starts with it.
+ */
 const ProjectForm = ({
   initialValues,
-  open = true,
-  type = "drawer",
-  onClose
+  onClose,
+  isDisabled = false
 }: ProjectFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
-
-  useEffect(() => {
-    if (type !== "modal") return;
-
-    if (fetcher.state === "loading" && fetcher.data?.data) {
-      onClose?.();
-      toast.success(t`Created project`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(t`Failed to create project: ${fetcher.data.error.message}`);
-    }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  const fetcher = useFetcher<{}>();
 
   const isEditing = initialValues.id !== undefined;
-  const isDisabled = isEditing
-    ? !permissions.can("update", "projects")
-    : !permissions.can("create", "projects");
+  const canSave = isEditing
+    ? permissions.can("update", "projects")
+    : permissions.can("create", "projects");
+
+  const [name, setName] = useState(initialValues.name ?? "");
+  const [identifier, setIdentifier] = useState(initialValues.identifier ?? "");
+  const [identifierEdited, setIdentifierEdited] = useState(
+    Boolean(initialValues.identifier)
+  );
+  const shownIdentifier = identifierEdited
+    ? identifier
+    : name.trim()
+      ? suggestProjectIdentifier(name)
+      : "";
+
+  const treatmentOptions = projectCostTreatments.map((treatment) => ({
+    label: treatment,
+    value: treatment
+  }));
+  const priorityOptions = projectElementPriorities.map((priority) => ({
+    label: priority,
+    value: priority
+  }));
+
+  const fields = (
+    <>
+      <Hidden name="id" />
+      <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
+        <InputControlled
+          name="name"
+          label={t`Name`}
+          value={name}
+          onChange={setName}
+          autoFocus={!isEditing}
+        />
+        <InputControlled
+          name="identifier"
+          label={t`Identifier`}
+          value={shownIdentifier}
+          isUppercase
+          isReadOnly={isEditing}
+          helperText={
+            isEditing
+              ? t`Element ids start with the identifier, so it cannot change`
+              : t`2 to 6 capital letters or digits, such as SNS`
+          }
+          onChange={(value) => {
+            setIdentifierEdited(true);
+            setIdentifier(value.toUpperCase());
+          }}
+        />
+        <div className="@xl:col-span-2">
+          <TextArea name="description" label={t`Description`} />
+        </div>
+        <Select
+          name="costTreatment"
+          label={t`Cost Treatment`}
+          options={treatmentOptions}
+        />
+        <Account
+          name="costAccountId"
+          label={t`Cost Account`}
+          helperText={t`Leave empty to use the account default`}
+        />
+        <Customer name="customerId" label={t`Customer`} />
+        <Employee name="ownerId" label={t`Owner`} />
+        <Location name="locationId" label={t`Location`} />
+        <Select name="priority" label={t`Priority`} options={priorityOptions} />
+        <DatePicker name="startDate" label={t`Start Date`} />
+        <DatePicker name="endDate" label={t`End Date`} />
+      </div>
+    </>
+  );
+
+  if (isEditing) {
+    return (
+      <Card>
+        <ValidatedForm
+          method="post"
+          validator={projectValidator}
+          defaultValues={initialValues}
+          isDisabled={isDisabled}
+        >
+          <CardHeader>
+            <CardTitle>
+              <Trans>Details</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="@container">{fields}</CardContent>
+          <CardFooter>
+            <Submit isDisabled={!canSave || isDisabled}>
+              <Trans>Save</Trans>
+            </Submit>
+          </CardFooter>
+        </ValidatedForm>
+      </Card>
+    );
+  }
 
   return (
-    <ModalDrawerProvider type={type}>
+    <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open={open}
+        open
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}
@@ -70,37 +181,31 @@ const ProjectForm = ({
           <ValidatedForm
             validator={projectValidator}
             method="post"
-            action={
-              isEditing
-                ? path.to.projectDetails(initialValues.id!)
-                : path.to.newProject
-            }
+            action={path.to.newProject}
             defaultValues={initialValues}
             fetcher={fetcher}
             className="flex flex-col h-full"
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? (
-                  <Trans>Edit Project</Trans>
-                ) : (
-                  <Trans>New Project</Trans>
-                )}
+                <Trans>New Project</Trans>
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
-              <Hidden name="id" />
-              <Hidden name="type" value={type} />
-              <VStack spacing={4}>
-                <Input name="name" label={t`Project Name`} />
-                <Input name="description" label={t`Description`} />
+              <VStack spacing={4} className="@container">
+                {fields}
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>
+                {/* Saving navigates to the new project, and the form is still
+                    mounted and dirty at that moment. */}
+                <Submit isDisabled={!canSave} withBlocker={false}>
                   <Trans>Save</Trans>
                 </Submit>
+                <Button size="md" variant="solid" onClick={() => onClose?.()}>
+                  <Trans>Cancel</Trans>
+                </Button>
               </HStack>
             </ModalDrawerFooter>
           </ValidatedForm>
