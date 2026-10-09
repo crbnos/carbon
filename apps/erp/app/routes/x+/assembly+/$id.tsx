@@ -628,6 +628,9 @@ export default function AssemblyInstructionRoute() {
   const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
   const [draftMotion, setDraftMotion] = useState<Motion | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingMotion = useRef<{ targetId: string; motion: Motion } | null>(
+    null
+  );
 
   const saveMotion = useCallback(
     (
@@ -650,40 +653,58 @@ export default function AssemblyInstructionRoute() {
     [motionFetcher, id]
   );
 
+  // The drag autosave waits 400 ms; leaving or switching an edit sends it now.
+  const flushMotionSave = useCallback(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = null;
+    const pending = pendingMotion.current;
+    pendingMotion.current = null;
+    if (pending) saveMotion(pending.targetId, { motion: pending.motion });
+  }, [saveMotion]);
+
   const onEditMotion = useCallback(
     (stepId: string, unitHeaderId?: string) => {
+      flushMotionSave();
       const edited = viewerSteps.find((s) => s.id === (unitHeaderId ?? stepId));
       setSelectedStepId(stepId);
       setEditingStepId(stepId);
       setEditingUnitId(unitHeaderId ?? null);
       setDraftMotion(edited?.motion ?? { type: "none" });
     },
-    [viewerSteps]
+    [viewerSteps, flushMotionSave]
   );
 
   const onStopEditMotion = useCallback(() => {
+    flushMotionSave();
     setEditingStepId(null);
     setEditingUnitId(null);
     setDraftMotion(null);
-  }, []);
+  }, [flushMotionSave]);
 
   const onMotionChange = useCallback(
     (stepId: string, motion: Motion) => {
       setDraftMotion(motion);
       // A sub-assembly's path lives on its header row.
-      const targetId = editingUnitId ?? stepId;
+      pendingMotion.current = { targetId: editingUnitId ?? stepId, motion };
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(
-        () => saveMotion(targetId, { motion }),
-        400
-      );
+      saveTimer.current = setTimeout(flushMotionSave, 400);
     },
-    [saveMotion, editingUnitId]
+    [flushMotionSave, editingUnitId]
   );
 
   const onResetMotion = useCallback(
-    (stepId: string) => saveMotion(stepId, { reset: true }),
-    [saveMotion]
+    (stepId: string) => {
+      // A drag still waiting to save on this row must not land after the reset.
+      if (pendingMotion.current?.targetId === stepId) {
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+        pendingMotion.current = null;
+      } else {
+        flushMotionSave();
+      }
+      saveMotion(stepId, { reset: true });
+    },
+    [saveMotion, flushMotionSave]
   );
 
   const onSetCamera = useCallback(

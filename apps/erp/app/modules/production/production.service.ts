@@ -7884,6 +7884,7 @@ export async function updateAssemblyStepMotion(
     camera?: z.infer<typeof cameraSchema> | null;
     /** Put back the motion the step had before its path was first drawn. */
     reset?: boolean;
+    companyId: string;
     updatedBy: string;
   }
 ) {
@@ -7893,6 +7894,7 @@ export async function updateAssemblyStepMotion(
       .from("assemblyInstructionStep")
       .select("motion, warnings")
       .eq("id", data.id)
+      .eq("companyId", data.companyId)
       .single();
     if (current.error) return { data: null, error: current.error };
     // The first hand-drawn edit keeps the planner's motion in
@@ -7934,6 +7936,7 @@ export async function updateAssemblyStepMotion(
       updatedAt: new Date().toISOString()
     })
     .eq("id", data.id)
+    .eq("companyId", data.companyId)
     .select("id")
     .single();
 }
