@@ -24,7 +24,8 @@ export const dimensions = [
   { name: "Supplier", entityType: "Supplier" },
   { name: "Item", entityType: "Item" },
   { name: "Scrap Reason", entityType: "ScrapReason" },
-  { name: "Project", entityType: "Project" }
+  { name: "Project", entityType: "Project" },
+  { name: "Project Element", entityType: "ProjectElement" }
 ] as const;
 
 export const supplierStatuses = [
@@ -2156,6 +2157,8 @@ export const accountDefaults = {
   rawMaterialsAccount: "1210",
   finishedGoodsAccount: "1220",
   workInProgressAccount: "1230",
+  projectWorkInProgressAccount: "1230",
+  projectExpenseAccount: "7080",
   receivablesAccount: "1110",
   intercompanyReceivablesAccount: "1130",
   bankCashAccount: "1010",

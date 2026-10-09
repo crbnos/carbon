@@ -46,7 +46,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 7: Apply migrations and regenerate types
 - [x] Task 8: Add authz rules and ship the RLS migration
 - [x] Task 9: Register backup id references and audit config
-- [ ] Task 10: Update seed data for new companies
+- [x] Task 10: Update seed data for new companies
 - [ ] Task 11: Add the projects module models
 - [ ] Task 12: Add the project and workspace service functions
 - [ ] Task 13: Add the element service functions
@@ -2405,3 +2405,4 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 4 follow-up (commit `9fe4ab5750`): the new FKs on `job` and `purchaseOrderLine` pushed 14 bare PostgREST embeds of their parents past TS2589 in `erp` and `@carbon/jobs`. Each now names its FK (lessons: "A new FK on a busy table breaks bare PostgREST embeds of it"). Checked against the local PostgREST.
 - Task 9: `projectLedger` also lists `laborCategoryId` and `supplierId` in `ID_REF_COLUMNS`. Both hold tenant row ids with no FK, which is the rule the file states; the plan listed only five columns.
 - Tasks 9–10 Verify: `turbo run typecheck` for `@carbon/jobs` and `@carbon/server-functions` fails on one error only, `POSTING_POLICY` in `packages/ee/src/accounting/core/models.ts` missing `Project Issue` and `Timesheet`. Task 1's enum values cause it and Task 25 fixes it, so it stays until Task 25 (the plan orders it that way). With `--continue`, `erp` also shows only the Task 25 enum-mirror errors (`JournalEntriesTable.tsx`, `JournalEntryDocuments.tsx`, `dimensions.$dimensionId.tsx`). No other errors remain in `erp`, `mes`, `@carbon/jobs`, `@carbon/server-functions`, `@carbon/planning` or `@carbon/api`.
+- Task 10: `seed-company` and the dataset `bootstrap.ts` both map every `accountDefaults` key generically, so neither changed. The two new keys sit next to `workInProgressAccount`. `db:check:datasets` passes ×4.
