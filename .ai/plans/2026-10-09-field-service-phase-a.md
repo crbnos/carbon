@@ -47,7 +47,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 13: Add `create-service-order-invoice`
 - [x] Task 14: Hide Service projects outside Service
 - [x] Task 15: Make My Timesheet personal
-- [ ] Task 16: Add the service models and services
+- [x] Task 16: Add the service models and services
 - [ ] Task 17: Add `createServiceOrder` and the status roll-up
 - [ ] Task 18: Add the Service module navigation and layout
 - [ ] Task 19: Add the customer asset pages and the customer Assets tab
@@ -1255,3 +1255,7 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 15: `path.to.serviceOrder(id)` (`/x/service-order/:id`, the Task 20 document page) is added here, because a Service row links to it. Task 18 adds the other service helpers. The Service navigation link to My Timesheet comes with Task 18's submodules.
 - Task 15: the grid reads the project's `projectType` and its service order (embedded in `TIMESHEET_ENTRY_COLUMNS`). A Service row shows the order's readable id and the node's name, links to the order, and shows its cells read-only (status and hours, no correction). A Standard row's name links to its element, else its project. `submitTimesheetEntries` now submits Standard projects' Draft entries only, so **Submit week** never posts a service order's time; Submit is enabled only by a Standard Draft cell.
 - Task 15: **My Timesheet** is in the user menu (`AvatarMenu`) for employees. `projects.mdx` names the new route.
+- Task 16: `customerAssetValidator` registers a unit (item, serial, customer, site, ship date, warranty dates, notes); the edit of an existing asset has its own `customerAssetUpdateValidator` (id, site, warranty dates, notes), because item, serial and customer never change after registration. `serviceOrderValidator` takes `startFrom` (`Empty`, `Template`, `Serial`, `Item`, matching `buildFromPartSources`) and requires `serviceTemplateId` for Template. The module also adds `serviceOrderUpdateValidator` (for `updateServiceOrder`) and `serviceBillableItemValidator` (for `updateServiceBillableItem`).
+- Task 16: `rollUpOrderStatus(order, visits)` takes `order.workComplete`: the **Work complete?** answer of Task 22 that gives Completed. Cancelled visits do not count. The test has the plan's 4 cases plus one for the pure `warrantyStatus(asset, today)` (In warranty while labor runs, Labor ended while only parts runs, else Expired), which the list filter and the badge share.
+- Task 16: `getCustomerAssets` takes `today` (the company's day) for the warranty filter; `openOrders` is an embedded count of the asset's orders that are not Closed or Cancelled. `getCustomerAssetHistoryByComponent` groups a node with neither a serial nor an item by its name, so an unlinked node still has a row. `updateServiceOrder` refuses a Closed or Cancelled order and drops contact, site and contract unless the order is Draft. `updateServiceBillableItem` changes an Unbilled or On Hold item (a hold is released by setting Unbilled), never a reversal, and recomputes the amount from the price. Every select string was checked against the local PostgREST.
+- Task 16: the service functions carry no `@mcp` tag, so none is an MCP or API tool yet.
