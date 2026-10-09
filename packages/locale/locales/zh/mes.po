@@ -139,6 +139,9 @@ msgstr "在打印设置中添加打印机以直接打印标签。"
 msgid "Add Inventory"
 msgstr "添加库存管理"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "添加样本"
 
@@ -629,6 +632,12 @@ msgstr "无法保存测量"
 msgid "Failed to save result"
 msgstr "无法保存结果"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "上传 {0} 失败"
@@ -691,6 +700,9 @@ msgstr "前往入门"
 
 msgid "Hide description"
 msgstr "隐藏描述"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "实际拣了多少？"
@@ -791,6 +803,9 @@ msgstr "继续拣货"
 
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "套件"
@@ -956,6 +971,9 @@ msgstr "必须在 {minValue} 到 {maxValue} {unitOfMeasureCode} 之间"
 msgid "My Hours"
 msgstr "我的工时"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "名称"
 
@@ -1091,6 +1109,9 @@ msgstr "无库存"
 msgid "No time entries for this week"
 msgstr "本周无考勤记录"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
 
@@ -1108,6 +1129,9 @@ msgstr "无"
 
 msgid "Notes"
 msgstr "备注"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "没有运行"
@@ -1234,6 +1258,9 @@ msgstr "拣货 {0}"
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "已拣货"
@@ -1489,6 +1516,9 @@ msgstr "搜索量具..."
 msgid "Search operators..."
 msgstr "搜索操作员..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "搜索..."
 
@@ -1691,6 +1721,9 @@ msgstr "子装配体 {0} · {1} — 单独显示"
 
 msgid "Submit anonymously"
 msgstr "匿名提交"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "建议"

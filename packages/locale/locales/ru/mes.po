@@ -139,6 +139,9 @@ msgstr "Добавьте принтер в настройки печати, чт
 msgid "Add Inventory"
 msgstr "Добавить запас"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "Добавить образец"
 
@@ -629,6 +632,12 @@ msgstr "Не удалось сохранить измерение"
 msgid "Failed to save result"
 msgstr "Не удалось сохранить результат"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Не удалось загрузить {0}"
@@ -691,6 +700,9 @@ msgstr "Перейти к первоначальной настройке"
 
 msgid "Hide description"
 msgstr "Скрыть описание"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически собрано?"
@@ -791,6 +803,9 @@ msgstr "Продолжить отбор"
 
 msgid "Keyboard shortcuts"
 msgstr "Клавиатурные сокращения"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "Комплект"
@@ -956,6 +971,9 @@ msgstr "Должно быть между {minValue} и {maxValue} {unitOfMeasure
 msgid "My Hours"
 msgstr "Мои часы"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "Имя"
 
@@ -1091,6 +1109,9 @@ msgstr "Нет запасов"
 msgid "No time entries for this week"
 msgstr "Нет записей учёта времени за эту неделю"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
@@ -1108,6 +1129,9 @@ msgstr "Нет"
 
 msgid "Notes"
 msgstr "Примечания"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "Ничего не работает"
@@ -1234,6 +1258,9 @@ msgstr "Отобрать {0}"
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "Подобрано"
@@ -1489,6 +1516,9 @@ msgstr "Поиск средств измерения..."
 msgid "Search operators..."
 msgstr "Поиск операторов..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "Поиск..."
 
@@ -1691,6 +1721,9 @@ msgstr "Под-узел {0} · {1} — показывается отдельно
 
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "Предложение"

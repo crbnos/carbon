@@ -139,6 +139,9 @@ msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가
 msgid "Add Inventory"
 msgstr "재고 추가"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "샘플 추가"
 
@@ -629,6 +632,12 @@ msgstr "측정값 저장 실패"
 msgid "Failed to save result"
 msgstr "결과 저장 실패"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} 업로드 실패"
@@ -691,6 +700,9 @@ msgstr "온보딩으로 이동"
 
 msgid "Hide description"
 msgstr "설명 숨기기"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
@@ -791,6 +803,9 @@ msgstr "피킹을 계속하세요"
 
 msgid "Keyboard shortcuts"
 msgstr "키보드 단축키"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "키트"
@@ -956,6 +971,9 @@ msgstr "{minValue}에서 {maxValue} {unitOfMeasureCode} 사이여야 합니다"
 msgid "My Hours"
 msgstr "내 근무 시간"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "이름"
 
@@ -1091,6 +1109,9 @@ msgstr "재고 없음"
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
@@ -1108,6 +1129,9 @@ msgstr "없음"
 
 msgid "Notes"
 msgstr "메모"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "실행 중인 것 없음"
@@ -1234,6 +1258,9 @@ msgstr "피킹 {0}"
 
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "피킹됨"
@@ -1489,6 +1516,9 @@ msgstr "계측기 검색..."
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "검색..."
 
@@ -1691,6 +1721,9 @@ msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "제안"

@@ -139,6 +139,9 @@ msgstr "प्रिंटिंग सेटिंग्स में एक �
 msgid "Add Inventory"
 msgstr "इन्वेंटरी जोड़ें"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "नमूना जोड़ें"
 
@@ -629,6 +632,12 @@ msgstr "माप को सहेजने में विफल"
 msgid "Failed to save result"
 msgstr "परिणाम को सहेजने में विफल"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} अपलोड करने में विफल"
@@ -691,6 +700,9 @@ msgstr "ऑनबोर्डिंग पर जाएं"
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "वास्तव में कितने चुने गए?"
@@ -791,6 +803,9 @@ msgstr "पिकिंग जारी रखें"
 
 msgid "Keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "किट"
@@ -956,6 +971,9 @@ msgstr "{minValue} और {maxValue} के बीच होना चाहि�
 msgid "My Hours"
 msgstr "मेरे घंटे"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "नाम"
 
@@ -1091,6 +1109,9 @@ msgstr "कोई स्टॉक नहीं"
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
 
@@ -1108,6 +1129,9 @@ msgstr "कोई नहीं"
 
 msgid "Notes"
 msgstr "नोट्स"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "कुछ नहीं चल रहा"
@@ -1234,6 +1258,9 @@ msgstr "पिकिंग {0}"
 
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "उठाया गया"
@@ -1489,6 +1516,9 @@ msgstr "गेज खोजें..."
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "खोजें..."
 
@@ -1691,6 +1721,9 @@ msgstr "सब-असेंबली {0} · {1} — स्वयं पर द�
 
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "सुझाव"

@@ -139,6 +139,9 @@ msgstr "Dodaj drukarkę w ustawieniach drukowania, aby drukować etykiety bezpo�
 msgid "Add Inventory"
 msgstr "Dodaj zapasy"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "Dodaj próbkę"
 
@@ -629,6 +632,12 @@ msgstr "Nie udało się zapisać pomiaru"
 msgid "Failed to save result"
 msgstr "Nie udało się zapisać wyniku"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Nie udało się przesłać pliku {0}"
@@ -691,6 +700,9 @@ msgstr "Przejdź do wdrożenia"
 
 msgid "Hide description"
 msgstr "Ukryj opis"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Ile faktycznie zostało zebrane?"
@@ -791,6 +803,9 @@ msgstr "Kontynuuj kompletację"
 
 msgid "Keyboard shortcuts"
 msgstr "Skróty klawiaturowe"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "Zestaw"
@@ -956,6 +971,9 @@ msgstr "Musi być pomiędzy {minValue} a {maxValue} {unitOfMeasureCode}"
 msgid "My Hours"
 msgstr "Moje godziny"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "Nazwa"
 
@@ -1091,6 +1109,9 @@ msgstr "Brak zapasu"
 msgid "No time entries for this week"
 msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
 
@@ -1108,6 +1129,9 @@ msgstr "Brak"
 
 msgid "Notes"
 msgstr "Notatki"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "Nic nie działa"
@@ -1234,6 +1258,9 @@ msgstr "Pobierz {0}"
 
 msgid "Pick tracked item"
 msgstr "Wybierz śledzony element"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "Pobrane"
@@ -1489,6 +1516,9 @@ msgstr "Szukaj przyrządów pomiarowych..."
 msgid "Search operators..."
 msgstr "Szukaj operatorów..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "Szukaj..."
 
@@ -1691,6 +1721,9 @@ msgstr "Podzestawienie {0} · {1} — wyświetlane osobno"
 
 msgid "Submit anonymously"
 msgstr "Prześlij anonimowo"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "Propozycja"

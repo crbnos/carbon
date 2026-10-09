@@ -139,6 +139,9 @@ msgstr "Einen Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt
 msgid "Add Inventory"
 msgstr "Bestand hinzufügen"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "Probe hinzufügen"
 
@@ -629,6 +632,12 @@ msgstr "Messung konnte nicht gespeichert werden"
 msgid "Failed to save result"
 msgstr "Ergebnis konnte nicht gespeichert werden"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Fehler beim Hochladen von {0}"
@@ -691,6 +700,9 @@ msgstr "Gehen Sie zum Onboarding"
 
 msgid "Hide description"
 msgstr "Beschreibung ausblenden"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Wie viele wurden tatsächlich gepickt?"
@@ -791,6 +803,9 @@ msgstr "Kommissionierung fortsetzen"
 
 msgid "Keyboard shortcuts"
 msgstr "Tastaturkürzel"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "Set"
@@ -956,6 +971,9 @@ msgstr "Muss zwischen {minValue} und {maxValue} {unitOfMeasureCode} liegen"
 msgid "My Hours"
 msgstr "Meine Stunden"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "Name"
 
@@ -1091,6 +1109,9 @@ msgstr "Kein Bestand"
 msgid "No time entries for this week"
 msgstr "Keine Zeiteinträge für diese Woche"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Kein Lagerbestand für diesen Artikel ist erfasst. Sie können ihn trotzdem kommissionieren — der verfügbare Bestand wird negativ, bis die Inventur abgestimmt ist."
 
@@ -1108,6 +1129,9 @@ msgstr "Keine"
 
 msgid "Notes"
 msgstr "Notizen"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "Nichts läuft"
@@ -1234,6 +1258,9 @@ msgstr "Kommissionieren {0}"
 
 msgid "Pick tracked item"
 msgstr "Verfolgtes Element auswählen"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "Gepickt"
@@ -1489,6 +1516,9 @@ msgstr "Prüfmittel suchen..."
 msgid "Search operators..."
 msgstr "Werker suchen..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "Suchen..."
 
@@ -1691,6 +1721,9 @@ msgstr "Untergruppe {0} · {1} — isoliert angezeigt"
 
 msgid "Submit anonymously"
 msgstr "Anonym einreichen"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "Vorschlag"

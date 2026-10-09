@@ -139,6 +139,9 @@ msgstr "Adicione uma impressora nas configurações de impressão para imprimir 
 msgid "Add Inventory"
 msgstr "Adicionar Estoque"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "Adicionar Amostra"
 
@@ -629,6 +632,12 @@ msgstr "Falha ao salvar medição"
 msgid "Failed to save result"
 msgstr "Falha ao salvar resultado"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Falha ao enviar arquivo {0}"
@@ -691,6 +700,9 @@ msgstr "Ir para integração"
 
 msgid "Hide description"
 msgstr "Ocultar descrição"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Quantos foram realmente apanhados?"
@@ -791,6 +803,9 @@ msgstr "Continuar separação"
 
 msgid "Keyboard shortcuts"
 msgstr "Atalhos de teclado"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "Kit"
@@ -956,6 +971,9 @@ msgstr "Deve estar entre {minValue} e {maxValue} {unitOfMeasureCode}"
 msgid "My Hours"
 msgstr "Minhas Horas"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "Nome"
 
@@ -1091,6 +1109,9 @@ msgstr "Sem stock"
 msgid "No time entries for this week"
 msgstr "Nenhum registro de horas nesta semana"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Nenhum estoque de armazém está registrado para este item. Você ainda pode coletá-lo — o estoque disponível ficará negativo até que a contagem seja reconciliada."
 
@@ -1108,6 +1129,9 @@ msgstr "Nenhum"
 
 msgid "Notes"
 msgstr "Observações"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "Nada em execução"
@@ -1234,6 +1258,9 @@ msgstr "Separar {0}"
 
 msgid "Pick tracked item"
 msgstr "Selecionar item rastreado"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "Apanhado"
@@ -1489,6 +1516,9 @@ msgstr "Pesquisar instrumentos de medição..."
 msgid "Search operators..."
 msgstr "Pesquisar operadores..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "Pesquisar..."
 
@@ -1691,6 +1721,9 @@ msgstr "Sub-montagem {0} · {1} — mostrada separadamente"
 
 msgid "Submit anonymously"
 msgstr "Enviar anonimamente"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "Sugestão"

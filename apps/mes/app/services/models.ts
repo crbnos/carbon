@@ -482,3 +482,17 @@ export const setClockOutValidator = z.object({
   intent: z.literal("clockOut"),
   clockOut: z.string().min(1, { message: "Clock out is required" })
 });
+
+/** One cell of the MES timesheet. Zero hours deletes the Draft entry. */
+export const timesheetCellValidator = z.object({
+  entryDate: z.string().min(1, { message: "Date is required" }),
+  projectId: z.string().min(1, { message: "Project is required" }),
+  projectElementId: zfd.text(z.string().optional()),
+  laborCategoryId: z.string().min(1, { message: "Labor category is required" }),
+  hours: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Hours cannot be negative" })
+      .max(24, { message: "A day has 24 hours" })
+  )
+});

@@ -139,6 +139,9 @@ msgstr "Add a printer in the printing settings to print labels directly."
 msgid "Add Inventory"
 msgstr "Add Inventory"
 
+msgid "Add row"
+msgstr "Add row"
+
 msgid "Add Sample"
 msgstr "Add Sample"
 
@@ -629,6 +632,12 @@ msgstr "Failed to save measurement"
 msgid "Failed to save result"
 msgstr "Failed to save result"
 
+msgid "Failed to save the hours"
+msgstr "Failed to save the hours"
+
+msgid "Failed to submit the week"
+msgstr "Failed to submit the week"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Failed to upload {0}"
@@ -691,6 +700,9 @@ msgstr "Go to onboarding"
 
 msgid "Hide description"
 msgstr "Hide description"
+
+msgid "Hours on {label}"
+msgstr "Hours on {label}"
 
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
@@ -791,6 +803,9 @@ msgstr "Keep picking"
 
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
+
+msgid "Kind of work"
+msgstr "Kind of work"
 
 msgid "Kit"
 msgstr "Kit"
@@ -956,6 +971,9 @@ msgstr "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgid "My Hours"
 msgstr "My Hours"
 
+msgid "My Timesheet"
+msgstr "My Timesheet"
+
 msgid "Name"
 msgstr "Name"
 
@@ -1091,6 +1109,9 @@ msgstr "No stock"
 msgid "No time entries for this week"
 msgstr "No time entries for this week"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr "No time this week. Add a row for each job or task you worked on."
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
@@ -1108,6 +1129,9 @@ msgstr "None"
 
 msgid "Notes"
 msgstr "Notes"
+
+msgid "Nothing matches your search."
+msgstr "Nothing matches your search."
 
 msgid "Nothing running"
 msgstr "Nothing running"
@@ -1234,6 +1258,9 @@ msgstr "Pick {0}"
 
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr "Pick what you worked on, then the kind of work."
 
 msgid "Picked"
 msgstr "Picked"
@@ -1489,6 +1516,9 @@ msgstr "Search gauges..."
 msgid "Search operators..."
 msgstr "Search operators..."
 
+msgid "Search projects and tasks"
+msgstr "Search projects and tasks"
+
 msgid "Search..."
 msgstr "Search..."
 
@@ -1691,6 +1721,9 @@ msgstr "Sub-Assembly {0} · {1} — shown on its own"
 
 msgid "Submit anonymously"
 msgstr "Submit anonymously"
+
+msgid "Submit week"
+msgstr "Submit week"
 
 msgid "Suggestion"
 msgstr "Suggestion"

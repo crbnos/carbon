@@ -217,6 +217,7 @@ export const path = {
       generatePath(`${x}/company/switch/${companyId}`),
     timeCardPage: `${x}/timecard`,
     timecard: `${api}/timecard`,
+    timesheet: `${x}/timesheet`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>

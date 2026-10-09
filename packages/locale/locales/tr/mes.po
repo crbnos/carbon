@@ -139,6 +139,9 @@ msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıc�
 msgid "Add Inventory"
 msgstr "Envantere Ekle"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "Örnek Ekle"
 
@@ -629,6 +632,12 @@ msgstr "Ölçüm kaydedilemedi"
 msgid "Failed to save result"
 msgstr "Sonuç kaydedilemedi"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} yüklenemedi"
@@ -691,6 +700,9 @@ msgstr "Başlangıç adımına git"
 
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane alındı?"
@@ -791,6 +803,9 @@ msgstr "Toplamaya devam et"
 
 msgid "Keyboard shortcuts"
 msgstr "Klavye kısayolları"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "Set"
@@ -956,6 +971,9 @@ msgstr "Aralması gereken değer {minValue} ile {maxValue} arasındadır"
 msgid "My Hours"
 msgstr "Saatlik Çalışmalarım"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "Adı"
 
@@ -1091,6 +1109,9 @@ msgstr "Stok yok"
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
@@ -1108,6 +1129,9 @@ msgstr "Hiçbiri"
 
 msgid "Notes"
 msgstr "Notlar"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "Hiçbir şey çalışmıyor"
@@ -1234,6 +1258,9 @@ msgstr "Toplama {0}"
 
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "Alındı"
@@ -1489,6 +1516,9 @@ msgstr "Ölçüm aletlerini ara..."
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "Ara..."
 
@@ -1691,6 +1721,9 @@ msgstr "Alt derleme {0} · {1} — kendi başına gösterilir"
 
 msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "Öneri"

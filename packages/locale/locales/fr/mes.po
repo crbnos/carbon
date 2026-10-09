@@ -139,6 +139,9 @@ msgstr "Ajoutez une imprimante dans les paramètres d'impression pour imprimer l
 msgid "Add Inventory"
 msgstr "Ajouter au stock"
 
+msgid "Add row"
+msgstr ""
+
 msgid "Add Sample"
 msgstr "Ajouter échantillon"
 
@@ -629,6 +632,12 @@ msgstr "Échec de l'enregistrement de la mesure"
 msgid "Failed to save result"
 msgstr "Échec de l'enregistrement du résultat"
 
+msgid "Failed to save the hours"
+msgstr ""
+
+msgid "Failed to submit the week"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Échec du téléversement de {0}"
@@ -691,6 +700,9 @@ msgstr "Aller à l'onboarding"
 
 msgid "Hide description"
 msgstr "Masquer la description"
+
+msgid "Hours on {label}"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Combien ont réellement été prélevés ?"
@@ -791,6 +803,9 @@ msgstr "Continuer le prélèvement"
 
 msgid "Keyboard shortcuts"
 msgstr "Raccourcis clavier"
+
+msgid "Kind of work"
+msgstr ""
 
 msgid "Kit"
 msgstr "Kit"
@@ -956,6 +971,9 @@ msgstr "Doit être entre {minValue} et {maxValue} {unitOfMeasureCode}"
 msgid "My Hours"
 msgstr "Mes heures"
 
+msgid "My Timesheet"
+msgstr ""
+
 msgid "Name"
 msgstr "Nom"
 
@@ -1091,6 +1109,9 @@ msgstr "Aucun stock"
 msgid "No time entries for this week"
 msgstr "Aucune saisie de temps pour cette semaine"
 
+msgid "No time this week. Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Aucun stock d'entrepôt n'est enregistré pour cet article. Vous pouvez toujours le prélever — le stock disponible deviendra négatif jusqu'à ce que le décompte soit rapproché."
 
@@ -1108,6 +1129,9 @@ msgstr "Aucun"
 
 msgid "Notes"
 msgstr "Notes"
+
+msgid "Nothing matches your search."
+msgstr ""
 
 msgid "Nothing running"
 msgstr "Rien en cours"
@@ -1234,6 +1258,9 @@ msgstr "Prélever {0}"
 
 msgid "Pick tracked item"
 msgstr "Sélectionner un article suivi"
+
+msgid "Pick what you worked on, then the kind of work."
+msgstr ""
 
 msgid "Picked"
 msgstr "Prélevé"
@@ -1489,6 +1516,9 @@ msgstr "Rechercher les instruments de mesure..."
 msgid "Search operators..."
 msgstr "Rechercher des opérateurs..."
 
+msgid "Search projects and tasks"
+msgstr ""
+
 msgid "Search..."
 msgstr "Rechercher..."
 
@@ -1691,6 +1721,9 @@ msgstr "Sous-ensemble {0} · {1} — affiché seul"
 
 msgid "Submit anonymously"
 msgstr "Soumettre anonymement"
+
+msgid "Submit week"
+msgstr ""
 
 msgid "Suggestion"
 msgstr "Suggestion"
