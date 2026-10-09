@@ -4,12 +4,15 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  buildExpenseReversal,
   buildServiceEstimate,
   canMoveServiceOrder,
   canMoveVisit,
   canOverrideCoverage,
+  canReverseCharge,
   summarizeWork,
   rollUpOrderStatus,
+  serviceChargeReversalValidator,
   serviceTemplateIdentifier,
   warrantyStatus
 } from "~/modules/service/service.models";
@@ -214,6 +217,108 @@ describe("canOverrideCoverage", () => {
     expect(
       canOverrideCoverage({ id: "r", reversalOfId: "a" }, reversed, null)
     ).toBe(false);
+  });
+});
+
+describe("canReverseCharge", () => {
+  const reversed = new Set(["old"]);
+
+  it("allows an open time or expense charge, billed or not", () => {
+    expect(
+      canReverseCharge(
+        { id: "a", reversalOfId: null, documentType: "Timesheet" },
+        reversed
+      )
+    ).toBe(true);
+    expect(
+      canReverseCharge(
+        { id: "a", reversalOfId: null, documentType: "Project Expense" },
+        reversed
+      )
+    ).toBe(true);
+  });
+
+  it("refuses a part, a reversal and a charge already reversed", () => {
+    expect(
+      canReverseCharge(
+        { id: "a", reversalOfId: null, documentType: "Project Issue" },
+        reversed
+      )
+    ).toBe(false);
+    expect(
+      canReverseCharge(
+        { id: "a", reversalOfId: null, documentType: null },
+        reversed
+      )
+    ).toBe(false);
+    expect(
+      canReverseCharge(
+        { id: "r", reversalOfId: "a", documentType: "Timesheet" },
+        reversed
+      )
+    ).toBe(false);
+    expect(
+      canReverseCharge(
+        { id: "old", reversalOfId: null, documentType: "Project Expense" },
+        reversed
+      )
+    ).toBe(false);
+  });
+});
+
+describe("serviceChargeReversalValidator", () => {
+  it("needs a charge and a reason that is not blank", () => {
+    expect(
+      serviceChargeReversalValidator.safeParse({
+        projectLedgerId: "pl1",
+        reason: "Logged on the wrong order"
+      }).success
+    ).toBe(true);
+    expect(
+      serviceChargeReversalValidator.safeParse({
+        projectLedgerId: "pl1",
+        reason: "   "
+      }).success
+    ).toBe(false);
+    expect(
+      serviceChargeReversalValidator.safeParse({
+        projectLedgerId: "",
+        reason: "Wrong order"
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("buildExpenseReversal", () => {
+  it("negates the amount and keeps the node, visit, employee and date", () => {
+    expect(
+      buildExpenseReversal(
+        {
+          id: "pjx1",
+          companyId: "c1",
+          projectId: "p1",
+          projectElementId: "e1",
+          serviceVisitId: "v1",
+          employeeId: "tech",
+          entryDate: "2026-10-05",
+          description: "Mileage",
+          amount: "40.5"
+        },
+        { reason: "Charged twice", userId: "manager" }
+      )
+    ).toEqual({
+      companyId: "c1",
+      projectId: "p1",
+      projectElementId: "e1",
+      serviceVisitId: "v1",
+      employeeId: "tech",
+      entryDate: "2026-10-05",
+      description: "Mileage",
+      amount: -40.5,
+      reversalOfId: "pjx1",
+      reversalReason: "Charged twice",
+      createdBy: "manager"
+    });
   });
 });
 

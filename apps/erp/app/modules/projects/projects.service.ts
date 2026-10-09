@@ -2748,6 +2748,8 @@ export async function createTimesheetCorrection(
       projectId: original.projectId,
       projectElementId: original.projectElementId,
       laborCategoryId: original.laborCategoryId,
+      // A service entry's correction stays on the visit the time was for.
+      serviceVisitId: original.serviceVisitId,
       note: original.note,
       correctionReason: args.correctionReason,
       // A service entry's coverage override travels to the replacement.

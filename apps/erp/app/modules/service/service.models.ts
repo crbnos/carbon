@@ -339,6 +339,12 @@ export const coverageOverrideValidator = z.object({
   reason: z.string().trim().min(1, { message: "A reason is required" })
 });
 
+/** A reversal of one posted time or expense charge. The reason is required. */
+export const serviceChargeReversalValidator = z.object({
+  projectLedgerId: z.string().min(1, { message: "Charge is required" }),
+  reason: z.string().trim().min(1, { message: "A reason is required" })
+});
+
 /** A review of one unbilled item: its price, a hold, or a write-off. */
 export const serviceBillableItemValidator = z
   .object({
@@ -663,6 +669,72 @@ export function canOverrideCoverage(
   if (charge.reversalOfId) return false;
   if (reversedIds.has(charge.id)) return false;
   return billableStatus !== "Billed";
+}
+
+/** The charges the node drawer reverses: time (a timesheet correction) and expenses. */
+export const reversibleChargeDocuments = [
+  "Timesheet",
+  "Project Expense"
+] as const;
+
+/** Whether a ledger row's document is one the node drawer reverses. */
+export function isReversibleDocument(documentType: string | null): boolean {
+  return (reversibleChargeDocuments as readonly (string | null)[]).includes(
+    documentType
+  );
+}
+
+/**
+ * Whether the node drawer can reverse a charge: a time or expense charge
+ * that is not a reversal and that no later row reverses. A part is returned
+ * with Issue Part instead. A billed charge can be reversed too: its billable
+ * item gets a negative copy, which the next invoice credits.
+ */
+export function canReverseCharge(
+  charge: {
+    id: string;
+    reversalOfId: string | null;
+    documentType: string | null;
+  },
+  reversedIds: Set<string>
+): boolean {
+  if (!isReversibleDocument(charge.documentType)) return false;
+  if (charge.reversalOfId) return false;
+  return !reversedIds.has(charge.id);
+}
+
+/**
+ * The expense entry that reverses `original`: the same node, visit, employee
+ * and date, the negative amount, and the reason. `post-project-expense` posts
+ * it at the original's coverage.
+ */
+export function buildExpenseReversal(
+  original: {
+    id: string;
+    companyId: string;
+    projectId: string;
+    projectElementId: string | null;
+    serviceVisitId: string | null;
+    employeeId: string;
+    entryDate: string;
+    description: string;
+    amount: number | string;
+  },
+  args: { reason: string; userId: string }
+) {
+  return {
+    companyId: original.companyId,
+    projectId: original.projectId,
+    projectElementId: original.projectElementId,
+    serviceVisitId: original.serviceVisitId,
+    employeeId: original.employeeId,
+    entryDate: original.entryDate,
+    description: original.description,
+    amount: round(-Number(original.amount)),
+    reversalOfId: original.id,
+    reversalReason: args.reason,
+    createdBy: args.userId
+  };
 }
 
 /**

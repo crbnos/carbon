@@ -89872,6 +89872,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectExpenseEntry.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.projectExpenseEntry.reversalReason"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -89982,6 +89985,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectExpenseEntry.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.projectExpenseEntry.reversalReason"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -90044,6 +90050,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectExpenseEntry.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectExpenseEntry.reversalReason"
           },
           {
             $ref: "#/parameters/body.projectExpenseEntry"
@@ -163882,6 +163891,10 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        reversalReason: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -219988,6 +220001,12 @@ export default {
     },
     "rowFilter.projectExpenseEntry.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectExpenseEntry.reversalReason": {
+      name: "reversalReason",
       required: false,
       in: "query",
       type: "string"

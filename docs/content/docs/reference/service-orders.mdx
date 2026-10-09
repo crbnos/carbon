@@ -65,6 +65,8 @@ Charge a node from its drawer or from the visit page. Each charge posts at once.
 - **Issue Part** takes a part from stock, by default from your own van. It is priced at the part's sale price, and it is written to the asset's [installed components](/docs/reference/customer-assets#installed-components). A return reverses one whole issue.
 - **Add Expense** records a date, a description and an amount.
 
+To undo a time or expense charge, click **Reverse** on it in the node drawer. The **Reverse Charge** dialog needs a **Reason**. The reversal posts at once, at the same coverage as the charge. The charge's billable item is written off, or credited on the next invoice when it is already billed. Time is reversed as a timesheet correction to 0 hours. A part is returned with **Issue Part** instead.
+
 Service time shows read-only on My Timesheet and never goes through **Submit week**.
 
 ## Coverage
@@ -181,13 +183,19 @@ A serial can have only one open service order (any status other than Closed or C
 The Coverage Contract belongs to another customer. Pick one of the unit's customer's contracts, or leave it empty.
 
 ### "This service order has 2 charges that are not reversed. Reverse every charge before you cancel the order, or complete the order and write off its billable items."
-At least one charge on the order still stands. Return each part with **Issue Part** and **Return to stock**, then cancel. A coverage override does not reverse a charge: it moves the cost to a new charge. Time and expenses cannot be reversed from a service order yet. For those, complete the order, write off its unbilled items on the Billing tab, then Close it.
+At least one charge on the order still stands. Return each part with **Issue Part** and **Return to stock**. Reverse each time and expense charge with **Reverse** in its node drawer. Then cancel. A coverage override does not reverse a charge: it moves the cost to a new charge.
+
+### "This charge is already reversed" / "Only time and expenses are reversed here. Return a part with Issue Part."
+**Reverse** applies only to a time or expense charge that is not a reversal and that no later charge reverses. A part charge is returned with **Issue Part**.
+
+### "You can reverse only the charges of your own visit"
+The user lacks service_update, so they can reverse only the charges of their own open visit. Grant service_update, or have the visit's technician do it.
 
 ### "Set Warranty Expense in Account Defaults before you charge a service order"
 The company has no Warranty Expense account default. Set it in Accounting → Default Accounts (Operating Expenses group). The same message names Cost of Goods Sold or Work in Progress when those defaults are missing.
 
-### "The time is logged but did not post: ..." / "The expense is saved but did not post: ..."
-The entry was saved but posting failed; the text after the colon is the posting error (often a missing account default or a closed accounting period).
+### "The time is logged but did not post: ..." / "The expense is saved but did not post: ..." / "The reversal is saved but did not post: ..."
+The entry was saved but posting failed; the text after the colon is the posting error (often a missing account default or a closed accounting period). For a reversal, fix the cause and click **Reverse** again: Carbon posts the saved reversal and does not write a second one.
 
 ### "Return the whole quantity of one issue" / "No open issue of this part to this node matches the return"
 A service part return reverses exactly one earlier issue of the same item (and serial or batch) to the same node. Partial returns are refused.

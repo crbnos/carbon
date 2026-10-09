@@ -48650,6 +48650,7 @@ export type Database = {
           projectElementId: string | null
           projectId: string
           reversalOfId: string | null
+          reversalReason: string | null
           serviceVisitId: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -48669,6 +48670,7 @@ export type Database = {
           projectElementId?: string | null
           projectId: string
           reversalOfId?: string | null
+          reversalReason?: string | null
           serviceVisitId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -48688,6 +48690,7 @@ export type Database = {
           projectElementId?: string | null
           projectId?: string
           reversalOfId?: string | null
+          reversalReason?: string | null
           serviceVisitId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null

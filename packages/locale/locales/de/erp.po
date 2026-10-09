@@ -463,6 +463,9 @@ msgstr "{days}T"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} bucht dies in Ihr Ledger, daher schiebt Carbon es nicht. Ihre gespeicherte Auswahl wird beibehalten, falls sich dies ändert."
 
+msgid "{description} of {amount}. The reversal posts at the same coverage, and its billable item is written off or credited."
+msgstr ""
+
 msgid "{discount} off"
 msgstr "{discount} Rabatt"
 
@@ -18816,6 +18819,9 @@ msgstr "Umsatzerlöstyp"
 msgid "Reversal"
 msgstr ""
 
+msgid "Reverse"
+msgstr ""
+
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -18833,6 +18839,9 @@ msgstr "Alle Artikelledgereinträge aus dieser Rechnung stornieren"
 
 msgid "Reverse charge"
 msgstr "Stornierungsgebühr"
+
+msgid "Reverse Charge"
+msgstr ""
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Reverse-Charge-Verfahren Umsatzsteuer"

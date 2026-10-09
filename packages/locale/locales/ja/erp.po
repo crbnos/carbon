@@ -463,6 +463,9 @@ msgstr "{days}日"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}がこれをあなたの台帳に転記するため、Carbonはそれをプッシュしません。変更があった場合に備えて、保存された選択肢は保持されます。"
 
+msgid "{description} of {amount}. The reversal posts at the same coverage, and its billable item is written off or credited."
+msgstr ""
+
 msgid "{discount} off"
 msgstr "{discount} 割引"
 
@@ -18816,6 +18819,9 @@ msgstr "売上種別"
 msgid "Reversal"
 msgstr ""
 
+msgid "Reverse"
+msgstr ""
+
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -18833,6 +18839,9 @@ msgstr "この請求書の品目台帳の仕訳をすべて反対仕訳する"
 
 msgid "Reverse charge"
 msgstr "逆請求"
+
+msgid "Reverse Charge"
+msgstr ""
 
 msgid "Reverse Charge Sales Tax"
 msgstr "リバースチャージ売上税"

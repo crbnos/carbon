@@ -463,6 +463,9 @@ msgstr "{days}d"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} wysyła to do Twojej księgi, więc Carbon tego nie wysyła. Twój zapisany wybór jest zachowywany na wypadek zmian."
 
+msgid "{description} of {amount}. The reversal posts at the same coverage, and its billable item is written off or credited."
+msgstr ""
+
 msgid "{discount} off"
 msgstr "{discount} rabatu"
 
@@ -18816,6 +18819,9 @@ msgstr "Typ przychodu"
 msgid "Reversal"
 msgstr ""
 
+msgid "Reverse"
+msgstr ""
+
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -18833,6 +18839,9 @@ msgstr "Odwróć wszystkie wpisy rejestru pozycji z tej faktury"
 
 msgid "Reverse charge"
 msgstr "Odwrotne obciążenie"
+
+msgid "Reverse Charge"
+msgstr ""
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Odwrotne obciążenie podatkiem od sprzedaży"

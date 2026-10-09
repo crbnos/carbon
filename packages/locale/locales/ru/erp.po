@@ -463,6 +463,9 @@ msgstr "{days}д"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} отправляет это в вашу бухгалтерскую книгу, поэтому Carbon не отправляет это. Ваш сохраненный выбор сохраняется на случай, если это изменится."
 
+msgid "{description} of {amount}. The reversal posts at the same coverage, and its billable item is written off or credited."
+msgstr ""
+
 msgid "{discount} off"
 msgstr "{discount} скидка"
 
@@ -18816,6 +18819,9 @@ msgstr "Тип выручки"
 msgid "Reversal"
 msgstr ""
 
+msgid "Reverse"
+msgstr ""
+
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -18833,6 +18839,9 @@ msgstr "Отменить любые записи журнала номенкла
 
 msgid "Reverse charge"
 msgstr "Обратное начисление"
+
+msgid "Reverse Charge"
+msgstr ""
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Налог на продажи с обратным взиманием"

@@ -104,7 +104,7 @@ Service project.
 ## Charges post through server functions
 
 Every charge goes through the order's charge route (`$id.charge.tsx`, `intent` = `time`,
-`part`, `expense`, `reclass`) and a server function. Never insert ledger rows, billable
+`part`, `expense`, `reclass`, `reverse`) and a server function. Never insert ledger rows, billable
 items or components directly.
 
 | Charge | Server function | Notes |
@@ -113,6 +113,12 @@ items or components directly.
 | Part | `post-project-issue` | `post-project-issue/service.ts`: billable item, installed component, replacement of the node's component, and the `Service` genealogy activity. A return reverses one whole open issue (`findServiceIssueToReturn`). |
 | Expense | `post-project-expense` | `addServiceExpense`; Dr the coverage account / Cr GRNI. |
 | Reclass | `reclass-project-coverage` | Refuses Capitalized either way. |
+| Reverse | `post-timesheet` / `post-project-expense` | `reverseServiceCharge`, with a reason (`serviceChargeReversalValidator`). Time: `createTimesheetCorrection` to 0 hours (`correctionReason`; the correction keeps the entry's `serviceVisitId`), posted at once. Expense: `buildExpenseReversal`, a `projectExpenseEntry` with `reversalOfId` and `reversalReason`. Both post at the original's coverage and reverse its billable item. A reversal saved but not posted is posted again on the next Reverse, never written twice. |
+
+The node drawer (`NodePeek`) shows **Reverse** on a time or expense row
+(`canReverseCharge`: not a reversal, not reversed since). A part has no Reverse: it is
+returned with Issue Part. Reversing the last standing charge is what lets
+`cancelServiceOrder` through.
 
 `loadServicePostingContexts` (`lib/project-posting.ts`) loads the order, its asset's
 warranty dates, the labor item's price and the node's installed component in 3 queries
@@ -122,7 +128,9 @@ for any number of charges. `buildBillableItem` builds the item: a covered item i
 The ERP writes through Kysely, which bypasses RLS, so the routes authorize. A user with
 `update: "service"` charges any open order. A technician without it charges only
 their own visit that is not Completed or Cancelled (`requireOwnServiceVisit`, the form's
-`serviceVisitId`), and never reclasses. A part also needs `update: "inventory"`.
+`serviceVisitId`), and never reclasses. A technician reverses only a charge whose entry
+carries their own open visit (`reverseServiceCharge`'s `onlyVisitId`). A part also needs
+`update: "inventory"`.
 
 ## Customer assets
 
@@ -200,10 +208,6 @@ No charges are seeded. The wipe deletes `customerAssetComponent`, `serviceVisit`
 
 ## Known gaps
 
-- A service order has no way to reverse its time or expenses (no correction on a Service
-  timesheet row, no expense reversal in the UI). Only a part return reverses a charge, so
-  an order with time or an expense cannot be cancelled; complete it and write off its
-  billable items.
 - The service tables do not broadcast, so no page declares `handle.realtime`.
 - `documentSourceType` has no service order value, so order and visit files write no
   `document` row.

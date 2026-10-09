@@ -463,6 +463,9 @@ msgstr "{days}g"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} bunu muhasebe defterinize gönderir, bu nedenle Carbon onu göndermez. Kaydedilen seçiminiz değişmesi durumunda korunur."
 
+msgid "{description} of {amount}. The reversal posts at the same coverage, and its billable item is written off or credited."
+msgstr ""
+
 msgid "{discount} off"
 msgstr "{discount} indirim"
 
@@ -18816,6 +18819,9 @@ msgstr "Hasılat Türü"
 msgid "Reversal"
 msgstr ""
 
+msgid "Reverse"
+msgstr ""
+
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -18833,6 +18839,9 @@ msgstr "Bu faturadaki herhangi bir kalem defteri girişini tersine çevirir"
 
 msgid "Reverse charge"
 msgstr "Ters kayıt"
+
+msgid "Reverse Charge"
+msgstr ""
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Ters yükleme satış vergisi"

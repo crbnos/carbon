@@ -19,19 +19,26 @@ import {
   BUILD_FROM_PART_MAX_DEPTH,
   defaultProjectStates
 } from "../projects/projects.models";
-import { insertElementsFromPart } from "../projects/projects.server";
+import {
+  insertElementsFromPart,
+  postTimesheetEntries
+} from "../projects/projects.server";
+import { createTimesheetCorrection } from "../projects/projects.service";
 import type {
   coverageOverrideValidator,
   customerAssetValidator,
   ServiceOrderStatus,
   ServiceVisitStatus,
+  serviceChargeReversalValidator,
   serviceExpenseValidator,
   serviceOrderValidator,
   serviceTemplateValidator,
   serviceVisitValidator
 } from "./service.models";
 import {
+  buildExpenseReversal,
   canMoveVisit,
+  canReverseCharge,
   rollUpOrderStatus,
   serviceTemplateIdentifier
 } from "./service.models";
@@ -647,6 +654,173 @@ export async function reclassServiceCharge(
       error: posting.error
     });
     return posting.error.message || "Failed to change the coverage";
+  }
+  return null;
+}
+
+/**
+ * Reverses one posted time or expense charge of a service order, with a
+ * reason:
+ * - time: a timesheet correction to 0 hours (`createTimesheetCorrection`),
+ *   posted at once by `post-timesheet`;
+ * - an expense: a `projectExpenseEntry` with `reversalOfId`, posted by
+ *   `post-project-expense`.
+ * Both post at the original's coverage and reverse its billable item. When
+ * `onlyVisitId` is set (a technician without `update: "service"`), the charge
+ * must belong to that visit. A reversal that exists but did not post is
+ * posted again, not written twice. Throws `ServiceOrderError` on a refusal;
+ * returns a posting error message, or null.
+ */
+export async function reverseServiceCharge(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof serviceChargeReversalValidator> & {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    onlyVisitId: string | null;
+  }
+): Promise<string | null> {
+  const charge = await db
+    .selectFrom("projectLedger")
+    .select(["id", "documentType", "documentId", "reversalOfId"])
+    .where("id", "=", args.projectLedgerId)
+    .where("projectId", "=", args.projectId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (!charge) {
+    throw new ServiceOrderError("The charge is not on this service order");
+  }
+  const reversedBy = await db
+    .selectFrom("projectLedger")
+    .select("id")
+    .where("reversalOfId", "=", charge.id)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (
+    !canReverseCharge(charge, new Set(reversedBy ? [charge.id] : [])) ||
+    !charge.documentId
+  ) {
+    throw new ServiceOrderError(
+      charge.reversalOfId || reversedBy
+        ? "This charge is already reversed"
+        : "Only time and expenses are reversed here. Return a part with Issue Part."
+    );
+  }
+  const documentId = charge.documentId;
+  const requireVisit = (serviceVisitId: string | null) => {
+    if (args.onlyVisitId && serviceVisitId !== args.onlyVisitId) {
+      throw new ServiceOrderError(
+        "You can reverse only the charges of your own visit"
+      );
+    }
+  };
+
+  if (charge.documentType === "Timesheet") {
+    const entry = await db
+      .selectFrom("timesheetEntry")
+      .select(["id", "serviceVisitId"])
+      .where("id", "=", documentId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!entry) throw new ServiceOrderError("The time entry was not found");
+    requireVisit(entry.serviceVisitId);
+
+    // A reversal left unposted by a failed posting is posted again.
+    const pending = await db
+      .selectFrom("timesheetEntry")
+      .select("id")
+      .where("reversalOfId", "=", entry.id)
+      .where("companyId", "=", args.companyId)
+      .where("status", "!=", "Posted")
+      .executeTakeFirst();
+    let reversalId = pending?.id ?? null;
+    if (!reversalId) {
+      try {
+        const correction = await createTimesheetCorrection(db, {
+          companyId: args.companyId,
+          userId: args.userId,
+          timesheetEntryId: entry.id,
+          hours: 0,
+          correctionReason: args.reason
+        });
+        reversalId = correction.reversalId;
+      } catch (err) {
+        throw new ServiceOrderError(
+          err instanceof Error ? err.message : "Failed to reverse the time"
+        );
+      }
+    }
+    const postingError = await postTimesheetEntries({
+      timesheetEntryIds: [reversalId],
+      companyId: args.companyId,
+      userId: args.userId
+    });
+    return postingError
+      ? `The reversal is saved but did not post: ${postingError}`
+      : null;
+  }
+
+  const reversalId = await db.transaction().execute(async (trx) => {
+    // Row lock: two reversals of one expense must not both write.
+    const original = await trx
+      .selectFrom("projectExpenseEntry")
+      .selectAll()
+      .where("id", "=", documentId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!original) throw new ServiceOrderError("The expense was not found");
+    requireVisit(original.serviceVisitId);
+    if (original.reversalOfId) {
+      throw new ServiceOrderError("This charge is already reversed");
+    }
+
+    // A reversal left unposted by a failed posting is posted again.
+    const existing = await trx
+      .selectFrom("projectExpenseEntry")
+      .select(["id", "journalId"])
+      .where("reversalOfId", "=", original.id)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (existing) {
+      const posted = await trx
+        .selectFrom("projectLedger")
+        .select("id")
+        .where("documentType", "=", "Project Expense")
+        .where("documentId", "=", existing.id)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (existing.journalId || posted) {
+        throw new ServiceOrderError("This charge is already reversed");
+      }
+      return existing.id;
+    }
+
+    const row = await trx
+      .insertInto("projectExpenseEntry")
+      .values(
+        buildExpenseReversal(original, {
+          reason: args.reason,
+          userId: args.userId
+        })
+      )
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    return row.id;
+  });
+
+  const posting = await serverFns
+    .system({ db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-project-expense", { projectExpenseEntryId: reversalId });
+  if (posting.error) {
+    logger.error("Failed to post a service expense reversal", {
+      companyId: args.companyId,
+      projectExpenseEntryId: reversalId,
+      error: posting.error
+    });
+    return `The reversal is saved but did not post: ${
+      posting.error.message || "the posting failed"
+    }`;
   }
   return null;
 }

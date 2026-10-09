@@ -40,7 +40,8 @@ import {
   LuReceipt,
   LuShieldQuestion,
   LuTimer,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuUndo2
 } from "react-icons/lu";
 import { DateTime } from "~/components";
 import {
@@ -59,7 +60,10 @@ import { useItems } from "~/stores";
 import type { ServiceCoverage } from "../../service.models";
 import {
   canOverrideCoverage,
+  canReverseCharge,
   coverageOverrideValidator,
+  isReversibleDocument,
+  serviceChargeReversalValidator,
   serviceCoverages,
   serviceNodeFixedPriceValidator
 } from "../../service.models";
@@ -91,7 +95,9 @@ export type NodePeekProps = ServiceNode & {
 /**
  * One node of the work: what it is linked to, its charges with who pays for
  * each, and the three ways to charge it (time, a part, an expense). A charge
- * that is not billed can move to another coverage, with a reason.
+ * that is not billed can move to another coverage, with a reason. A time or
+ * expense charge can be reversed, with a reason; a part is returned with
+ * Issue Part.
  */
 export default function NodePeek({
   element,
@@ -115,6 +121,7 @@ export default function NodePeek({
   const formatQuantity = useQuantityFormatter();
   const [modal, setModal] = useState<OpenModal>(null);
   const [overriding, setOverriding] = useState<ServiceCharge | null>(null);
+  const [reversing, setReversing] = useState<ServiceCharge | null>(null);
 
   const reversedIds = useMemo(
     () =>
@@ -261,6 +268,8 @@ export default function NodePeek({
                             reversedIds,
                             billable?.status ?? null
                           );
+                        const canReverse =
+                          canCharge && canReverseCharge(charge, reversedIds);
                         return (
                           <Tr key={charge.id}>
                             <Td className="whitespace-nowrap">
@@ -312,15 +321,29 @@ export default function NodePeek({
                               </div>
                             </Td>
                             <Td>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                leftIcon={<LuShieldQuestion />}
-                                isDisabled={!canOverride}
-                                onClick={() => setOverriding(charge)}
-                              >
-                                <Trans>Override</Trans>
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  leftIcon={<LuShieldQuestion />}
+                                  isDisabled={!canOverride}
+                                  onClick={() => setOverriding(charge)}
+                                >
+                                  <Trans>Override</Trans>
+                                </Button>
+                                {isReversibleDocument(charge.documentType) &&
+                                  !charge.reversalOfId && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      leftIcon={<LuUndo2 />}
+                                      isDisabled={!canReverse}
+                                      onClick={() => setReversing(charge)}
+                                    >
+                                      <Trans>Reverse</Trans>
+                                    </Button>
+                                  )}
+                              </div>
                             </Td>
                           </Tr>
                         );
@@ -372,7 +395,95 @@ export default function NodePeek({
           onClose={() => setOverriding(null)}
         />
       )}
+      {reversing && (
+        <ReverseChargeModal
+          action={chargeAction}
+          charge={reversing}
+          description={costTypeLabels[reversing.costType] ?? reversing.costType}
+          serviceVisitId={serviceVisitId}
+          onClose={() => setReversing(null)}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * Reverses one time or expense charge: the reversal posts at the charge's
+ * coverage and reverses its billable item. The reason is required.
+ */
+function ReverseChargeModal({
+  action,
+  charge,
+  description,
+  serviceVisitId,
+  onClose
+}: {
+  action: string;
+  charge: ServiceCharge;
+  description: string;
+  serviceVisitId?: string | null;
+  onClose: () => void;
+}) {
+  const { t } = useLingui();
+  const formatCurrency = useCurrencyFormatter();
+  const amount = formatCurrency.format(Number(charge.amount));
+  const fetcher = useAction<{
+    success?: boolean;
+    error?: { message: string } | null;
+  }>({ onSuccess: () => onClose() });
+  const errorMessage =
+    fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
+
+  return (
+    <Modal open onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <ValidatedForm
+          validator={serviceChargeReversalValidator}
+          method="post"
+          action={action}
+          fetcher={fetcher}
+          defaultValues={{ projectLedgerId: charge.id, reason: "" }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Reverse Charge</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              <Trans>
+                {description} of {amount}. The reversal posts at the same
+                coverage, and its billable item is written off or credited.
+              </Trans>
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <Hidden name="intent" value="reverse" />
+            <Hidden name="projectLedgerId" />
+            {serviceVisitId && (
+              <Hidden name="serviceVisitId" value={serviceVisitId} />
+            )}
+            <VStack spacing={4}>
+              {errorMessage && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+              <TextArea name="reason" label={t`Reason`} />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit withBlocker={false}>
+              <Trans>Reverse</Trans>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
   );
 }
 

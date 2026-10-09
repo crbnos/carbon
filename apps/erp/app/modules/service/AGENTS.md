@@ -15,7 +15,7 @@ Field service (Phase A): customer assets, Field Visit service orders, their visi
 - MUST call `syncServiceOrderStatus` after every visit or order status change, in the same transaction. `scheduleServiceVisit`, `setServiceVisitStatus` and `cancelServiceOrder` already do this. The call also sets the project's status through `projectStatusOfOrder`.
 - MUST check `hasPermission(claims.permissions, "service", "update", companyId)` in every route that writes through Kysely. Kysely writes bypass RLS. When the check fails, fall back to `requireOwnServiceVisit` (technician, own open visit), as `$id.charge.tsx`, `$id_.visits.$visitId.tsx` and `$id.visits.$visitId.signature.tsx` do. The visit status route passes `technicianId: userId` to `setServiceVisitStatus` for the same reason.
 - MUST call `requireServiceOrderNode` before you charge a node. It refuses a Closed or Cancelled order and a node from another order's tree.
-- MUST post charges through server functions: time through `logServiceTime` then `postTimesheetEntries` (`post-timesheet`); parts through `postProjectIssue` (`post-project-issue`, which installs the component); expenses through `addServiceExpense` (`post-project-expense`); coverage changes through `reclassServiceCharge` (`reclass-project-coverage`); the invoice through `create-service-order-invoice`.
+- MUST post charges through server functions: time through `logServiceTime` then `postTimesheetEntries` (`post-timesheet`); parts through `postProjectIssue` (`post-project-issue`, which installs the component); expenses through `addServiceExpense` (`post-project-expense`); coverage changes through `reclassServiceCharge` (`reclass-project-coverage`); time and expense reversals through `reverseServiceCharge` (a timesheet correction through `post-timesheet`, or a `projectExpenseEntry` with `reversalOfId` through `post-project-expense`), with a reason; the invoice through `create-service-order-invoice`.
 - MUST name new path helpers `serviceOrder*`, `customerAsset*`, `serviceVisit*`, `serviceTemplate*`, `myVisits` or `serviceSchedule`. `path.to.service`, `serviceRoot`, `serviceDetails` and `services` belong to the Service ITEM page.
 
 ### Ask First
@@ -23,7 +23,7 @@ Field service (Phase A): customer assets, Field Visit service orders, their visi
 - Changing `resolveCoverage` or the `projectModule` / `serviceVisit` rules in `packages/database/src/authz/manifest.ts`. The posting accounts and the technician's access depend on them.
 
 ### Never
-- Never insert `projectLedger`, `projectBillableItem`, `customerAssetComponent` or journal rows directly. Use the server functions above. A Draft `timesheetEntry` (`logServiceTime`) is the only charge row the module writes itself.
+- Never insert `projectLedger`, `projectBillableItem`, `customerAssetComponent` or journal rows directly. Use the server functions above. The module writes only entries, which the server functions then post: a Draft `timesheetEntry` (`logServiceTime`), a `projectExpenseEntry` (`addServiceExpense`), and their reversals (`reverseServiceCharge`).
 - Never schedule or move a visit with `upsertServiceVisit`. It skips the roll-up and nothing calls it. Use `scheduleServiceVisit`.
 - Never open a second order on a serial that already has an open order. `serviceOrder_open_subject_key` is a unique index on `trackedEntityId` WHERE status is not Closed or Cancelled.
 - Never show a Service project in Projects. `getChargeNumbers`, the MES picker and `getEntityValues` filter `projectType = 'Standard'`.
@@ -47,7 +47,7 @@ pnpm --filter @carbon/server-functions test   # posting + invoice functions
 ## Key Service Functions
 - `createServiceOrder(client, db, args)` (`service.server.ts`) — one transaction: checks the asset is In Service, uses the customer's only Active contract, creates the project and the order, then builds the tree (`insertElementsFromPart`, with `includePlanLines: true`).
 - `getServiceOrder`, `getServiceWork`, `getServiceNode`, `getServiceVisits`, `getCustomerAssets`, `getServiceBillableItems`, `getServiceEstimateInputs` (`service.service.ts`).
-- Pure, tested helpers in `service.models.ts` (`apps/erp/test/service-models.test.ts`): `summarizeWork`, `buildServiceEstimate` (also used by the estimate PDF, `ServiceEstimatePDF` in `@carbon/documents`), `inTreeOrder`, `canOverrideCoverage`.
+- Pure, tested helpers in `service.models.ts` (`apps/erp/test/service-models.test.ts`): `summarizeWork`, `buildServiceEstimate` (also used by the estimate PDF, `ServiceEstimatePDF` in `@carbon/documents`), `inTreeOrder`, `canOverrideCoverage`, `canReverseCharge`, `buildExpenseReversal`.
 
 ## Routes
 - `x+/service-orders+/` — module pages: list, `new`, `assets`, `my-visits`, `schedule`, `templates`, and `templates_.$id.tsx`. The trailing `_` renders the template page in the module layout, not under the list.

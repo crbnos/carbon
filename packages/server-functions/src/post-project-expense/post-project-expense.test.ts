@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { openChargeIds } from "@carbon/utils";
 import { expect } from "vitest";
 import { projectPostingFixture } from "../lib/project-posting-test-fixture";
 import { databaseTest } from "../local-database-test-fixture";
+import postTimesheet from "../post-timesheet";
 import postProjectExpense from "./index";
 
 databaseTest(
@@ -215,6 +217,148 @@ databaseTest(
         [40, "Billable"]
       ]);
       expect(ledger[0]!.reversalOfId).not.toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "reversing a service order's time and expense with a reason leaves no open charge, so the order can be cancelled",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      await f.addServiceOrder("reverse", {
+        laborWarrantyEndDate: "2026-01-01",
+        laborPrice: 95
+      });
+      const time = await f.db
+        .insertInto("timesheetEntry")
+        .values({
+          employeeId: "system",
+          entryDate: "2026-10-05",
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          laborCategoryId: f.laborCategoryId,
+          hours: 2,
+          status: "Draft",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      expect(
+        (await postTimesheet(f.ctx, { timesheetEntryIds: [time.id] })).error
+      ).toBeNull();
+      const expense = await f.db
+        .insertInto("projectExpenseEntry")
+        .values({
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          employeeId: "system",
+          entryDate: "2026-10-05",
+          description: "Mileage",
+          amount: 40,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      expect(
+        (
+          await postProjectExpense(f.ctx, {
+            projectExpenseEntryId: expense.id
+          })
+        ).error
+      ).toBeNull();
+
+      const before = await f.db
+        .selectFrom("projectLedger")
+        .select(["id", "reversalOfId"])
+        .where("projectId", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(openChargeIds(before)).toHaveLength(2);
+
+      // The rows the service order's Reverse writes: a timesheet correction
+      // to 0 hours (createTimesheetCorrection) and an expense reversal
+      // (buildExpenseReversal), each with its reason.
+      const timeReversal = await f.db
+        .insertInto("timesheetEntry")
+        .values({
+          employeeId: "system",
+          entryDate: "2026-10-05",
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          laborCategoryId: f.laborCategoryId,
+          hours: -2,
+          status: "Submitted",
+          reversalOfId: time.id,
+          correctionReason: "Logged on the wrong order",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      expect(
+        (await postTimesheet(f.ctx, { timesheetEntryIds: [timeReversal.id] }))
+          .error
+      ).toBeNull();
+      const expenseReversal = await f.db
+        .insertInto("projectExpenseEntry")
+        .values({
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          employeeId: "system",
+          entryDate: "2026-10-05",
+          description: "Mileage",
+          amount: -40,
+          reversalOfId: expense.id,
+          reversalReason: "Charged twice",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      expect(
+        (
+          await postProjectExpense(f.ctx, {
+            projectExpenseEntryId: expenseReversal.id
+          })
+        ).error
+      ).toBeNull();
+
+      const after = await f.db
+        .selectFrom("projectLedger")
+        .select(["id", "reversalOfId", "amount", "coverage"])
+        .where("projectId", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(after).toHaveLength(4);
+      expect(openChargeIds(after)).toEqual([]);
+      expect(after.every((row) => row.coverage === "Billable")).toBe(true);
+      expect(after.reduce((sum, row) => sum + Number(row.amount), 0)).toEqual(
+        0
+      );
+
+      const items = await f.db
+        .selectFrom("projectBillableItem")
+        .select(["status", "statusReason"])
+        .where("projectId", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(items).toEqual([
+        { status: "Written Off", statusReason: "Reversed" },
+        { status: "Written Off", statusReason: "Reversed" }
+      ]);
+
+      const reason = await f.db
+        .selectFrom("projectExpenseEntry")
+        .select("reversalReason")
+        .where("id", "=", expenseReversal.id)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(reason.reversalReason).toEqual("Charged twice");
     } finally {
       await f.cleanup();
     }

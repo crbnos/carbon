@@ -17,6 +17,7 @@ import {
 } from "~/modules/projects/projects.server";
 import {
   coverageOverrideValidator,
+  serviceChargeReversalValidator,
   serviceExpenseValidator
 } from "~/modules/service";
 import {
@@ -25,6 +26,7 @@ import {
   reclassServiceCharge,
   requireOwnServiceVisit,
   requireServiceOrderNode,
+  reverseServiceCharge,
   ServiceOrderError
 } from "~/modules/service/service.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -39,7 +41,8 @@ const MESSAGES = {
   time: "Time logged",
   part: "Part issued",
   expense: "Expense added",
-  reclass: "Coverage changed"
+  reclass: "Coverage changed",
+  reverse: "Charge reversed"
 } as const;
 
 /**
@@ -49,9 +52,12 @@ const MESSAGES = {
  * - `part`: an issue or a return through `post-project-issue`;
  * - `expense`: a `projectExpenseEntry`, posted by `post-project-expense`;
  * - `reclass`: a charge moved to another coverage, with a reason, through
- *   `reclass-project-coverage`.
- * A user without `update: "service"` charges only their own open visit (the
- * form's `serviceVisitId`) and never reclasses.
+ *   `reclass-project-coverage`;
+ * - `reverse`: a posted time or expense charge reversed, with a reason (a
+ *   timesheet correction through `post-timesheet`, or an expense reversal
+ *   through `post-project-expense`).
+ * A user without `update: "service"` charges and reverses only on their own
+ * open visit (the form's `serviceVisitId`) and never reclasses.
  * A refusal is returned as fetcher data, so the modal shows it and stays open.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -65,7 +71,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     intent !== "time" &&
     intent !== "part" &&
     intent !== "expense" &&
-    intent !== "reclass"
+    intent !== "reclass" &&
+    intent !== "reverse"
   ) {
     return refuse("Unknown charge");
   }
@@ -166,6 +173,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
         companyId,
         userId,
         projectId: order.projectId
+      });
+      if (postingError) return refuse(postingError);
+    } else if (intent === "reverse") {
+      const validation = await validator(
+        serviceChargeReversalValidator
+      ).validate(formData);
+      if (validation.error) return validationError(validation.error);
+      const order = await requireServiceOrderNode(db, {
+        companyId,
+        serviceOrderId: id
+      });
+      const postingError = await reverseServiceCharge(db, {
+        ...validation.data,
+        companyId,
+        userId,
+        projectId: order.projectId,
+        onlyVisitId: canUpdateAny ? null : visitId
       });
       if (postingError) return refuse(postingError);
     } else {
