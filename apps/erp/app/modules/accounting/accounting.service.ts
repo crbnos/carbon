@@ -71,6 +71,7 @@ import {
 import {
   buildDepreciationLines,
   type DepreciationLine,
+  depreciationFloor,
   diffJournalLines,
   monthEndOf,
   usageKey
@@ -7308,7 +7309,7 @@ export async function buildDepreciationRunLines(
   ] = await Promise.all([
     client
       .from("companySettings")
-      .select("assetTaxDepreciationEnabled")
+      .select("assetTaxDepreciationEnabled, accountingCutoverDate")
       .eq("id", companyId)
       .single(),
     client
@@ -7366,7 +7367,14 @@ export async function buildDepreciationRunLines(
   }
   if (assets.error || !assets.data) return { data: null, error: assets.error };
 
-  const lastPostedPeriodEnd = lastPosted.data?.periodEnd ?? null;
+  // Depreciation before the accounting cutover is in the prior system and in
+  // each asset's accumulated depreciation at the cutover, never in a Carbon
+  // run. So with no run posted after it, a run starts at the cutover month,
+  // not at the asset's depreciation start date.
+  const lastPostedPeriodEnd = depreciationFloor(
+    lastPosted.data?.periodEnd ?? null,
+    settings.data?.accountingCutoverDate ?? null
+  );
 
   // A run can cover several months (a picked later period), so units of
   // production sums every usage log since the last posted run.

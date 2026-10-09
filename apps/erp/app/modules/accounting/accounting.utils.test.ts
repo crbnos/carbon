@@ -13,6 +13,7 @@ import {
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
   computeDisposalGainLoss,
+  depreciationFloor,
   depreciationRunLineDisplay,
   depreciationRunLinesMatch,
   diffJournalLines,
@@ -1473,5 +1474,24 @@ describe("cost adjustment catch-up", () => {
     );
     // 6,000 less a 20 % residual is 4,800 — all of it, in one line.
     expect(lines.map((line) => line.amount)).toEqual([4800]);
+  });
+});
+
+describe("depreciationFloor", () => {
+  it("starts a company with no posted run at its accounting cutover", () => {
+    expect(depreciationFloor(null, "2026-10-01")).toBe("2026-09-30");
+  });
+
+  it("keeps a run posted after the cutover", () => {
+    expect(depreciationFloor("2026-11-30", "2026-10-01")).toBe("2026-11-30");
+  });
+
+  it("moves a run posted before the cutover up to the cutover", () => {
+    expect(depreciationFloor("2026-03-31", "2026-10-01")).toBe("2026-09-30");
+  });
+
+  it("changes nothing for a company with no cutover", () => {
+    expect(depreciationFloor("2026-03-31", null)).toBe("2026-03-31");
+    expect(depreciationFloor(null, null)).toBeNull();
   });
 });

@@ -1034,3 +1034,22 @@ export function diffJournalLines(
     deleteIds: stored.map((l) => l.id).filter((id) => !claimed.has(id))
   };
 }
+
+/**
+ * The period end a depreciation run continues from: the last posted run's,
+ * or the day before the accounting cutover when that is later. Depreciation
+ * before the cutover lives in the prior system and in each asset's
+ * accumulated depreciation at the cutover, never in a Carbon run, so a
+ * company's first run after the cutover starts at the cutover month.
+ * Dates are `YYYY-MM-DD`, so string order is chronological.
+ */
+export function depreciationFloor(
+  postedPeriodEnd: string | null,
+  cutoverDate: string | null
+): string | null {
+  if (!cutoverDate) return postedPeriodEnd;
+  const beforeCutover = parseDate(cutoverDate).subtract({ days: 1 }).toString();
+  return !postedPeriodEnd || postedPeriodEnd < beforeCutover
+    ? beforeCutover
+    : postedPeriodEnd;
+}

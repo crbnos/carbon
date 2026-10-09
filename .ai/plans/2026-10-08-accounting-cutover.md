@@ -35,12 +35,12 @@
 - [ ] Task 24: Prove a company with no cutover can post every document
 
 ### Phase C — The cutover
-- [ ] Task 25: Accept the Opening Balance source type in the AR/AP readers and payment lookups
-- [ ] Task 26: Add the pure cutover planner
+- [x] Task 25: Accept the Opening Balance source type in the AR/AP readers and payment lookups
+- [x] Task 26: Add the pure cutover planner
 - [ ] Task 27: Add the cutover read services
 - [ ] Task 28: Add the `activate-accounting` server function
 - [ ] Task 29: Handle voids of documents dated before the cutover
-- [ ] Task 30: Start depreciation at the cutover
+- [x] Task 30: Start depreciation at the cutover
 - [ ] Task 31: Build the 5-step enable wizard
 
 ### Phase D — Retire the flag
@@ -947,17 +947,19 @@ docker exec carbon-carbon-accounting-reset-plan-postgres-1 psql -U postgres -d p
    };
    export type TrialBalanceLine = { accountId: string; accountClass: OpenItem["accountClass"]; debit: number; credit: number };
    ```
-2. Write `buildOpeningJournalLines(items, trialBalance, controlAccountIds, migrationClearing)`. It returns journal line inserts with natural-balance-signed `amount`, as the lessons require:
-   - One line per open item, on its account, with its document keys.
+2. Give `OpenItem` 2 more fields: `originalAmount` (the document's original base control amount) and `settledBeforeCutover` (the base amount settled before the cutover). For an open item that is not a document (Inventory, Work in Progress, Fixed Asset Cost, Accumulated Depreciation, Deferred Revenue, Lease Net Investment), set `originalAmount = amount` and `settledBeforeCutover = 0`. `amount` is always `originalAmount − settledBeforeCutover`.
+3. Write `buildOpeningJournalLines(items, trialBalance, controlAccountIds, migrationClearing)`. It returns journal line inserts with natural-balance-signed `amount`, as the lessons require:
+   - Per open item: one line for `originalAmount` with its description and document keys. If `settledBeforeCutover` is not 0, a second line for `−settledBeforeCutover` with the same keys and the description `${description} (settled before cutover)`. The AR/AP readers and the payment lookup match descriptions exactly, so they ignore the second line, and the account nets to `amount` (spec section 4).
    - One Migration Clearing line per control account, offsetting the open items of that account.
    - One line per trial balance row on a non-control account, and one Migration Clearing line offsetting it.
    - No line for a trial balance row on a control account.
-3. Write `migrationClearingByAccount(items, trialBalance, controlAccountIds)`. It returns, per control account, `{ accountId, trialBalance, carbon, difference }` and a `total`. Enable needs `equals(total, 0, 0.01)`.
-4. Write `planInventoryReset(onHandAtCutover, unitCostByItem, layersBeforeCutover)`. Input on-hand is per item (sum across locations). It returns `layerIdsToClose` and one opening layer per item with on-hand above zero: `{ itemId, quantity, cost: round(quantity × unitCost), remainingQuantity: quantity }`.
-5. Write `recostOutbound(layers, outbound)`. `layers` are the opening layers and the inbound layers dated on or after the cutover, oldest first. `outbound` are the outbound `costLedger` rows dated on or after the cutover, in date then `entryNumber` order. It relieves FIFO and returns `{ costLedgerId, newCost, delta }` per outbound row and the new `remainingQuantity` per layer. Copy the FIFO rule from `packages/server-functions/src/lib/calculate-cogs.ts`.
-6. Use `round`, `equals` and `distributeRoundingResidual` from `@carbon/utils`. Never use `Math.round`.
-7. Write tests for each function:
+4. Write `migrationClearingByAccount(items, trialBalance, controlAccountIds)`. It returns, per control account, `{ accountId, trialBalance, carbon, difference }` and a `total`. Enable needs `equals(total, 0, 0.01)`.
+5. Write `planInventoryReset(onHandAtCutover, unitCostByItem, layersBeforeCutover)`. Input on-hand is per item (sum across locations). It returns `layerIdsToClose` and one opening layer per item with on-hand above zero: `{ itemId, quantity, cost: round(quantity × unitCost), remainingQuantity: quantity }`.
+6. Write `recostOutbound(layers, outbound)`. `layers` are the opening layers and the inbound layers dated on or after the cutover, oldest first. `outbound` are the outbound `costLedger` rows dated on or after the cutover, in date then `entryNumber` order. It relieves FIFO and returns `{ costLedgerId, newCost, delta }` per outbound row and the new `remainingQuantity` per layer. Copy the FIFO rule from `packages/server-functions/src/lib/calculate-cogs.ts`.
+7. Use `round`, `equals` and `distributeRoundingResidual` from `@carbon/utils`. Never use `Math.round`.
+8. Write tests for each function:
    - 2 open invoices on one receivables account and a trial balance that matches: difference 0, the journal balances.
+   - An invoice of 100 with 40 settled before the cutover: 2 lines (+100 "Accounts Receivable", −40 "Accounts Receivable (settled before cutover)"), net 60.
    - The same with a trial balance 5.00 higher: difference 5.00 on that account.
    - A trial balance row on cash: one cash line and one clearing line.
    - Inventory reset closes every layer before the cutover and opens 1 layer per item.
@@ -992,8 +994,8 @@ pnpm exec turbo run typecheck --filter=@carbon/database
    - `legacy-jobs`: no open job created before L. L is `MIN("createdAt")` of the company's journals with status `Provisional` or `Superseded`, else now.
    - `opening-balance`: no Posted journal with `sourceType 'Opening Balance'`.
 2. Add `getCutoverOpenItems(client, db, { companyId, cutoverDate })`. It returns `OpenItem[]` (Task 26) from these sources:
-   - Receivables and payables: `get_ar_open_by_customer` and `get_ap_open_by_supplier` as of the day before the cutover. An invoice with status Paid and no settlement counts as settled.
-   - Unapplied credits and deposits: payments posted before the cutover, cash minus settlements before the cutover. A deposit (`payment.rentalAgreementId` or `payment.salesOrderId`) goes to `prepaymentAccount` with description `CUSTOMER_DEPOSIT_DESCRIPTION`.
+   - Receivables and payables: per open invoice, `originalAmount` is its base total (the original control amount its posting writes) and `settledBeforeCutover` is the base sum of its `invoiceSettlement.appliedAmount` from payments posted before the cutover. Cross-check the open amount against `get_ar_open_by_customer` / `get_ap_open_by_supplier` as of the day before the cutover. An invoice with status Paid and no settlement counts as settled.
+   - Unapplied credits and deposits: per payment posted before the cutover, `originalAmount` is its unapplied cash at posting and `settledBeforeCutover` is what later settlements before the cutover applied of it. A deposit (`payment.rentalAgreementId` or `payment.salesOrderId`) goes to `prepaymentAccount` with description `CUSTOMER_DEPOSIT_DESCRIPTION`.
    - Received not invoiced: purchase order lines, `quantityReceived − quantityInvoiced` at the cutover × the receipt layer's unit cost. The document line reference is `journalReference.to.receipt(poLineId)`.
    - Work in progress: per open job, the sum of its `DOCUMENT_JOURNAL_STATUSES` lines on `workInProgressAccount` dated before the cutover.
    - Deferred revenue: `revenueRecognitionSchedule` rows still Planned, dated on or after the cutover, on their credit account.
@@ -1411,6 +1413,8 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 - Voids copy `accountDefaultRole` from each original line to its reversal (Tasks 14, 15, 16).
 - Task 23: the guard tests live in `accounting.periods.test.ts` (it already has the client stub and module mocks). The payment test fixture now gives its company a cutover.
 - Task 20: capitalize with an entered cost and adjustCost now always need an offset account, so `capitalize.tsx` and `$fixedAssetId.adjust-cost.tsx` must always show that field (Task 32). Lease Interest schedule rows refuse with the existing message when their defaults are empty (no stand-in in a non-journal row).
+- Task 26: `recostOutbound` takes FIFO/LIFO movements only; Standard and Average items cost from `itemCost`, not layers.
+- Task 30: the floor is the pure `depreciationFloor` in `accounting.utils.ts`, tested there.
 - New UI strings are translated in one `/translate` batch at the end of Phase D, not per commit.
 - Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.
