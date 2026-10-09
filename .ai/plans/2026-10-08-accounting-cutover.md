@@ -32,7 +32,7 @@
 - [x] Task 21: Always post in the SQL job-costing functions
 - [x] Task 22: Always post in the ERP fixed-asset paths, Stripe fees and the revenue recognition cron
 - [x] Task 23: Refuse manual accounting work before the cutover
-- [ ] Task 24: Prove a company with no cutover can post every document
+- [x] Task 24: Prove a company with no cutover can post every document
 
 ### Phase C — The cutover
 - [x] Task 25: Accept the Opening Balance source type in the AR/AP readers and payment lookups
@@ -1419,4 +1419,4 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 - Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.
 - A commit that touches a migration or `packages/database/src` needs `pnpm generate:mcp` first, then stage `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
-- The dataset and backup checks read `SUPABASE_DB_URL` from `.env` (port 54322). This worktree's stack is on `.env.local` (port 55625). Export it before a commit: `export $(grep -E "^SUPABASE_DB_URL=" .env.local | xargs)`.
+- The dataset and backup checks read `SUPABASE_DB_URL` from `.env` (port 54322). This worktree's stack is on `.env.local` (port 65067 since the stack restart). Export it before a commit: `export $(grep -E "^SUPABASE_DB_URL=" .env.local | xargs)`.
