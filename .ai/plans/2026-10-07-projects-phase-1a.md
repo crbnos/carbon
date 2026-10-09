@@ -62,7 +62,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 23: Route charges and reimbursements to the project account
 - [x] Task 24: Add Project and Project Element to the journal dimension builder
 - [x] Task 25: Add the new enum values to the TS mirrors
-- [ ] Task 26: Move the accounting Projects screens into the new module
+- [x] Task 26: Move the accounting Projects screens into the new module
 - [x] Task 27: Add module navigation, layout and paths
 - [ ] Task 28: Build the project list and the new-project form
 - [ ] Task 29: Build the project page shell and the Details tab
@@ -2471,3 +2471,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 27: `JournalEntryDocuments.tsx` now opens a `projectTime` line at `path.to.projectTime` (the Task 25 note).
 - Task 27: the Projects submodule has its own `isActive`. It is active on `/x/projects/**` except the timesheet, approvals and labor categories pages, and on every `/x/project/**` page.
 - Task 27: the new module shifted type-check order, and `x+/purchase-return-order+/$id.$lineId.details.tsx` hit TS2589 on a bare `purchaseOrder(...)` embed from `purchaseOrderLine`. It now names the FK (`purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey`).
+- Task 26: the old `deleteProject` path is deleted here, with its route (the Task 27 note). The moved `ProjectsTable` loses its Delete menu item, because Phase 1a has no project delete route. A project ends through the Close status action (Task 29).
+- Task 26: the moved `index.ts` barrel stays in `modules/projects/ui/Projects/`. `modules/projects/types.ts` gains `ProjectListItem` (a `getProjects` row) for the table.
+- Task 26: the moved test now imports the projects `projectValidator`, which requires `costTreatment`, so each case passes `costTreatment: "Statistical"`. 3 tests pass; the full `erp` suite passes (1958).
+- Task 26: the accounting `projects.tsx` redirect exports `middleware = [redirectBeforeLoaders(loader)]`, as the index-route precedent does.

@@ -2856,10 +2856,6 @@ msgstr "Fiyatlandırma kuralını silmek istediğinizden emin misiniz: {0}? Bu g
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "Yazıcı \"{0}\" cihazını silmek istediğinizden emin misiniz? Bu yazıcıya atıfta bulunan tüm görevlendirmeler temizlenecektir. Bu işlem geri alınamaz."
 
-#. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
-msgstr "Projeyi silmek istediğinize emin misiniz: {0}? Deaktif edilecek ve aktif listelerden gizlenecektir."
-
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -6790,9 +6786,6 @@ msgstr "Prosedürü Sil"
 
 msgid "Delete Process"
 msgstr "İşlemi Sil"
-
-msgid "Delete Project"
-msgstr "Projeyi Sil"
 
 msgid "Delete Purchase Invoice"
 msgstr "Alış Faturasını Sil"

@@ -23,7 +23,7 @@ import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { projectValidator } from "../../accounting.models";
+import { projectValidator } from "../../projects.models";
 
 type ProjectFormProps = {
   initialValues: z.infer<typeof projectValidator>;
@@ -55,8 +55,8 @@ const ProjectForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !permissions.can("update", "accounting")
-    : !permissions.can("create", "accounting");
+    ? !permissions.can("update", "projects")
+    : !permissions.can("create", "projects");
 
   return (
     <ModalDrawerProvider type={type}>
@@ -72,7 +72,7 @@ const ProjectForm = ({
             method="post"
             action={
               isEditing
-                ? path.to.project(initialValues.id!)
+                ? path.to.projectDetails(initialValues.id!)
                 : path.to.newProject
             }
             defaultValues={initialValues}

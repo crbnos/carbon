@@ -2856,10 +2856,6 @@ msgstr "क्या आप मूल्य नियम {0} को हटान
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "क्या आप प्रिंटर \"{0}\" को हटाना चाहते हैं? इस प्रिंटर की सभी असाइनमेंट हटा दी जाएंगी। इसे पूर्ववत नहीं किया जा सकता।"
 
-#. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
-msgstr "क्या आप सुनिश्चित हैं कि आप परियोजना को हटाना चाहते हैं: {0}? इसे निष्क्रिय कर दिया जाएगा और सूचियों से छिपा दिया जाएगा।"
-
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -6790,9 +6786,6 @@ msgstr "कार्यविधि हटाएँ"
 
 msgid "Delete Process"
 msgstr "प्रक्रिया हटाएं"
-
-msgid "Delete Project"
-msgstr "परियोजना हटाएँ"
 
 msgid "Delete Purchase Invoice"
 msgstr "क्रय चालान हटाएँ"

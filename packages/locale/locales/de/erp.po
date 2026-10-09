@@ -2856,10 +2856,6 @@ msgstr "Sind Sie sicher, dass Sie die Preisregel: {0} löschen möchten? Dies ka
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie den Drucker \"{0}\" löschen möchten? Alle Zuweisungen, die auf diesen Drucker verweisen, werden gelöscht. Dies kann nicht rückgängig gemacht werden."
 
-#. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
-msgstr "Möchten Sie das Projekt wirklich löschen: {0}? Es wird deaktiviert und aus den aktiven Listen ausgeblendet."
-
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -6790,9 +6786,6 @@ msgstr "Verfahrensanweisung löschen"
 
 msgid "Delete Process"
 msgstr "Prozess löschen"
-
-msgid "Delete Project"
-msgstr "Projekt löschen"
 
 msgid "Delete Purchase Invoice"
 msgstr "Eingangsrechnung löschen"

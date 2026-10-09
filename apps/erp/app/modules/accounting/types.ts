@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import type { getProjects } from "../projects/projects.service";
 import type { periodCloseStatuses } from "./accounting.models";
 import type {
   getAccount,
@@ -403,10 +402,6 @@ export type PaymentTermCalculationMethod =
 
 export type PaymentTerm = NonNullable<
   Awaited<ReturnType<typeof getPaymentTerms>>["data"]
->[number];
-
-export type Project = NonNullable<
-  Awaited<ReturnType<typeof getProjects>>["data"]
 >[number];
 
 export type Transaction = {

@@ -6,20 +6,15 @@ import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import {
-  LuFolderKanban,
-  LuLetterText,
-  LuPencil,
-  LuTrash
-} from "react-icons/lu";
+import { LuFolderKanban, LuLetterText, LuPencil } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
-import type { Project } from "../../types";
+import type { ProjectListItem } from "../../types";
 
 type ProjectsTableProps = {
-  data: Project[];
+  data: ProjectListItem[];
   count: number;
 };
 
@@ -29,13 +24,13 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
 
-  const columns = useMemo<ColumnDef<Project>[]>(() => {
+  const columns = useMemo<ColumnDef<ProjectListItem>[]>(() => {
     return [
       {
         accessorKey: "name",
         header: t`Name`,
         cell: ({ row }) => (
-          <Hyperlink to={`${row.original.id}?${params.toString()}`}>
+          <Hyperlink to={path.to.projectElements(row.original.id)}>
             {row.original.name}
           </Hyperlink>
         ),
@@ -52,46 +47,39 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
         }
       }
     ];
-  }, [params, t]);
+  }, [t]);
 
   const renderContextMenu = useCallback(
-    (row: Project) => {
+    (row: ProjectListItem) => {
       return (
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.edit}
-            disabled={!permissions.can("update", "accounting")}
+            disabled={!permissions.can("update", "projects")}
             onClick={() => {
-              navigate(`${path.to.project(row.id)}?${params.toString()}`);
+              navigate(path.to.projectDetails(row.id));
             }}
           >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Project</Trans>
           </MenuItem>
-          <MenuItem
-            shortcut={MENU_ITEM_SHORTCUTS.delete}
-            disabled={!permissions.can("delete", "accounting")}
-            onClick={() => {
-              navigate(`${path.to.deleteProject(row.id)}?${params.toString()}`);
-            }}
-          >
-            <MenuIcon icon={<LuTrash />} />
-            <Trans>Delete Project</Trans>
-          </MenuItem>
         </>
       );
     },
-    [navigate, params, permissions]
+    [navigate, permissions]
   );
 
   return (
-    <Table<Project>
+    <Table<ProjectListItem>
       data={data}
       columns={columns}
       count={count}
       primaryAction={
-        permissions.can("create", "accounting") && (
-          <New label={t`Project`} to={`new?${params.toString()}`} />
+        permissions.can("create", "projects") && (
+          <New
+            label={t`Project`}
+            to={`${path.to.newProject}?${params.toString()}`}
+          />
         )
       }
       renderContextMenu={renderContextMenu}

@@ -2856,10 +2856,6 @@ msgstr "Tem certeza de que deseja excluir a regra de precificação: {0}? Isto n
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "Tem certeza de que deseja excluir a impressora \"{0}\"? Todas as atribuições que fazem referência a esta impressora serão limpas. Isto não pode ser desfeito."
 
-#. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
-msgstr "Tem certeza de que deseja excluir o projeto: {0}? Ele será desativado e oculto das listas ativas."
-
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -6790,9 +6786,6 @@ msgstr "Excluir Procedimento"
 
 msgid "Delete Process"
 msgstr "Excluir Processo"
-
-msgid "Delete Project"
-msgstr "Excluir Projeto"
 
 msgid "Delete Purchase Invoice"
 msgstr "Excluir Fatura de compra"

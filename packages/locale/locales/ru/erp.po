@@ -2856,10 +2856,6 @@ msgstr "Вы уверены, что хотите удалить правило �
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "Вы уверены, что хотите удалить принтер \"{0}\"? Все назначения, ссылающиеся на этот принтер, будут очищены. Это действие невозможно отменить."
 
-#. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
-msgstr "Вы уверены, что хотите удалить проект: {0}? Он будет деактивирован и скрыт из активных списков."
-
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -6790,9 +6786,6 @@ msgstr "Удалить процедуру"
 
 msgid "Delete Process"
 msgstr "Удалить процесс"
-
-msgid "Delete Project"
-msgstr "Удалить проект"
 
 msgid "Delete Purchase Invoice"
 msgstr "Удалить счет-фактуру полученную"

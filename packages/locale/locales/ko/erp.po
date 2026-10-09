@@ -2856,10 +2856,6 @@ msgstr "가격 규칙 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "프린터 \"{0}\"을(를) 삭제하시겠습니까? 이 프린터를 참조하는 모든 배정이 해제됩니다. 이 작업은 되돌릴 수 없습니다."
 
-#. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
-msgstr "{0} 프로젝트를 삭제하시겠습니까? 프로젝트가 비활성화되어 활성 목록에서 숨겨집니다."
-
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -6790,9 +6786,6 @@ msgstr "절차서 삭제"
 
 msgid "Delete Process"
 msgstr "공정 삭제"
-
-msgid "Delete Project"
-msgstr "프로젝트 삭제"
 
 msgid "Delete Purchase Invoice"
 msgstr "매입 송장 삭제"

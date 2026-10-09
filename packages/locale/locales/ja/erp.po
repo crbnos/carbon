@@ -2856,10 +2856,6 @@ msgstr "本当に価格設定ルール: {0} を削除してもよろしいです
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "このプリンター「{0}」を削除してもよろしいですか？このプリンターを参照しているすべての割り当ては削除されます。この操作は取り消せません。"
 
-#. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
-msgstr "{0}プロジェクトを削除してもよろしいですか？これは無効化され、アクティブなリストから非表示になります。"
-
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -6790,9 +6786,6 @@ msgstr "手順書を削除"
 
 msgid "Delete Process"
 msgstr "プロセスを削除"
-
-msgid "Delete Project"
-msgstr "プロジェクトを削除"
 
 msgid "Delete Purchase Invoice"
 msgstr "仕入先請求書を削除"

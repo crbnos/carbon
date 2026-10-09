@@ -635,12 +635,6 @@ export const costCenterValidator = z.object({
   ownerId: z.string().min(1, { message: "Owner is required" })
 });
 
-export const projectValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().trim().optional())
-});
-
 export const intercompanyTransactionStatuses = [
   "Unmatched",
   "Matched",
