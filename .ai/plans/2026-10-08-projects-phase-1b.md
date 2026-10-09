@@ -50,7 +50,7 @@
 - [x] Task 12: Move Straight Line depreciation to a remaining-life basis
 - [x] Task 13: Add the capital project fields to the project and element UI
 - [x] Task 14: Add the trace link and suspect service functions
-- [ ] Task 15: Add the Requirement, Test Case and Parameter fields and the verification read
+- [x] Task 15: Add the Requirement, Test Case and Parameter fields and the verification read
 - [ ] Task 16: Add the trace link, verification and parameter sections to the element page
 - [ ] Task 17: Build the Tree layout
 - [ ] Task 18: Build the Timeline layout
@@ -1494,3 +1494,8 @@ ls .ai/playbooks/projects-phase-1b.md
 - After Task 13: the full `@carbon/server-functions` suite passes (429). One run failed `get-accounting-period.test.ts` ("period creation uses the fiscal start…"), which passes alone and in the next full run. This plan does not touch it; it is another shared-database race. The full `erp` suite passes (1974). `@carbon/jobs`, `@carbon/server-functions`, `erp`, `mes` and `@carbon/database` typecheck green, and `check:workflow-catalog` passes.
 - Task 14: `canLink` returns `{ ok: true }` or `{ ok: false, reason }`, so the route can show why a link is refused. `deleteProjectElementLink` refuses a `feeds` link, because only the formula save writes them.
 - Task 14: `updateProjectElementField` reads the old values of a `suspectLinkFields` field first and marks only the links of the elements whose value changed. A save with the same value (a blur commit) marks nothing. A link that is already suspect keeps its first `suspectSince`.
+- Task 15: `parseParameterFormula` returns `{ error, position }` on a failure. Positions count from 0 in the text as typed, so `= SNS-1; drop` fails at 7. Function names match in any case; a readable id must be capitals.
+- Task 15: a Parameter's verification carries `checkedHigh` (computed × (1 + c), for `≤` and the budget) and `checkedLow` (computed × (1 − c), for `≥`). Range checks both ends. `=` needs both to equal the target within `EPSILON`, so a contingency on an `=` target fails unless the value is 0.
+- Task 15: `budgetValue` uses the direct parent when it is a Parameter. `formatAllocation` takes a `locale` (default `en`) and uses `formatPercent`, so it returns `"≤ 600 kg (30% of 2,000 kg)"`. The plan's `"30.0 %"` needs inline fraction digits, which `no-inline-fraction-digits` forbids.
+- Task 15: `updateProjectElementField` checks the type of every type-specific field (`typeSpecificElementFields`). A Range target with no upper value starts the upper value at the target. The Formula source is refused until a formula is saved (the DB CHECK needs one), and the Item source fills `parameterItemField` with `unitCost` when it is empty. A Parameter that leaves Formula keeps its formula and its `feeds` links, so it can go back. Deleting the links there made the function destructive for the MCP generator, and only the Formula source reads them.
+- Task 15: `saveParameterFormula` locks the element row, refuses a ref to the Parameter itself, and walks the project's `feeds` links with the element's incoming links replaced by the new refs.

@@ -17,7 +17,11 @@ import type {
   projectIssueValidator,
   projectValidator
 } from "./projects.models";
-import { chargeableByDefault, defaultProjectStates } from "./projects.models";
+import {
+  chargeableByDefault,
+  defaultProjectStates,
+  parseParameterFormula
+} from "./projects.models";
 import {
   getLaborCategoriesList,
   getProjectCostSummary,
@@ -464,6 +468,134 @@ export async function insertProjectElement(
       .executeTakeFirstOrThrow();
 
     return { id: element.id, readableId };
+  });
+}
+
+/**
+ * Saves a Parameter's formula, in one transaction. It refuses a parse error,
+ * a ref that is not a Parameter of the project, and a cycle of `feeds` links.
+ * Then it sets the Formula source and replaces the element's incoming `feeds`
+ * links with one link from each ref. Formula values recompute live, so the
+ * links only record the dependency.
+ */
+export async function saveParameterFormula(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    elementId: string;
+    formula: string;
+  }
+): Promise<{ error: string; position?: number } | { refs: string[] }> {
+  const formula = args.formula.trim();
+  const parsed = parseParameterFormula(formula);
+  if ("error" in parsed) {
+    return { error: parsed.error, position: parsed.position };
+  }
+
+  return db.transaction().execute(async (trx) => {
+    const element = await trx
+      .selectFrom("projectElement")
+      .select(["id", "projectId", "type"])
+      .where("id", "=", args.elementId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!element) return { error: "The element does not exist" };
+    if (element.type !== "Parameter") {
+      return { error: "Only a Parameter has a formula" };
+    }
+
+    const targets =
+      parsed.refs.length === 0
+        ? []
+        : await trx
+            .selectFrom("projectElement")
+            .select(["id", "readableId", "type"])
+            .where("projectId", "=", element.projectId)
+            .where("companyId", "=", args.companyId)
+            .where("readableId", "in", parsed.refs)
+            .execute();
+    for (const ref of parsed.refs) {
+      const target = targets.find((t) => t.readableId === ref);
+      if (!target) return { error: `${ref} is not in this project` };
+      if (target.type !== "Parameter") {
+        return { error: `${ref} is a ${target.type}, not a Parameter` };
+      }
+      if (target.id === element.id) {
+        return { error: "A formula cannot refer to its own Parameter" };
+      }
+    }
+
+    // Walk the project's feeds links with the element's incoming links
+    // replaced by the new refs. Reaching the element again is a cycle.
+    const feeds = await trx
+      .selectFrom("projectElementLink")
+      .select(["fromElementId", "toElementId"])
+      .where("projectId", "=", element.projectId)
+      .where("companyId", "=", args.companyId)
+      .where("linkType", "=", "feeds")
+      .execute();
+    const next = new Map<string, string[]>();
+    const addEdge = (from: string, to: string) => {
+      const list = next.get(from) ?? [];
+      list.push(to);
+      next.set(from, list);
+    };
+    for (const link of feeds) {
+      if (link.toElementId !== element.id) {
+        addEdge(link.fromElementId, link.toElementId);
+      }
+    }
+    for (const target of targets) addEdge(target.id, element.id);
+    const seen = new Set<string>();
+    const stack = [...(next.get(element.id) ?? [])];
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      if (id === element.id) {
+        return { error: "This formula would make a circular formula" };
+      }
+      if (seen.has(id)) continue;
+      seen.add(id);
+      stack.push(...(next.get(id) ?? []));
+    }
+
+    await trx
+      .updateTable("projectElement")
+      .set({
+        parameterFormula: formula,
+        parameterSource: "Formula",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", element.id)
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    await trx
+      .deleteFrom("projectElementLink")
+      .where("toElementId", "=", element.id)
+      .where("linkType", "=", "feeds")
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    if (targets.length > 0) {
+      await trx
+        .insertInto("projectElementLink")
+        .values(
+          targets.map((target) => ({
+            companyId: args.companyId,
+            projectId: element.projectId,
+            fromElementId: target.id,
+            toElementId: element.id,
+            linkType: "feeds" as const,
+            createdBy: args.userId
+          }))
+        )
+        .execute();
+    }
+
+    return { refs: parsed.refs };
   });
 }
 

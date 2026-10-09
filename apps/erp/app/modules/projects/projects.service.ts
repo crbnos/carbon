@@ -31,7 +31,18 @@ import type {
   projectValidator,
   timesheetCellValidator
 } from "./projects.models";
-import { canLink, suspectLinkFields, weekStartOf } from "./projects.models";
+import {
+  canLink,
+  PARAMETER_ITEM_UNIT_COST,
+  parameterSources,
+  requirementCategories,
+  requirementTargetOperators,
+  requirementVerificationMethods,
+  suspectLinkFields,
+  testCaseVerdicts,
+  typeSpecificElementFields,
+  weekStartOf
+} from "./projects.models";
 import type { ProjectElementLink } from "./types";
 
 type Client = SupabaseClient<Database>;
@@ -1012,6 +1023,27 @@ export async function getProjectElement(
   return { data: { ...element.data, parent: parent.data }, error: null };
 }
 
+type TypedElementRow = {
+  id: string;
+  projectId: string;
+  readableId: string;
+  type: ProjectElementType;
+  targetValue: number | null;
+  targetUpperValue: number | null;
+  targetOperator:
+    | Database["public"]["Enums"]["requirementTargetOperator"]
+    | null;
+  parameterFormula: string | null;
+  parameterItemField: string | null;
+};
+
+function isOneOf<T extends string>(
+  values: readonly T[],
+  value: string
+): value is T {
+  return (values as readonly string[]).includes(value);
+}
+
 /** The element columns `suspectLinkFields` compares before a change. */
 const SUSPECT_FIELD_COLUMNS =
   "id, name, description, targetOperator, targetValue, targetUpperValue, targetUnit, parameterValue, parameterUnit" as const;
@@ -1036,6 +1068,40 @@ export async function updateProjectElementField(
   const update: Database["public"]["Tables"]["projectElement"]["Update"] = {
     updatedBy: args.updatedBy,
     updatedAt: datetime.timestamp()
+  };
+
+  // A type-specific field (a Requirement's target, a Test Case's verdict, a
+  // Parameter's value) is refused on an element of another type.
+  const requiredType = typeSpecificElementFields[args.field];
+  let typed: TypedElementRow[] = [];
+  if (requiredType) {
+    const elements = await client
+      .from("projectElement")
+      .select(
+        "id, projectId, readableId, type, targetValue, targetUpperValue, targetOperator, parameterFormula, parameterItemField"
+      )
+      .in("id", args.ids)
+      .eq("companyId", args.companyId);
+    if (elements.error) return { data: null, error: elements.error };
+    typed = elements.data;
+    const other = typed.find((element) => element.type !== requiredType);
+    if (other) {
+      return refusal(
+        `${other.readableId} is a ${other.type}, not a ${requiredType}`
+      );
+    }
+  }
+  const number = (min?: number, max?: number) => {
+    if (raw === null) return { value: null };
+    const value = Number(raw);
+    if (
+      !Number.isFinite(value) ||
+      (min !== undefined && value < min) ||
+      (max !== undefined && value > max)
+    ) {
+      return { error: true as const };
+    }
+    return { value };
   };
 
   switch (args.field) {
@@ -1138,7 +1204,110 @@ export async function updateProjectElementField(
     case "startDate":
     case "targetDate":
     case "itemId":
+    case "targetUnit":
+    case "parameterUnit":
+    case "qualityDocumentId":
       update[args.field] = raw;
+      break;
+    case "requirementCategory":
+      if (raw !== null && !isOneOf(requirementCategories, raw)) {
+        return refusal("Choose a requirement category");
+      }
+      update.requirementCategory = raw;
+      break;
+    case "verificationMethod":
+      if (raw !== null && !isOneOf(requirementVerificationMethods, raw)) {
+        return refusal("Choose a verification method");
+      }
+      update.verificationMethod = raw;
+      break;
+    case "targetOperator": {
+      if (raw !== null && !isOneOf(requirementTargetOperators, raw)) {
+        return refusal("Choose a target operator");
+      }
+      update.targetOperator = raw;
+      // A Range needs an upper value: start it at the target.
+      if (raw === "Range") {
+        const open = typed.filter((e) => e.targetUpperValue === null);
+        if (open.length > 0 && typed.length > 1) {
+          return refusal("Set the upper value of each Requirement first");
+        }
+        if (open.length > 0) {
+          update.targetUpperValue = Number(open[0]!.targetValue ?? 0);
+        }
+      }
+      break;
+    }
+    case "targetValue":
+    case "targetUpperValue":
+    case "parameterValue": {
+      const result = number();
+      if ("error" in result) return refusal("Enter a number");
+      if (
+        args.field === "targetUpperValue" &&
+        result.value === null &&
+        typed.some((e) => e.targetOperator === "Range")
+      ) {
+        return refusal("A range needs an upper value");
+      }
+      update[args.field] = result.value;
+      break;
+    }
+    case "parameterContingencyPercent":
+    case "allocationPercent": {
+      const result = number(0, 1);
+      if ("error" in result) return refusal("Enter a percent from 0 to 100");
+      update[args.field] = result.value;
+      break;
+    }
+    case "actualParameterId": {
+      if (raw !== null) {
+        const parameter = await client
+          .from("projectElement")
+          .select("type, projectId")
+          .eq("id", raw)
+          .eq("companyId", args.companyId)
+          .maybeSingle();
+        if (parameter.error) return { data: null, error: parameter.error };
+        if (
+          parameter.data?.type !== "Parameter" ||
+          typed.some((e) => e.projectId !== parameter.data?.projectId)
+        ) {
+          return refusal("Choose a Parameter of this project");
+        }
+      }
+      update.actualParameterId = raw;
+      break;
+    }
+    case "verdict":
+      if (raw !== null && !isOneOf(testCaseVerdicts, raw)) {
+        return refusal("Choose a verdict");
+      }
+      update.verdict = raw;
+      update.verdictAt = raw === null ? null : datetime.timestamp();
+      update.verdictBy = raw === null ? null : args.updatedBy;
+      break;
+    case "parameterSource": {
+      if (raw !== null && !isOneOf(parameterSources, raw)) {
+        return refusal("Choose a source");
+      }
+      // The formula save sets the Formula source, with its feeds links. A
+      // Parameter that leaves Formula keeps its formula and links, so it can
+      // go back; only the Formula source reads them.
+      if (raw === "Formula" && typed.some((e) => !e.parameterFormula)) {
+        return refusal(
+          "Enter the formula. Saving it sets the source to Formula."
+        );
+      }
+      if (raw === "Item" && typed.some((e) => !e.parameterItemField)) {
+        update.parameterItemField = PARAMETER_ITEM_UNIT_COST;
+      }
+      update.parameterSource = raw;
+      break;
+    }
+    case "parameterItemField":
+      if (raw === null) return refusal("Choose an item field");
+      update.parameterItemField = raw;
       break;
   }
 
@@ -1168,7 +1337,9 @@ export async function updateProjectElementField(
     .in("id", args.ids)
     .eq("companyId", args.companyId)
     .select("id");
-  if (result.error || changedIds.length === 0) return result;
+  if (result.error) return result;
+
+  if (changedIds.length === 0) return result;
 
   // A `feeds` link never turns suspect: a formula recomputes live. A link
   // that is already suspect keeps the time it first turned suspect.

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { EPSILON, equals, formatPercent, formatQuantity } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -316,7 +317,22 @@ export const projectElementEditableFields = [
   "isChargeable",
   "isFinalAsset",
   "itemId",
-  "description"
+  "description",
+  "requirementCategory",
+  "targetOperator",
+  "targetValue",
+  "targetUpperValue",
+  "targetUnit",
+  "verificationMethod",
+  "actualParameterId",
+  "qualityDocumentId",
+  "verdict",
+  "parameterValue",
+  "parameterUnit",
+  "parameterSource",
+  "parameterItemField",
+  "parameterContingencyPercent",
+  "allocationPercent"
 ] as const;
 
 export type ProjectElementEditableField =
@@ -1093,4 +1109,888 @@ export function buildProjectCostFigures(
   }
 
   return { byElement, project: figures(projectTotals, projectBudget, null) };
+}
+
+// --- Requirements, Test Cases and Parameters ---------------------------------
+
+export type RequirementCategory = Enums["requirementCategory"];
+export type RequirementTargetOperator = Enums["requirementTargetOperator"];
+export type RequirementVerificationMethod =
+  Enums["requirementVerificationMethod"];
+export type TestCaseVerdict = Enums["testCaseVerdict"];
+export type ParameterSource = Enums["parameterSource"];
+
+export const requirementCategories = [
+  "Functional",
+  "Performance",
+  "Interface",
+  "Environmental",
+  "Design Constraint"
+] as const satisfies readonly RequirementCategory[];
+
+export const requirementTargetOperators = [
+  "≤",
+  "≥",
+  "=",
+  "Range"
+] as const satisfies readonly RequirementTargetOperator[];
+
+export const requirementVerificationMethods = [
+  "Test",
+  "Analysis",
+  "Inspection",
+  "Demonstration"
+] as const satisfies readonly RequirementVerificationMethod[];
+
+export const testCaseVerdicts = [
+  "Not Run",
+  "Pass",
+  "Fail",
+  "Inconclusive"
+] as const satisfies readonly TestCaseVerdict[];
+
+export const parameterSources = [
+  "Manual",
+  "Sum",
+  "Min",
+  "Max",
+  "Formula",
+  "Item"
+] as const satisfies readonly ParameterSource[];
+
+/** The `parameterItemField` value that reads the item's unit cost. */
+export const PARAMETER_ITEM_UNIT_COST = "unitCost";
+
+/** The fields that only one element type has. Another type refuses them. */
+export const typeSpecificElementFields: Partial<
+  Record<ProjectElementEditableField, ProjectElementType>
+> = {
+  requirementCategory: "Requirement",
+  targetOperator: "Requirement",
+  targetValue: "Requirement",
+  targetUpperValue: "Requirement",
+  targetUnit: "Requirement",
+  verificationMethod: "Requirement",
+  actualParameterId: "Requirement",
+  qualityDocumentId: "Test Case",
+  verdict: "Test Case",
+  parameterValue: "Parameter",
+  parameterUnit: "Parameter",
+  parameterSource: "Parameter",
+  parameterItemField: "Parameter",
+  parameterContingencyPercent: "Parameter",
+  allocationPercent: "Parameter"
+};
+
+/** A readable id in a formula: `SNS-7`, or a Service project's `SVC000123-4`. */
+const FORMULA_REF_PATTERN = /^[A-Z][A-Z0-9]*-\d+$/;
+const FORMULA_FUNCTIONS = ["min", "max", "abs"] as const;
+type FormulaFunction = (typeof FORMULA_FUNCTIONS)[number];
+
+export type FormulaNode =
+  | { kind: "number"; value: number }
+  | { kind: "ref"; id: string }
+  | { kind: "negate"; arg: FormulaNode }
+  | {
+      kind: "binary";
+      op: "+" | "-" | "*" | "/";
+      left: FormulaNode;
+      right: FormulaNode;
+    }
+  | { kind: "call"; name: FormulaFunction; args: FormulaNode[] };
+
+type FormulaToken =
+  | { kind: "number"; value: number; position: number }
+  | { kind: "ref"; id: string; position: number }
+  | { kind: "function"; name: FormulaFunction; position: number }
+  | { kind: "symbol"; symbol: string; position: number }
+  | { kind: "end"; position: number };
+
+class FormulaError extends Error {
+  constructor(
+    message: string,
+    readonly position: number
+  ) {
+    super(message);
+  }
+}
+
+function tokenizeFormula(text: string, start: number): FormulaToken[] {
+  const tokens: FormulaToken[] = [];
+  let i = start;
+  const isDigit = (c: string | undefined) =>
+    c !== undefined && c >= "0" && c <= "9";
+  const isLetter = (c: string | undefined) =>
+    c !== undefined && ((c >= "A" && c <= "Z") || (c >= "a" && c <= "z"));
+  while (i < text.length) {
+    const c = text[i]!;
+    if (c === " " || c === "\t" || c === "\n" || c === "\r") {
+      i++;
+      continue;
+    }
+    if (isDigit(c) || (c === "." && isDigit(text[i + 1]))) {
+      const begin = i;
+      while (isDigit(text[i])) i++;
+      if (text[i] === ".") {
+        i++;
+        if (!isDigit(text[i])) {
+          throw new FormulaError(`Expected a digit at position ${i}`, i);
+        }
+        while (isDigit(text[i])) i++;
+      }
+      tokens.push({
+        kind: "number",
+        value: Number(text.slice(begin, i)),
+        position: begin
+      });
+      continue;
+    }
+    if (isLetter(c)) {
+      const begin = i;
+      while (isLetter(text[i]) || isDigit(text[i])) i++;
+      const word = text.slice(begin, i);
+      // A readable id is a word, a hyphen and digits: `SNS-7`.
+      if (text[i] === "-" && isDigit(text[i + 1])) {
+        let end = i + 1;
+        while (isDigit(text[end])) end++;
+        const id = text.slice(begin, end);
+        if (FORMULA_REF_PATTERN.test(id)) {
+          tokens.push({ kind: "ref", id, position: begin });
+          i = end;
+          continue;
+        }
+      }
+      const name = word.toLowerCase();
+      if ((FORMULA_FUNCTIONS as readonly string[]).includes(name)) {
+        tokens.push({
+          kind: "function",
+          name: name as FormulaFunction,
+          position: begin
+        });
+        continue;
+      }
+      throw new FormulaError(
+        `Unknown name "${word}" at position ${begin}`,
+        begin
+      );
+    }
+    if ("+-*/(),".includes(c)) {
+      tokens.push({ kind: "symbol", symbol: c, position: i });
+      i++;
+      continue;
+    }
+    throw new FormulaError(`Unexpected "${c}" at position ${i}`, i);
+  }
+  tokens.push({ kind: "end", position: text.length });
+  return tokens;
+}
+
+/**
+ * Parses a Parameter formula such as `= SNS-20 - SNS-21` or
+ * `= max(SNS-3, SNS-4) * 1.2`. A hand-written recursive-descent parser:
+ * expression → term (`+ -`) → factor (`* /`) → unary minus → primary (a
+ * number, a readable id, `min`/`max`/`abs`, or a parenthesis). It never
+ * evaluates the text as code. `refs` lists the distinct readable ids.
+ */
+export function parseParameterFormula(
+  text: string
+): { ast: FormulaNode; refs: string[] } | { error: string; position: number } {
+  let start = 0;
+  while (start < text.length && /\s/.test(text[start]!)) start++;
+  if (text[start] !== "=") {
+    return { error: "A formula starts with =", position: start };
+  }
+
+  try {
+    const tokens = tokenizeFormula(text, start + 1);
+    let index = 0;
+    const peek = () => tokens[index]!;
+    const isSymbol = (symbol: string) => {
+      const token = peek();
+      return token.kind === "symbol" && token.symbol === symbol;
+    };
+    const expect = (symbol: string) => {
+      if (!isSymbol(symbol)) {
+        const token = peek();
+        throw new FormulaError(
+          `Expected "${symbol}" at position ${token.position}`,
+          token.position
+        );
+      }
+      index++;
+    };
+
+    const expression = (): FormulaNode => {
+      let node = term();
+      while (isSymbol("+") || isSymbol("-")) {
+        const op = (tokens[index++] as { symbol: "+" | "-" }).symbol;
+        node = { kind: "binary", op, left: node, right: term() };
+      }
+      return node;
+    };
+    const term = (): FormulaNode => {
+      let node = unary();
+      while (isSymbol("*") || isSymbol("/")) {
+        const op = (tokens[index++] as { symbol: "*" | "/" }).symbol;
+        node = { kind: "binary", op, left: node, right: unary() };
+      }
+      return node;
+    };
+    const unary = (): FormulaNode => {
+      if (isSymbol("-")) {
+        index++;
+        return { kind: "negate", arg: unary() };
+      }
+      return primary();
+    };
+    const primary = (): FormulaNode => {
+      const token = peek();
+      if (token.kind === "number") {
+        index++;
+        return { kind: "number", value: token.value };
+      }
+      if (token.kind === "ref") {
+        index++;
+        return { kind: "ref", id: token.id };
+      }
+      if (token.kind === "function") {
+        index++;
+        expect("(");
+        const args = [expression()];
+        while (isSymbol(",")) {
+          index++;
+          args.push(expression());
+        }
+        expect(")");
+        if (token.name === "abs" && args.length !== 1) {
+          throw new FormulaError(
+            `abs takes one value (position ${token.position})`,
+            token.position
+          );
+        }
+        return { kind: "call", name: token.name, args };
+      }
+      if (isSymbol("(")) {
+        index++;
+        const node = expression();
+        expect(")");
+        return node;
+      }
+      throw new FormulaError(
+        token.kind === "end"
+          ? `The formula ends early at position ${token.position}`
+          : `Unexpected value at position ${token.position}`,
+        token.position
+      );
+    };
+
+    const ast = expression();
+    const end = peek();
+    if (end.kind !== "end") {
+      throw new FormulaError(
+        `Unexpected value at position ${end.position}`,
+        end.position
+      );
+    }
+    return { ast, refs: formulaRefs(ast) };
+  } catch (err) {
+    if (err instanceof FormulaError) {
+      return { error: err.message, position: err.position };
+    }
+    throw err;
+  }
+}
+
+/** The distinct readable ids a formula names, in order of first use. */
+export function formulaRefs(ast: FormulaNode): string[] {
+  const refs = new Set<string>();
+  const walk = (node: FormulaNode) => {
+    switch (node.kind) {
+      case "ref":
+        refs.add(node.id);
+        break;
+      case "negate":
+        walk(node.arg);
+        break;
+      case "binary":
+        walk(node.left);
+        walk(node.right);
+        break;
+      case "call":
+        node.args.forEach(walk);
+        break;
+      case "number":
+        break;
+    }
+  };
+  walk(ast);
+  return [...refs];
+}
+
+export type FormulaResult =
+  | { value: number; reason: null }
+  | { value: null; reason: string };
+
+/**
+ * Evaluates a parsed formula. `valueOf(readableId)` gives a Parameter's
+ * value or null. A null input or a division by zero gives null with a reason.
+ */
+export function evaluateFormula(
+  ast: FormulaNode,
+  valueOf: (readableId: string) => number | null
+): FormulaResult {
+  const fail = (reason: string): never => {
+    throw new FormulaError(reason, 0);
+  };
+  const evaluate = (node: FormulaNode): number => {
+    switch (node.kind) {
+      case "number":
+        return node.value;
+      case "ref": {
+        const value = valueOf(node.id);
+        if (value === null || !Number.isFinite(value)) {
+          return fail(`${node.id} has no value`);
+        }
+        return value;
+      }
+      case "negate":
+        return -evaluate(node.arg);
+      case "binary": {
+        const left = evaluate(node.left);
+        const right = evaluate(node.right);
+        switch (node.op) {
+          case "+":
+            return left + right;
+          case "-":
+            return left - right;
+          case "*":
+            return left * right;
+          case "/":
+            if (right === 0) return fail("Division by zero");
+            return left / right;
+        }
+        return fail("Unknown operator");
+      }
+      case "call": {
+        const values = node.args.map(evaluate);
+        if (node.name === "abs") return Math.abs(values[0]!);
+        return node.name === "min" ? Math.min(...values) : Math.max(...values);
+      }
+    }
+  };
+  try {
+    return { value: evaluate(ast), reason: null };
+  } catch (err) {
+    if (err instanceof FormulaError)
+      return { value: null, reason: err.message };
+    throw err;
+  }
+}
+
+/**
+ * Whether a formula adds or subtracts values with different units. Units
+ * are free text and never convert. A product or quotient has no checked unit.
+ */
+function formulaMixesUnits(
+  ast: FormulaNode,
+  unitOf: (readableId: string) => string | null
+): boolean {
+  let mixed = false;
+  const unit = (node: FormulaNode): string | null => {
+    switch (node.kind) {
+      case "number":
+        return null;
+      case "ref":
+        return unitOf(node.id);
+      case "negate":
+        return unit(node.arg);
+      case "binary": {
+        const left = unit(node.left);
+        const right = unit(node.right);
+        if (node.op === "*" || node.op === "/") return null;
+        if (left !== null && right !== null && left !== right) mixed = true;
+        return left ?? right;
+      }
+      case "call": {
+        const units = node.args.map(unit).filter((u) => u !== null);
+        if (new Set(units).size > 1) mixed = true;
+        return units[0] ?? null;
+      }
+    }
+  };
+  unit(ast);
+  return mixed;
+}
+
+/** The element fields `computeVerification` reads. */
+export type VerificationElement = {
+  id: string;
+  readableId: string;
+  type: ProjectElementType;
+  parentId: string | null;
+  itemId: string | null;
+  parameterValue: number | null;
+  parameterUnit: string | null;
+  parameterSource: ParameterSource | null;
+  parameterFormula: string | null;
+  parameterItemField: string | null;
+  parameterContingencyPercent: number | null;
+  allocationPercent: number | null;
+  targetOperator: RequirementTargetOperator | null;
+  targetValue: number | null;
+  targetUpperValue: number | null;
+  targetUnit: string | null;
+  actualParameterId: string | null;
+  verdict: TestCaseVerdict | null;
+};
+
+export type VerificationLink = {
+  fromElementId: string;
+  toElementId: string;
+  linkType: ProjectElementLinkType;
+};
+
+/** The values of a linked part: its unit cost and its custom field values. */
+export type ItemValues = {
+  unitCost: number | null;
+  customFields: Record<string, unknown> | null;
+};
+
+export type RequirementStatus = "Pass" | "Fail" | "Unverified";
+
+export type ParameterVerification = {
+  kind: "Parameter";
+  computedValue: number | null;
+  /** Why `computedValue` is null. */
+  reason: string | null;
+  mixedUnits: boolean;
+  /** The value a `≤` check uses: computed × (1 + contingency). */
+  checkedHigh: number | null;
+  /** The value a `≥` check uses: computed × (1 − contingency). */
+  checkedLow: number | null;
+  /** Allocation × the parent Parameter's computed value. */
+  budgetValue: number | null;
+  /** The parent Parameter's computed value, for `formatAllocation`. */
+  parentValue: number | null;
+  budgetPass: boolean | null;
+};
+
+export type RequirementVerification = {
+  kind: "Requirement";
+  targetPass: boolean | null;
+  anyTestFail: boolean;
+  checkCount: number;
+  status: RequirementStatus;
+};
+
+export type ElementVerification =
+  | ParameterVerification
+  | RequirementVerification;
+
+function itemFieldValue(
+  values: ItemValues | undefined,
+  field: string
+): FormulaResult {
+  if (!values) return { value: null, reason: "The item has no values" };
+  const raw =
+    field === PARAMETER_ITEM_UNIT_COST
+      ? values.unitCost
+      : (values.customFields?.[field] ?? null);
+  if (raw === null || raw === undefined || raw === "") {
+    return { value: null, reason: "The item has no value for this field" };
+  }
+  const value = typeof raw === "number" ? raw : Number(raw);
+  if (typeof raw === "boolean" || !Number.isFinite(value)) {
+    return { value: null, reason: "The item field is not a number" };
+  }
+  return { value, reason: null };
+}
+
+/** Whether a checked value meets a Requirement's target. */
+function meetsTarget(
+  element: VerificationElement,
+  parameter: ParameterVerification
+): boolean | null {
+  const { targetOperator: operator, targetValue: target } = element;
+  const { checkedLow: low, checkedHigh: high } = parameter;
+  if (!operator || target === null || low === null || high === null) {
+    return null;
+  }
+  const t = Number(target);
+  switch (operator) {
+    case "≤":
+      return high <= t + EPSILON;
+    case "≥":
+      return low >= t - EPSILON;
+    case "=":
+      return equals(low, t) && equals(high, t);
+    case "Range": {
+      if (element.targetUpperValue === null) return null;
+      return (
+        low >= t - EPSILON && high <= Number(element.targetUpperValue) + EPSILON
+      );
+    }
+  }
+}
+
+/**
+ * Computes the verification of every Parameter and Requirement of a project
+ * from the rows the page already loads. A Parameter's value comes from its
+ * source (Manual, a Sum/Min/Max of its direct child Parameters in the same
+ * unit, a Formula, or a field of the nearest linked part). Values compute in
+ * dependency order; a cycle gives its Parameters null with "Circular
+ * formula". A Requirement passes or fails on its target and on the Test Cases
+ * that verify it.
+ */
+export function computeVerification(
+  elements: VerificationElement[],
+  links: VerificationLink[],
+  itemValues: Map<string, ItemValues>
+): Map<string, ElementVerification> {
+  const byId = new Map(elements.map((e) => [e.id, e]));
+  const byReadableId = new Map(elements.map((e) => [e.readableId, e]));
+  const childParameters = new Map<string, VerificationElement[]>();
+  for (const element of elements) {
+    if (element.type !== "Parameter" || !element.parentId) continue;
+    const siblings = childParameters.get(element.parentId) ?? [];
+    siblings.push(element);
+    childParameters.set(element.parentId, siblings);
+  }
+
+  const parsed = new Map<string, ReturnType<typeof parseParameterFormula>>();
+  const dependencies = new Map<string, string[]>();
+  for (const element of elements) {
+    if (element.type !== "Parameter") continue;
+    const deps: string[] = [];
+    if (
+      element.parameterSource === "Sum" ||
+      element.parameterSource === "Min" ||
+      element.parameterSource === "Max"
+    ) {
+      for (const child of childParameters.get(element.id) ?? []) {
+        deps.push(child.id);
+      }
+    } else if (element.parameterSource === "Formula") {
+      const result = parseParameterFormula(element.parameterFormula ?? "");
+      parsed.set(element.id, result);
+      if ("ast" in result) {
+        for (const ref of result.refs) {
+          const target = byReadableId.get(ref);
+          if (target?.type === "Parameter") deps.push(target.id);
+        }
+      }
+      for (const link of links) {
+        if (link.linkType === "feeds" && link.toElementId === element.id) {
+          deps.push(link.fromElementId);
+        }
+      }
+    }
+    dependencies.set(element.id, [...new Set(deps)]);
+  }
+
+  // Tarjan's strongly connected components: every Parameter in a component
+  // of two or more (or with a self edge) is part of a cycle.
+  const inCycle = new Set<string>();
+  {
+    let counter = 0;
+    const index = new Map<string, number>();
+    const low = new Map<string, number>();
+    const stack: string[] = [];
+    const onStack = new Set<string>();
+    const connect = (id: string) => {
+      index.set(id, counter);
+      low.set(id, counter);
+      counter++;
+      stack.push(id);
+      onStack.add(id);
+      for (const dep of dependencies.get(id) ?? []) {
+        if (!dependencies.has(dep)) continue;
+        if (!index.has(dep)) {
+          connect(dep);
+          low.set(id, Math.min(low.get(id)!, low.get(dep)!));
+        } else if (onStack.has(dep)) {
+          low.set(id, Math.min(low.get(id)!, index.get(dep)!));
+        }
+      }
+      if (low.get(id) === index.get(id)) {
+        const component: string[] = [];
+        let member: string;
+        do {
+          member = stack.pop()!;
+          onStack.delete(member);
+          component.push(member);
+        } while (member !== id);
+        if (component.length > 1 || (dependencies.get(id) ?? []).includes(id)) {
+          for (const c of component) inCycle.add(c);
+        }
+      }
+    };
+    for (const id of dependencies.keys()) {
+      if (!index.has(id)) connect(id);
+    }
+  }
+
+  const result = new Map<string, ElementVerification>();
+  const computed = new Map<string, FormulaResult & { mixedUnits: boolean }>();
+
+  const computeParameter = (
+    element: VerificationElement
+  ): FormulaResult & { mixedUnits: boolean } => {
+    const done = computed.get(element.id);
+    if (done) return done;
+    let value: FormulaResult & { mixedUnits: boolean };
+    if (inCycle.has(element.id)) {
+      value = { value: null, reason: "Circular formula", mixedUnits: false };
+    } else {
+      switch (element.parameterSource ?? "Manual") {
+        case "Manual":
+          value =
+            element.parameterValue === null
+              ? { value: null, reason: "No value", mixedUnits: false }
+              : {
+                  value: Number(element.parameterValue),
+                  reason: null,
+                  mixedUnits: false
+                };
+          break;
+        case "Sum":
+        case "Min":
+        case "Max": {
+          let mixedUnits = false;
+          const values: number[] = [];
+          let missing: string | null = null;
+          for (const child of childParameters.get(element.id) ?? []) {
+            if (
+              (child.parameterUnit ?? null) !== (element.parameterUnit ?? null)
+            ) {
+              mixedUnits = true;
+              continue;
+            }
+            const childValue = computeParameter(child);
+            if (childValue.value === null) {
+              missing ??= `${child.readableId} has no value`;
+              continue;
+            }
+            values.push(childValue.value);
+          }
+          if (missing) {
+            value = { value: null, reason: missing, mixedUnits };
+          } else if (values.length === 0) {
+            value = {
+              value: null,
+              reason: "No child Parameters in this unit",
+              mixedUnits
+            };
+          } else {
+            const source = element.parameterSource;
+            value = {
+              value:
+                source === "Sum"
+                  ? values.reduce((sum, v) => sum + v, 0)
+                  : source === "Min"
+                    ? Math.min(...values)
+                    : Math.max(...values),
+              reason: null,
+              mixedUnits
+            };
+          }
+          break;
+        }
+        case "Formula": {
+          const formula = parsed.get(element.id);
+          if (!formula || "error" in formula) {
+            value = {
+              value: null,
+              reason: formula?.error ?? "No formula",
+              mixedUnits: false
+            };
+            break;
+          }
+          const parameterOf = (readableId: string) => {
+            const ref = byReadableId.get(readableId);
+            return ref?.type === "Parameter" ? ref : null;
+          };
+          value = {
+            ...evaluateFormula(formula.ast, (readableId) => {
+              const ref = parameterOf(readableId);
+              return ref ? computeParameter(ref).value : null;
+            }),
+            mixedUnits: formulaMixesUnits(
+              formula.ast,
+              (readableId) => parameterOf(readableId)?.parameterUnit ?? null
+            )
+          };
+          break;
+        }
+        case "Item": {
+          // A Parameter links no part, so the nearest part is above it.
+          let itemId: string | null = null;
+          const seen = new Set<string>();
+          let current: VerificationElement | undefined = element;
+          while (current && !seen.has(current.id)) {
+            seen.add(current.id);
+            if (current.itemId) {
+              itemId = current.itemId;
+              break;
+            }
+            current = current.parentId ? byId.get(current.parentId) : undefined;
+          }
+          value = itemId
+            ? {
+                ...itemFieldValue(
+                  itemValues.get(itemId),
+                  element.parameterItemField ?? PARAMETER_ITEM_UNIT_COST
+                ),
+                mixedUnits: false
+              }
+            : {
+                value: null,
+                reason: "No element above links a part",
+                mixedUnits: false
+              };
+          break;
+        }
+      }
+    }
+    computed.set(element.id, value);
+    return value;
+  };
+
+  for (const element of elements) {
+    if (element.type !== "Parameter") continue;
+    const own = computeParameter(element);
+    const contingency = Number(element.parameterContingencyPercent ?? 0);
+    const parent = element.parentId ? byId.get(element.parentId) : undefined;
+    const parentValue =
+      parent?.type === "Parameter" ? computeParameter(parent).value : null;
+    const checkedHigh =
+      own.value === null ? null : own.value * (1 + contingency);
+    const budgetValue =
+      element.allocationPercent === null || parentValue === null
+        ? null
+        : Number(element.allocationPercent) * parentValue;
+    result.set(element.id, {
+      kind: "Parameter",
+      computedValue: own.value,
+      reason: own.reason,
+      mixedUnits: own.mixedUnits,
+      checkedHigh,
+      checkedLow: own.value === null ? null : own.value * (1 - contingency),
+      budgetValue,
+      parentValue,
+      budgetPass:
+        budgetValue === null || checkedHigh === null
+          ? null
+          : checkedHigh <= budgetValue + EPSILON
+    });
+  }
+
+  const verifiers = new Map<string, VerificationElement[]>();
+  for (const link of links) {
+    if (link.linkType !== "verifies") continue;
+    const from = byId.get(link.fromElementId);
+    if (from?.type !== "Test Case") continue;
+    const list = verifiers.get(link.toElementId) ?? [];
+    list.push(from);
+    verifiers.set(link.toElementId, list);
+  }
+
+  for (const element of elements) {
+    if (element.type !== "Requirement") continue;
+    const parameter = element.actualParameterId
+      ? result.get(element.actualParameterId)
+      : undefined;
+    const targetPass =
+      parameter?.kind === "Parameter" ? meetsTarget(element, parameter) : null;
+    const tests = verifiers.get(element.id) ?? [];
+    const anyTestFail = tests.some((test) => test.verdict === "Fail");
+    const checkCount =
+      (targetPass === null ? 0 : 1) +
+      tests.filter((test) => test.verdict && test.verdict !== "Not Run").length;
+    const status: RequirementStatus =
+      targetPass === false || anyTestFail
+        ? "Fail"
+        : checkCount > 0
+          ? "Pass"
+          : "Unverified";
+    result.set(element.id, {
+      kind: "Requirement",
+      targetPass,
+      anyTestFail,
+      checkCount,
+      status
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Rolls Requirement status up the tree. A Requirement with child
+ * Requirements fails when it or any child fails. It passes only when its own
+ * status is Pass (or Unverified with no checks) and every child passes.
+ * Everything else is Unverified.
+ */
+export function rollUpRequirementStatus(
+  tree: { id: string; parentId: string | null; type: ProjectElementType }[],
+  verification: Map<string, ElementVerification>
+): Map<string, RequirementStatus> {
+  const children = new Map<string, string[]>();
+  for (const element of tree) {
+    if (element.type !== "Requirement" || !element.parentId) continue;
+    const list = children.get(element.parentId) ?? [];
+    list.push(element.id);
+    children.set(element.parentId, list);
+  }
+
+  const rolled = new Map<string, RequirementStatus>();
+  const visiting = new Set<string>();
+  const statusOf = (id: string): RequirementStatus => {
+    const done = rolled.get(id);
+    if (done) return done;
+    const own = verification.get(id);
+    const ownStatus: RequirementStatus =
+      own?.kind === "Requirement" ? own.status : "Unverified";
+    if (visiting.has(id)) return ownStatus;
+    visiting.add(id);
+    const childStatuses = (children.get(id) ?? []).map(statusOf);
+    visiting.delete(id);
+
+    let status: RequirementStatus;
+    if (ownStatus === "Fail" || childStatuses.includes("Fail")) {
+      status = "Fail";
+    } else if (childStatuses.length === 0) {
+      status = ownStatus;
+    } else {
+      const ownOk =
+        ownStatus === "Pass" ||
+        (own?.kind === "Requirement" ? own.checkCount === 0 : true);
+      status =
+        ownOk && childStatuses.every((s) => s === "Pass")
+          ? "Pass"
+          : "Unverified";
+    }
+    rolled.set(id, status);
+    return status;
+  };
+
+  for (const element of tree) {
+    if (element.type === "Requirement") statusOf(element.id);
+  }
+  return rolled;
+}
+
+/** A Parameter's budget: `"≤ 600 kg (30% of 2,000 kg)"`. */
+export function formatAllocation(
+  budgetValue: number,
+  allocationPercent: number,
+  parentValue: number,
+  unit: string | null,
+  locale = "en"
+): string {
+  const withUnit = (value: number) =>
+    unit
+      ? `${formatQuantity(value, locale)} ${unit}`
+      : formatQuantity(value, locale);
+  return `≤ ${withUnit(budgetValue)} (${formatPercent(allocationPercent, locale)} of ${withUnit(parentValue)})`;
 }
