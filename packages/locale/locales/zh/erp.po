@@ -69,7 +69,7 @@ msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr ""
+msgstr "{0, plural, one {# 条记录需要关注} other {# 条记录需要关注}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -405,7 +405,7 @@ msgid "{count} units"
 msgstr "{count} 件"
 
 msgid "{created} created, {updated} updated."
-msgstr ""
+msgstr "已创建 {created} 条，已更新 {updated} 条。"
 
 msgid "{days}d"
 msgstr "{days}天"
@@ -432,7 +432,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "第{from}–{to}个工序（共{count}个）"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr ""
+msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "还有{hiddenCount}个：{hiddenNames}"
@@ -11386,10 +11386,10 @@ msgstr "姓氏"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr ""
+msgstr "最后一次推送 {when} 失败：{0}"
 
 msgid "Last push {when}:"
-msgstr ""
+msgstr "最后一次推送 {when}："
 
 msgid "Last Quarter"
 msgstr "上一季度"
@@ -11398,7 +11398,7 @@ msgid "Last Run"
 msgstr "最后运行"
 
 msgid "Last scheduled push {when}:"
-msgstr ""
+msgstr "最后一次计划推送 {when}："
 
 msgid "Last synced: <0/>"
 msgstr "上次同步: <0/>"
@@ -12548,7 +12548,7 @@ msgid "More overtime"
 msgstr "更多加班"
 
 msgid "More records are waiting. Push again to continue."
-msgstr ""
+msgstr "还有更多记录在等待。请再次推送以继续。"
 
 msgid "Morning, {name}."
 msgstr "早上，{name}。"
@@ -12563,7 +12563,7 @@ msgid "Motion"
 msgstr "运动"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr ""
+msgstr "Mount 中有 {matches} 条记录使用此标识符。请在 Mount 中删除或合并多余的记录，然后重新推送。"
 
 msgid "Move"
 msgstr "移动"
@@ -13281,7 +13281,7 @@ msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
 msgid "No companies match \"{query}\""
-msgstr ""
+msgstr "没有公司与 \"{query}\" 匹配"
 
 msgid "No completed jobs within range"
 msgstr "范围内没有已完成的工单"
@@ -13744,10 +13744,10 @@ msgid "No Supplier"
 msgstr "无供应商"
 
 msgid "No supplier parts have been added yet."
-msgstr ""
+msgstr "尚未添加供应商零件。"
 
 msgid "No supplier parts match \"{searchText}\"."
-msgstr ""
+msgstr "没有供应商零件与 \"{searchText}\" 匹配。"
 
 msgid "No suppliers yet"
 msgstr "还没有供应商"
@@ -18255,7 +18255,7 @@ msgid "Search fields..."
 msgstr "搜索字段..."
 
 msgid "Search for a company"
-msgstr ""
+msgstr "搜索公司"
 
 msgid "Search for existing or create a new one"
 msgstr "搜索现有问题或创建新问题"
@@ -18297,7 +18297,7 @@ msgid "Search storage units and tracking numbers"
 msgstr "搜索存储单元和追踪号"
 
 msgid "Search supplier parts"
-msgstr ""
+msgstr "搜索供应商零件"
 
 msgid "Search suppliers..."
 msgstr "搜索供应商..."
@@ -19523,7 +19523,7 @@ msgid "Started"
 msgstr "开始于"
 
 msgid "Starting"
-msgstr ""
+msgstr "开始中"
 
 msgid "Starting…"
 msgstr "正在启动…"
@@ -19985,7 +19985,7 @@ msgid "Supplier Part"
 msgstr "供应商零件"
 
 msgid "Supplier part actions"
-msgstr ""
+msgstr "供应商零件操作"
 
 msgid "Supplier Part ID"
 msgstr "供应商料号"
@@ -21047,16 +21047,16 @@ msgid "The purchase order"
 msgstr "采购订单"
 
 msgid "The push to Mount did not start. Try again."
-msgstr ""
+msgstr "推送至 Mount 未启动。请重试。"
 
 msgid "The push to Mount failed"
-msgstr ""
+msgstr "推送至 Mount 失败"
 
 msgid "The push to Mount finished"
-msgstr ""
+msgstr "推送至 Mount 已完成"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr ""
+msgstr "推送至 Mount 已完成。某些记录需要关注"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "此行定价的数量断点;每一列都有自己的单位价格,用于采购方–供应商谈判和转换为下游文件。"
@@ -22272,7 +22272,7 @@ msgid "Triggers"
 msgstr "触发器"
 
 msgid "Try a different name."
-msgstr ""
+msgstr "请尝试其他名称。"
 
 msgid "Tuesday"
 msgstr "星期二"
@@ -23082,7 +23082,7 @@ msgid "View Issue"
 msgstr "查看问题"
 
 msgid "View Item"
-msgstr ""
+msgstr "查看物料"
 
 msgid "View Item Master"
 msgstr "查看物料主数据"

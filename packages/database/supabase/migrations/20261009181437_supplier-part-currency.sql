@@ -10,8 +10,61 @@
 -- Price breaks ("supplierPartPrice") are in their supplier part's currency.
 
 -- 1. The price columns hold the supplier's currency now: rename, keep the data.
-ALTER TABLE "supplierPart" RENAME COLUMN "unitPrice" TO "supplierUnitPrice";
-ALTER TABLE "supplierPartPrice" RENAME COLUMN "unitPrice" TO "supplierUnitPrice";
+--    The renames and the one-time per-unit repair (formerly step 4) run in
+--    ONE block, and only while the old column still exists: a retried file
+--    neither fails on the rename nor multiplies prices by conversionFactor a
+--    second time.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'supplierPart'
+      AND column_name = 'unitPrice'
+  ) THEN
+    ALTER TABLE "supplierPart" RENAME COLUMN "unitPrice" TO "supplierUnitPrice";
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'supplierPartPrice'
+        AND column_name = 'unitPrice'
+    ) THEN
+      ALTER TABLE "supplierPartPrice" RENAME COLUMN "unitPrice" TO "supplierUnitPrice";
+    END IF;
+
+    -- One unit: per PURCHASE unit. Converting a supplier quote to a purchase
+    --    order and finalizing a supplier quote stored the price per INVENTORY unit
+    --    (÷ conversionFactor), while the purchase order and invoice forms, planning
+    --    and update-purchased-prices all read and write it per purchase unit. The
+    --    two only disagree when conversionFactor is not 1.
+    --
+    --    Price breaks from those two writers carry their source, so they are
+    --    repaired exactly. The part's own price has no source; it was set to the
+    --    cheapest of those breaks, so a part whose price still equals one of its
+    --    Quote / Purchase Order breaks is repaired with them. A price that matches
+    --    none was last written per purchase unit and is left alone. Runs before
+    --    the break repair, which changes the values it compares against.
+    UPDATE "supplierPart" sp
+    SET "supplierUnitPrice" = sp."supplierUnitPrice" * sp."conversionFactor"
+    WHERE sp."conversionFactor" IS NOT NULL
+      AND sp."conversionFactor" NOT IN (0, 1)
+      AND sp."supplierUnitPrice" IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM "supplierPartPrice" spp
+        WHERE spp."supplierPartId" = sp."id"
+          AND spp."companyId" = sp."companyId"
+          AND spp."sourceType" IN ('Quote', 'Purchase Order')
+          AND spp."supplierUnitPrice" = sp."supplierUnitPrice"
+      );
+
+    UPDATE "supplierPartPrice" spp
+    SET "supplierUnitPrice" = spp."supplierUnitPrice" * sp."conversionFactor"
+    FROM "supplierPart" sp
+    WHERE sp."id" = spp."supplierPartId"
+      AND sp."companyId" = spp."companyId"
+      AND spp."sourceType" IN ('Quote', 'Purchase Order')
+      AND sp."conversionFactor" IS NOT NULL
+      AND sp."conversionFactor" NOT IN (0, 1);
+  END IF;
+END $$;
 
 -- 2. The currency the price is in. Nullable so a backup taken before this
 --    column still restores; readers treat NULL as the company's base currency,
@@ -46,40 +99,6 @@ SET "currencyCode" = c."baseCurrencyCode"
 FROM "company" c
 WHERE c."id" = sp."companyId"
   AND sp."currencyCode" IS NULL;
-
--- 4. One unit: per PURCHASE unit. Converting a supplier quote to a purchase
---    order and finalizing a supplier quote stored the price per INVENTORY unit
---    (÷ conversionFactor), while the purchase order and invoice forms, planning
---    and update-purchased-prices all read and write it per purchase unit. The
---    two only disagree when conversionFactor is not 1.
---
---    Price breaks from those two writers carry their source, so they are
---    repaired exactly. The part's own price has no source; it was set to the
---    cheapest of those breaks, so a part whose price still equals one of its
---    Quote / Purchase Order breaks is repaired with them. A price that matches
---    none was last written per purchase unit and is left alone. Runs before
---    the break repair, which changes the values it compares against.
-UPDATE "supplierPart" sp
-SET "supplierUnitPrice" = sp."supplierUnitPrice" * sp."conversionFactor"
-WHERE sp."conversionFactor" IS NOT NULL
-  AND sp."conversionFactor" NOT IN (0, 1)
-  AND sp."supplierUnitPrice" IS NOT NULL
-  AND EXISTS (
-    SELECT 1 FROM "supplierPartPrice" spp
-    WHERE spp."supplierPartId" = sp."id"
-      AND spp."companyId" = sp."companyId"
-      AND spp."sourceType" IN ('Quote', 'Purchase Order')
-      AND spp."supplierUnitPrice" = sp."supplierUnitPrice"
-  );
-
-UPDATE "supplierPartPrice" spp
-SET "supplierUnitPrice" = spp."supplierUnitPrice" * sp."conversionFactor"
-FROM "supplierPart" sp
-WHERE sp."id" = spp."supplierPartId"
-  AND sp."companyId" = spp."companyId"
-  AND spp."sourceType" IN ('Quote', 'Purchase Order')
-  AND sp."conversionFactor" IS NOT NULL
-  AND sp."conversionFactor" NOT IN (0, 1);
 
 -- ============================================================
 -- 5. get_purchasing_planning: each supplier now reports its price as quoted

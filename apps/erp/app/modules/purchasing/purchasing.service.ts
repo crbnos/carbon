@@ -5106,10 +5106,13 @@ export async function createReplacementPurchaseOrder(
       supplierPart.currencyCode,
       baseCurrencyCode
     );
+    // Base is always 1, whether or not the group lists it.
     const exchangeRate =
       currencyCode === orderCurrency.currencyCode
         ? orderCurrency.exchangeRate
-        : exchangeRateByCurrency.get(currencyCode);
+        : currencyCode === baseCurrencyCode
+          ? 1
+          : exchangeRateByCurrency.get(currencyCode);
     // No rate: leave it to the next fallback rather than price it at par.
     if (!exchangeRate) return null;
     return convertUnitPrice(

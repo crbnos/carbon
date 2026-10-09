@@ -174,6 +174,7 @@ const CurrencyForm = ({
               className="w-full"
             >
               <Hidden name="id" />
+              {rate !== null && <Hidden name="displayedRate" value={rate} />}
               <VStack spacing={4}>
                 {isEditing && (
                   <>

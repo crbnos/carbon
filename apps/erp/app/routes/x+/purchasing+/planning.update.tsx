@@ -685,7 +685,11 @@ export async function action({ request }: ActionFunctionArgs) {
                   supplierPart?.currencyCode,
                   baseCurrencyCode
                 );
-                const partRate = exchangeRateByCurrency.get(partCurrency);
+                // Base is always 1, whether or not the group lists it.
+                const partRate =
+                  partCurrency === baseCurrencyCode
+                    ? 1
+                    : exchangeRateByCurrency.get(partCurrency);
                 if (
                   supplierPart?.supplierUnitPrice != null &&
                   partCurrency !== currencyCode &&

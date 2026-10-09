@@ -416,7 +416,10 @@ export const currencyValidator = z.object({
 export const currencyFormValidator = currencyValidator.extend({
   rate: zfd.numeric(
     z.number().positive({ message: "Rate must be positive" }).optional()
-  )
+  ),
+  // The rate the drawer opened with. A submitted rate equal to it was not
+  // edited, so it is never pinned — even if the market moved meanwhile.
+  displayedRate: zfd.numeric(z.number().optional())
 });
 
 export const exchangeRateOverrideValidator = z.object({
