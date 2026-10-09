@@ -16151,6 +16151,9 @@ msgstr "進捗"
 msgid "Project"
 msgstr "プロジェクト"
 
+msgid "Project element"
+msgstr ""
+
 msgid "Project elements"
 msgstr ""
 

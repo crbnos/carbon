@@ -16151,6 +16151,9 @@ msgstr "진행 상황"
 msgid "Project"
 msgstr "프로젝트"
 
+msgid "Project element"
+msgstr ""
+
 msgid "Project elements"
 msgstr ""
 
