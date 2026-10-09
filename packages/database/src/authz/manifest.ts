@@ -1099,6 +1099,7 @@ export const manifest = {
   projectElementCost: company("projects"),
   projectElementLabel: company("projects"),
   projectElementLabor: company("projects"),
+  projectElementLink: company("projects"),
   projectElementMaterial: company("projects"),
   projectLabel: company("projects"),
   projectLedger: company("projects", {
@@ -1108,6 +1109,30 @@ export const manifest = {
   }),
   projectMilestone: company("projects"),
   projectState: company("projects"),
+  projectUserPreference: policies({
+    select: owner("userId"),
+    insert: and(owner("userId"), inCompany("companyId", "employee")),
+    update: {
+      using: owner("userId"),
+      check: and(owner("userId"), inCompany("companyId", "employee"))
+    },
+    delete: owner("userId")
+  }),
+  projectView: policies({
+    select: or(
+      owner("createdBy"),
+      and(
+        where<"projectView">((eb) => eb("isShared", "=", true)),
+        inCompany("companyId", "projects_view")
+      )
+    ),
+    insert: and(owner("createdBy"), inCompany("companyId", "projects_view")),
+    update: {
+      using: owner("createdBy"),
+      check: and(owner("createdBy"), inCompany("companyId", "projects_view"))
+    },
+    delete: owner("createdBy")
+  }),
   purchaseInvoice: company("invoicing", { read: "invoicing_view" }),
   purchaseInvoiceDelivery: company("invoicing", { read: "invoicing_view" }),
   purchaseInvoiceLine: company("invoicing", { read: "invoicing_view" }),

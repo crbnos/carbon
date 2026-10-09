@@ -434,7 +434,9 @@ export const auditConfig = {
         projectElementLabel: { entityIdColumn: "projectElementId" },
         projectElementMaterial: { entityIdColumn: "projectElementId" },
         projectElementLabor: { entityIdColumn: "projectElementId" },
-        projectElementCost: { entityIdColumn: "projectElementId" }
+        projectElementCost: { entityIdColumn: "projectElementId" },
+        // A link is audited on the element it starts from.
+        projectElementLink: { entityIdColumn: "fromElementId" }
       }
     },
 
