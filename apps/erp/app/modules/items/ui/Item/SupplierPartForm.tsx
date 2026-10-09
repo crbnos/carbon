@@ -220,7 +220,7 @@ const SupplierPartForm = ({
                   minValue={1}
                   termId="supplier-part-order-multiple"
                 />
-                <CustomFormFields table="partSupplier" />
+                <CustomFormFields table="supplierPart" />
               </div>
               <PriceBreaks
                 priceBreaks={priceBreaks}

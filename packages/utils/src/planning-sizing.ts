@@ -67,6 +67,159 @@ const ceilUnits = (value: number): number => round(value, 0, RoundingMode.Up);
 /** Integer floor of a non-negative integer division (a, b integers, b > 0). */
 const intFloorDiv = (a: number, b: number): number => (a - (a % b)) / b;
 
+/** Weekly planning periods. */
+const DAYS_IN_PERIOD = 7;
+
+export type PlannedOrderSplit = {
+  quantity: number;
+  /** Days after the week's first order this one is due. */
+  dayOffset: number;
+};
+
+/**
+ * One order per batch: an order larger than the batch size (`lotSize`) is
+ * made in full batches with the remainder last, due dates spread evenly across
+ * the week. A batch size of 0, or an order that fits in one batch, is one
+ * order. How Demand-Based Reorder splits its order.
+ */
+export function lotSizeBatches(
+  quantity: number,
+  lotSize: number
+): PlannedOrderSplit[] {
+  if (!(lotSize > 0) || quantity <= lotSize) {
+    return [{ quantity, dayOffset: 0 }];
+  }
+  const numberOfBatches = ceilUnits(quantity / lotSize);
+  return Array.from({ length: numberOfBatches }, (_, batch) => ({
+    quantity: Math.min(lotSize, quantity - batch * lotSize),
+    // integer floor — mirrors the original Math.floor without a raw-rounding call
+    dayOffset: intFloorDiv(batch * DAYS_IN_PERIOD, numberOfBatches)
+  }));
+}
+
+export type OrderSizingParams = Pick<
+  PlanningSizingParams,
+  | "reorderPoint"
+  | "reorderQuantity"
+  | "minimumOrderQuantity"
+  | "maximumOrderQuantity"
+  | "orderMultiple"
+  | "lotSize"
+>;
+
+/**
+ * How ONE order of a reordering policy is sized — the same rules
+ * `computePlanningOrders` applies, stated once so what happens after sizing
+ * keeps them:
+ * - `perOrder`: the quantity one order holds when a need takes several —
+ *   the batch size (Demand-Based Reorder), the fixed reorder quantity, or the
+ *   maximum order quantity (Maximum Quantity). 0: one order of any size.
+ * - `daily`: several orders in a week fall one per day (Fixed Reorder
+ *   Quantity, Maximum Quantity), not spread across it (batches).
+ * - `maximum`: the most one order may hold. 0: no limit.
+ * - `minimum` / `multiples`: the least an order holds, and what it is a whole
+ *   multiple of.
+ *
+ * MRP keeps one Order / Make action per item and week, so the orders a week
+ * needs are summed into it; the planning pages split it back by `perOrder`
+ * (`splitIntoOrders`). An Increase may not grow an order past `maximum`, and
+ * a Decrease keeps `minimum` and `multiples` (`reducedOrderQuantity`).
+ * Stock Only, Manual Reorder and an unknown policy size by none of them.
+ */
+export function orderSizingRules(
+  policyName: string | null | undefined,
+  params: OrderSizingParams
+): {
+  perOrder: number;
+  daily: boolean;
+  maximum: number;
+  minimum: number;
+  multiples: number[];
+} {
+  const lotSize = Number(params.lotSize) || 0;
+  const maximumOrderQuantity = Number(params.maximumOrderQuantity) || 0;
+  const minimumOrderQuantity = Number(params.minimumOrderQuantity) || 0;
+  const orderMultiple = Number(params.orderMultiple) || 0;
+  switch (policyName) {
+    case "Demand-Based Reorder": {
+      const limits = [lotSize, maximumOrderQuantity].filter((n) => n > 0);
+      return {
+        perOrder: lotSize,
+        daily: false,
+        maximum: limits.length > 0 ? Math.min(...limits) : 0,
+        minimum: minimumOrderQuantity,
+        multiples: [orderMultiple]
+      };
+    }
+    case "Fixed Reorder Quantity": {
+      const reorderQuantity = Number(params.reorderQuantity) || 0;
+      // as computePlanningOrders: no reorder quantity orders the reorder point
+      const fixed =
+        reorderQuantity > 0
+          ? reorderQuantity
+          : Number(params.reorderPoint) || 0;
+      return {
+        perOrder: fixed,
+        daily: true,
+        maximum: fixed,
+        minimum: 0,
+        multiples: [fixed]
+      };
+    }
+    case "Maximum Quantity":
+      return {
+        perOrder: maximumOrderQuantity,
+        daily: true,
+        maximum: maximumOrderQuantity,
+        minimum: minimumOrderQuantity,
+        // as computePlanningOrders: a multiple of 1 is no rule
+        multiples: [orderMultiple > 1 ? orderMultiple : 0, lotSize]
+      };
+    default:
+      return {
+        perOrder: 0,
+        daily: false,
+        maximum: 0,
+        minimum: 0,
+        multiples: []
+      };
+  }
+}
+
+/**
+ * A week's summed Order / Make quantity split back into the orders its policy
+ * sizes: full orders of `perOrder` with the remainder last, one per day
+ * (`daily`) or spread across the week (batches).
+ */
+export function splitIntoOrders(
+  quantity: number,
+  rules: Pick<ReturnType<typeof orderSizingRules>, "perOrder" | "daily">
+): PlannedOrderSplit[] {
+  const split = lotSizeBatches(quantity, rules.perOrder);
+  if (!rules.daily) return split;
+  return split.map((order, index) => ({
+    ...order,
+    dayOffset: Math.min(index, DAYS_IN_PERIOD - 1)
+  }));
+}
+
+/**
+ * What an open order may be reduced to when only `required` of it is needed:
+ * at least the policy's minimum and a whole multiple of each of its multiples.
+ * Never more than `current`, the order as it stands.
+ */
+export function reducedOrderQuantity(
+  required: number,
+  current: number,
+  rules: Pick<ReturnType<typeof orderSizingRules>, "minimum" | "multiples">
+): number {
+  let quantity = Math.max(required, rules.minimum);
+  for (const multiple of rules.multiples) {
+    if (multiple > 0) quantity = ceilToMultiple(quantity, multiple);
+  }
+  return Math.min(quantity, current);
+}
+
 export function computePlanningOrders(
   input: ComputePlanningOrdersInput
 ): PlanningOrderSuggestion[] {
@@ -155,57 +308,17 @@ export function computePlanningOrders(
           );
         }
 
-        // If we have a lot size and need to split orders
-        if (lotSize > 0 && totalOrderQuantity > lotSize) {
-          const numberOfBatches = ceilUnits(totalOrderQuantity / lotSize);
-          const daysInPeriod = 7; // Weekly periods
-
-          for (let batch = 0; batch < numberOfBatches; batch++) {
-            const batchQuantity = Math.min(
-              lotSize,
-              totalOrderQuantity - batch * lotSize
-            );
-
-            // Spread due dates evenly across the period (integer floor —
-            // mirrors the original Math.floor without a raw-rounding call)
-            const dueDateOffset = intFloorDiv(
-              batch * daysInPeriod,
-              numberOfBatches
-            );
-            const dueDate = parseDate(currentPeriod.startDate).add({
-              days: dueDateOffset
-            });
-            const startDate = dueDate.subtract({ days: leadTime });
-
-            orders.push({
-              startDate: startDate.toString(),
-              dueDate: dueDate.toString(),
-              quantity: batchQuantity,
-              periodId: currentPeriod.id,
-              isASAP: startDate.compare(todaysDate) < 0,
-              policyName: "Demand-Based Reorder",
-              triggerValues: {
-                projectedStock: endOfWindowProjection,
-                safetyStock: demandAccumulationSafetyStock,
-                lotSize,
-                leadTime
-              }
-            });
-          }
-        } else {
-          // Single order for the period
-          const orderQuantity =
-            lotSize > 0
-              ? Math.min(totalOrderQuantity, lotSize)
-              : totalOrderQuantity;
-
-          const dueDate = parseDate(currentPeriod.startDate);
+        // One order per batch, due dates spread across the period
+        for (const batch of lotSizeBatches(totalOrderQuantity, lotSize)) {
+          const dueDate = parseDate(currentPeriod.startDate).add({
+            days: batch.dayOffset
+          });
           const startDate = dueDate.subtract({ days: leadTime });
 
           orders.push({
             startDate: startDate.toString(),
             dueDate: dueDate.toString(),
-            quantity: orderQuantity,
+            quantity: batch.quantity,
             periodId: currentPeriod.id,
             isASAP: startDate.compare(todaysDate) < 0,
             policyName: "Demand-Based Reorder",

@@ -67,6 +67,10 @@ msgstr "{0, plural, one {# giorno di ritardo} other {# giorni di ritardo}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operazione senza standard di tempo} other {# operazioni senza standard di tempo}}"
 
+#. placeholder {0}: issues.length
+msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# riga si collega ai dati al di fuori di questa Azienda, quindi non è possibile fare una copia di sicurezza dei dati attuali.} other {# righe si collegano ai dati al di fuori di questa Azienda, quindi non è possibile fare una copia di sicurezza dei dati attuali.}}"
@@ -413,6 +417,9 @@ msgstr "{count} di {total} unità"
 msgid "{count} units"
 msgstr "{count} unità"
 
+msgid "{created} created, {updated} updated."
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -436,6 +443,9 @@ msgstr "{from}–{to} di {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} di {count} operazioni"
+
+msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
+msgstr ""
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} altri: {hiddenNames}"
@@ -2030,6 +2040,15 @@ msgstr "Riga indirizzo 1"
 msgid "Address line2"
 msgstr "Riga indirizzo 2"
 
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
+msgstr "Aggiunge il costo che l'asset non è mai stato addebitato, come la manodopera e il materiale di un ordine di produzione che non ha registrato nulla."
+
+msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Aggiunge il costo che l'asset non è mai stato addebitato, come la manodopera e il materiale di un ordine di produzione che non ha registrato nulla. Il valore è registrato nell'asset dal conto da cui è stato speso: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
+
+msgid "Adjust Cost"
+msgstr "Regola il costo"
+
 msgid "Adjustment"
 msgstr "Rettifica"
 
@@ -3468,8 +3487,21 @@ msgstr "Ore disponibili"
 msgid "Available on the Business plan"
 msgstr "Disponibile nel piano Business"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Opzione avatar {0}"
+
+msgid "Avatar style"
+msgstr "Stile avatar"
+
 msgid "Avatar url"
 msgstr "URL avatar"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Avatar da <0>{0}</0> di {1}, con licenza <1>{2}</1>."
 
 msgid "Avg Days to Close"
 msgstr "Giorni medi per chiudere"
@@ -3485,6 +3517,9 @@ msgstr "Torna alla tracciabilità"
 
 msgid "Backflush"
 msgstr "Backflush"
+
+msgid "Background"
+msgstr "Sfondo"
 
 msgid "Backup"
 msgstr "Backup"
@@ -4442,9 +4477,6 @@ msgstr "Scegli un numero di lotto"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Scegli un processo raggruppabile per vedere le operazioni che possono essere eseguite insieme."
 
-msgid "Choose a company"
-msgstr "Scegli un'azienda"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Scegli un componente che {itemReadableId} sostituisce. La regola è salvata su quel componente con {itemReadableId} come suo successore."
 
@@ -4464,8 +4496,14 @@ msgstr ""
 msgid "Choose another file"
 msgstr "Scegli un altro file"
 
+msgid "Choose avatar"
+msgstr "Scegli avatar"
+
 msgid "Choose how to add lines to this return."
 msgstr "Scegli come aggiungere righe a questo reso."
+
+msgid "Choose Return To for {unitName}"
+msgstr "Scegli la destinazione di restituzione per {unitName}"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Scegli le unità flotta che questo accordo noleggia. Ogni unità inizia al suo tasso nei registri per la frequenza; modificalo nella griglia."
@@ -5239,6 +5277,9 @@ msgstr "Conversione in corso…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte l'unità di acquisto di un fornitore nella tua unità di inventario su una linea di ordine, ricevuta o fattura — acquista in scatole di 12, stoccaggio in unità singole."
+
+msgid "Copied ID to clipboard"
+msgstr "ID copiato negli appunti"
 
 msgid "Copied link to clipboard"
 msgstr "Collegamento copiato negli appunti"
@@ -7040,11 +7081,11 @@ msgstr "Elimina flusso di lavoro"
 msgid "Deliver"
 msgstr "Consegna"
 
-msgid "Deliver {label}"
-msgstr "Consegna {label}"
-
 msgid "Delivered"
 msgstr "Consegnato"
+
+msgid "Delivered on"
+msgstr "Consegnato il"
 
 msgid "Delivery Date"
 msgstr "Data di consegna"
@@ -8379,6 +8420,12 @@ msgstr "Inserisci un numero di lotto prima di impostare la data di scadenza"
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Inserisci una quantità tra 1 e {0}."
 
+msgid "Enter a reason to take the unit out of service"
+msgstr "Inserisci un motivo per mettere l'unità fuori servizio"
+
+msgid "Enter a web address, such as https://example.com"
+msgstr "Inserisci un indirizzo web, ad esempio https://example.com"
+
 msgid "Enter an item and quantity yourself."
 msgstr "Inserisci un articolo e una quantità tu stesso."
 
@@ -8408,6 +8455,12 @@ msgstr "Immetti l'URL Onshape, l'ID client e il client secret della tua applicaz
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Inserisci la quantità che questo movimento avrebbe dovuto essere. Un movimento opposto per la differenza è registrato accanto all'originale, nel periodo temporale dell'originale."
+
+msgid "Enter what it cost to make."
+msgstr "Inserisci il costo di produzione."
+
+msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Inserisci il costo di produzione. Il valore è registrato nell'asset dal conto da cui è stato speso: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
 
 msgid "Entered At Receipt"
 msgstr "Inserito al Ricevimento"
@@ -9150,6 +9203,9 @@ msgstr "Impossibile caricare le entità tracciate"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to move account: {0}"
 msgstr "Impossibile spostare il conto: {0}"
+
+msgid "Failed to plan job"
+msgstr "Impossibile pianificare l'ordine di produzione"
 
 msgid "Failed to record gauge"
 msgstr "Impossibile registrare lo strumento di misura"
@@ -10387,6 +10443,9 @@ msgstr "Gli ID e le descrizioni vengono generati per le materie prime."
 msgid "If"
 msgstr "Se"
 
+msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
+msgstr "Se l'ammortamento è già stato eseguito, la prossima esecuzione recupera i mesi che un asset con Quote costanti ha preso al vecchio costo."
+
 msgid "If it can't wait for the next call, the leads on both sides decide."
 msgstr "Se non può aspettare la prossima call, i responsabili da entrambi i lati decidono."
 
@@ -11438,11 +11497,21 @@ msgstr "Cognome"
 msgid "Last Name"
 msgstr "Cognome"
 
+#. placeholder {0}: record.error
+msgid "Last push {when} failed: {0}"
+msgstr ""
+
+msgid "Last push {when}:"
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "Ultimo Trimestre"
 
 msgid "Last Run"
 msgstr "Ultima esecuzione"
+
+msgid "Last scheduled push {when}:"
+msgstr ""
 
 msgid "Last synced: <0/>"
 msgstr "Ultimo sincronismo: <0/>"
@@ -12151,9 +12220,6 @@ msgstr "Contrassegna ambito come concordato"
 msgid "Mark Short"
 msgstr "Segna come incompleto"
 
-msgid "Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle."
-msgstr "Contrassegna l'unità come consegnata al cliente oggi. Va a noleggio oggi; la fatturazione segue la Data di inizio dell'accordo e il ciclo."
-
 msgid "Mark to delete"
 msgstr "Segna per eliminare"
 
@@ -12401,8 +12467,8 @@ msgstr "Messaggio"
 msgid "Metadata"
 msgstr "Metadati"
 
-msgid "Meter Reading"
-msgstr "Lettura del contatore"
+msgid "Meter"
+msgstr "Contatore"
 
 msgid "Method"
 msgstr "Metodo"
@@ -12610,6 +12676,9 @@ msgstr "Altre opzioni"
 msgid "More overtime"
 msgstr "Più straordinario"
 
+msgid "More records are waiting. Push again to continue."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "Mattino, {name}."
 
@@ -12621,6 +12690,9 @@ msgstr "La maggior parte dei problemi viene identificata e risolta qui. Nominala
 
 msgid "Motion"
 msgstr "Movimento"
+
+msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
+msgstr ""
 
 msgid "Move"
 msgstr "Sposta"
@@ -13349,6 +13421,9 @@ msgstr "Nessun percorso libero da collisioni"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Nessun commento ancora. Sii il primo ad aggiungere un commento."
 
+msgid "No companies match \"{query}\""
+msgstr ""
+
 msgid "No completed jobs within range"
 msgstr "Nessun ordine di produzione completato entro l'intervallo"
 
@@ -13366,6 +13441,9 @@ msgstr "Nessuna condizione può corrispondere"
 
 msgid "No conversion is required"
 msgstr "Nessuna conversione richiesta"
+
+msgid "No cost"
+msgstr "Nessun costo"
 
 msgid "No cost has been recorded against this asset yet."
 msgstr "Non è stato registrato alcun costo su questo asset."
@@ -13938,6 +14016,9 @@ msgstr "Non configurato"
 msgid "Not Configured"
 msgstr "Non Configurato"
 
+msgid "Not delivered"
+msgstr "Non consegnato"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Non ci sono abbastanza ordini di produzione per coprire la quantità"
 
@@ -13985,9 +14066,6 @@ msgstr "Non lavora oggi"
 
 msgid "Not yet"
 msgstr "Non ancora"
-
-msgid "Not you?"
-msgstr "Non sei tu?"
 
 msgid "Note"
 msgstr "Nota"
@@ -14101,6 +14179,9 @@ msgstr "Disattivato — gestito al di fuori della sincronizzazione"
 
 msgid "Off — released revisions stay editable"
 msgstr "Disattivato — le revisioni rilasciate rimangono modificabili"
+
+msgid "Offset Account"
+msgstr "Conto di compensazione"
 
 msgid "ok"
 msgstr "ok"
@@ -14629,6 +14710,9 @@ msgstr "Data dell'ordine"
 msgid "Order Multiple"
 msgstr "Multiplo d'Ordine"
 
+msgid "Order Multiple:"
+msgstr "Multiplo d'ordine:"
+
 msgid "Order Parts"
 msgstr "Ordina Componenti"
 
@@ -14921,6 +15005,12 @@ msgstr "Sostituzione Pezzo"
 msgid "Partial"
 msgstr "Parziale"
 
+msgid "Partially Delivered"
+msgstr "Consegna Parziale"
+
+msgid "Partially Returned"
+msgstr "Restituzione Parziale"
+
 msgid "Partly Recognized"
 msgstr "Parzialmente riconosciuto"
 
@@ -15155,9 +15245,6 @@ msgstr "Telefono"
 msgid "Phone Number"
 msgstr "Numero di telefono"
 
-msgid "Photo removed successfully"
-msgstr "Foto rimossa con successo"
-
 msgid "Photo uploaded successfully"
 msgstr "Foto caricata con successo"
 
@@ -15199,6 +15286,9 @@ msgstr "Scegli un tipo di record…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Seleziona un passo dall'elenco per modificare i dettagli, i componenti e i materiali."
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Scegli uno stile e un avatar, o mescola per vederne di nuovi."
 
 msgid "Pick a target date to compare."
 msgstr "Seleziona una data di destinazione da confrontare."
@@ -16730,6 +16820,13 @@ msgstr "Registri"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "I record e le prime note registrate vengono inviate e ricevute da questo provider."
 
+msgid "Recost"
+msgstr "Ricalcola il costo"
+
+#. placeholder {0}: recostItem.readableId ?? ""
+msgid "Recost {0}"
+msgstr "Ricalcola il costo {0}"
+
 msgid "Recovery Period"
 msgstr "Registrare"
 
@@ -16853,6 +16950,9 @@ msgstr "Cronologia relativa · date da confermare"
 msgid "Release"
 msgstr "Rilascio"
 
+msgid "Release {unitLabel}"
+msgstr "Rilascia {unitLabel}"
+
 msgid "Release Batch"
 msgstr "Rilascia lotto"
 
@@ -16870,6 +16970,9 @@ msgstr "Controllo rilascio"
 msgid "Release Control"
 msgstr "Controllo Rilascio"
 
+msgid "Release date"
+msgstr "Data di rilascio"
+
 msgid "Release Job"
 msgstr "Rilascia Commessa"
 
@@ -16881,6 +16984,9 @@ msgstr "Rilascia Ordini di produzione"
 
 msgid "Release purchase order {target} by {date}"
 msgstr "Rilascia ordine di acquisto {target} entro {date}"
+
+msgid "Release unit"
+msgstr "Rilascia unità"
 
 msgid "Released"
 msgstr "Rilasciato"
@@ -17083,6 +17189,9 @@ msgstr "Tariffe di noleggio"
 
 msgid "Rental Site"
 msgstr "Sito di noleggio"
+
+msgid "Rental Units"
+msgstr "Unità in Noleggio"
 
 msgid "Rental Utilization"
 msgstr "Utilizzo dei noleggi"
@@ -17450,12 +17559,6 @@ msgstr "Riprova ripristino"
 msgid "Return"
 msgstr "Restituzione"
 
-msgid "Return {unitLabel}"
-msgstr "Restituzione {unitLabel}"
-
-msgid "Return Date"
-msgstr "Data di restituzione"
-
 msgid "Return Home"
 msgstr "Torna alla Home"
 
@@ -17464,9 +17567,6 @@ msgstr "ID Reso"
 
 msgid "Return Location"
 msgstr "Ubicazione Reso"
-
-msgid "Return Notes"
-msgstr "Note di restituzione"
 
 msgid "Return Number"
 msgstr "Numero Reso"
@@ -17495,9 +17595,6 @@ msgstr "Restituisci al magazzino"
 msgid "Return to Service"
 msgstr "Ritorno in servizio"
 
-msgid "Return Unit"
-msgstr "Unità di restituzione"
-
 msgid "returnable"
 msgstr "restituibile"
 
@@ -17509,6 +17606,9 @@ msgstr "Lotto Restituito"
 
 msgid "Returned goods re-enter inventory at zero value"
 msgstr "I beni restituiti rientrano in inventario con valore zero"
+
+msgid "Returned on"
+msgstr "Restituito il"
 
 msgid "Returned serial numbers"
 msgstr "Numeri di serie restituiti"
@@ -18347,6 +18447,9 @@ msgstr "Cerca eventi..."
 msgid "Search fields..."
 msgstr "Cerca campi..."
 
+msgid "Search for a company"
+msgstr ""
+
 msgid "Search for existing or create a new one"
 msgstr "Cerca uno esistente o creane uno nuovo"
 
@@ -18906,6 +19009,12 @@ msgstr "Imposta la versione {0} come versione attiva?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Imposta la tua ubicazione predefinita nelle impostazioni del profilo per scegliere un'unità di stoccaggio."
 
+msgid "Sets what this unit is carried at in inventory."
+msgstr "Definisce il valore con cui questa unità è riportata nel magazzino."
+
+msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
+msgstr "Definisce il valore con cui questa unità è riportata nel magazzino. La differenza è registrata tra il magazzino e il conto da cui è stato speso il costo: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
+
 msgid "Settings"
 msgstr "Impostazioni"
 
@@ -19272,6 +19381,9 @@ msgstr "Mostrato al cliente sulla fattura"
 msgid "Shown to the user when this rule fails."
 msgstr "Mostrato all'utente quando questa regola fallisce."
 
+msgid "Shuffle"
+msgstr "Mescola"
+
 msgid "Sign in to Carbon"
 msgstr "Accedi a Carbon"
 
@@ -19407,6 +19519,9 @@ msgstr "Alcuni record non torneranno. Digita <0>{CONFIRM_WORD}</0> per continuar
 
 msgid "Some Shifts"
 msgstr "Alcuni turni"
+
+msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+msgstr "Qualcuno che può aggiornare la contabilità deve inserire il costo di produzione prima che possa essere capitalizzato."
 
 msgid "Something went wrong. Please try again."
 msgstr "Qualcosa è andato storto. Riprova."
@@ -19606,6 +19721,9 @@ msgstr "Inizia con"
 
 msgid "Started"
 msgstr "Iniziato"
+
+msgid "Starting"
+msgstr ""
 
 msgid "Starting…"
 msgstr "Avvio in corso…"
@@ -19838,6 +19956,9 @@ msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazi
 
 msgid "Structure"
 msgstr ""
+
+msgid "Style default"
+msgstr "Predefinito dello stile"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stile dell'output kanban da mostrare nella tabella Kanban"
@@ -20540,9 +20661,6 @@ msgstr "Il record di sola aggiunta di ogni movimento di inventario; la giacenza 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "L'asset si sposta nella sua classe in servizio e inizia l'ammortamento dalla data di messa in servizio."
 
-msgid "The asset would be worth nothing. Set a unit cost on the item, then capitalize it."
-msgstr "L'attività non avrebbe valore. Impostare un costo unitario sull'articolo, quindi capitalizzarlo."
-
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "L'autorizzazione è stata rifiutata in Onshape. Salva le impostazioni di integrazione per riprovare."
 
@@ -20783,9 +20901,6 @@ msgstr "Il conto spese a cui questa riga di spesa indiretta viene contabilizzata
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Il file caricato e le mappature effettuate andranno persi."
-
-msgid "The final billing period is re-cut to the return date. A period already billed in advance gets an adjustment for the unused days."
-msgstr "Il periodo di fatturazione finale viene ricalcolato alla data di restituzione. Un periodo già fatturato in anticipo riceve una rettifica per i giorni non utilizzati."
 
 msgid "the first 3 to 4 weeks"
 msgstr "le prime 3-4 settimane"
@@ -21137,6 +21252,18 @@ msgstr "Il provider non offre target di dimensione. Abilita prima la funzione ne
 msgid "The purchase order"
 msgstr "L'ordine di acquisto"
 
+msgid "The push to Mount did not start. Try again."
+msgstr ""
+
+msgid "The push to Mount failed"
+msgstr ""
+
+msgid "The push to Mount finished"
+msgstr ""
+
+msgid "The push to Mount finished. Some records need attention"
+msgstr ""
+
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "I punti di rottura della quantità a cui questa riga è quotata; ogni colonna ha il proprio prezzo unitario per la negoziazione acquirente-fornitore e per la conversione a documenti a valle."
 
@@ -21381,15 +21508,8 @@ msgstr "L'unità in cui è espresso un tempo di ciclo di lavorazione, come Ore/P
 msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "L'unità e le sue tariffe sono fisse una volta che l'accordo è attivato."
 
-#. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
-msgstr "L'unità può essere restituita alla data di fine o successivamente, {0}. Terminare un noleggio trattato come una vendita in anticipo è una prima nota manuale."
-
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "L'unità torna a giacenza al suo valore contabile netto e l'asset viene chiuso senza utili o perdite."
-
-msgid "The unit goes to maintenance instead of back to available."
-msgstr "L'unità va in manutenzione invece di tornare disponibile."
 
 msgid "The unit has no other use to you once the term ends."
 msgstr "L'unità non ha altri usi per te una volta terminato il termine."
@@ -21399,6 +21519,9 @@ msgstr "L'unità viene rimossa dalla disponibilità finché non viene ritornata 
 
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "L'unità esce dalla giacenza e diventa un'attività al costo al quale il magazzino la tiene."
+
+msgid "The unit never left the yard. Billing stops on the release date, and the unit is free again."
+msgstr "L'unità non ha mai lasciato il cantiere. La fatturazione si ferma alla data di rilascio e l'unità è di nuovo libera."
 
 msgid "The unit price of the item at the time of the purchase"
 msgstr "Il prezzo unitario dell'articolo al momento dell'acquisto"
@@ -21727,9 +21850,6 @@ msgstr "Questo Trimestre"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Questo rimuove la loro app autenticatore, quindi il loro prossimo accesso ha bisogno solo di un collegamento magico. Usalo quando hanno perso l'accesso al loro autenticatore. Influisce sul loro accesso per ogni azienda a cui appartengono."
 
-msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "Questo noleggio è trattato come una vendita. L'investimento netto di chiusura torna nello stato patrimoniale con l'unità e il programma degli interessi non registrato viene rimosso."
-
 msgid "This resets {resets} edited invoices from {effectiveDate}"
 msgstr "Questo ripristina {resets} fatture modificate da {effectiveDate}"
 
@@ -21998,6 +22118,9 @@ msgstr "A data"
 
 msgid "To deactivate, use the row menu and choose Deactivate Account."
 msgstr "Per disattivare, usa il menu della riga e scegli Disattiva Account."
+
+msgid "To Deliver"
+msgstr "Da Consegnare"
 
 msgid "To Location"
 msgstr "Ubicazione di destinazione"
@@ -22362,6 +22485,9 @@ msgstr "Attivato da"
 
 msgid "Triggers"
 msgstr "Trigger"
+
+msgid "Try a different name."
+msgstr ""
 
 msgid "Tuesday"
 msgstr "Martedì"

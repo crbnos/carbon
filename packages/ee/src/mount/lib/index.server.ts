@@ -4,7 +4,9 @@
 
 export * from "./client";
 export * from "./constants";
+export * from "./errors";
 export * from "./mappers";
+export * from "./outcome";
 export * from "./publish";
 export * from "./push";
 export * from "./run";

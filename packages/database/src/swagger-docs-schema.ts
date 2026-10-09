@@ -73279,6 +73279,9 @@ export default {
             $ref: "#/parameters/rowFilter.attributeDataType.isFile"
           },
           {
+            $ref: "#/parameters/rowFilter.attributeDataType.isLink"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -73371,6 +73374,9 @@ export default {
             $ref: "#/parameters/rowFilter.attributeDataType.isFile"
           },
           {
+            $ref: "#/parameters/rowFilter.attributeDataType.isLink"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -73415,6 +73421,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.attributeDataType.isFile"
+          },
+          {
+            $ref: "#/parameters/rowFilter.attributeDataType.isLink"
           },
           {
             $ref: "#/parameters/body.attributeDataType"
@@ -120359,13 +120368,13 @@ export default {
           type: "string"
         },
         type: {
-          enum: ["Capitalization", "Return to Inventory"],
+          enum: ["Capitalization", "Return to Inventory", "Cost Adjustment"],
           format: 'public."fixedAssetTransferType"',
           type: "string"
         },
         sourceType: {
           default: "Inventory",
-          enum: ["Inventory", "Job", "Construction in Progress"],
+          enum: ["Inventory", "Job", "Construction in Progress", "Manual"],
           format: 'public."fixedAssetTransferSourceType"',
           type: "string"
         },
@@ -149155,7 +149164,8 @@ export default {
         "isUser",
         "isCustomer",
         "isSupplier",
-        "isFile"
+        "isFile",
+        "isLink"
       ],
       properties: {
         id: {
@@ -149208,6 +149218,11 @@ export default {
           type: "boolean"
         },
         isFile: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        isLink: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -201648,6 +201663,12 @@ export default {
     },
     "rowFilter.attributeDataType.isFile": {
       name: "isFile",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.attributeDataType.isLink": {
+      name: "isLink",
       required: false,
       in: "query",
       type: "string"

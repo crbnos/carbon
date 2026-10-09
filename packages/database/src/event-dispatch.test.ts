@@ -38,3 +38,29 @@ describe.each(files)("%s", (file) => {
     expect(columns.sort()).toEqual([...auditConfig.skipFields].sort());
   });
 });
+
+describe("dispatch_event_batch recordId", () => {
+  const read = (name: string) =>
+    readFileSync(
+      fileURLToPath(
+        new URL(`event-system/functions/${name}.sql`, import.meta.url)
+      ),
+      "utf8"
+    );
+
+  // Behaviour is proven against a database, for every evented table, by
+  // supabase/tests/event-record-id.test.sql. These keep the two edits that
+  // test depends on from being reverted where no database runs.
+  it("is built from the whole primary key, not one column of it", () => {
+    const sql = read("dispatch_event_batch");
+    expect(sql).toContain("pk_columns := public.get_primary_key_columns(");
+    expect(sql.match(/''recordId'', %s,/g)).toHaveLength(3);
+    expect(sql).toContain("IF 'id' = ANY(pk_columns)");
+  });
+
+  it("reads a unique index's key columns from position 0", () => {
+    const sql = read("get_primary_key_columns");
+    expect(sql).toContain("[0:i.indnkeyatts - 1]");
+    expect(sql).not.toContain("[1:i.indnkeyatts]");
+  });
+});

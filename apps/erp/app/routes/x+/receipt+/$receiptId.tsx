@@ -19,7 +19,9 @@ import {
   getReceiptLines,
   getReceiptRelatedItems,
   getReceiptTracking,
-  getShelfLifeForItems
+  getRentalReceiptLines,
+  getShelfLifeForItems,
+  type RentalReceiptLine
 } from "~/modules/inventory";
 import {
   ReceiptDocuments,
@@ -109,7 +111,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         "id, purchaseOrderLineId, received, serialNumber, purchaseOrderLine:purchaseOrderLineId(assetId, description, fixedAsset:assetId(name, fixedAssetId, serialNumber))"
       )
       .eq("receiptId", receiptId)
-      .eq("companyId", companyId);
+      .eq("companyId", companyId)
+      .not("purchaseOrderLineId", "is", null);
 
     fixedAssetLines = (faLineRecords.data ?? [])
       .filter((row) => {
@@ -131,11 +134,66 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
   }
 
+  let rentalLines: RentalReceiptLine[] = [];
+
+  if (receipt.data.sourceDocument === "Rental Agreement") {
+    // Service role: rentalAgreementLine needs sales_view, which an inventory
+    // user may not hold.
+    const rentalLineRecords = await getRentalReceiptLines(
+      serviceRole,
+      receiptId,
+      companyId
+    );
+    if (rentalLineRecords.error) {
+      throw redirect(
+        path.to.receipts,
+        await flash(
+          request,
+          error(rentalLineRecords.error, "Failed to load the rental units")
+        )
+      );
+    }
+
+    rentalLines = (rentalLineRecords.data ?? []).map((row) => {
+      // The read filters out rows with no rental line.
+      const line = row.rentalAgreementLine!;
+      return {
+        id: row.id,
+        rentalAgreementLineId: row.rentalAgreementLineId!,
+        received: row.received,
+        meter: row.meter === null ? null : Number(row.meter),
+        notes: row.notes,
+        takeOutOfService: row.takeOutOfService,
+        outOfServiceReason: row.outOfServiceReason,
+        // A CHECK constraint holds the column to these two values.
+        residualDestination:
+          row.residualDestination as RentalReceiptLine["residualDestination"],
+        lessorClassification: line.lessorClassification ?? null,
+        unitName: line.fixedAsset?.name ?? line.item?.name ?? "Rental unit",
+        thumbnailPath: line.item?.thumbnailPath ?? null,
+        itemType: line.item?.type ?? null,
+        assetReadableId: line.fixedAsset?.fixedAssetId ?? null,
+        serialNumber:
+          line.fixedAsset?.serialNumber ??
+          line.trackedEntity?.readableId ??
+          null,
+        lineStatus: line.status
+      };
+    });
+    // By unit, like ordinary lines by part number, so the list holds still.
+    rentalLines.sort((a, b) =>
+      (a.assetReadableId ?? a.unitName).localeCompare(
+        b.assetReadableId ?? b.unitName
+      )
+    );
+  }
+
   return {
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
     receiptInspections: receiptInspections.data ?? [],
     fixedAssetLines,
+    rentalLines,
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
     receiptLineTracking: receiptLineTracking.data ?? [],
     batchProperties:

@@ -35,6 +35,8 @@ export default defineConfig(({ isSsrBuild }) => ({
       "react-icons",
       "react-phone-number-input",
       "tailwind-merge",
+      // Avatar styles are JSON loaded with import(); see apps/erp/vite.config.ts.
+      "@dicebear/styles",
     ],
   },
   server: {

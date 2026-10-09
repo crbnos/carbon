@@ -3,14 +3,14 @@ title: Receipts
 description: "Goods coming in: receiving against a purchase order and posting to inventory."
 ---
 
-A **receipt** records incoming goods from a <Term id="purchase-order">purchase order</Term> or inbound transfer. <Term id="posting">Posting</Term> the receipt adds the delivery to stock on hand.
+A **receipt** records incoming goods from a <Term id="purchase-order">purchase order</Term>, an inbound transfer, or a [rental agreement](/docs/reference/rental-agreements). <Term id="posting">Posting</Term> the receipt adds the delivery to stock on hand.
 
 Each receipt line references the purchase-order line it fulfills. Posting increases inventory and the order line's received quantity. When accounting is enabled, it debits inventory—or <Term id="wip">work-in-process</Term> for outside processing—and credits a <Term id="gr-ir">goods-received-not-invoiced</Term> accrual that the supplier invoice later clears.
 
 ## Fields
 
 <FieldTable>
-  <Field name="Source document" type="reference">The purchase order (or transfer) being received.</Field>
+  <Field name="Source document" type="reference">The purchase order, transfer, or rental agreement being received. A rental receipt keeps its agreement: create it from the agreement's **"Return"** button, not by changing the source.</Field>
   <Field name="Received quantity" type="number">Units on this receipt, per line.</Field>
   <Field name="Conversion factor" type="number">Converts the supplier's purchase unit to the stock unit.</Field>
   <Field name="Location" type="reference">Where the goods land.</Field>
@@ -29,6 +29,14 @@ Each receipt line references the purchase-order line it fulfills. Posting increa
 Receive an item flagged for inspection and its units land **On Hold**, with an inbound inspection opened at *Pending* — they don't become available stock until the inspection clears.
 </Callout>
 
+## Rental receipts
+
+A receipt from a rental agreement brings fleet units back. It lists every unit on rent, ticked, and every unit not yet delivered, unticked. Each row takes a **"Meter"** reading, **"Notes"**, and a **"Take out of service"** switch with a reason. A unit treated as a sale also needs **"Return To"**: the rental fleet or inventory.
+
+The post dialog asks for **"Returned on"**, which cannot be later than today. Posting ends each ticked unit's rental on that date and records the unit at the receipt's location. The rows are read-only from then on. A unit treated as a rental stays a fixed asset, so it writes no inventory movement and no journal entry. A posted rental receipt cannot be voided.
+
+<Screenshot label="Draft rental receipt listing fleet units with tick boxes, Meter, Notes and Take out of service" caption="A rental receipt: units on rent are ticked, units not yet delivered are not." />
+
 ## Related
 
 <Cards>
@@ -37,6 +45,9 @@ Receive an item flagged for inspection and its units land **On Hold**, with an i
   </Card>
   <Card title="Purchase orders" href="/docs/reference/purchase-orders">
     The document a receipt advances.
+  </Card>
+  <Card title="Rental agreements" href="/docs/reference/rental-agreements">
+    Units returned on a rental receipt.
   </Card>
 </Cards>
 
@@ -53,6 +64,12 @@ A batch-tracked line has no batch number assigned. Fill in the batch number in t
 
 ### "Serial numbers are missing"
 A serial-tracked line has fewer serial numbers entered than its received quantity. Every received unit needs a serial number before the receipt can post.
+
+### "A rental return cannot be voided. Correct the unit by hand."
+A posted rental receipt (source Rental Agreement) is never voided: the return re-cut the unit's billing and may have booked a residual return. Fix the agreement line and asset by hand.
+
+### "A posted receipt can no longer be changed"
+A unit row on a rental receipt was edited after the receipt left Draft. Its meter, notes and out-of-service choice are a record once posted; correct the unit on its agreement or asset instead.
 
 ### "Can only void posted receipts"
 Voiding applies only to a receipt at **"Posted"**. A Draft or Pending receipt can be edited or deleted instead — there is nothing to reverse yet.

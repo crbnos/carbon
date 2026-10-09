@@ -30,6 +30,7 @@ import { CgProfile } from "react-icons/cg";
 import {
   LuContainer,
   LuGripVertical,
+  LuLink,
   LuPencil,
   LuSquareUser,
   LuTrash
@@ -262,6 +263,7 @@ function getIcon(props: AttributeDataType) {
     isDate,
     isNumeric,
     isText,
+    isLink,
     isUser,
     isCustomer,
     isSupplier
@@ -270,6 +272,7 @@ function getIcon(props: AttributeDataType) {
   if (isDate) return <BsCalendarDate />;
   if (isNumeric) return <AiOutlineNumber />;
   if (isText) return <BiText />;
+  if (isLink) return <LuLink />;
   if (isUser) return <CgProfile />;
   if (isCustomer) return <LuSquareUser />;
   if (isSupplier) return <LuContainer />;

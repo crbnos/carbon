@@ -12,8 +12,18 @@ import type {
 } from "../../../template";
 import type { Company } from "../../../types";
 
+/** One rental unit on a Delivery Ticket. */
+export type PackingSlipRentalUnit = {
+  id: string;
+  name: string;
+  assetReadableId: string | null;
+  serialNumber: string | null;
+};
+
 /** Everything a Packing Slip block renderer might need. */
 export interface PackingSlipData {
+  /** "Packing Slip", or "Delivery Ticket" for a rental shipment. */
+  title: string;
   company: Company;
   locale: string;
   customer:
@@ -29,6 +39,8 @@ export interface PackingSlipData {
   shippingMethod: { id: string; name: string };
   terms: JSONContent;
   trackedEntities: Database["public"]["Tables"]["trackedEntity"]["Row"][];
+  /** A rental shipment's units; when present they replace the shipment lines. */
+  rentalUnits?: PackingSlipRentalUnit[];
   thumbnails?: Record<string, string | null>;
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;

@@ -8,7 +8,9 @@ import {
   CLOSED_JOB_STATUSES,
   postAssetTransferInput,
   RETURNABLE_ASSET_STATUSES,
-  resolveCapitalizationStock
+  resolveCapitalizationCost,
+  resolveCapitalizationStock,
+  statusAfterCostAdjustment
 } from "./validators";
 
 it("capitalize accepts the inventory payload with its optional fields absent", () => {
@@ -182,4 +184,101 @@ it("status sets match the plan", () => {
   ]);
   expect(RETURNABLE_ASSET_STATUSES.has("Under Construction")).toEqual(false);
   expect(CLOSED_JOB_STATUSES.has("Paused")).toEqual(false);
+});
+
+it("adjustCost requires a positive amount", () => {
+  const base = {
+    type: "adjustCost",
+    fixedAssetId: "fa_1",
+    locationId: "loc_1",
+    transferDate: "2026-10-08"
+  };
+  expect(postAssetTransferInput.safeParse({ ...base, amount: 0 }).success).toBe(
+    false
+  );
+  expect(
+    postAssetTransferInput.safeParse({ ...base, amount: -5 }).success
+  ).toBe(false);
+  expect(
+    postAssetTransferInput.safeParse({
+      ...base,
+      amount: 1250,
+      offsetAccountId: "acc_re"
+    }).success
+  ).toBe(true);
+});
+
+it("capitalize takes the inventory cost when the unit carries one", () => {
+  expect(
+    resolveCapitalizationCost({
+      carried: 60,
+      entered: null,
+      serial: "SN-1",
+      itemReadableId: "RW"
+    })
+  ).toEqual({ cost: 60, source: "inventory" });
+});
+
+it("capitalize refuses an entered cost for a unit that carries one", () => {
+  const resolved = resolveCapitalizationCost({
+    carried: 60,
+    entered: 90,
+    serial: "SN-1",
+    itemReadableId: "RW"
+  });
+  expect("error" in resolved && resolved.error).toMatch(
+    /SN-1 is carried in inventory at a cost/
+  );
+});
+
+it("capitalize takes the entered cost for a unit carried at zero", () => {
+  expect(
+    resolveCapitalizationCost({
+      carried: 0,
+      entered: 4200,
+      serial: "SN-2",
+      itemReadableId: "RW"
+    })
+  ).toEqual({ cost: 4200, source: "entered" });
+});
+
+it("capitalize refuses a unit carried at zero with no entered cost", () => {
+  const resolved = resolveCapitalizationCost({
+    carried: 0,
+    entered: null,
+    serial: "SN-2",
+    itemReadableId: "RW"
+  });
+  expect("error" in resolved && resolved.error).toMatch(
+    /SN-2 has no cost in inventory/
+  );
+});
+
+it("a Fully Depreciated asset whose cost is raised above its residual returns to Active", () => {
+  // A zero-cost asset a run marked Fully Depreciated, now worth 1,000.
+  expect(
+    statusAfterCostAdjustment({
+      status: "Fully Depreciated",
+      acquisitionCost: 1000,
+      accumulatedDepreciation: 0,
+      residualValuePercent: 20
+    })
+  ).toEqual("Active");
+  // Raised, but still at or below its residual: nothing left to depreciate.
+  expect(
+    statusAfterCostAdjustment({
+      status: "Fully Depreciated",
+      acquisitionCost: 1000,
+      accumulatedDepreciation: 800,
+      residualValuePercent: 20
+    })
+  ).toEqual("Fully Depreciated");
+  expect(
+    statusAfterCostAdjustment({
+      status: "Active",
+      acquisitionCost: 1000,
+      accumulatedDepreciation: 0,
+      residualValuePercent: 0
+    })
+  ).toEqual("Active");
 });

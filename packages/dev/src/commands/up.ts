@@ -136,7 +136,6 @@ export async function up(opts: UpOpts = {}) {
   const shouldRegen = shouldMigrate && (opts.regen ?? true);
   const shouldBorrow = opts.borrow === true;
   const minimal = opts.minimal ?? false;
-  const size = { minimal, full: !minimal && opts.full === true };
   // Services-only mode: boot compose stack + portless aliases (api/studio/
   // mail/inngest URLs still useful), skip spawnApps + auto-`down` on Ctrl+C.
   // Triggered by --no-apps OR by deselecting everything in the picker.
@@ -202,6 +201,11 @@ export async function up(opts: UpOpts = {}) {
   // Fail before booting anything heavy (docker, migrations) if the assembler is
   // selected without its one-time OCCT build.
   if (selectedApps.includes("assembler")) assertAssemblerDepsBuilt();
+  const size: StackSize = {
+    minimal,
+    full: !minimal && opts.full === true,
+    studio: selectedApps.includes("studio")
+  };
   const slug = resolveSlug(root);
 
   // Resolve borrowed slot before ensureSlugAvailable (borrowing doesn't start
@@ -270,7 +274,7 @@ export async function up(opts: UpOpts = {}) {
     ctx.ports,
     selectedApps,
     portless ? ctx.branchPrefix : undefined,
-    size.full
+    size.full || size.studio
   );
   // `box()` derives its padding from `process.stdout.columns`; some
   // non-interactive terminals (e.g. Conductor's run pane) report a width of 0,
@@ -305,7 +309,8 @@ export async function up(opts: UpOpts = {}) {
     return;
   }
 
-  if (selectedApps.length === 0) {
+  // Studio is a compose service, not a process: it alone is still services-only.
+  if (selectedApps.every((id) => id === "studio")) {
     // Services-only: the stack stays up after crbn exits, so let the stripe
     // listener outlive us too (apps mode kills it on teardown instead).
     stripeChild?.unref();
@@ -587,7 +592,9 @@ async function bootDockerStack(ctx: Ctx, size: StackSize) {
     ? "Boot docker compose stack (minimal — no inbucket)"
     : size.full
       ? "Boot docker compose stack (full — with studio/meta/edge-runtime/imgproxy)"
-      : "Boot docker compose stack";
+      : size.studio
+        ? "Boot docker compose stack (with studio/meta)"
+        : "Boot docker compose stack";
   await tasks([
     {
       title: label,
@@ -784,7 +791,9 @@ async function ensureHostsFile() {
 }
 
 function reactRouterApps(selectedApps: AppId[]): AppId[] {
-  return selectedApps.filter((id) => id !== "assembler" && id !== "email");
+  return selectedApps.filter(
+    (id) => id !== "assembler" && id !== "email" && id !== "studio"
+  );
 }
 
 async function runAppsThenTeardown(

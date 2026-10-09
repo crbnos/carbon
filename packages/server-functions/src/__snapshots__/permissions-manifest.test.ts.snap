@@ -70,6 +70,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       "receiptFromPurchaseOrder": {
         "create": "inventory",
       },
+      "receiptFromRentalAgreement": {
+        "create": "inventory",
+      },
       "receiptFromSalesReturnOrder": {
         "create": "inventory",
       },
@@ -86,6 +89,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
         "create": "inventory",
       },
       "shipmentFromPurchaseReturnOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromRentalAgreement": {
         "create": "inventory",
       },
       "shipmentFromSalesOrder": {
@@ -275,7 +281,24 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     },
   },
   "post-asset-transfer": {
-    "create": "accounting",
+    "by": "type",
+    "rules": {
+      "adjustCost": {
+        "update": "accounting",
+      },
+      "attachJob": {
+        "create": "accounting",
+      },
+      "capitalize": {
+        "create": "accounting",
+      },
+      "capitalizeCip": {
+        "create": "accounting",
+      },
+      "return": {
+        "create": "accounting",
+      },
+    },
   },
   "post-charge": {
     "update": "invoicing",
@@ -330,6 +353,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "preview-revenue-recognition-run": {
     "view": "accounting",
   },
+  "preview-serial-unit-costs": {
+    "view": "accounting",
+  },
   "propose-revenue-recognition-run": {
     "create": "accounting",
   },
@@ -337,6 +363,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "update": "production",
   },
   "recalculate-revenue-recognition-run": {
+    "update": "accounting",
+  },
+  "recost-serial-unit": {
     "update": "accounting",
   },
   "reschedule": {

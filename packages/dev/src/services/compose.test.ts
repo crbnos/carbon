@@ -26,6 +26,7 @@ describe("buildDownArgs", () => {
     const bootable = new Set([
       ...profilesIn(buildUpArgs(ROOT, SLUG)),
       ...profilesIn(buildUpArgs(ROOT, SLUG, { full: true })),
+      ...profilesIn(buildUpArgs(ROOT, SLUG, { studio: true })),
       ...profilesIn(buildUpArgs(ROOT, SLUG, { minimal: true }))
     ]);
     const tearable = new Set(profilesIn(buildDownArgs(ROOT, SLUG, false)));
@@ -89,6 +90,19 @@ describe("buildUpArgs", () => {
       "full",
       "mail"
     ]);
+  });
+
+  it("adds only the studio profile when Studio is picked", () => {
+    expect(profilesIn(buildUpArgs(ROOT, SLUG, { studio: true }))).toEqual([
+      "studio",
+      "mail"
+    ]);
+  });
+
+  it("lets --full cover Studio without a second profile", () => {
+    expect(
+      profilesIn(buildUpArgs(ROOT, SLUG, { full: true, studio: true }))
+    ).toEqual(["full", "mail"]);
   });
 
   it("enables no profile under --minimal", () => {
