@@ -14,7 +14,6 @@ import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
 import type {
   ElementVerification,
-  ItemValues,
   logTimeValidator,
   ProjectCopyElement,
   ProjectCopySource,
@@ -33,13 +32,15 @@ import {
   rollUpRequirementStatus
 } from "./projects.models";
 import {
+  getItemNumericCustomFields,
   getLaborCategoriesList,
   getProjectCostSummary,
   getProjectElement,
   getProjectElementComments,
   getProjectElementLinks,
   getProjectElementPlanLines,
-  getProjectElements
+  getProjectElements,
+  getProjectItemValues
 } from "./projects.service";
 import type { ProjectElementLink } from "./types";
 
@@ -706,7 +707,8 @@ export type ProjectVerification = {
  * Loads a project's trace links and computes the verification of its
  * Parameters and Requirements. Pass the unfiltered elements when the caller
  * already has them; a filtered list would leave out the inputs of a value.
- * The linked parts give their unit cost (`itemCost`).
+ * The linked parts give their unit cost and custom field values
+ * (`getProjectItemValues`).
  */
 export async function getProjectVerification(
   client: SupabaseClient<Database>,
@@ -726,33 +728,20 @@ export async function getProjectVerification(
   if (loaded.error) return { data: null, error: loaded.error };
   const elements = (loaded.data ?? []) as VerificationElement[];
 
-  const itemIds = [
-    ...new Set(
-      elements
-        .map((element) => element.itemId)
-        .filter((id): id is string => Boolean(id))
-    )
-  ];
-  const itemValues = new Map<string, ItemValues>();
-  if (itemIds.length > 0) {
-    const costs = await client
-      .from("itemCost")
-      .select("itemId, unitCost")
-      .in("itemId", itemIds)
-      .eq("companyId", args.companyId);
-    if (costs.error) return { data: null, error: costs.error };
-    for (const cost of costs.data ?? []) {
-      itemValues.set(cost.itemId, {
-        unitCost: cost.unitCost === null ? null : Number(cost.unitCost),
-        customFields: null
-      });
-    }
-  }
+  const itemIds = elements
+    .map((element) => element.itemId)
+    .filter((id): id is string => Boolean(id));
+  const itemValues = await getProjectItemValues(
+    client,
+    args.companyId,
+    itemIds
+  );
+  if (itemValues.error) return { data: null, error: itemValues.error };
 
   const verification = computeVerification(
     elements,
     links.data ?? [],
-    itemValues
+    itemValues.data
   );
   return {
     data: {
@@ -1119,6 +1108,42 @@ export async function getProjectElementPage(
     return { data: null, error: qualityDocuments.error };
   }
 
+  // A Parameter reads the nearest linked part: offer its type's Numeric
+  // custom fields as the Part field.
+  let itemFields: { id: string; name: string }[] = [];
+  if (element.data.type === "Parameter") {
+    const byId = new Map((elements.data ?? []).map((e) => [e.id, e]));
+    let current = byId.get(element.data.id);
+    const seen = new Set<string>();
+    let nearestItemId: string | null = null;
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      if (current.itemId) {
+        nearestItemId = current.itemId;
+        break;
+      }
+      current = current.parentId ? byId.get(current.parentId) : undefined;
+    }
+    if (nearestItemId) {
+      const item = await client
+        .from("item")
+        .select("type")
+        .eq("id", nearestItemId)
+        .eq("companyId", args.companyId)
+        .maybeSingle();
+      if (item.error) return { data: null, error: item.error };
+      if (item.data) {
+        const fields = await getItemNumericCustomFields(
+          client,
+          args.companyId,
+          item.data.type
+        );
+        if (fields.error) return { data: null, error: fields.error };
+        itemFields = fields.data ?? [];
+      }
+    }
+  }
+
   // A final asset's asset under construction (or in service), for its status.
   const capitalAsset = element.data.fixedAssetId
     ? await client
@@ -1143,7 +1168,8 @@ export async function getProjectElementPage(
       ledger: timeAndMaterials.ledger,
       openTime: timeAndMaterials.openTime,
       ...verification.data,
-      qualityDocuments: qualityDocuments.data ?? []
+      qualityDocuments: qualityDocuments.data ?? [],
+      itemFields
     },
     error: null
   };

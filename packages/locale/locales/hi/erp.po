@@ -9964,6 +9964,9 @@ msgstr "परिवर्तन तारीख से"
 msgid "From the next billing period"
 msgstr "अगली बिलिंग अवधि से"
 
+msgid "From the part's bill of materials"
+msgstr ""
+
 msgid "From:"
 msgstr "से:"
 
@@ -14290,6 +14293,9 @@ msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
+
+msgid "No serial"
+msgstr ""
 
 msgid "No serial numbers selected yet."
 msgstr "अभी तक कोई सीरियल नंबर चयनित नहीं।"

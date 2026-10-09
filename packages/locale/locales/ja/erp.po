@@ -9964,6 +9964,9 @@ msgstr "変更日から"
 msgid "From the next billing period"
 msgstr "次の請求期間から"
 
+msgid "From the part's bill of materials"
+msgstr ""
+
 msgid "From:"
 msgstr "開始："
 
@@ -14290,6 +14293,9 @@ msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "このウィンドウにはスケジュール済みの作業がありません"
+
+msgid "No serial"
+msgstr ""
 
 msgid "No serial numbers selected yet."
 msgstr "シリアル番号がまだ選択されていません。"

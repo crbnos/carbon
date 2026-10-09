@@ -2,15 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, Combobox, Copy, cn, Subheading, Switch } from "@carbon/react";
+import { Button, Copy, cn, Subheading, Switch } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { LuBuilding2 } from "react-icons/lu";
 import { Link } from "react-router";
 import { usePermissions } from "~/hooks";
 import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
-import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ProjectCostTreatment } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
@@ -29,6 +28,7 @@ import {
   ElementTypeIcon,
   useElementTypeLabels
 } from "../Elements/ElementTypeIcon";
+import { PartLink } from "./PartLink";
 import { PlaceInServiceModal } from "./PlaceInServiceModal";
 
 type Element = ProjectElementPage["element"];
@@ -168,12 +168,11 @@ export function ElementSidebar({
           )}
         </>
       )}
-      {element.type === "System" && (
+      {element.type !== "Parameter" && (
         <Property label={t`Linked part`}>
-          <LinkedPart
+          <PartLink
             projectId={projectId}
-            elementId={element.id}
-            itemId={element.itemId}
+            element={element}
             isDisabled={isDisabled}
           />
         </Property>
@@ -291,51 +290,6 @@ function CapitalAssetLink({
           onClose={() => setPlacing(false)}
         />
       )}
-    </div>
-  );
-}
-
-function LinkedPart({
-  projectId,
-  elementId,
-  itemId,
-  isDisabled
-}: {
-  projectId: string;
-  elementId: string;
-  itemId: string | null;
-  isDisabled: boolean;
-}) {
-  const { t } = useLingui();
-  const [items] = useItems();
-  const { pending, submit } = useElementField(projectId, elementId, "itemId");
-  const value = pending === undefined ? itemId : pending;
-  const options = useMemo(
-    () =>
-      items
-        .filter((item) => item.active || item.id === value)
-        .map((item) => ({
-          value: item.id,
-          label: item.readableIdWithRevision,
-          helper: item.name
-        })),
-    [items, value]
-  );
-
-  return (
-    <div className="w-full">
-      <Combobox
-        asButton
-        size="sm"
-        value={value ?? ""}
-        options={options}
-        isClearable
-        isReadOnly={isDisabled}
-        placeholder={t`No part`}
-        onChange={(next) => {
-          if ((next || null) !== value) submit(next || null);
-        }}
-      />
     </div>
   );
 }

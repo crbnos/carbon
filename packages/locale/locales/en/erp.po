@@ -9964,6 +9964,9 @@ msgstr "From the change date"
 msgid "From the next billing period"
 msgstr "From the next billing period"
 
+msgid "From the part's bill of materials"
+msgstr "From the part's bill of materials"
+
 msgid "From:"
 msgstr "From:"
 
@@ -14290,6 +14293,9 @@ msgstr "No saved views"
 
 msgid "No scheduled work in this window"
 msgstr "No scheduled work in this window"
+
+msgid "No serial"
+msgstr "No serial"
 
 msgid "No serial numbers selected yet."
 msgstr "No serial numbers selected yet."

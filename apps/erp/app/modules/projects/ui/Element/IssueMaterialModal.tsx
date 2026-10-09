@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { useControlField, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Alert,
@@ -34,6 +34,7 @@ import {
   Submit
 } from "~/components/Form";
 import { useUser } from "~/hooks";
+import { getMethodMaterialsByMakeMethod } from "~/modules/items/items.service";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { projectIssueDirections } from "../../projects.models";
@@ -125,6 +126,98 @@ function useTrackedEntityOptions(args: {
   return options;
 }
 
+/** The methodMaterial types an issue can stand in for: picked and bought. */
+const ISSUABLE_METHOD_TYPES = ["Pull from Inventory", "Purchase to Order"];
+
+/**
+ * The item ids of the linked part's bill of materials that an issue can
+ * stand in for, in BOM order. Reads the active make method, then its
+ * materials in one call.
+ */
+function useBomMaterialIds(itemId: string | null | undefined) {
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const [itemIds, setItemIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!carbon || !itemId) {
+      setItemIds([]);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      const makeMethod = await carbon
+        .from("activeMakeMethods")
+        .select("id")
+        .eq("itemId", itemId)
+        .eq("companyId", company.id)
+        .maybeSingle();
+      if (cancelled || !makeMethod.data?.id) {
+        if (!cancelled) setItemIds([]);
+        return;
+      }
+      const materials = await getMethodMaterialsByMakeMethod(
+        carbon,
+        makeMethod.data.id
+      );
+      if (cancelled) return;
+      setItemIds([
+        ...new Set(
+          (materials.data ?? [])
+            .filter((material) =>
+              ISSUABLE_METHOD_TYPES.includes(material.methodType)
+            )
+            .map((material) => material.itemId)
+        )
+      ]);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, company.id, itemId]);
+
+  return itemIds;
+}
+
+/** One-click picks from the linked part's bill of materials. */
+function BomMaterialPicks({
+  itemIds,
+  onPick
+}: {
+  itemIds: string[];
+  onPick: (itemId: string) => void;
+}) {
+  const [items] = useItems();
+  const [, setItemId] = useControlField<string>("itemId");
+  const rows = itemIds
+    .map((id) => items.find((item) => item.id === id))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  if (rows.length === 0) return null;
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <span className="text-xs text-muted-foreground">
+        <Trans>From the part's bill of materials</Trans>
+      </span>
+      <div className="flex flex-wrap gap-1">
+        {rows.map((item) => (
+          <Button
+            key={item.id}
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setItemId(item.id);
+              onPick(item.id);
+            }}
+          >
+            <span className="font-mono">{item.readableIdWithRevision}</span>
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Issues stock to a project, or returns it. Opened from an element, the
  * charge number is fixed to it; opened from Inventory, the user picks it.
@@ -138,7 +231,13 @@ export function IssueMaterialModal({
 }: {
   /** Fixed charge number; leave both out to pick one (Inventory). */
   projectId?: string;
-  element?: { id: string; readableId: string; name: string };
+  element?: {
+    id: string;
+    readableId: string;
+    name: string;
+    /** The linked part: its BOM materials are offered first. */
+    itemId?: string | null;
+  };
   defaultLocationId?: string | null;
   onClose: () => void;
 }) {
@@ -181,6 +280,11 @@ export function IssueMaterialModal({
   });
 
   const isFixed = Boolean(projectId);
+  const bomItemIds = useBomMaterialIds(element?.itemId);
+  const stockedBomItemIds = useMemo(
+    () => bomItemIds.filter((id) => stockedItemIds.includes(id)),
+    [bomItemIds, stockedItemIds]
+  );
 
   return (
     <Modal open onOpenChange={(open) => !open && onClose()}>
@@ -239,6 +343,10 @@ export function IssueMaterialModal({
                 onChange={(option) =>
                   setDirection((option?.value as Direction) ?? "Issue")
                 }
+              />
+              <BomMaterialPicks
+                itemIds={stockedBomItemIds}
+                onPick={setItemId}
               />
               <Item
                 name="itemId"

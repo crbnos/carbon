@@ -50,6 +50,7 @@ type ElementTypeBlockProps = {
   verification: ProjectElementPage["verification"];
   requirementStatus: ProjectElementPage["requirementStatus"];
   qualityDocuments: ProjectElementPage["qualityDocuments"];
+  itemFields: ProjectElementPage["itemFields"];
   isDisabled: boolean;
 };
 
@@ -449,6 +450,7 @@ function ParameterBlock({
   element,
   elements,
   verification,
+  itemFields,
   isDisabled
 }: ElementTypeBlockProps) {
   const { t } = useLingui();
@@ -551,7 +553,13 @@ function ParameterBlock({
             value={element.parameterItemField ?? PARAMETER_ITEM_UNIT_COST}
             placeholder={t`Choose a field`}
             isClearable={false}
-            options={[{ value: PARAMETER_ITEM_UNIT_COST, label: t`Unit cost` }]}
+            options={[
+              { value: PARAMETER_ITEM_UNIT_COST, label: t`Unit cost` },
+              ...itemFields.map((field) => ({
+                value: field.id,
+                label: field.name
+              }))
+            ]}
           />
         </Row>
       )}

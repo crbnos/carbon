@@ -9964,6 +9964,9 @@ msgstr "A partir da data da alteração"
 msgid "From the next billing period"
 msgstr "A partir do próximo período de faturamento"
 
+msgid "From the part's bill of materials"
+msgstr ""
+
 msgid "From:"
 msgstr "De:"
 
@@ -14290,6 +14293,9 @@ msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "Nenhum trabalho programado nesta janela"
+
+msgid "No serial"
+msgstr ""
 
 msgid "No serial numbers selected yet."
 msgstr "Nenhum número de série selecionado ainda."

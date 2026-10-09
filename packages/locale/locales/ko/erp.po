@@ -9964,6 +9964,9 @@ msgstr "변경일부터"
 msgid "From the next billing period"
 msgstr "다음 청구 기간부터"
 
+msgid "From the part's bill of materials"
+msgstr ""
+
 msgid "From:"
 msgstr "시작:"
 
@@ -14290,6 +14293,9 @@ msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "이 시간대에 스케줄된 작업이 없습니다"
+
+msgid "No serial"
+msgstr ""
 
 msgid "No serial numbers selected yet."
 msgstr "아직 선택된 시리얼 번호가 없습니다."

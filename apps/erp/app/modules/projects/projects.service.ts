@@ -13,6 +13,7 @@ import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
+  ItemValues,
   laborCategoryRateValidator,
   laborCategoryValidator,
   ProjectCostTreatment,
@@ -1047,7 +1048,7 @@ export async function getProjectElement(
   const element = await client
     .from("projectElement")
     .select(
-      "*, state:projectState!projectElement_state_fkey(id, name, group, color), owner:user!projectElement_ownerId_fkey(id, fullName, avatarUrl), milestone:projectMilestone!projectElement_milestone_fkey(id, name, endDate), labels:projectElementLabel!projectElementLabel_element_fkey(projectLabelId)"
+      "*, state:projectState!projectElement_state_fkey(id, name, group, color), owner:user!projectElement_ownerId_fkey(id, fullName, avatarUrl), milestone:projectMilestone!projectElement_milestone_fkey(id, name, endDate), labels:projectElementLabel!projectElementLabel_element_fkey(projectLabelId), item:item!projectElement_item_fkey(id, readableId, readableIdWithRevision, name, type, thumbnailPath, itemTrackingType), trackedEntity:trackedEntity!projectElement_trackedEntityId_fkey(id, readableId)"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -1246,11 +1247,52 @@ export async function updateProjectElementField(
       }
       break;
     }
+    case "itemId":
+    case "trackedEntityId": {
+      // A Parameter links no part. A serial must be of the element's item;
+      // the database trigger fills an empty item from the serial.
+      const elements = await client
+        .from("projectElement")
+        .select("id, readableId, type, itemId")
+        .in("id", args.ids)
+        .eq("companyId", args.companyId);
+      if (elements.error) return { data: null, error: elements.error };
+      if (raw !== null && elements.data.some((e) => e.type === "Parameter")) {
+        return refusal("A Parameter cannot link a part");
+      }
+      if (args.field === "itemId") {
+        update.itemId = raw;
+        // A new part drops the serial of the old one.
+        update.trackedEntityId = null;
+        break;
+      }
+      if (raw !== null) {
+        const serial = await client
+          .from("trackedEntity")
+          .select("itemId")
+          .eq("id", raw)
+          .eq("companyId", args.companyId)
+          .maybeSingle();
+        if (serial.error) return { data: null, error: serial.error };
+        if (!serial.data?.itemId) {
+          return refusal("The serial has no item in this company");
+        }
+        const other = elements.data.find(
+          (e) => e.itemId !== null && e.itemId !== serial.data?.itemId
+        );
+        if (other) {
+          return refusal(
+            `The serial belongs to a different item than ${other.readableId}`
+          );
+        }
+      }
+      update.trackedEntityId = raw;
+      break;
+    }
     case "ownerId":
     case "milestoneId":
     case "startDate":
     case "targetDate":
-    case "itemId":
     case "targetUnit":
     case "parameterUnit":
     case "qualityDocumentId":
@@ -1579,6 +1621,129 @@ export async function deleteProjectElement(
 }
 
 // --- Trace links -------------------------------------------------------------
+
+/** The item types whose typed table carries the part's custom field values. */
+const ITEM_VALUE_TABLES = {
+  Part: "part",
+  Material: "material",
+  Tool: "tool",
+  Consumable: "consumable"
+} as const;
+
+type ItemValueTable =
+  (typeof ITEM_VALUE_TABLES)[keyof typeof ITEM_VALUE_TABLES];
+
+/** `attributeDataType.id` of the Numeric custom field type. */
+const NUMERIC_CUSTOM_FIELD_TYPE = 4;
+
+/**
+ * The values a Parameter reads from a linked part: the unit cost
+ * (`itemCost`) and the custom field values, keyed by `customField.id`. The
+ * custom fields live on the typed item table (`part`, `material`, `tool`,
+ * `consumable`), whose `id` is the item's `readableId`. At most 6 queries for
+ * any number of items. Values stay as stored (form data stores strings);
+ * `computeVerification` parses them.
+ * @mcp read
+ */
+export async function getProjectItemValues(
+  client: Client,
+  companyId: string,
+  itemIds: string[]
+): Promise<{ data: Map<string, ItemValues>; error: PostgrestError | null }> {
+  const values = new Map<string, ItemValues>();
+  const ids = [...new Set(itemIds)];
+  if (ids.length === 0) return { data: values, error: null };
+
+  const [items, costs] = await Promise.all([
+    client
+      .from("item")
+      .select("id, readableId, type")
+      .in("id", ids)
+      .eq("companyId", companyId),
+    client
+      .from("itemCost")
+      .select("itemId, unitCost")
+      .in("itemId", ids)
+      .eq("companyId", companyId)
+  ]);
+  if (items.error) return { data: values, error: items.error };
+  if (costs.error) return { data: values, error: costs.error };
+
+  const readableIdsByTable = new Map<ItemValueTable, Set<string>>();
+  for (const item of items.data ?? []) {
+    const table =
+      ITEM_VALUE_TABLES[item.type as keyof typeof ITEM_VALUE_TABLES];
+    if (!table || !item.readableId) continue;
+    const set = readableIdsByTable.get(table) ?? new Set<string>();
+    set.add(item.readableId);
+    readableIdsByTable.set(table, set);
+  }
+
+  const typed = await Promise.all(
+    [...readableIdsByTable].map(async ([table, readableIds]) => {
+      const result = await client
+        .from(table as "part")
+        .select("id, customFields")
+        .in("id", [...readableIds])
+        .eq("companyId", companyId);
+      return { table, result };
+    })
+  );
+  const customFieldsByKey = new Map<string, Record<string, unknown>>();
+  for (const { table, result } of typed) {
+    if (result.error) return { data: values, error: result.error };
+    for (const row of result.data ?? []) {
+      const fields = row.customFields;
+      if (fields && typeof fields === "object" && !Array.isArray(fields)) {
+        customFieldsByKey.set(
+          `${table}:${row.id}`,
+          fields as Record<string, unknown>
+        );
+      }
+    }
+  }
+
+  const unitCostById = new Map(
+    (costs.data ?? []).map((cost) => [
+      cost.itemId,
+      cost.unitCost === null ? null : Number(cost.unitCost)
+    ])
+  );
+  for (const item of items.data ?? []) {
+    const table =
+      ITEM_VALUE_TABLES[item.type as keyof typeof ITEM_VALUE_TABLES];
+    values.set(item.id, {
+      unitCost: unitCostById.get(item.id) ?? null,
+      customFields:
+        (table && item.readableId
+          ? customFieldsByKey.get(`${table}:${item.readableId}`)
+          : undefined) ?? null
+    });
+  }
+  return { data: values, error: null };
+}
+
+/**
+ * The active Numeric custom fields of an item type, for a Parameter's
+ * **Part field**. A type with no typed custom field table has none.
+ * @mcp read
+ */
+export async function getItemNumericCustomFields(
+  client: Client,
+  companyId: string,
+  itemType: Database["public"]["Enums"]["itemType"]
+) {
+  const table = ITEM_VALUE_TABLES[itemType as keyof typeof ITEM_VALUE_TABLES];
+  if (!table) return { data: [], error: null };
+  return client
+    .from("customField")
+    .select("id, name")
+    .eq("table", table)
+    .eq("dataTypeId", NUMERIC_CUSTOM_FIELD_TYPE)
+    .eq("companyId", companyId)
+    .not("active", "is", false)
+    .order("sortOrder", { ascending: true });
+}
 
 /**
  * Lists every trace link of a project. Pages through the rows, because a

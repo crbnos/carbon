@@ -9964,6 +9964,9 @@ msgstr "С даты изменения"
 msgid "From the next billing period"
 msgstr "С следующего периода выставления счетов"
 
+msgid "From the part's bill of materials"
+msgstr ""
+
 msgid "From:"
 msgstr "От:"
 
@@ -14290,6 +14293,9 @@ msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
+
+msgid "No serial"
+msgstr ""
 
 msgid "No serial numbers selected yet."
 msgstr "Серийные номера ещё не выбраны."

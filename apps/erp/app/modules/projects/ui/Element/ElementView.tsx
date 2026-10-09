@@ -103,6 +103,7 @@ export function ElementView({
   verification,
   requirementStatus,
   qualityDocuments,
+  itemFields,
   states,
   labels,
   milestones,
@@ -301,6 +302,7 @@ export function ElementView({
                 verification={verification}
                 requirementStatus={requirementStatus}
                 qualityDocuments={qualityDocuments}
+                itemFields={itemFields}
                 isDisabled={!canUpdate}
               />
             </Section>

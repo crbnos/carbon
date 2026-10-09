@@ -9964,6 +9964,9 @@ msgstr "从变更日期起"
 msgid "From the next billing period"
 msgstr "从下一个计费周期开始"
 
+msgid "From the part's bill of materials"
+msgstr ""
+
 msgid "From:"
 msgstr "来源："
 
@@ -14290,6 +14293,9 @@ msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
+
+msgid "No serial"
+msgstr ""
 
 msgid "No serial numbers selected yet."
 msgstr "尚未选择序列号。"

@@ -62,7 +62,7 @@
 - [x] Task 24: Add Create PO line from a plan-line material
 - [x] Task 25: Add charge numbers to reimbursement lines and show them on charges
 - [x] Task 26: Add the milestone burn chart
-- [ ] Task 27: Add part links and item values
+- [x] Task 27: Add part links and item values
 - [ ] Task 28: Add Build from part
 - [ ] Task 29: Add the element history by part
 - [ ] Task 30: Extend the demo datasets
@@ -1539,3 +1539,9 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 26: day k is the start date plus k days, and `ideal` is `plannedHours × k ÷ (end − start)`, so the plan's "10-day milestone" runs from day 0 to day 10 (11 points). An entry before the start counts from day 0, one after the end does not count. `buildBurnSeries` takes an optional `today`: later days have a null `actual`, so the line stops at today instead of running flat into the future. `projects-burn.test.ts` has the plan's 2 cases.
 - Task 26: the planned hours are the milestone's `estimatedHours` from `summarizeMilestones` (the estimates of its elements, Cancelled ones left out). The posted hours are `timesheetEntry` rows with status Posted (reversals included, so a correction nets out), read in one query with `.in("projectElementId", elementIds)` for the selected milestone only.
 - Task 26: a milestone row stays a link to its elements, so the chart opens from a **Burn chart** icon button next to the row menu. The selection is `?milestone=<id>`; the loader builds the series for it, and the list shows the chart in a sticky side column (`lg:grid-cols-[minmax(0,1fr)_26rem]`). A milestone without a start or an end date shows a note in place of the chart.
+- Task 27: `PartLink` keeps the sidebar's ghost `Combobox` over `useItems` in place of the form `Item` picker. `Item` binds to a `ValidatedForm` field (`useControlField`), and the sidebar pills save each field on its own. Every item type is offered. The pill shows on every element type except Parameter (it was System only).
+- Task 27: `updateProjectElementField` refuses `itemId` and `trackedEntityId` on a Parameter. It checks that a serial belongs to the element's item before the update, so the refusal reads as a sentence. The database trigger stays the final check. A new item clears the serial.
+- Task 27: `getProjectItemValues` (`projects.service.ts`) replaces the inline `itemCost` read in `getProjectVerification`, so the Elements loader and the element page both get the custom fields. It keeps each custom field value as stored: `itemFieldValue` already parses it with `Number()` and refuses a value that is not a number.
+- Task 27: the Part field options come from `getItemNumericCustomFields` (`customField` rows with `dataTypeId` 4 for the item type's table), not `getCustomFields`. `getCustomFields` reads the `customFieldTables` view, which returns every field of a table as one JSON value. The element page reads them only for a Parameter, after it finds the nearest linked part in the elements it already loads (2 queries).
+- Task 27: the Issue Material modal shows the BOM materials as one-click buttons above the Item field, under "From the part's bill of materials". A button sets the form's item through `useControlField`. The `Item` combobox has no option groups, so the BOM rows cannot be listed inside it. Only stocked materials show, because a Non-Inventory item cannot be issued.
+- Task 27: a rolled-back SQL session linked a serial of another item to an element and got `ERROR: The serial belongs to a different item`.

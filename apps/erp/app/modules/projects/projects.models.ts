@@ -317,6 +317,7 @@ export const projectElementEditableFields = [
   "isChargeable",
   "isFinalAsset",
   "itemId",
+  "trackedEntityId",
   "description",
   "requirementCategory",
   "targetOperator",
