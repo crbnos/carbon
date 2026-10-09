@@ -42,7 +42,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 8: Post service time in `post-timesheet`
 - [x] Task 9: Post service parts and install components in `post-project-issue`
 - [x] Task 10: Add `post-project-expense` and the coverage reclass
-- [ ] Task 11: Create customer assets in `post-shipment`
+- [x] Task 11: Create customer assets in `post-shipment`
 - [ ] Task 12: Stop the second stock relief and release billable item stamps
 - [ ] Task 13: Add `create-service-order-invoice`
 - [ ] Task 14: Hide Service projects outside Service
@@ -1233,3 +1233,7 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 10: `reclass-project-coverage` permissions are `{ update: "projects" }`, as the other charge functions. It credits the account on the charge's own journal line (`journalLineId`), else the account the old coverage resolves to on the charge's date. It posts nothing when both accounts are the same, and it refuses Capitalized in either direction (a Refurbishment's charges stay Capitalized). The journal's `sourceType` and `documentType` are the charge's own (Timesheet, Project Issue or Project Expense). For a part, the installed component moves to the new ledger row.
 - Task 10: a reclass leaves the old row without `reversalOfId`, reversed by a later row. So `post-timesheet` now reads a correction's original row only when no row reverses it, and the `Service` activity of an issue carries the issue's item ledger id (stable across a reclass), not its ledger row id. A return after a reclass finds the new row.
 - Task 10: tests: a Standard Expense project expense (no billable item; a second post is a no-op), the plan's 40.00 Billable expense with its reversal, and the plan's 120.00 Warranty labor reclass. That test also refuses a second reclass and posts a correction against the reclassed row. The permissions snapshot gains the two functions, reviewed. `@carbon/server-functions` and `@carbon/database` typecheck green.
+- Task 11: the upsert is one `INSERT … SELECT … ON CONFLICT` inside the transaction (`upsertShippedCustomerAssets`, `post-shipment/customer-assets.ts`). It joins the warranty months in the same statement, so the plan's read of `itemUnitSalePrice` before the transaction is not needed. Postgres adds the months (`make_interval`), which clamps a month end as `CalendarDate.add` does. `itemUnitSalePrice` has no key on `itemId`, so a lateral join takes the oldest row.
+- Task 11: a reshipped serial keeps its `source` (an asset registered by hand stays Manual); every other field the plan names is reset.
+- Task 11: on a return to customer, the site becomes the RMA's `customerLocationId` when it has one, else the asset keeps its site. The step updates only serials that are already assets.
+- Task 11: `customer-assets.test.ts` posts a real Sales Order shipment of a serial with accounting off: the new asset with 12 and 24 months, the void setting it Returned, a drop shipment's site, and a reshipped serial's reset. The RMA return step has no database test (no post-shipment test fixture exists for an RMA).

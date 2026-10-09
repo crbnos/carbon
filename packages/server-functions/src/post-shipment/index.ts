@@ -48,6 +48,7 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { upsertShippedCustomerAssets } from "./customer-assets";
 
 const logger = getLogger("server-functions", "post-shipment");
 
@@ -194,7 +195,13 @@ const postShipment = defineServerFn({
                       db,
                       "salesOrderShipment",
                       { id: shipmentHeader.sourceDocumentId },
-                      { columns: ["shippingCost"] }
+                      {
+                        columns: [
+                          "shippingCost",
+                          "dropShipment",
+                          "customerLocationId"
+                        ]
+                      }
                     )
                 ]);
               if (salesOrder.error)
@@ -1194,6 +1201,19 @@ const postShipment = defineServerFn({
                     .returning(["id"])
                     .execute();
                 }
+
+                // Each shipped serial becomes (or moves) a customer asset.
+                await upsertShippedCustomerAssets(trx, {
+                  companyId,
+                  userId,
+                  shipmentId,
+                  trackedEntityIds: serialNumbersConsumed,
+                  customerId: salesOrder.data.customerId,
+                  customerLocationId: salesOrderDelivery.data.dropShipment
+                    ? salesOrderDelivery.data.customerLocationId
+                    : salesOrder.data.customerLocationId,
+                  shippedDate: today
+                });
 
                 if (Object.keys(jobUpdates).length > 0) {
                   logger.info("Final job updates to be applied:", jobUpdates);
@@ -2387,6 +2407,29 @@ const postShipment = defineServerFn({
                   }
                 }
 
+                // The customer's units go back into service at the site the
+                // RMA names. Their warranty dates stay.
+                const returnedEntityIds = Object.keys(trackedEntityUpdates);
+                if (returnedEntityIds.length > 0) {
+                  await trx
+                    .updateTable("customerAsset")
+                    .set({
+                      status: "In Service",
+                      shippedDate: today,
+                      shipmentId,
+                      customerLocationId: (eb) =>
+                        eb.fn.coalesce(
+                          eb.val(salesReturnOrder.data.customerLocationId),
+                          eb.ref("customerAsset.customerLocationId")
+                        ),
+                      updatedBy: userId,
+                      updatedAt: datetime.timestamp()
+                    })
+                    .where("trackedEntityId", "in", returnedEntityIds)
+                    .where("companyId", "=", companyId)
+                    .execute();
+                }
+
                 await trx
                   .updateTable("shipment")
                   .set({
@@ -3481,6 +3524,18 @@ const postShipment = defineServerFn({
                     updatedBy: userId
                   })
                   .where("id", "=", shipmentId)
+                  .where("companyId", "=", companyId)
+                  .execute();
+
+                // The units this shipment created or last moved are back.
+                await trx
+                  .updateTable("customerAsset")
+                  .set({
+                    status: "Returned",
+                    updatedBy: userId,
+                    updatedAt: datetime.timestamp()
+                  })
+                  .where("shipmentId", "=", shipmentId)
                   .where("companyId", "=", companyId)
                   .execute();
 
