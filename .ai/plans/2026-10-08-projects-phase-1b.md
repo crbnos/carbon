@@ -41,7 +41,7 @@
 - [x] Task 3: Create the trace links and element fields migration
 - [x] Task 4: Create the views and preferences migration
 - [x] Task 5: Apply migrations, regenerate types, ship RLS
-- [ ] Task 6: Add Capitalize to the posting helpers and the SQL mirror
+- [x] Task 6: Add Capitalize to the posting helpers and the SQL mirror
 - [ ] Task 7: Create CIP assets on release and on marking a final asset
 - [ ] Task 8: Write CIP cost rows from the project posting paths
 - [ ] Task 9: Charge Capitalize jobs through `job.fixedAssetId`
@@ -1451,3 +1451,7 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 3: `pnpm db:migrate` applied the migration, then its `authz sync` step failed, because `projectElementLink` has no manifest rule until Task 5 (as in Phase 1a Tasks 3–7). A rolled-back SQL session checked the migration. A serial fills an empty `itemId`, and a serial of another item is refused. Deleting a Parameter nulls `actualParameterId` and keeps `companyId`. Deleting an element removes its links. A Parameter with an item is refused.
 - Task 4: both tables index `companyId` and `("projectId", "companyId")`. `projectView` also indexes `createdBy` and `updatedBy`, and `projectUserPreference` indexes `userId`.
 - Task 5: the manifest rules are the plan's, with the helper signatures unchanged. `authz migration projects-1b-rls` wrote `20261009102907_projects-1b-rls.sql` for the 3 tables, and a second `pnpm db:migrate` recorded it. `audit.config.ts` audits a `projectElementLink` row on its `fromElementId` element. `vitest run src/authz` passes (33), the full `@carbon/database` suite passes (410), and its typecheck is green.
+- Task 6: a `ProjectPostingAsset` is `{ id, status, classAssetAccountId }`. The plan also named `cipClassAssetAccountId`. An Under Construction asset sits in its CIP class, so its current class account is the CIP account, and one field serves both cases. `capitalAssetId(ctx)` exports the nearest-final-asset walk for Tasks 8–11.
+- Task 6: the asset query runs after the 3 parallel reads, as a 4th query. It loads only the project assets and the assets of final-asset elements in the chain.
+- Task 6: Capitalize ignores an explicit `costAccountId`. The capitalization credits the CIP class account for every CIP cost row, so the debit must go to that account. A final-asset element with no asset yet refuses, as a missing asset does. `Fully Depreciated` refuses too: the plan names Active only.
+- Task 6: migration `20261009103835_project-posting-account-capitalize.sql`. A rolled-back SQL session checked it on the seeded company: the project asset gives the CIP class account, a child under an Active final-asset branch gives that branch's class account, and a branch with no asset raises the TS message. The 2 seeded Statistical projects still return NULL.

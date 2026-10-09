@@ -25,14 +25,16 @@ function contexts(
           id: "proj",
           status: "Released",
           costTreatment,
-          costAccountId: null
+          costAccountId: null,
+          fixedAssetId: null
         },
         element: null,
         ancestors: [],
         defaults: {
           projectExpenseAccount: "6100",
           projectWorkInProgressAccount: "1400"
-        }
+        },
+        assets: new Map()
       }
     ]
   ]);

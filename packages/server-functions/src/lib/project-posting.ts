@@ -25,6 +25,8 @@ export type ProjectPostingProject = {
   status: Database["public"]["Enums"]["projectStatus"];
   costTreatment: ProjectCostTreatment;
   costAccountId: string | null;
+  /** The project's own CIP asset (Capitalize). */
+  fixedAssetId: string | null;
   /** For messages only. */
   identifier?: string | null;
   name?: string;
@@ -38,8 +40,18 @@ export type ProjectPostingElement = {
   costTreatment: ProjectCostTreatment | null;
   costTreatmentEffectiveFrom: string | null;
   costAccountId: string | null;
+  /** A final-asset element holds its own CIP asset (Capitalize). */
+  isFinalAsset: boolean;
+  fixedAssetId: string | null;
   /** For messages only. */
   readableId?: string;
+};
+
+/** A capital project's asset, with the asset account of its current class. */
+export type ProjectPostingAsset = {
+  id: string;
+  status: Database["public"]["Enums"]["fixedAssetStatus"];
+  classAssetAccountId: string;
 };
 
 export type ProjectPostingContext = {
@@ -50,6 +62,17 @@ export type ProjectPostingContext = {
     projectExpenseAccount: string | null;
     projectWorkInProgressAccount: string | null;
   };
+  /** The project's asset and each final-asset node's asset, by asset id. */
+  assets: Map<string, ProjectPostingAsset>;
+};
+
+export type ResolvedProjectPostingAccount = {
+  treatment: ProjectCostTreatment;
+  accountId: string | null;
+  /** The asset a Capitalize charge builds; null for the other treatments. */
+  fixedAssetId: string | null;
+  /** True when the Capitalize asset is already in service (a late cost). */
+  postCapitalization: boolean;
 };
 
 export class ProjectChargeError extends Error {
@@ -73,15 +96,30 @@ function elementLabel(element: ProjectPostingElement): string {
 }
 
 /**
+ * The asset a Capitalize charge builds: the element itself when it is a
+ * final asset, else its nearest final-asset ancestor, else the project's
+ * own asset. Null when none of them holds an asset.
+ */
+export function capitalAssetId(ctx: ProjectPostingContext): string | null {
+  const chain = ctx.element ? [ctx.element, ...ctx.ancestors] : [];
+  const finalAsset = chain.find((element) => element.isFinalAsset);
+  if (finalAsset) return finalAsset.fixedAssetId;
+  return ctx.project.fixedAssetId;
+}
+
+/**
  * The treatment and account a charge posts to on `postingDate`
  * (`YYYY-MM-DD`). The nearest element (itself, then its ancestors) whose
  * treatment is in effect on the date decides; else the project does.
  * Statistical posts to no project account (`accountId: null`).
+ * Capitalize posts to the asset account of the asset it builds
+ * (`capitalAssetId`): the CIP class while the asset is Under Construction,
+ * its in-service class once it is Active (a late cost).
  */
 export function resolveProjectPostingAccount(
   ctx: ProjectPostingContext,
   postingDate: string
-): { treatment: ProjectCostTreatment; accountId: string | null } {
+): ResolvedProjectPostingAccount {
   const chain = ctx.element ? [ctx.element, ...ctx.ancestors] : [];
   const override = chain.find(
     (element) =>
@@ -95,8 +133,40 @@ export function resolveProjectPostingAccount(
     ? override.costAccountId
     : ctx.project.costAccountId;
 
-  if (treatment === "Statistical") return { treatment, accountId: null };
-  if (explicitAccount) return { treatment, accountId: explicitAccount };
+  const noAsset = { fixedAssetId: null, postCapitalization: false };
+
+  if (treatment === "Capitalize") {
+    // The asset decides the account, so an explicit account is ignored: the
+    // capitalization credits the CIP class account for every CIP cost row.
+    const assetId = capitalAssetId(ctx);
+    const asset = assetId ? ctx.assets.get(assetId) : undefined;
+    if (asset?.status === "Under Construction") {
+      return {
+        treatment,
+        accountId: asset.classAssetAccountId,
+        fixedAssetId: asset.id,
+        postCapitalization: false
+      };
+    }
+    if (asset?.status === "Active") {
+      return {
+        treatment,
+        accountId: asset.classAssetAccountId,
+        fixedAssetId: asset.id,
+        postCapitalization: true
+      };
+    }
+    throw new ProjectChargeError(
+      "This capital project has no asset under construction. Release the project first."
+    );
+  }
+
+  if (treatment === "Statistical") {
+    return { treatment, accountId: null, ...noAsset };
+  }
+  if (explicitAccount) {
+    return { treatment, accountId: explicitAccount, ...noAsset };
+  }
 
   if (treatment === "Expense") {
     if (!ctx.defaults.projectExpenseAccount) {
@@ -104,19 +174,23 @@ export function resolveProjectPostingAccount(
         "Set Project Expense in Account Defaults before you charge an Expense project"
       );
     }
-    return { treatment, accountId: ctx.defaults.projectExpenseAccount };
+    return {
+      treatment,
+      accountId: ctx.defaults.projectExpenseAccount,
+      ...noAsset
+    };
   }
 
-  if (treatment === "Contract") {
-    if (!ctx.defaults.projectWorkInProgressAccount) {
-      throw new ProjectChargeError(
-        "Set Project Work in Progress in Account Defaults before you charge a Contract project"
-      );
-    }
-    return { treatment, accountId: ctx.defaults.projectWorkInProgressAccount };
+  if (!ctx.defaults.projectWorkInProgressAccount) {
+    throw new ProjectChargeError(
+      "Set Project Work in Progress in Account Defaults before you charge a Contract project"
+    );
   }
-
-  throw new ProjectChargeError("The Capitalize treatment is not available yet");
+  return {
+    treatment,
+    accountId: ctx.defaults.projectWorkInProgressAccount,
+    ...noAsset
+  };
 }
 
 /**
@@ -244,12 +318,14 @@ type ElementRow = {
   costTreatment: ProjectCostTreatment | null;
   costTreatmentEffectiveFrom: string | null;
   costAccountId: string | null;
+  isFinalAsset: boolean;
+  fixedAssetId: string | null;
 };
 
 /**
- * Loads the posting context of every (project, element) ref in 3 queries:
- * the projects, the elements with all their ancestors, and the account
- * defaults. A ref whose project is missing, or whose element is missing or
+ * Loads the posting context of every (project, element) ref in 4 queries:
+ * the projects, the elements with all their ancestors, the account
+ * defaults, and the capital assets the projects and elements hold. A ref whose project is missing, or whose element is missing or
  * belongs to another project, has no entry in the map.
  */
 export async function loadProjectPostingContexts(
@@ -279,7 +355,8 @@ export async function loadProjectPostingContexts(
           "identifier",
           "status",
           "costTreatment",
-          "costAccountId"
+          "costAccountId",
+          "fixedAssetId"
         ])
         .where("id", "in", projectIds)
         .where("companyId", "=", companyId)
@@ -292,21 +369,24 @@ export async function loadProjectPostingContexts(
               WITH RECURSIVE chain AS (
                 SELECT e."id", e."parentId", e."projectId", e."readableId",
                   e."isChargeable", e."stateId", e."costTreatment",
-                  e."costTreatmentEffectiveFrom", e."costAccountId"
+                  e."costTreatmentEffectiveFrom", e."costAccountId",
+                  e."isFinalAsset", e."fixedAssetId"
                 FROM "projectElement" e
                 WHERE e."id" IN (${sql.join(elementIds)})
                   AND e."companyId" = ${companyId}
                 UNION
                 SELECT p."id", p."parentId", p."projectId", p."readableId",
                   p."isChargeable", p."stateId", p."costTreatment",
-                  p."costTreatmentEffectiveFrom", p."costAccountId"
+                  p."costTreatmentEffectiveFrom", p."costAccountId",
+                  p."isFinalAsset", p."fixedAssetId"
                 FROM "projectElement" p
                 JOIN chain c ON p."id" = c."parentId"
                 WHERE p."companyId" = ${companyId}
               )
               SELECT c."id", c."parentId", c."projectId", c."readableId",
                 c."isChargeable", s."group" AS "stateGroup", c."costTreatment",
-                c."costTreatmentEffectiveFrom", c."costAccountId"
+                c."costTreatmentEffectiveFrom", c."costAccountId",
+                c."isFinalAsset", c."fixedAssetId"
               FROM chain c
               JOIN "projectState" s ON s."id" = c."stateId" AND s."companyId" = ${companyId}
             `.execute(trx)
@@ -336,7 +416,46 @@ export async function loadProjectPostingContexts(
         costTreatment: row.costTreatment,
         // A DATE column arrives as a YYYY-MM-DD string from node-postgres.
         costTreatmentEffectiveFrom: row.costTreatmentEffectiveFrom,
-        costAccountId: row.costAccountId
+        costAccountId: row.costAccountId,
+        isFinalAsset: row.isFinalAsset,
+        fixedAssetId: row.fixedAssetId
+      }
+    ])
+  );
+
+  const assetIds = [
+    ...new Set(
+      [
+        ...projects.map((project) => project.fixedAssetId),
+        ...elements.map((row) => (row.isFinalAsset ? row.fixedAssetId : null))
+      ].filter((id): id is string => Boolean(id))
+    )
+  ];
+  const assetRows =
+    assetIds.length === 0
+      ? []
+      : await trx
+          .selectFrom("fixedAsset")
+          .innerJoin(
+            "fixedAssetClass",
+            "fixedAssetClass.id",
+            "fixedAsset.fixedAssetClassId"
+          )
+          .select([
+            "fixedAsset.id",
+            "fixedAsset.status",
+            "fixedAssetClass.assetAccountId"
+          ])
+          .where("fixedAsset.id", "in", assetIds)
+          .where("fixedAsset.companyId", "=", companyId)
+          .execute();
+  const assets = new Map<string, ProjectPostingAsset>(
+    assetRows.map((row) => [
+      row.id,
+      {
+        id: row.id,
+        status: row.status,
+        classAssetAccountId: row.assetAccountId
       }
     ])
   );
@@ -372,12 +491,14 @@ export async function loadProjectPostingContexts(
         status: project.status,
         costTreatment: project.costTreatment,
         costAccountId: project.costAccountId,
+        fixedAssetId: project.fixedAssetId,
         identifier: project.identifier,
         name: project.name
       },
       element,
       ancestors,
-      defaults: accountDefaults
+      defaults: accountDefaults,
+      assets
     });
   }
 

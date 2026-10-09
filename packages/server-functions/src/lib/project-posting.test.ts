@@ -7,6 +7,7 @@ import {
   assertChargeable,
   buildProjectLedgerRow,
   ProjectChargeError,
+  type ProjectPostingAsset,
   type ProjectPostingContext,
   type ProjectPostingElement,
   type ProjectPostingProject,
@@ -27,6 +28,7 @@ function project(
     status: "Released",
     costTreatment: "Expense",
     costAccountId: null,
+    fixedAssetId: null,
     ...overrides
   };
 }
@@ -43,6 +45,8 @@ function element(
     costTreatment: null,
     costTreatmentEffectiveFrom: null,
     costAccountId: null,
+    isFinalAsset: false,
+    fixedAssetId: null,
     ...overrides
   };
 }
@@ -55,6 +59,7 @@ function context(
     element: null,
     ancestors: [],
     defaults,
+    assets: new Map(),
     ...overrides
   };
 }
@@ -63,7 +68,9 @@ describe("resolveProjectPostingAccount", () => {
   it("posts an Expense project with no element to Project Expense", () => {
     expect(resolveProjectPostingAccount(context(), "2026-03-01")).toEqual({
       treatment: "Expense",
-      accountId: "acct-expense"
+      accountId: "acct-expense",
+      fixedAssetId: null,
+      postCapitalization: false
     });
   });
 
@@ -71,7 +78,9 @@ describe("resolveProjectPostingAccount", () => {
     const ctx = context({ project: project({ costTreatment: "Contract" }) });
     expect(resolveProjectPostingAccount(ctx, "2026-03-01")).toEqual({
       treatment: "Contract",
-      accountId: "acct-wip"
+      accountId: "acct-wip",
+      fixedAssetId: null,
+      postCapitalization: false
     });
   });
 
@@ -79,7 +88,9 @@ describe("resolveProjectPostingAccount", () => {
     const ctx = context({ project: project({ costTreatment: "Statistical" }) });
     expect(resolveProjectPostingAccount(ctx, "2026-03-01")).toEqual({
       treatment: "Statistical",
-      accountId: null
+      accountId: null,
+      fixedAssetId: null,
+      postCapitalization: false
     });
   });
 
@@ -98,7 +109,9 @@ describe("resolveProjectPostingAccount", () => {
     );
     expect(resolveProjectPostingAccount(ctx, "2026-03-01")).toEqual({
       treatment: "Contract",
-      accountId: "acct-wip"
+      accountId: "acct-wip",
+      fixedAssetId: null,
+      postCapitalization: false
     });
   });
 
@@ -125,11 +138,84 @@ describe("resolveProjectPostingAccount", () => {
       /Set Project Expense in Account Defaults/
     );
   });
+});
 
-  it("refuses the Capitalize treatment", () => {
+describe("resolveProjectPostingAccount: Capitalize", () => {
+  function assets(...list: ProjectPostingAsset[]) {
+    return new Map(list.map((asset) => [asset.id, asset]));
+  }
+  const projectAsset: ProjectPostingAsset = {
+    id: "fa-project",
+    status: "Under Construction",
+    classAssetAccountId: "acct-cip"
+  };
+
+  it("posts a project with no final-asset elements to the project asset's CIP account", () => {
+    const ctx = context({
+      project: project({
+        costTreatment: "Capitalize",
+        fixedAssetId: "fa-project"
+      }),
+      element: element(),
+      assets: assets(projectAsset)
+    });
+    expect(resolveProjectPostingAccount(ctx, "2026-03-01")).toEqual({
+      treatment: "Capitalize",
+      accountId: "acct-cip",
+      fixedAssetId: "fa-project",
+      postCapitalization: false
+    });
+  });
+
+  it("posts an element under a final-asset branch to that branch's asset", () => {
+    const branch = element({
+      id: "el-branch",
+      isFinalAsset: true,
+      fixedAssetId: "fa-branch"
+    });
+    const ctx = context({
+      project: project({
+        costTreatment: "Capitalize",
+        fixedAssetId: "fa-project"
+      }),
+      element: element({ parentId: "el-branch" }),
+      ancestors: [branch],
+      assets: assets(projectAsset, {
+        id: "fa-branch",
+        status: "Under Construction",
+        classAssetAccountId: "acct-cip-branch"
+      })
+    });
+    expect(resolveProjectPostingAccount(ctx, "2026-03-01")).toEqual({
+      treatment: "Capitalize",
+      accountId: "acct-cip-branch",
+      fixedAssetId: "fa-branch",
+      postCapitalization: false
+    });
+  });
+
+  it("posts a late cost on an Active branch asset to its class asset account", () => {
+    const ctx = context({
+      project: project({ costTreatment: "Capitalize" }),
+      element: element({ isFinalAsset: true, fixedAssetId: "fa-branch" }),
+      assets: assets({
+        id: "fa-branch",
+        status: "Active",
+        classAssetAccountId: "acct-machinery"
+      })
+    });
+    expect(resolveProjectPostingAccount(ctx, "2026-03-01")).toEqual({
+      treatment: "Capitalize",
+      accountId: "acct-machinery",
+      fixedAssetId: "fa-branch",
+      postCapitalization: true
+    });
+  });
+
+  it("refuses a Capitalize project with no asset", () => {
     const ctx = context({ project: project({ costTreatment: "Capitalize" }) });
     expect(() => resolveProjectPostingAccount(ctx, "2026-03-01")).toThrow(
-      "The Capitalize treatment is not available yet"
+      "This capital project has no asset under construction. Release the project first."
     );
   });
 });
