@@ -39,7 +39,7 @@ Progress fields stay editable at all times: state, owner, priority, labels, date
 - [x] Task 4: Move the diff engine to `modules/shared`
 - [x] Task 5: Move the diff UI to shared components
 - [x] Task 6: Add the plan snapshot and the baseline service
-- [ ] Task 7: Add the baseline compare page
+- [x] Task 7: Add the baseline compare page
 - [ ] Task 8: Add the change request overlay and draft writes
 - [ ] Task 9: Add submit, approve, reject and apply
 - [ ] Task 10: Add the approvals engine branch and notifications
@@ -689,3 +689,9 @@ ls .ai/playbooks/projects-phase-1c.md
 - Task 6: `projects.server.ts` has `insertProjectBaseline(trx, …)`, which writes a baseline inside an open transaction, and `createProjectBaseline(db, …)`, which wraps it in one. Task 9 calls `insertProjectBaseline` inside the apply transaction. The project row UPDATE runs first, so it locks the project before the snapshot loads. The snapshot is written with `toJson`.
 - Task 6: `completeProjectMilestone` now returns `id, name, projectId`, so the route can name the baseline without a second read. The milestone update is a Supabase write and the baseline is a Kysely transaction, so the two are not atomic. If the baseline fails, the milestone stays completed, the error is logged, and the flash says "Milestone completed, but its baseline could not be written". Reopening a milestone writes no baseline.
 - Task 6: the 3 `projects-snapshot.test.ts` cases pass. A throwaway vitest run against this worktree's database (rolled back) inserted 2 elements and a cost line, took a baseline, then changed a budget and a state. The diff of the baseline against `loadPlanSnapshot` showed the budget change only. `nextBaselineSequence` was back to its value after the rollback. The script was not committed.
+- Task 7: `$projectId.baselines.compare.tsx` is a child of `$projectId.baselines.tsx` under the flat-route rules. The list route renders the child in place of the list (`useOutlet()`), so the compare is a full page with the plan's file names. The compare page reads the list from the parent's loader data (`useRouteData`) for its two selects (From and To, where To also offers **Current plan**).
+- Task 7: the compare loader computes the diff on the server (`diffPlanSnapshots`) and returns it. It refuses a missing `from` and a baseline of another project with a flash and a redirect to the list. `path.to.projectBaselineCompare(id, from, to = "current")` builds the URL; `CURRENT_PLAN` (models) names the live plan. `projectBaselineValidator` (models) checks the name of a manual baseline.
+- Task 7: the plan named no lookup for labor categories. `getLaborCategoryNames` (`projects.service.ts`, no `@mcp` tag) reads the names of the categories in the diff with one `.in()`, active or not. Parts show their readable id from the items store. Elements show their readable id. A serial or a procedure shows as "Linked" rather than a raw id.
+- Task 7: `PlanDiffViewer` hides `id`, `projectId`, `readableId` and `sortOrder` from the field rows. An element whose only change is its position shows "Position changed". Links show under their `from` element; plan lines show under their element. Money, quantity, percent and date fields use the formatter hooks.
+- Task 7: the Baselines tab sits after Milestones, with the shortcut ⌘⇧B (`PROJECT_TAB_SHORTCUTS.baselines`). A baseline row opens the compare with the current plan. Its ⋯ menu has **Compare with current** and **Compare with…** (a submenu of the other baselines; the older one becomes the base). **Take Baseline** opens a modal with a name; it needs `update: projects`.
+- Task 7: Browser verification of the two pages is deferred with Task 14 (overnight run). `erp` typechecks green and the `@carbon/checks` tests pass (278).

@@ -1973,6 +1973,10 @@ export const path = {
     productionSettings: `${x}/settings/production`,
     profile: `${x}/account/profile`,
     project: (id: string) => generatePath(`${x}/project/${id}`),
+    projectBaselineCompare: (id: string, from: string, to = "current") =>
+      `${generatePath(`${x}/project/${id}/baselines/compare`)}?${new URLSearchParams({ from, to })}`,
+    projectBaselines: (id: string) =>
+      generatePath(`${x}/project/${id}/baselines`),
     projectCosts: (id: string) => generatePath(`${x}/project/${id}/costs`),
     projectCostsElement: (id: string, elementId: string) =>
       generatePath(`${x}/project/${id}/costs/${elementId}`),

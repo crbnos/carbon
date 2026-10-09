@@ -67,12 +67,24 @@ msgstr "{0, plural, one {# 日のスラック} other {# 日のスラック}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
 
+#. placeholder {0}: groups.length
+msgid "{0, plural, one {# element changed} other {# elements changed}}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
 msgstr ""
 
+#. placeholder {0}: baseline.elementCount
+msgid "{0, plural, one {# element} other {# elements}}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
+#. placeholder {0}: baseline.linkCount
+msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
@@ -3546,6 +3558,9 @@ msgstr "承認待ち"
 msgid "Back"
 msgstr "戻る"
 
+msgid "Back to baselines"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
 
@@ -3638,6 +3653,9 @@ msgstr "ベース材料 — 例：鋼 vs アルミニウム"
 
 msgid "Base Price"
 msgstr "基本価格"
+
+msgid "Baselines"
+msgstr ""
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "基本的なERP、MES、およびQMS機能"
@@ -4421,6 +4439,9 @@ msgstr ""
 msgid "Change priority"
 msgstr ""
 
+msgid "Change request"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4885,6 +4906,9 @@ msgstr "会社のポリシーでは、受け取った人とは異なる人が受
 msgid "Company-wide — includes all locations"
 msgstr "会社全体 — すべての場所を含む"
 
+msgid "Compare"
+msgstr ""
+
 msgid "Compare and Order"
 msgstr "比較して注文"
 
@@ -4896,6 +4920,12 @@ msgstr "見積もりを比較"
 
 msgid "Compare Supplier Quotes"
 msgstr "仕入先見積を比較"
+
+msgid "Compare with current"
+msgstr ""
+
+msgid "Compare with…"
+msgstr ""
 
 msgid "Compatibility rules"
 msgstr "互換性ルール"
@@ -6305,6 +6335,9 @@ msgstr "現在の未償却残高:"
 msgid "Current Password"
 msgstr "現在のパスワード"
 
+msgid "Current plan"
+msgstr ""
+
 msgid "Current projection"
 msgstr "現在の予測"
 
@@ -7443,6 +7476,9 @@ msgid "Description of Issue"
 msgstr "問題の説明"
 
 msgid "Design Constraint"
+msgstr ""
+
+msgid "Design review"
 msgstr ""
 
 msgid "Detail"
@@ -8612,6 +8648,9 @@ msgstr "有効"
 
 msgid "End"
 msgstr "終了"
+
+msgid "End date"
+msgstr ""
 
 msgid "End Date"
 msgstr "終了日"
@@ -12145,6 +12184,9 @@ msgstr "受注明細へのリンク"
 msgid "Link type"
 msgstr ""
 
+msgid "Linked"
+msgstr ""
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -13806,6 +13848,9 @@ msgstr "利用可能な追跡対象エンティティが見つかりません"
 msgid "No bank accounts have been added yet."
 msgstr "銀行口座がまだ追加されていません。"
 
+msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "No batches"
 msgstr "バッチなし"
 
@@ -13909,6 +13954,9 @@ msgid "No deposit has been received for this agreement."
 msgstr "この契約の前受金が受け取られていません。"
 
 msgid "No description"
+msgstr ""
+
+msgid "No differences."
 msgstr ""
 
 msgid "No dimension slots configured"
@@ -15273,6 +15321,12 @@ msgstr "元のカウント"
 msgid "Other"
 msgstr "その他"
 
+msgid "Other cost"
+msgstr ""
+
+msgid "Other costs"
+msgstr ""
+
 msgid "Other Costs"
 msgstr ""
 
@@ -16084,6 +16138,9 @@ msgstr "ポータルリンク"
 
 msgid "Portals"
 msgstr "ポータル"
+
+msgid "Position changed"
+msgstr ""
 
 msgid "Positive Adjustment"
 msgstr "正の調整"
@@ -17927,6 +17984,9 @@ msgstr "必須アクション"
 
 msgid "Required Actions (in order)"
 msgstr "必要なアクション（順番に）"
+
+msgid "Required date"
+msgstr ""
 
 msgid "Required Date"
 msgstr "所要日"
@@ -20982,11 +21042,17 @@ msgstr "タグ"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "このハブを得意先用にカスタマイズしてください。変更はそれを表示している全員にリアルタイムで適用されます。ここで得意先には表示されません。"
 
+msgid "Take Baseline"
+msgstr ""
+
 msgid "Take out of service"
 msgstr "稼働を停止"
 
 msgid "Take Out of Service"
 msgstr "使用停止"
+
+msgid "Take the first baseline"
+msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "このアイテムを製造するために消費される材料全体で最短の保存期間を使用してください。製品の使用期限がその成分に依存する場合に使用してください。"
@@ -21050,6 +21116,9 @@ msgstr "ターゲットバージョン"
 
 msgid "Target quantity"
 msgstr "目標数量"
+
+msgid "Target unit"
+msgstr ""
 
 msgid "Target value"
 msgstr ""
@@ -23355,14 +23424,23 @@ msgstr "工程で回復不可能として報告された単位数（理由付き
 msgid "Unknown"
 msgstr "不明"
 
+msgid "Unknown element"
+msgstr ""
+
 msgid "unknown error"
 msgstr "不明なエラー"
 
 msgid "Unknown gauge"
 msgstr "不明な測定器"
 
+msgid "Unknown labor category"
+msgstr ""
+
 msgid "unknown location"
 msgstr "不明な場所"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "無制限の機能サポート"
@@ -23660,6 +23738,9 @@ msgstr "アップロード中…"
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "変換をクリックすると、以下の社内部品番号で部品が作成されます："
 
+msgid "Upper target"
+msgstr ""
+
 msgid "Upper value"
 msgstr ""
 
@@ -23869,6 +23950,9 @@ msgstr "VAT番号"
 
 msgid "Verdict"
 msgstr "判定"
+
+msgid "Verification"
+msgstr ""
 
 msgid "Verification Error"
 msgstr "認証エラー"

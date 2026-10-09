@@ -2948,3 +2948,10 @@ export function diffPlanSnapshots(
     costs: diff("costs")
   };
 }
+
+export const projectBaselineValidator = z.object({
+  name: z.string().trim().min(1, { message: "Name is required" })
+});
+
+/** The baseline a compare reads as its target: a baseline id or the live plan. */
+export const CURRENT_PLAN = "current";

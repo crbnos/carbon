@@ -67,12 +67,24 @@ msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 
+#. placeholder {0}: groups.length
+msgid "{0, plural, one {# element changed} other {# elements changed}}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
 msgstr ""
 
+#. placeholder {0}: baseline.elementCount
+msgid "{0, plural, one {# element} other {# elements}}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
+#. placeholder {0}: baseline.linkCount
+msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
@@ -3546,6 +3558,9 @@ msgstr "승인 대기 중"
 msgid "Back"
 msgstr "뒤로"
 
+msgid "Back to baselines"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "추적성으로 돌아가기"
 
@@ -3638,6 +3653,9 @@ msgstr "기본 자재 — 예: 강철 vs 알루미늄"
 
 msgid "Base Price"
 msgstr "기본 가격"
+
+msgid "Baselines"
+msgstr ""
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "기본 ERP, MES 및 QMS 기능"
@@ -4421,6 +4439,9 @@ msgstr ""
 msgid "Change priority"
 msgstr ""
 
+msgid "Change request"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4885,6 +4906,9 @@ msgstr "회사 정책상 입고 품목을 받은 사람과 검사하는 사람�
 msgid "Company-wide — includes all locations"
 msgstr "회사 전체 — 모든 위치 포함"
 
+msgid "Compare"
+msgstr ""
+
 msgid "Compare and Order"
 msgstr "비교 후 주문"
 
@@ -4896,6 +4920,12 @@ msgstr "견적 비교"
 
 msgid "Compare Supplier Quotes"
 msgstr "공급업체 견적 비교"
+
+msgid "Compare with current"
+msgstr ""
+
+msgid "Compare with…"
+msgstr ""
 
 msgid "Compatibility rules"
 msgstr "호환성 규칙"
@@ -6305,6 +6335,9 @@ msgstr "현재 순장부가액:"
 msgid "Current Password"
 msgstr "현재 비밀번호"
 
+msgid "Current plan"
+msgstr ""
+
 msgid "Current projection"
 msgstr "현재 예측"
 
@@ -7443,6 +7476,9 @@ msgid "Description of Issue"
 msgstr "이슈 설명"
 
 msgid "Design Constraint"
+msgstr ""
+
+msgid "Design review"
 msgstr ""
 
 msgid "Detail"
@@ -8612,6 +8648,9 @@ msgstr "활성화됨"
 
 msgid "End"
 msgstr "종료"
+
+msgid "End date"
+msgstr ""
 
 msgid "End Date"
 msgstr "종료일"
@@ -12145,6 +12184,9 @@ msgstr "수주 라인으로 링크"
 msgid "Link type"
 msgstr ""
 
+msgid "Linked"
+msgstr ""
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -13806,6 +13848,9 @@ msgstr "추적된 가용 객체를 찾을 수 없습니다"
 msgid "No bank accounts have been added yet."
 msgstr "아직 추가된 은행 계좌가 없습니다."
 
+msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "No batches"
 msgstr "배치 없음"
 
@@ -13909,6 +13954,9 @@ msgid "No deposit has been received for this agreement."
 msgstr "이 계약에 대해 보증금이 수령되지 않았습니다."
 
 msgid "No description"
+msgstr ""
+
+msgid "No differences."
 msgstr ""
 
 msgid "No dimension slots configured"
@@ -15273,6 +15321,12 @@ msgstr "원본 계산"
 msgid "Other"
 msgstr "기타"
 
+msgid "Other cost"
+msgstr ""
+
+msgid "Other costs"
+msgstr ""
+
 msgid "Other Costs"
 msgstr ""
 
@@ -16084,6 +16138,9 @@ msgstr "포털 링크"
 
 msgid "Portals"
 msgstr "포털"
+
+msgid "Position changed"
+msgstr ""
 
 msgid "Positive Adjustment"
 msgstr "양수 조정"
@@ -17927,6 +17984,9 @@ msgstr "필수 조치"
 
 msgid "Required Actions (in order)"
 msgstr "필수 조치(순서대로)"
+
+msgid "Required date"
+msgstr ""
 
 msgid "Required Date"
 msgstr "소요일"
@@ -20982,11 +21042,17 @@ msgstr "태그"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "이 허브를 고객에 맞게 조정하세요. 변경 사항은 이를 보는 모든 사람에게 즉시 적용됩니다. 이 화면은 고객에게 표시되지 않습니다."
 
+msgid "Take Baseline"
+msgstr ""
+
 msgid "Take out of service"
 msgstr "서비스 중지"
 
 msgid "Take Out of Service"
 msgstr "사용 중단"
+
+msgid "Take the first baseline"
+msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "이 품목을 만드는 데 소비되는 자재 중 가장 짧은 보존 기간을 사용합니다. 제품의 유통기한이 재료에 따라 결정될 때 사용합니다."
@@ -21050,6 +21116,9 @@ msgstr "하나 이상의 품목을 대상으로 지정합니다."
 
 msgid "Target quantity"
 msgstr "목표 수량"
+
+msgid "Target unit"
+msgstr ""
 
 msgid "Target value"
 msgstr ""
@@ -23355,14 +23424,23 @@ msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으
 msgid "Unknown"
 msgstr "알 수 없음"
 
+msgid "Unknown element"
+msgstr ""
+
 msgid "unknown error"
 msgstr "알 수 없는 오류"
 
 msgid "Unknown gauge"
 msgstr "알 수 없는 계측기"
 
+msgid "Unknown labor category"
+msgstr ""
+
 msgid "unknown location"
 msgstr "알 수 없는 위치"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "무제한 기능 지원"
@@ -23660,6 +23738,9 @@ msgstr "업로드 중…"
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "전환을 클릭하면 다음의 내부 부품 번호로 부품이 생성됩니다:"
 
+msgid "Upper target"
+msgstr ""
+
 msgid "Upper value"
 msgstr ""
 
@@ -23869,6 +23950,9 @@ msgstr "사업자등록번호"
 
 msgid "Verdict"
 msgstr "판정"
+
+msgid "Verification"
+msgstr ""
 
 msgid "Verification Error"
 msgstr "확인 오류"

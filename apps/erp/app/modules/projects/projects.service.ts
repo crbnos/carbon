@@ -973,6 +973,19 @@ export async function getProjectBaseline(
     .single();
 }
 
+/** The names of the given labor categories, active or not (one `.in()`). */
+export async function getLaborCategoryNames(
+  client: Client,
+  ids: string[],
+  companyId: string
+) {
+  return client
+    .from("laborCategory")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .in("id", ids);
+}
+
 // --- Elements ----------------------------------------------------------------
 
 const PROJECT_ELEMENT_LIST_COLUMNS =

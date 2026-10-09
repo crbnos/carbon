@@ -49,6 +49,7 @@ export const DETAIL_TAB_SHORTCUTS = {
 export const PROJECT_TAB_SHORTCUTS = {
   elements: "mod+shift+e",
   milestones: "mod+shift+m",
+  baselines: "mod+shift+b",
   costs: "mod+shift+c",
   time: "mod+shift+h",
   settings: "mod+shift+s",

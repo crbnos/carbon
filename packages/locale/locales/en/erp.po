@@ -67,13 +67,25 @@ msgstr "{0, plural, one {# day of slack} other {# days of slack}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# day short} other {# days short}}"
 
+#. placeholder {0}: groups.length
+msgid "{0, plural, one {# element changed} other {# elements changed}}"
+msgstr "{0, plural, one {# element changed} other {# elements changed}}"
+
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
 msgstr "{0, plural, one {# element will be created} other {# elements will be created}}"
 
+#. placeholder {0}: baseline.elementCount
+msgid "{0, plural, one {# element} other {# elements}}"
+msgstr "{0, plural, one {# element} other {# elements}}"
+
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
 msgstr "{0, plural, one {# label} other {# labels}}"
+
+#. placeholder {0}: baseline.linkCount
+msgid "{0, plural, one {# link} other {# links}}"
+msgstr "{0, plural, one {# link} other {# links}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -3546,6 +3558,9 @@ msgstr "Awaiting approval"
 msgid "Back"
 msgstr "Back"
 
+msgid "Back to baselines"
+msgstr "Back to baselines"
+
 msgid "Back to traceability"
 msgstr "Back to traceability"
 
@@ -3638,6 +3653,9 @@ msgstr "Base material — e.g. steel vs aluminum"
 
 msgid "Base Price"
 msgstr "Base Price"
+
+msgid "Baselines"
+msgstr "Baselines"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Basic ERP, MES, and QMS functionality"
@@ -4421,6 +4439,9 @@ msgstr "Change owner"
 msgid "Change priority"
 msgstr "Change priority"
 
+msgid "Change request"
+msgstr "Change request"
+
 msgid "Change state"
 msgstr "Change state"
 
@@ -4885,6 +4906,9 @@ msgstr "Company policy asks for a different person to inspect inbound items than
 msgid "Company-wide — includes all locations"
 msgstr "Company-wide — includes all locations"
 
+msgid "Compare"
+msgstr "Compare"
+
 msgid "Compare and Order"
 msgstr "Compare and Order"
 
@@ -4896,6 +4920,12 @@ msgstr "Compare Quotes"
 
 msgid "Compare Supplier Quotes"
 msgstr "Compare Supplier Quotes"
+
+msgid "Compare with current"
+msgstr "Compare with current"
+
+msgid "Compare with…"
+msgstr "Compare with…"
 
 msgid "Compatibility rules"
 msgstr "Compatibility rules"
@@ -6305,6 +6335,9 @@ msgstr "Current Net Book Value:"
 msgid "Current Password"
 msgstr "Current Password"
 
+msgid "Current plan"
+msgstr "Current plan"
+
 msgid "Current projection"
 msgstr "Current projection"
 
@@ -7444,6 +7477,9 @@ msgstr "Description of Issue"
 
 msgid "Design Constraint"
 msgstr "Design Constraint"
+
+msgid "Design review"
+msgstr "Design review"
 
 msgid "Detail"
 msgstr "Detail"
@@ -8612,6 +8648,9 @@ msgstr "Enabled"
 
 msgid "End"
 msgstr "End"
+
+msgid "End date"
+msgstr "End date"
 
 msgid "End Date"
 msgstr "End Date"
@@ -12145,6 +12184,9 @@ msgstr "Link to sales order line"
 msgid "Link type"
 msgstr "Link type"
 
+msgid "Linked"
+msgstr "Linked"
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -13806,6 +13848,9 @@ msgstr "No available tracked entities found"
 msgid "No bank accounts have been added yet."
 msgstr "No bank accounts have been added yet."
 
+msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
+
 msgid "No batches"
 msgstr "No batches"
 
@@ -13910,6 +13955,9 @@ msgstr "No deposit has been received for this agreement."
 
 msgid "No description"
 msgstr "No description"
+
+msgid "No differences."
+msgstr "No differences."
 
 msgid "No dimension slots configured"
 msgstr "No dimension slots configured"
@@ -15273,6 +15321,12 @@ msgstr "Original Count"
 msgid "Other"
 msgstr "Other"
 
+msgid "Other cost"
+msgstr "Other cost"
+
+msgid "Other costs"
+msgstr "Other costs"
+
 msgid "Other Costs"
 msgstr "Other Costs"
 
@@ -16084,6 +16138,9 @@ msgstr "Portal Link"
 
 msgid "Portals"
 msgstr "Portals"
+
+msgid "Position changed"
+msgstr "Position changed"
 
 msgid "Positive Adjustment"
 msgstr "Positive Adjustment"
@@ -17927,6 +17984,9 @@ msgstr "Required Actions"
 
 msgid "Required Actions (in order)"
 msgstr "Required Actions (in order)"
+
+msgid "Required date"
+msgstr "Required date"
 
 msgid "Required Date"
 msgstr "Required Date"
@@ -20982,11 +21042,17 @@ msgstr "Tags"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 
+msgid "Take Baseline"
+msgstr "Take Baseline"
+
 msgid "Take out of service"
 msgstr "Take out of service"
 
 msgid "Take Out of Service"
 msgstr "Take Out of Service"
+
+msgid "Take the first baseline"
+msgstr "Take the first baseline"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
@@ -21050,6 +21116,9 @@ msgstr "Target one or more items."
 
 msgid "Target quantity"
 msgstr "Target quantity"
+
+msgid "Target unit"
+msgstr "Target unit"
 
 msgid "Target value"
 msgstr "Target value"
@@ -23355,14 +23424,23 @@ msgstr "Units reported as unrecoverable at an operation, with a reason — the a
 msgid "Unknown"
 msgstr "Unknown"
 
+msgid "Unknown element"
+msgstr "Unknown element"
+
 msgid "unknown error"
 msgstr "unknown error"
 
 msgid "Unknown gauge"
 msgstr "Unknown gauge"
 
+msgid "Unknown labor category"
+msgstr "Unknown labor category"
+
 msgid "unknown location"
 msgstr "unknown location"
+
+msgid "Unknown part"
+msgstr "Unknown part"
 
 msgid "Unlimited functional support"
 msgstr "Unlimited functional support"
@@ -23660,6 +23738,9 @@ msgstr "Uploading…"
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Upon clicking Convert, parts will be created with the following internal part numbers:"
 
+msgid "Upper target"
+msgstr "Upper target"
+
 msgid "Upper value"
 msgstr "Upper value"
 
@@ -23869,6 +23950,9 @@ msgstr "VAT Number"
 
 msgid "Verdict"
 msgstr "Verdict"
+
+msgid "Verification"
+msgstr "Verification"
 
 msgid "Verification Error"
 msgstr "Verification Error"

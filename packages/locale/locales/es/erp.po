@@ -67,12 +67,24 @@ msgstr "{0, plural, one {# día de holgura} other {# días de holgura}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# día de atraso} other {# días de atraso}}"
 
+#. placeholder {0}: groups.length
+msgid "{0, plural, one {# element changed} other {# elements changed}}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
 msgstr ""
 
+#. placeholder {0}: baseline.elementCount
+msgid "{0, plural, one {# element} other {# elements}}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
+#. placeholder {0}: baseline.linkCount
+msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
@@ -3546,6 +3558,9 @@ msgstr "A la espera de aprobación"
 msgid "Back"
 msgstr "Atrás"
 
+msgid "Back to baselines"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Volver a trazabilidad"
 
@@ -3638,6 +3653,9 @@ msgstr "Material base — por ej. acero vs aluminio"
 
 msgid "Base Price"
 msgstr "Precio Base"
+
+msgid "Baselines"
+msgstr ""
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Funcionalidad básica de ERP, MES y QMS"
@@ -4421,6 +4439,9 @@ msgstr ""
 msgid "Change priority"
 msgstr ""
 
+msgid "Change request"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4885,6 +4906,9 @@ msgstr "La política de la empresa requiere que una persona diferente inspeccion
 msgid "Company-wide — includes all locations"
 msgstr "Toda la empresa — incluye todas las ubicaciones"
 
+msgid "Compare"
+msgstr ""
+
 msgid "Compare and Order"
 msgstr "Comparar y Ordenar"
 
@@ -4896,6 +4920,12 @@ msgstr "Comparar Cotizaciones"
 
 msgid "Compare Supplier Quotes"
 msgstr "Comparar cotizaciones del proveedor"
+
+msgid "Compare with current"
+msgstr ""
+
+msgid "Compare with…"
+msgstr ""
 
 msgid "Compatibility rules"
 msgstr "Reglas de compatibilidad"
@@ -6305,6 +6335,9 @@ msgstr "Valor Neto en Libros Actual:"
 msgid "Current Password"
 msgstr "Contraseña Actual"
 
+msgid "Current plan"
+msgstr ""
+
 msgid "Current projection"
 msgstr "Proyección actual"
 
@@ -7443,6 +7476,9 @@ msgid "Description of Issue"
 msgstr "Descripción del Problema"
 
 msgid "Design Constraint"
+msgstr ""
+
+msgid "Design review"
 msgstr ""
 
 msgid "Detail"
@@ -8612,6 +8648,9 @@ msgstr "Habilitado"
 
 msgid "End"
 msgstr "Fin"
+
+msgid "End date"
+msgstr ""
 
 msgid "End Date"
 msgstr "Fecha de Fin"
@@ -12145,6 +12184,9 @@ msgstr "Vínculo a línea de pedido de venta"
 msgid "Link type"
 msgstr ""
 
+msgid "Linked"
+msgstr ""
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -13806,6 +13848,9 @@ msgstr "No se encontraron entidades rastreadas disponibles"
 msgid "No bank accounts have been added yet."
 msgstr "Aún no se han agregado cuentas bancarias."
 
+msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "No batches"
 msgstr "Sin lotes"
 
@@ -13909,6 +13954,9 @@ msgid "No deposit has been received for this agreement."
 msgstr "No se ha recibido depósito para este acuerdo."
 
 msgid "No description"
+msgstr ""
+
+msgid "No differences."
 msgstr ""
 
 msgid "No dimension slots configured"
@@ -15273,6 +15321,12 @@ msgstr "Conteo Original"
 msgid "Other"
 msgstr "Otros"
 
+msgid "Other cost"
+msgstr ""
+
+msgid "Other costs"
+msgstr ""
+
 msgid "Other Costs"
 msgstr ""
 
@@ -16084,6 +16138,9 @@ msgstr "Enlace del Portal"
 
 msgid "Portals"
 msgstr "Portales"
+
+msgid "Position changed"
+msgstr ""
 
 msgid "Positive Adjustment"
 msgstr "Ajuste Positivo"
@@ -17927,6 +17984,9 @@ msgstr "Acciones Requeridas"
 
 msgid "Required Actions (in order)"
 msgstr "Acciones Requeridas (en orden)"
+
+msgid "Required date"
+msgstr ""
 
 msgid "Required Date"
 msgstr "Fecha Requerida"
@@ -20982,11 +21042,17 @@ msgstr "Etiquetas"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Personaliza este hub para el cliente. Los cambios se aplican en vivo para todos los que lo visualizan. Nunca se muestra al cliente aquí."
 
+msgid "Take Baseline"
+msgstr ""
+
 msgid "Take out of service"
 msgstr "Sacar de servicio"
 
 msgid "Take Out of Service"
 msgstr "Retirar de Servicio"
+
+msgid "Take the first baseline"
+msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Toma la vida de anaquel más corta restante entre los artículos consumidos para fabricar este artículo. Usa esto cuando la caducidad del producto depende de sus ingredientes."
@@ -21050,6 +21116,9 @@ msgstr "Versión Destino"
 
 msgid "Target quantity"
 msgstr "Cantidad objetivo"
+
+msgid "Target unit"
+msgstr ""
 
 msgid "Target value"
 msgstr ""
@@ -23355,14 +23424,23 @@ msgstr "Unidades reportadas como irrecuperables en una operación, con una razó
 msgid "Unknown"
 msgstr "Desconocido"
 
+msgid "Unknown element"
+msgstr ""
+
 msgid "unknown error"
 msgstr "error desconocido"
 
 msgid "Unknown gauge"
 msgstr "Instrumento de medición desconocido"
 
+msgid "Unknown labor category"
+msgstr ""
+
 msgid "unknown location"
 msgstr "ubicación desconocida"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "Soporte funcional ilimitado"
@@ -23660,6 +23738,9 @@ msgstr "Cargando…"
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Al hacer clic en Convertir, se crearán piezas con los siguientes números de pieza internos:"
 
+msgid "Upper target"
+msgstr ""
+
 msgid "Upper value"
 msgstr ""
 
@@ -23869,6 +23950,9 @@ msgstr "Número de IVA"
 
 msgid "Verdict"
 msgstr "Veredicto"
+
+msgid "Verification"
+msgstr ""
 
 msgid "Verification Error"
 msgstr "Error de verificación"

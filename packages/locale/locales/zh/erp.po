@@ -67,12 +67,24 @@ msgstr "{0, plural, one {# 天的松弛} other {# 天的松弛}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 
+#. placeholder {0}: groups.length
+msgid "{0, plural, one {# element changed} other {# elements changed}}"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
 msgstr ""
 
+#. placeholder {0}: baseline.elementCount
+msgid "{0, plural, one {# element} other {# elements}}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
+msgstr ""
+
+#. placeholder {0}: baseline.linkCount
+msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
@@ -3546,6 +3558,9 @@ msgstr "等待审批"
 msgid "Back"
 msgstr "返回"
 
+msgid "Back to baselines"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "返回可追溯性"
 
@@ -3638,6 +3653,9 @@ msgstr "基础材料 — 例如 钢 与 铝"
 
 msgid "Base Price"
 msgstr "基础价格"
+
+msgid "Baselines"
+msgstr ""
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "基本的 ERP、MES 和 QMS 功能"
@@ -4421,6 +4439,9 @@ msgstr ""
 msgid "Change priority"
 msgstr ""
 
+msgid "Change request"
+msgstr ""
+
 msgid "Change state"
 msgstr ""
 
@@ -4885,6 +4906,9 @@ msgstr "公司政策要求与收货人不同的人检查来料。"
 msgid "Company-wide — includes all locations"
 msgstr "公司范围 — 包括所有地点"
 
+msgid "Compare"
+msgstr ""
+
 msgid "Compare and Order"
 msgstr "比较并订购"
 
@@ -4896,6 +4920,12 @@ msgstr "比较报价"
 
 msgid "Compare Supplier Quotes"
 msgstr "比较供应商报价"
+
+msgid "Compare with current"
+msgstr ""
+
+msgid "Compare with…"
+msgstr ""
 
 msgid "Compatibility rules"
 msgstr "兼容性规则"
@@ -6305,6 +6335,9 @@ msgstr "当前账面净值："
 msgid "Current Password"
 msgstr "当前密码"
 
+msgid "Current plan"
+msgstr ""
+
 msgid "Current projection"
 msgstr "当前预测"
 
@@ -7443,6 +7476,9 @@ msgid "Description of Issue"
 msgstr "问题描述"
 
 msgid "Design Constraint"
+msgstr ""
+
+msgid "Design review"
 msgstr ""
 
 msgid "Detail"
@@ -8612,6 +8648,9 @@ msgstr "已启用"
 
 msgid "End"
 msgstr "结束"
+
+msgid "End date"
+msgstr ""
 
 msgid "End Date"
 msgstr "结束日期"
@@ -12145,6 +12184,9 @@ msgstr "关联销售订单行"
 msgid "Link type"
 msgstr ""
 
+msgid "Linked"
+msgstr ""
+
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
 msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
@@ -13806,6 +13848,9 @@ msgstr "未找到可用的追踪实体"
 msgid "No bank accounts have been added yet."
 msgstr "尚未添加银行账户。"
 
+msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "No batches"
 msgstr "无生产批次"
 
@@ -13909,6 +13954,9 @@ msgid "No deposit has been received for this agreement."
 msgstr "未收到此协议的押金。"
 
 msgid "No description"
+msgstr ""
+
+msgid "No differences."
 msgstr ""
 
 msgid "No dimension slots configured"
@@ -15273,6 +15321,12 @@ msgstr "原始盘点"
 msgid "Other"
 msgstr "其他"
 
+msgid "Other cost"
+msgstr ""
+
+msgid "Other costs"
+msgstr ""
+
 msgid "Other Costs"
 msgstr ""
 
@@ -16084,6 +16138,9 @@ msgstr "门户链接"
 
 msgid "Portals"
 msgstr "门户"
+
+msgid "Position changed"
+msgstr ""
 
 msgid "Positive Adjustment"
 msgstr "正向调整"
@@ -17927,6 +17984,9 @@ msgstr "必需操作"
 
 msgid "Required Actions (in order)"
 msgstr "必需的操作（按顺序）"
+
+msgid "Required date"
+msgstr ""
 
 msgid "Required Date"
 msgstr "需求日期"
@@ -20982,11 +21042,17 @@ msgstr "标签"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "为客户定制此中心。更改对所有查看者实时生效。永远不会向客户显示此内容。"
 
+msgid "Take Baseline"
+msgstr ""
+
 msgid "Take out of service"
 msgstr "停用"
 
 msgid "Take Out of Service"
 msgstr "停用"
+
+msgid "Take the first baseline"
+msgstr ""
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "采用制造此物料所消耗的原材料中最短的保质期。当产品的有效期取决于其成分时使用。"
@@ -21050,6 +21116,9 @@ msgstr "定位一个或多个物料。"
 
 msgid "Target quantity"
 msgstr "目标数量"
+
+msgid "Target unit"
+msgstr ""
 
 msgid "Target value"
 msgstr ""
@@ -23355,14 +23424,23 @@ msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替
 msgid "Unknown"
 msgstr "未知"
 
+msgid "Unknown element"
+msgstr ""
+
 msgid "unknown error"
 msgstr "未知错误"
 
 msgid "Unknown gauge"
 msgstr "未知量具"
 
+msgid "Unknown labor category"
+msgstr ""
+
 msgid "unknown location"
 msgstr "未知位置"
+
+msgid "Unknown part"
+msgstr ""
 
 msgid "Unlimited functional support"
 msgstr "无限功能支持"
@@ -23660,6 +23738,9 @@ msgstr "上传中…"
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "点击转换后，将使用以下内部零件编号创建零件："
 
+msgid "Upper target"
+msgstr ""
+
 msgid "Upper value"
 msgstr ""
 
@@ -23869,6 +23950,9 @@ msgstr "增值税号"
 
 msgid "Verdict"
 msgstr "结果"
+
+msgid "Verification"
+msgstr ""
 
 msgid "Verification Error"
 msgstr "验证错误"

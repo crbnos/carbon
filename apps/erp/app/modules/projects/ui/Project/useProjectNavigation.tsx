@@ -7,6 +7,7 @@ import {
   LuCoins,
   LuFileText,
   LuFlag,
+  LuHistory,
   LuListTree,
   LuSettings2,
   LuTimer
@@ -35,6 +36,12 @@ export function useProjectNavigation() {
       to: path.to.projectMilestones(projectId),
       icon: LuFlag,
       shortcut: PROJECT_TAB_SHORTCUTS.milestones
+    },
+    {
+      name: t`Baselines`,
+      to: path.to.projectBaselines(projectId),
+      icon: LuHistory,
+      shortcut: PROJECT_TAB_SHORTCUTS.baselines
     },
     {
       name: t`Costs`,
