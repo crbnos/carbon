@@ -71,8 +71,8 @@ export function AgentPanel() {
   return (
     <div
       className={`fixed right-4 z-40 flex flex-col w-100 max-w-[calc(100vw-2rem)] rounded-lg border bg-background shadow-lg overflow-hidden animate-in slide-in-from-top-4 fade-in duration-200 ${
-        expanded ? "top-14 bottom-4" : "top-14 h-[45vh]"
-      } max-md:inset-0 max-md:z-[60] max-md:h-auto max-md:w-full max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:pt-safe max-md:pb-safe`}
+        expanded ? "top-14 bottom-4 max-md:h-[75dvh]" : "top-14 h-[45vh]"
+      } max-md:inset-x-2 max-md:top-auto max-md:bottom-[calc(0.5rem+env(safe-area-inset-bottom))] max-md:z-[60] max-md:w-auto max-md:max-w-none`}
     >
       <div className="flex items-center justify-between px-3 h-11 border-b shrink-0">
         <div className="flex items-center gap-2">

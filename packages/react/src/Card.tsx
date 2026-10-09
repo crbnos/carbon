@@ -213,13 +213,14 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     if (context?.isCollapsed) {
       return null;
     }
-    // Phones flatten the panel under its header. When the header before it is
-    // hidden on phones, the panel is the card's top edge, so it stays rounded.
+    // Phones square off the panel's top under its header. When the header
+    // before it is hidden on phones, the panel is the card's top edge, so it
+    // stays rounded.
     return (
       <div
         ref={ref}
         className={cn(
-          "flex flex-col flex-1 p-6 m-[-1px] rounded-xl border border-border bg-card dark:bg-muted/40 max-md:p-4 max-md:rounded-t-none max-md:border-x-0 max-md:border-b-0 max-md:[&:is([class~='max-md:hidden']+*)]:rounded-t-xl max-md:[&:is([class~='max-md:hidden']+*)]:border-t-0",
+          "flex flex-col flex-1 p-6 m-[-1px] rounded-xl border border-border bg-card dark:bg-muted/40 max-md:p-4 max-md:rounded-t-none max-md:[&:is([class~='max-md:hidden']+*)]:rounded-t-xl",
           className
         )}
         {...props}
