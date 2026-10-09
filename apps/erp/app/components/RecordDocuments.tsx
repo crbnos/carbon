@@ -63,10 +63,13 @@ type RecordDocumentsProps = {
   id: string;
   /** Storage prefix segment under ${companyId}/, e.g. "supplier" */
   bucketPrefix: string;
-  /** documentSourceType value */
-  sourceDocument: "Supplier" | "Customer";
+  /**
+   * documentSourceType value. Without one, the upload writes no `document`
+   * row: the file lives with the record only (a service order's files).
+   */
+  sourceDocument?: "Supplier" | "Customer";
   /** Permission module gating upload/delete */
-  module: "purchasing" | "sales";
+  module: "purchasing" | "sales" | "service";
   isReadOnly?: boolean;
 };
 
@@ -234,8 +237,8 @@ const RecordDocuments = ({
 type RecordDocumentUploadProps = {
   id: string;
   bucketPrefix: string;
-  sourceDocument: "Supplier" | "Customer";
-  module: "purchasing" | "sales";
+  sourceDocument?: "Supplier" | "Customer";
+  module: "purchasing" | "sales" | "service";
 };
 
 const RecordDocumentUpload = (props: RecordDocumentUploadProps) => {
@@ -341,6 +344,7 @@ export const useRecordDocuments = ({
       name: string;
       size: number;
     }) => {
+      if (!sourceDocument) return;
       const formData = new FormData();
       formData.append("path", filePath);
       formData.append("name", name);

@@ -928,6 +928,9 @@ msgstr "A draft run must be posted or deleted first."
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 
+msgid "A field visit to a unit at a customer. The unit decides the customer and the site."
+msgstr "A field visit to a unit at a customer. The unit decides the customer and the site."
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "A file named {0} already exists — delete or rename it first"
@@ -2772,11 +2775,17 @@ msgstr "Are you sure you want to cancel this job? It will no longer be available
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgstr "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 msgstr "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
+
+msgid "Are you sure you want to close this service order without an invoice? A closed order cannot change."
+msgstr "Are you sure you want to close this service order without an invoice? A closed order cannot change."
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
@@ -4049,6 +4058,9 @@ msgstr "By Item"
 msgid "By Location"
 msgstr "By Location"
 
+msgid "By Node"
+msgstr "By Node"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 
@@ -4132,8 +4144,8 @@ msgid "Cancel"
 msgstr "Cancel"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "Cancel {0}"
 
@@ -4178,6 +4190,9 @@ msgstr "Cancel RMA"
 
 msgid "Cancel Sales Order"
 msgstr "Cancel Sales Order"
+
+msgid "Cancel Service Order"
+msgstr "Cancel Service Order"
 
 msgid "Cancel SO"
 msgstr "Cancel SO"
@@ -4659,6 +4674,9 @@ msgstr "Choose the new parent"
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 
+msgid "Choose the unit to see its customer and warranty."
+msgstr "Choose the unit to see its customer and warranty."
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
 
@@ -4758,6 +4776,7 @@ msgstr "Clocked in since <0/>"
 msgid "Close"
 msgstr "Close"
 
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: project.identifier
 msgid "Close {0}"
 msgstr "Close {0}"
@@ -4963,6 +4982,10 @@ msgstr "Compatibility rules"
 
 msgid "Complete"
 msgstr "Complete"
+
+#. placeholder {0}: order.serviceOrderId
+msgid "Complete {0}"
+msgstr "Complete {0}"
 
 msgid "Complete All"
 msgstr "Complete All"
@@ -5682,6 +5705,9 @@ msgstr "Copy sales return order unique identifier"
 msgid "Copy service number"
 msgstr "Copy service number"
 
+msgid "Copy service order unique identifier"
+msgstr "Copy service order unique identifier"
+
 msgid "Copy service unique identifier"
 msgstr "Copy service unique identifier"
 
@@ -5938,6 +5964,9 @@ msgstr "Country code"
 
 msgid "Coverage"
 msgstr "Coverage"
+
+msgid "Coverage Contract"
+msgstr "Coverage Contract"
 
 msgid "Create"
 msgstr "Create"
@@ -11428,6 +11457,9 @@ msgstr "Invoice Customer Location"
 msgid "Invoice Date"
 msgstr "Invoice Date"
 
+msgid "Invoice Detail"
+msgstr "Invoice Detail"
+
 msgid "Invoice ID"
 msgstr "Invoice ID"
 
@@ -11553,6 +11585,9 @@ msgstr "Is supplier org group"
 
 msgid "Is supplier type group"
 msgstr "Is supplier type group"
+
+msgid "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
+msgstr "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
 
 msgid "Issue"
 msgstr "Issue"
@@ -11709,6 +11744,9 @@ msgstr "Item Type (optional)"
 
 msgid "Item types"
 msgstr "Item types"
+
+msgid "Itemized"
+msgstr "Itemized"
 
 msgid "items"
 msgstr "items"
@@ -13869,6 +13907,9 @@ msgstr "Next Sequence"
 msgid "Next step"
 msgstr "Next step"
 
+msgid "Next Visit"
+msgstr "Next Visit"
+
 msgid "Next week"
 msgstr "Next week"
 
@@ -14411,6 +14452,9 @@ msgstr "No printers configured. Click \"Add Printer\" to create one."
 msgid "No priority"
 msgstr "No priority"
 
+msgid "No problem described"
+msgstr "No problem described"
+
 msgid "No procedure"
 msgstr "No procedure"
 
@@ -14465,6 +14509,9 @@ msgstr "No reports match your search."
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 
+msgid "No resolution yet"
+msgstr "No resolution yet"
+
 msgid "No results"
 msgstr "No results"
 
@@ -14503,6 +14550,9 @@ msgstr "No serial numbers selected yet."
 
 msgid "No service order has fitted a part to this unit."
 msgstr "No service order has fitted a part to this unit."
+
+msgid "No service templates yet"
+msgstr "No service templates yet"
 
 msgid "No service work has been charged to this asset yet."
 msgstr "No service work has been charged to this asset yet."
@@ -16570,6 +16620,9 @@ msgstr "Privacy Policy"
 msgid "Private"
 msgstr "Private"
 
+msgid "Problem"
+msgstr "Problem"
+
 msgid "procedure"
 msgstr "procedure"
 
@@ -17013,6 +17066,9 @@ msgstr "Push to accounting"
 
 msgid "Put on hold"
 msgstr "Put on hold"
+
+msgid "Put on Hold"
+msgstr "Put on Hold"
 
 msgid "Putting your data back"
 msgstr "Putting your data back"
@@ -18236,6 +18292,9 @@ msgstr "Residual Value"
 msgid "Residual Value %"
 msgstr "Residual Value %"
 
+msgid "Resolution"
+msgstr "Resolution"
+
 msgid "Resolve"
 msgstr "Resolve"
 
@@ -19223,6 +19282,9 @@ msgstr "Search by linear issue title..."
 msgid "Search by receipt, PO, or item"
 msgstr "Search by receipt, PO, or item"
 
+msgid "Search by serial"
+msgstr "Search by serial"
+
 msgid "Search by shipment, sales order, or item"
 msgstr "Search by shipment, sales order, or item"
 
@@ -19718,6 +19780,9 @@ msgstr "Service ID"
 msgid "Service lines"
 msgstr "Service lines"
 
+msgid "Service Location"
+msgstr "Service Location"
+
 msgid "Service order"
 msgstr "Service order"
 
@@ -19735,6 +19800,12 @@ msgstr "Service Provider Details"
 
 msgid "Service start"
 msgstr "Service start"
+
+msgid "Service template"
+msgstr "Service template"
+
+msgid "Service Template"
+msgstr "Service Template"
 
 msgid "Service Templates"
 msgstr "Service Templates"
@@ -20533,6 +20604,9 @@ msgstr "Start Time"
 
 msgid "Start with"
 msgstr "Start with"
+
+msgid "Start Work From"
+msgstr "Start Work From"
 
 msgid "Started"
 msgstr "Started"
@@ -21431,6 +21505,9 @@ msgstr "Technically complete"
 msgid "Technically Complete"
 msgstr "Technically Complete"
 
+msgid "Technicians"
+msgstr "Technicians"
+
 msgid "Tell the employee what to fix"
 msgstr "Tell the employee what to fix"
 
@@ -21894,6 +21971,9 @@ msgstr "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 1
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "The item each job produces — require it to match to merge output lots"
+
+msgid "The item's bill of materials"
+msgstr "The item's bill of materials"
 
 msgid "The item's rental rate"
 msgstr "The item's rental rate"
@@ -22436,6 +22516,9 @@ msgstr "The unit suppliers price and ship this item in, when different from the 
 msgid "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 msgstr "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 
+msgid "The unit's build history"
+msgstr "The unit's build history"
+
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "The units of measure you buy, stock, and sell in"
 
@@ -22596,6 +22679,9 @@ msgstr "This contract's invoices post automatically, so confirming it needs perm
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "This counterparty has nothing outstanding — the payment will be recorded on-account."
+
+msgid "This customer has no active contract"
+msgstr "This customer has no active contract"
 
 msgid "This customer has no registered assets yet."
 msgstr "This customer has no registered assets yet."
@@ -24410,6 +24496,9 @@ msgstr "View Traceability Graph"
 
 msgid "View Transfer"
 msgstr "View Transfer"
+
+msgid "View Unit"
+msgstr "View Unit"
 
 msgid "Viewed"
 msgstr "Viewed"

@@ -14,6 +14,7 @@ import { useMemo } from "react";
 import {
   LuBlocks,
   LuCirclePlay,
+  LuClipboardList,
   LuContainer,
   LuShieldX,
   LuShoppingCart,
@@ -105,6 +106,14 @@ function useCreate(): Route[] {
         name: t`Sales Order`,
         to: path.to.newSalesOrder,
         icon: <RiProgress8Line />
+      });
+    }
+
+    if (permissions.can("create", "service")) {
+      links.push({
+        name: t`Service Order`,
+        to: path.to.newServiceOrder,
+        icon: <LuClipboardList />
       });
     }
 

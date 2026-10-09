@@ -928,6 +928,9 @@ msgstr "초안 실행을 먼저 전기하거나 삭제해야 합니다."
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "초안의 라인은 직접 편집됩니다. 확정된 후에는 수정(Amend)으로 변경을 수행하고 여기에 기록됩니다."
 
+msgid "A field visit to a unit at a customer. The unit decides the customer and the site."
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "{0} 파일이 이미 존재합니다 — 먼저 삭제하거나 이름을 바꾸세요"
@@ -2772,11 +2775,17 @@ msgstr "이 작업 지시를 취소하시겠습니까? 현장에서 더 이상 �
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "이 RMA를 취소하시겠습니까? 이렇게 하면 승인된 수량이 원본 문서로 반환됩니다."
 
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgstr ""
+
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 msgstr "이 공급업체 반품을 취소하시겠습니까? 이렇게 하면 승인된 수량이 원본 문서로 반환됩니다."
 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "{propertyName} 속성을 변경하시겠습니까? 자동 생성된 자재 ID를 사용하고 있으므로, 이 변경으로 해당 품목의 품목 ID와 관련된 모든 리비전이 변경됩니다."
+
+msgid "Are you sure you want to close this service order without an invoice? A closed order cannot change."
+msgstr ""
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "이 RMA를 확인하시겠습니까? 확인하면 고객이 라인상의 상품을 반품할 수 있도록 허가됩니다."
@@ -4049,6 +4058,9 @@ msgstr "항목별"
 msgid "By Location"
 msgstr "위치별"
 
+msgid "By Node"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
@@ -4132,8 +4144,8 @@ msgid "Cancel"
 msgstr "취소"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "{0} 취소"
 
@@ -4178,6 +4190,9 @@ msgstr "RMA 취소"
 
 msgid "Cancel Sales Order"
 msgstr "수주 취소"
+
+msgid "Cancel Service Order"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "판매주문 취소"
@@ -4659,6 +4674,9 @@ msgstr ""
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "이 계약이 청구하는 서비스를 선택하세요. 각 서비스는 그리드에서 가격을 책정할 수 있는 반복 라인으로 추가됩니다."
 
+msgid "Choose the unit to see its customer and warranty."
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "인쇄된 작업 이동표에 나타날 내용을 선택하십시오."
 
@@ -4758,6 +4776,7 @@ msgstr "<0/> 이후로 근무 중"
 msgid "Close"
 msgstr "닫기"
 
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: project.identifier
 msgid "Close {0}"
 msgstr ""
@@ -4963,6 +4982,10 @@ msgstr "호환성 규칙"
 
 msgid "Complete"
 msgstr "완료"
+
+#. placeholder {0}: order.serviceOrderId
+msgid "Complete {0}"
+msgstr ""
 
 msgid "Complete All"
 msgstr "모두 완료"
@@ -5682,6 +5705,9 @@ msgstr "판매 반품 주문 고유 식별자 복사"
 msgid "Copy service number"
 msgstr "서비스 번호 복사"
 
+msgid "Copy service order unique identifier"
+msgstr ""
+
 msgid "Copy service unique identifier"
 msgstr "서비스 고유 식별자 복사"
 
@@ -5938,6 +5964,9 @@ msgstr "국가 코드"
 
 msgid "Coverage"
 msgstr "배치"
+
+msgid "Coverage Contract"
+msgstr ""
 
 msgid "Create"
 msgstr "생성"
@@ -11428,6 +11457,9 @@ msgstr "송장 고객 사업장"
 msgid "Invoice Date"
 msgstr "송장 날짜"
 
+msgid "Invoice Detail"
+msgstr ""
+
 msgid "Invoice ID"
 msgstr "송장 ID"
 
@@ -11553,6 +11585,9 @@ msgstr "공급업체 조직 그룹입니다"
 
 msgid "Is supplier type group"
 msgstr "공급업체 유형 그룹입니다"
+
+msgid "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
+msgstr ""
 
 msgid "Issue"
 msgstr "이슈"
@@ -11709,6 +11744,9 @@ msgstr "품목 유형(선택 사항)"
 
 msgid "Item types"
 msgstr "품목 유형"
+
+msgid "Itemized"
+msgstr ""
 
 msgid "items"
 msgstr "품목"
@@ -13869,6 +13907,9 @@ msgstr "다음 채번 규칙"
 msgid "Next step"
 msgstr "다음 단계"
 
+msgid "Next Visit"
+msgstr ""
+
 msgid "Next week"
 msgstr "다음 주"
 
@@ -14411,6 +14452,9 @@ msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하�
 msgid "No priority"
 msgstr ""
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No procedure"
 msgstr ""
 
@@ -14465,6 +14509,9 @@ msgstr "검색 결과와 일치하는 보고서가 없습니다."
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "이 회사의 대표자가 아직 Carbon GovCloud Rider를 수락하지 않았습니다. 누구든 Carbon에 액세스하기 전에 이 회사의 관리자가 수락해야 합니다 — Carbon 직원이 귀사를 대신하여 수락할 수 없습니다."
 
+msgid "No resolution yet"
+msgstr ""
+
 msgid "No results"
 msgstr "결과 없음"
 
@@ -14502,6 +14549,9 @@ msgid "No serial numbers selected yet."
 msgstr "아직 선택된 시리얼 번호가 없습니다."
 
 msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service templates yet"
 msgstr ""
 
 msgid "No service work has been charged to this asset yet."
@@ -16570,6 +16620,9 @@ msgstr "개인정보처리방침"
 msgid "Private"
 msgstr "비공개"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "절차서"
 
@@ -17012,6 +17065,9 @@ msgid "Push to accounting"
 msgstr "회계로 푸시"
 
 msgid "Put on hold"
+msgstr ""
+
+msgid "Put on Hold"
 msgstr ""
 
 msgid "Putting your data back"
@@ -18236,6 +18292,9 @@ msgstr "잔존가액"
 msgid "Residual Value %"
 msgstr "잔존가액 %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr ""
 
@@ -19223,6 +19282,9 @@ msgstr "linear 이슈 제목으로 검색..."
 msgid "Search by receipt, PO, or item"
 msgstr "입고, 발주 또는 품목으로 검색"
 
+msgid "Search by serial"
+msgstr ""
+
 msgid "Search by shipment, sales order, or item"
 msgstr "출하, 수주, 또는 품목으로 검색"
 
@@ -19718,6 +19780,9 @@ msgstr "서비스 ID"
 msgid "Service lines"
 msgstr "서비스 라인"
 
+msgid "Service Location"
+msgstr ""
+
 msgid "Service order"
 msgstr ""
 
@@ -19735,6 +19800,12 @@ msgstr "서비스 공급자 세부 정보"
 
 msgid "Service start"
 msgstr "서비스 시작일"
+
+msgid "Service template"
+msgstr ""
+
+msgid "Service Template"
+msgstr ""
 
 msgid "Service Templates"
 msgstr ""
@@ -20533,6 +20604,9 @@ msgstr "시작 시간"
 
 msgid "Start with"
 msgstr "…부터 시작"
+
+msgid "Start Work From"
+msgstr ""
 
 msgid "Started"
 msgstr "시작됨"
@@ -21431,6 +21505,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Technicians"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -21894,6 +21971,9 @@ msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 �
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하기 위해 일치 필수"
+
+msgid "The item's bill of materials"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "품목의 임차료"
@@ -22436,6 +22516,9 @@ msgstr "재고 단위와 다를 경우, 공급업체가 이 품목의 가격을 
 msgid "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 msgstr "자산의 장부가액이 표시되지 않으므로, 그 매출원가 및 자산 계정이 표시되지 않습니다."
 
+msgid "The unit's build history"
+msgstr ""
+
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "구매, 재고, 판매 시 사용하는 측정 단위"
 
@@ -22596,6 +22679,9 @@ msgstr "이 계약의 송장은 자동으로 전기되므로, 확인하려면 �
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처는 미결 항목이 없으므로 지불이 외상으로 기록됩니다."
+
+msgid "This customer has no active contract"
+msgstr ""
 
 msgid "This customer has no registered assets yet."
 msgstr ""
@@ -24410,6 +24496,9 @@ msgstr "추적성 그래프 보기"
 
 msgid "View Transfer"
 msgstr "이동 보기"
+
+msgid "View Unit"
+msgstr ""
 
 msgid "Viewed"
 msgstr ""

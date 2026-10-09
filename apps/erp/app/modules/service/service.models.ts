@@ -147,6 +147,42 @@ export function rollUpOrderStatus(
   return "Draft";
 }
 
+/** The statuses a user moves an order to from the order page. */
+export const serviceOrderStatusActions = [
+  "On Hold",
+  "Completed",
+  "Closed",
+  "Cancelled",
+  "Draft"
+] as const satisfies readonly ServiceOrderStatus[];
+export type ServiceOrderStatusAction =
+  (typeof serviceOrderStatusActions)[number];
+
+/**
+ * Whether a user may move an order from `from` to `to` (spec, *Lifecycle*).
+ * An open order (Draft, Scheduled, In Progress) can be put on hold,
+ * completed or cancelled. An order on hold resumes (Draft, so its visits
+ * decide again) or is cancelled. A completed order closes or reopens
+ * (Draft). Closed and Cancelled are final.
+ */
+export function canMoveServiceOrder(
+  from: ServiceOrderStatus,
+  to: ServiceOrderStatusAction
+): boolean {
+  switch (from) {
+    case "Draft":
+    case "Scheduled":
+    case "In Progress":
+      return to === "On Hold" || to === "Completed" || to === "Cancelled";
+    case "On Hold":
+      return to === "Draft" || to === "Cancelled";
+    case "Completed":
+      return to === "Closed" || to === "Draft";
+    default:
+      return false;
+  }
+}
+
 const optionalDate = zfd.text(
   z
     .string()

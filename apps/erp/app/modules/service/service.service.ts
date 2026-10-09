@@ -346,6 +346,48 @@ export async function getServiceOrder(
 }
 
 /**
+ * What the new order form offers: the In Service customer assets (the only
+ * subjects a field visit takes), the Active coverage contracts of their
+ * customers, and the service templates. The asset list stops at the
+ * PostgREST page (1000 rows).
+ */
+export async function getServiceOrderFormOptions(
+  client: Client,
+  companyId: string
+) {
+  const [assets, contracts, templates] = await Promise.all([
+    client
+      .from("customerAsset")
+      .select(
+        "id, customerId, customerLocationId, laborWarrantyEndDate, partsWarrantyEndDate, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey!inner(readableId), item:item!customerAsset_itemId_fkey(readableIdWithRevision, name), customer:customer!customerAsset_customerId_fkey(name)"
+      )
+      .eq("companyId", companyId)
+      .eq("status", "In Service")
+      .order("createdAt", { ascending: false }),
+    client
+      .from("customerContract")
+      .select("id, customerContractId, name, customerId")
+      .eq("companyId", companyId)
+      .eq("status", "Active")
+      .order("customerContractId"),
+    client
+      .from("project")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .eq("projectType", "Service")
+      .eq("isTemplate", true)
+      .order("name")
+  ]);
+
+  return {
+    assets: assets.data ?? [],
+    contracts: contracts.data ?? [],
+    templates: templates.data ?? [],
+    error: assets.error ?? contracts.error ?? templates.error
+  };
+}
+
+/**
  * The posted cost of each order's work, keyed by project id: the sum of its
  * project's ledger amounts (a reversal nets its original out). One query
  * for every project.

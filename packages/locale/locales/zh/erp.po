@@ -928,6 +928,9 @@ msgstr "草稿凭证必须先过账或删除。"
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "草稿的行直接编辑。确认后，更改通过修订进行并在此处记录。"
 
+msgid "A field visit to a unit at a customer. The unit decides the customer and the site."
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "文件 {0} 已存在 — 请先删除或重新命名"
@@ -2772,11 +2775,17 @@ msgstr "你确定要取消此工作吗？它将不再在车间可用。"
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "确实要取消此 RMA 吗？这将把授权数量释放回源文档。"
 
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgstr ""
+
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 msgstr "确实要取消此供应商退货吗？这将把授权数量释放回源文档。"
 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "您确定要更改{propertyName}属性吗？由于您使用自动生成的物料ID，这将更改该零件的零件ID及其所有相关的修订版。"
+
+msgid "Are you sure you want to close this service order without an invoice? A closed order cannot change."
+msgstr ""
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "确实要确认此 RMA 吗？确认授权客户退回这些行上的商品。"
@@ -4049,6 +4058,9 @@ msgstr "按物品"
 msgid "By Location"
 msgstr "按位置"
 
+msgid "By Node"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
@@ -4132,8 +4144,8 @@ msgid "Cancel"
 msgstr "取消"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "取消 {0}"
 
@@ -4178,6 +4190,9 @@ msgstr "取消 RMA"
 
 msgid "Cancel Sales Order"
 msgstr "取消销售订单"
+
+msgid "Cancel Service Order"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "取消销售订单"
@@ -4659,6 +4674,9 @@ msgstr ""
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "选择此合同开票的服务。每个作为循环行添加，您可以在网格中定价"
 
+msgid "Choose the unit to see its customer and warranty."
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
 
@@ -4758,6 +4776,7 @@ msgstr "自 <0/> 打卡"
 msgid "Close"
 msgstr "关闭"
 
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: project.identifier
 msgid "Close {0}"
 msgstr ""
@@ -4963,6 +4982,10 @@ msgstr "兼容性规则"
 
 msgid "Complete"
 msgstr "完成"
+
+#. placeholder {0}: order.serviceOrderId
+msgid "Complete {0}"
+msgstr ""
 
 msgid "Complete All"
 msgstr "全部完成"
@@ -5682,6 +5705,9 @@ msgstr "复制销售退货订单唯一标识符"
 msgid "Copy service number"
 msgstr "复制服务编号"
 
+msgid "Copy service order unique identifier"
+msgstr ""
+
 msgid "Copy service unique identifier"
 msgstr "复制服务唯一标识符"
 
@@ -5938,6 +5964,9 @@ msgstr "国家代码"
 
 msgid "Coverage"
 msgstr "覆盖范围"
+
+msgid "Coverage Contract"
+msgstr ""
 
 msgid "Create"
 msgstr "创建"
@@ -11428,6 +11457,9 @@ msgstr "发票客户位置"
 msgid "Invoice Date"
 msgstr "发票日期"
 
+msgid "Invoice Detail"
+msgstr ""
+
 msgid "Invoice ID"
 msgstr "发票ID"
 
@@ -11553,6 +11585,9 @@ msgstr "是供应商组织组"
 
 msgid "Is supplier type group"
 msgstr "是供应商类型组"
+
+msgid "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
+msgstr ""
 
 msgid "Issue"
 msgstr "问题"
@@ -11709,6 +11744,9 @@ msgstr "物料类型（可选）"
 
 msgid "Item types"
 msgstr "物料类型"
+
+msgid "Itemized"
+msgstr ""
 
 msgid "items"
 msgstr "物料"
@@ -13869,6 +13907,9 @@ msgstr "下一个编号规则"
 msgid "Next step"
 msgstr "下一步"
 
+msgid "Next Visit"
+msgstr ""
+
 msgid "Next week"
 msgstr "下一周"
 
@@ -14411,6 +14452,9 @@ msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
 msgid "No priority"
 msgstr ""
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No procedure"
 msgstr ""
 
@@ -14465,6 +14509,9 @@ msgstr "未找到与搜索条件匹配的报告。"
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "该公司还没有代表接受 Carbon GovCloud Rider。该公司的管理员必须先接受它，然后任何人才能访问 Carbon — Carbon 员工不能代表您接受。"
 
+msgid "No resolution yet"
+msgstr ""
+
 msgid "No results"
 msgstr "无结果"
 
@@ -14502,6 +14549,9 @@ msgid "No serial numbers selected yet."
 msgstr "尚未选择序列号。"
 
 msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service templates yet"
 msgstr ""
 
 msgid "No service work has been charged to this asset yet."
@@ -16570,6 +16620,9 @@ msgstr "隐私政策"
 msgid "Private"
 msgstr "私密"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "程序文件"
 
@@ -17012,6 +17065,9 @@ msgid "Push to accounting"
 msgstr "推送到会计系统"
 
 msgid "Put on hold"
+msgstr ""
+
+msgid "Put on Hold"
 msgstr ""
 
 msgid "Putting your data back"
@@ -18236,6 +18292,9 @@ msgstr "残值"
 msgid "Residual Value %"
 msgstr "残值 %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr ""
 
@@ -19223,6 +19282,9 @@ msgstr "按线性问题标题搜索..."
 msgid "Search by receipt, PO, or item"
 msgstr "按收货、PO或物料搜索"
 
+msgid "Search by serial"
+msgstr ""
+
 msgid "Search by shipment, sales order, or item"
 msgstr "按发货、销售订单或物料搜索"
 
@@ -19718,6 +19780,9 @@ msgstr "服务ID"
 msgid "Service lines"
 msgstr "服务行"
 
+msgid "Service Location"
+msgstr ""
+
 msgid "Service order"
 msgstr ""
 
@@ -19735,6 +19800,12 @@ msgstr "服务提供商详情"
 
 msgid "Service start"
 msgstr "服务开始"
+
+msgid "Service template"
+msgstr ""
+
+msgid "Service Template"
+msgstr ""
 
 msgid "Service Templates"
 msgstr ""
@@ -20533,6 +20604,9 @@ msgstr "开始时间"
 
 msgid "Start with"
 msgstr "从以下开始"
+
+msgid "Start Work From"
+msgstr ""
 
 msgid "Started"
 msgstr "开始于"
@@ -21431,6 +21505,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Technicians"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -21894,6 +21971,9 @@ msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "每个工单生产的物料 — 要求其匹配以合并输出批次"
+
+msgid "The item's bill of materials"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "该物料的租赁费率"
@@ -22436,6 +22516,9 @@ msgstr "供应商为该物料定价和发货的单位,当与库存单位不同�
 msgid "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 msgstr "该件的账面价值对您不可见，因此不显示其销售成本和资产科目。"
 
+msgid "The unit's build history"
+msgstr ""
+
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "您购买、库存和销售的计量单位"
 
@@ -22596,6 +22679,9 @@ msgstr "此合同的发票自动过账，所以确认它需要创建发票的权
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"
+
+msgid "This customer has no active contract"
+msgstr ""
 
 msgid "This customer has no registered assets yet."
 msgstr ""
@@ -24410,6 +24496,9 @@ msgstr "查看可追溯性图表"
 
 msgid "View Transfer"
 msgstr "查看转移"
+
+msgid "View Unit"
+msgstr ""
 
 msgid "Viewed"
 msgstr ""

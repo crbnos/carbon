@@ -928,6 +928,9 @@ msgstr "下書き実行は最初に転記済にするか削除する必要があ
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "下書きの明細は直接編集されます。確定済みになると、変更は修正で行われここに記録されます。"
 
+msgid "A field visit to a unit at a customer. The unit decides the customer and the site."
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "ファイル {0} は既に存在します — 削除するか先に名前を変更してください"
@@ -2772,11 +2775,17 @@ msgstr "この製造指図をキャンセルしてよろしいですか？もう
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "このRMAをキャンセルしてよろしいですか？これにより、承認された数量が参照伝票に戻されます。"
 
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgstr ""
+
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 msgstr "この仕入先返品をキャンセルしてよろしいですか？これにより、承認された数量が参照伝票に戻されます。"
 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "本当に{propertyName}プロパティを変更してもよろしいですか？生成された材料IDを使用しているため、このパーツのパーツIDと関連するすべてのリビジョンが変更されます。"
+
+msgid "Are you sure you want to close this service order without an invoice? A closed order cannot change."
+msgstr ""
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "この RMA を確定してもよろしいですか？確定すると、得意先は明細の商品を返品することが認可されます。"
@@ -4049,6 +4058,9 @@ msgstr "品目別"
 msgid "By Location"
 msgstr "場所別"
 
+msgid "By Node"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
 
@@ -4132,8 +4144,8 @@ msgid "Cancel"
 msgstr "キャンセル"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "{0}をキャンセル"
 
@@ -4178,6 +4190,9 @@ msgstr "RMAをキャンセル"
 
 msgid "Cancel Sales Order"
 msgstr "受注キャンセル"
+
+msgid "Cancel Service Order"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "SO をキャンセル"
@@ -4659,6 +4674,9 @@ msgstr ""
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "このコントラクトが請求する外注サービスを選択してください。各サービスは、グリッドで価格設定できる繰り返し明細として追加されます。"
 
+msgid "Choose the unit to see its customer and warranty."
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "印刷された製造指図現品票に表示される内容を選択します。"
 
@@ -4758,6 +4776,7 @@ msgstr "<0/>からクロックイン中"
 msgid "Close"
 msgstr "閉じる"
 
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: project.identifier
 msgid "Close {0}"
 msgstr ""
@@ -4963,6 +4982,10 @@ msgstr "互換性ルール"
 
 msgid "Complete"
 msgstr "完了"
+
+#. placeholder {0}: order.serviceOrderId
+msgid "Complete {0}"
+msgstr ""
 
 msgid "Complete All"
 msgstr "すべて完了"
@@ -5682,6 +5705,9 @@ msgstr "売上返品の一意識別子をコピー"
 msgid "Copy service number"
 msgstr "サービス番号をコピー"
 
+msgid "Copy service order unique identifier"
+msgstr ""
+
 msgid "Copy service unique identifier"
 msgstr "サービスの一意な識別子をコピー"
 
@@ -5938,6 +5964,9 @@ msgstr "国コード"
 
 msgid "Coverage"
 msgstr "配置"
+
+msgid "Coverage Contract"
+msgstr ""
 
 msgid "Create"
 msgstr "作成"
@@ -11428,6 +11457,9 @@ msgstr "請求書得意先拠点"
 msgid "Invoice Date"
 msgstr "請求日"
 
+msgid "Invoice Detail"
+msgstr ""
+
 msgid "Invoice ID"
 msgstr "請求書ID"
 
@@ -11553,6 +11585,9 @@ msgstr "仕入先組織グループです"
 
 msgid "Is supplier type group"
 msgstr "仕入先タイプグループです"
+
+msgid "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
+msgstr ""
 
 msgid "Issue"
 msgstr "問題"
@@ -11709,6 +11744,9 @@ msgstr "品目タイプ（オプション）"
 
 msgid "Item types"
 msgstr "品目タイプ"
+
+msgid "Itemized"
+msgstr ""
 
 msgid "items"
 msgstr "アイテム"
@@ -13869,6 +13907,9 @@ msgstr "次の採番"
 msgid "Next step"
 msgstr "次のステップ"
 
+msgid "Next Visit"
+msgstr ""
+
 msgid "Next week"
 msgstr "来週"
 
@@ -14411,6 +14452,9 @@ msgstr "プリンターが設定されていません。「プリンターを追
 msgid "No priority"
 msgstr ""
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No procedure"
 msgstr ""
 
@@ -14465,6 +14509,9 @@ msgstr "検索に一致するレポートはありません。"
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "この会社の代表者はまだCarbon GovCloud Riderを承諾していません。この会社の管理者は、誰もがCarbonにアクセスできるようになる前に、それを承諾する必要があります。Carbonスタッフはあなたに代わって承諾することはできません。"
 
+msgid "No resolution yet"
+msgstr ""
+
 msgid "No results"
 msgstr "結果がありません"
 
@@ -14502,6 +14549,9 @@ msgid "No serial numbers selected yet."
 msgstr "シリアル番号がまだ選択されていません。"
 
 msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service templates yet"
 msgstr ""
 
 msgid "No service work has been charged to this asset yet."
@@ -16570,6 +16620,9 @@ msgstr "プライバシーポリシー"
 msgid "Private"
 msgstr "プライベート"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "手順書"
 
@@ -17012,6 +17065,9 @@ msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
 msgid "Put on hold"
+msgstr ""
+
+msgid "Put on Hold"
 msgstr ""
 
 msgid "Putting your data back"
@@ -18236,6 +18292,9 @@ msgstr "残存価額"
 msgid "Residual Value %"
 msgstr "残存価額 %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr ""
 
@@ -19223,6 +19282,9 @@ msgstr "Linear イシュータイトルで検索..."
 msgid "Search by receipt, PO, or item"
 msgstr "入荷、発注、または品目で検索"
 
+msgid "Search by serial"
+msgstr ""
+
 msgid "Search by shipment, sales order, or item"
 msgstr "出荷、受注、または品目で検索"
 
@@ -19718,6 +19780,9 @@ msgstr "サービスID"
 msgid "Service lines"
 msgstr "外注サービス明細"
 
+msgid "Service Location"
+msgstr ""
+
 msgid "Service order"
 msgstr ""
 
@@ -19735,6 +19800,12 @@ msgstr "サービスプロバイダーの詳細"
 
 msgid "Service start"
 msgstr "サービス開始日"
+
+msgid "Service template"
+msgstr ""
+
+msgid "Service Template"
+msgstr ""
 
 msgid "Service Templates"
 msgstr ""
@@ -20533,6 +20604,9 @@ msgstr "開始時刻"
 
 msgid "Start with"
 msgstr "まず"
+
+msgid "Start Work From"
+msgstr ""
 
 msgid "Started"
 msgstr "開始"
@@ -21431,6 +21505,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Technicians"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -21894,6 +21971,9 @@ msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのア�
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "各製造指図が生産する品目 — 出力ロットをマージするには一致する必要があります"
+
+msgid "The item's bill of materials"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "品目のレンタル料金"
@@ -22436,6 +22516,9 @@ msgstr "仕入先が価格設定および発送する単位で、在庫単位と
 msgid "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 msgstr "この個の帳簿価額はあなたに表示されないため、その売上原価および資産項目は表示されません。"
 
+msgid "The unit's build history"
+msgstr ""
+
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "購入、在庫、販売する単位"
 
@@ -22596,6 +22679,9 @@ msgstr "この契約の請求書は自動的に転記されるため、確認に
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
+
+msgid "This customer has no active contract"
+msgstr ""
 
 msgid "This customer has no registered assets yet."
 msgstr ""
@@ -24410,6 +24496,9 @@ msgstr "トレーサビリティグラフを表示"
 
 msgid "View Transfer"
 msgstr "転送を表示"
+
+msgid "View Unit"
+msgstr ""
 
 msgid "Viewed"
 msgstr ""

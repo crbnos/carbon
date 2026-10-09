@@ -928,6 +928,9 @@ msgstr "Um rascunho deve ser contabilizado ou excluído primeiro."
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "As linhas de um Rascunho são editadas diretamente. Após confirmado, as alterações são feitas ao modificar e registradas aqui."
 
+msgid "A field visit to a unit at a customer. The unit decides the customer and the site."
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "Um arquivo nomeado {0} já existe — exclua ou renomeie-o primeiro"
@@ -2772,11 +2775,17 @@ msgstr "Tem a certeza de que deseja cancelar este trabalho? Deixará de estar di
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "Tem certeza de que deseja cancelar esta RMA? Isso libera as quantidades autorizadas de volta aos documentos de origem."
 
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgstr ""
+
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 msgstr "Tem certeza de que deseja cancelar esta devolução de fornecedor? Isso libera as quantidades autorizadas de volta aos documentos de origem."
 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Tem a certeza de que deseja alterar a propriedade {propertyName}? Como utiliza IDs de material gerados, isto alterará o ID da peça desta peça e todas as revisões relacionadas."
+
+msgid "Are you sure you want to close this service order without an invoice? A closed order cannot change."
+msgstr ""
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Tem certeza de que deseja confirmar esta RMA? Confirmar autoriza o cliente a devolver os produtos nas linhas."
@@ -4049,6 +4058,9 @@ msgstr "Por Item"
 msgid "By Location"
 msgstr "Por Local"
 
+msgid "By Node"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Ao fazer login, você concorda com os <0>Termos de Serviço</0> e a <1>Política de Privacidade.</1>"
 
@@ -4132,8 +4144,8 @@ msgid "Cancel"
 msgstr "Cancelar"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "Cancelar {0}"
 
@@ -4178,6 +4190,9 @@ msgstr "Cancelar RMA"
 
 msgid "Cancel Sales Order"
 msgstr "Cancelar Pedido de Venda"
+
+msgid "Cancel Service Order"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "Cancelar SO"
@@ -4659,6 +4674,9 @@ msgstr ""
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Escolha os serviços que este contrato fatura. Cada um é adicionado como uma linha recorrente que você pode precificar na grade."
 
+msgid "Choose the unit to see its customer and warranty."
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Escolha o que aparece na ficha de acompanhamento impressa."
 
@@ -4758,6 +4776,7 @@ msgstr "Marcado desde <0/>"
 msgid "Close"
 msgstr "Fechar"
 
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: project.identifier
 msgid "Close {0}"
 msgstr ""
@@ -4963,6 +4982,10 @@ msgstr "Regras de compatibilidade"
 
 msgid "Complete"
 msgstr "Concluir"
+
+#. placeholder {0}: order.serviceOrderId
+msgid "Complete {0}"
+msgstr ""
 
 msgid "Complete All"
 msgstr "Completar Tudo"
@@ -5682,6 +5705,9 @@ msgstr "Copiar identificador único do pedido de devolução de venda"
 msgid "Copy service number"
 msgstr "Copiar número do serviço"
 
+msgid "Copy service order unique identifier"
+msgstr ""
+
 msgid "Copy service unique identifier"
 msgstr "Copiar identificador exclusivo do serviço"
 
@@ -5938,6 +5964,9 @@ msgstr "Código do país"
 
 msgid "Coverage"
 msgstr "Cobertura"
+
+msgid "Coverage Contract"
+msgstr ""
 
 msgid "Create"
 msgstr "Criar"
@@ -11428,6 +11457,9 @@ msgstr "Localização do Cliente da Fatura"
 msgid "Invoice Date"
 msgstr "Data da Fatura"
 
+msgid "Invoice Detail"
+msgstr ""
+
 msgid "Invoice ID"
 msgstr "ID da Fatura"
 
@@ -11553,6 +11585,9 @@ msgstr "É grupo de organização de fornecedor"
 
 msgid "Is supplier type group"
 msgstr "É grupo de tipo de fornecedor"
+
+msgid "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
+msgstr ""
 
 msgid "Issue"
 msgstr "Problema"
@@ -11709,6 +11744,9 @@ msgstr "Tipo de Item (opcional)"
 
 msgid "Item types"
 msgstr "Tipos de item"
+
+msgid "Itemized"
+msgstr ""
 
 msgid "items"
 msgstr "itens"
@@ -13869,6 +13907,9 @@ msgstr "Próxima Sequência"
 msgid "Next step"
 msgstr "Próxima etapa"
 
+msgid "Next Visit"
+msgstr ""
+
 msgid "Next week"
 msgstr "Próxima semana"
 
@@ -14411,6 +14452,9 @@ msgstr "Nenhuma impressora configurada. Clique em \"Adicionar Impressora\" para 
 msgid "No priority"
 msgstr ""
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No procedure"
 msgstr ""
 
@@ -14465,6 +14509,9 @@ msgstr "Nenhum relatório corresponde à sua pesquisa."
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "Nenhum representante desta empresa aceitou ainda o Carbon GovCloud Rider. Um administrador desta empresa deve aceitá-lo antes que qualquer pessoa possa acessar o Carbon — a equipe da Carbon não pode aceitá-lo em seu nome."
 
+msgid "No resolution yet"
+msgstr ""
+
 msgid "No results"
 msgstr "Sem resultados"
 
@@ -14502,6 +14549,9 @@ msgid "No serial numbers selected yet."
 msgstr "Nenhum número de série selecionado ainda."
 
 msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service templates yet"
 msgstr ""
 
 msgid "No service work has been charged to this asset yet."
@@ -16570,6 +16620,9 @@ msgstr "Política de Privacidade"
 msgid "Private"
 msgstr "Privado"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "procedimentos"
 
@@ -17012,6 +17065,9 @@ msgid "Push to accounting"
 msgstr "Enviar para contabilidade"
 
 msgid "Put on hold"
+msgstr ""
+
+msgid "Put on Hold"
 msgstr ""
 
 msgid "Putting your data back"
@@ -18236,6 +18292,9 @@ msgstr "Valor residual"
 msgid "Residual Value %"
 msgstr "Valor residual %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr ""
 
@@ -19223,6 +19282,9 @@ msgstr "Pesquisar por título do problema Linear..."
 msgid "Search by receipt, PO, or item"
 msgstr "Pesquise por recebimento, PO ou item"
 
+msgid "Search by serial"
+msgstr ""
+
 msgid "Search by shipment, sales order, or item"
 msgstr "Pesquisar por remessa, pedido de venda ou item"
 
@@ -19718,6 +19780,9 @@ msgstr "ID do Serviço"
 msgid "Service lines"
 msgstr "Linhas de Serviço"
 
+msgid "Service Location"
+msgstr ""
+
 msgid "Service order"
 msgstr ""
 
@@ -19735,6 +19800,12 @@ msgstr "Detalhes do Provedor de Serviço"
 
 msgid "Service start"
 msgstr "Início do Serviço"
+
+msgid "Service template"
+msgstr ""
+
+msgid "Service Template"
+msgstr ""
 
 msgid "Service Templates"
 msgstr ""
@@ -20533,6 +20604,9 @@ msgstr "Hora de Início"
 
 msgid "Start with"
 msgstr "Comece com"
+
+msgid "Start Work From"
+msgstr ""
 
 msgid "Started"
 msgstr "Iniciado"
@@ -21431,6 +21505,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Technicians"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -21894,6 +21971,9 @@ msgstr "A classe de período de recuperação IRS para este ativo sob MACRS (3, 
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "O item que cada ordem de produção produz — exija que corresponda para mesclar lotes de saída"
+
+msgid "The item's bill of materials"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "A taxa de aluguel do item"
@@ -22436,6 +22516,9 @@ msgstr "A unidade na qual os fornecedores estabelecem o preço e enviam este ite
 msgid "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 msgstr "O valor contábil da unidade não é visível para você, então seu custo dos produtos vendidos e linhas de ativo não são exibidos."
 
+msgid "The unit's build history"
+msgstr ""
+
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "As unidades de medida que você compra, estoca e vende"
 
@@ -22596,6 +22679,9 @@ msgstr "As faturas deste contrato são contabilizadas automaticamente, portanto 
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Este terceiro não tem nada pendente — o pagamento será registrado em conta."
+
+msgid "This customer has no active contract"
+msgstr ""
 
 msgid "This customer has no registered assets yet."
 msgstr ""
@@ -24410,6 +24496,9 @@ msgstr "Ver Gráfico de Rastreabilidade"
 
 msgid "View Transfer"
 msgstr "Ver Transferência"
+
+msgid "View Unit"
+msgstr ""
 
 msgid "Viewed"
 msgstr ""

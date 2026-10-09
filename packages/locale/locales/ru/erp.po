@@ -928,6 +928,9 @@ msgstr "Черновой запуск должен быть проведен и�
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "Строки черновика редактируются непосредственно. После подтверждения изменения вносятся через функцию изменения и записываются здесь."
 
+msgid "A field visit to a unit at a customer. The unit decides the customer and the site."
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "Файл с именем {0} уже существует — удалите или переименуйте его сначала"
@@ -2772,11 +2775,17 @@ msgstr "Вы уверены, что хотите отменить этот пр�
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "Вы уверены, что хотите отменить это RMA? Это освобождает авторизованные количества обратно в документы-основания."
 
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgstr ""
+
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 msgstr "Вы уверены, что хотите отменить этот возврат поставщику? Это освобождает авторизованные количества обратно в документы-основания."
 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Вы уверены, что хотите изменить свойство {propertyName}? Так как вы используете сгенерированные идентификаторы материалов, это изменит идентификатор детали этой детали и всех связанных ревизий."
+
+msgid "Are you sure you want to close this service order without an invoice? A closed order cannot change."
+msgstr ""
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Вы уверены, что хотите подтвердить эту RMA? Подтверждение авторизирует покупателя на возврат товара по строкам."
@@ -4049,6 +4058,9 @@ msgstr "По товару"
 msgid "By Location"
 msgstr "По местоположению"
 
+msgid "By Node"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Подписываясь, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности.</1>"
 
@@ -4132,8 +4144,8 @@ msgid "Cancel"
 msgstr "Отмена"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "Отменить {0}"
 
@@ -4178,6 +4190,9 @@ msgstr "Отменить RMA"
 
 msgid "Cancel Sales Order"
 msgstr "Отмена Заказа покупателя"
+
+msgid "Cancel Service Order"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "Отменить ПП"
@@ -4659,6 +4674,9 @@ msgstr ""
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Выберите услуги, которые этот контракт выставляет. Каждая добавляется как повторяющаяся строка, цену которой вы можете устанавливать в таблице."
 
+msgid "Choose the unit to see its customer and warranty."
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
 
@@ -4758,6 +4776,7 @@ msgstr "Работаю с <0/>"
 msgid "Close"
 msgstr "Закрыть"
 
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: project.identifier
 msgid "Close {0}"
 msgstr ""
@@ -4963,6 +4982,10 @@ msgstr "Правила совместимости"
 
 msgid "Complete"
 msgstr "Завершить"
+
+#. placeholder {0}: order.serviceOrderId
+msgid "Complete {0}"
+msgstr ""
 
 msgid "Complete All"
 msgstr "Завершить все"
@@ -5682,6 +5705,9 @@ msgstr "Скопировать уникальный идентификатор �
 msgid "Copy service number"
 msgstr "Копировать номер услуги"
 
+msgid "Copy service order unique identifier"
+msgstr ""
+
 msgid "Copy service unique identifier"
 msgstr "Копировать уникальный идентификатор услуги"
 
@@ -5938,6 +5964,9 @@ msgstr "Код страны"
 
 msgid "Coverage"
 msgstr "Покрытие"
+
+msgid "Coverage Contract"
+msgstr ""
 
 msgid "Create"
 msgstr "Создать"
@@ -11428,6 +11457,9 @@ msgstr "Площадка покупателя счета-фактуры"
 msgid "Invoice Date"
 msgstr "Дата счета-фактуры"
 
+msgid "Invoice Detail"
+msgstr ""
+
 msgid "Invoice ID"
 msgstr "Счет-фактура ID"
 
@@ -11553,6 +11585,9 @@ msgstr "Является группой организаций поставщи�
 
 msgid "Is supplier type group"
 msgstr "Является группой типов поставщиков"
+
+msgid "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
+msgstr ""
 
 msgid "Issue"
 msgstr "Проблема"
@@ -11709,6 +11744,9 @@ msgstr "Тип номенклатуры (опционально)"
 
 msgid "Item types"
 msgstr "Типы номенклатуры"
+
+msgid "Itemized"
+msgstr ""
 
 msgid "items"
 msgstr "элементы"
@@ -13869,6 +13907,9 @@ msgstr "Следующая Нумерация"
 msgid "Next step"
 msgstr "Следующий шаг"
 
+msgid "Next Visit"
+msgstr ""
+
 msgid "Next week"
 msgstr "Следующая неделя"
 
@@ -14411,6 +14452,9 @@ msgstr "Принтеры не настроены. Нажмите «Добави�
 msgid "No priority"
 msgstr ""
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No procedure"
 msgstr ""
 
@@ -14465,6 +14509,9 @@ msgstr "Никакие отчеты не соответствуют вашему
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "Ни один представитель этой организации еще не принял Carbon GovCloud Rider. Администратор этой организации должен принять его перед тем, как кто-либо сможет получить доступ к Carbon — персонал Carbon не может принять его от вас."
 
+msgid "No resolution yet"
+msgstr ""
+
 msgid "No results"
 msgstr "Нет результатов"
 
@@ -14502,6 +14549,9 @@ msgid "No serial numbers selected yet."
 msgstr "Серийные номера ещё не выбраны."
 
 msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service templates yet"
 msgstr ""
 
 msgid "No service work has been charged to this asset yet."
@@ -16570,6 +16620,9 @@ msgstr "Политика конфиденциальности"
 msgid "Private"
 msgstr "Приватный"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "процедуры"
 
@@ -17012,6 +17065,9 @@ msgid "Push to accounting"
 msgstr "Отправить в бухгалтерию"
 
 msgid "Put on hold"
+msgstr ""
+
+msgid "Put on Hold"
 msgstr ""
 
 msgid "Putting your data back"
@@ -18236,6 +18292,9 @@ msgstr "Ликвидационная стоимость"
 msgid "Residual Value %"
 msgstr "Ликвидационная стоимость %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr ""
 
@@ -19223,6 +19282,9 @@ msgstr "Поиск по названию задачи Linear..."
 msgid "Search by receipt, PO, or item"
 msgstr "Поиск по поступлению, ПО или номенклатуре"
 
+msgid "Search by serial"
+msgstr ""
+
 msgid "Search by shipment, sales order, or item"
 msgstr "Поиск по отгрузке, заказу покупателя или номенклатуре"
 
@@ -19718,6 +19780,9 @@ msgstr "ID обслуживания"
 msgid "Service lines"
 msgstr "Строки услуг"
 
+msgid "Service Location"
+msgstr ""
+
 msgid "Service order"
 msgstr ""
 
@@ -19735,6 +19800,12 @@ msgstr "Детали поставщика услуг"
 
 msgid "Service start"
 msgstr "Начало обслуживания"
+
+msgid "Service template"
+msgstr ""
+
+msgid "Service Template"
+msgstr ""
 
 msgid "Service Templates"
 msgstr ""
@@ -20533,6 +20604,9 @@ msgstr "Время начала"
 
 msgid "Start with"
 msgstr "Начните с"
+
+msgid "Start Work From"
+msgstr ""
 
 msgid "Started"
 msgstr "Начал"
@@ -21431,6 +21505,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Technicians"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -21894,6 +21971,9 @@ msgstr "Класс периода восстановления IRS для это
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Номенклатура, которую производит каждый производственный заказ — требуется совпадение для объединения выходных партий"
+
+msgid "The item's bill of materials"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Ставка аренды номенклатуры"
@@ -22436,6 +22516,9 @@ msgstr "Единица, в которой поставщики устанавл�
 msgid "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 msgstr "Балансовая стоимость единицы вам недоступна, поэтому себестоимость продаж и статьи по активам не отображаются."
 
+msgid "The unit's build history"
+msgstr ""
+
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "Единицы измерения, в которых вы покупаете, храните и продаете"
 
@@ -22596,6 +22679,9 @@ msgstr "Счета-фактуры этого контракта проводят
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."
+
+msgid "This customer has no active contract"
+msgstr ""
 
 msgid "This customer has no registered assets yet."
 msgstr ""
@@ -24410,6 +24496,9 @@ msgstr "Просмотр графика прослеживаемости"
 
 msgid "View Transfer"
 msgstr "Просмотр передачи"
+
+msgid "View Unit"
+msgstr ""
 
 msgid "Viewed"
 msgstr ""

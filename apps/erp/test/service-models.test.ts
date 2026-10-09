@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  canMoveServiceOrder,
   rollUpOrderStatus,
   warrantyStatus
 } from "~/modules/service/service.models";
@@ -74,5 +75,37 @@ describe("warrantyStatus", () => {
         "2027-01-01"
       )
     ).toBe("Expired");
+  });
+});
+
+describe("canMoveServiceOrder", () => {
+  it("lets an open order go on hold, complete or cancel", () => {
+    for (const from of ["Draft", "Scheduled", "In Progress"] as const) {
+      expect(canMoveServiceOrder(from, "On Hold")).toBe(true);
+      expect(canMoveServiceOrder(from, "Completed")).toBe(true);
+      expect(canMoveServiceOrder(from, "Cancelled")).toBe(true);
+      expect(canMoveServiceOrder(from, "Closed")).toBe(false);
+    }
+  });
+
+  it("resumes an order on hold, and closes or reopens a completed one", () => {
+    expect(canMoveServiceOrder("On Hold", "Draft")).toBe(true);
+    expect(canMoveServiceOrder("On Hold", "Completed")).toBe(false);
+    expect(canMoveServiceOrder("Completed", "Closed")).toBe(true);
+    expect(canMoveServiceOrder("Completed", "Draft")).toBe(true);
+    expect(canMoveServiceOrder("Completed", "Cancelled")).toBe(false);
+  });
+
+  it("never moves a closed or cancelled order", () => {
+    for (const to of [
+      "On Hold",
+      "Completed",
+      "Closed",
+      "Cancelled",
+      "Draft"
+    ] as const) {
+      expect(canMoveServiceOrder("Closed", to)).toBe(false);
+      expect(canMoveServiceOrder("Cancelled", to)).toBe(false);
+    }
   });
 });

@@ -928,6 +928,9 @@ msgstr "Taslak çalıştırma önce muhasebeleştirilmeli veya silinmelidir."
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "Taslak satırları doğrudan düzenlenir. Teyit edildikten sonra, değişiklikler Düzelt ile yapılır ve buraya kaydedilir."
 
+msgid "A field visit to a unit at a customer. The unit decides the customer and the site."
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "Adı {0} olan bir dosya zaten var — önce silin veya yeniden adlandırın"
@@ -2772,11 +2775,17 @@ msgstr "Bu işi iptal etmek istediğinizden emin misiniz? Artık atölyede kulla
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "Bu RMA'yı iptal etmek istediğinizden emin misiniz? Bu, yetkilendirilen miktarları kaynak belgelere serbest bırakacaktır."
 
+msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with posted charges cannot be cancelled."
+msgstr ""
+
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 msgstr "Bu tedarikçi iadesini iptal etmek istediğinizden emin misiniz? Bu, yetkilendirilen miktarları kaynak belgelere serbest bırakacaktır."
 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Bu {propertyName} özelliğini değiştirmek istediğinizden emin misiniz? Üretilen malzeme kimlikleri kullandığınız için bu, parçanın ve tüm ilgili revizyonların parça kimliğini değiştirecektir."
+
+msgid "Are you sure you want to close this service order without an invoice? A closed order cannot change."
+msgstr ""
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Bu RMA'yı onaylamak istediğinizden emin misiniz? Onaylamak, müşteriye satırlardaki malları iade etme yetkisi verir."
@@ -4049,6 +4058,9 @@ msgstr "Ürüne Göre"
 msgid "By Location"
 msgstr "Konuma Göre"
 
+msgid "By Node"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
 
@@ -4132,8 +4144,8 @@ msgid "Cancel"
 msgstr "İptal"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "İptal Et {0}"
 
@@ -4178,6 +4190,9 @@ msgstr "RMA'yı İptal Et"
 
 msgid "Cancel Sales Order"
 msgstr "Satış Siparişini İptal Et"
+
+msgid "Cancel Service Order"
+msgstr ""
 
 msgid "Cancel SO"
 msgstr "SO'yu İptal Et"
@@ -4659,6 +4674,9 @@ msgstr ""
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Bu sözleşmenin faturaladığı hizmetleri seçin. Her biri, ızgarada fiyatlandırabileceğiniz yinelenen bir satır olarak eklenir."
 
+msgid "Choose the unit to see its customer and warranty."
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
 
@@ -4758,6 +4776,7 @@ msgstr "<0/> tarihinden beri saatlenmiş"
 msgid "Close"
 msgstr "Kapat"
 
+#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: project.identifier
 msgid "Close {0}"
 msgstr ""
@@ -4963,6 +4982,10 @@ msgstr "Uyumluluk Kuralları"
 
 msgid "Complete"
 msgstr "Tamamla"
+
+#. placeholder {0}: order.serviceOrderId
+msgid "Complete {0}"
+msgstr ""
 
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
@@ -5682,6 +5705,9 @@ msgstr "Satış iade siparişi benzersiz tanıtıcısını kopyala"
 msgid "Copy service number"
 msgstr "Hizmet numarasını kopyala"
 
+msgid "Copy service order unique identifier"
+msgstr ""
+
 msgid "Copy service unique identifier"
 msgstr "Hizmet benzersiz tanımlayıcısını kopyala"
 
@@ -5938,6 +5964,9 @@ msgstr "Ülke kodu"
 
 msgid "Coverage"
 msgstr "Vardiya katılımı"
+
+msgid "Coverage Contract"
+msgstr ""
 
 msgid "Create"
 msgstr "Oluştur"
@@ -11428,6 +11457,9 @@ msgstr "Fatura Müşteri Konumu"
 msgid "Invoice Date"
 msgstr "Fatura Tarihi"
 
+msgid "Invoice Detail"
+msgstr ""
+
 msgid "Invoice ID"
 msgstr "Fatura Kimlik Numarası"
 
@@ -11553,6 +11585,9 @@ msgstr "Tedarikçi kuruluş grubu mu"
 
 msgid "Is supplier type group"
 msgstr "Tedarikçi türü grubu mu"
+
+msgid "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
+msgstr ""
 
 msgid "Issue"
 msgstr "Sorun"
@@ -11709,6 +11744,9 @@ msgstr "Stok kartı türü (isteğe bağlı)"
 
 msgid "Item types"
 msgstr "Stok kartı türleri"
+
+msgid "Itemized"
+msgstr ""
 
 msgid "items"
 msgstr "öğeler"
@@ -13869,6 +13907,9 @@ msgstr "Sonraki numaralandırma"
 msgid "Next step"
 msgstr "Sonraki adım"
 
+msgid "Next Visit"
+msgstr ""
+
 msgid "Next week"
 msgstr "Sonraki hafta"
 
@@ -14411,6 +14452,9 @@ msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı
 msgid "No priority"
 msgstr ""
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No procedure"
 msgstr ""
 
@@ -14465,6 +14509,9 @@ msgstr "Aramanızla eşleşen rapor yok."
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "Bu Şirketin henüz hiç temsilcisi Carbon GovCloud Rider'ı Kabul etmemiştir. Carbon'a erişebilmek için bu Şirketin yöneticisi bunu Kabul etmelidir — Carbon personeli sizin adınıza bunu Kabul edemez."
 
+msgid "No resolution yet"
+msgstr ""
+
 msgid "No results"
 msgstr "Sonuç bulunamadı"
 
@@ -14502,6 +14549,9 @@ msgid "No serial numbers selected yet."
 msgstr "Henüz hiçbir seri numarası seçilmemiştir."
 
 msgid "No service order has fitted a part to this unit."
+msgstr ""
+
+msgid "No service templates yet"
 msgstr ""
 
 msgid "No service work has been charged to this asset yet."
@@ -16570,6 +16620,9 @@ msgstr "Gizlilik Politikası"
 msgid "Private"
 msgstr "Gizli"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "prosedürler"
 
@@ -17012,6 +17065,9 @@ msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
 msgid "Put on hold"
+msgstr ""
+
+msgid "Put on Hold"
 msgstr ""
 
 msgid "Putting your data back"
@@ -18236,6 +18292,9 @@ msgstr "Kalıntı değer"
 msgid "Residual Value %"
 msgstr "Kalıntı Değer %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr ""
 
@@ -19223,6 +19282,9 @@ msgstr "Linear sorunu başlığı ile ara..."
 msgid "Search by receipt, PO, or item"
 msgstr "Mal kabul, PO veya stok kartına göre ara"
 
+msgid "Search by serial"
+msgstr ""
+
 msgid "Search by shipment, sales order, or item"
 msgstr "Sevkiyat, satış siparişi veya stok kartı ile ara"
 
@@ -19718,6 +19780,9 @@ msgstr "Hizmet Kimliği"
 msgid "Service lines"
 msgstr "Hizmet Satırları"
 
+msgid "Service Location"
+msgstr ""
+
 msgid "Service order"
 msgstr ""
 
@@ -19735,6 +19800,12 @@ msgstr "Hizmet Sağlayıcı Ayrıntıları"
 
 msgid "Service start"
 msgstr "Hizmet Başlangıç Tarihi"
+
+msgid "Service template"
+msgstr ""
+
+msgid "Service Template"
+msgstr ""
 
 msgid "Service Templates"
 msgstr ""
@@ -20533,6 +20604,9 @@ msgstr "Başlangıç Saati"
 
 msgid "Start with"
 msgstr "Başla"
+
+msgid "Start Work From"
+msgstr ""
 
 msgid "Started"
 msgstr "Başlangıç"
@@ -21431,6 +21505,9 @@ msgstr ""
 msgid "Technically Complete"
 msgstr ""
 
+msgid "Technicians"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -21894,6 +21971,9 @@ msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5,
 
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleştirmek için eşleşmesi gerekir"
+
+msgid "The item's bill of materials"
+msgstr ""
 
 msgid "The item's rental rate"
 msgstr "Stok kartı'nın kiralama oranı"
@@ -22436,6 +22516,9 @@ msgstr "Tedarikçilerin bu öğeye fiyat koyduğu ve sevk ettiği birim, envante
 msgid "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 msgstr "Adete ait defter değeri sizin için görünür değildir, bu nedenle satılan malın maliyeti ve varlık kalemleri gösterilmez."
 
+msgid "The unit's build history"
+msgstr ""
+
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "Satın aldığınız, stokladığınız ve sattığınız ölçü birimleri"
 
@@ -22596,6 +22679,9 @@ msgstr "Bu sözleşmenin faturaları otomatik olarak muhasebeleştirilir, bu ned
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."
+
+msgid "This customer has no active contract"
+msgstr ""
 
 msgid "This customer has no registered assets yet."
 msgstr ""
@@ -24410,6 +24496,9 @@ msgstr "İzlenebilirlik Grafiğini Görüntüle"
 
 msgid "View Transfer"
 msgstr "Transferi Görüntüle"
+
+msgid "View Unit"
+msgstr ""
 
 msgid "Viewed"
 msgstr ""
