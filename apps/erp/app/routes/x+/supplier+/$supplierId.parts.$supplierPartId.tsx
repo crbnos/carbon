@@ -9,25 +9,9 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
+import { isSupplierPartItemType } from "~/modules/items/ui/Item/SupplierPartForm";
 import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-// The item types a supplier part form can save; it posts to that type's
-// purchasing route.
-const supplierPartItemTypes = [
-  "Part",
-  "Material",
-  "Tool",
-  "Consumable",
-  "Service"
-] as const;
-type SupplierPartItemType = (typeof supplierPartItemTypes)[number];
-
-function isSupplierPartItemType(
-  type: string | null | undefined
-): type is SupplierPartItemType {
-  return supplierPartItemTypes.includes(type as SupplierPartItemType);
-}
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

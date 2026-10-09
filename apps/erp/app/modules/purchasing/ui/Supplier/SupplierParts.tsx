@@ -4,6 +4,7 @@
 
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -23,10 +24,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { LuEllipsisVertical, LuExternalLink, LuPencil } from "react-icons/lu";
 import { Outlet, useNavigate, useParams } from "react-router";
-import { ItemThumbnail } from "~/components";
+import { ItemThumbnail, New } from "~/components";
 import Grid from "~/components/Grid";
 import Hyperlink from "~/components/Hyperlink";
-import { useCurrencyFormatter } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { SupplierPartWithItem } from "~/modules/items";
 import { getLinkToItemPurchasing } from "~/modules/items/ui/Item/ItemForm";
@@ -44,6 +45,8 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
 
   const { t } = useLingui();
   const navigate = useNavigate();
+  const permissions = usePermissions();
+  const canCreate = permissions.can("create", "parts");
   const formatter = useCurrencyFormatter();
   const customColumns = useCustomColumns<SupplierPartWithItem>("supplierPart");
 
@@ -155,16 +158,26 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
   return (
     <>
       <Card className="w-full h-full min-h-[50vh]">
-        <CardHeader>
-          <CardTitle>
-            <Trans>Supplier Parts</Trans>
-          </CardTitle>
-        </CardHeader>
+        <HStack className="justify-between items-start">
+          <CardHeader>
+            <CardTitle>
+              <Trans>Supplier Parts</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardAction>
+            {canCreate && <New to={path.to.newSupplierPart(supplierId)} />}
+          </CardAction>
+        </HStack>
         <CardContent>
           <Grid<SupplierPartWithItem>
             data={supplierParts}
             columns={columns}
             canEdit={false}
+            onNewRow={
+              canCreate
+                ? () => navigate(path.to.newSupplierPart(supplierId))
+                : undefined
+            }
           />
         </CardContent>
       </Card>
