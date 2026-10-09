@@ -17,6 +17,7 @@ import {
   type OpenItem,
   type TrialBalanceLine
 } from "../accounting-cutover";
+import { configuredDefaultAccount } from "../journal-posting-status";
 import { debitSigned, isAccountClass } from "../ledger";
 import { round } from "../precision";
 import { getNextSequence } from "../sequence";
@@ -204,6 +205,10 @@ export async function getCutoverOpeningInputs(
       defaults.payablesAccount,
       defaults.intercompanyReceivablesAccount,
       defaults.intercompanyPayablesAccount,
+      configuredDefaultAccount(
+        defaults,
+        "employeeReimbursementsPayableAccount"
+      ),
       defaults.prepaymentAccount,
       defaults.goodsReceivedNotInvoicedAccount,
       defaults.workInProgressAccount,

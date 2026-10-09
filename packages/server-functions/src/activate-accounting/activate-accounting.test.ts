@@ -13,6 +13,7 @@ import {
   getCutoverInventory,
   saveOpeningTrialBalance
 } from "@carbon/database/accounting-cutover-reads";
+import { REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION } from "@carbon/database/accounting-posting";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
@@ -25,8 +26,11 @@ import {
   debitOf,
   type Fixture,
   glBalance,
+  insertEmployee,
   moveBeforeCutover,
   pay,
+  payOutReimbursement,
+  postReimbursementOf,
   postServiceInvoice,
   receiveFiveParts,
   shipFiveParts,
@@ -303,6 +307,96 @@ databaseTest(
         confirmation: f.companyName
       });
       expect(again.error?.message).toBe("Accounting is already set up.");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a reimbursement open at the cutover opens on its payable, and a payout after the enable clears it",
+  async () => {
+    const f = await activationFixture();
+    try {
+      // Before the cutover: 100 owed to the employee, 40 of it paid out.
+      const employeeId = await insertEmployee(f);
+      const reimbursementId = await postReimbursementOf(f, {
+        id: "re-1",
+        employeeId,
+        amount: 100,
+        expenseAccountId: f.account("travel")
+      });
+      await payOutReimbursement(f, {
+        id: "payout-1",
+        employeeId,
+        reimbursementId,
+        amount: 40,
+        bankAccountId: f.account("bank")
+      });
+      await moveBeforeCutover(f);
+
+      await f.db
+        .updateTable("accountDefault")
+        .set({ scrapAccount: f.account("scrap") })
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+      await saveOpeningTrialBalance(f.db, {
+        ...args,
+        userId: USER,
+        lines: [
+          { accountId: f.account("employee-payable"), debit: 0, credit: 60 },
+          { accountId: f.account("bank"), debit: 60, credit: 0 }
+        ]
+      });
+      const { openingJournalId } = unwrap(
+        await activateAccounting(f.ctx, {
+          ...args,
+          confirmation: f.companyName
+        })
+      );
+
+      // The original amount on the payable under the description the payout
+      // reads, and the part paid out before the cutover under one it ignores.
+      const openingLines = await f.db
+        .selectFrom("journalLine")
+        .select(["amount", "description", "documentType", "documentId"])
+        .where("companyId", "=", f.companyId)
+        .where("journalId", "=", openingJournalId!)
+        .where("accountId", "=", f.account("employee-payable"))
+        .execute();
+      expect(
+        openingLines.map((line) => ({ ...line, amount: Number(line.amount) }))
+      ).toEqual(
+        expect.arrayContaining([
+          {
+            amount: 100,
+            description: REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
+            documentType: "Reimbursement",
+            documentId: reimbursementId
+          },
+          {
+            amount: -40,
+            description: `${REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION} (settled before cutover)`,
+            documentType: "Reimbursement",
+            documentId: reimbursementId
+          }
+        ])
+      );
+      expect(openingLines).toHaveLength(2);
+      expect(await glBalance(f, "employee-payable")).toBeCloseTo(60, 6);
+      expect(await glBalance(f, "migration-clearing")).toBeCloseTo(0, 6);
+
+      // The rest paid out after the enable finds the opening line and nets
+      // the payable to zero.
+      await payOutReimbursement(f, {
+        id: "payout-2",
+        employeeId,
+        reimbursementId,
+        amount: 60,
+        bankAccountId: f.account("bank")
+      });
+      expect(await glBalance(f, "employee-payable")).toBeCloseTo(0, 6);
     } finally {
       await f.cleanup();
     }

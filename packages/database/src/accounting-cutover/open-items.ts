@@ -4,8 +4,9 @@
 
 // The document-level items open at the cutover
 // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 4):
-// receivables, payables, unapplied credit, deposits, received-not-invoiced,
-// work in progress, deferred revenue and lease net investment.
+// receivables, payables, employee reimbursements, unapplied credit, deposits,
+// received-not-invoiced, work in progress, deferred revenue and lease net
+// investment.
 
 import { sql } from "kysely";
 import { toBaseAmount } from "../accounting-currency";
@@ -18,8 +19,10 @@ import {
 import {
   CUSTOMER_DEPOSIT_DESCRIPTION,
   DOCUMENT_JOURNAL_STATUSES,
-  onAccountCreditDescription
+  onAccountCreditDescription,
+  REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
 } from "../accounting-posting";
+import { configuredDefaultAccount } from "../journal-posting-status";
 import { credit, debit, debitSigned } from "../ledger";
 import { EPSILON, round } from "../precision";
 import { journalReference } from "../utils";
@@ -76,6 +79,7 @@ type SettlementRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
   targetMemoId: string | null;
+  targetReimbursementId: string | null;
   appliedAmount: number;
   discountAmount: number;
   writeOffAmount: number;
@@ -118,6 +122,7 @@ async function getSettlementsBeforeCutover(
       "s.targetSalesInvoiceId",
       "s.targetPurchaseInvoiceId",
       "s.targetMemoId",
+      "s.targetReimbursementId",
       "s.appliedAmount",
       "s.discountAmount",
       "s.writeOffAmount",
@@ -305,6 +310,81 @@ async function getReceivableAndPayableItems(
     throw new Error(
       `The open amount of ${mismatches.join(", ")} does not match the receivables and payables reports`
     );
+  }
+  return items;
+}
+
+/**
+ * Employee reimbursements open at the cutover: one item per reimbursement
+ * Posted before the cutover (its posting date, else its reimbursement date)
+ * and not fully paid out the day before it. A Voided one is not open, as the
+ * AR/AP readers skip a Voided invoice.
+ *
+ * `originalAmount` is the amount in base at the reimbursement's rate, the
+ * total `post-payment` falls back to when a reimbursement has no control
+ * line. `settledBeforeCutover` is what payouts Posted before the cutover
+ * applied (`invoiceSettlement.targetReimbursementId`), as a payout debits the
+ * payable: applied plus discount plus write-off. The item is on the account
+ * the posting credited (`payableAccountId`), which the payout checks against
+ * the control line; a row with none takes the employee reimbursements payable
+ * default, else payables (`DEFAULT_FALLBACKS`). The description is the one the
+ * payout's control lookup matches.
+ */
+async function getReimbursementItems(
+  db: CutoverDb,
+  companyId: string,
+  cutoverDate: string,
+  defaults: AccountDefaults,
+  settlements: SettlementRow[]
+): Promise<DraftItem[]> {
+  const rows = await db
+    .selectFrom("reimbursement")
+    .select(["id", "amount", "exchangeRate", "payableAccountId"])
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Posted")
+    .where((eb) =>
+      eb(eb.fn.coalesce("postingDate", "reimbursementDate"), "<", cutoverDate)
+    )
+    .execute();
+  if (rows.length === 0) return [];
+
+  const settled = new Map<string, number>();
+  for (const row of settlements) {
+    addTo(
+      settled,
+      row.targetReimbursementId,
+      row.appliedAmount + row.discountAmount + row.writeOffAmount
+    );
+  }
+
+  const fallbackAccountId = configuredDefaultAccount(
+    defaults,
+    "employeeReimbursementsPayableAccount"
+  );
+  const items: DraftItem[] = [];
+  for (const row of rows) {
+    const original = toBaseAmount(Number(row.amount), Number(row.exchangeRate));
+    const settledBase = round(settled.get(row.id) ?? 0);
+    if (original - settledBase <= EPSILON) continue;
+    const accountId = row.payableAccountId ?? fallbackAccountId;
+    if (!accountId) {
+      throw new Error(
+        "Set the employeeReimbursementsPayableAccount account default"
+      );
+    }
+    // A credit balance: the payable is credited at posting and debited by
+    // each payout.
+    items.push({
+      openItemType: "Reimbursement",
+      accountId,
+      basis: "debit",
+      original: -original,
+      settled: -settledBase,
+      documentType: "Reimbursement",
+      documentId: row.id,
+      documentLineReference: null,
+      description: REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
+    });
   }
   return items;
 }
@@ -1035,9 +1115,9 @@ export async function finishItems(
 
 /**
  * Every document-level item open at the cutover, in base currency, positive
- * on the natural side of its account: receivables, payables, unapplied
- * credit, deposits, received-not-invoiced, work in progress, deferred revenue
- * and lease net investment. Inventory and fixed assets come from
+ * on the natural side of its account: receivables, payables, employee
+ * reimbursements, unapplied credit, deposits, received-not-invoiced, work in
+ * progress, deferred revenue and lease net investment. Inventory and fixed assets come from
  * `getCutoverInventory` and `getCutoverFixedAssets`.
  */
 export async function getCutoverOpenItems(
@@ -1065,6 +1145,7 @@ export async function openItemsFor(
       defaults,
       settlements
     ),
+    getReimbursementItems(db, companyId, cutoverDate, defaults, settlements),
     getUnappliedPaymentItems(db, companyId, cutoverDate, defaults, settlements),
     getReceivedNotInvoicedItems(db, companyId, cutoverDate, defaults),
     getWorkInProgressItems(db, companyId, cutoverDate, defaults),

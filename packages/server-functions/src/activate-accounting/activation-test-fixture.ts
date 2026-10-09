@@ -17,11 +17,13 @@ import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { OPTIONAL_DEFAULT_ROLES } from "@carbon/database/journal-posting-status";
 import { datetime } from "@carbon/utils";
-import { type Insertable, sql } from "kysely";
+import { type Insertable, type Kysely, sql } from "kysely";
 import { expect } from "vitest";
 import create from "../create";
 import { connectLocalTestDatabase } from "../local-database-test-fixture";
+import postPayment from "../post-payment";
 import postReceipt from "../post-receipt";
+import postReimbursement from "../post-reimbursement";
 import { FILLER_ACCOUNT_DEFAULTS } from "../post-reimbursement/post-reimbursement-test-fixture";
 import postSalesInvoice from "../post-sales-invoice";
 import postShipment from "../post-shipment";
@@ -43,12 +45,14 @@ export const ACCOUNTS = [
   { name: "bank", class: "Asset" },
   { name: "grni", class: "Liability" },
   { name: "payables", class: "Liability" },
+  { name: "employee-payable", class: "Liability" },
   { name: "card", class: "Liability" },
   { name: "retained-earnings", class: "Equity" },
   { name: "migration-clearing", class: "Equity" },
   { name: "sales", class: "Revenue" },
   { name: "shipping-revenue", class: "Revenue" },
   { name: "cogs", class: "Expense" },
+  { name: "travel", class: "Expense" },
   { name: "scrap", class: "Expense" },
   { name: "fixed-assets", class: "Asset" },
   { name: "accumulated-depreciation", class: "Asset" },
@@ -164,6 +168,7 @@ export async function activationFixture() {
         bankCashAccount: account("bank"),
         goodsReceivedNotInvoicedAccount: account("grni"),
         payablesAccount: account("payables"),
+        employeeReimbursementsPayableAccount: account("employee-payable"),
         retainedEarningsAccount: account("retained-earnings"),
         salesAccount: account("sales"),
         costOfGoodsSoldAccount: account("cogs"),
@@ -288,6 +293,18 @@ export async function activationFixture() {
             postedBy: null,
             voidedAt: null,
             voidedBy: null
+          })
+          .where("companyId", "=", companyId)
+          .execute();
+        // `reimbursement_draft_guard` refuses to delete a Posted row.
+        await trx
+          .updateTable("reimbursement")
+          .set({
+            status: "Draft",
+            journalId: null,
+            postingDate: null,
+            postedAt: null,
+            postedBy: null
           })
           .where("companyId", "=", companyId)
           .execute();
@@ -527,7 +544,164 @@ export async function moveBeforeCutover(f: Fixture) {
       .set({ appliedDate: date })
       .where("companyId", "=", f.companyId)
       .execute();
+    // `reimbursement_draft_guard` refuses to change a Posted row's date.
+    await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+    await trx
+      .updateTable("reimbursement")
+      .set({ postingDate: date, reimbursementDate: date })
+      .where("companyId", "=", f.companyId)
+      .where("status", "=", "Posted")
+      .execute();
+    await sql`SET LOCAL session_replication_role = origin`.execute(trx);
   });
+}
+
+/** What the reimbursement helpers need of a test company. */
+type ReimbursementCompany = {
+  db: Kysely<KyselyDatabase>;
+  ctx: ServerFnContext;
+  prefix: string;
+  companyId: string;
+  today: string;
+};
+
+/**
+ * An employee to reimburse. `employee` and `employeeType` carry sync
+ * interceptors that need a real user and a provisioned company, which a
+ * journal does not, so the inserts run with triggers off
+ * (post-reimbursement-test-fixture.ts does the same).
+ */
+export async function insertEmployee(f: ReimbursementCompany) {
+  const employeeId = `${f.prefix}-employee`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+    await trx
+      .insertInto("employeeType")
+      .values({
+        id: `${f.prefix}-employee-type`,
+        name: "Employee",
+        companyId: f.companyId
+      })
+      .execute();
+    await trx
+      .insertInto("employee")
+      .values({
+        id: employeeId,
+        companyId: f.companyId,
+        employeeTypeId: `${f.prefix}-employee-type`,
+        active: true
+      })
+      .execute();
+  });
+  return employeeId;
+}
+
+/** A reimbursement of `amount` in base currency, coded to one expense
+ *  account and posted with `post-reimbursement`. */
+export async function postReimbursementOf(
+  f: ReimbursementCompany,
+  {
+    id,
+    employeeId,
+    amount,
+    expenseAccountId
+  }: {
+    id: string;
+    employeeId: string;
+    amount: number;
+    expenseAccountId: string;
+  }
+): Promise<string> {
+  const reimbursementId = `${f.prefix}-${id}`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("reimbursement")
+      .values({
+        id: reimbursementId,
+        reimbursementId: id.toUpperCase(),
+        employeeId,
+        status: "Draft",
+        reimbursementDate: f.today,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        amount,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("reimbursementLine")
+      .values({
+        reimbursementId,
+        accountId: expenseAccountId,
+        amount,
+        description: "Travel",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  unwrap(await postReimbursement(f.ctx, { type: "post", reimbursementId }));
+  return reimbursementId;
+}
+
+/** Pays the employee `amount` against the reimbursement, posted with
+ *  `post-payment`. */
+export async function payOutReimbursement(
+  f: ReimbursementCompany,
+  {
+    id,
+    employeeId,
+    reimbursementId,
+    amount,
+    bankAccountId
+  }: {
+    id: string;
+    employeeId: string;
+    reimbursementId: string;
+    amount: number;
+    bankAccountId: string;
+  }
+): Promise<string> {
+  const paymentId = `${f.prefix}-${id}`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("payment")
+      .values({
+        id: paymentId,
+        paymentId: id.toUpperCase(),
+        paymentType: "Disbursement",
+        employeeId,
+        paymentDate: f.today,
+        postingDate: f.today,
+        currencyCode: "USD",
+        totalAmount: amount,
+        exchangeRate: 1,
+        bankAccount: bankAccountId,
+        status: "Draft",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("invoiceSettlement")
+      .values({
+        paymentId,
+        targetReimbursementId: reimbursementId,
+        sourceAmount: amount,
+        appliedAmount: amount,
+        sourceExchangeRate: 1,
+        targetExchangeRate: 1,
+        appliedDate: f.today,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  unwrap(await postPayment(f.ctx, { type: "post", paymentId }));
+  return paymentId;
 }
 
 /** Ships 5 parts on a sales order, today. */

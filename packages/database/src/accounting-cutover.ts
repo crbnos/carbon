@@ -57,6 +57,7 @@ export type MigrationClearingAccount = {
 export type OpenItemType =
   | "Receivable"
   | "Payable"
+  | "Reimbursement"
   | "Unapplied Credit"
   | "Customer Deposit"
   | "Received Not Invoiced"

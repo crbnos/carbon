@@ -15,6 +15,7 @@ import {
   getMigrationClearing,
   saveOpeningTrialBalance
 } from "@carbon/database/accounting-cutover-reads";
+import { REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { type Insertable, sql } from "kysely";
@@ -31,6 +32,11 @@ import { FILLER_ACCOUNT_DEFAULTS } from "../post-reimbursement/post-reimbursemen
 import postSalesInvoice from "../post-sales-invoice";
 import postShipment from "../post-shipment";
 import { ServerFnContext } from "../server-fn-context";
+import {
+  insertEmployee,
+  payOutReimbursement,
+  postReimbursementOf
+} from "./activation-test-fixture";
 
 const USER = "system";
 const TIME_ZONE = "America/New_York";
@@ -44,6 +50,7 @@ const ACCOUNTS = [
   { name: "bank", class: "Asset" },
   { name: "grni", class: "Liability" },
   { name: "payables", class: "Liability" },
+  { name: "employee-payable", class: "Liability" },
   { name: "retained-earnings", class: "Equity" },
   { name: "sales", class: "Revenue" },
   { name: "cogs", class: "Expense" }
@@ -239,6 +246,18 @@ async function cutoverReadsFixture() {
         await trx
           .updateTable("purchaseInvoice")
           .set({ status: "Draft" })
+          .where("companyId", "=", companyId)
+          .execute();
+        // `reimbursement_draft_guard` refuses to delete a Posted row.
+        await trx
+          .updateTable("reimbursement")
+          .set({
+            status: "Draft",
+            journalId: null,
+            postingDate: null,
+            postedAt: null,
+            postedBy: null
+          })
           .where("companyId", "=", companyId)
           .execute();
         await sql`SET LOCAL session_replication_role = origin`.execute(trx);
@@ -877,6 +896,91 @@ databaseTest(
       expect(
         legacy.find((item) => item.documentId === invoiceId)
       ).toMatchObject({ amount: 60, settledBeforeCutover: 40 });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a reimbursement partly paid out before the cutover opens on its payable account",
+  async () => {
+    const f = await cutoverReadsFixture();
+    try {
+      await f.db
+        .updateTable("accountDefault")
+        .set({
+          employeeReimbursementsPayableAccount: f.account("employee-payable")
+        })
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const employeeId = await insertEmployee(f);
+      const reimbursement = (id: string, amount: number) =>
+        postReimbursementOf(f, {
+          id,
+          employeeId,
+          amount,
+          expenseAccountId: f.account("cogs")
+        });
+      const payOut = (id: string, reimbursementId: string, amount: number) =>
+        payOutReimbursement(f, {
+          id,
+          employeeId,
+          reimbursementId,
+          amount,
+          bankAccountId: f.account("bank")
+        });
+
+      // 100 owed, 40 paid out: 60 open. 30 owed and paid out in full: not
+      // open.
+      const openId = await reimbursement("re-1", 100);
+      await payOut("payout-1", openId, 40);
+      const paidId = await reimbursement("re-2", 30);
+      await payOut("payout-2", paidId, 30);
+
+      const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+      const items = await getCutoverOpenItems(f.db, args);
+      expect(items).toEqual([
+        {
+          openItemType: "Reimbursement",
+          accountId: f.account("employee-payable"),
+          accountClass: "Liability",
+          amount: 60,
+          originalAmount: 100,
+          settledBeforeCutover: 40,
+          documentType: "Reimbursement",
+          documentId: openId,
+          documentLineReference: null,
+          // The description the payout's control lookup matches.
+          description: REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
+        }
+      ]);
+
+      // The payable is a control account: the trial balance asserts it, and
+      // Migration Clearing compares the assertion with the open item.
+      await saveOpeningTrialBalance(f.db, {
+        ...args,
+        userId: USER,
+        lines: [
+          { accountId: f.account("employee-payable"), debit: 0, credit: 60 },
+          { accountId: f.account("retained-earnings"), debit: 60, credit: 0 }
+        ]
+      });
+      const clearing = await getMigrationClearing(f.db, args);
+      expect(clearing.controlAccountIds).toContain(
+        f.account("employee-payable")
+      );
+      expect(
+        clearing.rows.find(
+          (row) => row.accountId === f.account("employee-payable")
+        )
+      ).toEqual({
+        accountId: f.account("employee-payable"),
+        trialBalance: -60,
+        carbon: -60,
+        difference: 0
+      });
+      expect(clearing.total).toBe(0);
     } finally {
       await f.cleanup();
     }
