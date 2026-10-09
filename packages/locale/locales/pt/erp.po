@@ -13446,6 +13446,9 @@ msgstr "Sem data de vencimento"
 msgid "No editable properties for this item."
 msgstr "Nenhuma propriedade editável para este item."
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Nenhuma operação elegível"
 

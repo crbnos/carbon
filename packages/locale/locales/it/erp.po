@@ -13446,6 +13446,9 @@ msgstr "Nessuna data di scadenza"
 msgid "No editable properties for this item."
 msgstr "Nessuna proprietà modificabile per questo elemento."
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Nessuna operazione idonea"
 

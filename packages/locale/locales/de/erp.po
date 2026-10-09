@@ -13446,6 +13446,9 @@ msgstr "Kein Fälligkeitsdatum"
 msgid "No editable properties for this item."
 msgstr "Keine bearbeitbaren Eigenschaften für dieses Element."
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Keine berechtigten Arbeitsgänge"
 

@@ -34,6 +34,7 @@ import {
   projectStateGroups,
   rollUpCostSummary
 } from "~/modules/projects";
+import { ElementBoard } from "~/modules/projects/ui/Elements/ElementBoard";
 import { ElementList } from "~/modules/projects/ui/Elements/ElementList";
 import { useElementDisplay } from "~/modules/projects/ui/Elements/ElementProperties";
 import type { ElementLayout } from "~/modules/projects/ui/Elements/ElementsHeader";
@@ -264,13 +265,22 @@ export default function ProjectElementsRoute() {
           canCreate={layoutProps.canCreate}
         />
         <div className="min-h-0 flex-1">
-          <ElementList
-            {...layoutProps}
-            newType={newType}
-            onNewTypeChange={setNewType}
-            quickAddRef={quickAddRef}
-            onCreateFirst={() => focusQuickAdd()}
-          />
+          {layout === "board" ? (
+            <ElementBoard
+              {...layoutProps}
+              newType={newType}
+              onNewTypeChange={setNewType}
+              quickAddRef={quickAddRef}
+            />
+          ) : (
+            <ElementList
+              {...layoutProps}
+              newType={newType}
+              onNewTypeChange={setNewType}
+              quickAddRef={quickAddRef}
+              onCreateFirst={() => focusQuickAdd()}
+            />
+          )}
         </div>
       </ResizablePanel>
       <RecordOutlet />

@@ -13446,6 +13446,9 @@ msgstr "Нет срока выполнения"
 msgid "No editable properties for this item."
 msgstr "Нет редактируемых свойств для этого элемента."
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Нет подходящих операций"
 

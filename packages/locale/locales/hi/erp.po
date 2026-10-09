@@ -13446,6 +13446,9 @@ msgstr "कोई नियत तिथि नहीं"
 msgid "No editable properties for this item."
 msgstr "इस आइटम के लिए कोई संपादन योग्य गुण नहीं।"
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "कोई पात्र ऑपरेशन नहीं"
 

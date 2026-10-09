@@ -69,7 +69,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 30: Build the project Settings tab (states and labels)
 - [x] Task 31: Build the `ChargeNumberSelect` picker and its API route
 - [x] Task 32: Build the Elements page with the List layout
-- [ ] Task 33: Add the Board layout
+- [x] Task 33: Add the Board layout
 - [ ] Task 34: Add the Table layout
 - [ ] Task 35: Build the element page (peek and full page)
 - [ ] Task 36: Add Log time and Issue material to the element page
@@ -2502,3 +2502,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 32: the row checkbox selects rows. With one row selected, the quick-add row adds under it (shown as a parent chip). With any selection, a bar offers **Update › State / Priority** for all of them (one post with `ids[]`). **Add child** in the row menu selects the row and focuses the quick-add input.
 - Task 32: a row narrower than 40rem (container query) shows only the state pill; the other pills show from 40rem.
 - Task 32: the row menu's **Delete** posts to `path.to.deleteProjectElement`, whose route Task 35 adds.
+- Task 33: the Board uses `useDraggable` cards and `useDroppable` state columns (no sort within a column), not the schedule board's sortable placement engine. Columns follow `sortStates` (group order, then `sortOrder`), the same order as the state pill menu.
+- Task 33: a drag posts with the fetcher key `element:{id}:stateId` (the pill's key, Task 32), not `element:{id}`. `usePendingStates` reads every pending `stateId` save from `useFetchers()`, so a card moves before the server answers whether the drag or a pill made the change.
+- Task 33: the board has a mouse and a touch sensor, with module-constant options, and no keyboard sensor: Enter on a card's pill or link would start a drag. A keyboard user changes the state from the element page. The cards leave out the state pill, because the column shows the state.
+- Task 33: **+ New** focuses the quick-add row of the default Unstarted column.

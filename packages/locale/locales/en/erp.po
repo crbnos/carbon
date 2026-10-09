@@ -13446,6 +13446,9 @@ msgstr "No due date"
 msgid "No editable properties for this item."
 msgstr "No editable properties for this item."
 
+msgid "No elements"
+msgstr "No elements"
+
 msgid "No eligible operations"
 msgstr "No eligible operations"
 

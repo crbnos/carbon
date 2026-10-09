@@ -13446,6 +13446,9 @@ msgstr "Son tarih yok"
 msgid "No editable properties for this item."
 msgstr "Bu öğe için düzenlenebilir özellik yok."
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Uygun operasyon yok"
 

@@ -13446,6 +13446,9 @@ msgstr "Brak daty terminu"
 msgid "No editable properties for this item."
 msgstr "Brak edytowalnych właściwości dla tego elementu."
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Brak kwalifikujących się operacji"
 

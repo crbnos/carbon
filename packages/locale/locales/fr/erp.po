@@ -13446,6 +13446,9 @@ msgstr "Pas de date d'échéance"
 msgid "No editable properties for this item."
 msgstr "Aucune propriété modifiable pour cet article."
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "Aucune opération admissible"
 

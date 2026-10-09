@@ -13446,6 +13446,9 @@ msgstr "마감일 없음"
 msgid "No editable properties for this item."
 msgstr "이 항목에 대한 편집 가능한 속성이 없습니다."
 
+msgid "No elements"
+msgstr ""
+
 msgid "No eligible operations"
 msgstr "적격 공정이 없습니다"
 
