@@ -13,6 +13,8 @@ import {
   setProjectElementLabels,
   updateProjectElementField
 } from "~/modules/projects";
+import { ensureCapitalAssets } from "~/modules/projects/projects.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-update");
 
@@ -97,6 +99,36 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return {
       error: { message: result.error.message ?? "Failed to save the change" }
     };
+  }
+
+  // A new final asset on a released project gets its asset under
+  // construction now, so its costs can post.
+  if (
+    field === "isFinalAsset" &&
+    (value === "true" || value === "on") &&
+    project.data.status !== "Draft"
+  ) {
+    try {
+      await ensureCapitalAssets(getDatabaseClient(), {
+        companyId,
+        userId,
+        projectId
+      });
+    } catch (err) {
+      logger.error("Failed to create the capital assets", {
+        companyId,
+        projectId,
+        error: err
+      });
+      return {
+        error: {
+          message:
+            err instanceof Error
+              ? err.message
+              : "Failed to create the asset under construction"
+        }
+      };
+    }
   }
 
   return { success: true };

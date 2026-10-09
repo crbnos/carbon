@@ -42,7 +42,7 @@
 - [x] Task 4: Create the views and preferences migration
 - [x] Task 5: Apply migrations, regenerate types, ship RLS
 - [x] Task 6: Add Capitalize to the posting helpers and the SQL mirror
-- [ ] Task 7: Create CIP assets on release and on marking a final asset
+- [x] Task 7: Create CIP assets on release and on marking a final asset
 - [ ] Task 8: Write CIP cost rows from the project posting paths
 - [ ] Task 9: Charge Capitalize jobs through `job.fixedAssetId`
 - [ ] Task 10: Add Place in service
@@ -1455,3 +1455,9 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 6: the asset query runs after the 3 parallel reads, as a 4th query. It loads only the project assets and the assets of final-asset elements in the chain.
 - Task 6: Capitalize ignores an explicit `costAccountId`. The capitalization credits the CIP class account for every CIP cost row, so the debit must go to that account. A final-asset element with no asset yet refuses, as a missing asset does. `Fully Depreciated` refuses too: the plan names Active only.
 - Task 6: migration `20261009103835_project-posting-account-capitalize.sql`. A rolled-back SQL session checked it on the seeded company: the project asset gives the CIP class account, a child under an Active final-asset branch gives that branch's class account, and a branch with no asset raises the TS message. The 2 seeded Statistical projects still return NULL.
+- Task 7: `ensureCapitalAssets` locks the project row, then allocates every asset id and number in one statement (`xid()` and `get_next_sequence('fixedAsset', …)` over `generate_series`). It inserts all assets in one insert and stamps the elements with one `UPDATE … FROM (VALUES …)`. No query runs per asset. It throws when the project's class is not a CIP class.
+- Task 7: each asset copies the class's depreciation and tax settings, as the Make to Asset branch does (`insertFixedAsset` takes them from its caller). `acquisitionDate` and `depreciationStartDate` stay null; `capitalizeCip` sets them.
+- Task 7: the status route calls `ensureCapitalAssets` BEFORE the status change, on every change to Released (Release and Resume). The call is safe to repeat. A failed status change leaves only assets on a project that cannot be charged. A Released project with no asset would refuse its first charge.
+- Task 7: `isFinalAsset` joins `projectElementEditableFields` here, not in Task 13: the update route needs it now. `updateProjectElementField` refuses it on a Parameter. It refuses turning it off while the element's asset has a CIP cost row. Turning it off keeps `fixedAssetId`, so turning it on again reuses the asset.
+- Task 7: the update route creates the asset when `isFinalAsset` turns on and the project is past Draft (Released, On Hold or Technically Complete). The plan named Released only, but the other two statuses also take postings.
+- Task 7: a throwaway vitest run against this worktree's database created a Released Capitalize project with 2 final-asset elements and 1 other element. 2 calls made 3 assets (the project and the 2 final assets), each Under Construction at cost 0 in the CIP class. The other element got none. The rows were deleted. The script was not committed.

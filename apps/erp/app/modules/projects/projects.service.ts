@@ -977,6 +977,44 @@ export async function updateProjectElementField(
       update.isChargeable = value;
       break;
     }
+    case "isFinalAsset": {
+      const value = raw === "true" || raw === "on";
+      const elements = await client
+        .from("projectElement")
+        .select("id, readableId, type, fixedAssetId")
+        .in("id", args.ids)
+        .eq("companyId", args.companyId);
+      if (elements.error) return { data: null, error: elements.error };
+      if (value) {
+        if (elements.data.some((element) => element.type === "Parameter")) {
+          return refusal("A Parameter cannot be a final asset");
+        }
+      } else {
+        // The asset's CIP costs would lose their element: refuse instead.
+        const assetIds = elements.data
+          .map((element) => element.fixedAssetId)
+          .filter((id): id is string => Boolean(id));
+        if (assetIds.length > 0) {
+          const costs = await client
+            .from("fixedAssetCipCost")
+            .select("fixedAssetId")
+            .in("fixedAssetId", assetIds)
+            .eq("companyId", args.companyId)
+            .limit(1);
+          if (costs.error) return { data: null, error: costs.error };
+          const withCost = elements.data.find(
+            (element) => element.fixedAssetId === costs.data[0]?.fixedAssetId
+          );
+          if (withCost) {
+            return refusal(
+              `${withCost.readableId} has costs on its asset under construction. It stays a final asset.`
+            );
+          }
+        }
+      }
+      update.isFinalAsset = value;
+      break;
+    }
     case "description": {
       try {
         update.description = raw === null ? null : (JSON.parse(raw) as Json);

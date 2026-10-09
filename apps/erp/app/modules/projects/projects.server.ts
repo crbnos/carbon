@@ -86,6 +86,166 @@ export async function createProject(
 }
 
 /**
+ * Creates the CIP assets of a capital project, in one transaction: the
+ * project's own asset, and one asset per final-asset element that has none.
+ * Each asset starts Under Construction at cost 0 in the project's CIP class,
+ * with the class's depreciation settings. Does nothing for a project that is
+ * not Capitalize or has no CIP class. Safe to call again: an element or a
+ * project that already holds an asset keeps it.
+ */
+export async function ensureCapitalAssets(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; projectId: string }
+): Promise<void> {
+  await db.transaction().execute(async (trx) => {
+    const project = await trx
+      .selectFrom("project")
+      .select([
+        "id",
+        "identifier",
+        "name",
+        "costTreatment",
+        "fixedAssetClassId",
+        "fixedAssetId",
+        "locationId"
+      ])
+      .where("id", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (
+      !project ||
+      project.costTreatment !== "Capitalize" ||
+      !project.fixedAssetClassId
+    ) {
+      return;
+    }
+
+    const assetClass = await trx
+      .selectFrom("fixedAssetClass")
+      .select([
+        "id",
+        "isConstructionInProgress",
+        "depreciationMethod",
+        "usefulLifeMonths",
+        "residualValuePercent",
+        "taxDepreciationMethod",
+        "taxUsefulLifeMonths",
+        "taxResidualValuePercent",
+        "macrsPropertyClass",
+        "macrsConvention",
+        "bonusDepreciationPercent"
+      ])
+      .where("id", "=", project.fixedAssetClassId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!assetClass?.isConstructionInProgress) {
+      throw new Error(
+        "The project's fixed asset class is not a Construction in Progress class"
+      );
+    }
+
+    const elements = await trx
+      .selectFrom("projectElement")
+      .select(["id", "readableId", "name"])
+      .where("projectId", "=", project.id)
+      .where("companyId", "=", args.companyId)
+      .where("isFinalAsset", "=", true)
+      .where("fixedAssetId", "is", null)
+      .orderBy("readableId")
+      .execute();
+
+    const wanted: { elementId: string | null; name: string }[] = [
+      ...(project.fixedAssetId
+        ? []
+        : [
+            {
+              elementId: null,
+              name: [project.identifier, project.name].filter(Boolean).join(" ")
+            }
+          ]),
+      ...elements.map((element) => ({
+        elementId: element.id,
+        name: `${element.readableId} ${element.name}`
+      }))
+    ];
+    if (wanted.length === 0) return;
+
+    // One statement allocates every id and asset number.
+    const allocated = await sql<{ id: string; fixedAssetId: string }>`
+      SELECT xid() AS "id",
+        get_next_sequence('fixedAsset', ${args.companyId}) AS "fixedAssetId"
+      FROM generate_series(1, ${wanted.length})
+    `.execute(trx);
+    const assets = wanted.map((asset, index) => ({
+      ...asset,
+      id: allocated.rows[index]!.id,
+      fixedAssetId: allocated.rows[index]!.fixedAssetId
+    }));
+
+    await trx
+      .insertInto("fixedAsset")
+      .values(
+        assets.map((asset) => ({
+          id: asset.id,
+          fixedAssetId: asset.fixedAssetId,
+          fixedAssetClassId: assetClass.id,
+          name: asset.name,
+          status: "Under Construction" as const,
+          acquisitionCost: 0,
+          depreciationMethod: assetClass.depreciationMethod,
+          usefulLifeMonths: assetClass.usefulLifeMonths,
+          residualValuePercent: assetClass.residualValuePercent,
+          taxDepreciationMethod: assetClass.taxDepreciationMethod,
+          taxUsefulLifeMonths: assetClass.taxUsefulLifeMonths,
+          taxResidualValuePercent: assetClass.taxResidualValuePercent,
+          macrsPropertyClass: assetClass.macrsPropertyClass,
+          macrsConvention: assetClass.macrsConvention,
+          bonusDepreciationPercent: assetClass.bonusDepreciationPercent,
+          locationId: project.locationId,
+          companyId: args.companyId,
+          createdBy: args.userId,
+          updatedBy: args.userId
+        }))
+      )
+      .execute();
+
+    const projectAsset = assets.find((asset) => asset.elementId === null);
+    if (projectAsset) {
+      await trx
+        .updateTable("project")
+        .set({
+          fixedAssetId: projectAsset.id,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", project.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+
+    const elementAssets = assets.filter(
+      (asset): asset is typeof asset & { elementId: string } =>
+        asset.elementId !== null
+    );
+    if (elementAssets.length > 0) {
+      await sql`
+        UPDATE "projectElement" e
+        SET "fixedAssetId" = v."fixedAssetId",
+          "updatedBy" = ${args.userId},
+          "updatedAt" = NOW()
+        FROM (VALUES ${sql.join(
+          elementAssets.map((asset) => sql`(${asset.elementId}, ${asset.id})`)
+        )}) AS v("elementId", "fixedAssetId")
+        WHERE e."id" = v."elementId"
+          AND e."companyId" = ${args.companyId}
+          AND e."projectId" = ${project.id}
+      `.execute(trx);
+    }
+  });
+}
+
+/**
  * Inserts an element, in one transaction. The project's sequence gives the
  * element its readable id (`ST-12`). An empty state takes the project's
  * default Unstarted state. An absent `isChargeable` takes the type's

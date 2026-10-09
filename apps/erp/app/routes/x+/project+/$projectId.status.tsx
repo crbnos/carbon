@@ -15,6 +15,8 @@ import {
   projectStatusValidator,
   updateProjectStatus
 } from "~/modules/projects";
+import { ensureCapitalAssets } from "~/modules/projects/projects.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "project-status");
@@ -62,6 +64,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       )
     );
+  }
+
+  // A capital project needs its assets under construction before it takes
+  // charges. Create them before the status changes: the call is safe to
+  // repeat, so a failed status change leaves nothing wrong behind.
+  if (status === "Released") {
+    try {
+      await ensureCapitalAssets(getDatabaseClient(), {
+        companyId,
+        userId,
+        projectId
+      });
+    } catch (err) {
+      logger.error("Failed to create the capital assets", {
+        companyId,
+        projectId,
+        error: err
+      });
+      throw redirect(
+        back,
+        await flash(
+          request,
+          error(err, "Failed to create the assets under construction")
+        )
+      );
+    }
   }
 
   const update = await updateProjectStatus(client, {

@@ -293,6 +293,7 @@ export const projectElementEditableFields = [
   "estimatedHours",
   "budget",
   "isChargeable",
+  "isFinalAsset",
   "itemId",
   "description"
 ] as const;
