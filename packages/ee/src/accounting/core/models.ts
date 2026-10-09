@@ -538,6 +538,13 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // A project expense entry (mileage, a cost with no card charge or invoice)
+  // posts Dr the project account / Cr GRNI, alongside project time and issues.
+  "Project Expense": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
   "Asset Depreciation": {
     representation: "journal",
     defaultEnabled: true,

@@ -32,7 +32,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 
 ## Progress
 
-- [ ] Task 1: Create the enum migration
+- [x] Task 1: Create the enum migration
 - [ ] Task 2: Create the Service projects migration
 - [ ] Task 3: Create the field service tables migration
 - [ ] Task 4: Create the module, permissions and seeds migration
@@ -1188,3 +1188,8 @@ ls .ai/playbooks/field-service-phase-a.md
 ```
 
 **Out of scope:** Phases B, C and D.
+
+## Execution notes
+
+- Prerequisite check: the Phase 1a, 1b and 1c artifacts this plan names exist (`projectElement`, `projectLedger`, `timesheetEntry`, `post-timesheet`, `post-project-issue`, `project-posting.ts`, part links, `buildElementsFromPart`). Each migration is applied with `pnpm db:migrate` before its commit, and the regenerated types, swagger and MCP digest go in the same commit, as in Phases 1a–1c.
+- Task 1: the new `journalEntrySourceType` value `Project Expense` broke the `@carbon/ee` and `erp` typechecks, so this commit fixes the enum mirrors. `POSTING_POLICY` gains `Project Expense` (journal, `defaultEnabled: true`, like `Timesheet` and `Project Issue`; the open follow-up on those defaults covers it too), and `posting-policy.test.ts` lists it. `journalEntrySourceTypes` (`accounting.models.ts`) gains it, and `JournalEntrySourceTypeIcon` shows it as `LuHandCoins`. The new `projectCostTreatment` value `By Coverage` broke `$projectId.details.tsx`, whose form offers 4 treatments; the route shows Expense for it, as it did for Capitalize in Phase 1a. A Service project never opens that page (Task 14), and its CHECK refuses any other treatment on save.

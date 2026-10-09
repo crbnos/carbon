@@ -132,7 +132,11 @@ export default function ProjectDetailsRoute() {
           name: project.name,
           identifier: project.identifier ?? undefined,
           description: project.description ?? undefined,
-          costTreatment: project.costTreatment,
+          // By Coverage belongs to Service projects, which never open here.
+          costTreatment:
+            project.costTreatment === "By Coverage"
+              ? "Expense"
+              : project.costTreatment,
           costAccountId: project.costAccountId ?? undefined,
           fixedAssetClassId: project.fixedAssetClassId ?? undefined,
           customerId: project.customerId ?? undefined,

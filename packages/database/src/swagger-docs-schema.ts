@@ -124399,7 +124399,13 @@ export default {
           type: "number"
         },
         costTreatment: {
-          enum: ["Statistical", "Expense", "Capitalize", "Contract"],
+          enum: [
+            "Statistical",
+            "Expense",
+            "Capitalize",
+            "Contract",
+            "By Coverage"
+          ],
           format: 'public."projectCostTreatment"',
           type: "string"
         },
@@ -124793,7 +124799,8 @@ export default {
             "Asset Transfer",
             "Lease",
             "Project Issue",
-            "Timesheet"
+            "Timesheet",
+            "Project Expense"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -132478,7 +132485,8 @@ export default {
             "Quality",
             "Printing",
             "Workflows",
-            "Projects"
+            "Projects",
+            "Service"
           ],
           format: "public.module",
           type: "string"
@@ -132875,7 +132883,8 @@ export default {
             "Quality",
             "Printing",
             "Workflows",
-            "Projects"
+            "Projects",
+            "Service"
           ],
           format: "public.module",
           type: "string"
@@ -138058,7 +138067,8 @@ export default {
             "Rental Agreement",
             "Contract",
             "Project Issue",
-            "Timesheet"
+            "Timesheet",
+            "Project Expense"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -138926,7 +138936,8 @@ export default {
             "Asset Transfer",
             "Lease",
             "Project Issue",
-            "Timesheet"
+            "Timesheet",
+            "Project Expense"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -153531,7 +153542,8 @@ export default {
             "Rental Agreement",
             "Contract",
             "Project Issue",
-            "Timesheet"
+            "Timesheet",
+            "Project Expense"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -153651,7 +153663,8 @@ export default {
             "Asset Transfer",
             "Lease",
             "Project Issue",
-            "Timesheet"
+            "Timesheet",
+            "Project Expense"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -153732,7 +153745,8 @@ export default {
             "Rental Agreement",
             "Contract",
             "Project Issue",
-            "Timesheet"
+            "Timesheet",
+            "Project Expense"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -160229,7 +160243,8 @@ export default {
             "Quality",
             "Printing",
             "Workflows",
-            "Projects"
+            "Projects",
+            "Service"
           ],
           format: "public.module",
           type: "string"
@@ -166341,7 +166356,13 @@ export default {
         },
         costTreatment: {
           default: "Statistical",
-          enum: ["Statistical", "Expense", "Capitalize", "Contract"],
+          enum: [
+            "Statistical",
+            "Expense",
+            "Capitalize",
+            "Contract",
+            "By Coverage"
+          ],
           format: 'public."projectCostTreatment"',
           type: "string"
         },
@@ -168820,7 +168841,8 @@ export default {
             "Quality",
             "Printing",
             "Workflows",
-            "Projects"
+            "Projects",
+            "Service"
           ],
           format: "public.module",
           type: "string"
@@ -169665,7 +169687,8 @@ export default {
             "Quality",
             "Printing",
             "Workflows",
-            "Projects"
+            "Projects",
+            "Service"
           ],
           format: "public.module",
           type: "string"

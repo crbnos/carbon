@@ -81,7 +81,9 @@ describe("POSTING_POLICY", () => {
         // Added with Projects: project time and project material issues post
         // like maintenance labor.
         "Timesheet",
-        "Project Issue"
+        "Project Issue",
+        // Added with Service projects: expense entries post like project time.
+        "Project Expense"
       ].sort()
     );
 

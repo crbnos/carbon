@@ -96343,6 +96343,7 @@ export type Database = {
         | "Indirect Cost"
         | "Variance"
         | "Total"
+      customerAssetStatus: "In Service" | "At Depot" | "Returned"
       customerContractStatus: "Draft" | "Active" | "Ended"
       customerContractType:
         | "New Sales"
@@ -96673,6 +96674,7 @@ export type Database = {
         | "Lease"
         | "Project Issue"
         | "Timesheet"
+        | "Project Expense"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -96706,6 +96708,7 @@ export type Database = {
         | "Contract"
         | "Project Issue"
         | "Timesheet"
+        | "Project Expense"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       lessorClassification: "Rental" | "Sale" | "Financing"
@@ -96765,6 +96768,7 @@ export type Database = {
         | "Printing"
         | "Workflows"
         | "Projects"
+        | "Service"
       month:
         | "January"
         | "February"
@@ -96849,6 +96853,11 @@ export type Database = {
       productionEventType: "Setup" | "Labor" | "Machine"
       productionQuantityType: "Rework" | "Scrap" | "Production"
       projectBaselineSource: "Manual" | "Milestone" | "Change Request"
+      projectBillableItemStatus:
+        | "Unbilled"
+        | "On Hold"
+        | "Billed"
+        | "Written Off"
       projectChangeOperation: "Add" | "Update" | "Delete"
       projectChangeRequestStatus:
         | "Draft"
@@ -96862,6 +96871,7 @@ export type Database = {
         | "Expense"
         | "Capitalize"
         | "Contract"
+        | "By Coverage"
       projectCostType:
         | "Material"
         | "Labor"
@@ -96910,6 +96920,7 @@ export type Database = {
         | "On Hold"
         | "Technically Complete"
         | "Closed"
+      projectType: "Standard" | "Service"
       purchaseInvoiceStatus:
         | "Draft"
         | "Pending"
@@ -97063,7 +97074,24 @@ export type Database = {
       salesRfqStatus: "Draft" | "Ready for Quote" | "Closed" | "Quoted"
       samplingPlanType: "All" | "First" | "Percentage" | "AQL"
       samplingStandard: "ANSI_Z1_4" | "ISO_2859_1"
+      serviceCoverage: "Warranty" | "Contract" | "Billable" | "Capitalized"
+      serviceInvoiceDetail: "Itemized" | "By Node"
+      serviceOrderStatus:
+        | "Draft"
+        | "Scheduled"
+        | "In Progress"
+        | "On Hold"
+        | "Completed"
+        | "Closed"
+        | "Cancelled"
+      serviceOrderType: "Field Visit" | "Depot Repair" | "Refurbishment"
       serviceType: "Internal" | "External"
+      serviceVisitStatus:
+        | "Scheduled"
+        | "Traveling"
+        | "On Site"
+        | "Completed"
+        | "Cancelled"
       shelfLifeMode: "Fixed Duration" | "Calculated" | "Set on Receipt"
       shelfLifeTriggerTiming: "Before" | "After"
       shipmentSourceDocument:
@@ -97914,6 +97942,7 @@ export const Constants = {
         "Variance",
         "Total",
       ],
+      customerAssetStatus: ["In Service", "At Depot", "Returned"],
       customerContractStatus: ["Draft", "Active", "Ended"],
       customerContractType: [
         "New Sales",
@@ -98273,6 +98302,7 @@ export const Constants = {
         "Lease",
         "Project Issue",
         "Timesheet",
+        "Project Expense",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
@@ -98307,6 +98337,7 @@ export const Constants = {
         "Contract",
         "Project Issue",
         "Timesheet",
+        "Project Expense",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
@@ -98372,6 +98403,7 @@ export const Constants = {
         "Printing",
         "Workflows",
         "Projects",
+        "Service",
       ],
       month: [
         "January",
@@ -98465,6 +98497,12 @@ export const Constants = {
       productionEventType: ["Setup", "Labor", "Machine"],
       productionQuantityType: ["Rework", "Scrap", "Production"],
       projectBaselineSource: ["Manual", "Milestone", "Change Request"],
+      projectBillableItemStatus: [
+        "Unbilled",
+        "On Hold",
+        "Billed",
+        "Written Off",
+      ],
       projectChangeOperation: ["Add", "Update", "Delete"],
       projectChangeRequestStatus: [
         "Draft",
@@ -98479,6 +98517,7 @@ export const Constants = {
         "Expense",
         "Capitalize",
         "Contract",
+        "By Coverage",
       ],
       projectCostType: [
         "Material",
@@ -98534,6 +98573,7 @@ export const Constants = {
         "Technically Complete",
         "Closed",
       ],
+      projectType: ["Standard", "Service"],
       purchaseInvoiceStatus: [
         "Draft",
         "Pending",
@@ -98702,7 +98742,26 @@ export const Constants = {
       salesRfqStatus: ["Draft", "Ready for Quote", "Closed", "Quoted"],
       samplingPlanType: ["All", "First", "Percentage", "AQL"],
       samplingStandard: ["ANSI_Z1_4", "ISO_2859_1"],
+      serviceCoverage: ["Warranty", "Contract", "Billable", "Capitalized"],
+      serviceInvoiceDetail: ["Itemized", "By Node"],
+      serviceOrderStatus: [
+        "Draft",
+        "Scheduled",
+        "In Progress",
+        "On Hold",
+        "Completed",
+        "Closed",
+        "Cancelled",
+      ],
+      serviceOrderType: ["Field Visit", "Depot Repair", "Refurbishment"],
       serviceType: ["Internal", "External"],
+      serviceVisitStatus: [
+        "Scheduled",
+        "Traveling",
+        "On Site",
+        "Completed",
+        "Cancelled",
+      ],
       shelfLifeMode: ["Fixed Duration", "Calculated", "Set on Receipt"],
       shelfLifeTriggerTiming: ["Before", "After"],
       shipmentSourceDocument: [
