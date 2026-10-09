@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ApprovalDecision } from "@carbon/ee/approvals";
+import type {
+  ApprovalDecision,
+  DocumentApprovalState
+} from "@carbon/ee/approvals";
 import {
   Badge,
   Button,
@@ -36,12 +39,12 @@ import {
 import { Await, useFetcher, useParams } from "react-router";
 import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
+import ApprovalDecisionModal from "~/components/Modals/ApprovalDecision";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import type { QualityDocument } from "../../types";
-import QualityDocumentApprovalModal from "./QualityDocumentApprovalModal";
 import QualityDocumentForm from "./QualityDocumentForm";
 import QualityDocumentStatus from "./QualityDocumentStatus";
 
@@ -52,12 +55,9 @@ const QualityDocumentHeader = () => {
   const routeData = useRouteData<{
     document: QualityDocument;
     versions: PostgrestResponse<QualityDocument>;
-    approvalRequest: { id: string } | null;
-    canApprove: boolean;
-    canReopen: boolean;
-    canDelete: boolean;
-    isApprovalRequired: boolean;
+    approval: DocumentApprovalState | null;
   }>(path.to.qualityDocument(id));
+  const user = useUser();
 
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -80,11 +80,14 @@ const QualityDocumentHeader = () => {
   const isDraft = status === "Draft";
   const isArchived = status === "Archived";
   const canActivate = isDraft || isArchived;
-  const approvalRequestId = routeData?.approvalRequest?.id;
+  const approval = routeData?.approval;
+  const approvalRequestId = approval?.pendingRequestId;
   const hasApprovalRequest = !!approvalRequestId;
-  const canApprove = routeData?.canApprove ?? false;
-  const canDelete = routeData?.canDelete ?? true;
-  const isApprovalRequired = routeData?.isApprovalRequired ?? false;
+  const canApprove = approval?.canApprove ?? false;
+  // While a request is pending only its requester may delete the document.
+  const canDelete =
+    !hasApprovalRequest || approval?.pendingRequestedBy === user.id;
+  const isApprovalRequired = approval?.isRequired ?? false;
 
   const statusIdle = statusFetcher.state === "idle";
   const submitLoading =
@@ -269,10 +272,20 @@ const QualityDocumentHeader = () => {
         />
       )}
       {approvalDecision && approvalRequestId && (
-        <QualityDocumentApprovalModal
-          qualityDocument={routeData?.document}
+        <ApprovalDecisionModal
+          action={path.to.qualityDocument(id)}
           approvalRequestId={approvalRequestId}
           decision={approvalDecision}
+          title={
+            approvalDecision === "Approved"
+              ? t`Approve ${displayName}`
+              : t`Reject ${displayName}`
+          }
+          description={
+            approvalDecision === "Approved"
+              ? t`Are you sure you want to approve this quality document? This will make it active.`
+              : t`Are you sure you want to reject this quality document? The document will remain in draft status.`
+          }
           fetcher={approvalFetcher}
           onClose={() => setApprovalDecision(null)}
         />

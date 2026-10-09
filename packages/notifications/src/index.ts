@@ -12,7 +12,8 @@ export enum NotificationEvent {
   ApprovalApproved = "approval-approved",
   ApprovalRejected = "approval-rejected",
   ApprovalRequested = "approval-requested",
-  // Change-notice stage broadcasts (the only CN events; no approval flow in v1).
+  // Change-notice stage broadcasts. Change notice approvals use the Approval*
+  // events above with documentType "changeOrder".
   // Values are persisted in `notification.event`, so they keep the legacy
   // "change-order" spelling.
   ChangeNoticeStarted = "change-order-started",

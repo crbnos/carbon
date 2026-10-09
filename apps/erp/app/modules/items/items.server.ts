@@ -3,9 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { hasPendingApproval } from "@carbon/ee/approvals.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -24,11 +26,11 @@ import {
   upsertItemSupersession
 } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
-import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 import type { plmReleaseControl } from "./items.models";
 import {
   canEditChangeNoticeEngineering,
   canEditChangeNoticeWorkflow,
+  changeNoticeAwaitingApprovalMessage,
   changeNoticeLockedMessage,
   changeNoticeOpenStatuses,
   supersessionModes
@@ -127,10 +129,15 @@ export function getLockVerdict(lock: {
 
 type MethodLock = {
   revisionStatus: ItemRevisionStatus | null;
+  changeNoticeId: string | null;
   changeNoticeStatus: string | null;
 };
 
-const NO_LOCK: MethodLock = { revisionStatus: null, changeNoticeStatus: null };
+const NO_LOCK: MethodLock = {
+  revisionStatus: null,
+  changeNoticeId: null,
+  changeNoticeStatus: null
+};
 
 // The FK chain from each lock kind up to its owning make method, expressed once.
 // The two lock inputs (the item's revisionStatus and the owning change notice's
@@ -138,7 +145,7 @@ const NO_LOCK: MethodLock = { revisionStatus: null, changeNoticeStatus: null };
 // chain twice would double a query that runs on every BOM/BOP mutation.
 // `methodMaterial` has two FKs to `makeMethod` (makeMethodId and
 // materialMakeMethodId); the parent method is methodMaterial_methodId_fkey.
-const METHOD_LOCK_SOURCE = "changeOrder(status), item(revisionStatus)";
+const METHOD_LOCK_SOURCE = "changeOrder(id, status), item(revisionStatus)";
 
 const methodLockQueries = {
   makeMethod: ["makeMethod", METHOD_LOCK_SOURCE],
@@ -193,12 +200,13 @@ async function resolveMethodLock(
   const method = unwrapMakeMethod(result.data as MethodLockRow | null, kind);
   return {
     revisionStatus: method?.item?.revisionStatus ?? null,
+    changeNoticeId: method?.changeOrder?.id ?? null,
     changeNoticeStatus: method?.changeOrder?.status ?? null
   };
 }
 
 type MakeMethodLockRow = {
-  changeOrder: { status: string | null } | null;
+  changeOrder: { id: string; status: string | null } | null;
   item: { revisionStatus: ItemRevisionStatus | null } | null;
 };
 
@@ -267,15 +275,14 @@ export async function checkRevisionLock(
 
   // Hard block, independent of releaseControl — releaseControl only governs the
   // revision lock.
-  if (
-    lock.changeNoticeStatus &&
-    !canEditChangeNoticeEngineering(lock.changeNoticeStatus)
-  ) {
-    return {
-      ok: false,
-      warn: false,
-      message: changeNoticeLockedMessage(lock.changeNoticeStatus)
-    };
+  const changeNoticeLock = lock.changeNoticeId
+    ? await getChangeNoticeEngineeringLock(
+        lock.changeNoticeId,
+        lock.changeNoticeStatus
+      )
+    : null;
+  if (changeNoticeLock) {
+    return { ok: false, warn: false, message: changeNoticeLock };
   }
 
   return getLockVerdict({
@@ -289,6 +296,30 @@ export async function checkRevisionLock(
 // =============================================================================
 
 type ChangeNoticeEditScope = "engineering" | "workflow";
+
+// Why a change notice's engineering content cannot be edited, or null. An
+// approval request can only be pending at Engineering Complete (approval gates
+// the move to Implementation), so only that stage pays for the lookup;
+// approvalRequest is service-role only.
+async function getChangeNoticeEngineeringLock(
+  changeNoticeId: string,
+  status: string | null | undefined
+): Promise<string | null> {
+  if (!canEditChangeNoticeEngineering(status)) {
+    return changeNoticeLockedMessage(status);
+  }
+  if (
+    status === "Engineering Complete" &&
+    (await hasPendingApproval(
+      getCarbonServiceRole(),
+      "changeOrder",
+      changeNoticeId
+    ))
+  ) {
+    return changeNoticeAwaitingApprovalMessage;
+  }
+  return null;
+}
 
 // One status read + predicate. Mutation routes call this before writing; the
 // UI disable is cosmetic on top of it.
@@ -311,16 +342,15 @@ export async function requireChangeNoticeEditable(
     return { error: { message: "Could not find change notice" }, data: null };
   }
 
-  const canEdit =
+  const { status } = existing.data;
+  const message =
     args.scope === "engineering"
-      ? canEditChangeNoticeEngineering
-      : canEditChangeNoticeWorkflow;
+      ? await getChangeNoticeEngineeringLock(args.changeNoticeId, status)
+      : canEditChangeNoticeWorkflow(status)
+        ? null
+        : changeNoticeLockedMessage(status);
 
-  return requireUnlockedBulk({
-    statuses: [existing.data.status],
-    checkFn: (status) => !canEdit(status),
-    message: changeNoticeLockedMessage(existing.data.status)
-  });
+  return message ? { error: { message }, data: null } : null;
 }
 
 // The inverse gate: an item owned by an open change notice must not get a manual

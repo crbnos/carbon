@@ -3,7 +3,5 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import ApprovalDecision from "./ApprovalDecision";
-import Confirm from "./Confirm";
-import ConfirmDelete from "./ConfirmDelete";
 
-export { ApprovalDecision, Confirm, ConfirmDelete };
+export default ApprovalDecision;

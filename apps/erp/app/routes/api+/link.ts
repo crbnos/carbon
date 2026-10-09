@@ -108,8 +108,9 @@ function resolve(
         return path.to.purchaseOrder(documentId);
       if (documentType === "qualityDocument")
         return path.to.qualityDocument(documentId);
-      if (documentType === "supplier")
-        return path.to.supplierApproval(documentId);
+      if (documentType === "supplier") return path.to.supplier(documentId);
+      if (documentType === "changeOrder")
+        return path.to.changeNoticeDetails(documentId);
       return null;
     default:
       return null;

@@ -1198,6 +1198,11 @@ export function changeNoticeLockedMessage(status: string | null | undefined) {
     : "This change notice is closed, so its changes are read-only.";
 }
 
+// Engineering content is also frozen while an approval request is pending: the
+// approver signs off on exactly what they reviewed.
+export const changeNoticeAwaitingApprovalMessage =
+  "This change notice is waiting for approval. Engineering changes are locked until it is approved or rejected.";
+
 // Workflow content — action tasks, assignee, dates, priority. Editable until closed.
 export function canEditChangeNoticeWorkflow(
   status: string | null | undefined

@@ -40,13 +40,6 @@ const MaterialHeader = () => {
   const { company } = useUser();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
-  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
-    entityType: "item",
-    entityId: itemId,
-    companyId: company.id,
-    variant: "dropdown"
-  });
-
   const routeData = useRouteData<{
     materialSummary: Material;
     supersession: Promise<{
@@ -57,6 +50,16 @@ const MaterialHeader = () => {
         | "No Stock";
     } | null>;
   }>(path.to.material(itemId));
+
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "item",
+    entityId: itemId,
+    companyId: company.id,
+    variant: "dropdown",
+    downloadable: true,
+    downloadName:
+      routeData?.materialSummary?.readableIdWithRevision ?? undefined
+  });
 
   const supersession = useResolved(routeData?.supersession, null, itemId);
   const lifecycleStatus = getItemLifecycleStatus(

@@ -23,6 +23,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { memo, useEffect, useRef, useState } from "react";
 import {
+  LuDownload,
   LuFilePen,
   LuFilePlus,
   LuFileX,
@@ -43,6 +44,7 @@ import {
 import { usePermissions, useRouteData } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
 import { path } from "~/utils/path";
+import { useAuditLogDownload } from "./useAuditLogDownload";
 import { isEmptyDiffValue } from "./utils";
 
 type AuditLogDrawerProps = {
@@ -59,6 +61,10 @@ type AuditLogDrawerProps = {
   recordId?: string;
   /** When true, shows an upgrade prompt instead of fetching audit data */
   planRestricted?: boolean;
+  /** When true, the header offers a CSV download of the full history. */
+  downloadable?: boolean;
+  /** Leads the downloaded file's name, e.g. the record's readable id. */
+  downloadName?: string;
 };
 
 /** How long after a change its audit rows typically take to be written. */
@@ -107,6 +113,8 @@ type AuditLogFeedProps = {
    * so an always-mounted feed refetches after the record is saved.
    */
   refreshKey?: string | null;
+  /** Reports how many entries are shown (null while nothing is loaded). */
+  onEntryCountChange?: (count: number | null) => void;
 };
 
 /**
@@ -121,7 +129,8 @@ export function AuditLogFeed({
   recordId,
   planRestricted = false,
   isActive,
-  refreshKey
+  refreshKey,
+  onEntryCountChange
 }: AuditLogFeedProps) {
   const fetcher = useFetcher<AuditLogFetcherData>();
   // Held in a ref so a re-render (a new fetcher object) never re-runs the
@@ -199,6 +208,14 @@ export function AuditLogFeed({
   const hasCurrentData = Boolean(fetcher.data) && dataEntity === entityKey;
   const entries = hasCurrentData ? (fetcher.data?.entries ?? []) : [];
   const isLoading = !hasCurrentData;
+  const shownCount =
+    hasCurrentData && canViewHistory && !planRestricted && auditLogEnabled
+      ? entries.length
+      : null;
+
+  useEffect(() => {
+    onEntryCountChange?.(shownCount);
+  }, [onEntryCountChange, shownCount]);
 
   if (!canViewHistory) {
     return (
@@ -294,8 +311,19 @@ const AuditLogDrawer = memo(
     companyId,
     title,
     recordId,
-    planRestricted = false
+    planRestricted = false,
+    downloadable = false,
+    downloadName
   }: AuditLogDrawerProps) => {
+    const [entryCount, setEntryCount] = useState<number | null>(null);
+    const { download, isDownloading } = useAuditLogDownload({
+      entityType,
+      entityId,
+      companyId,
+      recordId,
+      downloadName
+    });
+
     return (
       <Drawer
         open={isOpen}
@@ -305,10 +333,23 @@ const AuditLogDrawer = memo(
       >
         <DrawerContent size="lg" position="left">
           <DrawerHeader>
-            <DrawerTitle className="flex items-center gap-2">
-              <LuHistory className="size-5" />
-              {title ?? <Trans>History</Trans>}
-            </DrawerTitle>
+            <HStack className="justify-between pr-12">
+              <DrawerTitle className="flex items-center gap-2">
+                <LuHistory className="size-5" />
+                {title ?? <Trans>History</Trans>}
+              </DrawerTitle>
+              {downloadable && (entryCount ?? 0) > 0 && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuDownload />}
+                  isLoading={isDownloading}
+                  isDisabled={isDownloading}
+                  onClick={download}
+                >
+                  <Trans>Download</Trans>
+                </Button>
+              )}
+            </HStack>
           </DrawerHeader>
           <DrawerBody>
             <AuditLogFeed
@@ -318,6 +359,7 @@ const AuditLogDrawer = memo(
               recordId={recordId}
               planRestricted={planRestricted}
               isActive={isOpen}
+              onEntryCountChange={downloadable ? setEntryCount : undefined}
             />
           </DrawerBody>
         </DrawerContent>

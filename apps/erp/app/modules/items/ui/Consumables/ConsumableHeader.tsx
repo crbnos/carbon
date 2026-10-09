@@ -40,13 +40,6 @@ const ConsumableHeader = () => {
   const permissions = usePermissions();
   const { t } = useLingui();
   const deleteModal = useDisclosure();
-  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
-    entityType: "item",
-    entityId: itemId,
-    companyId: company.id,
-    variant: "dropdown"
-  });
-
   const routeData = useRouteData<{
     consumableSummary: Consumable;
     supersession: Promise<{
@@ -57,6 +50,16 @@ const ConsumableHeader = () => {
         | "No Stock";
     } | null>;
   }>(path.to.consumable(itemId));
+
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "item",
+    entityId: itemId,
+    companyId: company.id,
+    variant: "dropdown",
+    downloadable: true,
+    downloadName:
+      routeData?.consumableSummary?.readableIdWithRevision ?? undefined
+  });
 
   const supersession = useResolved(routeData?.supersession, null, itemId);
   const lifecycleStatus = getItemLifecycleStatus(

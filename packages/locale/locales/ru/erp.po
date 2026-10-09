@@ -412,6 +412,9 @@ msgstr "{discount} скидка"
 msgid "{dismissed} dismissed"
 msgstr "{dismissed} отклонено"
 
+msgid "{documentTypeLabel} approval rule"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
@@ -2538,6 +2541,9 @@ msgstr "Дата утверждения"
 msgid "Approval is required at or above this amount, up to the next rule's minimum"
 msgstr "Утверждение требуется для сумм, равных этой сумме или выше, вплоть до минимума следующего правила"
 
+msgid "Approval Rejected"
+msgstr ""
+
 msgid "Approval requirements"
 msgstr "Требования утверждения"
 
@@ -2552,6 +2558,16 @@ msgstr "Утверждения"
 
 msgid "Approve"
 msgstr "Утвердить"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Approve {0}"
+msgstr ""
+
+msgid "Approve {changeOrderId}"
+msgstr ""
+
+msgid "Approve {displayName}"
+msgstr ""
 
 msgid "Approved By"
 msgstr "Одобрено"
@@ -2611,6 +2627,15 @@ msgstr "Вы уверены, что хотите активировать про
 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Вы уверены, что хотите активировать это средство измерения?"
+
+msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
+msgstr ""
+
+msgid "Are you sure you want to approve this quality document? This will make it active."
+msgstr ""
+
+msgid "Are you sure you want to approve this supplier? This will make it active."
+msgstr ""
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -3013,8 +3038,17 @@ msgstr "Вы уверены, что хотите провести этот пр�
 msgid "Are you sure you want to post this shipment?"
 msgstr "Вы уверены, что хотите провести эту отгрузку?"
 
+msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
+msgstr ""
+
+msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
+msgstr ""
+
 msgid "Are you sure you want to reject this quote?"
 msgstr "Вы уверены, что хотите отклонить это предложение?"
+
+msgid "Are you sure you want to reject this supplier?"
+msgstr ""
 
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Вы уверены, что хотите запустить в работу этот производственный заказ? Он станет доступен цеху и начнет управлять закупками и производством."
@@ -6949,6 +6983,9 @@ msgstr "Удалить вебхук"
 msgid "Delete Workflow"
 msgstr "Удалить рабочий процесс"
 
+msgid "Deleted"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Доставить"
 
@@ -8949,6 +8986,9 @@ msgstr "Не удалось удалить файл из старого мест
 
 msgid "Failed to download file for moving"
 msgstr "Не удалось скачать файл для перемещения"
+
+msgid "Failed to download history"
+msgstr ""
 
 msgid "Failed to fetch item costs"
 msgstr "Ошибка при получении себестоимости номенклатуры"
@@ -12994,6 +13034,9 @@ msgstr "Новая Строка перемещения"
 msgid "New Unit of Measure"
 msgstr "Новая единица измерения"
 
+msgid "New Value"
+msgstr ""
+
 msgid "New Version"
 msgstr "Новая версия"
 
@@ -13426,6 +13469,9 @@ msgstr "Нет новых уведомлений"
 
 msgid "No notes"
 msgstr "Нет примечаний"
+
+msgid "No notes were given."
+msgstr ""
 
 msgid "No one assigned"
 msgstr "Никто не назначен"
@@ -13951,6 +13997,9 @@ msgstr "хорошо"
 
 msgid "OK"
 msgstr "ОК"
+
+msgid "Old Value"
+msgstr ""
 
 msgid "Oldest first"
 msgstr "Сначала самые старые"
@@ -14906,6 +14955,9 @@ msgstr "Водяной знак PDF"
 msgid "Pending"
 msgstr "Ожидание"
 
+msgid "Pending Approval"
+msgstr ""
+
 msgid "people"
 msgstr "сотрудники"
 
@@ -15856,9 +15908,6 @@ msgstr "Сумма заказа поставщику"
 msgid "Purchase Order Approval"
 msgstr "Утверждение заказа поставщику"
 
-msgid "Purchase Order approval rule"
-msgstr "Правило утверждения заказа поставщику"
-
 msgid "Purchase Order ID"
 msgstr "ID Заказа поставщику"
 
@@ -16025,8 +16074,8 @@ msgstr "качество"
 msgid "Quality"
 msgstr "Качество"
 
-msgid "Quality Document approval rule"
-msgstr "Правило утверждения документа качества"
+msgid "Quality Document"
+msgstr ""
 
 msgid "Quality Documents"
 msgstr "Документы качества"
@@ -16523,6 +16572,9 @@ msgstr "Запись удалена"
 msgid "Record Deposit"
 msgstr "Учесть авансовый платеж"
 
+msgid "Record ID"
+msgstr ""
+
 msgid "Record inspections tied to a part and a job"
 msgstr "Зарегистрировать контроль, связанный с деталью и производственным заказом"
 
@@ -16642,6 +16694,16 @@ msgstr "Возмещения"
 
 msgid "Reject"
 msgstr "Отклонить"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Reject {0}"
+msgstr ""
+
+msgid "Reject {changeOrderId}"
+msgstr ""
+
+msgid "Reject {displayName}"
+msgstr ""
 
 msgid "Reject Lot"
 msgstr "Отклонить партию"
@@ -17034,6 +17096,9 @@ msgstr "Требовать назначенного оператора пере�
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
+msgid "Require approval before change notices move to Implementation"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Требовать утверждение перед установкой статуса «Активный» для поставщиков"
 
@@ -17049,8 +17114,8 @@ msgstr "Требовать совпадение"
 msgid "Require SAML SSO"
 msgstr "Требовать SAML SSO"
 
-msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr "Требовать многоуровневого одобрения заказов поставщикам, документов качества и поставщиков на основе пороговых сумм и групп утверждающих."
+msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
+msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
@@ -19683,6 +19748,9 @@ msgstr "Отправить анонимно"
 msgid "Submit for approval"
 msgstr "Отправить на утверждение"
 
+msgid "Submit for Approval"
+msgstr ""
+
 msgid "Submit Inspection"
 msgstr "Отправить контроль"
 
@@ -21339,6 +21407,9 @@ msgstr "Это извещение об изменении внедряется, 
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Это извещение об изменении закрыто, поэтому его изменения доступны только для чтения."
+
+msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
+msgstr ""
 
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "Данные этой Организации заменяются содержимым этой резервной копии. Данные сегодня сохраняются первыми, поэтому вы можете вернуться."

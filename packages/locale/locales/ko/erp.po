@@ -412,6 +412,9 @@ msgstr "{discount} 할인"
 msgid "{dismissed} dismissed"
 msgstr "{dismissed} 무시됨"
 
+msgid "{documentTypeLabel} approval rule"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
@@ -2538,6 +2541,9 @@ msgstr "승인일"
 msgid "Approval is required at or above this amount, up to the next rule's minimum"
 msgstr "이 금액 이상부터 다음 규칙의 최소값 미만까지는 승인이 필요합니다"
 
+msgid "Approval Rejected"
+msgstr ""
+
 msgid "Approval requirements"
 msgstr "승인 요구사항"
 
@@ -2552,6 +2558,16 @@ msgstr "승인"
 
 msgid "Approve"
 msgstr "승인"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Approve {0}"
+msgstr ""
+
+msgid "Approve {changeOrderId}"
+msgstr ""
+
+msgid "Approve {displayName}"
+msgstr ""
 
 msgid "Approved By"
 msgstr "승인자"
@@ -2611,6 +2627,15 @@ msgstr "공정 {name}을(를) 활성화하시겠습니까? 드롭다운에 다�
 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "이 계측기를 활성화하시겠습니까?."
+
+msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
+msgstr ""
+
+msgid "Are you sure you want to approve this quality document? This will make it active."
+msgstr ""
+
+msgid "Are you sure you want to approve this supplier? This will make it active."
+msgstr ""
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -3013,8 +3038,17 @@ msgstr "이 입고를 전기하시겠습니까?"
 msgid "Are you sure you want to post this shipment?"
 msgstr "이 출하를 전기하시겠습니까?"
 
+msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
+msgstr ""
+
+msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
+msgstr ""
+
 msgid "Are you sure you want to reject this quote?"
 msgstr "이 견적서를 거부하시겠습니까?"
+
+msgid "Are you sure you want to reject this supplier?"
+msgstr ""
 
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "이 작업 지시를 릴리스하시겠습니까? 현장에서 가용하게 되며 구매 및 생산을 드라이브합니다."
@@ -6949,6 +6983,9 @@ msgstr "웹훅 삭제"
 msgid "Delete Workflow"
 msgstr "워크플로우 삭제"
 
+msgid "Deleted"
+msgstr ""
+
 msgid "Deliver"
 msgstr "배송"
 
@@ -8949,6 +8986,9 @@ msgstr "이전 위치에서 파일 삭제 실패"
 
 msgid "Failed to download file for moving"
 msgstr "이동을 위한 파일 다운로드 실패"
+
+msgid "Failed to download history"
+msgstr ""
 
 msgid "Failed to fetch item costs"
 msgstr "품목 원가 조회 실패"
@@ -12994,6 +13034,9 @@ msgstr "신규 이송 라인"
 msgid "New Unit of Measure"
 msgstr "새 측정 단위"
 
+msgid "New Value"
+msgstr ""
+
 msgid "New Version"
 msgstr "새 버전"
 
@@ -13426,6 +13469,9 @@ msgstr "새 알림이 없습니다"
 
 msgid "No notes"
 msgstr "메모 없음"
+
+msgid "No notes were given."
+msgstr ""
 
 msgid "No one assigned"
 msgstr "배치된 사람이 없습니다"
@@ -13951,6 +13997,9 @@ msgstr "확인"
 
 msgid "OK"
 msgstr "확인"
+
+msgid "Old Value"
+msgstr ""
 
 msgid "Oldest first"
 msgstr "오래된순"
@@ -14906,6 +14955,9 @@ msgstr "PDF 워터마크"
 msgid "Pending"
 msgstr "대기 중"
 
+msgid "Pending Approval"
+msgstr ""
+
 msgid "people"
 msgstr "인원"
 
@@ -15856,9 +15908,6 @@ msgstr "발주서 금액"
 msgid "Purchase Order Approval"
 msgstr "발주서 승인"
 
-msgid "Purchase Order approval rule"
-msgstr "발주서 승인 규칙"
-
 msgid "Purchase Order ID"
 msgstr "발주서 ID"
 
@@ -16025,8 +16074,8 @@ msgstr "품질"
 msgid "Quality"
 msgstr "품질"
 
-msgid "Quality Document approval rule"
-msgstr "품질 문서 승인 규칙"
+msgid "Quality Document"
+msgstr ""
 
 msgid "Quality Documents"
 msgstr "품질 문서"
@@ -16523,6 +16572,9 @@ msgstr "레코드가 삭제됨"
 msgid "Record Deposit"
 msgstr "선금 기록"
 
+msgid "Record ID"
+msgstr ""
+
 msgid "Record inspections tied to a part and a job"
 msgstr "품목과 작업에 연결된 검사를 기록"
 
@@ -16642,6 +16694,16 @@ msgstr "환급금"
 
 msgid "Reject"
 msgstr "거부"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Reject {0}"
+msgstr ""
+
+msgid "Reject {changeOrderId}"
+msgstr ""
+
+msgid "Reject {displayName}"
+msgstr ""
 
 msgid "Reject Lot"
 msgstr "로트 거부"
@@ -17034,6 +17096,9 @@ msgstr "스케줄러가 사업장에 작업을 배치하기 전에 할당된 작
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
 
+msgid "Require approval before change notices move to Implementation"
+msgstr ""
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "공급업체를 활성 상태로 설정하기 전에 승인 필요"
 
@@ -17049,8 +17114,8 @@ msgstr "필수 일치"
 msgid "Require SAML SSO"
 msgstr "SAML SSO 필수"
 
-msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr "금액 한계 및 승인자 그룹을 기준으로 발주서, 품질 문서, 공급업체에 대한 단계별 승인을 요구합니다."
+msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
+msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "2단계 인증 필수"
@@ -19683,6 +19748,9 @@ msgstr "익명으로 제출"
 msgid "Submit for approval"
 msgstr "승인을 위해 제출"
 
+msgid "Submit for Approval"
+msgstr ""
+
 msgid "Submit Inspection"
 msgstr "검사 제출"
 
@@ -21339,6 +21407,9 @@ msgstr "이 변경 통지가 구현 중이므로 변경 사항이 잠겨 있습�
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "이 변경 통지는 마감되었으므로 변경 사항은 읽기 전용입니다."
+
+msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
+msgstr ""
 
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "이 회사의 데이터는 이 백업의 내용으로 바뀝니다. 오늘의 데이터가 먼저 저장되므로 되돌릴 수 있습니다."

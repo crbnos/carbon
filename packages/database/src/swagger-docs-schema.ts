@@ -117656,7 +117656,7 @@ export default {
           type: "string"
         },
         documentType: {
-          enum: ["purchaseOrder", "qualityDocument", "supplier"],
+          enum: ["purchaseOrder", "qualityDocument", "supplier", "changeOrder"],
           format: 'public."approvalDocumentType"',
           type: "string"
         },
@@ -145215,7 +145215,7 @@ export default {
           type: "string"
         },
         documentType: {
-          enum: ["purchaseOrder", "qualityDocument", "supplier"],
+          enum: ["purchaseOrder", "qualityDocument", "supplier", "changeOrder"],
           format: 'public."approvalDocumentType"',
           type: "string"
         },
@@ -162371,7 +162371,7 @@ export default {
           type: "string"
         },
         documentType: {
-          enum: ["purchaseOrder", "qualityDocument", "supplier"],
+          enum: ["purchaseOrder", "qualityDocument", "supplier", "changeOrder"],
           format: 'public."approvalDocumentType"',
           type: "string"
         },

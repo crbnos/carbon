@@ -144,6 +144,27 @@ export async function approveRequest(
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
         }
+      } else if (documentType === "changeOrder") {
+        // Approval is the gate on Engineering Complete -> Implementation, so
+        // approving performs that transition (only from the gated stage).
+        const changeOrderUpdate = await trx
+          .updateTable("changeOrder")
+          .set({
+            status: "Implementation",
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Engineering Complete")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!changeOrderUpdate) {
+          throw new Error(
+            "Failed to update change notice status - it may no longer be in 'Engineering Complete' state"
+          );
+        }
       }
 
       return updatedApproval;
@@ -882,7 +903,8 @@ export async function rejectRequest(
           );
         }
       }
-      // Note: qualityDocument rejection doesn't change status (stays Draft)
+      // Note: qualityDocument rejection doesn't change status (stays Draft),
+      // and neither does changeOrder (stays Engineering Complete)
 
       if (documentType === "supplier") {
         const supplierUpdate = await trx

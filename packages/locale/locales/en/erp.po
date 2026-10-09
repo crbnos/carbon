@@ -412,6 +412,9 @@ msgstr "{discount} off"
 msgid "{dismissed} dismissed"
 msgstr "{dismissed} dismissed"
 
+msgid "{documentTypeLabel} approval rule"
+msgstr "{documentTypeLabel} approval rule"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} of {total} phases complete"
 
@@ -2538,6 +2541,9 @@ msgstr "Approval Date"
 msgid "Approval is required at or above this amount, up to the next rule's minimum"
 msgstr "Approval is required at or above this amount, up to the next rule's minimum"
 
+msgid "Approval Rejected"
+msgstr "Approval Rejected"
+
 msgid "Approval requirements"
 msgstr "Approval requirements"
 
@@ -2552,6 +2558,16 @@ msgstr "Approvals"
 
 msgid "Approve"
 msgstr "Approve"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Approve {0}"
+msgstr "Approve {0}"
+
+msgid "Approve {changeOrderId}"
+msgstr "Approve {changeOrderId}"
+
+msgid "Approve {displayName}"
+msgstr "Approve {displayName}"
 
 msgid "Approved By"
 msgstr "Approved By"
@@ -2611,6 +2627,15 @@ msgstr "Are you sure you want to activate the process: {name}? It will appear in
 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "Are you sure you want to activate this gauge?."
+
+msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
+msgstr "Are you sure you want to approve this change notice? This moves it to Implementation."
+
+msgid "Are you sure you want to approve this quality document? This will make it active."
+msgstr "Are you sure you want to approve this quality document? This will make it active."
+
+msgid "Are you sure you want to approve this supplier? This will make it active."
+msgstr "Are you sure you want to approve this supplier? This will make it active."
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -3013,8 +3038,17 @@ msgstr "Are you sure you want to post this receipt?"
 msgid "Are you sure you want to post this shipment?"
 msgstr "Are you sure you want to post this shipment?"
 
+msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
+msgstr "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
+
+msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
+msgstr "Are you sure you want to reject this quality document? The document will remain in draft status."
+
 msgid "Are you sure you want to reject this quote?"
 msgstr "Are you sure you want to reject this quote?"
+
+msgid "Are you sure you want to reject this supplier?"
+msgstr "Are you sure you want to reject this supplier?"
 
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
@@ -6949,6 +6983,9 @@ msgstr "Delete Webhook"
 msgid "Delete Workflow"
 msgstr "Delete Workflow"
 
+msgid "Deleted"
+msgstr "Deleted"
+
 msgid "Deliver"
 msgstr "Deliver"
 
@@ -8949,6 +8986,9 @@ msgstr "Failed to delete file from old location"
 
 msgid "Failed to download file for moving"
 msgstr "Failed to download file for moving"
+
+msgid "Failed to download history"
+msgstr "Failed to download history"
 
 msgid "Failed to fetch item costs"
 msgstr "Failed to fetch item costs"
@@ -12994,6 +13034,9 @@ msgstr "New Transfer Line"
 msgid "New Unit of Measure"
 msgstr "New Unit of Measure"
 
+msgid "New Value"
+msgstr "New Value"
+
 msgid "New Version"
 msgstr "New Version"
 
@@ -13426,6 +13469,9 @@ msgstr "No new notifications"
 
 msgid "No notes"
 msgstr "No notes"
+
+msgid "No notes were given."
+msgstr "No notes were given."
 
 msgid "No one assigned"
 msgstr "No one assigned"
@@ -13951,6 +13997,9 @@ msgstr "ok"
 
 msgid "OK"
 msgstr "OK"
+
+msgid "Old Value"
+msgstr "Old Value"
 
 msgid "Oldest first"
 msgstr "Oldest first"
@@ -14906,6 +14955,9 @@ msgstr "PDF Watermark"
 msgid "Pending"
 msgstr "Pending"
 
+msgid "Pending Approval"
+msgstr "Pending Approval"
+
 msgid "people"
 msgstr "people"
 
@@ -15856,9 +15908,6 @@ msgstr "Purchase Order Amount"
 msgid "Purchase Order Approval"
 msgstr "Purchase Order Approval"
 
-msgid "Purchase Order approval rule"
-msgstr "Purchase Order approval rule"
-
 msgid "Purchase Order ID"
 msgstr "Purchase Order ID"
 
@@ -16025,8 +16074,8 @@ msgstr "quality"
 msgid "Quality"
 msgstr "Quality"
 
-msgid "Quality Document approval rule"
-msgstr "Quality Document approval rule"
+msgid "Quality Document"
+msgstr "Quality Document"
 
 msgid "Quality Documents"
 msgstr "Quality Documents"
@@ -16523,6 +16572,9 @@ msgstr "Record deleted"
 msgid "Record Deposit"
 msgstr "Record Deposit"
 
+msgid "Record ID"
+msgstr "Record ID"
+
 msgid "Record inspections tied to a part and a job"
 msgstr "Record inspections tied to a part and a job"
 
@@ -16642,6 +16694,16 @@ msgstr "Reimbursements"
 
 msgid "Reject"
 msgstr "Reject"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Reject {0}"
+msgstr "Reject {0}"
+
+msgid "Reject {changeOrderId}"
+msgstr "Reject {changeOrderId}"
+
+msgid "Reject {displayName}"
+msgstr "Reject {displayName}"
 
 msgid "Reject Lot"
 msgstr "Reject Lot"
@@ -17034,6 +17096,9 @@ msgstr "Require an assigned operator before the scheduler places work at a locat
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 
+msgid "Require approval before change notices move to Implementation"
+msgstr "Require approval before change notices move to Implementation"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "Require approval before suppliers can be set to Active"
 
@@ -17049,8 +17114,8 @@ msgstr "Require Match"
 msgid "Require SAML SSO"
 msgstr "Require SAML SSO"
 
-msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
+msgstr "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 
 msgid "Require two-factor authentication"
 msgstr "Require two-factor authentication"
@@ -19683,6 +19748,9 @@ msgstr "Submit anonymously"
 msgid "Submit for approval"
 msgstr "Submit for approval"
 
+msgid "Submit for Approval"
+msgstr "Submit for Approval"
+
 msgid "Submit Inspection"
 msgstr "Submit Inspection"
 
@@ -21339,6 +21407,9 @@ msgstr "This change notice is being implemented, so its changes are locked. Reop
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "This change notice is closed, so its changes are read-only."
+
+msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
+msgstr "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."

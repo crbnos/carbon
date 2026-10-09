@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { DocumentApprovalState } from "@carbon/ee/approvals";
 import { Select, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -20,7 +21,7 @@ import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { Tags } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type { action } from "~/routes/x+/quality-document+/update";
 import { path } from "~/utils/path";
@@ -52,12 +53,17 @@ const QualityDocumentProperties = () => {
   const routeData = useRouteData<{
     document: QualityDocument;
     tags: Array<{ name: string }>;
-    approvalRequest: { id: string } | null;
-    canReopen: boolean;
+    approval: DocumentApprovalState | null;
   }>(path.to.qualityDocument(id));
+  const user = useUser();
 
-  const hasPendingApproval = !!routeData?.approvalRequest;
-  const canReopen = routeData?.canReopen ?? true;
+  const approval = routeData?.approval;
+  const hasPendingApproval = !!approval?.pendingRequestId;
+  // Withdrawing a pending request (back to Draft) is for its requester or an approver.
+  const canReopen =
+    !hasPendingApproval ||
+    approval?.pendingRequestedBy === user.id ||
+    (approval?.canApprove ?? false);
   const currentStatus = routeData?.document?.status ?? null;
   const isArchived = currentStatus === "Archived";
   const statusOptions = hasPendingApproval

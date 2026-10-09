@@ -13,6 +13,11 @@ import type { LoaderFunctionArgs } from "react-router";
 
 const logger = getLogger("erp", "audit-log");
 
+// `all=true` (the History drawer's Download) pages through every entry still in
+// the live log, up to a hard cap.
+const DOWNLOAD_PAGE_SIZE = 500;
+const DOWNLOAD_MAX_ENTRIES = 10_000;
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "settings"
@@ -22,6 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const entityType = url.searchParams.get("entityType");
   const entityId = url.searchParams.get("entityId");
   const recordId = url.searchParams.get("recordId");
+  const all = url.searchParams.get("all") === "true";
 
   if (!entityType || !entityId) {
     return Response.json(
@@ -51,16 +57,46 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Get audit log entries for this entity
   try {
-    const entries = await getEntityAuditLog(
-      client,
+    if (!all) {
+      const entries = await getEntityAuditLog(
+        client,
+        companyId,
+        entityType,
+        entityId,
+        { limit: 50, offset: 0, recordId: recordId ?? undefined }
+      );
+      return Response.json({ entries });
+    }
+
+    const entries: Awaited<ReturnType<typeof getEntityAuditLog>> = [];
+    while (entries.length < DOWNLOAD_MAX_ENTRIES) {
+      const page = await getEntityAuditLog(
+        client,
+        companyId,
+        entityType,
+        entityId,
+        {
+          limit: DOWNLOAD_PAGE_SIZE,
+          offset: entries.length,
+          recordId: recordId ?? undefined
+        }
+      );
+      entries.push(...page);
+      if (page.length < DOWNLOAD_PAGE_SIZE) break;
+    }
+    return Response.json({ entries: entries.slice(0, DOWNLOAD_MAX_ENTRIES) });
+  } catch (err) {
+    logger.error("Failed to fetch audit log", {
       companyId,
       entityType,
       entityId,
-      { limit: 50, offset: 0, recordId: recordId ?? undefined }
-    );
-    return Response.json({ entries });
-  } catch (err) {
-    logger.error("Failed to fetch audit log", { error: err });
-    return Response.json({ entries: [] });
+      all,
+      error: err
+    });
+    // A download must fail visibly: an empty list would save a file with no
+    // history in it.
+    return all
+      ? Response.json({ entries: [] }, { status: 500 })
+      : Response.json({ entries: [] });
   }
 }
