@@ -1589,12 +1589,21 @@ export type CutoverFixedAsset = {
 /** The disposal `postDisposal` writes. The enable writes its journal again. */
 export const REBUILT_DISPOSAL_METHOD = "Scrapping" as const;
 
+/** The journals that still move the books: a Reversed one is cancelled. */
+const DISPOSAL_JOURNAL_STATUSES = ["Provisional", "Posted"] as const;
+
 /**
  * Assets disposed on or after the cutover whose disposal has no journal and
  * gets none at the enable: a sale, a return to inventory or a lease
  * commencement posted before the reset, whose journal the reset deleted. The
- * enable rebuilds only the scrap (`REBUILT_DISPOSAL_METHOD`); a disposal
- * posted after the reset keeps its own journal (`fixedAssetDisposal.journalId`).
+ * enable rebuilds only the scrap (`REBUILT_DISPOSAL_METHOD`). A disposal
+ * posted after the reset keeps its own journal. The asset transfer and the
+ * lease commencement store it on `fixedAssetDisposal.journalId`. A sale
+ * stores none: its journal is the shipment's or the sales invoice's, so the
+ * asset keeps a journal when that document credits the asset account for it
+ * (`post-shipment` on `shipment:<salesOrderLineId>`, a direct
+ * `post-sales-invoice` line on the invoice). The enable does not write that
+ * leg for a legacy sale (legacy/shipment.ts, legacy/sales-invoice.ts).
  * Such an asset leaves the books with no journal, so it is not in the opening
  * fixed assets, and its depreciation after the cutover is not rebuilt.
  */
@@ -1602,8 +1611,14 @@ export async function getAssetsLeavingWithoutJournal(
   db: CutoverDb,
   { companyId, cutoverDate }: CutoverArgs
 ): Promise<Set<string>> {
+  const shipmentPrefix = journalReference.to.shipment("");
   const rows = await db
     .selectFrom("fixedAsset as asset")
+    .innerJoin("fixedAssetClass as class", (join) =>
+      join
+        .onRef("class.id", "=", "asset.fixedAssetClassId")
+        .onRef("class.companyId", "=", "asset.companyId")
+    )
     .select("asset.id")
     .where("asset.companyId", "=", companyId)
     .where("asset.status", "=", "Disposed")
@@ -1622,6 +1637,53 @@ export async function getAssetsLeavingWithoutJournal(
             .whereRef("disposal.fixedAssetId", "=", "asset.id")
             .whereRef("disposal.companyId", "=", "asset.companyId")
             .where("disposal.journalId", "is not", null)
+        )
+      )
+    )
+    // The sale's own journal: the asset account line of the shipment or the
+    // sales invoice that sold the asset.
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("journalLine as line")
+            .innerJoin("journal", (join) =>
+              join
+                .onRef("journal.id", "=", "line.journalId")
+                .onRef("journal.companyId", "=", "line.companyId")
+            )
+            .select("line.id")
+            .whereRef("line.companyId", "=", "asset.companyId")
+            .whereRef("line.accountId", "=", "class.assetAccountId")
+            .where("journal.status", "in", [...DISPOSAL_JOURNAL_STATUSES])
+            .where((eb) =>
+              eb.or([
+                eb.and([
+                  eb("line.documentType", "=", "Sales Shipment"),
+                  eb.exists(
+                    eb
+                      .selectFrom("salesOrderLine as orderLine")
+                      .select("orderLine.id")
+                      .whereRef("orderLine.companyId", "=", "asset.companyId")
+                      .whereRef("orderLine.assetId", "=", "asset.id")
+                      .where(
+                        sql<boolean>`"line"."documentLineReference" = ${shipmentPrefix} || "orderLine"."id"`
+                      )
+                  )
+                ]),
+                eb.and([
+                  eb("line.documentType", "=", "Invoice"),
+                  eb.exists(
+                    eb
+                      .selectFrom("salesInvoiceLine as invoiceLine")
+                      .select("invoiceLine.id")
+                      .whereRef("invoiceLine.companyId", "=", "asset.companyId")
+                      .whereRef("invoiceLine.invoiceId", "=", "line.documentId")
+                      .whereRef("invoiceLine.assetId", "=", "asset.id")
+                      .where("invoiceLine.invoiceLineType", "=", "Fixed Asset")
+                  )
+                ])
+              ])
+            )
         )
       )
     )

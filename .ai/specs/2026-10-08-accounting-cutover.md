@@ -354,6 +354,10 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 | Re-costing the window between D and enable takes too long inside one transaction | Med | D is at most 3 periods back (Q9). Measure the enable on the largest demo dataset with D 3 periods back before release. If it times out, the transaction rolls back whole and the user picks a later D. |
 | Always-posting doubles the journal volume | Low | Journals are already written for every company with accounting on. Volume grows linearly with documents. |
 | A customer relies on Mark Paid | Low | Payments is the documented path. The release note says so. |
+| A legacy journal uses today's accounts and costs, not the ones the document saw | Low | The historical values are not stored. Each rebuilt journal balances, and the re-cost values FIFO and LIFO items against the layers. Section 5a lists what is not rebuilt. |
+| A legacy invoice books a rental or contract line as plain revenue, and the rebuilt recognition run books the same revenue again | Low | Rentals and contracts shipped on 2026-10-07, one day before the reset, so few legacy documents exist. Review revenue for such a company after the enable. |
+| A rebuilt depreciation, disposal or recognition journal is pushed to an accounting provider that already holds the original | Med | The enable writes an `Excluded` sync operation for each rebuilt run journal, so no sync path picks it up. A user can still send one from Sync Activity. |
+| An asset shipped before the reset and invoiced after it leaves the disposal clearing account short by its net book value | Low | The legacy shipment wrote no asset journal, and the invoice clears that account. Review the disposal clearing account after the enable if such a sale exists. |
 | A purchase receipt void did not update `costLedger`, so the voided layer kept its remaining quantity. | Low | Fixed on 2026-10-08 (`planReceiptVoidCostLedger`, `post-receipt/void-cost-ledger.ts`). The void closes the receipt's layers, refuses when one was partly used, and restores the stock a negative line relieved. |
 
 ## Open Questions

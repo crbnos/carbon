@@ -20,8 +20,10 @@ import { round } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { expect } from "vitest";
+import create from "../../create";
 import { databaseTest } from "../../local-database-test-fixture";
 import postSalesInvoice from "../../post-sales-invoice";
+import postShipment from "../../post-shipment";
 import activateAccounting from "..";
 import {
   activationFixture,
@@ -455,6 +457,228 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "an asset bought before the cutover and sold after the reset keeps its opening, and its sale journal clears it",
+  async () => {
+    const f = await activationFixture();
+    try {
+      const { classId } = await legacyAssets(f, { runs: false });
+      const acquired = parseDate(f.cutoverDate)
+        .subtract({ years: 1 })
+        .toString();
+      const monthEnd = endOfMonth(parseDate(f.cutoverDate)).toString();
+      const assets = {
+        invoiced: `${f.prefix}-invoiced`,
+        shipped: `${f.prefix}-shipped`
+      };
+      // Each asset: cost 400, accumulated 120, of it 20 by a Posted run after
+      // the cutover whose journal the reset deleted.
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("fixedAsset")
+          .values(
+            Object.entries(assets).map(([name, id]) => ({
+              id,
+              fixedAssetId: `FA-${name.toUpperCase()}`,
+              name,
+              fixedAssetClassId: classId,
+              status: "Active" as const,
+              acquisitionCost: 400,
+              acquisitionDate: acquired,
+              depreciationStartDate: acquired,
+              accumulatedDepreciation: 120,
+              locationId: f.locationId,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+        await trx
+          .insertInto("depreciationRun")
+          .values({
+            id: `${f.prefix}-dep-after`,
+            depreciationRunId: "DEP-AFTER",
+            periodEnd: monthEnd,
+            status: "Posted",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("depreciationRunLine")
+          .values(
+            Object.values(assets).map((fixedAssetId) => ({
+              depreciationRunId: `${f.prefix}-dep-after`,
+              fixedAssetId,
+              periodEnd: monthEnd,
+              amount: 20,
+              companyId: f.companyId
+            }))
+          )
+          .execute();
+      });
+
+      // Sold after the reset, so each sale writes a Provisional journal and
+      // leaves `fixedAssetDisposal.journalId` empty.
+      await sellAssetOnInvoice(f, assets.invoiced);
+      await shipAsset(f, assets.shipped);
+      const disposals = await f.db
+        .selectFrom("fixedAssetDisposal")
+        .select(["fixedAssetId", "journalId"])
+        .where("companyId", "=", f.companyId)
+        .orderBy("fixedAssetId")
+        .execute();
+      expect(disposals).toEqual(
+        Object.values(assets)
+          .sort()
+          .map((fixedAssetId) => ({ fixedAssetId, journalId: null }))
+      );
+
+      const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+      expect(
+        (await getCutoverFixedAssets(f.db, args)).map((asset) => ({
+          id: asset.id,
+          cost: asset.cost,
+          accumulatedDepreciation: asset.accumulatedDepreciation
+        }))
+      ).toEqual(
+        [assets.invoiced, assets.shipped].map((id) => ({
+          id,
+          cost: 400,
+          accumulatedDepreciation: 100
+        }))
+      );
+      await saveOpeningTrialBalance(f.db, {
+        ...args,
+        userId: USER,
+        lines: [
+          { accountId: f.account("fixed-assets"), debit: 800, credit: 0 },
+          {
+            accountId: f.account("accumulated-depreciation"),
+            debit: 0,
+            credit: 200
+          },
+          {
+            accountId: f.account("retained-earnings"),
+            debit: 0,
+            credit: 600
+          }
+        ]
+      });
+      expect((await getMigrationClearing(f.db, args)).total).toBe(0);
+
+      const result = unwrap(
+        await activateAccounting(f.ctx, {
+          ...args,
+          confirmation: f.companyName
+        })
+      );
+      expect(result.legacyJournals.depreciationRuns).toBe(1);
+
+      // Opening, the rebuilt run and the sale: both accounts net to 0.
+      expect(await glBalance(f, "fixed-assets")).toBe(0);
+      expect(await glBalance(f, "accumulated-depreciation")).toBe(0);
+      expect(await glBalance(f, "migration-clearing")).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** Sells the asset for 300 on a direct sales invoice, posted today. */
+async function sellAssetOnInvoice(f: Fixture, assetId: string) {
+  const invoiceId = `${f.prefix}-asset-invoice`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("salesInvoice")
+      .values({
+        id: invoiceId,
+        invoiceId: "INV-ASSET",
+        customerId: f.customerId,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        status: "Draft",
+        postingDate: f.today,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesInvoiceShipment")
+      .values({
+        id: invoiceId,
+        shippingCost: 0,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesInvoiceLine")
+      .values({
+        invoiceId,
+        invoiceLineType: "Fixed Asset",
+        assetId,
+        quantity: 1,
+        unitPrice: 300,
+        exchangeRate: 1,
+        unitOfMeasureCode: "EA",
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  unwrap(await postSalesInvoice(f.ctx, { type: "post", invoiceId }));
+}
+
+/** Ships the asset on a sales order, today. */
+async function shipAsset(f: Fixture, assetId: string) {
+  const salesOrderId = `${f.prefix}-asset-so`;
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("salesOrder")
+      .values({
+        id: salesOrderId,
+        salesOrderId: "SO-ASSET",
+        customerId: f.customerId,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("salesOrderShipment")
+      .values({ id: salesOrderId, companyId: f.companyId })
+      .execute();
+    await trx
+      .insertInto("salesOrderLine")
+      .values({
+        salesOrderId,
+        salesOrderLineType: "Fixed Asset",
+        assetId,
+        saleQuantity: 1,
+        unitPrice: 300,
+        locationId: f.locationId,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  const shipment = unwrap(
+    await create(f.ctx, {
+      type: "shipmentFromSalesOrder",
+      salesOrderId,
+      locationId: f.locationId
+    })
+  );
+  unwrap(await postShipment(f.ctx, { type: "post", shipmentId: shipment.id }));
+}
 
 async function assetAccumulated(f: Fixture, id: string) {
   const row = await f.db
