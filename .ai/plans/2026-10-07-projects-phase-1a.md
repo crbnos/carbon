@@ -47,7 +47,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 8: Add authz rules and ship the RLS migration
 - [x] Task 9: Register backup id references and audit config
 - [x] Task 10: Update seed data for new companies
-- [ ] Task 11: Add the projects module models
+- [x] Task 11: Add the projects module models
 - [ ] Task 12: Add the project and workspace service functions
 - [ ] Task 13: Add the element service functions
 - [ ] Task 14: Add the time, labor category and ledger service functions
@@ -2410,3 +2410,4 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 25: `DIMENSION_LABEL_SOURCES` takes one label column, so `ProjectElement` uses `readableId`. The ERP dimension picker shows `readableId name` and lists chargeable elements only.
 - Task 25: `pnpm exec turbo run typecheck --filter=@carbon/ee --filter=erp` is green (3/3). `@carbon/ee` tests pass (1928).
 - Task 25 onwards: the overnight brief names Biome and the scoped typecheck as the gates. The `/translate` fill for new UI strings (`Project`, `Project Time`) is left for one pass at the end of the plan.
+- Task 11: `projectCostTreatments` holds the three treatments the UI offers (Statistical, Expense, Contract), so `projectValidator` refuses Capitalize. `projectElementValidator.isChargeable` reads an absent value as `undefined`, not `false`, so `insertProjectElement` can apply `chargeableByDefault`. The editable field names are exported as `projectElementEditableFields`.
