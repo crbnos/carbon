@@ -99,7 +99,7 @@ function StockTransferLineComponent({
   return (
     <div
       className={cn(
-        "@container flex flex-col border-b p-6 gap-6",
+        "@container flex flex-col border-b p-6 gap-6 max-md:p-4 max-md:gap-4",
         index === totalLines - 1 && "border-none",
         isPicked && "opacity-50 hover:opacity-100"
       )}
@@ -150,7 +150,7 @@ function StockTransferLineComponent({
             )}
           />
         </HStack>
-        <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0 max-md:gap-3">
           <HStack spacing={4} className="text-left items-center min-w-0">
             {"fromStorageUnitId" in line && (
               <span

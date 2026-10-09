@@ -492,7 +492,7 @@ const Grid = <T extends object>({
     >
       <div
         className={cn(
-          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
+          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-md:scroll-fade-x",
           contained ? "" : "relative",
           isVirtual && "overflow-y-auto"
         )}

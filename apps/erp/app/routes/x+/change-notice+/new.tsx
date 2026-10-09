@@ -11,6 +11,7 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
 import {
   addChangeNoticeAffectedItem,
@@ -183,8 +184,8 @@ export default function ChangeNoticeNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <ChangeNoticeForm initialValues={initialValues} types={types} />
-    </div>
+    </NewRecordPage>
   );
 }

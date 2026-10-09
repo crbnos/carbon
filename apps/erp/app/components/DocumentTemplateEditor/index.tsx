@@ -12,6 +12,7 @@ import { getDocumentLabel } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
+  cn,
   Heading,
   IconButton,
   ResizableHandle,
@@ -27,18 +28,22 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger
+  TabsTrigger,
+  useViewport
 } from "@carbon/react";
 import { labelSizes } from "@carbon/utils";
-import { type ReactNode, useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { LuArrowLeft, LuPalette, LuRefreshCw, LuType } from "react-icons/lu";
 import { Link } from "react-router";
+import { CompactTabRow } from "~/components/Layout/CompactTabRow";
 import { path } from "~/utils/path";
 import { BlockConfig } from "./BlockConfig";
 import { AddBlockMenu, BlockList } from "./BlockList";
 import type { CustomFieldRef, PreviewEntity, SectionRef } from "./context";
 import {
   DocumentTemplateProvider,
+  PickBlockProvider,
   useDocumentTemplate,
   useEditorStore
 } from "./context";
@@ -94,59 +99,136 @@ export function DocumentTemplateEditor({
       hasWatermark={hasWatermark}
       initialLabelSizeId={initialLabelSizeId}
     >
-      <div className="flex h-full w-full min-w-0 flex-col bg-background">
+      <div className="flex h-full w-full min-w-0 flex-col bg-background max-md:h-[calc(100dvh-var(--topbar-height)-var(--content-inset,0px))]">
         <EditorToolbar
           title={getDocumentLabel(documentType)}
           canEdit={canEdit}
         />
         <ConflictBanner documentType={documentType} />
-        <ResizablePanelGroup
-          direction="horizontal"
-          autoSaveId="document-template-editor"
-          className="flex-1 overflow-hidden"
-        >
-          {/* LEFT — blocks + theme */}
-          <ResizablePanel
-            id="rail"
-            order={1}
-            defaultSize={22}
-            minSize={16}
-            maxSize={34}
-          >
-            <ControlRail />
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          {/* CENTER — canvas */}
-          <ResizablePanel id="canvas" order={2} defaultSize={56} minSize={30}>
-            <div className="flex h-full min-w-0 flex-col bg-muted/40 p-6">
-              <TemplatePreview previewPath={`${actionPath}/preview`} />
-            </div>
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          {/* RIGHT — contextual config, always present */}
-          <ResizablePanel
-            id="config"
-            order={3}
-            defaultSize={22}
-            minSize={16}
-            maxSize={34}
-          >
-            <ScrollArea className="h-full bg-card">
-              <div className="flex flex-col gap-1.5 p-3">
-                <Subheading as="h2" variant="heavy" className="block">
-                  Configure
-                </Subheading>
-                <BlockConfig />
-              </div>
-            </ScrollArea>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+        <EditorPanes actionPath={actionPath} />
       </div>
     </DocumentTemplateProvider>
+  );
+}
+
+/**
+ * Desktop: rail / canvas / config side by side. Phones: one pane at a time
+ * behind an underline tab row (the record-tabs pattern).
+ */
+function EditorPanes({ actionPath }: { actionPath: string }) {
+  const { isPhone } = useViewport();
+  if (isPhone) return <CompactEditorPanes actionPath={actionPath} />;
+
+  return (
+    <ResizablePanelGroup
+      direction="horizontal"
+      autoSaveId="document-template-editor"
+      className="flex-1 overflow-hidden"
+    >
+      {/* LEFT — blocks + theme */}
+      <ResizablePanel
+        id="rail"
+        order={1}
+        defaultSize={22}
+        minSize={16}
+        maxSize={34}
+      >
+        <ControlRail />
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
+
+      {/* CENTER — canvas */}
+      <ResizablePanel id="canvas" order={2} defaultSize={56} minSize={30}>
+        <div className="flex h-full min-w-0 flex-col bg-muted/40 p-6">
+          <TemplatePreview previewPath={`${actionPath}/preview`} />
+        </div>
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
+
+      {/* RIGHT — contextual config, always present */}
+      <ResizablePanel
+        id="config"
+        order={3}
+        defaultSize={22}
+        minSize={16}
+        maxSize={34}
+      >
+        <ScrollArea className="h-full bg-card">
+          <div className="flex flex-col gap-1.5 p-3">
+            <Subheading as="h2" variant="heavy" className="block">
+              <Trans>Configure</Trans>
+            </Subheading>
+            <BlockConfig />
+          </div>
+        </ScrollArea>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
+}
+
+type CompactPane = "canvas" | "rail" | "config";
+
+function CompactEditorPanes({ actionPath }: { actionPath: string }) {
+  const { t } = useLingui();
+  const selectedId = useEditorStore((s) => s.selectedId);
+  const select = useEditorStore((s) => s.select);
+  const [pane, setPane] = useState<CompactPane>("canvas");
+
+  // A newly added block opens its settings, as the desktop config rail does.
+  useEffect(() => {
+    if (selectedId) setPane("config");
+  }, [selectedId]);
+  // Tapping a row always opens its settings: the config sits on another tab,
+  // so a second tap must not deselect it.
+  const pickBlock = useCallback(
+    (id: string) => {
+      select(id);
+      setPane("config");
+    },
+    [select]
+  );
+
+  const tabs: { id: CompactPane; label: string }[] = [
+    { id: "canvas", label: t`Preview` },
+    { id: "rail", label: t`Blocks` },
+    { id: "config", label: t`Configure` }
+  ];
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <CompactTabRow
+        items={tabs.map((tab) => ({
+          ...tab,
+          active: pane === tab.id,
+          onClick: () => setPane(tab.id)
+        }))}
+      />
+      {/* Panes stay mounted (hidden) so the preview iframe keeps its state. */}
+      <div className="relative min-h-0 flex-1">
+        <div
+          className={cn(
+            "absolute inset-0 flex flex-col bg-muted/40 p-4",
+            pane !== "canvas" && "hidden"
+          )}
+        >
+          <TemplatePreview previewPath={`${actionPath}/preview`} />
+        </div>
+        <div className={cn("absolute inset-0", pane !== "rail" && "hidden")}>
+          <PickBlockProvider value={pickBlock}>
+            <ControlRail />
+          </PickBlockProvider>
+        </div>
+        <div className={cn("absolute inset-0", pane !== "config" && "hidden")}>
+          <ScrollArea className="h-full bg-card">
+            <div className="flex flex-col gap-1.5 p-4">
+              <BlockConfig />
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -171,7 +253,7 @@ function ControlRail() {
       {/* Fixed Blocks header with the inline add-block button. */}
       <div className="flex shrink-0 items-center justify-between px-3 pt-3 pb-1">
         <Subheading as="h2" variant="heavy" className="block">
-          Blocks
+          <Trans>Blocks</Trans>
         </Subheading>
         <AddBlockMenu />
       </div>
@@ -303,12 +385,12 @@ function EditorToolbar({
   const refreshPreview = useEditorStore((s) => s.refreshPreview);
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b bg-card px-4 py-3">
+    <div className="flex items-center justify-between gap-3 border-b bg-card px-4 py-3 max-md:flex-wrap max-md:gap-2">
       <div className="flex items-center gap-3">
         <Link
           to={path.to.documentTemplates}
           aria-label="Back to documents"
-          className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground max-md:hidden"
         >
           <LuArrowLeft className="size-4" />
         </Link>
@@ -318,7 +400,7 @@ function EditorToolbar({
         </div>
       </div>
       {previewEntities.length > 0 && (
-        <div className="flex min-w-0 max-w-[280px] flex-1 flex-col items-center gap-0.5 self-end">
+        <div className="flex min-w-0 max-w-[280px] flex-1 flex-col items-center gap-0.5 self-end max-md:order-last max-md:basis-full max-md:max-w-none max-md:items-stretch max-md:self-auto">
           <Subheading variant="heavy">Preview data</Subheading>
           <Select
             value={previewId ?? SAMPLE_DATA_VALUE}
@@ -340,7 +422,7 @@ function EditorToolbar({
           </Select>
         </div>
       )}
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-2 max-md:ml-auto">
         <LabelSizePicker />
         {canEdit && (
           <>

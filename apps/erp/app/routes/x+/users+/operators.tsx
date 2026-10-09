@@ -115,6 +115,7 @@ const OperatorsTable = memo(
             <EmployeeAvatar size="sm" employeeId={row.original.id} />
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -145,6 +146,7 @@ const OperatorsTable = memo(
             />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuBriefcase />
           }
         },
@@ -153,6 +155,7 @@ const OperatorsTable = memo(
           header: "Active",
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static" as const,
               options: [

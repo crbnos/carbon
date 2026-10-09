@@ -24,6 +24,8 @@
 
   :root {
     --header-height: 50px;
+    /* Phones: the MES tab bar, safe area included. */
+    --mes-tab-bar-h: calc(54px + env(safe-area-inset-bottom));
     --filters-height: 38px;
     /* Side control panel; only in play at lg+ (below that it stacks inline). */
     --controls-width: 220px;
@@ -156,4 +158,25 @@ p.is-editor-empty:first-child:before {
 
 .animate-spinner {
   animation: spinner-fade 1.2s linear infinite;
+}
+
+/*
+ * Phones (< 768px): toasts sit above the MES tab bar while it shows, or above
+ * a page's bottom action bar. Sonner's own mobileOffset only applies up to 600px.
+ * A bottom bar carries `data-mes-bottom-bar`; `useMesBottomBar` publishes
+ * `--mes-bottom-bar-h` on <html>: its top edge from the screen bottom, safe
+ * area included.
+ */
+@media (width < 48rem) {
+  body:has([data-mes-tab-bar][data-visible="true"]):not(
+      :has([data-mes-bottom-bar])
+    )
+    [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(var(--mes-tab-bar-h) + 16px);
+  }
+
+  body:has([data-mes-bottom-bar])
+    [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(var(--mes-bottom-bar-h, 64px) + 16px);
+  }
 }

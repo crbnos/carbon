@@ -138,6 +138,7 @@ const OutboundTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -193,6 +194,7 @@ const OutboundTable = memo(
             <CustomerAvatar customerId={row.original.customerId} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuSquareUser />
           }
         },
@@ -266,14 +268,18 @@ const OutboundTable = memo(
           id: "progress",
           header: t`Progress`,
           // No attachments here, so the portal-only customerId is never read.
+          // Phones: the strip scrolls sideways so segment labels stay whole.
           cell: ({ row }) => (
-            <JobOperationProgress
-              customerId=""
-              jobOperations={row.original.operations}
-              jobOperationAttachments={{}}
-            />
+            <div className="contents max-md:block max-md:max-w-full max-md:overflow-x-auto max-md:scroll-fade-x max-md:[&>div>*]:shrink-0">
+              <JobOperationProgress
+                customerId=""
+                jobOperations={row.original.operations}
+                jobOperationAttachments={{}}
+              />
+            </div>
           ),
           meta: {
+            mobile: "P2",
             filterHeader: t`Progress`,
             exportValue: (row) =>
               `${row.operations.filter((op) => op.status === "Done").length}/${row.operations.length}`

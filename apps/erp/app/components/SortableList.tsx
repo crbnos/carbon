@@ -4,8 +4,31 @@
 
 "use client";
 
-import { Checkbox, cn, HStack } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import {
+  BottomSheet,
+  BottomSheetBody,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+  Button,
+  Checkbox,
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+  cn,
+  HStack,
+  IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
+  useViewport
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -14,9 +37,15 @@ import {
   useDragControls
 } from "motion/react";
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuSettings2, LuTrash, LuX } from "react-icons/lu";
+import {
+  LuGripVertical,
+  LuPencil,
+  LuSettings2,
+  LuTrash,
+  LuX
+} from "react-icons/lu";
 import Empty from "./Empty";
 
 export interface Item {
@@ -33,11 +62,21 @@ interface SortableItem<T> extends Item {
   data: T;
 }
 
+/**
+ * Phones: what a row's edit sheet needs from its row — the sheet is rendered
+ * by the editor (`SortableListItemPanel`), the row owns its title and delete.
+ */
+const PhoneRowContext = createContext<{
+  title: ReactNode;
+  onClose: () => void;
+  onDelete?: () => void;
+} | null>(null);
+
 interface SortableListItemProps<T> {
   item: SortableItem<T>;
   items: SortableItem<T>[];
   order: number;
-  onSelectItem: (id: string) => void;
+  onSelectItem: (id: string | null) => void;
   onToggleItem: (id: string) => void;
   onRemoveItem: (id: string) => void;
   renderExtra?: (item: SortableItem<T>) => React.ReactNode;
@@ -46,6 +85,8 @@ interface SortableListItemProps<T> {
   className?: string;
   handleDrag: () => void;
   isReadOnly?: boolean;
+  /** Phones: extra items for the row's press-and-hold menu. */
+  menuItems?: ReactNode;
 }
 
 function SortableListItem<T>({
@@ -60,10 +101,13 @@ function SortableListItem<T>({
   isExpanded,
   isHighlighted,
   className,
-  isReadOnly = false
+  isReadOnly = false,
+  menuItems
 }: SortableListItemProps<T>) {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const [isDragging, setIsDragging] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const isDraggable = !isExpanded && !isReadOnly;
   const dragControls = useDragControls();
   const itemRef = useRef<HTMLDivElement>(null);
@@ -88,6 +132,142 @@ function SortableListItem<T>({
       });
     }
   }, [isHighlighted]);
+
+  if (isPhone) {
+    // Phones: a flat row. Tapping it opens the editor in a sheet, holding it
+    // opens its menu, and only the grip reorders — a drag anywhere on the
+    // card would fight the page's scroll.
+    const onDelete = isReadOnly ? undefined : () => setIsConfirmingDelete(true);
+    return (
+      <Reorder.Item
+        as="div"
+        value={item}
+        ref={itemRef}
+        dragListener={false}
+        dragControls={dragControls}
+        onDragEnd={handleDragEnd}
+        className={cn(
+          "relative flex items-start gap-3 py-3 pr-1 pl-4",
+          isDragging && "z-10 rounded-lg bg-card shadow-lg",
+          isHighlighted &&
+            "bg-primary/5 shadow-[inset_3px_0_0_hsl(var(--primary))]",
+          className
+        )}
+      >
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div
+              role="button"
+              tabIndex={0}
+              className="flex min-w-0 flex-1 items-start gap-3 text-left"
+              onClick={() => onSelectItem(item.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") onSelectItem(item.id);
+              }}
+            >
+              <span
+                className={cn(
+                  "mt-px flex size-6 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-xs font-medium tabular-nums text-muted-foreground",
+                  item.order === "With Previous" &&
+                    "border-dashed bg-transparent"
+                )}
+              >
+                {getParallelizedOrder(order, item, items)}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                {item.title}
+                {item.details}
+                {item.footer && (
+                  // The footer's own controls act in place.
+                  <div
+                    className="-ml-1 flex flex-wrap items-center gap-1"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {item.footer}
+                  </div>
+                )}
+              </div>
+            </div>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem onClick={() => onSelectItem(item.id)}>
+              <LuPencil className="mr-2 h-4 w-4" />
+              {isReadOnly ? <Trans>View</Trans> : <Trans>Edit</Trans>}
+            </ContextMenuItem>
+            {menuItems}
+            {onDelete && (
+              <ContextMenuItem destructive onClick={onDelete}>
+                <LuTrash className="mr-2 h-4 w-4" />
+                <Trans>Delete</Trans>
+              </ContextMenuItem>
+            )}
+          </ContextMenuContent>
+        </ContextMenu>
+        {!isReadOnly && (
+          <button
+            type="button"
+            aria-label={t`Reorder`}
+            className="-mt-2.5 flex h-11 w-10 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground active:cursor-grabbing"
+            onPointerDown={(event) => {
+              flushSync(() => setIsDragging(true));
+              handleDrag();
+              dragControls.start(event);
+            }}
+          >
+            <LuGripVertical className="size-5" />
+          </button>
+        )}
+        <PhoneRowContext.Provider
+          value={{
+            title: item.title,
+            onClose: () => onSelectItem(null),
+            onDelete
+          }}
+        >
+          {renderExtra?.(item)}
+        </PhoneRowContext.Provider>
+        {isConfirmingDelete && (
+          <Modal
+            open
+            onOpenChange={(open) => {
+              if (!open) setIsConfirmingDelete(false);
+            }}
+          >
+            <ModalOverlay />
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>
+                  <Trans>Delete this line?</Trans>
+                </ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>This cannot be undone.</Trans>
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsConfirmingDelete(false)}
+                >
+                  <Trans>Cancel</Trans>
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setIsConfirmingDelete(false);
+                    onRemoveItem(item.id);
+                  }}
+                >
+                  <Trans>Delete</Trans>
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        )}
+      </Reorder.Item>
+    );
+  }
 
   return (
     <div className={cn("", className)} key={item.id} ref={itemRef}>
@@ -140,7 +320,7 @@ function SortableListItem<T>({
                     >
                       <HStack
                         className={cn(
-                          "w-full justify-between pr-8",
+                          "w-full justify-between pr-8 max-md:flex-wrap max-md:gap-y-1",
                           !isReadOnly && "cursor-grab"
                         )}
                       >
@@ -176,7 +356,7 @@ function SortableListItem<T>({
                         )}
 
                         {item.details && (
-                          <div className="flex flex-shrink-0">
+                          <div className="flex flex-shrink-0 max-md:basis-full max-md:flex-wrap max-md:[&>*]:flex-wrap">
                             {item.details}
                           </div>
                         )}
@@ -232,11 +412,16 @@ export function SortableListItemToggle({
   onToggle: () => void;
   className?: string;
 }) {
+  // Phones open a row by tapping it; its sheet has its own close.
+  if (useContext(PhoneRowContext)) return null;
   return (
     <button
       type="button"
       onClick={onToggle}
-      className={cn("absolute right-3 top-3 z-10", className)}
+      className={cn(
+        "absolute right-3 top-3 z-10 max-md:after:absolute max-md:after:-inset-3",
+        className
+      )}
     >
       {isOpen ? (
         <LuX className="h-5 w-5 text-foreground" />
@@ -254,6 +439,36 @@ export function SortableListItemPanel({
   isOpen: boolean;
   children: ReactNode;
 }) {
+  const { t } = useLingui();
+  const phoneRow = useContext(PhoneRowContext);
+  if (phoneRow) {
+    return (
+      <BottomSheet
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) phoneRow.onClose();
+        }}
+      >
+        <BottomSheetContent size="full">
+          <BottomSheetHeader className="max-md:justify-start">
+            {phoneRow.onDelete && (
+              <IconButton
+                aria-label={t`Delete`}
+                icon={<LuTrash />}
+                variant="ghost"
+                className="absolute left-1 top-1/2 size-11 -translate-y-1/2 text-red-500"
+                onClick={phoneRow.onDelete}
+              />
+            )}
+            <BottomSheetTitle asChild>
+              <div className="min-w-0 text-left">{phoneRow.title}</div>
+            </BottomSheetTitle>
+          </BottomSheetHeader>
+          <BottomSheetBody>{children}</BottomSheetBody>
+        </BottomSheetContent>
+      </BottomSheet>
+    );
+  }
   return (
     <AnimatePresence initial={false}>
       {isOpen ? (
@@ -287,6 +502,7 @@ interface SortableListProps<T extends Item> {
   onReorder: (items: T[]) => void;
   renderItem: (props: SortableItemRenderProps<T>) => React.ReactNode;
   isReadOnly?: boolean;
+  emptyState?: React.ReactNode;
 }
 
 function SortableList<T extends Item>({
@@ -295,8 +511,10 @@ function SortableList<T extends Item>({
   onToggleItem,
   onReorder,
   renderItem,
-  isReadOnly = false
+  isReadOnly = false,
+  emptyState
 }: SortableListProps<T>) {
+  const { isPhone } = useViewport();
   if (items && Array.isArray(items) && items.length > 0) {
     return (
       <LayoutGroup>
@@ -305,7 +523,11 @@ function SortableList<T extends Item>({
           values={items}
           // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
           onReorder={isReadOnly ? () => {} : onReorder}
-          className="flex flex-col gap-2"
+          className={cn(
+            "flex flex-col gap-2",
+            // Phones: flat rows edge to edge in the card.
+            isPhone && "-mx-4 -mb-4 gap-0 divide-y divide-border first:-mt-4"
+          )}
         >
           {items?.map((item, index) =>
             renderItem({
@@ -320,7 +542,7 @@ function SortableList<T extends Item>({
       </LayoutGroup>
     );
   } else {
-    return <Empty />;
+    return <>{emptyState ?? <Empty />}</>;
   }
 }
 

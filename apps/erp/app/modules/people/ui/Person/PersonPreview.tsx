@@ -13,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 // import { LuHistory } from "react-icons/lu";
@@ -31,6 +32,7 @@ const PersonHeader = () => {
 
   const { company } = useUser();
   const auditDrawer = useDisclosure();
+  const { isPhone } = useViewport();
   const routeData = useRouteData<{ employeeSummary: EmployeeSummary }>(
     path.to.person(personId)
   );
@@ -78,7 +80,8 @@ const PersonHeader = () => {
                 <Trans>Manager</Trans>
               </CardAttributeLabel>
               <CardAttributeValue>
-                {routeData?.employeeSummary?.managerName}
+                {routeData?.employeeSummary?.managerName ||
+                  (isPhone ? "—" : null)}
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>

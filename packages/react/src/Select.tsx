@@ -15,14 +15,44 @@ import {
   LuChevronsUpDown,
   LuChevronUp
 } from "react-icons/lu";
-
+import { compactPart } from "./MenuSheet";
+import {
+  SelectSheetContent,
+  SelectSheetGroup,
+  SelectSheetItem,
+  SelectSheetLabel,
+  SelectSheetRoot,
+  SelectSheetSeparator,
+  SelectSheetTrigger,
+  SelectSheetValue
+} from "./SelectSheet";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
-const Select = SelectPrimitive.Root;
+/*
+ * Phones render each part from SelectSheet (a bottom sheet) instead of Radix's
+ * select; see SelectSheet.tsx.
+ */
+const Select = (
+  props: ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
+) =>
+  useViewport().isPhone ? (
+    <SelectSheetRoot {...props} />
+  ) : (
+    <SelectPrimitive.Root {...props} />
+  );
 
-const SelectGroup = SelectPrimitive.Group;
+const SelectGroup = compactPart(
+  SelectPrimitive.Group,
+  SelectSheetGroup,
+  "SelectGroup"
+);
 
-const SelectValue = SelectPrimitive.Value;
+const SelectValue = compactPart(
+  SelectPrimitive.Value,
+  SelectSheetValue,
+  "SelectValue"
+);
 
 const selectTriggerVariants = cva(
   "bg-transparent text-foreground flex w-full items-center justify-between whitespace-nowrap rounded-md border border-input shadow-xs transition-[color,box-shadow] data-[placeholder]:text-muted-foreground outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>span]:min-w-0 [&>span]:truncate",
@@ -30,8 +60,8 @@ const selectTriggerVariants = cva(
     variants: {
       size: {
         lg: "h-12 px-4 py-3 rounded-lg text-base space-x-4",
-        md: "h-10 px-3 py-2 rounded-md text-sm space-x-3",
-        sm: "h-8  px-3 py-2 rounded text-xs space-x-2"
+        md: "h-10 px-3 py-2 rounded-md text-sm space-x-3 max-md:h-11 max-md:text-base",
+        sm: "h-8  px-3 py-2 rounded text-xs space-x-2 max-md:h-11 max-md:text-base"
       }
     },
     defaultVariants: {
@@ -50,26 +80,29 @@ interface SelectTriggerProps
 const SelectTrigger = forwardRef<
   ElementRef<typeof SelectPrimitive.Trigger>,
   SelectTriggerProps
->(({ size, className, children, hideIcon, inline, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      !inline &&
-        selectTriggerVariants({
-          size
-        }),
-      className
-    )}
-    {...props}
-  >
-    {children}
-    {!hideIcon && !inline && (
-      <SelectPrimitive.Icon asChild>
-        <LuChevronsUpDown className="h-4 w-4 flex-shrink-0 opacity-50" />
-      </SelectPrimitive.Icon>
-    )}
-  </SelectPrimitive.Trigger>
-));
+>(({ size, className, children, hideIcon, inline, ...props }, ref) => {
+  const { isPhone } = useViewport();
+  const Trigger = isPhone ? SelectSheetTrigger : SelectPrimitive.Trigger;
+  const icon = (
+    <LuChevronsUpDown className="h-4 w-4 flex-shrink-0 opacity-50" />
+  );
+  return (
+    <Trigger
+      ref={ref}
+      className={cn(!inline && selectTriggerVariants({ size }), className)}
+      {...props}
+    >
+      {children}
+      {!hideIcon && !inline ? (
+        isPhone ? (
+          icon
+        ) : (
+          <SelectPrimitive.Icon asChild>{icon}</SelectPrimitive.Icon>
+        )
+      ) : null}
+    </Trigger>
+  );
+});
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
 const SelectScrollUpButton = forwardRef<
@@ -107,39 +140,47 @@ const SelectScrollDownButton = forwardRef<
 SelectScrollDownButton.displayName =
   SelectPrimitive.ScrollDownButton.displayName;
 
-const SelectContent = forwardRef<
+const DesktopSelectContent = forwardRef<
   ElementRef<typeof SelectPrimitive.Content>,
   ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      ref={ref}
-      className={cn(
-        "relative z-50 origin-(--radix-select-content-transform-origin) max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        position === "popper" &&
-          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-        className
-      )}
-      position={position}
-      {...props}
-    >
-      <SelectScrollUpButton />
-      <SelectPrimitive.Viewport
-        className={cn(
-          "p-1",
-          position === "popper" &&
-            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] max-h-[300px] overflow-y-auto"
-        )}
-      >
-        {children}
-      </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
-SelectContent.displayName = SelectPrimitive.Content.displayName;
+>(
+  (
+    { className, children, position: positionProp = "popper", ...props },
+    ref
+  ) => {
+    const position = positionProp;
+    return (
+      <SelectPrimitive.Portal>
+        <SelectPrimitive.Content
+          ref={ref}
+          className={cn(
+            "relative z-50 origin-(--radix-select-content-transform-origin) max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+            position === "popper" &&
+              "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+            className
+          )}
+          position={position}
+          {...props}
+        >
+          <SelectScrollUpButton />
+          <SelectPrimitive.Viewport
+            className={cn(
+              "p-1",
+              position === "popper" &&
+                "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] max-h-[300px] overflow-y-auto"
+            )}
+          >
+            {children}
+          </SelectPrimitive.Viewport>
+          <SelectScrollDownButton />
+        </SelectPrimitive.Content>
+      </SelectPrimitive.Portal>
+    );
+  }
+);
+DesktopSelectContent.displayName = SelectPrimitive.Content.displayName;
 
-const SelectLabel = forwardRef<
+const DesktopSelectLabel = forwardRef<
   ElementRef<typeof SelectPrimitive.Label>,
   ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
 >(({ className, ...props }, ref) => (
@@ -152,9 +193,9 @@ const SelectLabel = forwardRef<
     {...props}
   />
 ));
-SelectLabel.displayName = SelectPrimitive.Label.displayName;
+DesktopSelectLabel.displayName = SelectPrimitive.Label.displayName;
 
-const SelectItem = forwardRef<
+const DesktopSelectItem = forwardRef<
   ElementRef<typeof SelectPrimitive.Item>,
   ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & {
     /**
@@ -192,9 +233,9 @@ const SelectItem = forwardRef<
     )}
   </SelectPrimitive.Item>
 ));
-SelectItem.displayName = SelectPrimitive.Item.displayName;
+DesktopSelectItem.displayName = SelectPrimitive.Item.displayName;
 
-const SelectSeparator = forwardRef<
+const DesktopSelectSeparator = forwardRef<
   ElementRef<typeof SelectPrimitive.Separator>,
   ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
 >(({ className, ...props }, ref) => (
@@ -204,7 +245,28 @@ const SelectSeparator = forwardRef<
     {...props}
   />
 ));
-SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
+DesktopSelectSeparator.displayName = SelectPrimitive.Separator.displayName;
+
+const SelectContent = compactPart(
+  DesktopSelectContent,
+  SelectSheetContent,
+  "SelectContent"
+);
+const SelectLabel = compactPart(
+  DesktopSelectLabel,
+  SelectSheetLabel,
+  "SelectLabel"
+);
+const SelectItem = compactPart(
+  DesktopSelectItem,
+  SelectSheetItem,
+  "SelectItem"
+);
+const SelectSeparator = compactPart(
+  DesktopSelectSeparator,
+  SelectSheetSeparator,
+  "SelectSeparator"
+);
 
 export {
   Select,

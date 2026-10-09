@@ -141,6 +141,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />,
           // The accessor is the raw item id — export the readable id
           // the cell shows instead of a UUID.
@@ -161,6 +162,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuAlignJustify />
         }
       },
@@ -199,6 +201,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: serviceReplenishmentSystems.map((type) => ({
@@ -571,7 +574,12 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
         primaryAction={
           permissions.can("create", "parts") && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" leftIcon={<LuGroup />} asChild>
+              <Button
+                variant="secondary"
+                leftIcon={<LuGroup />}
+                className="max-md:hidden"
+                asChild
+              >
                 <Link to={path.to.itemPostingGroups}>
                   <Trans>Item Groups</Trans>
                 </Link>

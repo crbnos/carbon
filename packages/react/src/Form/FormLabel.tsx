@@ -33,7 +33,7 @@ export const FormLabel = forwardRef<
     <label
       {...labelProps}
       ref={ref}
-      className="flex items-center justify-between"
+      className="flex items-center justify-between max-md:gap-2"
       // {...props}
     >
       <span
@@ -42,9 +42,9 @@ export const FormLabel = forwardRef<
         {children}
       </span>
       {(isOptional || onConfigure) && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 max-md:gap-2">
           {isOptional && (
-            <span className="text-muted-foreground text-xxs">
+            <span className="text-muted-foreground text-xxs max-md:text-xs">
               <Trans>Optional</Trans>
             </span>
           )}

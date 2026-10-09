@@ -32,6 +32,7 @@ import { RouteRealtime } from "@carbon/query";
 import { setClientCompanyId } from "@carbon/query/cache";
 import {
   Button,
+  cn,
   Heading,
   ItarEntityPendingBlock,
   ItarUserCertification,
@@ -52,7 +53,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -64,10 +65,12 @@ import {
   Form,
   Outlet,
   useLoaderData,
+  useLocation,
   useNavigate
 } from "react-router";
 import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
+import { isTabBarPath, MesTabBar } from "~/components/MesTabBar";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
@@ -354,6 +357,9 @@ export default function AuthenticatedRoute() {
   }, [loaderData]);
 
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const showTabBar = isTabBarPath(pathname);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Session lock (NIST 3.1.10) — client idle UX only; server enforces in
   // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT and non-console.
@@ -526,13 +532,28 @@ export default function AuthenticatedRoute() {
                     openClockEntry={openClockEntry}
                     pinnedInUser={pinnedInUser}
                     timeCardEnabled={timeCardEnabled}
+                    moreOpen={moreOpen}
+                    onMoreOpenChange={setMoreOpen}
                   />
-                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border">
+                  {/* From lg the shell does not scroll, so the page area stops at the
+                      screen and each page's own scroller takes the overflow. */}
+                  <div
+                    className={cn(
+                      "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
+                      showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
+                    )}
+                  >
                     {/* A company switch stays on the same page. Without the key the page
                         keeps its state, so a form still held the previous company's
                         values and saving wrote them to the new one. */}
                     <Outlet key={companyId} />
                   </div>
+                  <MesTabBar
+                    activeEvents={activeEvents}
+                    activeMaintenanceCount={activeMaintenanceCount}
+                    moreOpen={moreOpen}
+                    onMoreOpenChange={setMoreOpen}
+                  />
                   <ShortcutHelp />
                   {timeCardEnabled && (
                     <Suspense fallback={null}>

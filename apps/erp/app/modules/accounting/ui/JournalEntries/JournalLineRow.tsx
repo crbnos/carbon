@@ -154,7 +154,7 @@ const JournalLineRow = ({
             isReadOnly={isDisabled}
           >
             <NumberInput
-              className="text-right font-mono tabular-nums"
+              className="text-right font-mono tabular-nums max-md:px-3"
               isReadOnly={isDisabled}
             />
           </NumberField>
@@ -174,7 +174,7 @@ const JournalLineRow = ({
             isReadOnly={isDisabled}
           >
             <NumberInput
-              className="text-right font-mono tabular-nums"
+              className="text-right font-mono tabular-nums max-md:px-3"
               isReadOnly={isDisabled}
             />
           </NumberField>
@@ -191,7 +191,7 @@ const JournalLineRow = ({
               variant="ghost"
               onClick={onDelete}
               isDisabled={!canDelete}
-              className="size-8 p-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 disabled:opacity-0"
+              className="size-8 p-0 text-muted-foreground md:opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 disabled:opacity-0"
             />
           )}
         </div>

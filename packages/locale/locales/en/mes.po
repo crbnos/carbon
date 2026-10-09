@@ -215,6 +215,9 @@ msgstr "available"
 msgid "Available"
 msgstr "Available"
 
+msgid "Back"
+msgstr "Back"
+
 msgid "Back to batch"
 msgstr "Back to batch"
 
@@ -295,6 +298,9 @@ msgstr "Check your email"
 msgid "Choose a job"
 msgstr "Choose a job"
 
+msgid "Choose an option"
+msgstr "Choose an option"
+
 msgid "Clear"
 msgstr "Clear"
 
@@ -360,6 +366,10 @@ msgstr "Company"
 msgid "Complete"
 msgstr "Complete"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr "Complete {0}?"
+
 msgid "Complete All"
 msgstr "Complete All"
 
@@ -406,8 +416,7 @@ msgstr "Copy to clipboard"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Cost of unplanned maintenance, last {0} days"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Create {0}"
 
@@ -510,8 +519,8 @@ msgid "Due"
 msgstr "Due"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
 
@@ -668,6 +677,9 @@ msgstr "Finish with material unpicked?"
 msgid "First due {0}"
 msgstr "First due {0}"
 
+msgid "Fit"
+msgstr "Fit"
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Fix the highlighted quantities before completing."
 
@@ -688,6 +700,9 @@ msgstr "Go back to operation"
 
 msgid "Go to onboarding"
 msgstr "Go to onboarding"
+
+msgid "Heading {level}"
+msgstr "Heading {level}"
 
 msgid "Hide description"
 msgstr "Hide description"
@@ -810,6 +825,9 @@ msgstr "Leave an operation at 0 to skip it — it returns to the schedule un-run
 msgid "Leave this page"
 msgstr "Leave this page"
 
+msgid "Left to Right"
+msgstr "Left to Right"
+
 msgid "Let's build something"
 msgstr "Let's build something"
 
@@ -879,6 +897,9 @@ msgstr "Machine"
 msgid "Machine down for maintenance now?"
 msgstr "Machine down for maintenance now?"
 
+msgid "Main"
+msgstr "Main"
+
 msgid "Maintenance"
 msgstr "Maintenance"
 
@@ -930,6 +951,9 @@ msgstr "Metric"
 
 msgid "Model"
 msgstr "Model"
+
+msgid "More"
+msgstr "More"
 
 msgid "More actions"
 msgstr "More actions"
@@ -1168,6 +1192,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "Open sub-assembly {0}: {1}"
 
 #. placeholder {0}: formatDate( operation.operationDueDate )
+#. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "Operation needed by {0}"
 
@@ -1185,6 +1210,9 @@ msgstr "Operator Performed"
 
 msgid "Optional"
 msgstr "Optional"
+
+msgid "Options"
+msgstr "Options"
 
 msgid "or"
 msgstr "or"
@@ -1224,6 +1252,9 @@ msgstr "Passkey unlock failed"
 
 msgid "Pause"
 msgstr "Pause"
+
+msgid "Pause timer"
+msgstr "Pause timer"
 
 msgid "Pick"
 msgstr "Pick"
@@ -1279,6 +1310,9 @@ msgstr "PM schedule lapsed"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+
+msgid "Press '/' for commands"
+msgstr "Press '/' for commands"
 
 msgid "Prev"
 msgstr "Prev"
@@ -1646,6 +1680,9 @@ msgstr "Start {0}"
 msgid "Start or pause the operation"
 msgstr "Start or pause the operation"
 
+msgid "Start timer"
+msgstr "Start timer"
+
 msgid "Station User"
 msgstr "Station User"
 
@@ -1744,6 +1781,9 @@ msgstr "This batch has no work instructions."
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."
 
+msgid "This marks the dispatch as completed."
+msgstr "This marks the dispatch as completed."
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 
@@ -1778,11 +1818,23 @@ msgstr "To run"
 msgid "Today"
 msgstr "Today"
 
+msgid "Toggle labor"
+msgstr "Toggle labor"
+
+msgid "Toggle machine"
+msgstr "Toggle machine"
+
+msgid "Toggle setup"
+msgstr "Toggle setup"
+
 msgid "Toggle the sidebar"
 msgstr "Toggle the sidebar"
 
 msgid "Tools"
 msgstr "Tools"
+
+msgid "Top to Bottom"
+msgstr "Top to Bottom"
 
 msgid "Total"
 msgstr "Total"
@@ -1918,6 +1970,9 @@ msgstr "Work Center Displays"
 
 msgid "Work instructions"
 msgstr "Work instructions"
+
+msgid "Write a note…"
+msgstr "Write a note…"
 
 msgid "Yes"
 msgstr "Yes"

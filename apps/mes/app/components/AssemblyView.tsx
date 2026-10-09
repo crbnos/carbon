@@ -45,7 +45,8 @@ import {
   useKeyboardWedge,
   useMode,
   useRouteData,
-  useShortcutKeys
+  useShortcutKeys,
+  useViewport
 } from "@carbon/react";
 import { distinctItemText, formatDurationMilliseconds } from "@carbon/utils";
 import type {
@@ -56,7 +57,7 @@ import type {
 } from "@carbon/viewer";
 import { AssemblyPlayer, buildSubAssemblyPlan } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuArrowLeft,
@@ -99,6 +100,8 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
+import { MesAppBar } from "~/components/MesAppBar";
+import { useMesBottomBar } from "~/components/MesBottomBar";
 import { useRealtime, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import type {
@@ -107,6 +110,7 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
+import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
 
@@ -534,12 +538,15 @@ export function AssemblyView({
   assemblyPlayback,
   productionQuantities = { scrap: 0, production: 0, rework: 0 }
 }: Props) {
+  const bottomBarRef = useMesBottomBar();
   const user = useUser();
   const { carbon } = useCarbon();
   const mode = useMode();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLingui();
+  const origin = useOrigin();
+  const { isPhone } = useViewport();
   // Which main panel is shown: the assembly details, the 3D model, or chat.
   const [tab, setTab] = useState<"details" | "model" | "chat">("details");
 
@@ -1457,6 +1464,9 @@ export function AssemblyView({
     if (setup?.id) fd.set("setupProductionEventId", setup.id);
     if (labor?.id) fd.set("laborProductionEventId", labor.id);
     if (machine?.id) fd.set("machineProductionEventId", machine.id);
+    // A finishing completion redirects back to the origin page.
+    const from = readOrigin(searchParams);
+    if (from) fd.set(ORIGIN_PARAM, from);
     completeUnitFetcher.submit(fd, {
       method: "post",
       action: path.to.complete
@@ -1623,227 +1633,282 @@ export function AssemblyView({
   const companyLogo =
     mode === "dark" ? user.company.logoDarkIcon : user.company.logoLightIcon;
 
+  // ── STEPS BAR (segmented, click to jump; green = done) ──
+  const renderStepsBar = (className?: string) =>
+    steps.length > 0 ? (
+      <div
+        className={cn(
+          "flex min-h-9 shrink-0 items-center gap-3 bg-card border-b border-border px-5 py-1 max-md:px-4",
+          className
+        )}
+      >
+        {/* Label reflects the active filter so a filtered bar (e.g. only the completed,
+            all-green steps) is never mistaken for "everything done". */}
+        <span className="whitespace-nowrap text-xs text-muted-foreground">
+          {stepFilter === "completed"
+            ? `${doneCount} completed`
+            : stepFilter === "incomplete"
+              ? `${steps.length - doneCount} incomplete`
+              : `${doneCount} / ${steps.length} done`}
+        </span>
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          {openSubAssemblyId ? (
+            <>
+              <Button
+                variant="ghost"
+                size="md"
+                leftIcon={<LuArrowLeft />}
+                onClick={closeSubAssembly}
+              >
+                {t`All steps`}
+              </Button>
+              <span className="max-w-[40%] shrink-0 truncate text-xs text-muted-foreground">
+                {t`Sub-Assembly ${subAssemblyNumber(openSubAssemblyId)} · ${subAssemblyTitle(openSubAssemblyId)}`}
+              </span>
+              {openIndices
+                .filter((i) => stepMatchesFilter(steps[i]))
+                .map((i) => renderStepSegment(steps[i], i))}
+            </>
+          ) : (
+            barItems.map((item) => {
+              if (item.kind === "step") {
+                const s = steps[item.index];
+                return stepMatchesFilter(s)
+                  ? renderStepSegment(s, item.index)
+                  : null;
+              }
+              const members = item.indices.map((i) => steps[i]);
+              const allDone = members.every(isStepDone);
+              if (stepFilter === "completed" && !allDone) return null;
+              if (stepFilter === "incomplete" && allDone) return null;
+              const isCurrent = item.indices.includes(currentStep);
+              return (
+                <button
+                  key={item.headerId}
+                  type="button"
+                  aria-label={t`Open sub-assembly ${subAssemblyNumber(item.headerId)}: ${subAssemblyTitle(item.headerId)}`}
+                  title={t`Sub-Assembly ${subAssemblyNumber(item.headerId)} · ${subAssemblyTitle(item.headerId)}`}
+                  onClick={() => openSubAssembly(item.headerId, item.indices)}
+                  style={{ flexGrow: item.indices.length }}
+                  className={cn(
+                    "flex h-6 flex-1 basis-0 items-center gap-0.5 rounded-[3px] border px-1 transition-colors hover:bg-muted",
+                    isCurrent ? "border-foreground" : "border-border"
+                  )}
+                >
+                  <LuBoxes className="size-3.5 shrink-0 text-muted-foreground" />
+                  {item.indices.map((i) => (
+                    <span
+                      key={steps[i].id}
+                      className={cn(
+                        "h-2 flex-1 rounded-[1px]",
+                        stepSegmentTone(steps[i], i)
+                      )}
+                    />
+                  ))}
+                </button>
+              );
+            })
+          )}
+          {stepFilter === "incomplete" && doneCount === steps.length && (
+            <span className="text-xs text-emerald-500">All steps done</span>
+          )}
+          {stepFilter === "completed" && doneCount === 0 && (
+            <span className="text-xs text-muted-foreground">
+              No completed steps yet
+            </span>
+          )}
+        </div>
+        {/* Filter which steps the bar emphasizes (all / completed / incomplete). */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label="Filter steps"
+              variant={stepFilter === "all" ? "ghost" : "active"}
+              size="sm"
+              icon={<LuListFilter />}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuRadioGroup
+              value={stepFilter}
+              onValueChange={(v) =>
+                setStepFilter(v as "all" | "completed" | "incomplete")
+              }
+            >
+              <DropdownMenuRadioItem value="all">
+                Show all
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="completed">
+                Show completed
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="incomplete">
+                Show incomplete
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+          {currentStep + 1} / {steps.length}
+        </span>
+        {/* Unit pager — fallback for narrow screens (< lg) where the left sidebar
+            is hidden; on lg+ the richer sidebar UnitNavigator takes over. Assembly
+            builds one at a time, but the operator can page back to review or fix a
+            prior unit's step records — mirrors the operation view. */}
+        {isMultiQuantity && (
+          <div className="flex items-center gap-0.5 lg:hidden">
+            <IconButton
+              aria-label="Previous unit"
+              variant="ghost"
+              size="sm"
+              icon={<LuChevronLeft />}
+              isDisabled={currentUnitIndex <= 0}
+              onClick={() => goToUnit(currentUnitIndex - 1)}
+            />
+            <Badge
+              variant="secondary"
+              className="whitespace-nowrap tabular-nums"
+            >
+              Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
+            </Badge>
+            <IconButton
+              aria-label="Next unit"
+              variant="ghost"
+              size="sm"
+              icon={<LuChevronRight />}
+              isDisabled={currentUnitIndex >= maxNavigableUnitIndex}
+              onClick={() => goToUnit(currentUnitIndex + 1)}
+            />
+          </div>
+        )}
+      </div>
+    ) : null;
+
+  // Phones: the item ID and the steps bar scroll with the Details content,
+  // and sit over the tab content on Model and Chat. md+ keeps the bar above.
+  const detailsShown = !(
+    (tab === "model" && modelPath) ||
+    (tab === "chat" && operation)
+  );
+  const phoneItemId = operation?.jobReadableId
+    ? job?.itemReadableIdWithRevision
+    : null;
+  const renderPhoneContext = () =>
+    phoneItemId || steps.length > 0 ? (
+      <div className="flex shrink-0 flex-col border-b border-border bg-card md:hidden">
+        {phoneItemId ? (
+          <span
+            className={cn(
+              "truncate px-4 pt-2 text-sm font-medium",
+              steps.length === 0 && "pb-2"
+            )}
+          >
+            {phoneItemId}
+          </span>
+        ) : null}
+        {renderStepsBar("border-b-0")}
+      </div>
+    ) : null;
+
+  // The header's actions; the md+ header and the phone app bar share them.
+  const headerActions = (
+    <>
+      {/* Phones: Complete sits in the bottom action bar instead. */}
+      {operation ? (
+        <button
+          type="button"
+          onClick={completeModal.onOpen}
+          className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] max-md:hidden md:gap-2 md:px-4"
+        >
+          <LuCheck className="size-4" />
+          <Trans>Complete</Trans>
+        </button>
+      ) : null}
+      {operation ? (
+        <button
+          type="button"
+          aria-label={t`More actions`}
+          onClick={actionsSheet.onOpen}
+          className="flex h-full shrink-0 items-center justify-center border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:min-w-11 md:px-4"
+        >
+          <LuEllipsisVertical className="size-4" />
+        </button>
+      ) : null}
+
+      {operation
+        ? headerWorkTypes.map((wt) => (
+            <TimerControl
+              key={wt}
+              operation={operation}
+              openEvent={openEventForWorkType(wt)}
+              workType={wt}
+              trackedEntityId={isTracked ? currentEntity?.id : undefined}
+              unitIndex={currentUnitIndex}
+            />
+          ))
+        : null}
+    </>
+  );
+
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
-      <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border">
-        {/* Full-height segment matching the Flag issue / Complete / timer buttons. */}
-        <SidebarTrigger className="h-full w-auto shrink-0 rounded-none border-r border-border px-2 hover:bg-accent md:px-4" />
-        {companyLogo ? (
-          <div className="hidden h-full shrink-0 items-center border-r border-border px-4 sm:flex">
-            <img
-              src={companyLogo}
-              alt={`${user.company.name} logo`}
-              className="h-7 w-auto max-w-[140px] object-contain"
-            />
-          </div>
-        ) : null}
-
-        <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
-          <span className="truncate text-sm font-semibold">
-            {job?.itemReadableIdWithRevision ?? "—"}
-          </span>
-          {operation?.description ? (
-            <>
-              <span className="hidden text-muted-foreground md:inline">·</span>
-              <span className="hidden truncate text-sm text-foreground/90 lg:inline">
-                {operation.description}
-              </span>
-            </>
-          ) : null}
-        </div>
-
-        <div className="flex-1" />
-
-        {/* Full-height segmented actions — same treatment as the timer button:
-            flush, no rounded corners, a left-border divider, hover highlight. */}
-        <button
-          type="button"
-          onClick={qualityModal.onOpen}
-          className="hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4 lg:flex"
-        >
-          <LuFlag className="size-4" />
-          Flag issue
-        </button>
-        {operation ? (
-          <button
-            type="button"
-            onClick={completeModal.onOpen}
-            className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4"
-          >
-            <LuCheck className="size-4" />
-            <span className="hidden sm:inline">Complete</span>
-            <span className="sm:hidden">Done</span>
-          </button>
-        ) : null}
-        {operation ? (
-          <button
-            type="button"
-            aria-label="More actions"
-            onClick={actionsSheet.onOpen}
-            className="flex h-full shrink-0 items-center justify-center border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:px-4"
-          >
-            <LuEllipsisVertical className="size-4" />
-          </button>
-        ) : null}
-
-        {operation
-          ? headerWorkTypes.map((wt) => (
-              <TimerControl
-                key={wt}
-                operation={operation}
-                openEvent={openEventForWorkType(wt)}
-                workType={wt}
-                trackedEntityId={isTracked ? currentEntity?.id : undefined}
-                unitIndex={currentUnitIndex}
-              />
-            ))
-          : null}
-      </header>
-
-      {/* ── STEPS BAR (segmented, click to jump; green = done) ── */}
-      {steps.length > 0 && (
-        <div className="flex min-h-9 shrink-0 items-center gap-3 bg-card border-b border-border px-5 py-1">
-          {/* Label reflects the active filter so a filtered bar (e.g. only the completed,
-              all-green steps) is never mistaken for "everything done". */}
-          <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {stepFilter === "completed"
-              ? `${doneCount} completed`
-              : stepFilter === "incomplete"
-                ? `${steps.length - doneCount} incomplete`
-                : `${doneCount} / ${steps.length} done`}
-          </span>
-          <div className="flex min-w-0 flex-1 items-center gap-1">
-            {openSubAssemblyId ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="md"
-                  leftIcon={<LuArrowLeft />}
-                  onClick={closeSubAssembly}
-                >
-                  {t`All steps`}
-                </Button>
-                <span className="max-w-[40%] shrink-0 truncate text-xs text-muted-foreground">
-                  {t`Sub-Assembly ${subAssemblyNumber(openSubAssemblyId)} · ${subAssemblyTitle(openSubAssemblyId)}`}
-                </span>
-                {openIndices
-                  .filter((i) => stepMatchesFilter(steps[i]))
-                  .map((i) => renderStepSegment(steps[i], i))}
-              </>
-            ) : (
-              barItems.map((item) => {
-                if (item.kind === "step") {
-                  const s = steps[item.index];
-                  return stepMatchesFilter(s)
-                    ? renderStepSegment(s, item.index)
-                    : null;
-                }
-                const members = item.indices.map((i) => steps[i]);
-                const allDone = members.every(isStepDone);
-                if (stepFilter === "completed" && !allDone) return null;
-                if (stepFilter === "incomplete" && allDone) return null;
-                const isCurrent = item.indices.includes(currentStep);
-                return (
-                  <button
-                    key={item.headerId}
-                    type="button"
-                    aria-label={t`Open sub-assembly ${subAssemblyNumber(item.headerId)}: ${subAssemblyTitle(item.headerId)}`}
-                    title={t`Sub-Assembly ${subAssemblyNumber(item.headerId)} · ${subAssemblyTitle(item.headerId)}`}
-                    onClick={() => openSubAssembly(item.headerId, item.indices)}
-                    style={{ flexGrow: item.indices.length }}
-                    className={cn(
-                      "flex h-6 flex-1 basis-0 items-center gap-0.5 rounded-[3px] border px-1 transition-colors hover:bg-muted",
-                      isCurrent ? "border-foreground" : "border-border"
-                    )}
-                  >
-                    <LuBoxes className="size-3.5 shrink-0 text-muted-foreground" />
-                    {item.indices.map((i) => (
-                      <span
-                        key={steps[i].id}
-                        className={cn(
-                          "h-2 flex-1 rounded-[1px]",
-                          stepSegmentTone(steps[i], i)
-                        )}
-                      />
-                    ))}
-                  </button>
-                );
-              })
-            )}
-            {stepFilter === "incomplete" && doneCount === steps.length && (
-              <span className="text-xs text-emerald-500">All steps done</span>
-            )}
-            {stepFilter === "completed" && doneCount === 0 && (
-              <span className="text-xs text-muted-foreground">
-                No completed steps yet
-              </span>
-            )}
-          </div>
-          {/* Filter which steps the bar emphasizes (all / completed / incomplete). */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label="Filter steps"
-                variant={stepFilter === "all" ? "ghost" : "active"}
-                size="sm"
-                icon={<LuListFilter />}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuRadioGroup
-                value={stepFilter}
-                onValueChange={(v) =>
-                  setStepFilter(v as "all" | "completed" | "incomplete")
-                }
-              >
-                <DropdownMenuRadioItem value="all">
-                  Show all
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="completed">
-                  Show completed
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="incomplete">
-                  Show incomplete
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-            {currentStep + 1} / {steps.length}
-          </span>
-          {/* Unit pager — fallback for narrow screens (< lg) where the left sidebar
-              is hidden; on lg+ the richer sidebar UnitNavigator takes over. Assembly
-              builds one at a time, but the operator can page back to review or fix a
-              prior unit's step records — mirrors the operation view. */}
-          {isMultiQuantity && (
-            <div className="flex items-center gap-0.5 lg:hidden">
-              <IconButton
-                aria-label="Previous unit"
-                variant="ghost"
-                size="sm"
-                icon={<LuChevronLeft />}
-                isDisabled={currentUnitIndex <= 0}
-                onClick={() => goToUnit(currentUnitIndex - 1)}
-              />
-              <Badge
-                variant="secondary"
-                className="whitespace-nowrap tabular-nums"
-              >
-                Unit {Math.min(currentUnitIndex + 1, unitCount)} / {unitCount}
-              </Badge>
-              <IconButton
-                aria-label="Next unit"
-                variant="ghost"
-                size="sm"
-                icon={<LuChevronRight />}
-                isDisabled={currentUnitIndex >= maxNavigableUnitIndex}
-                onClick={() => goToUnit(currentUnitIndex + 1)}
+      <MesAppBar
+        title={
+          operation?.jobReadableId ?? job?.itemReadableIdWithRevision ?? "—"
+        }
+        subtitle={origin.label}
+        back={{ to: origin.to }}
+        actions={headerActions}
+      />
+      {/* Phones use the app bar above; one header mounts so its timers do too. */}
+      {!isPhone && (
+        <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border max-md:hidden">
+          {/* Full-height segment matching the Flag issue / Complete / timer buttons. */}
+          <SidebarTrigger className="h-full w-auto shrink-0 rounded-none border-r border-border px-2 hover:bg-accent md:px-4" />
+          {companyLogo ? (
+            <div className="hidden h-full shrink-0 items-center border-r border-border px-4 sm:flex">
+              <img
+                src={companyLogo}
+                alt={`${user.company.name} logo`}
+                className="h-7 w-auto max-w-[140px] object-contain"
               />
             </div>
-          )}
-        </div>
+          ) : null}
+
+          <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
+            <span className="truncate text-sm font-semibold">
+              {job?.itemReadableIdWithRevision ?? "—"}
+            </span>
+            {operation?.description ? (
+              <>
+                <span className="hidden text-muted-foreground md:inline">
+                  ·
+                </span>
+                <span className="hidden truncate text-sm text-foreground/90 lg:inline">
+                  {operation.description}
+                </span>
+              </>
+            ) : null}
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Full-height segmented actions — same treatment as the timer button:
+            flush, no rounded corners, a left-border divider, hover highlight. */}
+          <button
+            type="button"
+            onClick={qualityModal.onOpen}
+            className="hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4 lg:flex"
+          >
+            <LuFlag className="size-4" />
+            Flag issue
+          </button>
+          {headerActions}
+        </header>
       )}
+
+      {renderStepsBar("max-md:hidden")}
+      {!detailsShown && renderPhoneContext()}
 
       {/* ── BODY ── stacks vertically (page scrolls) on phones/tablets,
           three columns side-by-side on lg+. ── */}
@@ -2075,7 +2140,8 @@ export function AssemblyView({
         {/* ── MAIN: tabbed — details (image + step) · model · chat ── */}
         <main className="flex w-full flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
           {/* Tab bar */}
-          <div className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5">
+          {/* Phones: 44px underline tabs, as on the operation page. */}
+          <div className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5 max-md:gap-5 max-md:px-4 max-md:py-0 max-md:[&>*]:flex-1">
             <TabButton
               active={tab === "details"}
               onClick={() => setTab("details")}
@@ -2113,6 +2179,7 @@ export function AssemblyView({
             </div>
           ) : (
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+              {renderPhoneContext()}
               <div className="flex shrink-0 flex-col gap-2 border-b border-border p-4">
                 {selected === "playback" &&
                 playbackAvailable &&
@@ -2534,6 +2601,24 @@ export function AssemblyView({
         </aside>
       </div>
 
+      {/* Phones: the completing action in thumb reach. */}
+      {operation ? (
+        <div
+          ref={bottomBarRef}
+          data-mes-bottom-bar
+          className="flex shrink-0 border-t border-border bg-card px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
+        >
+          <Button
+            size="lg"
+            leftIcon={<LuCheck />}
+            onClick={completeModal.onOpen}
+            className="h-12 flex-1"
+          >
+            <Trans>Complete</Trans>
+          </Button>
+        </div>
+      ) : null}
+
       {issueModal.isOpen && (
         <IssueMaterialModal
           operationId={operationId}
@@ -2884,7 +2969,13 @@ function TimerControl({
   trackedEntityId?: string;
   unitIndex?: number;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher();
+  const workTypeLabels = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  } as const;
 
   // Optimistic state: the moment Start/End is submitted, flip immediately
   // instead of waiting for the (slow) post-production-event round-trip. This
@@ -2934,10 +3025,10 @@ function TimerControl({
       <button
         disabled={fetcher.state !== "idle"}
         type="submit"
-        aria-label={active ? "Pause timer" : "Start timer"}
-        className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4"
+        aria-label={active ? t`Pause timer` : t`Start timer`}
+        className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:min-w-11 max-md:justify-center md:gap-2 md:px-4"
       >
-        <span className="hidden flex-col items-end leading-none sm:flex">
+        <span className="flex flex-col items-end leading-none">
           <span className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
@@ -2945,8 +3036,8 @@ function TimerControl({
               {() => formatElapsed(elapsed)}
             </ClientOnly>
           </span>
-          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
-            {workType}
+          <span className="text-[9px] max-md:text-xs uppercase tracking-wider text-muted-foreground">
+            {workTypeLabels[workType]}
           </span>
         </span>
         {active ? (
@@ -3533,9 +3624,10 @@ function TabButton({
       onClick={onClick}
       className={cn(
         "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+        "max-md:min-h-11 max-md:min-w-11 max-md:rounded-none max-md:border-b-2 max-md:border-transparent max-md:px-0 max-md:text-[15px]",
         active
-          ? "bg-foreground text-background"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          ? "bg-foreground text-background max-md:border-foreground max-md:bg-transparent max-md:text-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground max-md:hover:bg-transparent"
       )}
     >
       {children}

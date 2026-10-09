@@ -33,7 +33,11 @@ export const BACKUP_VERSION = 1;
  * every operator's PIN. `ssoConnection` / `ssoDomain` are the company's login
  * identity — `providerId` and a verified `domain` are unique across ALL
  * companies, so a copy collides with the source company or hands its domain to
- * another. `oauthCode` is a live auth code, and dangles without `oauthClient`.)
+ * another. `oauthCode` is a live auth code, and dangles without `oauthClient`.
+ * `pushSubscription` holds a browser's push endpoint and its encryption keys:
+ * a device credential that means nothing in another company, and being secret
+ * keeps an in-place restore from bringing back signed-out browsers or wiping
+ * the current ones.)
  */
 export const SECRET_TABLES = [
   "apiKey",
@@ -46,7 +50,8 @@ export const SECRET_TABLES = [
   "oauthCode",
   "oauthToken",
   "ssoConnection",
-  "ssoDomain"
+  "ssoDomain",
+  "pushSubscription"
 ];
 
 /**

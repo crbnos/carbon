@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn } from "@carbon/react";
+import { cn, useViewport } from "@carbon/react";
 import {
   Background,
   BackgroundVariant,
@@ -28,7 +28,7 @@ import type {
   ActivityOutput,
   TrackedEntity
 } from "~/modules/inventory";
-import { clampDepth } from "./constants";
+import { COMPACT_FIT_PADDING, clampDepth } from "./constants";
 import { QuantityEdge } from "./edges/QuantityEdge";
 import { GraphLegend } from "./GraphLegend";
 import { GraphToolbar } from "./GraphToolbar";
@@ -105,6 +105,7 @@ function TraceabilityGraphInner({
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { fitView } = useReactFlow();
+  const { isPhone } = useViewport();
   const nodesInitialized = useNodesInitialized();
   const lastFitSignatureRef = useRef<string>("");
 
@@ -541,7 +542,7 @@ function TraceabilityGraphInner({
     lastFitSignatureRef.current = sig;
     const raf = requestAnimationFrame(() => {
       fitView({
-        padding: 0.2,
+        padding: isPhone ? COMPACT_FIT_PADDING : 0.2,
         duration: isFirstFit ? 0 : 250,
         maxZoom: 1
       });
@@ -557,7 +558,8 @@ function TraceabilityGraphInner({
     view,
     width,
     height,
-    fitView
+    fitView,
+    isPhone
   ]);
 
   const handleDepthChange = useCallback(
@@ -661,7 +663,7 @@ function TraceabilityGraphInner({
         <MiniMap
           pannable
           zoomable
-          className="!bg-card !border-border"
+          className="!bg-card !border-border max-md:!hidden"
           nodeColor={(n) => {
             const data = (n as any).data;
             if (data?.kind === "entity") {
@@ -744,7 +746,7 @@ function TraceabilityGraphInner({
                 </button>
               </>
             ) : (
-              <span className="px-1 flex items-center gap-1.5 text-muted-foreground">
+              <span className="px-1 flex items-center gap-1.5 text-muted-foreground max-md:hidden">
                 <kbd className="rounded border border-border bg-muted px-1 py-px font-mono text-[10px] leading-none text-foreground">
                   Shift
                 </kbd>

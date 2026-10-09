@@ -339,6 +339,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <Hyperlink to={row.original.id}>{row.original.readableId}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuLayers />
         }
       },
@@ -347,6 +348,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <BatchStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: BATCH_STATUSES.map((status) => ({
@@ -377,6 +379,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <Enumerable value={row.original.workCenterName ?? null} />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuFactory />,
           filterHeader: t`Work Center`,
           exportValue: (row: JobOperationBatch) => row.workCenterName ?? null
@@ -389,6 +392,8 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <span className="tabular-nums">{row.original.memberCount ?? 0}</span>
         ),
         meta: {
+          mobile: "P2",
+          mobileLabel: true,
           icon: <LuUsers />
         }
       },

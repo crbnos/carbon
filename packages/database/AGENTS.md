@@ -12,6 +12,13 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - `scriptRun` is a deliberate exception to the table conventions above: no `companyId`, no
   composite PK, SELECT-only RLS. It is the per-database ledger of one-off scripts that
   `ci/src/migrations.ts` runs after `supabase db push` — see `scripts/one-off/README.md`.
+- **User-owned preference rows** are the other deliberate exception: `notificationPreference`,
+  `userModulePreference` and `pushSubscription` use an `xid()` id, a single-column
+  `PRIMARY KEY ("id")` and no `createdBy`/`updatedBy`. A row belongs to one user and only that
+  user writes it, so the audit columns would always repeat `userId`. They keep `companyId`
+  (FK, `ON DELETE CASCADE`) for tenant attribution and the RLS rule `owner("userId")` +
+  `member("companyId")`. `pushSubscription` is unique per browser `endpoint`, not per company
+  (one browser, one owner); see `.ai/specs/2026-10-08-web-push-notifications.md`.
   It is intentionally NOT tenant-scoped so `selectWipeableTables` (company-backup.ts) cannot
   select it and a company restore cannot erase it. A migration landing in this package is
   also what triggers those scripts to deploy (`.github/workflows/supabase.yml` only fires on
@@ -21,6 +28,10 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
   the first concurrently. `fetchAllRecords` is the same pager over a query FACTORY (`() => builder`)
   — a factory, because supabase-js builders are mutable, so concurrent awaits on one builder all
   fetch whichever `.range()` was set last.
+- Use `fetchAllByIds(ids, (batch) => query.in(col, batch).order(...))` for a read keyed by an id
+  list that can grow with the data. It sends 100 ids per request, because `.in()` writes every id
+  into the URL and the gateway rejects a long request line (HTTP 431). It pages each group with
+  `fetchAllRecords`, and one failed group fails the whole read.
 
 ## Ask First
 
@@ -55,7 +66,7 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
+| `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchAllByIds` (100 ids per `.in()` request, each group paged), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
 | `./client` | Node-only. `Kysely`, `KyselyDatabase`, `getPostgresClient`, and `getProcessPool()` (one shared pool per process — never create another, never end it outside an exiting script); registers the NUMERIC → `Number` and DATE → `YYYY-MM-DD` type parsers at module load (see `.claude/rules/numeric-precision.md`) |
 | `./methods` | Make-method helpers shared by get-method and `@carbon/planning` (`getJobMethodTree`, `getQuoteMethodTree`, `traverseJobMethod`, `calculateQuoteLinePrices`, …) |
 | `./job-quantities-engine` | `computeJobQuantities` / `flattenJobQuantityTree` — the pure job-quantity cascade behind the `recalculate` server function |

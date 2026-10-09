@@ -5,34 +5,117 @@
 "use client";
 
 import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { Slot } from "@radix-ui/react-slot";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
-
+import { ActionPresentationBoundary } from "./ActionPresentation";
+import {
+  BottomSheet,
+  BottomSheetClose,
+  BottomSheetTrigger
+} from "./BottomSheet";
+import { PopupSheetContent } from "./PopupSheet";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
-const Popover = PopoverPrimitive.Root;
+/*
+ * Phones show a popover as a real bottom sheet (a Radix Dialog): each part
+ * switches to its Dialog counterpart, so call sites stay unchanged.
+ */
+const Popover = ({
+  open,
+  defaultOpen,
+  onOpenChange,
+  modal,
+  children
+}: ComponentPropsWithoutRef<typeof PopoverPrimitive.Root>) => {
+  const { isPhone } = useViewport();
+  return isPhone ? (
+    <BottomSheet
+      open={open}
+      defaultOpen={defaultOpen}
+      onOpenChange={onOpenChange}
+    >
+      {children}
+    </BottomSheet>
+  ) : (
+    <PopoverPrimitive.Root
+      open={open}
+      defaultOpen={defaultOpen}
+      onOpenChange={onOpenChange}
+      modal={modal}
+    >
+      {children}
+    </PopoverPrimitive.Root>
+  );
+};
 
-const PopoverTrigger = PopoverPrimitive.Trigger;
+const PopoverTrigger = forwardRef<
+  ElementRef<typeof PopoverPrimitive.Trigger>,
+  ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
+>((props, ref) => {
+  const { isPhone } = useViewport();
+  return isPhone ? (
+    <BottomSheetTrigger ref={ref} {...props} />
+  ) : (
+    <PopoverPrimitive.Trigger ref={ref} {...props} />
+  );
+});
+PopoverTrigger.displayName = PopoverPrimitive.Trigger.displayName;
 
-const PopoverAnchor = PopoverPrimitive.Anchor;
+/** Phones: a sheet has no anchor, so this renders its element plainly. */
+const PopoverAnchor = forwardRef<
+  ElementRef<typeof PopoverPrimitive.Anchor>,
+  ComponentPropsWithoutRef<typeof PopoverPrimitive.Anchor>
+>(({ asChild, ...props }, ref) => {
+  const { isPhone } = useViewport();
+  if (!isPhone) {
+    return <PopoverPrimitive.Anchor ref={ref} asChild={asChild} {...props} />;
+  }
+  const Comp = asChild ? Slot : "div";
+  return <Comp ref={ref} {...props} />;
+});
+PopoverAnchor.displayName = PopoverPrimitive.Anchor.displayName;
 
 const PopoverContent = forwardRef<
   ElementRef<typeof PopoverPrimitive.Content>,
   ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
-      align={align}
-      sideOffset={sideOffset}
-      className={cn(
-        "z-50 origin-(--radix-popover-content-transform-origin) rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        className
-      )}
-      {...props}
-    />
-  </PopoverPrimitive.Portal>
-));
+>(
+  (
+    { className, align = "center", sideOffset = 4, children, ...props },
+    ref
+  ) => {
+    const { isPhone } = useViewport();
+    if (isPhone) {
+      return (
+        <PopupSheetContent
+          ref={ref}
+          label={props["aria-label"]}
+          className={className}
+          {...props}
+        >
+          {children}
+        </PopupSheetContent>
+      );
+    }
+    return (
+      <PopoverPrimitive.Portal>
+        <PopoverPrimitive.Content
+          ref={ref}
+          align={align}
+          sideOffset={sideOffset}
+          className={cn(
+            "z-50 origin-(--radix-popover-content-transform-origin) rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+            className
+          )}
+          {...props}
+        >
+          <ActionPresentationBoundary>{children}</ActionPresentationBoundary>
+        </PopoverPrimitive.Content>
+      </PopoverPrimitive.Portal>
+    );
+  }
+);
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
 const PopoverHeader = forwardRef<
@@ -65,7 +148,18 @@ const PopoverFooter = forwardRef<
 ));
 PopoverFooter.displayName = "PopoverFooter";
 
-const PopoverClose = PopoverPrimitive.Close;
+const PopoverClose = forwardRef<
+  ElementRef<typeof PopoverPrimitive.Close>,
+  ComponentPropsWithoutRef<typeof PopoverPrimitive.Close>
+>((props, ref) => {
+  const { isPhone } = useViewport();
+  return isPhone ? (
+    <BottomSheetClose ref={ref} {...props} />
+  ) : (
+    <PopoverPrimitive.Close ref={ref} {...props} />
+  );
+});
+PopoverClose.displayName = PopoverPrimitive.Close.displayName;
 
 export {
   Popover,

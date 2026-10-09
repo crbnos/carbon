@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
+import { getVapidDetails } from "@carbon/env/push.server";
 import { validationError, validator } from "@carbon/form";
 import {
   getNotificationTopicChannels,
@@ -16,11 +17,13 @@ import {
   USER_FACING_NOTIFICATION_TOPICS
 } from "@carbon/notifications";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  HStack,
   Switch,
   VStack
 } from "@carbon/react";
@@ -28,6 +31,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetchers, useLoaderData, useSubmit } from "react-router";
+import { usePushSubscription } from "~/hooks/usePushSubscription";
 import {
   getNotificationPreferences,
   notificationPreferenceValidator,
@@ -35,6 +39,7 @@ import {
 } from "~/modules/account";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { dismissBrowserNotificationsPrompt } from "~/utils/push";
 
 export const handle: Handle = {
   breadcrumb: msg`Notifications`,
@@ -59,10 +64,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companyHasFeature(client, companyId, { feature: "EMAIL_NOTIFICATIONS" })
   ]);
 
+  const pushKeys = getVapidDetails();
+
   return {
     preferences: preferences.data ?? [],
     slackActive: slackIntegration.data?.active ?? false,
-    emailPlanEnabled
+    emailPlanEnabled,
+    // Null hides every push control: the deployment has no push keys (no
+    // SESSION_SECRET).
+    push: pushKeys ? { publicKey: pushKeys.publicKey } : null
   };
 }
 
@@ -100,8 +110,9 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function AccountNotifications() {
-  const { preferences, slackActive, emailPlanEnabled } =
+  const { preferences, slackActive, emailPlanEnabled, push } =
     useLoaderData<typeof loader>();
+  const device = usePushSubscription({ publicKey: push?.publicKey ?? null });
   const submit = useSubmit();
   const fetchers = useFetchers();
   const { t } = useLingui();
@@ -164,6 +175,68 @@ export default function AccountNotifications() {
 
   return (
     <VStack spacing={4} className="pb-6">
+      {push && (
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between">
+              <div>
+                <CardTitle>
+                  <Trans>Browser notifications</Trans>
+                </CardTitle>
+                <CardDescription>
+                  {device.state === "off" && (
+                    <Trans>Get your Carbon notifications as they happen.</Trans>
+                  )}
+                  {device.state === "on" && (
+                    <Trans>
+                      Browser notifications are on for this browser.
+                    </Trans>
+                  )}
+                  {device.state === "denied" && (
+                    <Trans>
+                      Notifications are blocked for Carbon in this
+                      browser&apos;s site settings.
+                    </Trans>
+                  )}
+                  {device.state === "unsupported" && (
+                    <Trans>
+                      This browser does not support push notifications. On
+                      iPhone or iPad, add Carbon to the Home Screen first.
+                    </Trans>
+                  )}
+                </CardDescription>
+              </div>
+              {device.state === "off" && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={device.turnOn}
+                  isDisabled={device.busy}
+                  isLoading={device.busy}
+                >
+                  <Trans>Enable</Trans>
+                </Button>
+              )}
+              {device.state === "on" && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={async () => {
+                    // Off for this browser, for everyone: the bell stops
+                    // offering it too — but only once it is really off.
+                    if (await device.turnOff()) {
+                      dismissBrowserNotificationsPrompt({ permanently: true });
+                    }
+                  }}
+                  isDisabled={device.busy}
+                >
+                  <Trans>Disable</Trans>
+                </Button>
+              )}
+            </HStack>
+          </CardHeader>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>

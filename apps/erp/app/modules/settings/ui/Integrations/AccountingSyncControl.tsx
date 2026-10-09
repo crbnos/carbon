@@ -35,7 +35,7 @@ export function AccountingSyncControl({
   const isBlocked = !checked && unmappedRequiredCount > 0;
 
   return (
-    <div className="flex items-start justify-between gap-4 rounded-md border border-border bg-muted/40 px-3 py-2">
+    <div className="flex items-start justify-between gap-4 rounded-md border border-border bg-muted/40 px-3 py-2 max-md:border-0 max-md:p-0 max-md:rounded-none max-md:bg-transparent">
       <div className="flex min-w-0 flex-col gap-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">

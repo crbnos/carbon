@@ -8,9 +8,11 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  useViewport,
   VStack
 } from "@carbon/react";
 import Dagre from "@dagrejs/dagre";
+import { useLingui } from "@lingui/react/macro";
 import {
   Background,
   type Edge,
@@ -77,13 +79,15 @@ type Props = {
 function computeLayout(
   operations: Operation[],
   dependencies: Dependency[],
-  direction: LayoutDirection
+  direction: LayoutDirection,
+  compact: boolean
 ): { nodes: Node[]; edges: Edge[] } {
   const g = new Dagre.graphlib.Graph();
   g.setGraph({
     rankdir: direction,
-    nodesep: 80,
-    ranksep: 120,
+    // Phones: tighter spacing, so less panning at the 0.6 fit.
+    nodesep: compact ? 24 : 80,
+    ranksep: compact ? 56 : 120,
     edgesep: 30,
     marginx: 40,
     marginy: 40
@@ -154,12 +158,24 @@ function computeLayout(
 }
 
 function JobDagInner({ operations, dependencies }: Props) {
-  const [direction, setDirection] = useState<LayoutDirection>("LR");
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
+  // Phones read top to bottom until the operator picks a direction.
+  const [chosenDirection, setDirection] = useState<LayoutDirection | null>(
+    null
+  );
+  const direction = chosenDirection ?? (isPhone ? "TB" : "LR");
   const { fitView } = useReactFlow();
+  // On a phone, fitting the whole graph shrinks nodes past reading size, so
+  // fit no smaller than 0.6 and let the operator pan the rest.
+  const fitViewOptions = useMemo(
+    () => (isPhone ? { padding: 0.1, minZoom: 0.6 } : { padding: 0.1 }),
+    [isPhone]
+  );
 
   const { nodes: layoutNodes, edges: layoutEdges } = useMemo(
-    () => computeLayout(operations, dependencies, direction),
-    [operations, dependencies, direction]
+    () => computeLayout(operations, dependencies, direction, isPhone),
+    [operations, dependencies, direction, isPhone]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes);
@@ -168,28 +184,29 @@ function JobDagInner({ operations, dependencies }: Props) {
   useEffect(() => {
     setNodes(layoutNodes);
     setEdges(layoutEdges);
-    setTimeout(() => fitView({ padding: 0.1 }), 50);
-  }, [layoutNodes, layoutEdges, setNodes, setEdges, fitView]);
+    setTimeout(() => fitView(fitViewOptions), 50);
+  }, [layoutNodes, layoutEdges, setNodes, setEdges, fitView, fitViewOptions]);
 
   const toggleDirection = useCallback(() => {
-    setDirection((d) => (d === "LR" ? "TB" : "LR"));
-  }, []);
+    setDirection(direction === "LR" ? "TB" : "LR");
+  }, [direction]);
 
   const handleFitView = useCallback(() => {
-    fitView({ padding: 0.1 });
-  }, [fitView]);
+    fitView(fitViewOptions);
+  }, [fitView, fitViewOptions]);
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="relative flex flex-col h-full w-full">
+      {/* Phones: the toolbar floats over the canvas, bottom-right. */}
       <HStack
-        className="border-b border-border px-3 py-1.5 bg-card"
+        className="border-b border-border px-3 py-1.5 bg-card max-md:absolute max-md:right-4 max-md:bottom-[calc(1rem+env(safe-area-inset-bottom))] max-md:z-20 max-md:border-0 max-md:bg-transparent max-md:p-0"
         spacing={2}
       >
         <button
           type="button"
           onClick={toggleDirection}
           className={cn(
-            "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5",
+            "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5 max-md:h-11 max-md:px-3",
             "border border-border bg-background hover:bg-accent/60 transition-colors"
           )}
         >
@@ -198,18 +215,18 @@ function JobDagInner({ operations, dependencies }: Props) {
           ) : (
             <LuArrowDown className="w-3.5 h-3.5" />
           )}
-          {direction === "LR" ? "Left to Right" : "Top to Bottom"}
+          {direction === "LR" ? t`Left to Right` : t`Top to Bottom`}
         </button>
         <button
           type="button"
           onClick={handleFitView}
           className={cn(
-            "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5",
+            "h-7 px-2 rounded-md text-xs font-medium flex items-center gap-1.5 max-md:h-11 max-md:px-3",
             "border border-border bg-background hover:bg-accent/60 transition-colors"
           )}
         >
           <LuMaximize className="w-3.5 h-3.5" />
-          Fit
+          {t`Fit`}
         </button>
       </HStack>
 
@@ -223,7 +240,7 @@ function JobDagInner({ operations, dependencies }: Props) {
           edgeTypes={edgeTypes}
           proOptions={proOptions}
           fitView
-          fitViewOptions={{ padding: 0.1 }}
+          fitViewOptions={fitViewOptions}
           nodesDraggable={false}
           nodesConnectable={false}
           edgesFocusable={false}
@@ -235,7 +252,7 @@ function JobDagInner({ operations, dependencies }: Props) {
             nodeStrokeWidth={3}
             pannable
             zoomable
-            className="!bg-card !border-border"
+            className="!bg-card !border-border max-md:!hidden"
           />
         </ReactFlow>
         <DagLegend />

@@ -4,6 +4,7 @@
 
 import type { Color } from "@carbon/utils";
 import { getColor, getColorByValue } from "@carbon/utils";
+import { createContext, useContext } from "react";
 import type { BadgeProps } from "./Badge";
 import { Badge } from "./Badge";
 import { useMode } from "./hooks";
@@ -13,9 +14,19 @@ type EnumerableProps = BadgeProps & {
   color?: Color;
 };
 
+/**
+ * Phones: inside a compact row's context line, enumerated values read as plain
+ * text instead of colour badges (the row's status pills stay badges).
+ */
+const EnumerableAsTextContext = createContext(false);
+const EnumerableAsText = EnumerableAsTextContext.Provider;
+const useEnumerableAsText = () => useContext(EnumerableAsTextContext);
+
 const Enumerable = ({ value, color, ...props }: EnumerableProps) => {
   const mode = useMode();
+  const asText = useContext(EnumerableAsTextContext);
   if (!value) return null;
+  if (asText) return <span>{value}</span>;
 
   const style = color ? getColor(color, mode) : getColorByValue(value, mode);
   return (
@@ -28,4 +39,4 @@ const Enumerable = ({ value, color, ...props }: EnumerableProps) => {
   );
 };
 
-export { Enumerable };
+export { Enumerable, EnumerableAsText, useEnumerableAsText };

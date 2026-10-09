@@ -49117,6 +49117,106 @@ export type Database = {
           }
         ]
       }
+      pushSubscription: {
+        Row: {
+          auth: string
+          companyId: string
+          createdAt: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updatedAt: string
+          userAgent: string | null
+          userId: string
+        }
+        Insert: {
+          auth: string
+          companyId: string
+          createdAt?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updatedAt?: string
+          userAgent?: string | null
+          userId: string
+        }
+        Update: {
+          auth?: string
+          companyId?: string
+          createdAt?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updatedAt?: string
+          userAgent?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       qualityDocument: {
         Row: {
           assignee: string | null

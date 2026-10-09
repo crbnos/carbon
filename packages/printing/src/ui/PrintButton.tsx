@@ -15,7 +15,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { LuCheck, LuPrinter } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -38,7 +38,8 @@ export function PrintButton({
   disabled,
   variant = "secondary",
   size,
-  isIcon = false
+  isIcon = false,
+  label
 }: {
   sourceDocument: string;
   sourceDocumentId: string;
@@ -52,6 +53,8 @@ export function PrintButton({
   // Render as an icon-only button (printer glyph, no label) instead of the
   // default labeled button. Same print/download flow either way.
   isIcon?: boolean;
+  /** The labeled button's text. Defaults to "Print". */
+  label?: ReactNode;
 }) {
   const { printerRoutes, resolvePrinterRoute, printPath } = usePrinting();
   const modal = useDisclosure();
@@ -122,7 +125,7 @@ export function PrintButton({
           disabled={disabled}
           onClick={handleClick}
         >
-          <Trans>Print</Trans>
+          {label ?? <Trans>Print</Trans>}
         </Button>
       )}
 

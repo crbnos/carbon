@@ -12,6 +12,7 @@ import {
 } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { IconButton } from "./IconButton";
+import { compactFooterClassName } from "./Modal";
 import { cn } from "./utils/cn";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -110,7 +111,7 @@ const CardAttribute = forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-row md:flex-col items-start justify-start gap-2",
+      "flex flex-row md:flex-col items-start justify-start gap-2 max-md:min-h-12 max-md:items-center max-md:justify-between",
       className
     )}
     {...props}
@@ -124,7 +125,7 @@ const CardAttributes = forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col md:flex-row gap-8", className)}
+    className={cn("flex flex-col md:flex-row gap-8 max-md:gap-0", className)}
     {...props}
   />
 ));
@@ -167,7 +168,7 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
       <div
         ref={ref}
         className={cn(
-          "flex flex-col gap-1 px-6 py-4 text-muted-foreground",
+          "flex flex-col gap-1 px-6 py-4 text-muted-foreground max-md:px-4 max-md:py-3",
           context?.isCollapsed && "cursor-pointer",
           className
         )}
@@ -212,11 +213,14 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     if (context?.isCollapsed) {
       return null;
     }
+    // Phones square off the panel's top under its header. When the header
+    // before it is hidden on phones, the panel is the card's top edge, so it
+    // stays rounded.
     return (
       <div
         ref={ref}
         className={cn(
-          "flex flex-col flex-1 p-6 m-[-1px] rounded-xl border border-border bg-card dark:bg-muted/40",
+          "flex flex-col flex-1 p-6 m-[-1px] rounded-xl border border-border bg-card dark:bg-muted/40 max-md:p-4 max-md:rounded-t-none max-md:[&:is([class~='max-md:hidden']+*)]:rounded-t-xl",
           className
         )}
         {...props}
@@ -226,8 +230,13 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 );
 CardContent.displayName = "CardContent";
 
-const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => {
+type CardFooterProps = HTMLAttributes<HTMLDivElement> & {
+  /** Phones: pin the footer's actions to the bottom of the screen. */
+  sticky?: boolean;
+};
+
+const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
+  ({ className, sticky = false, ...props }, ref) => {
     const context = useContext(CardContext);
     if (context?.isCollapsed) {
       return null;
@@ -235,7 +244,14 @@ const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     return (
       <div
         ref={ref}
-        className={cn("flex items-center py-4 px-6 gap-2", className)}
+        className={cn(
+          "flex items-center py-4 px-6 gap-2 max-md:px-4",
+          // Phones: the same full-width 44pt actions as a sheet footer.
+          sticky && compactFooterClassName,
+          sticky &&
+            "max-md:z-10 max-md:border-t max-md:border-border max-md:bg-card max-md:pb-safe-4",
+          className
+        )}
         {...props}
       />
     );

@@ -10,17 +10,13 @@ import {
   CardFooter,
   CardHeader,
   cn,
-  Heading,
   HStack,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useRouteData
 } from "@carbon/react";
-import {
-  convertDateStringToIsoString,
-  formatDurationMilliseconds
-} from "@carbon/utils";
+import { convertDateStringToIsoString } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
@@ -35,12 +31,18 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { DateTime, OperationStatusIcon } from "~/components";
 import Avatar from "~/components/Avatar";
-import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { DeadlineIcon } from "~/components/Icons";
+import {
+  AssigneeTags,
+  OperationDuration,
+  PhoneThumbnail,
+  QuantityStat
+} from "~/components/OperationCardParts";
 import { useDateFormatter } from "~/hooks";
+import { withOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { DUE_URGENCY_BORDER, getDueUrgency } from "../dueUrgency";
 import type { DisplaySettings, Item } from "../types";
@@ -118,25 +120,32 @@ export function ItemCard({
     ? Array.from(progressByItemId[item.id].employees!)
     : undefined;
 
+  const location = useLocation();
   const isBatch = (item.batchSize ?? 0) > 1 && !!item.batchId;
   const urgency = getDueUrgency({ ...item, status }, scheduleToday);
 
   return (
     <Link
-      to={isBatch ? path.to.batch(item.batchId!) : path.to.operation(item.id)}
+      to={withOrigin(
+        isBatch ? path.to.batch(item.batchId!) : path.to.operation(item.id),
+        location
+      )}
     >
       <Card
         className={cn(
-          "max-w-[330px]",
+          "max-w-[330px] max-md:max-w-none",
           cardVariants({
             status: status
           }),
           urgency && DUE_URGENCY_BORDER[urgency]
         )}
       >
-        <CardHeader className="flex flex-col justify-between relative gap-2">
+        <CardHeader className="flex flex-col justify-between relative gap-2 max-md:pb-1">
           <div className="flex w-full max-w-full justify-between items-start gap-2">
-            <div className="flex flex-col space-y-0 min-w-0">
+            {showThumbnail && item.thumbnailPath && (
+              <PhoneThumbnail path={item.thumbnailPath} alt={item.title} />
+            )}
+            <div className="flex flex-col space-y-0 min-w-0 max-md:flex-1">
               {item.itemReadableId && (
                 <span className="text-xs text-muted-foreground line-clamp-1">
                   {isBatch ? item.batchReadableId : item.itemReadableId}
@@ -159,74 +168,76 @@ export function ItemCard({
                   </TooltipContent>
                 </Tooltip>
               )}
-              <Heading size="h4" className="text-foreground">
+              <QuantityStat className="text-foreground">
                 {isBatch
                   ? `×${item.batchSize} · ${item.targetQuantity}`
                   : item.targetQuantity}
-              </Heading>
+              </QuantityStat>
             </HStack>
           </div>
 
-          {showProgress &&
-            Number.isFinite(progress) &&
-            Number.isFinite(item?.duration) &&
-            Number(progress) >= 0 &&
-            Number(item?.duration) > 0 && (
-              <HStack className="mt-2">
-                <BarProgress
-                  gradient
-                  invertGradient
-                  activeClassName={
-                    progress > (item.duration ?? 0)
-                      ? "bg-red-500"
-                      : status === "Paused"
-                        ? "bg-yellow-500"
-                        : "bg-emerald-500"
-                  }
-                  progress={Math.min(
-                    progress && item.duration
-                      ? (progress / item.duration) * 100
-                      : 0,
-                    100
-                  )}
-                />
-                <LuTimer className="text-muted-foreground w-4 h-4" />
-              </HStack>
-            )}
-          {showProgress &&
-            Number.isFinite(item.quantity) &&
-            Number(item.quantity) > 0 && (
-              <HStack className="mt-2">
-                <BarProgress
-                  segments={[
-                    {
-                      value: item.quantityCompleted ?? 0,
-                      className: "bg-emerald-500"
-                    },
-                    {
-                      value: item.quantityReworked ?? 0,
-                      className: "bg-yellow-500"
-                    },
-                    {
-                      value: item.quantityScrapped ?? 0,
-                      className: "bg-red-500"
+          <div className="contents max-md:grid max-md:grid-cols-2 max-md:gap-3 max-md:[&>*:only-child]:col-span-2">
+            {showProgress &&
+              Number.isFinite(progress) &&
+              Number.isFinite(item?.duration) &&
+              Number(progress) >= 0 &&
+              Number(item?.duration) > 0 && (
+                <HStack className="mt-2">
+                  <BarProgress
+                    gradient
+                    invertGradient
+                    activeClassName={
+                      progress > (item.duration ?? 0)
+                        ? "bg-red-500"
+                        : status === "Paused"
+                          ? "bg-yellow-500"
+                          : "bg-emerald-500"
                     }
-                  ]}
-                  max={item.targetQuantity || 1}
-                  progress={
-                    item.quantityCompleted && item.targetQuantity
-                      ? (item.quantityCompleted / item.targetQuantity) * 100
-                      : 0
-                  }
-                />
-                <LuCircleCheck className="text-muted-foreground w-4 h-4" />
-              </HStack>
-            )}
+                    progress={Math.min(
+                      progress && item.duration
+                        ? (progress / item.duration) * 100
+                        : 0,
+                      100
+                    )}
+                  />
+                  <LuTimer className="text-muted-foreground w-4 h-4" />
+                </HStack>
+              )}
+            {showProgress &&
+              Number.isFinite(item.quantity) &&
+              Number(item.quantity) > 0 && (
+                <HStack className="mt-2">
+                  <BarProgress
+                    segments={[
+                      {
+                        value: item.quantityCompleted ?? 0,
+                        className: "bg-emerald-500"
+                      },
+                      {
+                        value: item.quantityReworked ?? 0,
+                        className: "bg-yellow-500"
+                      },
+                      {
+                        value: item.quantityScrapped ?? 0,
+                        className: "bg-red-500"
+                      }
+                    ]}
+                    max={item.targetQuantity || 1}
+                    progress={
+                      item.quantityCompleted && item.targetQuantity
+                        ? (item.quantityCompleted / item.targetQuantity) * 100
+                        : 0
+                    }
+                  />
+                  <LuCircleCheck className="text-muted-foreground w-4 h-4" />
+                </HStack>
+              )}
+          </div>
         </CardHeader>
 
-        <CardContent className="gap-2 text-left whitespace-pre-wrap text-sm">
+        <CardContent className="gap-2 text-left whitespace-pre-wrap text-sm max-md:border-t-0 max-md:pt-1 max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-1.5 max-md:[&>*]:min-w-0">
           {showThumbnail && item.thumbnailPath && (
-            <div className="flex justify-center">
+            <div className="flex justify-center max-md:hidden">
               <img
                 src={getPrivateUrl(item.thumbnailPath)}
                 alt={item.title}
@@ -234,7 +245,7 @@ export function ItemCard({
               />
             </div>
           )}
-          <HStack className="justify-start space-x-2">
+          <HStack className="justify-start space-x-2 max-md:col-span-2">
             <LuCirclePlay className="text-muted-foreground" />
             <span className="text-sm line-clamp-1">
               {isBatch && item.batchJobReadableIds?.length
@@ -245,7 +256,7 @@ export function ItemCard({
           </HStack>
 
           {showDescription && item.description && (
-            <HStack className="justify-start space-x-2">
+            <HStack className="justify-start space-x-2 max-md:col-span-2">
               <LuClipboardCheck className="text-muted-foreground" />
               <span className="text-sm line-clamp-1">{item.description}</span>
             </HStack>
@@ -257,12 +268,7 @@ export function ItemCard({
             </HStack>
           )}
           {showDuration && typeof item.duration === "number" && (
-            <HStack className="justify-start space-x-2">
-              <LuTimer className="text-muted-foreground" />
-              <span className="text-sm">
-                {formatDurationMilliseconds(item.duration)}
-              </span>
-            </HStack>
+            <OperationDuration value={item.duration} />
           )}
           {showDueDate && item.deadlineType && (
             <HStack className="justify-start space-x-2">
@@ -310,7 +316,7 @@ export function ItemCard({
             )}
 
           {Array.isArray(employeeIds) && employeeIds.length > 0 && (
-            <HStack className="justify-start space-x-2">
+            <HStack className="justify-start space-x-2 max-md:order-1">
               <Avatar size="xs" name="Active Employee" />
               <span className="text-sm">
                 <Trans>{employeeIds.length} Active</Trans>
@@ -319,38 +325,32 @@ export function ItemCard({
           )}
 
           {showCustomer && item.customerId && (
-            <HStack className="justify-start space-x-2">
-              <LuSquareUser className="text-muted-foreground" />
-              <HStack className="truncate no-underline hover:no-underline">
+            <HStack className="justify-start space-x-2 min-w-0">
+              <LuSquareUser className="text-muted-foreground shrink-0" />
+              <HStack className="min-w-0 truncate no-underline hover:no-underline">
                 <Avatar size="xs" name={customer?.name ?? ""} />
-                <span>{customer?.name}</span>
+                <span className="truncate">{customer?.name}</span>
               </HStack>
             </HStack>
           )}
 
           {Number(item.quantityScrapped) > 0 && (
-            <HStack className="justify-start space-x-2 text-red-500">
+            <HStack className="justify-start space-x-2 text-red-500 max-md:order-1">
               <LuTrash className="w-4 h-4" />
               <span className="text-sm">
                 <Trans>{item.quantityScrapped} Scrapped</Trans>
               </span>
             </HStack>
           )}
+          {(item.assignee || (item.tags && item.tags.length > 0)) && (
+            <div className="hidden flex-wrap items-center gap-1 text-xs max-md:order-2 max-md:col-span-2 max-md:flex">
+              <AssigneeTags assignee={item.assignee} tags={item.tags} />
+            </div>
+          )}
         </CardContent>
         {(item.assignee || (item.tags && item.tags.length > 0)) && (
-          <CardFooter className="items-center justify-start space-2 text-xs flex-wrap">
-            {item.assignee && (
-              <EmployeeAvatar size="xs" employeeId={item.assignee} />
-            )}
-            {item.tags?.map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="border dark:border-none dark:shadow-button-base"
-              >
-                {tag}
-              </Badge>
-            ))}
+          <CardFooter className="items-center justify-start space-2 text-xs flex-wrap max-md:hidden">
+            <AssigneeTags assignee={item.assignee} tags={item.tags} />
           </CardFooter>
         )}
       </Card>

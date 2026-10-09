@@ -12,12 +12,16 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useShortcutKeyMap
+  useShortcutKeyMap,
+  useViewport
 } from "@carbon/react";
 import { useMemo } from "react";
 import type { IconType } from "react-icons";
 import { useNavigate } from "react-router";
 import { useOptimisticLocation, useUrlParams } from "~/hooks";
+import type { CompactTabItem } from "../CompactTabRow";
+import { CompactTabRow } from "../CompactTabRow";
+import { recordFrameSlot, recordTabsSlot } from "../Panels";
 import { useSlidingHoverCard } from "./useSlidingHoverCard";
 
 type DetailTopbarProps = {
@@ -67,6 +71,42 @@ const DetailTopbar = ({
       [links, navigate, params, preserveParams]
     )
   );
+
+  // Phones: inside a record frame the links join its one tab row; elsewhere
+  // they render here as a scrolling underline row.
+  const { isPhone } = useViewport();
+  const paramString = params.toString();
+  // `links` is a new array on every render: keyed on what the tabs show.
+  const itemsKey = links
+    .map((link) => {
+      const active = link.isActive
+        ? link.isActive(location.pathname)
+        : location.pathname.includes(link.to);
+      return `${link.name}|${link.to}|${link.count}|${active}`;
+    })
+    .join(",");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on itemsKey
+  const items = useMemo<CompactTabItem[]>(
+    () =>
+      links.map((route) => ({
+        id: route.to,
+        label: route.name,
+        to: preserveParams ? `${route.to}?${paramString}` : route.to,
+        count: route.count,
+        active: route.isActive
+          ? route.isActive(location.pathname)
+          : location.pathname.includes(route.to)
+      })),
+    [itemsKey, preserveParams, paramString]
+  );
+  recordTabsSlot.useProvide(isPhone ? items : null);
+  const inRecordFrame = recordFrameSlot.useValue() !== null;
+
+  if (isPhone) {
+    return inRecordFrame ? null : (
+      <CompactTabRow className="w-full min-w-0 shrink" items={items} />
+    );
+  }
 
   return (
     <div

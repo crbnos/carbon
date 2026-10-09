@@ -10,15 +10,14 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Heading,
-  ScrollArea,
-  VStack
+  ScrollArea
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuMoon, LuSun } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import type { Company } from "~/modules/settings";
 import {
@@ -81,15 +80,15 @@ export default function LogosRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack spacing={4} className="py-12 px-4 max-w-[60rem] h-full mx-auto">
-        <div className="flex w-full justify-between items-center gap-1">
-          <Heading size="h3">
+      <SettingsPage>
+        <div className="flex w-full justify-between items-center gap-1 max-md:justify-end">
+          <SettingsPageHeading>
             <Trans>Logos</Trans>
-          </Heading>
+          </SettingsPageHeading>
           <Badge variant="outline">{maxSizeMB}MB limit</Badge>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 w-full">
+        <div className="grid grid-cols-2 gap-4 w-full max-md:grid-cols-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -160,7 +159,7 @@ export default function LogosRoute() {
             <CompanyLogoForm company={company} target="logoWatermark" />
           </CardContent>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

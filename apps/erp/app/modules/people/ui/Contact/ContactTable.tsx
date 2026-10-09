@@ -23,6 +23,7 @@ const ContactTable = memo(({ data, count }: ContactTableProps) => {
         header: t`First Name`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P1",
           icon: <LuUser />
         }
       },
@@ -39,6 +40,7 @@ const ContactTable = memo(({ data, count }: ContactTableProps) => {
         header: t`Email`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuMail />
         }
       },

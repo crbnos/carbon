@@ -41,6 +41,7 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Quote`,
   realtime: [
     { table: "quote", column: "id", param: "quoteId" },
     { table: "quoteLine", column: "quoteId", param: "quoteId" },

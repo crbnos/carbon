@@ -112,6 +112,7 @@ const PurchaseOrdersTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -122,6 +123,7 @@ const PurchaseOrdersTable = memo(
             return <SupplierAvatar supplierId={row.original.supplierId} />;
           },
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({
@@ -144,6 +146,7 @@ const PurchaseOrdersTable = memo(
             return <PurchasingStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: purchaseOrderStatusType.map((status) => ({
@@ -256,6 +259,7 @@ const PurchaseOrdersTable = memo(
           header: t`Order Total`,
           cell: (item) => currencyFormatter.format(item.getValue<number>()),
           meta: {
+            mobile: "P2",
             icon: <LuDollarSign />,
             formatter: currencyFormatter.format,
             renderTotal: true

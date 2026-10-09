@@ -215,6 +215,9 @@ msgstr "доступно"
 msgid "Available"
 msgstr "Доступно"
 
+msgid "Back"
+msgstr ""
+
 msgid "Back to batch"
 msgstr "Вернуться к серии"
 
@@ -295,6 +298,9 @@ msgstr "Проверьте вашу электронную почту"
 msgid "Choose a job"
 msgstr "Выбрать производственный заказ"
 
+msgid "Choose an option"
+msgstr ""
+
 msgid "Clear"
 msgstr "Очистить"
 
@@ -360,6 +366,10 @@ msgstr "Организация"
 msgid "Complete"
 msgstr "Завершить"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Завершить все"
 
@@ -406,8 +416,7 @@ msgstr "Копировать в буфер обмена"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Создать {0}"
 
@@ -510,8 +519,8 @@ msgid "Due"
 msgstr "Срок"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -668,6 +677,9 @@ msgstr "Завершить с неподобранным материалом?"
 msgid "First due {0}"
 msgstr "Первый срок {0}"
 
+msgid "Fit"
+msgstr ""
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Исправьте выделенные количества перед завершением."
 
@@ -688,6 +700,9 @@ msgstr "Вернуться к операции"
 
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
+
+msgid "Heading {level}"
+msgstr ""
 
 msgid "Hide description"
 msgstr "Скрыть описание"
@@ -810,6 +825,9 @@ msgstr "Оставьте операцию на 0, чтобы пропустит�
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
+msgid "Left to Right"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
 
@@ -879,6 +897,9 @@ msgstr "Станок"
 msgid "Machine down for maintenance now?"
 msgstr "Станок на техобслуживание сейчас?"
 
+msgid "Main"
+msgstr ""
+
 msgid "Maintenance"
 msgstr "Техобслуживание"
 
@@ -930,6 +951,9 @@ msgstr "Метрическая"
 
 msgid "Model"
 msgstr "Модель"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "Дополнительные действия"
@@ -1160,13 +1184,14 @@ msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения MRB"
 
 msgid "Open Jobs"
-msgstr "Открытые производственные заказы"
+msgstr ""
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Открыть под-узел {0}: {1}"
 
+#. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "Операция нужна к {0}"
@@ -1185,6 +1210,9 @@ msgstr "Выполнено оператором"
 
 msgid "Optional"
 msgstr "Опционально"
+
+msgid "Options"
+msgstr ""
 
 msgid "or"
 msgstr "или"
@@ -1224,6 +1252,9 @@ msgstr "Не удалось разблокировать ключ доступа
 
 msgid "Pause"
 msgstr "Приостановить"
+
+msgid "Pause timer"
+msgstr ""
 
 msgid "Pick"
 msgstr "Выбрать"
@@ -1279,6 +1310,9 @@ msgstr "График обслуживания истек"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Нажмите ? на любой странице, чтобы открыть этот список. Горячие клавиши отключены при вводе в поле."
+
+msgid "Press '/' for commands"
+msgstr ""
 
 msgid "Prev"
 msgstr "Назад"
@@ -1646,6 +1680,9 @@ msgstr "Начать {0}"
 msgid "Start or pause the operation"
 msgstr "Запустить или приостановить операцию"
 
+msgid "Start timer"
+msgstr ""
+
 msgid "Station User"
 msgstr "Пользователь станции"
 
@@ -1744,6 +1781,9 @@ msgstr "Эта серия не имеет рабочих инструкций."
 msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
 
+msgid "This marks the dispatch as completed."
+msgstr ""
+
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Эта деталь была произведена на заказ. Списание может открыть заново ее маршрут для создания замены."
 
@@ -1778,11 +1818,23 @@ msgstr "Для запуска"
 msgid "Today"
 msgstr "Сегодня"
 
+msgid "Toggle labor"
+msgstr ""
+
+msgid "Toggle machine"
+msgstr ""
+
+msgid "Toggle setup"
+msgstr ""
+
 msgid "Toggle the sidebar"
 msgstr "Открыть/закрыть боковую панель"
 
 msgid "Tools"
 msgstr "Инструменты"
+
+msgid "Top to Bottom"
+msgstr ""
 
 msgid "Total"
 msgstr "Итого"
@@ -1918,6 +1970,9 @@ msgstr "Дисплеи рабочего центра"
 
 msgid "Work instructions"
 msgstr "Рабочие инструкции"
+
+msgid "Write a note…"
+msgstr ""
 
 msgid "Yes"
 msgstr "Да"

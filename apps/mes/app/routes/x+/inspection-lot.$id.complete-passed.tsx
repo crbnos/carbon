@@ -18,6 +18,7 @@ import {
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 // Completions posted here insert productionQuantity rows, whose SQL interceptor
@@ -68,7 +69,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     laborProductionEventId,
     machineProductionEventId
   };
-  const returnTo = path.to.inspection(operationId);
+  // The page the inspection was opened from; Back keeps returning there.
+  const origin = readOrigin(formData);
+  const returnTo = withOrigin(path.to.inspection(operationId), origin);
   const fail = async (err: unknown, message: string): Promise<never> => {
     throw redirect(returnTo, await flash(request, error(err, message)));
   };

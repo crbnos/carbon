@@ -16,7 +16,6 @@ import {
   CardHeader,
   CardTitle,
   Copy,
-  Heading,
   HStack,
   Modal,
   ModalBody,
@@ -36,6 +35,7 @@ import { Trans } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { getCompanySettings, updateTimeCardSetting } from "~/modules/settings";
@@ -175,13 +175,10 @@ export default function PeopleSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>People</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <Card>
           <CardHeader>
@@ -198,7 +195,7 @@ export default function PeopleSettingsRoute() {
           <CardContent>
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2">
+                <HStack className="items-center gap-2 max-md:flex-wrap">
                   <span className="font-medium">
                     {(companySettings as any).consoleEnabled ? (
                       <Trans>Console mode is enabled</Trans>
@@ -206,7 +203,7 @@ export default function PeopleSettingsRoute() {
                       <Trans>Console mode is disabled</Trans>
                     )}
                   </span>
-                  <Badge variant="yellow">
+                  <Badge variant="yellow" className="max-md:shrink-0">
                     <Trans>Beta</Trans>
                   </Badge>
                 </HStack>
@@ -249,7 +246,7 @@ export default function PeopleSettingsRoute() {
           <CardContent>
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2">
+                <HStack className="items-center gap-2 max-md:flex-wrap">
                   <span className="font-medium">
                     {companySettings.timeCardEnabled ? (
                       <Trans>Timecards are enabled</Trans>
@@ -257,7 +254,7 @@ export default function PeopleSettingsRoute() {
                       <Trans>Timecards are disabled</Trans>
                     )}
                   </span>
-                  <Badge variant="yellow">
+                  <Badge variant="yellow" className="max-md:shrink-0">
                     <Trans>Beta</Trans>
                   </Badge>
                 </HStack>
@@ -278,7 +275,7 @@ export default function PeopleSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
-      </VStack>
+      </SettingsPage>
 
       {showPinModal && generatedPin && (
         <Modal open onOpenChange={(open) => !open && setShowPinModal(false)}>

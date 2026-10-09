@@ -87,6 +87,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -97,6 +98,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           <CustomerAvatar customerId={row.original.customerId} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -155,6 +157,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: salesInvoiceStatusType.map((status) => ({
@@ -186,6 +189,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
         header: t`Invoice Total`,
         cell: (item) => currencyFormatter.format(item.getValue<number>()),
         meta: {
+          mobile: "P2",
           icon: <LuDollarSign />,
           formatter: currencyFormatter.format,
           renderTotal: true

@@ -5,20 +5,7 @@
 "use client";
 
 import { useCarbon } from "@carbon/auth";
-import {
-  Button,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  NavRailItem,
-  Spinner,
-  toast,
-  useDisclosure
-} from "@carbon/react";
+import { Button, NavRailItem, Spinner, toast } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -29,10 +16,11 @@ import type { action as endShiftAction } from "~/routes/x+/end-shift";
 import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
 import type { Operation } from "~/services/types";
 import { path } from "~/utils/path";
+import { ToolSurface, useToolSurface } from "./MoreSheet";
 
 export function EndShift() {
   const { t } = useLingui();
-  const confirmModal = useDisclosure();
+  const surface = useToolSurface("end-operations", t`End Operations`);
   const fetcher = useFetcher<typeof endShiftAction>();
   const user = useUser();
 
@@ -43,7 +31,7 @@ export function EndShift() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === true) {
-      confirmModal.onClose();
+      surface.done();
       toast.success(fetcher.data?.message ?? t`Operations ended`);
     }
 
@@ -55,7 +43,7 @@ export function EndShift() {
   const openModal = async () => {
     flushSync(() => {
       setLoading(true);
-      confirmModal.onOpen();
+      surface.open();
     });
 
     if (!carbon) return;
@@ -70,6 +58,58 @@ export function EndShift() {
     setLoading(false);
   };
 
+  const description = (
+    <Trans>
+      Are you sure you want to end all production events? This will end all
+      active operations without completing or finishing them.
+    </Trans>
+  );
+  const list = loading ? (
+    <div className="flex items-center justify-center w-full h-24">
+      <Spinner />
+    </div>
+  ) : operations?.length === 0 ? (
+    <div className="flex items-center justify-center w-full h-24 text-muted-foreground">
+      <Trans>No active operations</Trans>
+    </div>
+  ) : (
+    <div className="flex flex-col gap-4">
+      {operations.map((operation) => (
+        <div
+          key={operation.id}
+          className="flex items-start justify-between p-4 rounded-lg border"
+        >
+          <div className="flex flex-col gap-1">
+            <div className="font-medium">{operation.jobReadableId}</div>
+            <div className="text-sm text-muted-foreground">
+              {operation.description}
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <div className="text-sm text-muted-foreground">
+              {operation.itemReadableId}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+  const actions = (
+    <>
+      <Button type="button" onClick={surface.close} variant="secondary">
+        <Trans>Cancel</Trans>
+      </Button>
+      <Button
+        type="submit"
+        isDisabled={fetcher.state !== "idle"}
+        isLoading={fetcher.state !== "idle"}
+        variant="destructive"
+      >
+        <Trans>End Operations</Trans>
+      </Button>
+    </>
+  );
+
   return (
     <>
       <NavRailItem
@@ -77,84 +117,17 @@ export function EndShift() {
         label={t`End Operations`}
         onClick={openModal}
       />
-      {confirmModal.isOpen && (
-        <Modal
-          open={confirmModal.isOpen}
-          onOpenChange={(open) => !open && confirmModal.onClose()}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>End Operations</Trans>
-              </ModalTitle>
-              <ModalDescription>
-                <Trans>
-                  Are you sure you want to end all production events? This will
-                  end all active operations without completing or finishing
-                  them.
-                </Trans>
-              </ModalDescription>
-            </ModalHeader>
-            <ModalBody>
-              {loading ? (
-                <div className="flex items-center justify-center w-full h-24">
-                  <Spinner />
-                </div>
-              ) : operations?.length === 0 ? (
-                <div className="flex items-center justify-center w-full h-24 text-muted-foreground">
-                  <Trans>No active operations</Trans>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {operations.map((operation) => (
-                    <div
-                      key={operation.id}
-                      className="flex items-start justify-between p-4 rounded-lg border"
-                    >
-                      <div className="flex flex-col gap-1">
-                        <div className="font-medium">
-                          {operation.jobReadableId}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {operation.description}
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <div className="text-sm text-muted-foreground">
-                          {operation.itemReadableId}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ModalBody>
-            <fetcher.Form
-              method="post"
-              action={path.to.endShift}
-              className="w-full"
-            >
-              <ModalFooter>
-                <Button
-                  type="button"
-                  onClick={confirmModal.onClose}
-                  variant="secondary"
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button
-                  type="submit"
-                  isDisabled={fetcher.state !== "idle"}
-                  isLoading={fetcher.state !== "idle"}
-                  variant="destructive"
-                >
-                  <Trans>End Operations</Trans>
-                </Button>
-              </ModalFooter>
-            </fetcher.Form>
-          </ModalContent>
-        </Modal>
-      )}
+      <ToolSurface
+        surface={surface}
+        description={description}
+        body={list}
+        footer={actions}
+        wrap={(children) => (
+          <fetcher.Form method="post" action={path.to.endShift}>
+            {children}
+          </fetcher.Form>
+        )}
+      />
     </>
   );
 }

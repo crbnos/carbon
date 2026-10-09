@@ -9,8 +9,8 @@ import {
   isHeic,
   MediaUploader
 } from "@carbon/files/media";
-import { cn, toast } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Button, cn, toast, useViewport } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -35,6 +35,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   className = "mt-4"
 }) => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const [isConverting, setIsConverting] = useState(false);
@@ -65,12 +66,31 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   };
 
   const isDisabled = disabled || isConverting;
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: onDropWithConversion,
     accept,
     multiple,
     disabled: isDisabled
   });
+
+  // Phones cannot drag files in: one Upload button opens the same picker.
+  if (isPhone) {
+    return (
+      <div className={className}>
+        <input {...getInputProps()} />
+        <Button
+          variant="secondary"
+          size="lg"
+          leftIcon={<LuCloudUpload />}
+          isDisabled={isDisabled}
+          className="w-full"
+          onClick={() => open()}
+        >
+          <Trans>Upload</Trans>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div

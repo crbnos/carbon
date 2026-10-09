@@ -62,6 +62,7 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Part`,
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Parts`, to: path.to.parts },
     (data) => data?.partSummary?.readableIdWithRevision
@@ -205,6 +206,7 @@ export default function PartRoute() {
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
+            explorerLabel={isManufactured ? t`Manufacturing` : t`Used In`}
             explorer={
               <div className="flex flex-col h-full">
                 {isManufactured ? (
