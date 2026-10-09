@@ -3,6 +3,21 @@ set -e
 
 pnpm exec lint-staged
 
+# Conformance checks (@carbon/checks): the gate CI runs on every PR, ~5s here.
+# Any violation beyond the committed baseline blocks the commit; the failure
+# prints `<check-id>  <file>:<line>  <snippet>`. Fix the code, never the
+# baseline. Set CARBON_SKIP_CONFORMANCE_CHECK=1 to skip.
+if [ -z "$CARBON_SKIP_CONFORMANCE_CHECK" ] && git diff --cached --name-only | grep -qE '^(apps|packages)/.*\.(ts|tsx|sql)$'; then
+    echo "Running conformance checks..."
+    [ -f packages/config/dist/vitest.mjs ] || pnpm --silent --filter @carbon/config build
+    if ! pnpm --silent --filter @carbon/checks exec vitest run src/run.test.ts; then
+        echo ""
+        echo "Commit blocked by a conformance check. The violation is printed above."
+        echo "Skip it with: CARBON_SKIP_CONFORMANCE_CHECK=1 git commit ..."
+        exit 1
+    fi
+fi
+
 # Compile lingui translations if any relevant files were modified
 if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
     echo "Compiling translations..."

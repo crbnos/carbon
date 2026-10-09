@@ -123,8 +123,11 @@ prove it, and stop.
    Phase 1 (`/root-cause`). Never fix a guess.
 2. Read `.ai/lessons.md` for the affected area.
 3. Read the affected module/package `AGENTS.md`.
-4. Read `BACKWARD_COMPATIBILITY.md` if the brief lists any BC impact.
-5. If working a GitHub issue: `gh issue edit <number> --add-assignee carbon-agent --add-label "agent:working"`.
+4. Read `.claude/rules/write-time-checklist.md` — the sections for what the
+   fix touches (a write, tenancy, a read at volume, errors, dates, a
+   migration, UI, types, docs, tests).
+5. Read `BACKWARD_COMPATIBILITY.md` if the brief lists any BC impact.
+6. If working a GitHub issue: `gh issue edit <number> --add-assignee carbon-agent --add-label "agent:working"`.
 
 ### 3.2 Plan the change
 
@@ -155,6 +158,11 @@ sure Phase 4 (Browser verify) is in the phase set.
 ### 3.4 Implement
 
 - **One concern.** Fix the bug. No refactoring, no cleanup, no "while I'm here".
+- **Checklist first.** Before writing each file, answer the matching sections
+  of `.claude/rules/write-time-checklist.md` from the code. A write that
+  checks a status in one statement and writes in another, a bare
+  `await serviceFn()`, an unbounded `.in()` list — each is a bug the review
+  round will send back.
 - **Match surrounding patterns** — grep for similar code and copy its idiom.
 - **companyId scoping** on every new or modified tenant-data query. Never skip.
 - **Module discipline**: one `{module}.service.ts`, one `{module}.models.ts`.
@@ -189,6 +197,7 @@ to the human even in autonomous mode).
 | Check | Question |
 |-------|----------|
 | Scope | Did I change only what the brief called for? |
+| Checklist | Every matching section of `.claude/rules/write-time-checklist.md` re-answered over `git diff HEAD`, every "no" fixed? |
 | Red→green | Did I watch the test fail before the fix and pass after? |
 | companyId | Every new/modified query scoped? |
 | Callers | Every caller of a changed signature updated? |

@@ -8,6 +8,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Use the closest package/module `AGENTS.md` for local architecture, imports, and validation commands.
 - Follow `.claude/rules/` for subsystem-specific conventions (auto-loaded via `paths:` frontmatter).
 - Read `.ai/lessons.md` before non-trivial changes to avoid known pitfalls.
+- Answer `.claude/rules/write-time-checklist.md` for every file before you write it, and again over the diff before you commit. `/execute`, `/fix` and `/self-review` run it; `/check-and-commit` and the pre-commit hook run the `@carbon/checks` conformance gate behind it.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI.
@@ -54,6 +55,12 @@ pnpm run generate:types      # Regenerate DB types (after migrations)
 pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gate)
 pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
+
+The pre-commit hook (`scripts/git-hooks/pre-commit`) also runs the `@carbon/checks`
+conformance suite (`pnpm --filter @carbon/checks exec vitest run src/run.test.ts`, ~5 s)
+whenever a staged file is a `.ts`/`.tsx`/`.sql` under `apps/` or `packages/`. It is
+the same gate CI runs; a violation beyond the committed baseline blocks the commit.
+Fix the code, never the baseline. `CARBON_SKIP_CONFORMANCE_CHECK=1` skips it.
 
 `typecheck`, `test`, `lint` and `build` are cached by Turborepo: a package re-runs
 only when its own files, a workspace dependency's files, or the lockfile changed
@@ -165,6 +172,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Bug fix: runtime instrumentation | `.claude/skills/debugging-difficult-bugs/SKILL.md` |
 | Bug fix: end-to-end pipeline (diagnose → fix → verify → commit) | `.claude/skills/fix/SKILL.md` |
 | Pre-commit verification gate | `.claude/skills/check-and-commit/SKILL.md` |
+| Write-time checklist (before writing any file; the same list `/self-review` runs) | `.claude/rules/write-time-checklist.md` |
 | Feature build (doer→gate→judge loop) | `.claude/skills/conductor/SKILL.md` |
 | Browser-verify a feature | `.claude/skills/test/SKILL.md` |
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
