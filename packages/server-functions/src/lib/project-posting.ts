@@ -12,7 +12,7 @@
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { inOrder } from "@carbon/database/rows";
-import { datetime, round } from "@carbon/utils";
+import { datetime, round, type ServiceCoverage } from "@carbon/utils";
 import { type Kysely, sql, type Transaction } from "kysely";
 
 export type ProjectCostTreatment =
@@ -27,6 +27,8 @@ export type ProjectPostingProject = {
   costAccountId: string | null;
   /** The project's own CIP asset (Capitalize). */
   fixedAssetId: string | null;
+  /** A Service project's contract project (By Coverage → Contract). */
+  parentProjectId?: string | null;
   /** For messages only. */
   identifier?: string | null;
   name?: string;
@@ -61,9 +63,20 @@ export type ProjectPostingContext = {
   defaults: {
     projectExpenseAccount: string | null;
     projectWorkInProgressAccount: string | null;
+    /** By Coverage: Warranty. */
+    warrantyExpenseAccount: string | null;
+    /** By Coverage: Billable, and Contract with no contract project. */
+    costOfGoodsSoldAccount: string | null;
+    /** By Coverage: Capitalized (a Refurbishment). */
+    workInProgressAccount: string | null;
   };
   /** The project's asset and each final-asset node's asset, by asset id. */
   assets: Map<string, ProjectPostingAsset>;
+  /**
+   * The parent project's own context (no element), when the project names one.
+   * A Service project's Contract charges post to its account.
+   */
+  parent?: ProjectPostingContext | null;
 };
 
 export type ResolvedProjectPostingAccount = {
@@ -143,6 +156,62 @@ export function resolveProjectTreatment(
 }
 
 /**
+ * By Coverage (a Service project): the charge's coverage decides the account.
+ * Warranty → Warranty Expense; Contract → the parent (contract) project's
+ * posting account, else Cost of Goods Sold; Billable → Cost of Goods Sold;
+ * Capitalized → Work in Progress (a Refurbishment's completion sweeps it).
+ */
+function coverageAccount(
+  ctx: ProjectPostingContext,
+  postingDate: string,
+  coverage: ServiceCoverage | null | undefined
+): string {
+  const required = (accountId: string | null, name: string) => {
+    if (!accountId) {
+      throw new ProjectChargeError(
+        `Set ${name} in Account Defaults before you charge a service order`
+      );
+    }
+    return accountId;
+  };
+
+  switch (coverage) {
+    case "Warranty":
+      return required(ctx.defaults.warrantyExpenseAccount, "Warranty Expense");
+    case "Contract": {
+      if (ctx.project.parentProjectId) {
+        if (!ctx.parent) {
+          throw new ProjectChargeError(
+            "The service order's contract project does not exist"
+          );
+        }
+        // A Statistical contract project keeps the natural account.
+        const parentAccount = resolveProjectPostingAccount(
+          ctx.parent,
+          postingDate
+        ).accountId;
+        if (parentAccount) return parentAccount;
+      }
+      return required(
+        ctx.defaults.costOfGoodsSoldAccount,
+        "Cost of Goods Sold"
+      );
+    }
+    case "Billable":
+      return required(
+        ctx.defaults.costOfGoodsSoldAccount,
+        "Cost of Goods Sold"
+      );
+    case "Capitalized":
+      return required(ctx.defaults.workInProgressAccount, "Work in Progress");
+    default:
+      throw new ProjectChargeError(
+        "A charge on a service order needs a coverage"
+      );
+  }
+}
+
+/**
  * The treatment and account a charge posts to on `postingDate`
  * (`YYYY-MM-DD`). The nearest element (itself, then its ancestors) whose
  * treatment is in effect on the date decides; else the project does.
@@ -150,13 +219,24 @@ export function resolveProjectTreatment(
  * Capitalize posts to the asset account of the asset it builds
  * (`capitalAssetId`): the CIP class while the asset is Under Construction,
  * its in-service class once it is Active (a late cost).
+ * By Coverage (Service projects) posts to the account of the charge's
+ * `coverage`, which the caller must pass.
  */
 export function resolveProjectPostingAccount(
   ctx: ProjectPostingContext,
-  postingDate: string
+  postingDate: string,
+  coverage?: ServiceCoverage | null
 ): ResolvedProjectPostingAccount {
   const { treatment, explicitAccount } = treatmentNode(ctx, postingDate);
   const noAsset = { fixedAssetId: null, postCapitalization: false };
+
+  if (treatment === "By Coverage") {
+    return {
+      treatment,
+      accountId: coverageAccount(ctx, postingDate, coverage),
+      ...noAsset
+    };
+  }
 
   if (treatment === "Capitalize") {
     // The asset decides the account, so an explicit account is ignored: the
@@ -349,12 +429,15 @@ type ElementRow = {
  * Loads the posting context of every (project, element) ref in 4 queries:
  * the projects, the elements with all their ancestors, the account
  * defaults, and the capital assets the projects and elements hold. A ref whose project is missing, or whose element is missing or
- * belongs to another project, has no entry in the map.
+ * belongs to another project, has no entry in the map. A project that names a
+ * parent project (a Service project's contract project) gets the parent's
+ * context in `parent`, loaded by one more call only when one is named.
  */
 export async function loadProjectPostingContexts(
   trx: Kysely<DB>,
   companyId: string,
-  refs: { projectId: string; projectElementId: string | null }[]
+  refs: { projectId: string; projectElementId: string | null }[],
+  { withParents = true }: { withParents?: boolean } = {}
 ): Promise<Map<string, ProjectPostingContext>> {
   const contexts = new Map<string, ProjectPostingContext>();
   if (refs.length === 0) return contexts;
@@ -379,7 +462,8 @@ export async function loadProjectPostingContexts(
           "status",
           "costTreatment",
           "costAccountId",
-          "fixedAssetId"
+          "fixedAssetId",
+          "parentProjectId"
         ])
         .where("id", "in", projectIds)
         .where("companyId", "=", companyId)
@@ -417,7 +501,13 @@ export async function loadProjectPostingContexts(
     () =>
       trx
         .selectFrom("accountDefault")
-        .select(["projectExpenseAccount", "projectWorkInProgressAccount"])
+        .select([
+          "projectExpenseAccount",
+          "projectWorkInProgressAccount",
+          "warrantyExpenseAccount",
+          "costOfGoodsSoldAccount",
+          "workInProgressAccount"
+        ])
         .where("companyId", "=", companyId)
         .executeTakeFirst()
   ]);
@@ -484,8 +574,33 @@ export async function loadProjectPostingContexts(
   );
   const accountDefaults = {
     projectExpenseAccount: defaults?.projectExpenseAccount ?? null,
-    projectWorkInProgressAccount: defaults?.projectWorkInProgressAccount ?? null
+    projectWorkInProgressAccount:
+      defaults?.projectWorkInProgressAccount ?? null,
+    warrantyExpenseAccount: defaults?.warrantyExpenseAccount ?? null,
+    costOfGoodsSoldAccount: defaults?.costOfGoodsSoldAccount ?? null,
+    workInProgressAccount: defaults?.workInProgressAccount ?? null
   };
+
+  // A Service project's contract project, loaded one level deep (its own
+  // parent is never read), only when a project names one.
+  const parentIds = withParents
+    ? [
+        ...new Set(
+          projects
+            .map((project) => project.parentProjectId)
+            .filter((id): id is string => Boolean(id))
+        )
+      ]
+    : [];
+  const parents =
+    parentIds.length === 0
+      ? new Map<string, ProjectPostingContext>()
+      : await loadProjectPostingContexts(
+          trx,
+          companyId,
+          parentIds.map((projectId) => ({ projectId, projectElementId: null })),
+          { withParents: false }
+        );
 
   for (const ref of refs) {
     const project = projectById.get(ref.projectId);
@@ -515,13 +630,18 @@ export async function loadProjectPostingContexts(
         costTreatment: project.costTreatment,
         costAccountId: project.costAccountId,
         fixedAssetId: project.fixedAssetId,
+        parentProjectId: project.parentProjectId,
         identifier: project.identifier,
         name: project.name
       },
       element,
       ancestors,
       defaults: accountDefaults,
-      assets
+      assets,
+      parent: project.parentProjectId
+        ? (parents.get(projectPostingKey(project.parentProjectId, null)) ??
+          null)
+        : null
     });
   }
 

@@ -16,7 +16,10 @@ import {
 
 const defaults = {
   projectExpenseAccount: "acct-expense",
-  projectWorkInProgressAccount: "acct-wip"
+  projectWorkInProgressAccount: "acct-wip",
+  warrantyExpenseAccount: "acct-warranty",
+  costOfGoodsSoldAccount: "acct-cogs",
+  workInProgressAccount: "acct-inventory-wip"
 };
 
 function project(
@@ -217,6 +220,62 @@ describe("resolveProjectPostingAccount: Capitalize", () => {
     expect(() => resolveProjectPostingAccount(ctx, "2026-03-01")).toThrow(
       "This capital project has no asset under construction. Release the project first."
     );
+  });
+});
+
+describe("resolveProjectPostingAccount: By Coverage", () => {
+  const service = (overrides: Partial<ProjectPostingContext> = {}) =>
+    context({
+      project: project({
+        identifier: "SVC000123",
+        costTreatment: "By Coverage"
+      }),
+      ...overrides
+    });
+  const accountOf = (ctx: ProjectPostingContext, coverage: string | null) =>
+    resolveProjectPostingAccount(
+      ctx,
+      "2028-02-01",
+      coverage as Parameters<typeof resolveProjectPostingAccount>[2]
+    ).accountId;
+
+  it("posts each coverage to its account", () => {
+    expect(accountOf(service(), "Warranty")).toBe("acct-warranty");
+    expect(accountOf(service(), "Contract")).toBe("acct-cogs");
+    expect(accountOf(service(), "Billable")).toBe("acct-cogs");
+    expect(accountOf(service(), "Capitalized")).toBe("acct-inventory-wip");
+  });
+
+  it("posts a Contract charge to the contract project's account", () => {
+    const ctx = service({
+      project: project({
+        identifier: "SVC000123",
+        costTreatment: "By Coverage",
+        parentProjectId: "prj-contract"
+      }),
+      parent: context({
+        project: project({ id: "prj-contract", costTreatment: "Expense" })
+      })
+    });
+    expect(accountOf(ctx, "Contract")).toBe("acct-expense");
+    // A Statistical contract project keeps the natural account.
+    const statistical = service({
+      project: ctx.project,
+      parent: context({
+        project: project({ id: "prj-contract", costTreatment: "Statistical" })
+      })
+    });
+    expect(accountOf(statistical, "Contract")).toBe("acct-cogs");
+  });
+
+  it("refuses a charge with no coverage, and a missing default by name", () => {
+    expect(() => accountOf(service(), null)).toThrow(ProjectChargeError);
+    expect(() =>
+      accountOf(
+        service({ defaults: { ...defaults, warrantyExpenseAccount: null } }),
+        "Warranty"
+      )
+    ).toThrow(/Warranty Expense/);
   });
 });
 

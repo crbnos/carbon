@@ -37,7 +37,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 3: Create the field service tables migration
 - [x] Task 4: Create the module, permissions and seeds migration
 - [x] Task 5: Apply migrations, regenerate types, ship RLS
-- [ ] Task 6: Add `resolveCoverage` and the coverage account
+- [x] Task 6: Add `resolveCoverage` and the coverage account
 - [ ] Task 7: Add `buildBillableItem` to the project posting helpers
 - [ ] Task 8: Post service time in `post-timesheet`
 - [ ] Task 9: Post service parts and install components in `post-project-issue`
@@ -1207,3 +1207,7 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 5: the Phase 1b and 1c project tables (`projectView`, `projectUserPreference`, `projectBaseline`, `projectChangeRequest*`) keep their rules; the plan's list leaves them out, and a Service order uses none of them.
 - Task 5 step 6: no `ID_REF_COLUMNS` entry was added. Every column the step names has an FK (Task 3 note), so the backup restore remaps it. `pnpm db:check:backups` passes.
 - Task 5: `authz migration field-service-rls` wrote `20261009154248_field-service-rls.sql` for 19 tables, and a second `pnpm db:migrate` recorded it. `vitest run src/authz` passes (35, with 2 new render tests for `projectModule`). The full `@carbon/database` suite passes (412). `authz-pieces.test.sql` passes with the new `projectModule` case (26 assertions), and `authz-fixes` and `journal-update-tenant-check` still pass. The pgTAP scripts were run through `/tmp/kpsql` (no `psql` binary). `@carbon/database`, `@carbon/jobs`, `@carbon/server-functions` and `erp` typecheck green.
+- Task 6: `resolveCoverage` types its order type and result with the generated enums (`ServiceOrderType`, `ServiceCoverage`, both exported from `@carbon/utils`). `resolveProjectPostingAccount` takes the coverage as an optional third argument; a By Coverage charge without one is refused ("A charge on a service order needs a coverage"), and so is every caller that does not pass one yet (a PO line, a job or a charge line on a Service project).
+- Task 6: the Contract branch needs the parent project's account, so `ProjectPostingContext` gains `parent` (the parent project's own context) and the project gains `parentProjectId`. `loadProjectPostingContexts` loads the parents with one more call, one level deep, only when a project names a parent; the defaults query also reads `warrantyExpenseAccount`, `costOfGoodsSoldAccount` and `workInProgressAccount`. A Statistical contract project has no account, so a Contract charge then posts to Cost of Goods Sold.
+- Task 6: the SQL mirror `project_posting_account` did not change. It raises "Cost treatment By Coverage is not available yet", which is right: job completion and backflush (its only callers) never charge a Service project in Phase A, and the SQL has no coverage to decide with.
+- Task 6: `project-posting.test.ts` adds 3 By Coverage cases beside the plan's 6 `resolveCoverage` cases. The project server-function tests (61) and the `@carbon/utils` suite (613) pass. `@carbon/utils`, `@carbon/server-functions`, `@carbon/jobs`, `erp` and `mes` typecheck green.
