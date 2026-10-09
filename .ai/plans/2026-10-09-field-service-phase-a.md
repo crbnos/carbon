@@ -33,7 +33,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 ## Progress
 
 - [x] Task 1: Create the enum migration
-- [ ] Task 2: Create the Service projects migration
+- [x] Task 2: Create the Service projects migration
 - [ ] Task 3: Create the field service tables migration
 - [ ] Task 4: Create the module, permissions and seeds migration
 - [ ] Task 5: Apply migrations, regenerate types, ship RLS
@@ -1193,3 +1193,6 @@ ls .ai/playbooks/field-service-phase-a.md
 
 - Prerequisite check: the Phase 1a, 1b and 1c artifacts this plan names exist (`projectElement`, `projectLedger`, `timesheetEntry`, `post-timesheet`, `post-project-issue`, `project-posting.ts`, part links, `buildElementsFromPart`). Each migration is applied with `pnpm db:migrate` before its commit, and the regenerated types, swagger and MCP digest go in the same commit, as in Phases 1a–1c.
 - Task 1: the new `journalEntrySourceType` value `Project Expense` broke the `@carbon/ee` and `erp` typechecks, so this commit fixes the enum mirrors. `POSTING_POLICY` gains `Project Expense` (journal, `defaultEnabled: true`, like `Timesheet` and `Project Issue`; the open follow-up on those defaults covers it too), and `posting-policy.test.ts` lists it. `journalEntrySourceTypes` (`accounting.models.ts`) gains it, and `JournalEntrySourceTypeIcon` shows it as `LuHandCoins`. The new `projectCostTreatment` value `By Coverage` broke `$projectId.details.tsx`, whose form offers 4 treatments; the route shows Expense for it, as it did for Capitalize in Phase 1a. A Service project never opens that page (Task 14), and its CHECK refuses any other treatment on save.
+- Task 2: the identifier CHECK is `project_identifier_check` (`20261009054539_projects-workspace.sql`), and it allows a NULL identifier. The new CHECK keeps that name and the NULL branch: `"identifier" IS NULL OR "projectType" = 'Service' OR "identifier" ~ '^[A-Z][A-Z0-9]{1,5}$'`. `project` also gains `project_parent_check` (no self parent), as `projectElement_parent_check` does.
+- Task 2: `projectExpenseEntry` gains `updatedBy` and `updatedAt`; the database conventions require `updatedBy` on every table with `createdBy`. Its `journalId` references `journal` (`ON DELETE SET NULL`) and `reversalOfId` the table itself, as on `timesheetEntry`. `projectBillableItem.reversalOfId` references the table itself, and `customerContractLineId` references `customerContractLine` (composite, `ON DELETE SET NULL ("customerContractLineId")`), so neither needs an `ID_REF_COLUMNS` entry. `salesInvoiceLine` has a single-column primary key, so its FK stays single-column, as the plan writes it. Every FK column is indexed as its full column list, and `timesheetEntry.serviceVisitId` is indexed here.
+- Task 2: `pnpm db:migrate` applied the migration, then its `authz sync` step failed because `projectExpenseEntry` and `projectBillableItem` have no manifest rule until Task 5 (as in Phase 1a Tasks 3–7). The migration is recorded in `supabase_migrations.schema_migrations`.

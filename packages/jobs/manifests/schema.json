@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009151059",
+  "schemaVersion": "20261009151846",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-09T15:17:52.644Z",
+  "exportedAt": "2026-10-09T15:23:15.340Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -5647,7 +5647,9 @@
         "fixedAssetId",
         "lockPlanAfterMilestoneId",
         "nextChangeRequestSequence",
-        "nextBaselineSequence"
+        "nextBaselineSequence",
+        "projectType",
+        "parentProjectId"
       ]
     },
     {
@@ -5758,7 +5760,8 @@
         "parameterFormula",
         "parameterItemField",
         "parameterContingencyPercent",
-        "trackedEntityId"
+        "trackedEntityId",
+        "fixedPrice"
       ]
     },
     {
@@ -5934,6 +5937,29 @@
       ]
     },
     {
+      "name": "projectExpenseEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "employeeId",
+        "entryDate",
+        "description",
+        "amount",
+        "coverage",
+        "coverageReason",
+        "serviceVisitId",
+        "journalId",
+        "reversalOfId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "projectLedger",
       "rows": 0,
       "columns": [
@@ -5958,7 +5984,9 @@
         "reversalOfId",
         "unallowable",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "coverage",
+        "coverageReason"
       ]
     },
     {
@@ -6052,7 +6080,10 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "coverage",
+        "coverageReason",
+        "serviceVisitId"
       ]
     },
     {
@@ -6399,6 +6430,32 @@
         "userId",
         "companyId",
         "viewedAt"
+      ]
+    },
+    {
+      "name": "projectBillableItem",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "projectLedgerId",
+        "customerContractLineId",
+        "itemId",
+        "description",
+        "quantity",
+        "unitPrice",
+        "amount",
+        "coverage",
+        "status",
+        "statusReason",
+        "reversalOfId",
+        "salesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
