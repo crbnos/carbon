@@ -346,6 +346,27 @@ export async function getServiceOrder(
 }
 
 /**
+ * The Depot Repair orders of an RMA, one per serial its Repair lines brought
+ * in, with their unit's status. A unit ships back once its order is Completed
+ * (or Closed) and it is still At Depot.
+ */
+export async function getDepotRepairOrdersByReturnOrder(
+  client: Client,
+  salesReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("serviceOrder")
+    .select(
+      "id, serviceOrderId, status, salesReturnOrderLineId, trackedEntityId, customerAsset:customerAsset!serviceOrder_asset_fkey(status), salesReturnOrderLine:salesReturnOrderLine!serviceOrder_rmaLine_fkey!inner(salesReturnOrderId)"
+    )
+    .eq("type", "Depot Repair")
+    .eq("companyId", companyId)
+    .eq("salesReturnOrderLine.salesReturnOrderId", salesReturnOrderId)
+    .order("serviceOrderId");
+}
+
+/**
  * What the new order form offers: the In Service customer assets (the only
  * subjects a field visit takes), the Active coverage contracts of their
  * customers, and the service templates. The asset list stops at the

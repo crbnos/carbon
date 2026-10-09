@@ -664,3 +664,17 @@ export function canOverrideCoverage(
   if (reversedIds.has(charge.id)) return false;
   return billableStatus !== "Billed";
 }
+
+/**
+ * A Depot Repair order whose unit can ship back: the work is done (Completed,
+ * or Closed after its invoice) and the unit is still at the depot.
+ */
+export function isReadyToShipBack(order: {
+  status: ServiceOrderStatus;
+  customerAsset: { status: string } | null;
+}): boolean {
+  return (
+    (order.status === "Completed" || order.status === "Closed") &&
+    order.customerAsset?.status === "At Depot"
+  );
+}

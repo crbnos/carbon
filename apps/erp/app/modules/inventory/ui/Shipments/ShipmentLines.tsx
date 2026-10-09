@@ -92,6 +92,8 @@ const ShipmentLines = () => {
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ShipmentLineTracking[];
+    /** A Sales Return Order shipment: the RMA lines whose disposition is Repair. */
+    repairLineIds?: string[];
     fixedAssetLines: {
       id: string;
       salesOrderLineId: string;
@@ -270,6 +272,10 @@ const ShipmentLines = () => {
                       key={line.id}
                       line={line}
                       shipment={routeData?.shipment}
+                      isRepairLine={
+                        !!line.lineId &&
+                        (routeData?.repairLineIds ?? []).includes(line.lineId)
+                      }
                       hasTrackingLabel={
                         routeData?.shipmentLineTracking?.some((t) => {
                           const attributes =
@@ -397,6 +403,7 @@ function ShipmentFixedAssetLineItem({
 function ShipmentLineItem({
   line,
   shipment,
+  isRepairLine,
   className,
   hasTrackingLabel,
   isReadOnly,
@@ -407,6 +414,8 @@ function ShipmentLineItem({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  /** The line ships a repaired unit back on its RMA's Repair line. */
+  isRepairLine: boolean;
   className?: string;
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
@@ -654,6 +663,7 @@ function ShipmentLineItem({
       {line.requiresSerialTracking && (
         <SerialForm
           shipment={shipment}
+          isRepairLine={isRepairLine}
           line={line}
           hasTrackingLabel={hasTrackingLabel}
           serialNumbers={serialNumbers}
@@ -679,11 +689,15 @@ function ShipmentLineItem({
 
 // Sales-return shipments (source "Sales Return Order") ship returned stock,
 // which is deliberately On Hold until it leaves — mirror the status
-// lines.tracking accepts when validating entities for this source.
-function expectedEntityStatus(shipment?: Shipment) {
-  return shipment?.sourceDocument === "Sales Return Order"
-    ? "On Hold"
-    : "Available";
+// lines.tracking accepts when validating entities for this source. A Repair
+// line ships the customer's own unit back: it never entered stock, so it is
+// Consumed.
+export function expectedEntityStatus(
+  shipment?: Pick<Shipment, "sourceDocument">,
+  isRepairLine = false
+) {
+  if (shipment?.sourceDocument !== "Sales Return Order") return "Available";
+  return isRepairLine ? "Consumed" : "On Hold";
 }
 
 function BatchForm({
@@ -1038,6 +1052,7 @@ function BatchForm({
 function SerialForm({
   line,
   shipment,
+  isRepairLine,
   hasTrackingLabel,
   serialNumbers,
   isReadOnly,
@@ -1045,6 +1060,7 @@ function SerialForm({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  isRepairLine: boolean;
   hasTrackingLabel: boolean;
   serialNumbers: { index: number; id: string }[];
   isReadOnly: boolean;
@@ -1097,15 +1113,16 @@ function SerialForm({
         return "Serial number not found";
       }
 
+      const expectedStatus = expectedEntityStatus(shipment, isRepairLine);
       // @ts-expect-error TS2339 - TODO: fix type
-      if (serialNumber.status !== expectedEntityStatus(shipment)) {
+      if (serialNumber.status !== expectedStatus) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
 
       return null;
     },
-    [serialNumbers, serialNumbersData?.data, shipment]
+    [serialNumbers, serialNumbersData?.data, shipment, isRepairLine]
   );
 
   const updateSerialNumber = useCallback(
@@ -1216,7 +1233,7 @@ function SerialForm({
   // this off the same data `validateSerialNumber` checks keeps them in step.
   const unassignedSerialNumbers = (serialNumbersData?.data ?? []).filter(
     (entity) =>
-      entity.status === expectedEntityStatus(shipment) &&
+      entity.status === expectedEntityStatus(shipment, isRepairLine) &&
       !serialNumbers.some((assigned) => {
         if (!assigned.id) return false;
         const resolved = resolveTrackedEntity(
@@ -1264,7 +1281,8 @@ function SerialForm({
             : null;
           const isSerialNumberValid =
             // @ts-expect-error TS2339 - TODO: fix type
-            resolvedSerial?.status === expectedEntityStatus(shipment);
+            resolvedSerial?.status ===
+            expectedEntityStatus(shipment, isRepairLine);
 
           return (
             <div
