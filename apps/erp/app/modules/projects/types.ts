@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { getProjects } from "./projects.service";
+import type { getProjectBaselines, getProjects } from "./projects.service";
 
 type Tables = Database["public"]["Tables"];
 
@@ -25,3 +25,7 @@ export type LaborCategory = Tables["laborCategory"]["Row"];
 export type LaborCategoryRate = Tables["laborCategoryRate"]["Row"];
 export type TimesheetEntry = Tables["timesheetEntry"]["Row"];
 export type ProjectLedgerEntry = Tables["projectLedger"]["Row"];
+export type ProjectBaseline = Tables["projectBaseline"]["Row"];
+export type ProjectBaselineListItem = NonNullable<
+  Awaited<ReturnType<typeof getProjectBaselines>>["data"]
+>[number];

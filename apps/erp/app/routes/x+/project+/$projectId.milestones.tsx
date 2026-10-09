@@ -24,8 +24,10 @@ import {
   summarizeMilestones,
   upsertProjectMilestone
 } from "~/modules/projects";
+import { createProjectBaseline } from "~/modules/projects/projects.server";
 import { MilestoneBurnChart } from "~/modules/projects/ui/Milestones/MilestoneBurnChart";
 import MilestonesList from "~/modules/projects/ui/Milestones/MilestonesList";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-milestones");
@@ -189,9 +191,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (result.error) {
         return refuse(result.error, "Failed to update the milestone");
       }
-      return done(
-        intent === "complete" ? "Milestone completed" : "Milestone reopened"
-      );
+      if (intent === "reopen") return done("Milestone reopened");
+
+      // A completed milestone writes a baseline of the plan layer. The
+      // milestone is already saved, so a failed baseline only warns.
+      try {
+        await createProjectBaseline(getDatabaseClient(), {
+          companyId,
+          userId,
+          projectId: result.data.projectId,
+          name: `${result.data.name} (completed)`,
+          source: "Milestone",
+          milestoneId: result.data.id
+        });
+      } catch (err) {
+        logger.error("Failed to write the milestone baseline", {
+          err,
+          milestoneId: result.data.id
+        });
+        return refuse(
+          err,
+          "Milestone completed, but its baseline could not be written"
+        );
+      }
+      return done("Milestone completed");
     }
     case "delete": {
       if (typeof id !== "string") return refuse(null, "No milestone was given");

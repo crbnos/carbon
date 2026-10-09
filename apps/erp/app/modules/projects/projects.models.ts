@@ -7,6 +7,7 @@ import { EPSILON, equals, formatPercent, formatQuantity } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { type DiffEntry, diffRows } from "../shared/diff";
 import { methodType } from "../shared/shared.models";
 
 type Enums = Database["public"]["Enums"];
@@ -2743,4 +2744,207 @@ export function buildBurnSeries(args: {
     });
   }
   return points;
+}
+
+// --- Baselines and change requests (Phase 1c) ---------------------------------
+
+export type ProjectPlanTable = Enums["projectPlanTable"];
+export type ProjectBaselineSource = Enums["projectBaselineSource"];
+export type ProjectChangeRequestStatus = Enums["projectChangeRequestStatus"];
+export type ProjectChangeOperation = Enums["projectChangeOperation"];
+
+export const projectPlanTables = [
+  "projectElement",
+  "projectElementLink",
+  "projectElementMaterial",
+  "projectElementLabor",
+  "projectElementCost"
+] as const satisfies readonly ProjectPlanTable[];
+
+/**
+ * The plan-layer columns of each plan table: the only columns that baselines
+ * snapshot, change requests change and the plan lock guards. Progress fields
+ * (state, owner, priority, labels, dates, milestone, verdict) stay out. So does
+ * what records history: a link's suspect flag and review, a material's issued
+ * quantity and its job or PO line, an element's asset. The cost treatment and
+ * the final-asset flag stay out too, because their writes create assets.
+ */
+export const PLAN_LAYER_FIELDS: Record<ProjectPlanTable, readonly string[]> = {
+  projectElement: [
+    "id",
+    "parentId",
+    "readableId",
+    "sortOrder",
+    "type",
+    "name",
+    "description",
+    "isChargeable",
+    "budget",
+    "estimatedHours",
+    "itemId",
+    "trackedEntityId",
+    "requirementCategory",
+    "targetOperator",
+    "targetValue",
+    "targetUpperValue",
+    "targetUnit",
+    "verificationMethod",
+    "actualParameterId",
+    "qualityDocumentId",
+    "parameterValue",
+    "parameterUnit",
+    "parameterSource",
+    "parameterFormula",
+    "parameterItemField",
+    "parameterContingencyPercent",
+    "allocationPercent"
+  ],
+  projectElementLink: [
+    "id",
+    "projectId",
+    "fromElementId",
+    "toElementId",
+    "linkType"
+  ],
+  projectElementMaterial: [
+    "id",
+    "projectId",
+    "projectElementId",
+    "itemId",
+    "methodType",
+    "quantity",
+    "unitOfMeasureCode",
+    "requiredDate",
+    "unitCost"
+  ],
+  projectElementLabor: [
+    "id",
+    "projectId",
+    "projectElementId",
+    "laborCategoryId",
+    "hours",
+    "startDate",
+    "endDate"
+  ],
+  projectElementCost: [
+    "id",
+    "projectId",
+    "projectElementId",
+    "description",
+    "amount"
+  ]
+};
+
+/** The version of the `projectBaseline.snapshot` shape this code writes. */
+export const PROJECT_BASELINE_FORMAT_VERSION = 1;
+
+/** One row of a plan snapshot: only the table's `PLAN_LAYER_FIELDS`. */
+export type PlanRow = Record<string, unknown> & { id: string };
+
+export type ProjectPlanSnapshot = {
+  elements: PlanRow[];
+  links: PlanRow[];
+  materials: PlanRow[];
+  labor: PlanRow[];
+  costs: PlanRow[];
+};
+
+export type ProjectPlanSnapshotKey = keyof ProjectPlanSnapshot;
+
+/** The snapshot key that holds the rows of each plan table. */
+export const planSnapshotKeys: Record<
+  ProjectPlanTable,
+  ProjectPlanSnapshotKey
+> = {
+  projectElement: "elements",
+  projectElementLink: "links",
+  projectElementMaterial: "materials",
+  projectElementLabor: "labor",
+  projectElementCost: "costs"
+};
+
+const planTableBySnapshotKey = Object.fromEntries(
+  Object.entries(planSnapshotKeys).map(([table, key]) => [key, table])
+) as Record<ProjectPlanSnapshotKey, ProjectPlanTable>;
+
+/** True when `field` is a plan-layer column of `table`. */
+export function isPlanLayerField(table: ProjectPlanTable, field: string) {
+  return PLAN_LAYER_FIELDS[table].includes(field);
+}
+
+/** The plan-layer columns of one row; a missing column reads as null. */
+export function pickPlanLayerFields(
+  table: ProjectPlanTable,
+  row: Record<string, unknown>
+): PlanRow {
+  const picked: Record<string, unknown> = {};
+  for (const field of PLAN_LAYER_FIELDS[table]) {
+    picked[field] = row[field] ?? null;
+  }
+  return picked as PlanRow;
+}
+
+function byId(a: PlanRow, b: PlanRow) {
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/**
+ * Builds a plan snapshot from the rows of the 5 plan tables. It keeps the
+ * plan-layer columns only and sorts each array by `id`, so two snapshots of
+ * the same plan are equal.
+ */
+export function toPlanSnapshot(
+  rows: Record<ProjectPlanSnapshotKey, Record<string, unknown>[]>
+): ProjectPlanSnapshot {
+  const pick = (key: ProjectPlanSnapshotKey) =>
+    rows[key]
+      .map((row) => pickPlanLayerFields(planTableBySnapshotKey[key], row))
+      .sort(byId);
+  return {
+    elements: pick("elements"),
+    links: pick("links"),
+    materials: pick("materials"),
+    labor: pick("labor"),
+    costs: pick("costs")
+  };
+}
+
+/** Reads a stored `projectBaseline.snapshot`; a missing array reads as empty. */
+export function parsePlanSnapshot(value: unknown): ProjectPlanSnapshot {
+  const source = (value && typeof value === "object" ? value : {}) as Partial<
+    Record<ProjectPlanSnapshotKey, unknown>
+  >;
+  const rowsOf = (key: ProjectPlanSnapshotKey) =>
+    Array.isArray(source[key]) ? (source[key] as PlanRow[]) : [];
+  return {
+    elements: rowsOf("elements"),
+    links: rowsOf("links"),
+    materials: rowsOf("materials"),
+    labor: rowsOf("labor"),
+    costs: rowsOf("costs")
+  };
+}
+
+export type ProjectPlanDiff = Record<
+  ProjectPlanSnapshotKey,
+  DiffEntry<PlanRow>[]
+>;
+
+/**
+ * Diffs two plan snapshots table by table. Rows match by `id`; every
+ * plan-layer column is compared.
+ */
+export function diffPlanSnapshots(
+  base: ProjectPlanSnapshot,
+  target: ProjectPlanSnapshot
+): ProjectPlanDiff {
+  const diff = (key: ProjectPlanSnapshotKey) =>
+    diffRows(base[key], target[key], { key: "id", ignoredFields: [] });
+  return {
+    elements: diff("elements"),
+    links: diff("links"),
+    materials: diff("materials"),
+    labor: diff("labor"),
+    costs: diff("costs")
+  };
 }

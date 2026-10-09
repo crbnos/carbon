@@ -914,7 +914,7 @@ export async function completeProjectMilestone(
     })
     .eq("id", args.id)
     .eq("companyId", args.companyId)
-    .select("id")
+    .select("id, name, projectId")
     .single();
 }
 
@@ -932,6 +932,45 @@ export async function deleteProjectMilestone(
     .delete()
     .eq("id", id)
     .eq("companyId", companyId);
+}
+
+// --- Baselines ---------------------------------------------------------------
+
+const PROJECT_BASELINE_LIST_COLUMNS =
+  "id, projectId, sequence, name, source, milestoneId, changeRequestId, formatVersion, elementCount, linkCount, createdBy, createdAt";
+
+/**
+ * Lists the baselines of a project, newest first, without their snapshots.
+ * @mcp read
+ */
+export async function getProjectBaselines(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("projectBaseline")
+    .select(PROJECT_BASELINE_LIST_COLUMNS)
+    .eq("projectId", projectId)
+    .eq("companyId", companyId)
+    .order("sequence", { ascending: false });
+}
+
+/**
+ * Loads one baseline with its plan snapshot.
+ * @mcp read
+ */
+export async function getProjectBaseline(
+  client: Client,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("projectBaseline")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
 }
 
 // --- Elements ----------------------------------------------------------------

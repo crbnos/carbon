@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { toJson } from "@carbon/database/json";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
@@ -18,9 +19,12 @@ import type {
   ElementVerification,
   logTimeValidator,
   PlannedBuildElement,
+  ProjectBaselineSource,
   ProjectCopyElement,
   ProjectCopySource,
   ProjectElementType,
+  ProjectPlanSnapshot,
+  ProjectPlanTable,
   ProjectStateGroup,
   projectElementValidator,
   projectIssueValidator,
@@ -33,11 +37,14 @@ import {
   chargeableByDefault,
   computeVerification,
   defaultProjectStates,
+  PLAN_LAYER_FIELDS,
+  PROJECT_BASELINE_FORMAT_VERSION,
   parseParameterFormula,
   planElementsFromSource,
   planProjectCopy,
   projectCopyIdPrefixes,
-  rollUpRequirementStatus
+  rollUpRequirementStatus,
+  toPlanSnapshot
 } from "./projects.models";
 import {
   getElementHistoryByItem,
@@ -273,6 +280,93 @@ export async function copyProject(
 
     return projectId;
   });
+}
+
+// --- Baselines (Phase 1c) -------------------------------------------------------
+
+/**
+ * Loads the plan layer of a project as a snapshot: 5 queries, one per plan
+ * table, each reading only its `PLAN_LAYER_FIELDS`.
+ */
+export async function loadPlanSnapshot(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: { companyId: string; projectId: string }
+): Promise<ProjectPlanSnapshot> {
+  const ofProject = (table: ProjectPlanTable) =>
+    db
+      .selectFrom(table as "projectElement")
+      .select(PLAN_LAYER_FIELDS[table] as never)
+      .where("projectId", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .execute() as Promise<Record<string, unknown>[]>;
+
+  const [elements, links, materials, labor, costs] = await Promise.all([
+    ofProject("projectElement"),
+    ofProject("projectElementLink"),
+    ofProject("projectElementMaterial"),
+    ofProject("projectElementLabor"),
+    ofProject("projectElementCost")
+  ]);
+  return toPlanSnapshot({ elements, links, materials, labor, costs });
+}
+
+export type CreateProjectBaselineArgs = {
+  companyId: string;
+  userId: string;
+  projectId: string;
+  name: string;
+  source: ProjectBaselineSource;
+  milestoneId?: string | null;
+  changeRequestId?: string | null;
+};
+
+/**
+ * Writes a baseline inside an open transaction: takes the next
+ * `project.nextBaselineSequence` (the UPDATE locks the project row), loads the
+ * snapshot and inserts it with its counts. The change request apply reuses it.
+ */
+export async function insertProjectBaseline(
+  trx: KyselyTx,
+  args: CreateProjectBaselineArgs
+): Promise<{ id: string; sequence: number }> {
+  const project = await trx
+    .updateTable("project")
+    .set({ nextBaselineSequence: sql`"nextBaselineSequence" + 1` })
+    .where("id", "=", args.projectId)
+    .where("companyId", "=", args.companyId)
+    .returning(sql<number>`"nextBaselineSequence" - 1`.as("sequence"))
+    .executeTakeFirst();
+  if (!project) throw new Error("The project does not exist");
+
+  const snapshot = await loadPlanSnapshot(trx, args);
+  const baseline = await trx
+    .insertInto("projectBaseline")
+    .values({
+      companyId: args.companyId,
+      projectId: args.projectId,
+      sequence: project.sequence,
+      name: args.name,
+      source: args.source,
+      milestoneId: args.milestoneId ?? null,
+      changeRequestId: args.changeRequestId ?? null,
+      formatVersion: PROJECT_BASELINE_FORMAT_VERSION,
+      snapshot: toJson(snapshot) as never,
+      elementCount: snapshot.elements.length,
+      linkCount: snapshot.links.length,
+      createdBy: args.userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+
+  return { id: baseline.id, sequence: project.sequence };
+}
+
+/** Takes a baseline of a project's plan layer, in one transaction. */
+export async function createProjectBaseline(
+  db: Kysely<KyselyDatabase>,
+  args: CreateProjectBaselineArgs
+): Promise<{ id: string; sequence: number }> {
+  return db.transaction().execute((trx) => insertProjectBaseline(trx, args));
 }
 
 /**
