@@ -9,6 +9,7 @@ import {
   group,
   type Manifest,
   parent,
+  projectModule,
   render,
   serviceOnly
 } from "./rules";
@@ -68,6 +69,40 @@ describe("render", () => {
     expect(sql).toContain(
       `get_companies_with_employee_permission('inventory_view')`
     );
+  });
+
+  test("projectModule: the project's type picks the module", () => {
+    const rule = company("projects", {
+      read: projectModule("projectId", "view", { standard: "employee" }),
+      update: projectModule("projectId", "update")
+    });
+    const child = render(rule, "projectElement");
+    expect(child).toContain(
+      `FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElement"."projectId" AND "p"."companyId" = "projectElement"."companyId" AND (("p"."projectType" = 'Standard' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])) OR ("p"."projectType" = 'Service' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('service_view'))::text[])))));`
+    );
+    expect(child).toContain(`'projects_update'`);
+    expect(child).toContain(`'service_update'`);
+    // On project itself the row's own columns decide: no policy queries its own table.
+    const own = render(rule, "project");
+    expect(own).not.toContain(`FROM "public"."project"`);
+    expect(own).toContain(
+      `FOR UPDATE USING ((("projectType" = 'Standard' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('projects_update'))::text[])) OR ("projectType" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('service_update'))::text[]))));`
+    );
+  });
+
+  test("projectModule via the element reaches the element's project", () => {
+    const sql = render(
+      company("projects", {
+        read: projectModule("projectElementId", "view", {
+          via: "projectElement"
+        })
+      }),
+      "projectElementLabel"
+    );
+    expect(sql).toContain(
+      `JOIN "public"."project" p ON "p"."id" = "e"."projectId" AND "p"."companyId" = "e"."companyId" WHERE "e"."id" = "projectElementLabel"."projectElementId" AND "e"."companyId" = "projectElementLabel"."companyId"`
+    );
+    expect(sql).toContain(`'projects_view'`);
   });
 
   test("serviceOnly renders no policies", () => {

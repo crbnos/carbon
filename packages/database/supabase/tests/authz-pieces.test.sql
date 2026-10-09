@@ -146,6 +146,92 @@ BEGIN
   ASSERT NOT pg_temp.allows('country', 'SELECT', 'using', '{}'::jsonb), 'anon does not';
   RAISE NOTICE 'PASS authenticated';
 
+  -- projectModule: the project's type decides the module (projectElement, project,
+  -- projectElementLabel via the element, timesheetEntry). A Standard project follows
+  -- projects_* (any employee still reads it); a Service project follows service_*.
+  DECLARE
+    pj text := gen_random_uuid()::text;  -- employee of A with projects_* only
+    sv text := gen_random_uuid()::text;  -- employee of A with service_* only
+    std_project text; svc_project text; std_state text; svc_state text;
+    std_element text; svc_element text;
+    std_row jsonb; svc_row jsonb;
+  BEGIN
+    RESET ROLE;
+    INSERT INTO "user" (id, email) VALUES (pj, pj || '@authz.invalid'), (sv, sv || '@authz.invalid');
+    INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES (pj, company_a, 'employee'), (sv, company_a, 'employee');
+    INSERT INTO "userPermission" (id, permissions) VALUES
+      (pj, jsonb_build_object(
+        'projects_view', jsonb_build_array(company_a), 'projects_create', jsonb_build_array(company_a),
+        'projects_update', jsonb_build_array(company_a), 'projects_delete', jsonb_build_array(company_a))),
+      (sv, jsonb_build_object(
+        'service_view', jsonb_build_array(company_a), 'service_create', jsonb_build_array(company_a),
+        'service_update', jsonb_build_array(company_a), 'service_delete', jsonb_build_array(company_a)));
+
+    INSERT INTO project (name, identifier, "companyId", "createdBy")
+      VALUES ('Pieces standard', 'PCS', company_a, 'system') RETURNING id INTO std_project;
+    INSERT INTO project (name, identifier, "projectType", "costTreatment", "companyId", "createdBy")
+      VALUES ('Pieces service', 'SVC999001', 'Service', 'By Coverage', company_a, 'system') RETURNING id INTO svc_project;
+    INSERT INTO "projectState" ("projectId", name, "group", color, "companyId", "createdBy")
+      VALUES (std_project, 'Pieces', 'Unstarted', '#60646C', company_a, 'system') RETURNING id INTO std_state;
+    INSERT INTO "projectState" ("projectId", name, "group", color, "companyId", "createdBy")
+      VALUES (svc_project, 'Pieces', 'Unstarted', '#60646C', company_a, 'system') RETURNING id INTO svc_state;
+    INSERT INTO "projectElement" ("projectId", type, name, "stateId", "companyId", "createdBy")
+      VALUES (std_project, 'Task', 'Standard task', std_state, company_a, 'system') RETURNING id INTO std_element;
+    INSERT INTO "projectElement" ("projectId", type, name, "stateId", "companyId", "createdBy")
+      VALUES (svc_project, 'Task', 'Service node', svc_state, company_a, 'system') RETURNING id INTO svc_element;
+
+    std_row := jsonb_build_object('projectId', std_project, 'companyId', company_a);
+    svc_row := jsonb_build_object('projectId', svc_project, 'companyId', company_a);
+
+    -- projects_* only: the Standard project as before, nothing of the Service project.
+    PERFORM pg_temp.act_as(pj);
+    ASSERT pg_temp.allows('projectElement', 'SELECT', 'using', std_row), 'projects user reads a Standard element';
+    ASSERT pg_temp.allows('projectElement', 'INSERT', 'check', std_row), 'projects user adds a Standard element';
+    ASSERT pg_temp.allows('projectElement', 'UPDATE', 'check', std_row), 'projects user updates a Standard element';
+    ASSERT pg_temp.allows('projectElement', 'DELETE', 'using', std_row), 'projects user deletes a Standard element';
+    ASSERT NOT pg_temp.allows('projectElement', 'SELECT', 'using', svc_row), 'projects user does not read a Service element';
+    ASSERT NOT pg_temp.allows('projectElement', 'UPDATE', 'using', svc_row), 'projects user does not update a Service element';
+    ASSERT pg_temp.allows('project', 'UPDATE', 'using', jsonb_build_object('projectType', 'Standard', 'companyId', company_a)),
+      'projects user updates a Standard project';
+    ASSERT NOT pg_temp.allows('project', 'SELECT', 'using', jsonb_build_object('projectType', 'Service', 'companyId', company_a)),
+      'projects user does not read a Service project';
+    ASSERT pg_temp.allows('projectElementLabel', 'INSERT', 'check', jsonb_build_object('projectElementId', std_element, 'companyId', company_a)),
+      'projects user labels a Standard element';
+    ASSERT NOT pg_temp.allows('projectElementLabel', 'SELECT', 'using', jsonb_build_object('projectElementId', svc_element, 'companyId', company_a)),
+      'projects user does not read a Service element''s labels';
+    ASSERT pg_temp.allows('timesheetEntry', 'SELECT', 'using', std_row || jsonb_build_object('employeeId', w)),
+      'projects user reads a colleague''s Standard time';
+    ASSERT NOT pg_temp.allows('timesheetEntry', 'SELECT', 'using', svc_row || jsonb_build_object('employeeId', w)),
+      'projects user does not read a colleague''s Service time';
+
+    -- service_* only: the Service project, and no write to the Standard one.
+    PERFORM pg_temp.act_as(sv);
+    ASSERT pg_temp.allows('projectElement', 'SELECT', 'using', svc_row), 'service user reads a Service element';
+    ASSERT pg_temp.allows('projectElement', 'INSERT', 'check', svc_row), 'service user adds a Service element';
+    ASSERT pg_temp.allows('projectElement', 'UPDATE', 'check', svc_row), 'service user updates a Service element';
+    ASSERT NOT pg_temp.allows('projectElement', 'INSERT', 'check', std_row), 'service user does not add a Standard element';
+    ASSERT NOT pg_temp.allows('projectElement', 'UPDATE', 'using', std_row), 'service user does not update a Standard element';
+    ASSERT pg_temp.allows('project', 'INSERT', 'check', jsonb_build_object('projectType', 'Service', 'companyId', company_a)),
+      'service user creates a Service project';
+    ASSERT NOT pg_temp.allows('project', 'INSERT', 'check', jsonb_build_object('projectType', 'Standard', 'companyId', company_a)),
+      'service user does not create a Standard project';
+    ASSERT pg_temp.allows('projectElementLabel', 'SELECT', 'using', jsonb_build_object('projectElementId', svc_element, 'companyId', company_a)),
+      'service user reads a Service element''s labels';
+    ASSERT pg_temp.allows('timesheetEntry', 'UPDATE', 'check', svc_row || jsonb_build_object('employeeId', w, 'status', 'Submitted')),
+      'service user updates a colleague''s Service time';
+    ASSERT NOT pg_temp.allows('timesheetEntry', 'UPDATE', 'check', std_row || jsonb_build_object('employeeId', w, 'status', 'Submitted')),
+      'service user does not update a colleague''s Standard time';
+    ASSERT NOT pg_temp.allows('projectElement', 'SELECT', 'using', jsonb_build_object('projectId', svc_project, 'companyId', company_b)),
+      'the project must be in the row''s own company';
+
+    -- an employee with neither: reads the Standard project as before, not the Service one.
+    PERFORM pg_temp.act_as(w);
+    ASSERT pg_temp.allows('projectElement', 'SELECT', 'using', std_row), 'any employee still reads a Standard element';
+    ASSERT NOT pg_temp.allows('projectElement', 'UPDATE', 'using', std_row), 'but does not update it';
+    ASSERT NOT pg_temp.allows('projectElement', 'SELECT', 'using', svc_row), 'nor reads a Service element';
+    RAISE NOTICE 'PASS projectModule';
+  END;
+
   -- serviceOnly: no policy, so nobody through the API (approvalRequest)
   PERFORM pg_temp.act_as(u);
   ASSERT NOT pg_temp.allows('approvalRequest', 'SELECT', 'using', a), 'no API access';

@@ -24,7 +24,9 @@ import {
   owner,
   policies,
   portal,
+  projectModule,
   serviceOnly,
+  type Table,
   through,
   viaParent,
   where
@@ -88,6 +90,23 @@ const managedAttribute = through(
     inCompany("companyId", "resources_update")
   )
 );
+
+/**
+ * A project table. Its project's type decides the module: a Standard project follows
+ * projects_* (any employee reads, as before), a Service project service_* (Service
+ * projects are the work trees of service orders). `column` names the row's project, or
+ * its element with `via: "projectElement"`; `project` itself passes "id".
+ */
+const projectTable = <T extends Table>(
+  column = "projectId",
+  via?: "projectElement"
+) =>
+  company<T>("projects", {
+    read: projectModule(column, "view", { standard: "employee", via }),
+    create: projectModule(column, "create", { via }),
+    update: projectModule(column, "update", { via }),
+    delete: projectModule(column, "delete", { via })
+  });
 
 export const manifest = {
   ability: company("resources", {
@@ -302,6 +321,12 @@ export const manifest = {
     insert: inCompany("companyId", "sales_create"),
     update: inCompany("companyId", "sales_update"),
     delete: inCompany("companyId", "sales_delete")
+  }),
+  customerAsset: company("service"),
+  customerAssetComponent: company("service", {
+    create: false,
+    update: false,
+    delete: false
   }),
   customerBankAccount: company("accounting", { read: "accounting_view" }),
   customerContact: policies({
@@ -1089,7 +1114,7 @@ export const manifest = {
   process: company("resources"),
   productionEvent: company("production", { read: "production_view" }),
   productionQuantity: company("production"),
-  project: company("projects"),
+  project: projectTable("id"),
   projectBaseline: company("projects", { update: false, delete: false }),
   projectChangeRequest: company("projects"),
   projectChangeRequestComment: company("projects", {
@@ -1107,25 +1132,38 @@ export const manifest = {
     },
     delete: owner("userId")
   }),
-  projectElement: company("projects"),
+  projectBillableItem: projectTable(),
+  projectElement: projectTable(),
   projectElementComment: company("projects", {
-    create: "employee",
+    read: projectModule("projectElementId", "view", {
+      standard: "employee",
+      via: "projectElement"
+    }),
+    create: and(
+      inCompany("companyId", "employee"),
+      projectModule("projectElementId", "view", {
+        standard: "employee",
+        via: "projectElement"
+      })
+    ),
     update: and(owner("createdBy"), inCompany("companyId", "employee")),
     delete: owner("createdBy")
   }),
-  projectElementCost: company("projects"),
-  projectElementLabel: company("projects"),
-  projectElementLabor: company("projects"),
-  projectElementLink: company("projects"),
-  projectElementMaterial: company("projects"),
-  projectLabel: company("projects"),
+  projectElementCost: projectTable(),
+  projectElementLabel: projectTable("projectElementId", "projectElement"),
+  projectElementLabor: projectTable(),
+  projectElementLink: projectTable(),
+  projectElementMaterial: projectTable(),
+  projectExpenseEntry: projectTable(),
+  projectLabel: projectTable(),
   projectLedger: company("projects", {
+    read: projectModule("projectId", "view", { standard: "employee" }),
     create: false,
     update: false,
     delete: false
   }),
-  projectMilestone: company("projects"),
-  projectState: company("projects"),
+  projectMilestone: projectTable(),
+  projectState: projectTable(),
   projectUserPreference: policies({
     select: owner("userId"),
     insert: and(owner("userId"), inCompany("companyId", "employee")),
@@ -1437,6 +1475,17 @@ export const manifest = {
   searchIndexRegistry: serviceOnly(),
   sequence: company("settings", { read: "settings_view" }),
   service: company("parts"),
+  serviceOrder: company("service"),
+  serviceVisit: company("service", {
+    create: or(
+      and(owner("technicianId"), inCompany("companyId", "employee")),
+      inCompany("companyId", "service_create")
+    ),
+    update: or(
+      and(owner("technicianId"), inCompany("companyId", "employee")),
+      inCompany("companyId", "service_update")
+    )
+  }),
   shift: company("people"),
   shipment: company("inventory", {
     read: anyOf("inventory_view", "sales_view"),
@@ -1586,7 +1635,7 @@ export const manifest = {
     delete: inCompany("companyId", "people_delete")
   }),
   timesheetEntry: policies({
-    select: or(owner("employeeId"), inCompany("companyId", "projects_view")),
+    select: or(owner("employeeId"), projectModule("projectId", "view")),
     insert: and(
       owner("employeeId"),
       inCompany("companyId", "employee"),
@@ -1598,7 +1647,7 @@ export const manifest = {
           owner("employeeId"),
           where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
         ),
-        inCompany("companyId", "projects_update")
+        projectModule("projectId", "update")
       ),
       check: or(
         and(
@@ -1606,7 +1655,7 @@ export const manifest = {
           inCompany("companyId", "employee"),
           where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
         ),
-        inCompany("companyId", "projects_update")
+        projectModule("projectId", "update")
       )
     },
     delete: and(
