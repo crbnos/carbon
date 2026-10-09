@@ -443,6 +443,8 @@ async function releaseRecurringInvoiceStamps(
   const { companyId, salesInvoiceLineIds, userId } = args;
   if (salesInvoiceLineIds.length === 0) return;
 
+  await releaseServiceOrderStamps(trx, args);
+
   await trx
     .updateTable("rentalBillingPeriod")
     .set({
@@ -518,6 +520,86 @@ async function releaseRecurringInvoiceStamps(
 }
 
 /**
+ * A service order's billable items go back to Unbilled when the Draft lines
+ * that billed them are deleted. An invoice left with no billing line loses
+ * its `serviceOrderId`, and its order goes back from Closed to Completed so
+ * it can be invoiced again.
+ */
+async function releaseServiceOrderStamps(
+  trx: KyselyTx,
+  args: { companyId: string; salesInvoiceLineIds: string[]; userId: string }
+): Promise<void> {
+  const { companyId, salesInvoiceLineIds, userId } = args;
+  const released = await trx
+    .updateTable("projectBillableItem")
+    .set({
+      salesInvoiceLineId: null,
+      status: "Unbilled",
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
+    .returning("id")
+    .execute();
+  if (released.length === 0) return;
+
+  const invoices = await trx
+    .selectFrom("salesInvoiceLine")
+    .select("invoiceId")
+    .distinct()
+    .where("companyId", "=", companyId)
+    .where("id", "in", salesInvoiceLineIds)
+    .execute();
+  const invoiceIds = invoices.map((row) => row.invoiceId);
+  if (invoiceIds.length === 0) return;
+
+  // An invoice still billing the order through another line keeps it.
+  const stillBilled = sql<boolean>`EXISTS (
+    SELECT 1 FROM "salesInvoiceLine" l
+    JOIN "projectBillableItem" b
+      ON b."salesInvoiceLineId" = l."id" AND b."companyId" = l."companyId"
+    WHERE l."invoiceId" = "salesInvoice"."id" AND l."companyId" = ${companyId}
+  )`;
+  const unstamped = await trx
+    .selectFrom("salesInvoice")
+    .select(["id", "serviceOrderId"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", invoiceIds)
+    .where("serviceOrderId", "is not", null)
+    .where(sql<boolean>`NOT ${stillBilled}`)
+    .execute();
+  if (unstamped.length === 0) return;
+
+  await trx
+    .updateTable("salesInvoice")
+    .set({ serviceOrderId: null, updatedBy: userId, updatedAt: sql`now()` })
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      unstamped.map((row) => row.id)
+    )
+    .execute();
+  await trx
+    .updateTable("serviceOrder")
+    .set({
+      status: "Completed",
+      salesInvoiceId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      unstamped.map((row) => row.serviceOrderId as string)
+    )
+    .where("status", "=", "Closed")
+    .execute();
+}
+
+/**
  * Deletes a Draft sales invoice and, in the same transaction, releases the
  * rental billing periods and charges and the contract schedule rows it
  * billed, so the next generation bills them again. `salesInvoiceLineId` on
@@ -552,7 +634,18 @@ export async function deleteSalesInvoiceReleasingRentals(
       .where((eb) =>
         eb.or([
           eb("invoiceLineType", "=", "Rental"),
-          eb("customerContractInvoiceLineId", "is not", null)
+          eb("customerContractInvoiceLineId", "is not", null),
+          eb.exists(
+            eb
+              .selectFrom("projectBillableItem")
+              .select(sql`1`.as("one"))
+              .whereRef(
+                "projectBillableItem.salesInvoiceLineId",
+                "=",
+                "salesInvoiceLine.id"
+              )
+              .where("projectBillableItem.companyId", "=", companyId)
+          )
         ])
       )
       .execute();

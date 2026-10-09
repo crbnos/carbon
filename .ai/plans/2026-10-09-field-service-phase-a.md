@@ -43,7 +43,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 9: Post service parts and install components in `post-project-issue`
 - [x] Task 10: Add `post-project-expense` and the coverage reclass
 - [x] Task 11: Create customer assets in `post-shipment`
-- [ ] Task 12: Stop the second stock relief and release billable item stamps
+- [x] Task 12: Stop the second stock relief and release billable item stamps
 - [ ] Task 13: Add `create-service-order-invoice`
 - [ ] Task 14: Hide Service projects outside Service
 - [ ] Task 15: Make My Timesheet personal
@@ -1237,3 +1237,7 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 11: a reshipped serial keeps its `source` (an asset registered by hand stays Manual); every other field the plan names is reset.
 - Task 11: on a return to customer, the site becomes the RMA's `customerLocationId` when it has one, else the asset keeps its site. The step updates only serials that are already assets.
 - Task 11: `customer-assets.test.ts` posts a real Sales Order shipment of a serial with accounting off: the new asset with 12 and 24 months, the void setting it Returned, a drop shipment's site, and a reshipped serial's reset. The RMA return step has no database test (no post-shipment test fixture exists for an RMA).
+- Task 12: `post-sales-invoice` reads the stamped line ids before the line loop (one query, `billedServiceLineIds`) and skips the whole "no sales order line" block for them: the shipment line, the `itemLedger` row and the COGS lines. Revenue posts as before. The new `post-sales-invoice.test.ts` posts one stamped and one unstamped `Service` line of an Inventory part. Only the unstamped line relieves stock and posts COGS; both post revenue. With the skip removed the test fails, so it proves the change.
+- Task 12: `projectBillableItem.salesInvoiceLineId` has an FK with `ON DELETE SET NULL`, so a deleted line already loses the stamp, but the item stays Billed. `releaseServiceOrderStamps` (`sales.server.ts`, called first by `releaseRecurringInvoiceStamps`) sets the items back to Unbilled. When the invoice has no other stamped line, it clears `salesInvoice.serviceOrderId`.
+- Task 12 (deviation): the release also moves the order from Closed back to Completed and clears `serviceOrder.salesInvoiceId`. Task 13 closes the order at invoicing and refuses any order that is not Completed, so without this step a deleted Draft invoice would leave the order impossible to invoice again.
+- Task 12: no ERP database test exists for the release functions. The release SQL was checked by hand against the local database. `erp` and `@carbon/server-functions` typecheck green. The invoice, payment, memo and contract and rental invoice suites pass (67).

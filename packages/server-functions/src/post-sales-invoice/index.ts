@@ -1102,6 +1102,23 @@ const postSalesInvoice = defineServerFn({
             endDate: string;
           }[] = [];
 
+          // Lines that bill a service order's charges: a part issued to a
+          // service node already left stock and posted its cost, so these
+          // lines post revenue only. One query per invoice.
+          const invoiceLineIds = salesInvoiceLines.data.map((line) => line.id);
+          const billedServiceLineIds = new Set(
+            invoiceLineIds.length === 0
+              ? []
+              : (
+                  await db
+                    .selectFrom("projectBillableItem")
+                    .select("salesInvoiceLineId")
+                    .where("salesInvoiceLineId", "in", invoiceLineIds)
+                    .where("companyId", "=", companyId)
+                    .execute()
+                ).map((row) => row.salesInvoiceLineId)
+          );
+
           for (const invoiceLine of salesInvoiceLines.data) {
             const invoiceLineQuantityInInventoryUnit = invoiceLine.quantity;
             const postingLine = {
@@ -1278,7 +1295,8 @@ const postSalesInvoice = defineServerFn({
                   // if the sales order line is null, we ship the part, do the normal entries and do not use accrual/reversing
                   if (
                     invoiceLine.salesOrderLineId === null &&
-                    invoiceLine.methodType !== "Make to Order"
+                    invoiceLine.methodType !== "Make to Order" &&
+                    !billedServiceLineIds.has(invoiceLine.id)
                   ) {
                     // Services are never shipped, so they must not materialize a
                     // shipment document — only the revenue + AR entries below.
