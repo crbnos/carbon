@@ -6,7 +6,7 @@ ARG APP
 ARG SOURCEMAPS=0
 
 # slim, not node:22 — every native dep ships prebuilt, nothing needs the toolchain.
-FROM node:22-slim AS deps
+FROM node:25-slim AS deps
 WORKDIR /repo
 RUN corepack enable
 # Store on a cache mount, so a source-only commit relinks instead of refetching.
@@ -49,7 +49,7 @@ RUN rm -rf apps/${APP}/node_modules/.vite apps/${APP}/node_modules/.ignored_*
 # not build on `deps`. It keeps the supabase CLI and tsx/esbuild that `runner`
 # strips for its CVE posture, so it is never exposed and is scanned
 # report-only. Kept BEFORE `runner` so `runner` stays the default build stage.
-FROM node:22-slim AS bootstrap-deps
+FROM node:25-slim AS bootstrap-deps
 WORKDIR /repo
 RUN corepack enable
 ENV npm_config_store_dir=/pnpm/store
@@ -82,7 +82,7 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
     find node_modules -type f \( -name '*.d.ts' -o -name '*.d.mts' -o -name '*.d.cts' \
         -o -name '*.md' -o -name '*.map' \) -delete 2>/dev/null || true
 
-FROM node:22-slim AS bootstrap
+FROM node:25-slim AS bootstrap
 # slim ships no CA certs, and the supabase CLI is a Go binary that verifies TLS
 # against the system store — migrations default to sslmode=require.
 RUN apt-get update \
@@ -135,7 +135,7 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         find node_modules -type f -name '*.map' -delete 2>/dev/null || true ; \
     fi
 
-FROM node:22-slim AS runner
+FROM node:25-slim AS runner
 ARG APP
 WORKDIR /repo
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
