@@ -6420,6 +6420,9 @@ msgstr "Счета покупателя"
 msgid "Customer and supplier pages"
 msgstr "Страницы покупателя и поставщика"
 
+msgid "Customer Assets"
+msgstr ""
+
 msgid "Customer contact"
 msgstr "Контактное лицо покупателя"
 
@@ -11197,6 +11200,9 @@ msgstr "Режим установки"
 msgid "Installed"
 msgstr "Установлено"
 
+msgid "Installed Base"
+msgstr ""
+
 msgid "Installed on this step, so it can't be hidden here."
 msgstr "Установлено на этом шаге, поэтому здесь его нельзя скрыть."
 
@@ -13294,6 +13300,9 @@ msgid "My Timesheet"
 msgstr ""
 
 msgid "My views"
+msgstr ""
+
+msgid "My Visits"
 msgstr ""
 
 msgid "Name"
@@ -19652,6 +19661,9 @@ msgstr "Строки услуг"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Orders"
+msgstr ""
+
 msgid "Service Period"
 msgstr "Период обслуживания"
 
@@ -19660,6 +19672,9 @@ msgstr "Детали поставщика услуг"
 
 msgid "Service start"
 msgstr "Начало обслуживания"
+
+msgid "Service Templates"
+msgstr ""
 
 msgid "services"
 msgstr "услуги"

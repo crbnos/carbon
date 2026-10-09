@@ -6420,6 +6420,9 @@ msgstr "ग्राहक खाते"
 msgid "Customer and supplier pages"
 msgstr "ग्राहक और आपूर्तिकर्ता पृष्ठ"
 
+msgid "Customer Assets"
+msgstr ""
+
 msgid "Customer contact"
 msgstr "ग्राहक संपर्क"
 
@@ -11197,6 +11200,9 @@ msgstr "इंस्टॉल मोड"
 msgid "Installed"
 msgstr "स्थापित"
 
+msgid "Installed Base"
+msgstr ""
+
 msgid "Installed on this step, so it can't be hidden here."
 msgstr "इस चरण पर स्थापित है, इसलिए इसे यहाँ छिपाया नहीं जा सकता।"
 
@@ -13294,6 +13300,9 @@ msgid "My Timesheet"
 msgstr ""
 
 msgid "My views"
+msgstr ""
+
+msgid "My Visits"
 msgstr ""
 
 msgid "Name"
@@ -19652,6 +19661,9 @@ msgstr "सेवा पंक्तियां"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Orders"
+msgstr ""
+
 msgid "Service Period"
 msgstr "सेवा अवधि"
 
@@ -19660,6 +19672,9 @@ msgstr "सेवा प्रदाता विवरण"
 
 msgid "Service start"
 msgstr "सेवा की शुरुआत"
+
+msgid "Service Templates"
+msgstr ""
 
 msgid "services"
 msgstr "सेवाएं"

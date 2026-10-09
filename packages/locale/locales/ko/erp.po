@@ -6420,6 +6420,9 @@ msgstr "고객 계정"
 msgid "Customer and supplier pages"
 msgstr "고객 및 공급업체 페이지"
 
+msgid "Customer Assets"
+msgstr ""
+
 msgid "Customer contact"
 msgstr "고객 담당자"
 
@@ -11197,6 +11200,9 @@ msgstr "설치 모드"
 msgid "Installed"
 msgstr "설치됨"
 
+msgid "Installed Base"
+msgstr ""
+
 msgid "Installed on this step, so it can't be hidden here."
 msgstr "이 단계에 설치되어 있어 여기서 숨길 수 없습니다."
 
@@ -13294,6 +13300,9 @@ msgid "My Timesheet"
 msgstr ""
 
 msgid "My views"
+msgstr ""
+
+msgid "My Visits"
 msgstr ""
 
 msgid "Name"
@@ -19652,6 +19661,9 @@ msgstr "서비스 라인"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Orders"
+msgstr ""
+
 msgid "Service Period"
 msgstr "서비스 기간"
 
@@ -19660,6 +19672,9 @@ msgstr "서비스 공급자 세부 정보"
 
 msgid "Service start"
 msgstr "서비스 시작일"
+
+msgid "Service Templates"
+msgstr ""
 
 msgid "services"
 msgstr "서비스"

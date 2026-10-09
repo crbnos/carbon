@@ -6420,6 +6420,9 @@ msgstr "客户账户"
 msgid "Customer and supplier pages"
 msgstr "客户和供应商页面"
 
+msgid "Customer Assets"
+msgstr ""
+
 msgid "Customer contact"
 msgstr "客户联系人"
 
@@ -11197,6 +11200,9 @@ msgstr "安装模式"
 msgid "Installed"
 msgstr "已安装"
 
+msgid "Installed Base"
+msgstr ""
+
 msgid "Installed on this step, so it can't be hidden here."
 msgstr "安装在此步骤上，因此无法在此隐藏。"
 
@@ -13294,6 +13300,9 @@ msgid "My Timesheet"
 msgstr ""
 
 msgid "My views"
+msgstr ""
+
+msgid "My Visits"
 msgstr ""
 
 msgid "Name"
@@ -19652,6 +19661,9 @@ msgstr "服务行"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Orders"
+msgstr ""
+
 msgid "Service Period"
 msgstr "服务期间"
 
@@ -19660,6 +19672,9 @@ msgstr "服务提供商详情"
 
 msgid "Service start"
 msgstr "服务开始"
+
+msgid "Service Templates"
+msgstr ""
 
 msgid "services"
 msgstr "服务"

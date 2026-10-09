@@ -6420,6 +6420,9 @@ msgstr "Cuentas de Cliente"
 msgid "Customer and supplier pages"
 msgstr "Páginas de cliente y proveedor"
 
+msgid "Customer Assets"
+msgstr ""
+
 msgid "Customer contact"
 msgstr "Contacto del cliente"
 
@@ -11197,6 +11200,9 @@ msgstr "Modo de instalación"
 msgid "Installed"
 msgstr "Instalado"
 
+msgid "Installed Base"
+msgstr ""
+
 msgid "Installed on this step, so it can't be hidden here."
 msgstr "Instalado en este paso, por lo que no se puede ocultar aquí."
 
@@ -13294,6 +13300,9 @@ msgid "My Timesheet"
 msgstr ""
 
 msgid "My views"
+msgstr ""
+
+msgid "My Visits"
 msgstr ""
 
 msgid "Name"
@@ -19652,6 +19661,9 @@ msgstr "Líneas de servicio"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Orders"
+msgstr ""
+
 msgid "Service Period"
 msgstr "Período de Servicio"
 
@@ -19660,6 +19672,9 @@ msgstr "Detalles del proveedor de servicios"
 
 msgid "Service start"
 msgstr "Inicio de Servicio"
+
+msgid "Service Templates"
+msgstr ""
 
 msgid "services"
 msgstr "servicios"

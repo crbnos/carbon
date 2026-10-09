@@ -13,6 +13,7 @@ import {
   LuFiles,
   LuFolderCheck,
   LuFolderKanban,
+  LuHardHat,
   LuLandmark,
   LuSettings,
   LuShield,
@@ -135,6 +136,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       name: t`Sales`,
       to: path.to.sales,
       icon: LuCrown
+    },
+    {
+      key: "service",
+      permission: "service",
+      name: t`Service`,
+      to: path.to.serviceOrders,
+      icon: LuHardHat
     },
     {
       key: "settings",

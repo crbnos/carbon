@@ -641,6 +641,11 @@ export const path = {
     customerAccounting: (id: string) =>
       generatePath(`${x}/customer/${id}/accounting`),
     customerAccounts: `${x}/users/customers`,
+    customerAsset: (id: string) =>
+      generatePath(`${x}/service-orders/assets/${id}`),
+    customerAssets: `${x}/service-orders/assets`,
+    customerAssetsTab: (customerId: string) =>
+      generatePath(`${x}/customer/${customerId}/assets`),
     customerBankAccount: (customerId: string, id: string) =>
       generatePath(`${x}/customer/${customerId}/bank-accounts/${id}`),
     customerBankAccounts: (id: string) =>
@@ -1604,6 +1609,7 @@ export const path = {
     mfaVerify: "/api/mfa/verify",
     moveChartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/move/${id}`),
+    myVisits: `${x}/service-orders/my-visits`,
     newAbility: `${x}/resources/abilities/new`,
     newApiKey: `${x}/settings/api-keys/new`,
     newApprovalRule: (documentType?: string) =>
@@ -1654,6 +1660,7 @@ export const path = {
     newCostCenter: `${x}/accounting/cost-centers/new`,
     newCustomer: `${x}/customer/new`,
     newCustomerAccount: `${x}/users/customers/new`,
+    newCustomerAsset: `${x}/service-orders/assets/new`,
     newCustomerBankAccount: (id: string) =>
       generatePath(`${x}/customer/${id}/bank-accounts/new`),
     newCustomerContact: (id: string) =>
@@ -1811,6 +1818,7 @@ export const path = {
     newScrapReason: `${x}/production/scrap-reasons/new`,
     newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
+    newServiceOrder: `${x}/service-orders/new`,
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
     newShift: `${x}/people/shifts/new`,
@@ -2409,14 +2417,31 @@ export const path = {
     serviceMake: (id: string, makeMethodId: string) =>
       generatePath(`${x}/service/${id}/make/${makeMethodId}`),
     serviceOrder: (id: string) => generatePath(`${x}/service-order/${id}`),
+    serviceOrderDetails: (id: string) =>
+      generatePath(`${x}/service-order/${id}/details`),
+    serviceOrderEstimate: (id: string) =>
+      generatePath(`${file}/service-estimate/${id}.pdf`),
+    serviceOrderInvoice: (id: string) =>
+      generatePath(`${x}/service-order/${id}/invoice`),
+    serviceOrderStatus: (id: string) =>
+      generatePath(`${x}/service-order/${id}/status`),
+    serviceOrders: `${x}/service-orders`,
+    serviceOrderVisits: (id: string) =>
+      generatePath(`${x}/service-order/${id}/visits`),
+    serviceOrderWork: (id: string) =>
+      generatePath(`${x}/service-order/${id}/work`),
     servicePurchasing: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing`),
     serviceQuality: (id: string) => generatePath(`${x}/service/${id}/quality`),
     serviceRoot: `${x}/service`,
     serviceSales: (id: string) => generatePath(`${x}/service/${id}/sales`),
+    serviceSchedule: `${x}/service-orders/schedule`,
     serviceSupplier: (serviceId: string, id: string) =>
       generatePath(`${x}/service/${serviceId}/purchasing/${id}`),
     services: `${x}/items/services`,
+    serviceTemplates: `${x}/service-orders/templates`,
+    serviceVisit: (orderId: string, visitId: string) =>
+      generatePath(`${x}/service-order/${orderId}/visits/${visitId}`),
     settings: `${x}/settings`,
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,

@@ -6420,6 +6420,9 @@ msgstr "得意先アカウント"
 msgid "Customer and supplier pages"
 msgstr "得意先および仕入先ページ"
 
+msgid "Customer Assets"
+msgstr ""
+
 msgid "Customer contact"
 msgstr "得意先担当者"
 
@@ -11197,6 +11200,9 @@ msgstr "インストール方式"
 msgid "Installed"
 msgstr "インストール済み"
 
+msgid "Installed Base"
+msgstr ""
+
 msgid "Installed on this step, so it can't be hidden here."
 msgstr "このステップにインストールされているため、ここでは非表示にできません。"
 
@@ -13294,6 +13300,9 @@ msgid "My Timesheet"
 msgstr ""
 
 msgid "My views"
+msgstr ""
+
+msgid "My Visits"
 msgstr ""
 
 msgid "Name"
@@ -19652,6 +19661,9 @@ msgstr "外注サービス明細"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Orders"
+msgstr ""
+
 msgid "Service Period"
 msgstr "サービス期間"
 
@@ -19660,6 +19672,9 @@ msgstr "サービスプロバイダーの詳細"
 
 msgid "Service start"
 msgstr "サービス開始日"
+
+msgid "Service Templates"
+msgstr ""
 
 msgid "services"
 msgstr "サービス"

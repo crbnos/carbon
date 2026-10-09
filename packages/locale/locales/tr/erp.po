@@ -6420,6 +6420,9 @@ msgstr "Müşteri Hesapları"
 msgid "Customer and supplier pages"
 msgstr "Müşteri ve tedarikçi sayfaları"
 
+msgid "Customer Assets"
+msgstr ""
+
 msgid "Customer contact"
 msgstr "Müşteri ilgili kişisi"
 
@@ -11197,6 +11200,9 @@ msgstr "Kurulum Modu"
 msgid "Installed"
 msgstr "Yüklendi"
 
+msgid "Installed Base"
+msgstr ""
+
 msgid "Installed on this step, so it can't be hidden here."
 msgstr "Bu adıma yüklü, bu nedenle burada gizlenemez."
 
@@ -13294,6 +13300,9 @@ msgid "My Timesheet"
 msgstr ""
 
 msgid "My views"
+msgstr ""
+
+msgid "My Visits"
 msgstr ""
 
 msgid "Name"
@@ -19652,6 +19661,9 @@ msgstr "Hizmet Satırları"
 msgid "Service order"
 msgstr ""
 
+msgid "Service Orders"
+msgstr ""
+
 msgid "Service Period"
 msgstr "Hizmet Dönemi"
 
@@ -19660,6 +19672,9 @@ msgstr "Hizmet Sağlayıcı Ayrıntıları"
 
 msgid "Service start"
 msgstr "Hizmet Başlangıç Tarihi"
+
+msgid "Service Templates"
+msgstr ""
 
 msgid "services"
 msgstr "hizmetler"

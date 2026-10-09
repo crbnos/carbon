@@ -49,7 +49,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 15: Make My Timesheet personal
 - [x] Task 16: Add the service models and services
 - [x] Task 17: Add `createServiceOrder` and the status roll-up
-- [ ] Task 18: Add the Service module navigation and layout
+- [x] Task 18: Add the Service module navigation and layout
 - [ ] Task 19: Add the customer asset pages and the customer Assets tab
 - [ ] Task 20: Add the service order list, new form and document page
 - [ ] Task 21: Add the Work section
@@ -1265,3 +1265,4 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 17: `registerCustomerAsset` refuses an item that is not serial-tracked and a serial the item already has (it becomes an asset when it ships).
 - Task 17: `syncServiceOrderStatus(db, { companyId, serviceOrderId, userId, status?, workComplete? })` runs in the caller's transaction when given one. `status` starts the roll-up from a status the user chose (a Resume passes Draft so the visits decide again); it stamps `completedAt`/`completedBy` on Completed and clears them when the order leaves Completed for an open status. `projectStatusOfOrder` holds the plan's mapping. `cancelServiceOrder` refuses an order with any ledger row and also cancels its open visits.
 - Task 17: a throwaway vitest run against this worktree's database (rolled back) registered an asset, created an order from the serial (project `SVC000001`, Service, Released, By Coverage), rolled it to Scheduled with a visit and to On Hold (project On Hold), then cancelled it. The script was not committed.
+- Task 18: the module layout also checks `view: "service"` in its loader, and a second layout, `x+/service-order+/_layout.tsx`, does the same for the order workspace (as `project+/_layout.tsx` does for Projects). Its handle has only `module: "service"`; the order route emits the breadcrumb. `path.to.serviceOrderEstimate(id)` is the PDF route `/file/service-estimate/<id>.pdf` (Task 26). The Service submodules are also registered in the command palette (`Search.tsx`). The module icon is `LuHardHat`.

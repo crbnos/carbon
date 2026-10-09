@@ -59,6 +59,7 @@ import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmod
 import useQualitySubmodules from "~/modules/quality/ui/useQualitySubmodules";
 import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodules";
 import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
+import useServiceSubmodules from "~/modules/service/ui/useServiceSubmodules";
 import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
 import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
 import useWorkflowsSubmodules from "~/modules/workflows/ui/useWorkflowsSubmodules";
@@ -564,6 +565,7 @@ function useNavigationItems(): NavigationItem[] {
   const quality = useQualitySubmodules();
   const resources = useResourcesSubmodules();
   const account = useAccountSubmodules();
+  const service = useServiceSubmodules();
   const workflows = useWorkflowsSubmodules();
   const groupedSubmodules: Record<
     string,
@@ -585,6 +587,7 @@ function useNavigationItems(): NavigationItem[] {
     people,
     production,
     resources,
+    service,
     settings,
     users,
     workflows,
