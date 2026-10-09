@@ -9,8 +9,8 @@
 ### Phase A — Foundation (no behavior change)
 - [x] Task 1: Add the Provisional and Superseded journal statuses
 - [x] Task 2: Add the cutover columns, the stand-in role column, triggers and the status function
-- [ ] Task 3: Add Migration Clearing to the seed data
-- [ ] Task 4: Regenerate the database types
+- [x] Task 3: Add Migration Clearing to the seed data
+- [x] Task 4: Regenerate the database types
 - [ ] Task 5: Add the journal status lists and `journalPostingStatus`
 - [ ] Task 6: Change the SQL readers that filter on `<> 'Draft'`
 - [x] Task 7: Exclude the new statuses from the dataset coverage check
