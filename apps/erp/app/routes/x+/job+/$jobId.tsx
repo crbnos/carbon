@@ -177,7 +177,7 @@ export default function JobRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
-              explorerLabel={t`Bill of Materials`}
+              explorerLabel={t`Structure`}
               explorer={
                 <div className="w-full h-full p-2">
                   <Suspense fallback={<ExplorerSkeleton />}>

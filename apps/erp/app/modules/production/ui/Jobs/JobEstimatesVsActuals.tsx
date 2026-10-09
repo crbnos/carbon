@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
   Tr,
   toast,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { formatDurationMilliseconds, getItemReadableId } from "@carbon/utils";
@@ -42,6 +43,7 @@ import {
   toZoned
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { LuCircleChevronRight, LuNotebook } from "react-icons/lu";
 import { Link, useParams } from "react-router";
@@ -307,6 +309,21 @@ const JobEstimatesVsActuals = ({
   const processesTotals = getProcessesTotals();
   const materialsTotals = getMaterialsTotals();
 
+  // Phones: one row per operation or material instead of the wide table.
+  // A duration nobody has logged reads "–", not "0 milliseconds".
+  const { isPhone } = useViewport();
+  const duration = (ms: number) => (ms ? formatDurationMilliseconds(ms) : "–");
+  const ratio = (actual: number, estimated: number) =>
+    estimated ? percentFormatter.format(actual / estimated) : null;
+  const phoneTotal = (label: ReactNode, value: ReactNode, isOver: boolean) => (
+    <div className="flex items-center justify-between gap-3 py-3 font-semibold">
+      <span>{label}</span>
+      <span className={cn("tabular-nums", isOver && "text-red-500")}>
+        {value}
+      </span>
+    </div>
+  );
+
   return (
     <Tabs defaultValue="processes" className="w-full">
       <Card>
@@ -329,430 +346,630 @@ const JobEstimatesVsActuals = ({
         </HStack>
         <CardContent>
           <TabsContent value="processes">
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th className="px-2" />
-                  <Th className="px-2">Estimated</Th>
-                  <Th className="px-2">Actual</Th>
-                  <Th className="px-2">%</Th>
-                  <Th className="px-2">Complete</Th>
-                  <Th className="px-2">Scrap</Th>
-                  <Th className="px-2" />
-                </Tr>
-              </Thead>
-              <Tbody>
+            {isPhone ? (
+              <div className="flex flex-col divide-y divide-border">
                 {operations.map((operation) => {
+                  if (operation.operationType === "Outside Processing")
+                    return null;
                   const estimated = getEstimatedTime(operation);
                   const actual = getActualTime(operation);
-                  const notes = getJobOperationNotes(operation);
-
-                  const isOutside =
-                    operation.operationType === "Outside Processing";
-                  if (isOutside) return null;
-
+                  const isOver = actual.total > estimated.total;
                   return (
-                    <>
-                      <Tr key={operation.id} className="border-b border-border">
-                        <Td className="border-r border-border px-2">
-                          <HStack className="w-full justify-between ">
-                            <HStack spacing={2}>
-                              <span>{operation.description}</span>
-                              {operation.reworkId && (
-                                <Badge variant="red">Rework</Badge>
+                    <div
+                      key={operation.id}
+                      className="flex flex-col gap-1.5 py-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <JobOperationStatus operation={operation} />
+                        <span className="min-w-0 flex-1 truncate font-medium">
+                          {operation.description}
+                        </span>
+                        {operation.reworkId && (
+                          <Badge variant="red">
+                            <Trans>Rework</Trans>
+                          </Badge>
+                        )}
+                        <span
+                          className={cn(
+                            "shrink-0 text-sm tabular-nums text-muted-foreground",
+                            isOver && "text-red-500"
+                          )}
+                        >
+                          {ratio(actual.total, estimated.total)}
+                        </span>
+                        <Link
+                          to={`${path.to.jobProductionEvents(
+                            jobId
+                          )}?filter=jobOperationId:eq:${operation.id}`}
+                        >
+                          <IconButton
+                            variant="ghost"
+                            icon={<LuCircleChevronRight />}
+                            aria-label={t`View Production Events`}
+                          />
+                        </Link>
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                        <span>
+                          <Trans>
+                            Estimated{" "}
+                            <span className="font-medium text-foreground tabular-nums">
+                              {duration(estimated.total)}
+                            </span>
+                          </Trans>
+                        </span>
+                        <span>
+                          <Trans>
+                            Actual{" "}
+                            <span
+                              className={cn(
+                                "font-medium text-foreground tabular-nums",
+                                isOver && "text-red-500"
                               )}
-                            </HStack>
-                            <JobOperationStatus operation={operation} />
-                          </HStack>
-                        </Td>
-                        <Td className="px-2">
-                          <span className="flex-shrink-0">
-                            {formatDurationMilliseconds(estimated.total)}
-                          </span>
-                        </Td>
-                        <Td className="px-2">
-                          <span
-                            className={cn(
-                              "flex-shrink-0",
-                              actual.total > estimated.total && "text-red-500"
-                            )}
-                          >
-                            {formatDurationMilliseconds(actual.total)}
-                          </span>
-                        </Td>
-                        <Td className="px-2">
-                          <span
-                            className={cn(
-                              "line-clamp-1",
-                              actual.total > estimated.total && "text-red-500"
-                            )}
-                          >
-                            {estimated.total
-                              ? percentFormatter.format(
-                                  actual.total / estimated.total
-                                )
-                              : null}
-                          </span>
-                        </Td>
-                        <Td className="px-2">
-                          {`${getCompleteQuantity(operation)}/${
-                            operation.targetQuantity ??
-                            operation.operationQuantity ??
-                            0
-                          }`}
-                        </Td>
-                        <Td className="px-2">{getScrapQuantity(operation)}</Td>
-                        <Td className="px-2">
-                          <HStack spacing={0} className="justify-end">
-                            {notes && notes.length > 0 && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <IconButton
-                                    variant="ghost"
-                                    icon={<LuNotebook />}
-                                    aria-label={t`Notes`}
-                                  />
-                                </PopoverTrigger>
-                                <PopoverContent className="w-96 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-gray-300">
-                                  <div className="flex flex-col gap-3 p-2">
-                                    {notes.map((note, index) => (
-                                      <div
-                                        key={index}
-                                        className="flex gap-2 items-center"
-                                      >
-                                        <div className="flex-shrink-0">
-                                          <EmployeeAvatar
-                                            employeeId={note.createdBy}
-                                            size="sm"
-                                            withName={false}
-                                          />
-                                        </div>
-                                        <div
-                                          className={cn(
-                                            "flex-1 rounded-lg p-2 text-sm",
-                                            note.createdBy === user.id
-                                              ? "bg-blue-500 text-white"
-                                              : "bg-muted"
-                                          )}
-                                        >
-                                          {note.note}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                            <Link
-                              to={`${path.to.jobProductionEvents(
-                                jobId
-                              )}?filter=jobOperationId:eq:${operation.id}`}
                             >
-                              <IconButton
-                                variant="ghost"
-                                icon={<LuCircleChevronRight />}
-                                aria-label={t`View Production Events`}
-                              />
-                            </Link>
-                          </HStack>
-                        </Td>
-                      </Tr>
-
+                              {duration(actual.total)}
+                            </span>
+                          </Trans>
+                        </span>
+                        <span className="tabular-nums">
+                          <Trans>
+                            Complete {getCompleteQuantity(operation)}/
+                            {operation.targetQuantity ??
+                              operation.operationQuantity ??
+                              0}
+                          </Trans>
+                        </span>
+                        {getScrapQuantity(operation) > 0 && (
+                          <span className="tabular-nums">
+                            <Trans>Scrap {getScrapQuantity(operation)}</Trans>
+                          </span>
+                        )}
+                      </div>
                       {timeTypes.map((type) => {
-                        if (
-                          estimated[
-                            type.toLowerCase() as keyof typeof estimated
-                          ] === 0
-                        ) {
-                          return null;
-                        }
+                        const key =
+                          type.toLowerCase() as keyof typeof estimated;
+                        if (estimated[key] === 0) return null;
                         const employeeIds = getEmployeeIds(operation, type);
-                        const notes = getNotes(operation, type);
                         return (
-                          <Tr key={type} className="border-b border-border">
-                            <Td className="border-r border-border pl-10">
-                              <HStack className="justify-between w-full">
-                                <HStack>
-                                  <TimeTypeIcon type={type} />
-                                  <span>{type}</span>
-                                </HStack>
-                                {employeeIds.length > 0 && (
-                                  <EmployeeAvatarGroup
-                                    employeeIds={employeeIds}
-                                    size="xs"
-                                    limit={3}
-                                  />
+                          <div
+                            key={type}
+                            className="flex items-center gap-2 text-sm text-muted-foreground"
+                          >
+                            <TimeTypeIcon type={type} />
+                            <span>{type}</span>
+                            {employeeIds.length > 0 && (
+                              <EmployeeAvatarGroup
+                                employeeIds={employeeIds}
+                                size="xs"
+                                limit={3}
+                              />
+                            )}
+                            <span className="ml-auto tabular-nums">
+                              <Trans>
+                                {duration(actual[key])} of{" "}
+                                {duration(estimated[key])}
+                              </Trans>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+                {phoneTotal(
+                  <Trans>Total</Trans>,
+                  <Trans>
+                    {duration(processesTotals.actual)} of{" "}
+                    {duration(processesTotals.estimated)}
+                  </Trans>,
+                  processesTotals.actual > processesTotals.estimated
+                )}
+              </div>
+            ) : (
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th className="px-2" />
+                    <Th className="px-2">Estimated</Th>
+                    <Th className="px-2">Actual</Th>
+                    <Th className="px-2">%</Th>
+                    <Th className="px-2">Complete</Th>
+                    <Th className="px-2">Scrap</Th>
+                    <Th className="px-2" />
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {operations.map((operation) => {
+                    const estimated = getEstimatedTime(operation);
+                    const actual = getActualTime(operation);
+                    const notes = getJobOperationNotes(operation);
+
+                    const isOutside =
+                      operation.operationType === "Outside Processing";
+                    if (isOutside) return null;
+
+                    return (
+                      <>
+                        <Tr
+                          key={operation.id}
+                          className="border-b border-border"
+                        >
+                          <Td className="border-r border-border px-2">
+                            <HStack className="w-full justify-between ">
+                              <HStack spacing={2}>
+                                <span>{operation.description}</span>
+                                {operation.reworkId && (
+                                  <Badge variant="red">Rework</Badge>
                                 )}
                               </HStack>
-                            </Td>
-                            <Td className="px-2">
-                              {formatDurationMilliseconds(
-                                estimated[
-                                  type.toLowerCase() as keyof typeof estimated
-                                ]
+                              <JobOperationStatus operation={operation} />
+                            </HStack>
+                          </Td>
+                          <Td className="px-2">
+                            <span className="flex-shrink-0">
+                              {formatDurationMilliseconds(estimated.total)}
+                            </span>
+                          </Td>
+                          <Td className="px-2">
+                            <span
+                              className={cn(
+                                "flex-shrink-0",
+                                actual.total > estimated.total && "text-red-500"
                               )}
-                            </Td>
-                            <Td className="px-2">
-                              {formatDurationMilliseconds(
-                                actual[
-                                  type.toLowerCase() as keyof typeof actual
-                                ]
+                            >
+                              {formatDurationMilliseconds(actual.total)}
+                            </span>
+                          </Td>
+                          <Td className="px-2">
+                            <span
+                              className={cn(
+                                "line-clamp-1",
+                                actual.total > estimated.total && "text-red-500"
                               )}
-                            </Td>
-                            <Td className="px-2">
-                              {percentFormatter.format(
-                                actual[
-                                  type.toLowerCase() as keyof typeof actual
-                                ] /
+                            >
+                              {estimated.total
+                                ? percentFormatter.format(
+                                    actual.total / estimated.total
+                                  )
+                                : null}
+                            </span>
+                          </Td>
+                          <Td className="px-2">
+                            {`${getCompleteQuantity(operation)}/${
+                              operation.targetQuantity ??
+                              operation.operationQuantity ??
+                              0
+                            }`}
+                          </Td>
+                          <Td className="px-2">
+                            {getScrapQuantity(operation)}
+                          </Td>
+                          <Td className="px-2">
+                            <HStack spacing={0} className="justify-end">
+                              {notes && notes.length > 0 && (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <IconButton
+                                      variant="ghost"
+                                      icon={<LuNotebook />}
+                                      aria-label={t`Notes`}
+                                    />
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-96 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-gray-300">
+                                    <div className="flex flex-col gap-3 p-2">
+                                      {notes.map((note, index) => (
+                                        <div
+                                          key={index}
+                                          className="flex gap-2 items-center"
+                                        >
+                                          <div className="flex-shrink-0">
+                                            <EmployeeAvatar
+                                              employeeId={note.createdBy}
+                                              size="sm"
+                                              withName={false}
+                                            />
+                                          </div>
+                                          <div
+                                            className={cn(
+                                              "flex-1 rounded-lg p-2 text-sm",
+                                              note.createdBy === user.id
+                                                ? "bg-blue-500 text-white"
+                                                : "bg-muted"
+                                            )}
+                                          >
+                                            {note.note}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                              <Link
+                                to={`${path.to.jobProductionEvents(
+                                  jobId
+                                )}?filter=jobOperationId:eq:${operation.id}`}
+                              >
+                                <IconButton
+                                  variant="ghost"
+                                  icon={<LuCircleChevronRight />}
+                                  aria-label={t`View Production Events`}
+                                />
+                              </Link>
+                            </HStack>
+                          </Td>
+                        </Tr>
+
+                        {timeTypes.map((type) => {
+                          if (
+                            estimated[
+                              type.toLowerCase() as keyof typeof estimated
+                            ] === 0
+                          ) {
+                            return null;
+                          }
+                          const employeeIds = getEmployeeIds(operation, type);
+                          const notes = getNotes(operation, type);
+                          return (
+                            <Tr key={type} className="border-b border-border">
+                              <Td className="border-r border-border pl-10">
+                                <HStack className="justify-between w-full">
+                                  <HStack>
+                                    <TimeTypeIcon type={type} />
+                                    <span>{type}</span>
+                                  </HStack>
+                                  {employeeIds.length > 0 && (
+                                    <EmployeeAvatarGroup
+                                      employeeIds={employeeIds}
+                                      size="xs"
+                                      limit={3}
+                                    />
+                                  )}
+                                </HStack>
+                              </Td>
+                              <Td className="px-2">
+                                {formatDurationMilliseconds(
                                   estimated[
                                     type.toLowerCase() as keyof typeof estimated
                                   ]
-                              )}
-                            </Td>
-                            <Td className="px-2" />
-                            <Td className="px-2" />
-                            <Td className="px-2">
-                              <HStack spacing={0} className="justify-end">
-                                {notes && notes.length > 0 && (
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <IconButton
-                                        variant="ghost"
-                                        icon={<LuNotebook />}
-                                        aria-label={t`Notes`}
-                                      />
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-96 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-gray-300">
-                                      <div className="flex flex-col gap-3 p-2">
-                                        {notes.map((note, index) => (
-                                          <div
-                                            key={index}
-                                            className="flex gap-2 items-center"
-                                          >
-                                            <div className="flex-shrink-0">
-                                              <EmployeeAvatar
-                                                employeeId={note.employeeId}
-                                                size="sm"
-                                                withName={false}
-                                              />
-                                            </div>
-                                            <div className="flex-1 rounded-lg bg-muted p-2 text-sm">
-                                              {note.notes}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
                                 )}
-                                <Link
-                                  to={`${path.to.jobProductionEvents(
-                                    jobId
-                                  )}?filter=jobOperationId:eq:${
-                                    operation.id
-                                  }&filter=type:eq:${type}`}
-                                >
-                                  <IconButton
-                                    variant="ghost"
-                                    icon={<LuCircleChevronRight />}
-                                    aria-label={t`View Production Events`}
-                                  />
-                                </Link>
-                              </HStack>
-                            </Td>
-                          </Tr>
-                        );
-                      })}
-                    </>
-                  );
-                })}
-              </Tbody>
-              <Tfoot>
-                <Tr className="font-bold bg-muted/50">
-                  <Td className="border-r border-border px-2">
-                    <Trans>Total</Trans>
-                  </Td>
-                  <Td className="px-2">
-                    {formatDurationMilliseconds(processesTotals.estimated)}
-                  </Td>
-                  <Td
-                    className={cn(
-                      "px-2",
-                      processesTotals.actual > processesTotals.estimated &&
-                        "text-red-500"
-                    )}
-                  >
-                    {formatDurationMilliseconds(processesTotals.actual)}
-                  </Td>
-                  <Td
-                    className={cn(
-                      processesTotals.actual > processesTotals.estimated &&
-                        "text-red-500"
-                    )}
-                  >
-                    {processesTotals.estimated > 0
-                      ? percentFormatter.format(processesTotals.percentage)
-                      : null}
-                  </Td>
-                  <Td className="px-2">{processesTotals.complete}</Td>
-                  <Td className="px-2">{processesTotals.scrap}</Td>
-                  <Td className="px-2" />
-                </Tr>
-              </Tfoot>
-            </Table>
+                              </Td>
+                              <Td className="px-2">
+                                {formatDurationMilliseconds(
+                                  actual[
+                                    type.toLowerCase() as keyof typeof actual
+                                  ]
+                                )}
+                              </Td>
+                              <Td className="px-2">
+                                {percentFormatter.format(
+                                  actual[
+                                    type.toLowerCase() as keyof typeof actual
+                                  ] /
+                                    estimated[
+                                      type.toLowerCase() as keyof typeof estimated
+                                    ]
+                                )}
+                              </Td>
+                              <Td className="px-2" />
+                              <Td className="px-2" />
+                              <Td className="px-2">
+                                <HStack spacing={0} className="justify-end">
+                                  {notes && notes.length > 0 && (
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <IconButton
+                                          variant="ghost"
+                                          icon={<LuNotebook />}
+                                          aria-label={t`Notes`}
+                                        />
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-96 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-gray-300">
+                                        <div className="flex flex-col gap-3 p-2">
+                                          {notes.map((note, index) => (
+                                            <div
+                                              key={index}
+                                              className="flex gap-2 items-center"
+                                            >
+                                              <div className="flex-shrink-0">
+                                                <EmployeeAvatar
+                                                  employeeId={note.employeeId}
+                                                  size="sm"
+                                                  withName={false}
+                                                />
+                                              </div>
+                                              <div className="flex-1 rounded-lg bg-muted p-2 text-sm">
+                                                {note.notes}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </PopoverContent>
+                                    </Popover>
+                                  )}
+                                  <Link
+                                    to={`${path.to.jobProductionEvents(
+                                      jobId
+                                    )}?filter=jobOperationId:eq:${
+                                      operation.id
+                                    }&filter=type:eq:${type}`}
+                                  >
+                                    <IconButton
+                                      variant="ghost"
+                                      icon={<LuCircleChevronRight />}
+                                      aria-label={t`View Production Events`}
+                                    />
+                                  </Link>
+                                </HStack>
+                              </Td>
+                            </Tr>
+                          );
+                        })}
+                      </>
+                    );
+                  })}
+                </Tbody>
+                <Tfoot>
+                  <Tr className="font-bold bg-muted/50">
+                    <Td className="border-r border-border px-2">
+                      <Trans>Total</Trans>
+                    </Td>
+                    <Td className="px-2">
+                      {formatDurationMilliseconds(processesTotals.estimated)}
+                    </Td>
+                    <Td
+                      className={cn(
+                        "px-2",
+                        processesTotals.actual > processesTotals.estimated &&
+                          "text-red-500"
+                      )}
+                    >
+                      {formatDurationMilliseconds(processesTotals.actual)}
+                    </Td>
+                    <Td
+                      className={cn(
+                        processesTotals.actual > processesTotals.estimated &&
+                          "text-red-500"
+                      )}
+                    >
+                      {processesTotals.estimated > 0
+                        ? percentFormatter.format(processesTotals.percentage)
+                        : null}
+                    </Td>
+                    <Td className="px-2">{processesTotals.complete}</Td>
+                    <Td className="px-2">{processesTotals.scrap}</Td>
+                    <Td className="px-2" />
+                  </Tr>
+                </Tfoot>
+              </Table>
+            )}
           </TabsContent>
           <TabsContent value="materials">
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>Material</Th>
-                  <Th>Estimated</Th>
-                  <Th>Actual</Th>
-                  <Th>%</Th>
-
-                  <Th>Estimated</Th>
-                  <Th>Actual</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
+            {isPhone ? (
+              <div className="flex flex-col divide-y divide-border">
                 {materials?.map((material) => {
-                  const exceedsEstimate =
-                    material.quantityIssued &&
-                    material.quantityIssued > (material.estimatedQuantity ?? 0);
-                  const currentUnitCost =
-                    currentUnitCosts[material.itemId] ?? 0;
-
+                  const isMade = material.methodType === "Make to Order";
+                  const isOver =
+                    (material.quantityIssued ?? 0) >
+                    (material.estimatedQuantity ?? 0);
                   const estimatedTotalCost =
                     (material.estimatedQuantity ?? 0) *
                     (material.unitCost ?? 0);
                   const actualTotalCost =
-                    (material.quantityIssued ?? 0) * currentUnitCost;
-
+                    (material.quantityIssued ?? 0) *
+                    (currentUnitCosts[material.itemId] ?? 0);
                   return (
-                    <Tr key={material.id} className="border-b border-border">
-                      <Td className="border-r border-border">
-                        <HStack className="w-full justify-start">
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <MethodIcon type={material.methodType} />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {material.methodType}
-                            </TooltipContent>
-                          </Tooltip>
-                          <span>
-                            {getItemReadableId(items, material.itemId)}
+                    <div key={material.id} className="flex flex-col gap-1 py-3">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <MethodIcon type={material.methodType} />
+                        <span className="min-w-0 flex-1 truncate font-medium">
+                          {getItemReadableId(items, material.itemId)}
+                        </span>
+                        {!isMade && (
+                          <span
+                            className={cn(
+                              "shrink-0 text-sm tabular-nums text-muted-foreground",
+                              isOver && "text-red-500"
+                            )}
+                          >
+                            {material.quantityIssued
+                              ? ratio(
+                                  material.quantityIssued,
+                                  material.estimatedQuantity ?? 0
+                                )
+                              : null}
                           </span>
-                        </HStack>
-                      </Td>
-                      <Td>{material.estimatedQuantity}</Td>
-                      <Td className={cn(exceedsEstimate && "text-red-500")}>
-                        {material.methodType === "Make to Order" ? (
-                          <MethodIcon type="Make to Order" />
-                        ) : (
-                          material.quantityIssued
                         )}
-                      </Td>
-
-                      <Td className={cn(exceedsEstimate && "text-red-500")}>
-                        {material.methodType !== "Make to Order" &&
-                        material.estimatedQuantity &&
-                        material.quantityIssued
-                          ? percentFormatter.format(
-                              material.quantityIssued /
-                                material.estimatedQuantity
-                            )
-                          : null}
-                      </Td>
-                      <Td>
-                        {material.methodType === "Make to Order" ? null : (
-                          <VStack spacing={0} className="py-1">
-                            <span className="text-sm">
+                      </div>
+                      {!isMade && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 pl-6 text-sm text-muted-foreground tabular-nums">
+                          <span className={cn(isOver && "text-red-500")}>
+                            <Trans>
+                              {material.quantityIssued ?? 0} of{" "}
+                              {material.estimatedQuantity ?? 0}
+                            </Trans>
+                          </span>
+                          <span
+                            className={cn(
+                              actualTotalCost > estimatedTotalCost &&
+                                "text-red-500"
+                            )}
+                          >
+                            <Trans>
+                              {currencyFormatter.format(actualTotalCost)} of{" "}
                               {currencyFormatter.format(estimatedTotalCost)}
-                            </span>
-                            <span className="text-xxs">
-                              {currencyFormatter.format(material.unitCost ?? 0)}
-                            </span>
-                          </VStack>
-                        )}
-                      </Td>
-                      <Td>
-                        {material.methodType === "Make to Order" ? null : (
-                          <VStack spacing={0} className="py-1">
-                            <span
-                              className={cn(
-                                "text-sm",
-                                actualTotalCost > estimatedTotalCost &&
-                                  "text-red-500"
-                              )}
-                            >
-                              {currencyFormatter.format(actualTotalCost)}
-                            </span>
-                            <span
-                              className={cn(
-                                "text-xxs",
-                                currentUnitCost > material.unitCost &&
-                                  "text-red-500"
-                              )}
-                            >
-                              {currencyFormatter.format(currentUnitCost)}
-                            </span>
-                          </VStack>
-                        )}
-                      </Td>
-                    </Tr>
+                            </Trans>
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
-              </Tbody>
-              <Tfoot>
-                <Tr className="font-bold bg-muted/50">
-                  <Td className="border-r border-border">
-                    <Trans>Total</Trans>
-                  </Td>
-                  <Td>{materialsTotals.estimatedQty || null}</Td>
-                  <Td
-                    className={cn(
-                      materialsTotals.actualQty >
-                        materialsTotals.estimatedQty && "text-red-500"
-                    )}
-                  >
-                    {materialsTotals.actualQty || null}
-                  </Td>
-                  <Td
-                    className={cn(
-                      materialsTotals.actualQty >
-                        materialsTotals.estimatedQty && "text-red-500"
-                    )}
-                  >
-                    {materialsTotals.estimatedQty > 0
-                      ? percentFormatter.format(materialsTotals.percentage)
-                      : null}
-                  </Td>
-                  <Td>
-                    <VStack spacing={0} className="py-1">
-                      <span className="text-sm">
-                        {currencyFormatter.format(
-                          materialsTotals.estimatedCost
-                        )}
-                      </span>
-                    </VStack>
-                  </Td>
-                  <Td>
-                    <VStack spacing={0} className="py-1">
-                      <span
-                        className={cn(
-                          "text-sm",
-                          materialsTotals.actualCost >
-                            materialsTotals.estimatedCost && "text-red-500"
-                        )}
-                      >
-                        {currencyFormatter.format(materialsTotals.actualCost)}
-                      </span>
-                    </VStack>
-                  </Td>
-                </Tr>
-              </Tfoot>
-            </Table>
+                {phoneTotal(
+                  <Trans>Total</Trans>,
+                  <Trans>
+                    {currencyFormatter.format(materialsTotals.actualCost)} of{" "}
+                    {currencyFormatter.format(materialsTotals.estimatedCost)}
+                  </Trans>,
+                  materialsTotals.actualCost > materialsTotals.estimatedCost
+                )}
+              </div>
+            ) : (
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Material</Th>
+                    <Th>Estimated</Th>
+                    <Th>Actual</Th>
+                    <Th>%</Th>
+
+                    <Th>Estimated</Th>
+                    <Th>Actual</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {materials?.map((material) => {
+                    const exceedsEstimate =
+                      material.quantityIssued &&
+                      material.quantityIssued >
+                        (material.estimatedQuantity ?? 0);
+                    const currentUnitCost =
+                      currentUnitCosts[material.itemId] ?? 0;
+
+                    const estimatedTotalCost =
+                      (material.estimatedQuantity ?? 0) *
+                      (material.unitCost ?? 0);
+                    const actualTotalCost =
+                      (material.quantityIssued ?? 0) * currentUnitCost;
+
+                    return (
+                      <Tr key={material.id} className="border-b border-border">
+                        <Td className="border-r border-border">
+                          <HStack className="w-full justify-start">
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <MethodIcon type={material.methodType} />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {material.methodType}
+                              </TooltipContent>
+                            </Tooltip>
+                            <span>
+                              {getItemReadableId(items, material.itemId)}
+                            </span>
+                          </HStack>
+                        </Td>
+                        <Td>{material.estimatedQuantity}</Td>
+                        <Td className={cn(exceedsEstimate && "text-red-500")}>
+                          {material.methodType === "Make to Order" ? (
+                            <MethodIcon type="Make to Order" />
+                          ) : (
+                            material.quantityIssued
+                          )}
+                        </Td>
+
+                        <Td className={cn(exceedsEstimate && "text-red-500")}>
+                          {material.methodType !== "Make to Order" &&
+                          material.estimatedQuantity &&
+                          material.quantityIssued
+                            ? percentFormatter.format(
+                                material.quantityIssued /
+                                  material.estimatedQuantity
+                              )
+                            : null}
+                        </Td>
+                        <Td>
+                          {material.methodType === "Make to Order" ? null : (
+                            <VStack spacing={0} className="py-1">
+                              <span className="text-sm">
+                                {currencyFormatter.format(estimatedTotalCost)}
+                              </span>
+                              <span className="text-xxs">
+                                {currencyFormatter.format(
+                                  material.unitCost ?? 0
+                                )}
+                              </span>
+                            </VStack>
+                          )}
+                        </Td>
+                        <Td>
+                          {material.methodType === "Make to Order" ? null : (
+                            <VStack spacing={0} className="py-1">
+                              <span
+                                className={cn(
+                                  "text-sm",
+                                  actualTotalCost > estimatedTotalCost &&
+                                    "text-red-500"
+                                )}
+                              >
+                                {currencyFormatter.format(actualTotalCost)}
+                              </span>
+                              <span
+                                className={cn(
+                                  "text-xxs",
+                                  currentUnitCost > material.unitCost &&
+                                    "text-red-500"
+                                )}
+                              >
+                                {currencyFormatter.format(currentUnitCost)}
+                              </span>
+                            </VStack>
+                          )}
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+                </Tbody>
+                <Tfoot>
+                  <Tr className="font-bold bg-muted/50">
+                    <Td className="border-r border-border">
+                      <Trans>Total</Trans>
+                    </Td>
+                    <Td>{materialsTotals.estimatedQty || null}</Td>
+                    <Td
+                      className={cn(
+                        materialsTotals.actualQty >
+                          materialsTotals.estimatedQty && "text-red-500"
+                      )}
+                    >
+                      {materialsTotals.actualQty || null}
+                    </Td>
+                    <Td
+                      className={cn(
+                        materialsTotals.actualQty >
+                          materialsTotals.estimatedQty && "text-red-500"
+                      )}
+                    >
+                      {materialsTotals.estimatedQty > 0
+                        ? percentFormatter.format(materialsTotals.percentage)
+                        : null}
+                    </Td>
+                    <Td>
+                      <VStack spacing={0} className="py-1">
+                        <span className="text-sm">
+                          {currencyFormatter.format(
+                            materialsTotals.estimatedCost
+                          )}
+                        </span>
+                      </VStack>
+                    </Td>
+                    <Td>
+                      <VStack spacing={0} className="py-1">
+                        <span
+                          className={cn(
+                            "text-sm",
+                            materialsTotals.actualCost >
+                              materialsTotals.estimatedCost && "text-red-500"
+                          )}
+                        >
+                          {currencyFormatter.format(materialsTotals.actualCost)}
+                        </span>
+                      </VStack>
+                    </Td>
+                  </Tr>
+                </Tfoot>
+              </Table>
+            )}
           </TabsContent>
         </CardContent>
       </Card>

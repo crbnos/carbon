@@ -76,6 +76,7 @@ import {
   MetricCard
 } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
+import { usePercentFormatter } from "~/hooks";
 import { useUser } from "~/hooks/useUser";
 import type { ActiveProductionEvent } from "~/modules/production";
 import {
@@ -352,17 +353,19 @@ export default function ProductionDashboard() {
         />
 
         <Card className="col-span-1 lg:col-span-6 max-md:col-span-2">
-          <HStack className="flex-col items-start gap-2 sm:flex-row sm:justify-between sm:items-center">
-            <CardHeader>
-              <div className="flex w-full justify-start items-center gap-2">
+          <HStack className="flex-col items-start gap-2 sm:flex-row sm:justify-between sm:items-center max-md:flex-row max-md:items-center max-md:gap-1.5 max-md:px-3 max-md:pt-3">
+            <CardHeader className="max-md:min-w-0 max-md:flex-1 max-md:p-0">
+              <div className="flex w-full min-w-0 justify-start items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="secondary"
                       rightIcon={<LuChevronDown />}
-                      className="hover:bg-background/80"
+                      className="hover:bg-background/80 max-md:min-w-0 max-md:flex-1 max-md:justify-between"
                     >
-                      <span>{kpiLabels[selectedKpiData.key]}</span>
+                      <span className="truncate">
+                        {kpiLabels[selectedKpiData.key]}
+                      </span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent side="bottom" align="start">
@@ -381,7 +384,7 @@ export default function ProductionDashboard() {
                 </DropdownMenu>
               </div>
             </CardHeader>
-            <CardAction className="flex-row items-center gap-2">
+            <CardAction className="flex-row items-center gap-2 max-md:shrink-0 max-md:gap-1.5 max-md:p-0">
               <DateSelect
                 value={interval}
                 onValueChange={onIntervalChange}
@@ -441,6 +444,14 @@ export default function ProductionDashboard() {
                   </p>
                 </Empty>
               </div>
+            ) : isPhone ? (
+              <Loading isLoading={isFetching} className="w-full">
+                <KpiBarList
+                  kpi={selectedKpi}
+                  data={kpiFetcher.data?.data ?? []}
+                  totalTimeInInterval={totalTimeInInterval}
+                />
+              </Loading>
             ) : (
               <Loading isLoading={isFetching} className="w-full">
                 <ChartContainer
@@ -456,10 +467,7 @@ export default function ProductionDashboard() {
                     accessibilityLayer
                     data={kpiFetcher.data?.data ?? []}
                     layout="vertical"
-                    margin={{
-                      // Phones: room for the top bar's value label.
-                      right: isPhone ? 48 : 30
-                    }}
+                    margin={{ right: 30 }}
                   >
                     <YAxis
                       dataKey="key"
@@ -609,6 +617,103 @@ export default function ProductionDashboard() {
   );
 }
 
+type KpiRow = {
+  key: string;
+  value?: number;
+  actual?: number;
+  estimate?: number;
+};
+
+/**
+ * Phones: the KPI chart as a list. A bar chart's category axis takes half of
+ * a phone's width, so each row puts its name and value on one line and draws
+ * the bar underneath at full width.
+ */
+function KpiBarList({
+  kpi,
+  data,
+  totalTimeInInterval
+}: {
+  kpi: (typeof KPIs)[number]["key"];
+  data: KpiRow[];
+  totalTimeInInterval: number;
+}) {
+  const percentFormatter = usePercentFormatter();
+  const isComparison = kpi === "estimatesVsActuals";
+  const max = Math.max(
+    1,
+    ...data.map((row) =>
+      isComparison
+        ? Math.max(row.actual ?? 0, row.estimate ?? 0)
+        : (row.value ?? 0)
+    )
+  );
+  const width = (value = 0) => ({ width: `${(value / max) * 100}%` });
+
+  return (
+    <div className="flex w-full flex-col gap-3">
+      {isComparison && (
+        <div className="flex gap-4 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 rounded-sm bg-[hsl(var(--chart-1))]" />
+            <Trans>Actual</Trans>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 rounded-sm bg-[hsl(var(--chart-2))]" />
+            <Trans>Estimate</Trans>
+          </span>
+        </div>
+      )}
+      {data.map((row) => (
+        <div key={row.key} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-2 text-sm">
+            <span className="truncate">{row.key}</span>
+            <span className="shrink-0 tabular-nums text-muted-foreground">
+              {isComparison ? (
+                <Trans>
+                  {formatDurationMilliseconds(row.actual ?? 0)} of{" "}
+                  {formatDurationMilliseconds(row.estimate ?? 0)}
+                </Trans>
+              ) : kpi === "utilization" ? (
+                `${formatDurationMilliseconds(row.value ?? 0)} · ${percentFormatter.format(
+                  totalTimeInInterval === 0
+                    ? 0
+                    : (row.value ?? 0) / totalTimeInInterval
+                )}`
+              ) : (
+                formatDurationMilliseconds(row.value ?? 0)
+              )}
+            </span>
+          </div>
+          {isComparison ? (
+            <div className="flex flex-col gap-0.5">
+              <div className="h-2 overflow-hidden rounded bg-muted">
+                <div
+                  className="h-full rounded bg-[hsl(var(--chart-1))]"
+                  style={width(row.actual)}
+                />
+              </div>
+              <div className="h-2 overflow-hidden rounded bg-muted">
+                <div
+                  className="h-full rounded bg-[hsl(var(--chart-2))]"
+                  style={width(row.estimate)}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="h-2 overflow-hidden rounded bg-muted">
+              <div
+                className="h-full rounded bg-primary"
+                style={width(row.value)}
+              />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 type JobOperationMetaData = {
   customerId?: string | null;
   deadlineType?: "No Deadline" | "ASAP" | "Soft Deadline" | "Hard Deadline";
@@ -635,6 +740,7 @@ function WorkCenterCards({
   workCenters: WorkCenterWithBlocking[];
 }) {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const [events, setEvents] = useState<ActiveProductionEvent[]>(initialEvents);
   const [jobOperationMetaData, setJobOperationMetaData] = useState<
     Record<string, JobOperationMetaData>
@@ -783,193 +889,303 @@ function WorkCenterCards({
     }
   });
 
-  return (
-    <div className="w-full grid grid-cols-6 gap-4 max-md:gap-3">
-      {workCenters.map((workCenter) => {
-        const {
-          hasEvents,
-          customerId,
-          deadlineType,
-          description,
-          descriptionCount,
-          dueDate,
-          employeeIds,
-          jobCount,
-          jobId,
-          jobReadableId,
-          salesOrderId,
-          salesOrderReadableId,
-          salesOrderLineId
-        } = eventsByWorkCenterId[workCenter?.id ?? ""];
+  const cards = workCenters.map((workCenter) => {
+    const {
+      hasEvents,
+      customerId,
+      deadlineType,
+      description,
+      descriptionCount,
+      dueDate,
+      employeeIds,
+      jobCount,
+      jobId,
+      jobReadableId,
+      salesOrderId,
+      salesOrderReadableId,
+      salesOrderLineId
+    } = eventsByWorkCenterId[workCenter?.id ?? ""];
 
-        const isOverdue =
-          deadlineType !== "No Deadline" && dueDate
-            ? new Date(dueDate) < new Date()
-            : false;
+    const isOverdue =
+      deadlineType !== "No Deadline" && dueDate
+        ? new Date(dueDate) < new Date()
+        : false;
 
-        const isBlocked = workCenter.isBlocked && workCenter.blockingDispatchId;
+    const isBlocked = workCenter.isBlocked && workCenter.blockingDispatchId;
 
-        return (
-          <Card
-            key={workCenter.id}
-            className={cn(
-              "p-0 h-[300px] col-span-6 max-md:col-span-full lg:col-span-3 xl:col-span-2",
-              isBlocked && "bg-red-100 dark:bg-red-900/50"
-            )}
-          >
-            <HStack
-              className={cn(
-                "justify-between w-full relative",
-                isBlocked && "text-red-800 dark:text-red-400"
-              )}
-            >
-              <CardHeader>
-                <CardTitle className="line-clamp-2 text-base">
-                  {workCenter.name}
-                </CardTitle>
-                {isBlocked && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link
-                        to={path.to.maintenanceDispatch(
-                          workCenter.blockingDispatchId!
-                        )}
-                        className="inline-flex items-center gap-1 text-xs font-normal"
-                      >
-                        <span>
-                          <Trans>
-                            Blocked by {workCenter.blockingDispatchReadableId}
-                          </Trans>
-                        </span>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        <Trans>View maintenance dispatch</Trans>
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </CardHeader>
-              <CardAction className="pt-2">
-                {!isBlocked && (
-                  <PulsingDot inactive={!hasEvents} className="mt-2" />
-                )}
-              </CardAction>
-            </HStack>
-            <CardContent
-              className={cn(
-                "flex items-start justify-start p-6 pt-3 border-t",
-                // the content's own dark background is translucent; keep the
-                // red card color from bleeding through it
-                isBlocked && "dark:bg-card"
-              )}
-            >
-              {!hasEvents ? (
-                <p className="text-muted-foreground text-center w-full h-full flex flex-col gap-2 items-center justify-center text-sm">
-                  <Trans>Inactive</Trans>
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2 items-start justify-start text-sm">
-                  {jobId && jobReadableId && (
-                    <HStack className="justify-start space-x-2">
-                      <LuCirclePlay className="text-muted-foreground flex-shrink-0" />
-                      <Hyperlink to={path.to.job(jobId)} className="truncate">
+    const deadlineLabel = deadlineType
+      ? ["ASAP", "No Deadline"].includes(deadlineType)
+        ? deadlineType
+        : dueDate
+          ? t`Due ${formatRelativeTime(convertDateStringToIsoString(dueDate))}`
+          : "–"
+      : null;
+
+    if (isPhone) {
+      // Phones: one row per work center in a single card, with every
+      // fact the desktop card shows.
+      return (
+        <div
+          key={workCenter.id}
+          className={cn(
+            "flex items-start gap-3 px-4 py-3",
+            isBlocked && "bg-red-100 dark:bg-red-900/40"
+          )}
+        >
+          {isBlocked ? (
+            <span className="mt-2 size-2 shrink-0 rounded-full bg-red-500" />
+          ) : (
+            <PulsingDot inactive={!hasEvents} className="mt-2 shrink-0" />
+          )}
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-sm">
+            <p className="truncate text-base font-medium">{workCenter.name}</p>
+            {isBlocked ? (
+              <Link
+                to={path.to.maintenanceDispatch(workCenter.blockingDispatchId!)}
+                className="text-red-800 dark:text-red-400"
+              >
+                <Trans>
+                  Blocked by {workCenter.blockingDispatchReadableId}
+                </Trans>
+              </Link>
+            ) : !hasEvents ? (
+              <p className="text-muted-foreground">
+                <Trans>Inactive</Trans>
+              </p>
+            ) : (
+              <>
+                {(jobReadableId || description) && (
+                  <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                    {jobId && jobReadableId && (
+                      <Hyperlink to={path.to.job(jobId)} className="shrink-0">
                         {jobReadableId}
                       </Hyperlink>
-                      {jobCount !== undefined &&
-                        Number.isInteger(jobCount) &&
-                        jobCount > 1 && (
-                          <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
-                            {`+${jobCount - 1}`}
-                          </div>
-                        )}
-                    </HStack>
-                  )}
-
-                  {description && (
-                    <HStack className="justify-start space-x-2">
-                      <LuClipboardCheck className="text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm line-clamp-1 truncate">
-                        {description}
-                      </span>
-                      {descriptionCount !== undefined &&
-                        Number.isInteger(descriptionCount) &&
-                        descriptionCount > 1 && (
-                          <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
-                            {`+${descriptionCount - 1}`}
-                          </div>
-                        )}
-                    </HStack>
-                  )}
-
-                  {salesOrderId && salesOrderLineId && salesOrderReadableId && (
-                    <HStack className="justify-start space-x-2">
-                      <RiProgress8Line className="text-muted-foreground flex-shrink-0" />
-                      <Hyperlink
-                        to={path.to.salesOrderLine(
-                          salesOrderId,
-                          salesOrderLineId
-                        )}
-                        className="truncate"
-                      >
-                        {salesOrderReadableId}
-                      </Hyperlink>
-                    </HStack>
-                  )}
-
-                  {customerId && (
-                    <HStack className="justify-start space-x-2">
-                      <LuInbox className="text-muted-foreground flex-shrink-0" />
-                      <CustomerAvatar customerId={customerId} />
-                    </HStack>
-                  )}
-
-                  {deadlineType && (
-                    <HStack className="justify-start space-x-2">
-                      {getDeadlineIcon(deadlineType)}
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <span
-                            className={cn(
-                              "text-sm truncate",
-                              isOverdue ? "text-red-500" : ""
-                            )}
-                          >
-                            {["ASAP", "No Deadline"].includes(deadlineType)
-                              ? deadlineType
-                              : dueDate
-                                ? t`Due ${formatRelativeTime(
-                                    convertDateStringToIsoString(dueDate)
-                                  )}`
-                                : "–"}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          {deadlineType}
-                        </TooltipContent>
-                      </Tooltip>
-                    </HStack>
-                  )}
-                </div>
-              )}
-            </CardContent>
-            {employeeIds?.length ? (
-              <CardFooter className="border-t py-3 bg-muted/30 text-sm">
-                {employeeIds.length > 1 ? (
-                  <EmployeeAvatarGroup
-                    employeeIds={employeeIds.filter((id) => id !== null)}
-                  />
-                ) : (
-                  <EmployeeAvatar employeeId={employeeIds[0]} />
+                    )}
+                    {jobCount !== undefined && jobCount > 1 && (
+                      <span className="shrink-0 font-mono">{`+${jobCount - 1}`}</span>
+                    )}
+                    {description && (
+                      <span className="truncate">{description}</span>
+                    )}
+                    {descriptionCount !== undefined && descriptionCount > 1 && (
+                      <span className="shrink-0 font-mono">{`+${descriptionCount - 1}`}</span>
+                    )}
+                  </p>
                 )}
-              </CardFooter>
-            ) : (
-              <CardFooter className="h-[var(--topbar-height)]" />
+                {(salesOrderReadableId || customerId) && (
+                  <div className="flex min-w-0 items-center gap-2">
+                    {salesOrderId &&
+                      salesOrderLineId &&
+                      salesOrderReadableId && (
+                        <Hyperlink
+                          to={path.to.salesOrderLine(
+                            salesOrderId,
+                            salesOrderLineId
+                          )}
+                          className="shrink-0"
+                        >
+                          {salesOrderReadableId}
+                        </Hyperlink>
+                      )}
+                    {customerId && (
+                      <span className="min-w-0 truncate">
+                        <CustomerAvatar customerId={customerId} />
+                      </span>
+                    )}
+                  </div>
+                )}
+                {deadlineType && (
+                  <p
+                    className={cn(
+                      "flex items-center gap-1.5",
+                      isOverdue ? "text-red-500" : "text-muted-foreground"
+                    )}
+                  >
+                    {getDeadlineIcon(deadlineType)}
+                    <span className="truncate">{deadlineLabel}</span>
+                  </p>
+                )}
+              </>
             )}
-          </Card>
-        );
-      })}
-    </div>
-  );
+          </div>
+          {employeeIds?.length ? (
+            <div className="shrink-0">
+              {employeeIds.length > 1 ? (
+                <EmployeeAvatarGroup
+                  employeeIds={employeeIds.filter((id) => id !== null)}
+                />
+              ) : (
+                <EmployeeAvatar employeeId={employeeIds[0]} withName={false} />
+              )}
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
+      <Card
+        key={workCenter.id}
+        className={cn(
+          "p-0 h-[300px] col-span-6 max-md:col-span-full lg:col-span-3 xl:col-span-2",
+          isBlocked && "bg-red-100 dark:bg-red-900/50"
+        )}
+      >
+        <HStack
+          className={cn(
+            "justify-between w-full relative",
+            isBlocked && "text-red-800 dark:text-red-400"
+          )}
+        >
+          <CardHeader>
+            <CardTitle className="line-clamp-2 text-base">
+              {workCenter.name}
+            </CardTitle>
+            {isBlocked && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={path.to.maintenanceDispatch(
+                      workCenter.blockingDispatchId!
+                    )}
+                    className="inline-flex items-center gap-1 text-xs font-normal"
+                  >
+                    <span>
+                      <Trans>
+                        Blocked by {workCenter.blockingDispatchReadableId}
+                      </Trans>
+                    </span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    <Trans>View maintenance dispatch</Trans>
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </CardHeader>
+          <CardAction className="pt-2">
+            {!isBlocked && (
+              <PulsingDot inactive={!hasEvents} className="mt-2" />
+            )}
+          </CardAction>
+        </HStack>
+        <CardContent
+          className={cn(
+            "flex items-start justify-start p-6 pt-3 border-t",
+            // the content's own dark background is translucent; keep the
+            // red card color from bleeding through it
+            isBlocked && "dark:bg-card"
+          )}
+        >
+          {!hasEvents ? (
+            <p className="text-muted-foreground text-center w-full h-full flex flex-col gap-2 items-center justify-center text-sm">
+              <Trans>Inactive</Trans>
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2 items-start justify-start text-sm">
+              {jobId && jobReadableId && (
+                <HStack className="justify-start space-x-2">
+                  <LuCirclePlay className="text-muted-foreground flex-shrink-0" />
+                  <Hyperlink to={path.to.job(jobId)} className="truncate">
+                    {jobReadableId}
+                  </Hyperlink>
+                  {jobCount !== undefined &&
+                    Number.isInteger(jobCount) &&
+                    jobCount > 1 && (
+                      <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
+                        {`+${jobCount - 1}`}
+                      </div>
+                    )}
+                </HStack>
+              )}
+
+              {description && (
+                <HStack className="justify-start space-x-2">
+                  <LuClipboardCheck className="text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm line-clamp-1 truncate">
+                    {description}
+                  </span>
+                  {descriptionCount !== undefined &&
+                    Number.isInteger(descriptionCount) &&
+                    descriptionCount > 1 && (
+                      <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
+                        {`+${descriptionCount - 1}`}
+                      </div>
+                    )}
+                </HStack>
+              )}
+
+              {salesOrderId && salesOrderLineId && salesOrderReadableId && (
+                <HStack className="justify-start space-x-2">
+                  <RiProgress8Line className="text-muted-foreground flex-shrink-0" />
+                  <Hyperlink
+                    to={path.to.salesOrderLine(salesOrderId, salesOrderLineId)}
+                    className="truncate"
+                  >
+                    {salesOrderReadableId}
+                  </Hyperlink>
+                </HStack>
+              )}
+
+              {customerId && (
+                <HStack className="justify-start space-x-2">
+                  <LuInbox className="text-muted-foreground flex-shrink-0" />
+                  <CustomerAvatar customerId={customerId} />
+                </HStack>
+              )}
+
+              {deadlineType && (
+                <HStack className="justify-start space-x-2">
+                  {getDeadlineIcon(deadlineType)}
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <span
+                        className={cn(
+                          "text-sm truncate",
+                          isOverdue ? "text-red-500" : ""
+                        )}
+                      >
+                        {deadlineLabel}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{deadlineType}</TooltipContent>
+                  </Tooltip>
+                </HStack>
+              )}
+            </div>
+          )}
+        </CardContent>
+        {employeeIds?.length ? (
+          <CardFooter className="border-t py-3 bg-muted/30 text-sm">
+            {employeeIds.length > 1 ? (
+              <EmployeeAvatarGroup
+                employeeIds={employeeIds.filter((id) => id !== null)}
+              />
+            ) : (
+              <EmployeeAvatar employeeId={employeeIds[0]} />
+            )}
+          </CardFooter>
+        ) : (
+          <CardFooter className="h-[var(--topbar-height)]" />
+        )}
+      </Card>
+    );
+  });
+
+  if (isPhone) {
+    return (
+      <section className="flex flex-col gap-2">
+        <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <Trans>Work Centers</Trans>
+        </h2>
+        <Card className="divide-y divide-border overflow-hidden bg-card">
+          {cards}
+        </Card>
+      </section>
+    );
+  }
+
+  return <div className="w-full grid grid-cols-6 gap-4">{cards}</div>;
 }

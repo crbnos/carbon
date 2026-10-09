@@ -16,7 +16,8 @@ import {
   IconButton,
   Loading,
   toast,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
@@ -55,6 +56,7 @@ export default function RiskRegisterCard({
 
   const [risks, setRisks] = useState<Risk[]>([]);
   const [loading, setLoading] = useState(false);
+  const { isPhone } = useViewport();
   const formDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const [selectedRisk, setSelectedRisk] = useState<Risk | undefined>(undefined);
@@ -125,7 +127,13 @@ export default function RiskRegisterCard({
             <Loading isLoading={true} />
           </div>
         ) : risks.length === 0 ? (
-          <Empty className="py-8" />
+          isPhone ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>No risks</Trans>
+            </p>
+          ) : (
+            <Empty className="py-8" />
+          )
         ) : (
           <div className="flex flex-col gap-4">
             {risks.map((risk) => (
