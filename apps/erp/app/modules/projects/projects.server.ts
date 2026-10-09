@@ -636,8 +636,9 @@ export async function insertProjectElement(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!parent) throw new Error("The parent element does not exist");
-      if (parent.type === "Parameter") {
-        throw new Error("A Parameter cannot have child elements");
+      // A Parameter's children are Parameters: they roll up into it.
+      if (parent.type === "Parameter" && args.type !== "Parameter") {
+        throw new Error("A Parameter can only have Parameters as children");
       }
     }
 
@@ -1429,8 +1430,8 @@ export async function saveParameterFormula(
 
 /**
  * Moves an element under a new parent (or to the top level). Refuses a
- * parent that is the element itself, one of its descendants, or a
- * Parameter.
+ * parent that is the element itself or one of its descendants, and a
+ * Parameter parent for an element that is not a Parameter.
  */
 export async function moveProjectElement(
   db: Kysely<KyselyDatabase>,
@@ -1467,16 +1468,26 @@ export async function moveProjectElement(
         throw new Error("An element cannot move under one of its descendants");
       }
 
-      const parent = await trx
-        .selectFrom("projectElement")
-        .select("type")
-        .where("id", "=", args.parentId)
-        .where("projectId", "=", args.projectId)
-        .where("companyId", "=", args.companyId)
-        .executeTakeFirst();
+      const [parent, element] = await Promise.all([
+        trx
+          .selectFrom("projectElement")
+          .select("type")
+          .where("id", "=", args.parentId)
+          .where("projectId", "=", args.projectId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst(),
+        trx
+          .selectFrom("projectElement")
+          .select("type")
+          .where("id", "=", args.elementId)
+          .where("projectId", "=", args.projectId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst()
+      ]);
       if (!parent) throw new Error("The parent element does not exist");
-      if (parent.type === "Parameter") {
-        throw new Error("A Parameter cannot have child elements");
+      // A Parameter's children are Parameters: they roll up into it.
+      if (parent.type === "Parameter" && element?.type !== "Parameter") {
+        throw new Error("A Parameter can only have Parameters as children");
       }
     }
 
