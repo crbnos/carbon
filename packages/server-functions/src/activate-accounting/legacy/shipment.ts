@@ -4,7 +4,7 @@
 
 // The journals of legacy shipments that stored a cost row: the lines
 // `post-shipment` writes today, at the cost the rows stored, with today's
-// account defaults (.ai/specs/2026-10-08-accounting-cutover.md section 5a).
+// account defaults (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
 // Mirrors post-shipment/index.ts:
 // - a sales order shipment with its "Sale" cost row (the company had

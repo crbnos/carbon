@@ -119,7 +119,7 @@ resets after a failed build, so one bad start does not poison later calls.
 
 Every posting function writes its journal for every company. The company's
 `companySettings.accountingCutoverDate` decides only the journal's status
-(`.ai/specs/2026-10-08-accounting-cutover.md`). The `accountingEnabled` column still
+(`.ai/specs/implemented/2026-10-08-accounting-cutover.md`). The `accountingEnabled` column still
 exists, but no code reads it.
 
 - **Status.** `journalPostingStatus(db, companyId)` (`@carbon/database/journal-posting-status`)

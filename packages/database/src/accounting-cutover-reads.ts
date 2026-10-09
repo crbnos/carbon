@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The database reads of the accounting cutover
-// (.ai/specs/2026-10-08-accounting-cutover.md sections 3 and 4): the
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md sections 3 and 4): the
 // readiness checks, the open items, the inventory and fixed assets at the
 // cutover date, and Migration Clearing. Also the two writes the wizard makes
 // before the enable: the Draft opening trial balance and the accumulated

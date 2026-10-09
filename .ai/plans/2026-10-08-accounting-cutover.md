@@ -1,6 +1,6 @@
 # Accounting Cutover — implementation plan
 
-**Spec:** .ai/specs/2026-10-08-accounting-cutover.md
+**Spec:** .ai/specs/implemented/2026-10-08-accounting-cutover.md
 **Research:** .ai/research/accounting-cutover.md
 **Branch:** accounting-reset-plan
 
@@ -52,7 +52,7 @@
 - [x] Task 37: Update the docs, rules and AGENTS.md files
 
 ### Phase E — Verify
-- [ ] Task 38: Run every gate and verify the enable flow in the browser
+- [x] Task 38: Run every gate and verify the enable flow in the browser
 
 ### Phase F — Legacy documents on or after the cutover (spec section 5a)
 - [x] Task 39: Write the journals of legacy sales and purchase invoices at enable
@@ -100,7 +100,7 @@
    ```sql
    -- A journal written before the company's accounting cutover counts nowhere
    -- (Provisional). At the cutover, Provisional journals dated before the
-   -- cutover date become Superseded. See .ai/specs/2026-10-08-accounting-cutover.md.
+   -- cutover date become Superseded. See .ai/specs/implemented/2026-10-08-accounting-cutover.md.
    ALTER TYPE "journalEntryStatus" ADD VALUE IF NOT EXISTS 'Provisional';
    ALTER TYPE "journalEntryStatus" ADD VALUE IF NOT EXISTS 'Superseded';
    ```
@@ -1332,7 +1332,7 @@ pnpm exec turbo run typecheck --filter=erp --filter=@carbon/utils
 - Modify: `.claude/rules/accounting-sync-handlers.md` — Provisional and Superseded never sync; promotion syncs
 - Modify: `.claude/rules/onboarding-company-templates.md` — tier 01 sets the cutover
 - Modify: `docs/content/docs/reference/accounting.mdx` — use the `carbon-docs` skill; describe the enable wizard
-- Modify: `.ai/specs/2026-10-08-accounting-cutover.md` — status `implemented` once Task 38 passes; move to `.ai/specs/implemented/`
+- Modify: `.ai/specs/implemented/2026-10-08-accounting-cutover.md` — status `implemented` once Task 38 passes; move to `.ai/specs/implemented/`
 
 **Steps:**
 1. Update each file. Ground each sentence in the code you wrote.
@@ -1516,3 +1516,5 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
   3. `no-unscoped-kysely-write` exempts `companySettings`. Its `id` is the company id, as for `company`.
 - Task 40 added migration `20261009060609_legacy-journal-attach.sql`. The charge and reimbursement draft guards refused every Posted to Posted change, so the enable could not set `journalId`. The guards now allow one more change: a Posted row with no journal gets one, and nothing else changes.
 - Task 42 also journals job issue and completion cost rows whose journals the reset deleted (companies that had accounting on). Without it the re-cost refuses such a row with 409. A zero-cost pair takes its sign from the offset account class in `postRecostJournals`.
+- Task 38: every scripted gate passed on 2026-10-09 (migrate, datasets, backups, 8 typechecks, 5 test suites, lint). `rows.test.ts` fails under parallel load and passes alone. The browser runs covered the wizard, the enable, a payment against a legacy invoice and the readiness list. A database test covers the void of a receipt dated before the cutover; the browser company had no document before its cutover.
+- Translations ran in a clean worktree at HEAD, so uncommitted work stayed out of the catalogs. The glossary checker reports 34 terminology violations in the new strings. The repair is `.ai/plans/2026-08-27-translation-consistency-runbook.md`, not a re-run.

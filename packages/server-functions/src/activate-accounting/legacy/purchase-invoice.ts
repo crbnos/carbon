@@ -4,7 +4,7 @@
 
 // The journal of a legacy purchase invoice: the lines `post-purchase-invoice`
 // writes today, from the stored invoice, with today's account defaults
-// (.ai/specs/2026-10-08-accounting-cutover.md section 5a). Amounts come from
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a). Amounts come from
 // `calculatePurchasePostingAmounts`, which converts the header freight at the
 // invoice's exchange rate as the posting does.
 //

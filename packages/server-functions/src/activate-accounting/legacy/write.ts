@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Writes the journals the enable builds for legacy documents
-// (.ai/specs/2026-10-08-accounting-cutover.md section 5a): Provisional, with
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a): Provisional, with
 // no period, so the later steps of the enable re-cost, period, re-point and
 // promote them like every other Provisional journal.
 

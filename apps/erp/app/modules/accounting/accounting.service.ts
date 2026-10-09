@@ -1311,7 +1311,7 @@ export async function upsertReportPin(
 // depreciation and recognition runs, intercompany matching and eliminations —
 // runs only after the company's accounting cutover. Before it, journals are
 // Provisional and count nowhere, so this work would have no effect
-// (.ai/specs/2026-10-08-accounting-cutover.md section 1).
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1).
 export const ACCOUNTING_NOT_STARTED =
   "Set up accounting before you post journals, runs or period closes.";
 

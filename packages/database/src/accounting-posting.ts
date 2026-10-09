@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The journal statuses each kind of reader may read
-// (.ai/specs/2026-10-08-accounting-cutover.md section 2). A Provisional
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 2). A Provisional
 // journal counts nowhere until the accounting cutover; a Superseded one never
 // counts again.
 

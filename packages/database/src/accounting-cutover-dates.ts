@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The date rule of the accounting cutover
-// (.ai/specs/2026-10-08-accounting-cutover.md section 6). Pure: callers read
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 6). Pure: callers read
 // the company's `accountingCutoverDate` and the document's posting date.
 
 import { parseDate } from "@internationalized/date";

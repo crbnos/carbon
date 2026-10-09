@@ -4,7 +4,7 @@
 
 // The journal of a legacy sales invoice: the lines `post-sales-invoice`
 // writes today, from the stored invoice, with today's account defaults
-// (.ai/specs/2026-10-08-accounting-cutover.md section 5a).
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
 // Mirrors post-sales-invoice/index.ts:
 // - receivables, revenue, shipping and tax through `buildSalesPostingLines`,

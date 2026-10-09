@@ -5,7 +5,7 @@
 // The journals of legacy movements booked through the adjustment core
 // (`bookAdjustment` / `valueMovement`, lib/post-adjustment.ts ~326-487): one
 // pair per cost row, inventory against the offset the posting used, at the
-// cost the row stored (.ai/specs/2026-10-08-accounting-cutover.md section
+// cost the row stored (.ai/specs/implemented/2026-10-08-accounting-cutover.md section
 // 5a). The pair is `buildAdjustmentJournalLines`, so the document type,
 // sides and descriptions are the core's own.
 //

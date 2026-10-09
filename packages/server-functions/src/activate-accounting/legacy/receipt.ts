@@ -4,7 +4,7 @@
 
 // The journals of legacy receipts: the lines `post-receipt` writes today,
 // from the stored receipt and the cost rows it stored, with today's account
-// defaults (.ai/specs/2026-10-08-accounting-cutover.md section 5a).
+// defaults (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
 // Mirrors post-receipt/index.ts:
 // - a purchase order receipt (~1641-1985, header ~2432-2550): per receipt

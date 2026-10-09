@@ -4,7 +4,7 @@
 
 // The journal of a legacy reimbursement: the lines `post-reimbursement`
 // writes today, from the stored reimbursement and its lines
-// (.ai/specs/2026-10-08-accounting-cutover.md section 5a).
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
 // Mirrors post-reimbursement/post-reimbursement-post.ts
 // (`postReimbursementJournal`): the payable account stored on the row, else

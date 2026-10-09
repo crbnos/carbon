@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The cost rows of legacy movements that stored none, and the journals of
-// the job movements (.ai/specs/2026-10-08-accounting-cutover.md section 5a,
+// the job movements (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a,
 // "Movement with no cost row"). With accounting off, a sales order shipment
 // and a job material issue never costed their movement, a direct sales
 // invoice line relieved its layers but wrote no row, and a job completion

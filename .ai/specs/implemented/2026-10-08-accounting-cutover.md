@@ -1,6 +1,6 @@
 # Accounting Cutover
 
-> Status: draft
+> Status: implemented
 > Author: Claude (with Brad Barbin)
 > Date: 2026-10-08
 > Tracking issue: crbnos/carbon#1057
@@ -396,3 +396,5 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - 2026-10-08: Fixed the 2 bugs found while writing. The purchase receipt void now updates `costLedger`. The revenue recognition cron skips companies with `accountingEnabled = false`; this spec replaces that check with the cutover. Run record: `.ai/runs/2026-10-08-receipt-void-cost-layers-and-revrec-cron.md`.
 - 2026-10-08: The void of an invoice dated before D now fails and points to a credit memo or a debit memo. No builder covers a whole invoice posting (found executing Task 29). The user chose the refusal over a new purchase invoice builder.
 - 2026-10-09: Section 5a. The enable writes the journals of legacy documents dated on or after D. Found in the browser test: a legacy invoice dated after D reached neither the opening journal nor promotion. The user refused both a readiness refusal and a manual reset.
+- 2026-10-09: The inventory step edits the unit cost of an Average item only. A FIFO or LIFO item opens at the value its layers held at the cutover, and a Standard item at its standard cost. A difference from the prior system goes on a non-control row of the trial balance. Chosen over a stored override, which needs a schema change.
+- 2026-10-09: Implemented. Gates and two browser runs passed (`.ai/playbooks/accounting-setup-wizard.md`). Status set to implemented.

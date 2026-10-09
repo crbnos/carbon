@@ -23,7 +23,7 @@ export function priorMonthEnd(today: string): string {
  * The companies a proposal runs for: only those with an accounting cutover.
  * The synthesizers write rental accruals and contract revenue rows for any
  * company they are pointed at, and a company with no cutover cannot post the
- * run (.ai/specs/2026-10-08-accounting-cutover.md).
+ * run (.ai/specs/implemented/2026-10-08-accounting-cutover.md).
  */
 export function companiesToPropose<T extends { id: string }>(
   companies: T[],

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The journal of a legacy charge: the lines `post-charge` writes today, from
-// the stored charge and its lines (.ai/specs/2026-10-08-accounting-cutover.md
+// the stored charge and its lines (.ai/specs/implemented/2026-10-08-accounting-cutover.md
 // section 5a). Every input is stored: the card and offset accounts on the
 // charge, and each line's account, cost center and project.
 //

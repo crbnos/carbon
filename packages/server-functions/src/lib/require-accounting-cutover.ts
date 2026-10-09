@@ -8,7 +8,7 @@ import { InvalidInputError } from "../errors";
 
 // Manual accounting work (recognition runs here) runs only after the
 // company's accounting cutover: before it, journals are Provisional and count
-// nowhere (.ai/specs/2026-10-08-accounting-cutover.md section 1). The ERP
+// nowhere (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1). The ERP
 // service functions refuse the same work with the same message.
 export const ACCOUNTING_NOT_STARTED =
   "Set up accounting before you post journals, runs or period closes.";

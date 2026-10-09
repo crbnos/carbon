@@ -4,7 +4,7 @@
 
 // The journal of a legacy memo: the lines `post-memo` writes today, from the
 // stored memo, with today's account defaults
-// (.ai/specs/2026-10-08-accounting-cutover.md section 5a).
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
 // Built by `rebuildMemoJournals` (post-memo/post-memo-transaction.ts), the
 // builder the void of a memo dated before the cutover uses, with the status

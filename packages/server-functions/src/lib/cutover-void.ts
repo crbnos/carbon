@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Voids of documents dated before the company's accounting cutover
-// (.ai/specs/2026-10-08-accounting-cutover.md section 6). The enable
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 6). The enable
 // superseded their journals and reset the cost layers they moved, so a
 // reversal of their own lines would undo nothing the opening journal opened.
 

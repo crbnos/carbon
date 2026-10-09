@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The pure decisions of the accounting cutover
-// (.ai/specs/2026-10-08-accounting-cutover.md sections 4 and 5): the opening
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md sections 4 and 5): the opening
 // journal, Migration Clearing per control account, the inventory reset and
 // the re-costing of outbound movements after the cutover date. No database
 // reads or writes here — the enable transaction feeds these and writes what

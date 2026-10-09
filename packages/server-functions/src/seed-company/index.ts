@@ -492,7 +492,7 @@ const seedCompany = defineServerFn({
         // A new company keeps its ledger in Carbon from day one: its
         // accounting cutover is the first day of the current period, so
         // every posting is Posted and there is nothing to migrate
-        // (.ai/specs/2026-10-08-accounting-cutover.md section 7).
+        // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 7).
         const today = datetime.today(await getCompanyTimeZone(trx, companyId));
         await trx
           .updateTable("companySettings")

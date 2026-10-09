@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The journals of legacy asset and revenue runs
-// (.ai/specs/2026-10-08-accounting-cutover.md section 5a). Depreciation runs,
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a). Depreciation runs,
 // scrap disposals and revenue recognition runs always wrote journals; the
 // reset deleted them and left the rows Posted with no journal. For each one
 // dated on or after the cutover the enable writes the journal again, from

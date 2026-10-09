@@ -4,7 +4,7 @@
 
 // The journal of a legacy payment: the lines `post-payment` writes today,
 // from the stored payment and its settlements, with today's account defaults
-// (.ai/specs/2026-10-08-accounting-cutover.md section 5a).
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
 // Built by `rebuildPaymentJournals` (post-payment/post-payment-transaction.ts),
 // the builder the void of a payment dated before the cutover uses, with the

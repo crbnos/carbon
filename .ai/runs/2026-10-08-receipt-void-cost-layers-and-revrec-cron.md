@@ -2,7 +2,7 @@
 
 - Date: 2026-10-08
 - Mode: fully-autonomous
-- Request: "great. make sure to fix the new bugs we found" — the 2 bugs recorded in `.ai/specs/2026-10-08-accounting-cutover.md` (Risks; section 1):
+- Request: "great. make sure to fix the new bugs we found" — the 2 bugs recorded in `.ai/specs/implemented/2026-10-08-accounting-cutover.md` (Risks; section 1):
   1. A purchase receipt void reverses `itemLedger` and journal lines but never updates `costLedger`. The voided layer keeps its `remainingQuantity`.
   2. The `revenue-recognition-proposal` cron proposes Draft runs for companies with accounting off.
 - Phase plan: root-cause [run] · instrument [resolved after root-cause] · fix [run] · test [skip — pure logic, the regression tests prove it] · commit [skip — no explicit ask]

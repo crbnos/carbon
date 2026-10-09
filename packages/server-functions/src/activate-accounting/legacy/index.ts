@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Step 1a of the enable (.ai/specs/2026-10-08-accounting-cutover.md section
+// Step 1a of the enable (.ai/specs/implemented/2026-10-08-accounting-cutover.md section
 // 5a): the journals of legacy documents dated on or after the cutover. Each
 // is the journal the document's posting writes today, Provisional and dated
 // the document's posting date, so the later steps re-cost, period, re-point

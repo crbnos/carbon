@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The status an automatic posting writes, and the account a line takes when
-// its account default is empty (.ai/specs/2026-10-08-accounting-cutover.md
+// its account default is empty (.ai/specs/implemented/2026-10-08-accounting-cutover.md
 // section 1). Server-only: it reads the database. The status lists live in
 // ./accounting-posting, which client bundles import.
 

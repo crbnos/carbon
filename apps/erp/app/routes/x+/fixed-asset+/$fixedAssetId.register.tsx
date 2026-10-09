@@ -99,7 +99,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Every company posts the registration journal: Provisional before the
   // accounting cutover (no period), Posted after it
-  // (.ai/specs/2026-10-08-accounting-cutover.md section 1).
+  // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1).
   const postingStatus = await journalPostingStatus(
     getDatabaseClient(),
     companyId
