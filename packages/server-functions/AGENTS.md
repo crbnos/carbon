@@ -270,7 +270,12 @@ journals it wrote, by id. `insertProvisionalJournals` refuses a journal dated
 in a Closed or Locked period with the period's name, before any is written.
 Settings → Accounting shows the count and a "Write missing journals" button.
 The one-off script `scripts/one-off/journal-legacy-documents.ts` runs it for
-every company (`journal-legacy-documents/companies.ts`).
+every company (`journal-legacy-documents/companies.ts`). A company whose own
+data refuses the repair (a closed period, an empty default, no user) is
+`skipped`: listed at the end, and the script still exits 0, so one company
+cannot fail every deploy. Only a database that stops answering `SELECT 1`
+after a refusal stops the run as `failed` and exits 1, so the next deploy
+retries.
 
 `seed-company` sets a new company's cutover to the first day of the current month, so
 a new company posts `Posted` journals from its first document.

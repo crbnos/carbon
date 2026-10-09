@@ -15,7 +15,10 @@ import { formatPeriodLabel } from "@carbon/utils";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import journalLegacyDocuments from "../../journal-legacy-documents";
-import { findCompaniesWithLegacyDocuments } from "../../journal-legacy-documents/companies";
+import {
+  findCompaniesWithLegacyDocuments,
+  journalLegacyDocumentsForAllCompanies
+} from "../../journal-legacy-documents/companies";
 import { databaseTest } from "../../local-database-test-fixture";
 import postPayment from "../../post-payment";
 import postPurchaseInvoice from "../../post-purchase-invoice";
@@ -107,6 +110,22 @@ databaseTest(
       );
       expect(await legacyDocumentCounts(f)).toEqual(counted);
       expect(await provisionalJournals(f)).toEqual([]);
+
+      // The one-off script skips the company over its closed period rather
+      // than failing the deploy, and still writes nothing.
+      expect(
+        await journalLegacyDocumentsForAllCompanies(f.db, {
+          dryRun: false,
+          companyIds: [f.companyId]
+        })
+      ).toEqual([
+        {
+          companyId: f.companyId,
+          status: "skipped",
+          reason: `The period ${formatPeriodLabel(f.cutoverDate)} is closed. Reopen it, then write the missing journals.`
+        }
+      ]);
+      expect(await legacyDocumentCounts(f)).toEqual(counted);
       await setPeriodCloseStatus(f, "Open");
 
       const result = unwrap(await journalLegacyDocuments(f.ctx, {}));

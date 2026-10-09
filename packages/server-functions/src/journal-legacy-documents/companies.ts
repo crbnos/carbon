@@ -35,9 +35,11 @@ const total = (counts: LegacyDocumentCounts) =>
  * company, because it is defined per company and cutover.
  */
 export async function findCompaniesWithLegacyDocuments(
-  db: Kysely<KyselyDatabase>
+  db: Kysely<KyselyDatabase>,
+  /** Only these companies; every company when omitted. */
+  companyIds?: string[]
 ): Promise<LegacyRepairCompany[]> {
-  const companies = await db
+  let query = db
     .selectFrom("companySettings as settings")
     .innerJoin("company", "company.id", "settings.id")
     .select([
@@ -60,8 +62,9 @@ export async function findCompaniesWithLegacyDocuments(
       )`.as("userId")
     ])
     .where("settings.accountingCutoverDate", "is not", null)
-    .orderBy("settings.id")
-    .execute();
+    .orderBy("settings.id");
+  if (companyIds) query = query.where("settings.id", "in", companyIds);
+  const companies = companyIds?.length === 0 ? [] : await query.execute();
 
   const withWork: LegacyRepairCompany[] = [];
   for (const company of companies) {
@@ -74,22 +77,46 @@ export async function findCompaniesWithLegacyDocuments(
 export type LegacyRepairOutcome =
   | { companyId: string; status: "written"; journals: LegacyJournalCounts }
   | { companyId: string; status: "found"; counts: LegacyDocumentCounts }
+  /** The company's own data refused the repair (a closed period, an empty
+   *  account default, no user): reported for someone to fix in Settings →
+   *  Accounting, and the run goes on. */
+  | { companyId: string; status: "skipped"; reason: string }
+  /** The database stopped answering: the run stops here. */
   | { companyId: string; status: "failed"; error: string };
+
+/** Whether the database still answers, so a company's failure can be told
+ *  apart from losing the connection. */
+async function databaseAnswers(db: Kysely<KyselyDatabase>) {
+  try {
+    await sql`SELECT 1`.execute(db);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Runs `journal-legacy-documents` for each company with work, one company per
- * transaction (the function's own), as the company's user. A company that
- * fails (a closed period, no user) is reported and the run goes on. With
- * `dryRun` it only reports what it found.
+ * transaction (the function's own), as the company's user. A company whose
+ * data refuses the repair is skipped and reported, and the run goes on: a
+ * deploy must not fail, and retry on every later deploy, over one company's
+ * closed period. Only a database that stops answering stops the run, as
+ * `failed`. With `dryRun` it only reports what it found.
  */
 export async function journalLegacyDocumentsForAllCompanies(
   db: Kysely<KyselyDatabase>,
   {
     dryRun,
+    companyIds,
     onOutcome
-  }: { dryRun: boolean; onOutcome?: (outcome: LegacyRepairOutcome) => void }
+  }: {
+    dryRun: boolean;
+    /** Only these companies; every company when omitted. */
+    companyIds?: string[];
+    onOutcome?: (outcome: LegacyRepairOutcome) => void;
+  }
 ): Promise<LegacyRepairOutcome[]> {
-  const companies = await findCompaniesWithLegacyDocuments(db);
+  const companies = await findCompaniesWithLegacyDocuments(db, companyIds);
   const outcomes: LegacyRepairOutcome[] = [];
   for (const { companyId, userId, counts } of companies) {
     let outcome: LegacyRepairOutcome;
@@ -98,28 +125,37 @@ export async function journalLegacyDocumentsForAllCompanies(
     } else if (!userId) {
       outcome = {
         companyId,
-        status: "failed",
-        error: "The company has no user who set up accounting and no Admin."
+        status: "skipped",
+        reason: "The company has no user who set up accounting and no Admin."
       };
     } else {
       const result = await journalLegacyDocuments(
         ServerFnContext.system({ db, companyId, userId }),
         {}
       );
-      outcome = result.error
-        ? {
-            companyId,
-            status: "failed",
-            error: result.error.message || "The data layer refused a write."
-          }
-        : {
-            companyId,
-            status: "written",
-            journals: result.data.legacyJournals
-          };
+      if (!result.error) {
+        outcome = {
+          companyId,
+          status: "written",
+          journals: result.data.legacyJournals
+        };
+      } else if (await databaseAnswers(db)) {
+        outcome = {
+          companyId,
+          status: "skipped",
+          reason: result.error.message || "The data layer refused a write."
+        };
+      } else {
+        outcome = {
+          companyId,
+          status: "failed",
+          error: result.error.message || "The database stopped answering."
+        };
+      }
     }
     onOutcome?.(outcome);
     outcomes.push(outcome);
+    if (outcome.status === "failed") break;
   }
   return outcomes;
 }

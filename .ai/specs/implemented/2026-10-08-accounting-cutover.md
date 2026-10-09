@@ -358,6 +358,7 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 | A legacy invoice books a rental or contract line as plain revenue, and the rebuilt recognition run books the same revenue again | Low | Rentals and contracts shipped on 2026-10-07, one day before the reset, so few legacy documents exist. Review revenue for such a company after the enable. |
 | A rebuilt depreciation, disposal or recognition journal is pushed to an accounting provider that already holds the original | Med | The enable writes an `Excluded` sync operation for each rebuilt run journal, so no sync path picks it up. A user can still send one from Sync Activity. |
 | An asset shipped before the reset and invoiced after it leaves the disposal clearing account short by its net book value | Low | The legacy shipment wrote no asset journal, and the invoice clears that account. Review the disposal clearing account after the enable if such a sale exists. |
+| A company's own data (a closed period, an empty account default) refuses the legacy repair during the deploy | Med | `scripts/one-off/journal-legacy-documents.ts` skips that company, lists it, and exits 0. Settings → Accounting offers the same repair once the data is fixed. The script exits 1 only when the database stops answering. |
 | A purchase receipt void did not update `costLedger`, so the voided layer kept its remaining quantity. | Low | Fixed on 2026-10-08 (`planReceiptVoidCostLedger`, `post-receipt/void-cost-ledger.ts`). The void closes the receipt's layers, refuses when one was partly used, and restores the stock a negative line relieved. |
 
 ## Open Questions
@@ -398,3 +399,5 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - 2026-10-09: Section 5a. The enable writes the journals of legacy documents dated on or after D. Found in the browser test: a legacy invoice dated after D reached neither the opening journal nor promotion. The user refused both a readiness refusal and a manual reset.
 - 2026-10-09: The inventory step edits the unit cost of an Average item only. A FIFO or LIFO item opens at the value its layers held at the cutover, and a Standard item at its standard cost. A difference from the prior system goes on a non-control row of the trial balance. Chosen over a stored override, which needs a schema change.
 - 2026-10-09: Implemented. Gates and two browser runs passed (`.ai/playbooks/accounting-setup-wizard.md`). Status set to implemented.
+
+- 2026-10-09: The one-off legacy repair skips a company whose data refuses it, instead of failing the deploy.

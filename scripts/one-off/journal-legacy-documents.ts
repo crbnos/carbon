@@ -12,9 +12,13 @@
 // its own transaction, as the user who set up accounting (else an Admin).
 //
 // Idempotent: the detection finds only documents still without a journal, so
-// a second run writes nothing. A company that fails (a closed period, no
-// user) is logged and the run goes on; the script then exits non-zero, so the
-// ledger row is not written and the next deploy retries.
+// a second run writes nothing. A company whose own data refuses the repair (a
+// closed period, an empty account default, no user) is skipped: it is listed
+// at the end, the run goes on, and the script still exits 0, so one company
+// cannot fail every deploy. Settings → Accounting offers the same repair for
+// it once its data is fixed. The script exits non-zero only when the database
+// stops answering, so the ledger row is not written and the next deploy
+// retries.
 //
 // Needs a Postgres connection: SUPABASE_DB_URL, which the migrations runner
 // passes to one-off scripts (the workspace's pooler URL, as the app gets it).
@@ -76,15 +80,28 @@ async function main(): Promise<number> {
           console.log(
             `${outcome.companyId}: wrote ${nonZero(outcome.journals) || "nothing"}`
           );
+        } else if (outcome.status === "skipped") {
+          console.warn(`${outcome.companyId}: skipped, ${outcome.reason}`);
         } else {
           console.error(`${outcome.companyId}: FAILED ${outcome.error}`);
         }
       }
     });
     const failed = outcomes.filter((outcome) => outcome.status === "failed");
-    console.log(
-      `${outcomes.length} compan${outcomes.length === 1 ? "y" : "ies"} with legacy documents; ${failed.length} failed.`
+    const skipped = outcomes.flatMap((outcome) =>
+      outcome.status === "skipped" ? [outcome] : []
     );
+    console.log(
+      `${outcomes.length} compan${outcomes.length === 1 ? "y" : "ies"} with legacy documents; ${skipped.length} skipped; ${failed.length} failed.`
+    );
+    if (skipped.length > 0) {
+      console.warn(
+        "Skipped companies need attention: fix the reason, then use Settings → Accounting → Write missing journals."
+      );
+      for (const outcome of skipped) {
+        console.warn(`  ${outcome.companyId}: ${outcome.reason}`);
+      }
+    }
     return failed.length > 0 ? 1 : 0;
   } finally {
     await db.destroy();
