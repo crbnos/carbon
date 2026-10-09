@@ -419,6 +419,9 @@ msgstr "{discount} छूट"
 msgid "{dismissed} dismissed"
 msgstr "{dismissed} खारिज किया गया"
 
+msgid "{documentTypeLabel} approval rule"
+msgstr "{documentTypeLabel} अनुमोदन नियम"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
@@ -2557,6 +2560,9 @@ msgstr "अनुमोदन तारीख"
 msgid "Approval is required at or above this amount, up to the next rule's minimum"
 msgstr "इस राशि पर या इससे अधिक पर अनुमोदन आवश्यक है, अगले नियम की न्यूनतम राशि तक"
 
+msgid "Approval Rejected"
+msgstr "अनुमोदन अस्वीकृत"
+
 msgid "Approval requirements"
 msgstr "अनुमोदन आवश्यकताएं"
 
@@ -2571,6 +2577,16 @@ msgstr "अनुमोदन"
 
 msgid "Approve"
 msgstr "अनुमोदित करें"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Approve {0}"
+msgstr "अनुमोदित करें {0}"
+
+msgid "Approve {changeOrderId}"
+msgstr "अनुमोदित करें {changeOrderId}"
+
+msgid "Approve {displayName}"
+msgstr "अनुमोदित करें {displayName}"
 
 msgid "Approved By"
 msgstr "द्वारा अनुमोदित"
@@ -2630,6 +2646,15 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस गेज को सक्रिय करना चाहते हैं?"
+
+msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस परिवर्तन सूचना को अनुमोदित करना चाहते हैं? यह इसे कार्यान्वयन में ले जाता है।"
+
+msgid "Are you sure you want to approve this quality document? This will make it active."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस गुणवत्ता दस्तावेज़ को अनुमोदित करना चाहते हैं? यह इसे सक्रिय बना देगा।"
+
+msgid "Are you sure you want to approve this supplier? This will make it active."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस आपूर्तिकर्ता को अनुमोदित करना चाहते हैं? यह इसे सक्रिय बना देगा।"
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -3032,8 +3057,17 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to post this shipment?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस शिपमेंट को पोस्ट करना चाहते हैं?"
 
+msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस परिवर्तन सूचना को अस्वीकार करना चाहते हैं? यह इंजीनियरिंग पूर्ण पर रहेगी ताकि इसे बदला और फिर से सबमिट किया जा सके।"
+
+msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
+msgstr "क्या आप सुनिश्चित हैं कि आप इस गुणवत्ता दस्तावेज़ को अस्वीकार करना चाहते हैं? दस्तावेज़ ड्राफ्ट स्थिति में रहेगा।"
+
 msgid "Are you sure you want to reject this quote?"
 msgstr "क्या आप निश्चित हैं कि आप इस कोटेशन को अस्वीकार करना चाहते हैं?"
+
+msgid "Are you sure you want to reject this supplier?"
+msgstr "क्या आप सुनिश्चित हैं कि आप इस आपूर्तिकर्ता को अस्वीकार करना चाहते हैं?"
 
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "क्या आप निश्चित हैं कि आप इस जॉब को जारी करना चाहते हैं? यह शॉप फ्लोर के लिए उपलब्ध हो जाएगा, और क्रय और उत्पादन को चलाएगा।"
@@ -6990,6 +7024,9 @@ msgstr "वेबहुक हटाएं"
 msgid "Delete Workflow"
 msgstr "वर्कफ़्लो हटाएँ"
 
+msgid "Deleted"
+msgstr "हटाया गया"
+
 msgid "Deliver"
 msgstr "डिलीवर करें"
 
@@ -8999,6 +9036,9 @@ msgstr "पुराने स्थान से फ़ाइल हटान�
 
 msgid "Failed to download file for moving"
 msgstr "स्थानांतरण के लिए फ़ाइल डाउनलोड करने में विफल"
+
+msgid "Failed to download history"
+msgstr "इतिहास डाउनलोड करने में विफल"
 
 msgid "Failed to fetch item costs"
 msgstr "आइटम लागत प्राप्त करने में विफल"
@@ -13063,6 +13103,9 @@ msgstr "नई स्थानांतरण पंक्ति"
 msgid "New Unit of Measure"
 msgstr "नई माप की इकाई"
 
+msgid "New Value"
+msgstr "नया मान"
+
 msgid "New Version"
 msgstr "नया संस्करण"
 
@@ -13501,6 +13544,9 @@ msgstr "कोई नई सूचनाएं नहीं"
 
 msgid "No notes"
 msgstr "कोई नोट नहीं"
+
+msgid "No notes were given."
+msgstr "कोई नोट नहीं दिया गया था।"
 
 msgid "No one assigned"
 msgstr "कोई क्रू नहीं"
@@ -14029,6 +14075,9 @@ msgstr "ठीक"
 
 msgid "OK"
 msgstr "ठीक है"
+
+msgid "Old Value"
+msgstr "पुराना मान"
 
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"
@@ -14993,6 +15042,9 @@ msgstr "PDF वॉटरमार्क"
 msgid "Pending"
 msgstr "लंबित"
 
+msgid "Pending Approval"
+msgstr "अनुमोदन लंबित"
+
 msgid "people"
 msgstr "लोग"
 
@@ -15943,9 +15995,6 @@ msgstr "क्रय आदेश राशि"
 msgid "Purchase Order Approval"
 msgstr "क्रय आदेश अनुमोदन"
 
-msgid "Purchase Order approval rule"
-msgstr "क्रय आदेश अनुमोदन नियम"
-
 msgid "Purchase Order ID"
 msgstr "क्रय आदेश ID"
 
@@ -16112,8 +16161,8 @@ msgstr "गुणवत्ता"
 msgid "Quality"
 msgstr "गुणवत्ता"
 
-msgid "Quality Document approval rule"
-msgstr "गुणवत्ता दस्तावेज़ अनुमोदन नियम"
+msgid "Quality Document"
+msgstr "गुणवत्ता दस्तावेज़"
 
 msgid "Quality Documents"
 msgstr "गुणवत्ता दस्तावेज़"
@@ -16610,6 +16659,9 @@ msgstr "रिकॉर्ड हटाया गया"
 msgid "Record Deposit"
 msgstr "जमा राशि रिकॉर्ड करें"
 
+msgid "Record ID"
+msgstr "रिकॉर्ड ID"
+
 msgid "Record inspections tied to a part and a job"
 msgstr "एक भाग और एक कार्य से जुड़े निरीक्षण रिकॉर्ड करें"
 
@@ -16736,6 +16788,16 @@ msgstr "प्रतिपूर्ति"
 
 msgid "Reject"
 msgstr "अस्वीकार करें"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Reject {0}"
+msgstr "अस्वीकार करें {0}"
+
+msgid "Reject {changeOrderId}"
+msgstr "अस्वीकार करें {changeOrderId}"
+
+msgid "Reject {displayName}"
+msgstr "अस्वीकार करें {displayName}"
 
 msgid "Reject Lot"
 msgstr "लॉट को अस्वीकार करें"
@@ -17140,6 +17202,9 @@ msgstr "शेड्यूलर किसी स्थान पर काम �
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 
+msgid "Require approval before change notices move to Implementation"
+msgstr "परिवर्तन सूचनाओं को कार्यान्वयन में ले जाने से पहले अनुमोदन आवश्यक है"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "आपूर्तिकर्ताओं को सक्रिय पर सेट करने से पहले अनुमोदन की आवश्यकता है"
 
@@ -17155,8 +17220,8 @@ msgstr "मिलान आवश्यक है"
 msgid "Require SAML SSO"
 msgstr "SAML SSO आवश्यक करें"
 
-msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr "राशि की सीमा और अनुमोदनकर्ता समूहों के आधार पर क्रय आदेशों, गुणवत्ता दस्तावेज़ों और आपूर्तिकर्ताओं पर स्तरीय अनुमोदन की आवश्यकता है।"
+msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
+msgstr "क्रय आदेशों, गुणवत्ता दस्तावेज़ों, आपूर्तिकर्ताओं और परिवर्तन सूचनाओं पर राशि सीमा और अनुमोदनकर्ता समूहों के आधार पर बहु-स्तरीय साइन-ऑफ आवश्यक है।"
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
@@ -19801,6 +19866,9 @@ msgstr "गुमनाम रूप से सबमिट करें"
 msgid "Submit for approval"
 msgstr "अनुमोदन के लिए सबमिट करें"
 
+msgid "Submit for Approval"
+msgstr "अनुमोदन के लिए सबमिट करें"
+
 msgid "Submit Inspection"
 msgstr "निरीक्षण सबमिट करें"
 
@@ -21460,6 +21528,9 @@ msgstr "यह परिवर्तन सूचना लागू की ज�
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "यह परिवर्तन सूचना बंद है, इसलिए इसके परिवर्तन केवल पढ़ने के लिए हैं।"
 
+msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
+msgstr "यह परिवर्तन सूचना अनुमोदन की प्रतीक्षा कर रही है। इसके परिवर्तन लॉक हैं जब तक इसे अनुमोदित या अस्वीकार नहीं किया जाता।"
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "इस कंपनी का डेटा इस बैकअप की सामग्री के साथ प्रतिस्थापित किया जाता है। आज का डेटा पहले सहेजा जाता है, इसलिए आप पूर्ववत कर सकते हैं।"
 
@@ -21492,6 +21563,10 @@ msgstr "यह वित्तीय वर्ष"
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "जब तक नीचे एक ईमेल डोमेन सत्यापित नहीं किया जाता, तब तक इसका कोई प्रभाव नहीं होगा।"
+
+#. placeholder {0}: entries.length
+msgid "This history is too long to download in full. The file has the {0} most recent entries."
+msgstr "यह इतिहास पूरी तरह से डाउनलोड करने के लिए बहुत लंबा है। फ़ाइल में {0} सबसे हाल की प्रविष्टियाँ हैं।"
 
 msgid "This information will be used on document headers"
 msgstr "यह जानकारी दस्तावेज़ शीर्षलेख पर उपयोग की जाएगी"

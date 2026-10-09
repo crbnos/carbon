@@ -6,15 +6,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import type { Database } from "@carbon/database";
+import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
-  approveRequest,
-  canApproveRequest,
-  canCancelRequest,
-  getLatestApprovalRequestForDocument,
-  isApprovalRequired,
-  rejectRequest
-} from "@carbon/ee/approvals.server";
+  decideApprovalRequest,
+  getDocumentApprovalState
+} from "@carbon/ee/approvals/document.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -22,14 +18,12 @@ import { NotificationEvent } from "@carbon/notifications";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getQualityDocument,
-  getQualityDocumentVersions,
-  qualityDocumentApprovalValidator
+  getQualityDocumentVersions
 } from "~/modules/quality";
 import QualityDocumentEditor from "~/modules/quality/ui/Documents/QualityDocumentEditor";
 import QualityDocumentHeader from "~/modules/quality/ui/Documents/QualityDocumentHeader";
@@ -41,70 +35,6 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id");
 
-type ApprovalContext = {
-  approvalRequest: { id: string } | null;
-  canApprove: boolean;
-  canReopen: boolean;
-  canDelete: boolean;
-  isApprovalRequired: boolean;
-};
-
-async function getQualityDocumentApprovalContext(
-  serviceRole: SupabaseClient<Database>,
-  documentId: string,
-  status: string | null,
-  companyId: string,
-  userId: string
-): Promise<ApprovalContext> {
-  const defaultContext: ApprovalContext = {
-    approvalRequest: null,
-    canApprove: false,
-    canReopen: true,
-    canDelete: true,
-    isApprovalRequired: false
-  };
-
-  if (status !== "Draft" && status !== "Archived") {
-    return defaultContext;
-  }
-
-  const [latest, approvalRequired] = await Promise.all([
-    getLatestApprovalRequestForDocument(
-      serviceRole,
-      "qualityDocument",
-      documentId
-    ),
-    isApprovalRequired(serviceRole, "qualityDocument", companyId, undefined)
-  ]);
-
-  const req = latest.data;
-  if (!req || req.status !== "Pending" || !req.requestedBy || !req.id) {
-    return { ...defaultContext, isApprovalRequired: approvalRequired };
-  }
-
-  const canApprove = await canApproveRequest(
-    serviceRole,
-    {
-      amount: req.amount,
-      documentType: req.documentType,
-      companyId: req.companyId
-    },
-    userId
-  );
-  const isRequester = canCancelRequest(
-    { requestedBy: req.requestedBy, status: req.status },
-    userId
-  );
-
-  return {
-    approvalRequest: { id: req.id },
-    canApprove,
-    canReopen: isRequester || canApprove,
-    canDelete: isRequester,
-    isApprovalRequired: approvalRequired
-  };
-}
-
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Policy & Procedure`, to: path.to.qualityDocuments },
@@ -113,115 +43,70 @@ export const handle: Handle = {
   module: "quality"
 };
 
+// Approving makes the document Active inside approveRequest's transaction;
+// rejecting leaves it in Draft.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId: callerCompanyId, userId } = await requirePermissions(
-    request,
-    {
-      update: "quality"
-    }
-  );
+  const { companyId, userId } = await requirePermissions(request, {
+    update: "quality"
+  });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const validation = await validator(qualityDocumentApprovalValidator).validate(
+  const validation = await validator(approvalDecisionValidator).validate(
     await request.formData()
   );
-
   if (validation.error) {
     return validationError(validation.error);
   }
 
   const { approvalRequestId, decision, notes } = validation.data;
-
-  const serviceRole = getCarbonServiceRole();
-
-  // Verify user can approve this request
-  const approvalRequest = await getLatestApprovalRequestForDocument(
-    serviceRole,
-    "qualityDocument",
-    id
+  const result = await decideApprovalRequest(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    {
+      documentType: "qualityDocument",
+      documentId: id,
+      companyId,
+      userId,
+      approvalRequestId,
+      decision,
+      notes
+    }
   );
 
-  // The request is read through the service role by a URL id, so it must be
-  // proven to be this company's before anything acts on it.
-  if (
-    !approvalRequest.data ||
-    approvalRequest.data.id !== approvalRequestId ||
-    approvalRequest.data.companyId !== callerCompanyId
-  ) {
-    logger.error("Quality document approval request not found", {
-      companyId: callerCompanyId,
+  if (result.error) {
+    logger.error("Quality document approval decision failed", {
+      companyId,
       documentId: id,
-      approvalRequestId
+      approvalRequestId,
+      error: result.error
     });
     throw redirect(
       path.to.qualityDocument(id),
-      await flash(request, error(null, "Approval request not found"))
+      await flash(request, error(result.error, result.error.message))
     );
   }
 
-  const canApprove = await canApproveRequest(
-    serviceRole,
-    {
-      amount: approvalRequest.data.amount,
-      documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
-    },
-    userId
-  );
-
-  if (!canApprove) {
-    throw redirect(
-      path.to.qualityDocument(id),
-      await flash(
-        request,
-        error(null, "You do not have permission to approve this request")
-      )
-    );
-  }
-
-  // Process approval decision
-  const db = getDatabaseClient();
-  const result =
-    decision === "Approved"
-      ? await approveRequest(db, approvalRequestId, userId, notes || undefined)
-      : await rejectRequest(db, approvalRequestId, userId, notes || undefined);
-
-  if (result.error) {
-    throw redirect(
-      path.to.qualityDocument(id),
-      await flash(
-        request,
-        error(
-          result.error,
-          result.error?.message ?? "Failed to process approval decision"
-        )
-      )
-    );
-  }
-
-  const requestedBy = approvalRequest.data?.requestedBy;
-  const companyId = approvalRequest.data?.companyId;
-  if (requestedBy && companyId && requestedBy !== userId) {
-    try {
-      await trigger("notify", {
-        event:
-          decision === "Approved"
-            ? NotificationEvent.ApprovalApproved
-            : NotificationEvent.ApprovalRejected,
+  if (result.requestedBy !== userId) {
+    await trigger("notify", {
+      event:
+        decision === "Approved"
+          ? NotificationEvent.ApprovalApproved
+          : NotificationEvent.ApprovalRejected,
+      companyId,
+      documentId: id,
+      documentType: "qualityDocument",
+      recipient: { type: "user", userId: result.requestedBy },
+      from: userId
+    }).catch((e) =>
+      logger.error("Failed to trigger approval decision notification", {
         companyId,
         documentId: id,
-        documentType: "qualityDocument",
-        recipient: { type: "user", userId: requestedBy },
-        from: userId
-      });
-    } catch (e) {
-      logger.error("Failed to trigger approval decision notification", {
         error: e
-      });
-    }
+      })
+    );
   }
 
   throw redirect(
@@ -242,21 +127,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const serviceRole = getCarbonServiceRole();
   // Kick off approval in parallel — it only needs document.status, so we chain
   // off the document fetch rather than waiting for Promise.all to settle.
+  // Approval only gates Draft / Archived → Active.
   const documentPromise = getQualityDocument(client, id);
   const [document, tags, approval] = await Promise.all([
     documentPromise,
     getTagsList(client, companyId, "qualityDocument"),
     documentPromise.then((d) =>
-      getQualityDocumentApprovalContext(
-        serviceRole,
-        id,
-        d.data?.status ?? null,
-        companyId,
-        userId
-      )
+      d.data?.status === "Draft" || d.data?.status === "Archived"
+        ? getDocumentApprovalState(getCarbonServiceRole(), {
+            documentType: "qualityDocument",
+            documentId: id,
+            companyId,
+            userId
+          })
+        : null
     )
   ]);
 
@@ -281,7 +167,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     document: document.data,
     versions: getQualityDocumentVersions(client, document.data, companyId),
     tags: tags.data ?? [],
-    ...approval
+    approval
   };
 }
 

@@ -291,7 +291,11 @@ function GenericNotification({
           to={
             documentType === "qualityDocument"
               ? path.to.qualityDocument(id)
-              : path.to.purchaseOrderDetails(id)
+              : documentType === "supplier"
+                ? path.to.supplier(id)
+                : documentType === "changeOrder"
+                  ? path.to.changeNoticeDetails(id)
+                  : path.to.purchaseOrderDetails(id)
           }
           {...props}
         />

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ApprovalDecision } from "@carbon/ee/approvals";
+import type { ApprovalDecision as Decision } from "@carbon/ee/approvals";
+import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import { Hidden, TextArea, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -14,63 +15,56 @@ import {
   ModalTitle
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useParams } from "react-router";
-import { supplierApprovalDecisionValidator } from "~/modules/purchasing";
-import { path } from "~/utils/path";
+import type { ReactNode } from "react";
+import type { FetcherWithComponents } from "react-router";
 
-type SupplierApprovalModalProps = {
-  supplierName?: string;
+type ApprovalDecisionProps = {
+  /** The route action that decides the request (posts `approvalDecisionValidator`). */
+  action: string;
   approvalRequestId: string;
-  decision: ApprovalDecision;
+  decision: Decision;
+  title: ReactNode;
+  /** What this decision does to the document. */
+  description: ReactNode;
+  fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
 };
 
-const SupplierApprovalModal = ({
-  supplierName,
+const ApprovalDecision = ({
+  action,
   approvalRequestId,
   decision,
+  title,
+  description,
+  fetcher,
   onClose
-}: SupplierApprovalModalProps) => {
+}: ApprovalDecisionProps) => {
   const { t } = useLingui();
-  const { supplierId } = useParams();
-  if (!supplierId) throw new Error("supplierId not found");
-
   const isApproving = decision === "Approved";
 
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
+        if (!open) onClose();
       }}
     >
       <ModalContent>
         <ValidatedForm
           method="post"
-          validator={supplierApprovalDecisionValidator}
-          action={path.to.supplierApproval(supplierId)}
+          validator={approvalDecisionValidator}
+          action={action}
           onSubmit={onClose}
-          defaultValues={{
-            approvalRequestId,
-            decision,
-            notes: undefined
-          }}
+          defaultValues={{ approvalRequestId, decision, notes: undefined }}
+          fetcher={fetcher}
         >
           <ModalHeader>
-            <ModalTitle>
-              {isApproving ? "Approve" : "Reject"} {supplierName}
-            </ModalTitle>
+            <ModalTitle>{title}</ModalTitle>
           </ModalHeader>
           <ModalBody>
             <Hidden name="approvalRequestId" />
             <Hidden name="decision" />
-            <p className="text-sm text-muted-foreground mb-4">
-              {isApproving
-                ? "Are you sure you want to approve this supplier? This will make it active."
-                : "Are you sure you want to reject this supplier?"}
-            </p>
+            <p className="text-sm text-muted-foreground mb-4">{description}</p>
             <TextArea
               name="notes"
               label={t`Notes (optional)`}
@@ -85,7 +79,7 @@ const SupplierApprovalModal = ({
               type="submit"
               variant={isApproving ? "primary" : "destructive"}
             >
-              {isApproving ? "Approve" : "Reject"}
+              {isApproving ? t`Approve` : t`Reject`}
             </Button>
           </ModalFooter>
         </ValidatedForm>
@@ -94,4 +88,4 @@ const SupplierApprovalModal = ({
   );
 };
 
-export default SupplierApprovalModal;
+export default ApprovalDecision;

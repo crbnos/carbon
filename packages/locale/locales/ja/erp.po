@@ -419,6 +419,9 @@ msgstr "{discount} 割引"
 msgid "{dismissed} dismissed"
 msgstr "{dismissed}件却下済み"
 
+msgid "{documentTypeLabel} approval rule"
+msgstr "{documentTypeLabel}承認ルール"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
@@ -2557,6 +2560,9 @@ msgstr "承認日"
 msgid "Approval is required at or above this amount, up to the next rule's minimum"
 msgstr "この金額以上で次のルールの最小値までの承認が必要です"
 
+msgid "Approval Rejected"
+msgstr "承認却下"
+
 msgid "Approval requirements"
 msgstr "承認要求事項"
 
@@ -2571,6 +2577,16 @@ msgstr "承認"
 
 msgid "Approve"
 msgstr "承認"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Approve {0}"
+msgstr "{0}を承認"
+
+msgid "Approve {changeOrderId}"
+msgstr "{changeOrderId}を承認"
+
+msgid "Approve {displayName}"
+msgstr "{displayName}を承認"
 
 msgid "Approved By"
 msgstr "承認者"
@@ -2630,6 +2646,15 @@ msgstr "プロセス「{name}」を有効化してもよろしいですか？ド
 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "この測定器を有効にしてもよろしいですか?."
+
+msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
+msgstr "この変更通知を承認してもよろしいですか？これは実施に移行します。"
+
+msgid "Are you sure you want to approve this quality document? This will make it active."
+msgstr "この品質文書を承認してもよろしいですか？これを有効にします。"
+
+msgid "Are you sure you want to approve this supplier? This will make it active."
+msgstr "この仕入先を承認してもよろしいですか？これを有効にします。"
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -3032,8 +3057,17 @@ msgstr "このレシートを転記してもよろしいですか？"
 msgid "Are you sure you want to post this shipment?"
 msgstr "この出荷を転記してもよろしいですか？"
 
+msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
+msgstr "この変更通知を却下してもよろしいですか？エンジニアリング完了のままで、変更して再度提出できます。"
+
+msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
+msgstr "この品質文書を却下してもよろしいですか？文書は下書きステータスのままです。"
+
 msgid "Are you sure you want to reject this quote?"
 msgstr "この見積を却下してもよろしいですか？"
+
+msgid "Are you sure you want to reject this supplier?"
+msgstr "この仕入先を却下してもよろしいですか？"
 
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "この製造指図をリリースしてもよろしいですか？これは製造現場で利用可能になり、購買と生産を推進します。"
@@ -6990,6 +7024,9 @@ msgstr "Webhookを削除"
 msgid "Delete Workflow"
 msgstr "ワークフローを削除"
 
+msgid "Deleted"
+msgstr "削除済み"
+
 msgid "Deliver"
 msgstr "配送"
 
@@ -8999,6 +9036,9 @@ msgstr "古い場所からファイルを削除できませんでした"
 
 msgid "Failed to download file for moving"
 msgstr "ファイルの移動用ダウンロードに失敗しました"
+
+msgid "Failed to download history"
+msgstr "履歴のダウンロードに失敗しました"
 
 msgid "Failed to fetch item costs"
 msgstr "品目の原価を取得できませんでした"
@@ -13063,6 +13103,9 @@ msgstr "新規転送明細"
 msgid "New Unit of Measure"
 msgstr "新しい測定単位"
 
+msgid "New Value"
+msgstr "新しい値"
+
 msgid "New Version"
 msgstr "新しいバージョン"
 
@@ -13501,6 +13544,9 @@ msgstr "新しい通知はありません"
 
 msgid "No notes"
 msgstr "メモなし"
+
+msgid "No notes were given."
+msgstr "メモが提供されていません。"
 
 msgid "No one assigned"
 msgstr "クルーなし"
@@ -14029,6 +14075,9 @@ msgstr "OK"
 
 msgid "OK"
 msgstr "OK"
+
+msgid "Old Value"
+msgstr "古い値"
 
 msgid "Oldest first"
 msgstr "最も古いものから"
@@ -14993,6 +15042,9 @@ msgstr "PDF透かし"
 msgid "Pending"
 msgstr "待機中"
 
+msgid "Pending Approval"
+msgstr "承認待機中"
+
 msgid "people"
 msgstr "人員"
 
@@ -15943,9 +15995,6 @@ msgstr "発注書金額"
 msgid "Purchase Order Approval"
 msgstr "発注書承認"
 
-msgid "Purchase Order approval rule"
-msgstr "発注書承認ルール"
-
 msgid "Purchase Order ID"
 msgstr "発注書ID"
 
@@ -16112,8 +16161,8 @@ msgstr "品質"
 msgid "Quality"
 msgstr "品質"
 
-msgid "Quality Document approval rule"
-msgstr "品質文書承認ルール"
+msgid "Quality Document"
+msgstr "品質文書"
 
 msgid "Quality Documents"
 msgstr "品質ドキュメント"
@@ -16610,6 +16659,9 @@ msgstr "レコード削除済み"
 msgid "Record Deposit"
 msgstr "入金を記録"
 
+msgid "Record ID"
+msgstr "レコードID"
+
 msgid "Record inspections tied to a part and a job"
 msgstr "部品とジョブに関連付けられた検査を記録する"
 
@@ -16736,6 +16788,16 @@ msgstr "払戻"
 
 msgid "Reject"
 msgstr "却下"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Reject {0}"
+msgstr "{0}を却下"
+
+msgid "Reject {changeOrderId}"
+msgstr "{changeOrderId}を却下"
+
+msgid "Reject {displayName}"
+msgstr "{displayName}を却下"
 
 msgid "Reject Lot"
 msgstr "ロットを却下"
@@ -17140,6 +17202,9 @@ msgstr "スケジューラがある拠点に作業を配置する前に、割当
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"
 
+msgid "Require approval before change notices move to Implementation"
+msgstr "変更通知が実施に移行する前に承認が必要"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "仕入先を有効に設定する前に承認が必要です"
 
@@ -17155,8 +17220,8 @@ msgstr "照合が必須"
 msgid "Require SAML SSO"
 msgstr "SAML SSOを必須にする"
 
-msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr "金額閾値と承認者グループに基づいて、発注書、品質ドキュメント、および仕入先に対する段階的な承認を要求します。"
+msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
+msgstr "金額しきい値と承認者グループに基づき、発注書、品質ドキュメント、仕入先、変更通知に多段階の承認を必須にします。"
 
 msgid "Require two-factor authentication"
 msgstr "二要素認証が必要です"
@@ -19801,6 +19866,9 @@ msgstr "匿名で提出"
 msgid "Submit for approval"
 msgstr "承認のため提出"
 
+msgid "Submit for Approval"
+msgstr "承認のため提出"
+
 msgid "Submit Inspection"
 msgstr "検査を提出"
 
@@ -21460,6 +21528,9 @@ msgstr "この変更通知は実施中のため、その変更はロック中で
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "この変更通知は閉じられているため、変更は読み取り専用です。"
 
+msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
+msgstr "この変更通知は承認を待機中です。その変更は承認されるか却下されるまでロック中です。"
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "この会社のデータはこのバックアップの内容に置き換えられます。今日のデータが最初に保存されるため、元に戻すことができます。"
 
@@ -21492,6 +21563,10 @@ msgstr "この会計年度"
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "メールドメインが下で検証されるまで、これは効果がありません。"
+
+#. placeholder {0}: entries.length
+msgid "This history is too long to download in full. The file has the {0} most recent entries."
+msgstr "この履歴は完全にダウンロードするには長すぎます。ファイルには{0}個の最新エントリが含まれています。"
 
 msgid "This information will be used on document headers"
 msgstr "この情報は文書ヘッダーで使用されます"

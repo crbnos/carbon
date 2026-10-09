@@ -1265,6 +1265,35 @@ async function buildEventContent(
         };
       }
 
+      if (opts.documentType === "changeOrder") {
+        const co = await client
+          .from("changeOrder")
+          .select("changeOrderId, name, status")
+          .eq("id", documentId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        if (co.error || !co.data) {
+          console.error(
+            "Failed to retrieve change notice for approval notification",
+            co.error
+          );
+          return {
+            description: `Change notice ${docPhrase}`,
+            details: []
+          };
+        }
+
+        return {
+          description: `Change notice ${co.data.changeOrderId} ${docPhrase}`,
+          reference: co.data.changeOrderId ?? undefined,
+          details: buildDetails([
+            { label: "Name", value: co.data.name },
+            { label: "Status", value: co.data.status }
+          ])
+        };
+      }
+
       return {
         description:
           outcome === "requested"

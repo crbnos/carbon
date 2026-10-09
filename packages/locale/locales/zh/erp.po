@@ -419,6 +419,9 @@ msgstr "{discount} 折扣"
 msgid "{dismissed} dismissed"
 msgstr "{dismissed} 已忽略"
 
+msgid "{documentTypeLabel} approval rule"
+msgstr "{documentTypeLabel}审批规则"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
@@ -2557,6 +2560,9 @@ msgstr "审批日期"
 msgid "Approval is required at or above this amount, up to the next rule's minimum"
 msgstr "此金额及以上需要审批，直到下一规则的最小值"
 
+msgid "Approval Rejected"
+msgstr "审批已拒绝"
+
 msgid "Approval requirements"
 msgstr "审批要求"
 
@@ -2571,6 +2577,16 @@ msgstr "审批"
 
 msgid "Approve"
 msgstr "审批"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Approve {0}"
+msgstr "审批{0}"
+
+msgid "Approve {changeOrderId}"
+msgstr "审批{changeOrderId}"
+
+msgid "Approve {displayName}"
+msgstr "审批{displayName}"
 
 msgid "Approved By"
 msgstr "批准人"
@@ -2630,6 +2646,15 @@ msgstr "您确定要激活流程：{name}？它将再次出现在下拉菜单中
 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "确定要启用此量具吗？"
+
+msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
+msgstr "你确定要审批此变更通知吗？这将使其进入实施阶段。"
+
+msgid "Are you sure you want to approve this quality document? This will make it active."
+msgstr "你确定要审批此质量文件吗？这将使其启用。"
+
+msgid "Are you sure you want to approve this supplier? This will make it active."
+msgstr "你确定要审批此供应商吗？这将使其启用。"
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -3032,8 +3057,17 @@ msgstr "你确定要过账此收据吗？"
 msgid "Are you sure you want to post this shipment?"
 msgstr "你确定要过账此发货单吗？"
 
+msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
+msgstr "你确定要拒绝此变更通知吗？它将保持在工程完成状态，以便修改和重新提交。"
+
+msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
+msgstr "你确定要拒绝此质量文件吗？该文件将保持草稿状态。"
+
 msgid "Are you sure you want to reject this quote?"
 msgstr "你确定要拒绝此报价吗？"
+
+msgid "Are you sure you want to reject this supplier?"
+msgstr "你确定要拒绝此供应商吗？"
 
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "确定要下达此工单吗？它将对车间可用，并驱动采购和生产。"
@@ -6990,6 +7024,9 @@ msgstr "删除 Webhook"
 msgid "Delete Workflow"
 msgstr "删除工作流"
 
+msgid "Deleted"
+msgstr "已删除"
+
 msgid "Deliver"
 msgstr "交付"
 
@@ -8999,6 +9036,9 @@ msgstr "删除旧位置的文件失败"
 
 msgid "Failed to download file for moving"
 msgstr "无法下载文件以进行移动"
+
+msgid "Failed to download history"
+msgstr "下载历史记录失败"
 
 msgid "Failed to fetch item costs"
 msgstr "获取物料成本失败"
@@ -13063,6 +13103,9 @@ msgstr "新建调拨行"
 msgid "New Unit of Measure"
 msgstr "新计量单位"
 
+msgid "New Value"
+msgstr "新值"
+
 msgid "New Version"
 msgstr "新版本"
 
@@ -13501,6 +13544,9 @@ msgstr "没有新通知"
 
 msgid "No notes"
 msgstr "没有备注"
+
+msgid "No notes were given."
+msgstr "未提供备注。"
 
 msgid "No one assigned"
 msgstr "没有人员配备"
@@ -14029,6 +14075,9 @@ msgstr "确定"
 
 msgid "OK"
 msgstr "确定"
+
+msgid "Old Value"
+msgstr "旧值"
 
 msgid "Oldest first"
 msgstr "最早优先"
@@ -14993,6 +15042,9 @@ msgstr "PDF 水印"
 msgid "Pending"
 msgstr "待处理"
 
+msgid "Pending Approval"
+msgstr "待处理审批"
+
 msgid "people"
 msgstr "人员"
 
@@ -15943,9 +15995,6 @@ msgstr "采购订单金额"
 msgid "Purchase Order Approval"
 msgstr "采购订单审批"
 
-msgid "Purchase Order approval rule"
-msgstr "采购订单审批规则"
-
 msgid "Purchase Order ID"
 msgstr "采购订单ID"
 
@@ -16112,8 +16161,8 @@ msgstr "质量"
 msgid "Quality"
 msgstr "质量"
 
-msgid "Quality Document approval rule"
-msgstr "质量文件审批规则"
+msgid "Quality Document"
+msgstr "质量文件"
 
 msgid "Quality Documents"
 msgstr "质量文档"
@@ -16610,6 +16659,9 @@ msgstr "记录已删除"
 msgid "Record Deposit"
 msgstr "记录押金"
 
+msgid "Record ID"
+msgstr "记录 ID"
+
 msgid "Record inspections tied to a part and a job"
 msgstr "记录与零件和工作相关的检验"
 
@@ -16736,6 +16788,16 @@ msgstr "报销"
 
 msgid "Reject"
 msgstr "拒绝"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Reject {0}"
+msgstr "拒绝{0}"
+
+msgid "Reject {changeOrderId}"
+msgstr "拒绝{changeOrderId}"
+
+msgid "Reject {displayName}"
+msgstr "拒绝{displayName}"
 
 msgid "Reject Lot"
 msgstr "拒绝批次"
@@ -17140,6 +17202,9 @@ msgstr "排程前需要已分配的操作员才能在地点安排工作。启用
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "需要身份验证应用程序才能打开此公司。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
+msgid "Require approval before change notices move to Implementation"
+msgstr "变更通知进入实施前需要审批"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "供应商设置为启用前需要审批"
 
@@ -17155,8 +17220,8 @@ msgstr "必需匹配"
 msgid "Require SAML SSO"
 msgstr "需要 SAML SSO"
 
-msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr "根据金额阈值和批准人组，对采购订单、质量文档和供应商要求分级批准。"
+msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
+msgstr "根据金额阈值和审批人组对采购订单、质量文档、供应商和变更通知进行分级审批。"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -19801,6 +19866,9 @@ msgstr "匿名提交"
 msgid "Submit for approval"
 msgstr "提交以审批"
 
+msgid "Submit for Approval"
+msgstr "提交审批"
+
 msgid "Submit Inspection"
 msgstr "提交检验"
 
@@ -21460,6 +21528,9 @@ msgstr "此变更通知正在实施中，因此其更改已锁定。重新打开
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "此变更通知已关闭，因此其更改为只读。"
 
+msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
+msgstr "此变更通知待审批。其变更已锁定，直到被审批或拒绝。"
+
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "此公司的数据将替换为此备份的内容。首先保存今天的数据，以便您可以恢复。"
 
@@ -21492,6 +21563,10 @@ msgstr "此会计年度"
 
 msgid "This has no effect until an email domain is verified below."
 msgstr "在下面验证电子邮件域之前，这不会产生任何影响。"
+
+#. placeholder {0}: entries.length
+msgid "This history is too long to download in full. The file has the {0} most recent entries."
+msgstr "历史记录过长，无法完整下载。该文件包含最近的{0}条记录。"
 
 msgid "This information will be used on document headers"
 msgstr "此信息将用于文件标题"

@@ -69,7 +69,7 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 - `getPurchasingPlanning` — MRP-driven planned order view (RPC `get_purchasing_planning_grid`)
 - `applyPurchasingPlanningActions(db, { companyId, userId, actions })` — one Kysely transaction for a batch of planning actions on PO lines: the claim (Open → Actioned, returning each action's suggested quantity and date, which are what gets written), one `UPDATE … FROM (VALUES …)` for dates and one for quantities (`taxPairForQuantity` restates the tax pair), one `DELETE` for Cancels (Draft / Planned PO, nothing received or invoiced), then the refused claims are released. Returns `{ applied, alreadyApplied, refused, failed }`
 - `updatePurchaseOrderLineSchedule(client, db, args)` — planning's single-line write (the order drawer's inline edit): `requiredDate` or `purchaseQuantity` on a line of a Draft / Planned PO, the guard inside the UPDATE; returns `{ updated, error }`
-- `getSupplierApprovalContext` — reads approval workflow state
+- Supplier approval — wiring only: the `$supplierId` loader reads `getDocumentApprovalState` and `$supplierId.approval.tsx` uses `openApprovalRequests` / `decideApprovalRequest` (`@carbon/ee/approvals/document.server`)
 - `getPurchasingRFQ` / `getPurchasingRFQs` / `upsertPurchasingRFQ` — RFQ management
 - `getSupplierQuotesForComparison` — side-by-side quote comparison
 - `getDefaultAttachmentsForPO` — default document attachments for PO creation

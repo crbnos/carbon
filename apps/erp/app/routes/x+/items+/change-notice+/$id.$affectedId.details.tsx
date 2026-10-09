@@ -3,12 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { VStack } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { ChangeNotice } from "~/modules/items";
-import { canEditChangeNoticeEngineering } from "~/modules/items";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
+import { useChangeNoticeEngineeringLock } from "~/modules/items/ui/ChangeNotice";
 import AffectedItemDetail from "~/modules/items/ui/ChangeNotice/AffectedItemDetail";
 import { path } from "~/utils/path";
 
@@ -18,13 +18,14 @@ import { path } from "~/utils/path";
 // which affected item to show, so refresh + back/forward reselect it.
 export default function ChangeNoticeAffectedItemRoute() {
   const { id, affectedId } = useParams();
-  const { t } = useLingui();
   if (!id) throw new Error("Could not find id");
 
   const routeData = useRouteData<{
     changeNotice: ChangeNotice;
     affectedItems: AffectedItemDraft[];
   }>(path.to.changeNotice(id));
+  const { isDisabled, reason: disabledReason } =
+    useChangeNoticeEngineeringLock(id);
 
   const changeNotice = routeData?.changeNotice;
   if (!changeNotice) throw new Error("Could not find change notice data");
@@ -40,15 +41,6 @@ export default function ChangeNoticeAffectedItemRoute() {
       </div>
     );
   }
-
-  const isDisabled = !canEditChangeNoticeEngineering(changeNotice.status);
-  // UI copy is kept separate from the server guard's flash text (same split as
-  // ReleaseLockAlert) — React macros can't run server-side, so this is the
-  // translated half of the same condition.
-  const disabledReason =
-    changeNotice.status === "Implementation"
-      ? t`This change notice is being implemented, so its changes are locked. Reopen it to edit.`
-      : t`This change notice is closed, so its changes are read-only.`;
 
   return (
     <VStack spacing={4} className="p-4">

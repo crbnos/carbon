@@ -46,13 +46,6 @@ const PartHeader = () => {
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const changeNoticeModal = useDisclosure();
-  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
-    entityType: "item",
-    entityId: itemId,
-    companyId: company.id,
-    variant: "dropdown"
-  });
-
   const routeData = useRouteData<{
     partSummary: PartSummary;
     supersession: Promise<{
@@ -63,6 +56,15 @@ const PartHeader = () => {
         | "No Stock";
     } | null>;
   }>(path.to.part(itemId));
+
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "item",
+    entityId: itemId,
+    companyId: company.id,
+    variant: "dropdown",
+    downloadable: true,
+    downloadName: routeData?.partSummary?.readableIdWithRevision ?? undefined
+  });
 
   const supersession = useResolved(routeData?.supersession, null, itemId);
   const lifecycleStatus = getItemLifecycleStatus(

@@ -391,14 +391,6 @@ export const requiredActionValidator = z.object({
   active: zfd.checkbox()
 });
 
-export const qualityDocumentApprovalValidator = z.object({
-  approvalRequestId: z
-    .string()
-    .min(1, { message: "Approval request is required" }),
-  decision: z.enum(["Approved", "Rejected"]),
-  notes: zfd.text(z.string().optional())
-});
-
 export const QualityKPIs = [
   { key: "weeklyTracking", label: "Issue Trend" },
   { key: "statusDistribution", label: "Status Distribution" },

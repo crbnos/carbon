@@ -518,6 +518,8 @@ export const path = {
     // drives selection — refresh + back/forward reselect it.
     changeNoticeAffectedItem: (id: string, affectedId: string) =>
       generatePath(`${x}/items/change-notice/${id}/${affectedId}/details`),
+    changeNoticeApproval: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/approval`),
     changeNoticeContent: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}/content`),
     // Delete action for a supplier part managed on a CO line (Buy Revision/New

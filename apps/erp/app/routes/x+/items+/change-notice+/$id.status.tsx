@@ -4,8 +4,16 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  cancelPendingApprovals,
+  openApprovalRequests
+} from "@carbon/ee/approvals/document.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
@@ -20,6 +28,17 @@ import {
 } from "~/modules/items/items.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "change-notice-status");
+
+const approvalOutcomeFlash = {
+  requested: success("Submitted for approval"),
+  "already-pending": error(
+    null,
+    "This change notice is already waiting for approval"
+  ),
+  failed: error(null, "Failed to submit for approval")
+};
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -40,6 +59,71 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { fromStatus, status: toStatus, assignee } = validation.data;
+
+  // An approval rule gates Engineering Complete → Implementation: submitting
+  // opens a request and leaves the status alone; approving it performs the
+  // transition (approveRequest). Without a rule the advance proceeds as usual.
+  const isGatedAdvance =
+    fromStatus === "Engineering Complete" && toStatus === "Implementation";
+  if (isGatedAdvance) {
+    // fromStatus comes from the form: a stale page must not open a request for
+    // a notice that is no longer at Engineering Complete.
+    const current = await client
+      .from("changeOrder")
+      .select("status")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (current.data?.status !== fromStatus) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.changeNoticeDetails(id),
+        await flash(
+          request,
+          error(
+            current.error,
+            "The change notice was updated by someone else. Refresh and try again."
+          )
+        )
+      );
+    }
+
+    const opened = await openApprovalRequests(getCarbonServiceRole(), {
+      documentType: "changeOrder",
+      documentIds: [id],
+      companyId,
+      userId
+    });
+
+    if (opened.status === "opened" && opened.approverIds.length > 0) {
+      await trigger("notify", {
+        event: NotificationEvent.ApprovalRequested,
+        companyId,
+        documentId: id,
+        documentType: "changeOrder",
+        recipient: { type: "users", userIds: opened.approverIds },
+        from: userId
+      }).catch((e) =>
+        logger.error("Failed to notify change notice approvers", {
+          companyId,
+          changeNoticeId: id,
+          error: e
+        })
+      );
+    }
+
+    if (opened.status !== "not-required") {
+      const outcome =
+        opened.status === "failed"
+          ? "failed"
+          : opened.requested.length > 0
+            ? "requested"
+            : "already-pending";
+      throw redirect(
+        requestReferrer(request) ?? path.to.changeNoticeDetails(id),
+        await flash(request, approvalOutcomeFlash[outcome])
+      );
+    }
+  }
 
   // Implementation → Done IS the apply: applyChangeNotice activates each affected
   // item's CO-owned Draft make method and performs the final CAS flip to Done
@@ -77,6 +161,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
           error(update.error, "Failed to update change notice status")
         )
       );
+    }
+  }
+
+  // Cancelling withdraws a pending request; so does a plain advance past the
+  // gate, which only happens when the rule was turned off after the request
+  // was opened.
+  if (toStatus === "Cancelled" || isGatedAdvance) {
+    const cancelled = await cancelPendingApprovals(getCarbonServiceRole(), {
+      documentType: "changeOrder",
+      documentIds: [id],
+      companyId,
+      userId
+    });
+    if (cancelled.error) {
+      logger.error("Failed to cancel change notice approval requests", {
+        companyId,
+        changeNoticeId: id,
+        error: cancelled.error
+      });
     }
   }
 

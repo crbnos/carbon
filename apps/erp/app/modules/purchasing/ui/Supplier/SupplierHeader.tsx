@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ApprovalDecision } from "@carbon/ee/approvals";
+import type {
+  ApprovalDecision,
+  DocumentApprovalState
+} from "@carbon/ee/approvals";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -53,7 +56,10 @@ import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
-import { ConfirmDelete } from "~/components/Modals";
+import {
+  ApprovalDecision as ApprovalDecisionModal,
+  ConfirmDelete
+} from "~/components/Modals";
 import {
   usePermissions,
   useRouteData,
@@ -64,7 +70,6 @@ import type { SupplierDetail } from "~/modules/purchasing";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";
-import SupplierApprovalModal from "./SupplierApprovalModal";
 
 const SupplierHeader = () => {
   const { supplierId } = useParams();
@@ -83,13 +88,7 @@ const SupplierHeader = () => {
   const routeData = useRouteData<{
     supplier: SupplierDetail;
     tags: { name: string }[];
-    approvalRequest: { id: string } | null;
-    canApprove: boolean;
-    decision: {
-      status: "Approved" | "Rejected";
-      decisionBy: string;
-      decisionAt: string;
-    } | null;
+    approval: DocumentApprovalState;
     supplierTax: { taxExempt: boolean } | null;
   }>(path.to.supplier(supplierId));
 
@@ -107,9 +106,11 @@ const SupplierHeader = () => {
 
   const status = routeData?.supplier?.status ?? null;
   const isPending = status === "Pending";
-  const approvalRequestId = routeData?.approvalRequest?.id;
+  const approvalRequestId = routeData?.approval?.pendingRequestId;
   const hasApprovalRequest = !!approvalRequestId;
-  const canApprove = routeData?.canApprove ?? false;
+  const canApprove = routeData?.approval?.canApprove ?? false;
+  const decision = routeData?.approval?.lastDecision;
+  const approvalFetcher = useFetcher();
 
   const submitRequestApproval = () => {
     const formData = new FormData();
@@ -293,58 +294,46 @@ const SupplierHeader = () => {
                   )}
                 </CardAttributeValue>
               </CardAttribute>
-              {routeData?.decision?.status === "Approved" &&
-                status === "Active" && (
-                  <>
-                    <CardAttribute>
-                      <CardAttributeLabel>
-                        <Trans>Approved By</Trans>
-                      </CardAttributeLabel>
-                      <CardAttributeValue>
-                        <EmployeeAvatar
-                          employeeId={routeData.decision.decisionBy}
-                        />
-                      </CardAttributeValue>
-                    </CardAttribute>
-                    <CardAttribute>
-                      <CardAttributeLabel>
-                        <Trans>Approval Date</Trans>
-                      </CardAttributeLabel>
-                      <CardAttributeValue>
-                        <DateTime
-                          value={routeData.decision.decisionAt}
-                          variant="date"
-                        />
-                      </CardAttributeValue>
-                    </CardAttribute>
-                  </>
-                )}
-              {routeData?.decision?.status === "Rejected" &&
-                status === "Rejected" && (
-                  <>
-                    <CardAttribute>
-                      <CardAttributeLabel>
-                        <Trans>Rejected By</Trans>
-                      </CardAttributeLabel>
-                      <CardAttributeValue>
-                        <EmployeeAvatar
-                          employeeId={routeData.decision.decisionBy}
-                        />
-                      </CardAttributeValue>
-                    </CardAttribute>
-                    <CardAttribute>
-                      <CardAttributeLabel>
-                        <Trans>Rejected Date</Trans>
-                      </CardAttributeLabel>
-                      <CardAttributeValue>
-                        <DateTime
-                          value={routeData.decision.decisionAt}
-                          variant="date"
-                        />
-                      </CardAttributeValue>
-                    </CardAttribute>
-                  </>
-                )}
+              {decision?.status === "Approved" && status === "Active" && (
+                <>
+                  <CardAttribute>
+                    <CardAttributeLabel>
+                      <Trans>Approved By</Trans>
+                    </CardAttributeLabel>
+                    <CardAttributeValue>
+                      <EmployeeAvatar employeeId={decision.decisionBy} />
+                    </CardAttributeValue>
+                  </CardAttribute>
+                  <CardAttribute>
+                    <CardAttributeLabel>
+                      <Trans>Approval Date</Trans>
+                    </CardAttributeLabel>
+                    <CardAttributeValue>
+                      <DateTime value={decision.decisionAt} variant="date" />
+                    </CardAttributeValue>
+                  </CardAttribute>
+                </>
+              )}
+              {decision?.status === "Rejected" && status === "Rejected" && (
+                <>
+                  <CardAttribute>
+                    <CardAttributeLabel>
+                      <Trans>Rejected By</Trans>
+                    </CardAttributeLabel>
+                    <CardAttributeValue>
+                      <EmployeeAvatar employeeId={decision.decisionBy} />
+                    </CardAttributeValue>
+                  </CardAttribute>
+                  <CardAttribute>
+                    <CardAttributeLabel>
+                      <Trans>Rejected Date</Trans>
+                    </CardAttributeLabel>
+                    <CardAttributeValue>
+                      <DateTime value={decision.decisionAt} variant="date" />
+                    </CardAttributeValue>
+                  </CardAttribute>
+                </>
+              )}
               <CardAttribute>
                 <CardAttributeValue>
                   <ValidatedForm
@@ -420,10 +409,21 @@ const SupplierHeader = () => {
       )}
       {auditLogDrawer}
       {approvalDecision && approvalRequestId && (
-        <SupplierApprovalModal
-          supplierName={routeData?.supplier?.name ?? undefined}
+        <ApprovalDecisionModal
+          action={path.to.supplierApproval(supplierId)}
           approvalRequestId={approvalRequestId}
           decision={approvalDecision}
+          title={
+            approvalDecision === "Approved"
+              ? t`Approve ${routeData?.supplier?.name ?? ""}`
+              : t`Reject ${routeData?.supplier?.name ?? ""}`
+          }
+          description={
+            approvalDecision === "Approved"
+              ? t`Are you sure you want to approve this supplier? This will make it active.`
+              : t`Are you sure you want to reject this supplier?`
+          }
+          fetcher={approvalFetcher}
           onClose={() => setApprovalDecision(null)}
         />
       )}

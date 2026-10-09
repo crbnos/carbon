@@ -46,13 +46,6 @@ const ToolHeader = () => {
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const changeNoticeModal = useDisclosure();
-  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
-    entityType: "item",
-    entityId: itemId,
-    companyId: company.id,
-    variant: "dropdown"
-  });
-
   const routeData = useRouteData<{
     toolSummary: Tool;
     supersession: Promise<{
@@ -63,6 +56,15 @@ const ToolHeader = () => {
         | "No Stock";
     } | null>;
   }>(path.to.tool(itemId));
+
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "item",
+    entityId: itemId,
+    companyId: company.id,
+    variant: "dropdown",
+    downloadable: true,
+    downloadName: routeData?.toolSummary?.readableIdWithRevision ?? undefined
+  });
 
   const supersession = useResolved(routeData?.supersession, null, itemId);
   const lifecycleStatus = getItemLifecycleStatus(

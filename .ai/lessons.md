@@ -3363,3 +3363,13 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 **Rule:** Never put an import attribute on a JSON import in code that also runs in the browser. Make the server bundle the package instead: add it to `ssrNoExternal` in each app's `vite.config.ts` (the ERP and MES lists apply to both `ssr.noExternal` and `environments.ssr.resolve.noExternal`). To check the browser side, fetch the module from the dev server (`curl $ERP_URL/@fs<absolute path>`) and confirm the `import()` call has no second argument.
 
 **Applies to:** `packages/react/src/utils/generatedAvatar.ts`; any isomorphic code that imports JSON from a dependency.
+
+## An entity in `audit.config.ts` records nothing until its tables have `events: true`
+
+**Context:** Change notice history (the `changeOrder` audit entity) was empty in the History drawer even with audit logging on (2026-10-08).
+
+**Problem:** `auditConfig.entities.changeOrder` listed its 4 tables, and `syncAuditSubscriptions` created AUDIT subscriptions for them. But `packages/database/src/event-system/attachments.ts` gave `changeOrder` only a statement broadcast and the 3 child tables no entry at all, so no async event trigger existed and nothing reached the event queue. Every check looked green: subscriptions present, sweeper succeeding, queue empty.
+
+**Rule:** When you add an entity to `audit.config.ts`, give each of its tables `events: true` in `attachments.ts` and ship it with `pnpm --filter @carbon/database authz migration <name>`. To debug an empty audit log, first check `pg_trigger` for `trg_event_async_*` on the table.
+
+**Applies to:** `packages/database/src/audit.config.ts`, `packages/database/src/event-system/attachments.ts`.
