@@ -51,6 +51,10 @@ msgstr "(исключено для этого покупателя)"
 msgid "(Inactive)"
 msgstr "(Неактивный)"
 
+#. placeholder {0}: data.preview.skippedLines
+msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# компонент в этой группе} other {# компонентов в этой группе}}"
@@ -62,6 +66,10 @@ msgstr "{0, plural, one {# день страхового запаса} few {# д
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# день недостатка} few {# дня недостатка} many {# дней недостатка} other {# дней недостатка}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
@@ -3934,6 +3942,9 @@ msgstr "Создайте любую новую работу"
 msgid "Build for Fleet"
 msgstr "Построить для парка"
 
+msgid "Build from part"
+msgstr ""
+
 msgid "Build integrations and customizations"
 msgstr "Создавайте интеграции и настройки"
 
@@ -4575,9 +4586,18 @@ msgstr "Выберите строку слева, чтобы увидеть, о�
 msgid "Choose a serial number"
 msgstr "Выберите серийный номер"
 
+msgid "Choose a source to see the elements it creates."
+msgstr ""
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "выберите поставщика для {0} в производственном заказе"
+
+msgid "Choose a template"
+msgstr ""
+
+msgid "Choose an item"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
@@ -5936,6 +5956,9 @@ msgstr "Создать извещение об изменении"
 msgid "Create Contract"
 msgstr "Создать контракт"
 
+msgid "Create elements"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "Создать прогноз"
 
@@ -5993,6 +6016,9 @@ msgstr "Создать запуск"
 msgid "Create Supplier Return"
 msgstr "Создать возврат поставщику"
 
+msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6010,6 +6036,9 @@ msgstr "Создать рабочий центр"
 
 msgid "Created"
 msgstr "Создано"
+
+msgid "Created {count} elements from the part"
+msgstr ""
 
 msgid "Created <0/>"
 msgstr "Создано <0/>"
@@ -7385,6 +7414,9 @@ msgstr "Начало амортизации"
 
 msgid "Depreciation Start Date"
 msgstr "Дата начала амортизации"
+
+msgid "Depth"
+msgstr ""
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Рассчитать срок хранения этой номенклатуры на основе кратчайшего срока хранения её компонентов, игнорируя поле «Дни» выше."
@@ -10908,6 +10940,9 @@ msgstr "Входной контроль"
 
 msgid "Inbox"
 msgstr "Входящие"
+
+msgid "Include bought components"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отгрузку"
@@ -15451,6 +15486,9 @@ msgstr "Родительский центр затрат"
 
 msgid "Parent Department"
 msgstr "Родительский отдел"
+
+msgid "Parent element"
+msgstr ""
 
 msgid "Parent Group"
 msgstr "Родительская группа"

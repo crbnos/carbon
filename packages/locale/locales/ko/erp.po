@@ -51,6 +51,10 @@ msgstr "(이 고객에게는 제외됨)"
 msgid "(Inactive)"
 msgstr "(비활성)"
 
+#. placeholder {0}: data.preview.skippedLines
+msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {이 그룹의 # 부품} other {이 그룹의 # 부품}}"
@@ -62,6 +66,10 @@ msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
@@ -3934,6 +3942,9 @@ msgstr "완전히 새로운 작업 구축"
 msgid "Build for Fleet"
 msgstr "플릿용 구성"
 
+msgid "Build from part"
+msgstr ""
+
 msgid "Build integrations and customizations"
 msgstr "연동과 커스터마이징 구축"
 
@@ -4575,9 +4586,18 @@ msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는�
 msgid "Choose a serial number"
 msgstr "시리얼 번호를 선택하십시오"
 
+msgid "Choose a source to see the elements it creates."
+msgstr ""
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "작업 지시의 {0}에 대한 공급업체를 선택하세요"
+
+msgid "Choose a template"
+msgstr ""
+
+msgid "Choose an item"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "다른 파일을 선택하세요"
@@ -5936,6 +5956,9 @@ msgstr "변경 통지 생성"
 msgid "Create Contract"
 msgstr "계약 생성"
 
+msgid "Create elements"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "예측 생성"
 
@@ -5993,6 +6016,9 @@ msgstr "실행 생성"
 msgid "Create Supplier Return"
 msgstr "공급업체 반품 생성"
 
+msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6010,6 +6036,9 @@ msgstr "작업장 생성"
 
 msgid "Created"
 msgstr "생성됨"
+
+msgid "Created {count} elements from the part"
+msgstr ""
 
 msgid "Created <0/>"
 msgstr "생성됨 <0/>"
@@ -7385,6 +7414,9 @@ msgstr "감가상각 시작"
 
 msgid "Depreciation Start Date"
 msgstr "감가상각 시작일"
+
+msgid "Depth"
+msgstr ""
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "이 품목의 보존 기간을 위의 Days 필드를 무시하고 구성 요소의 가장 짧은 보존 기간에서 도출합니다."
@@ -10908,6 +10940,9 @@ msgstr "수입 검사"
 
 msgid "Inbox"
 msgstr "받은함"
+
+msgid "Include bought components"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "출하에 여분 부품 포함"
@@ -15451,6 +15486,9 @@ msgstr "상위 원가 센터"
 
 msgid "Parent Department"
 msgstr "상위 부서"
+
+msgid "Parent element"
+msgstr ""
 
 msgid "Parent Group"
 msgstr "상위 그룹"

@@ -63,7 +63,7 @@
 - [x] Task 25: Add charge numbers to reimbursement lines and show them on charges
 - [x] Task 26: Add the milestone burn chart
 - [x] Task 27: Add part links and item values
-- [ ] Task 28: Add Build from part
+- [x] Task 28: Add Build from part
 - [ ] Task 29: Add the element history by part
 - [ ] Task 30: Extend the demo datasets
 - [ ] Task 31: Update the rule file, module AGENTS.md, docs and spec
@@ -1545,3 +1545,11 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 27: the Part field options come from `getItemNumericCustomFields` (`customField` rows with `dataTypeId` 4 for the item type's table), not `getCustomFields`. `getCustomFields` reads the `customFieldTables` view, which returns every field of a table as one JSON value. The element page reads them only for a Parameter, after it finds the nearest linked part in the elements it already loads (2 queries).
 - Task 27: the Issue Material modal shows the BOM materials as one-click buttons above the Item field, under "From the part's bill of materials". A button sets the form's item through `useControlField`. The `Item` combobox has no option groups, so the BOM rows cannot be listed inside it. Only stocked materials show, because a Non-Inventory item cannot be issued.
 - Task 27: a rolled-back SQL session linked a serial of another item to an element and got `ERROR: The serial belongs to a different item`.
+- Task 28: `planElementsFromSource` has no `rootDepth` argument. A source node with `parentKey` null is on level 1, and `depth` counts from there. It takes `startSortOrder`, so the first level follows the parent's other children. The function, `BuildSourceNode`, `buildFromPartValidator` and the 500-node cap (`BUILD_FROM_PART_MAX_NODES`) live in `projects.models.ts`. `MAX_ENTITIES` is private to `inventory/lineage.server.ts`, so the cap is a constant of its own.
+- Task 28: `buildElementsFromPart` and `previewBuildFromPart` take a Supabase client and a Kysely client. `getMethodTree` reads through the Supabase client. The serial walk and the insert use Kysely. The preview runs the same plan with no insert.
+- Task 28: the serial walk calls both lineage RPCs per level. The ancestors RPC returns the outputs of the activities that took the seed as an input, and an Unconsume activity outputs the components it gave back. A component counts when its Consume rows outnumber its Unconsume rows for the same assembly. A scrapped component is also left out, as MES `getTrackedInputs` does. A component whose item is not Buy is a Make node.
+- Task 28: the item walk counts the skipped lines against the `methodMaterial` rows of the make methods it reached. Those are the root and each Make to Order line above the depth limit.
+- Task 28: a Template source copies the template's elements down to `depth` and the links between them. It copies no plan lines, labels or milestones, because those belong to the template project. `planProjectCopy` takes an optional `startSequence` (default 1). Each copied state maps to this project's default state of the same group. Only a project with `isTemplate` set is a template.
+- Task 28: `$projectId.elements.build.tsx` is a resource route. Its loader returns the templates and the preview, and its action builds. The drawer is local state on the Elements page, opened from **New → Build from part**. Its controls are comboboxes that reload the preview. A form would have to submit before it could preview.
+- Task 28: a throwaway vitest run against this worktree's database previewed the satellite item SAT-1000. It gave 10 elements at depth 2 (6 Make to Order sub-assemblies), and 30 with bought components. A serial's build gave 4 reaction wheels linked to their serials and 2 consumed lots. A build created the 10 elements and advanced `nextElementSequence` from 1 to 11. The rows were deleted and the sequence was restored. The script was not committed.
+- Task 28: a test that imports `projects.server.ts` needs `@lingui/core/macro` mocked. The import chain reaches the docs glossary (`msg`), which the vitest config does not compile.

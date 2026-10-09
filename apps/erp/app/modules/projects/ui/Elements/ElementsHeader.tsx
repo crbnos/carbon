@@ -43,6 +43,7 @@ import {
   LuBookmark,
   LuBookmarkPlus,
   LuBookOpenText,
+  LuBoxes,
   LuChartGantt,
   LuChevronDown,
   LuFileText,
@@ -122,6 +123,8 @@ type ElementsHeaderProps = {
   onDisplayChange: (property: ElementDisplayProperty, shown: boolean) => void;
   /** Focuses the quick-add input, with a type or the current one. */
   onNew: (type?: ProjectElementType) => void;
+  /** Opens Build from part. */
+  onBuildFromPart: () => void;
   canCreate: boolean;
   /** The Table layout's grouping; the Display popover offers it when set. */
   grouping?: ElementGrouping;
@@ -147,6 +150,7 @@ export function ElementsHeader({
   display,
   onDisplayChange,
   onNew,
+  onBuildFromPart,
   canCreate,
   grouping,
   onGroupingChange,
@@ -328,6 +332,11 @@ export function ElementsHeader({
                   {typeLabels[value]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onBuildFromPart}>
+                <DropdownMenuIcon icon={<LuBoxes />} />
+                <Trans>Build from part</Trans>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </HStack>

@@ -11,12 +11,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { customAlphabet } from "nanoid";
 import type { z } from "zod";
+import { getMethodTree } from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type {
+  BuildSourceNode,
   ElementVerification,
   logTimeValidator,
+  PlannedBuildElement,
   ProjectCopyElement,
   ProjectCopySource,
+  ProjectElementType,
+  ProjectStateGroup,
   projectElementValidator,
   projectIssueValidator,
   projectValidator,
@@ -24,11 +29,14 @@ import type {
   VerificationElement
 } from "./projects.models";
 import {
+  BUILD_FROM_PART_MAX_NODES,
   chargeableByDefault,
   computeVerification,
   defaultProjectStates,
   parseParameterFormula,
+  planElementsFromSource,
   planProjectCopy,
+  projectCopyIdPrefixes,
   rollUpRequirementStatus
 } from "./projects.models";
 import {
@@ -692,6 +700,537 @@ export async function insertProjectElement(
       .executeTakeFirstOrThrow();
 
     return { id: element.id, readableId };
+  });
+}
+
+// --- Build from part ------------------------------------------------------------
+
+export type BuildFromPartArgs = {
+  companyId: string;
+  projectId: string;
+  parentId: string | null;
+  source:
+    | { trackedEntityId: string }
+    | { itemId: string }
+    | { templateProjectId: string };
+  depth: number;
+  includeBought: boolean;
+};
+
+type TraceRow = {
+  sourceEntityId: string;
+  trackedActivityId: string;
+  id: string;
+  status: Database["public"]["Enums"]["trackedEntityStatus"];
+};
+
+/**
+ * The upstream build of a serial: what was consumed to make it, then what was
+ * consumed to make each of those, one level at a time. Each level is two RPC
+ * calls for all its entities, one read of the activity types and one read of
+ * the entities' items, never one per entity.
+ * `get_direct_descendants_of_tracked_entities_strict` returns the inputs of
+ * the activities that output a seed (the upstream side, despite its name). A
+ * component counts when a Consume activity took it and no later Unconsume
+ * activity of the same assembly gave it back (the ancestors RPC returns those
+ * as the Unconsume's outputs), as MES `getTrackedInputs` nets them. A
+ * scrapped component is no longer in the build.
+ */
+async function loadSerialBuildNodes(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: { companyId: string; trackedEntityId: string; depth: number }
+): Promise<BuildSourceNode[]> {
+  const seed = await db
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("id", "=", args.trackedEntityId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (!seed) throw new Error("The serial was not found");
+
+  const nodes: BuildSourceNode[] = [];
+  // The node keys of each entity on the current level (the seed has none).
+  let level = new Map<string, (string | null)[]>([[seed.id, [null]]]);
+  const visited = new Set<string>([seed.id]);
+
+  for (let depth = 1; depth <= args.depth && level.size > 0; depth++) {
+    const ids = [...level.keys()];
+    const [consumed, given] = await Promise.all([
+      sql<TraceRow>`
+        SELECT "sourceEntityId", "trackedActivityId", "id", "status"
+        FROM get_direct_descendants_of_tracked_entities_strict(${ids}::text[], ${args.companyId})
+      `.execute(db),
+      sql<TraceRow>`
+        SELECT "sourceEntityId", "trackedActivityId", "id", "status"
+        FROM get_direct_ancestors_of_tracked_entities_strict(${ids}::text[], ${args.companyId})
+      `.execute(db)
+    ]);
+    const activityIds = [
+      ...new Set(
+        [...consumed.rows, ...given.rows].map((row) => row.trackedActivityId)
+      )
+    ];
+    if (activityIds.length === 0) break;
+    const activities = await db
+      .selectFrom("trackedActivity")
+      .select(["id", "type"])
+      .where("id", "in", activityIds)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    const typeOf = new Map(activities.map((a) => [a.id, a.type]));
+
+    // Net per (assembly, component): Consume less Unconsume.
+    const net = new Map<
+      string,
+      { assembly: string; component: string; count: number }
+    >();
+    for (const row of consumed.rows) {
+      if (typeOf.get(row.trackedActivityId) !== "Consume") continue;
+      if (row.status === "Scrapped") continue;
+      const key = `${row.sourceEntityId} ${row.id}`;
+      const entry = net.get(key) ?? {
+        assembly: row.sourceEntityId,
+        component: row.id,
+        count: 0
+      };
+      entry.count += 1;
+      net.set(key, entry);
+    }
+    for (const row of given.rows) {
+      if (typeOf.get(row.trackedActivityId) !== "Unconsume") continue;
+      const entry = net.get(`${row.sourceEntityId} ${row.id}`);
+      if (entry) entry.count -= 1;
+    }
+    const pairs = [...net.values()].filter((entry) => entry.count > 0);
+    if (pairs.length === 0) break;
+
+    const componentIds = [...new Set(pairs.map((pair) => pair.component))];
+    const entities = await db
+      .selectFrom("trackedEntity as te")
+      .leftJoin("item as i", "i.id", "te.itemId")
+      .select([
+        "te.id",
+        "te.readableId",
+        "te.itemId",
+        "i.name",
+        "i.readableIdWithRevision",
+        "i.itemTrackingType",
+        "i.replenishmentSystem"
+      ])
+      .where("te.id", "in", componentIds)
+      .where("te.companyId", "=", args.companyId)
+      .execute();
+    const entityById = new Map(entities.map((e) => [e.id, e]));
+
+    const next = new Map<string, (string | null)[]>();
+    for (const { assembly, component } of pairs) {
+      const entity = entityById.get(component);
+      if (!entity) continue;
+      const isSerial = entity.itemTrackingType === "Serial";
+      const itemName =
+        entity.name ?? entity.readableIdWithRevision ?? entity.readableId ?? "";
+      for (const parentKey of level.get(assembly) ?? []) {
+        if (nodes.length >= BUILD_FROM_PART_MAX_NODES) break;
+        const key = `${parentKey ?? ""}/${component}`;
+        nodes.push({
+          key,
+          parentKey,
+          itemId: entity.itemId,
+          trackedEntityId: isSerial ? entity.id : null,
+          name:
+            isSerial && entity.readableId
+              ? `${itemName} ${entity.readableId}`
+              : itemName,
+          replenishment: entity.replenishmentSystem === "Buy" ? "Buy" : "Make"
+        });
+        if (!visited.has(component)) {
+          next.set(component, [...(next.get(component) ?? []), key]);
+        }
+      }
+    }
+    for (const id of next.keys()) visited.add(id);
+    if (nodes.length >= BUILD_FROM_PART_MAX_NODES) break;
+    level = next;
+  }
+  return nodes;
+}
+
+type MethodTreeNode = NonNullable<
+  Awaited<ReturnType<typeof getMethodTree>>["data"]
+>[number];
+
+/**
+ * The make method tree of an item: Make to Order lines are Make nodes, every
+ * other line a Buy node. The lines below a Pull from Inventory line
+ * (`isPickDescendant`) are left out. `get_method_tree` inner-joins
+ * `itemCost`, so a line whose item has no cost row is missing:
+ * `skippedLines` counts them on the make methods the walk reached.
+ */
+async function loadItemBuildNodes(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; itemId: string; depth: number }
+): Promise<{ nodes: BuildSourceNode[]; skippedLines: number }> {
+  const makeMethod = await client
+    .from("activeMakeMethods")
+    .select("id")
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (makeMethod.error) throw makeMethod.error;
+  if (!makeMethod.data?.id) throw new Error("The item has no make method");
+
+  const tree = await getMethodTree(client, makeMethod.data.id);
+  if (tree.error) throw tree.error;
+  const root = tree.data?.[0] as MethodTreeNode | undefined;
+
+  const nodes: BuildSourceNode[] = [];
+  const shownByMethod = new Map<string, Set<string>>();
+  const walkedMethods = new Set<string>([makeMethod.data.id]);
+  const walk = (
+    children: MethodTreeNode[],
+    parentKey: string | null,
+    level: number
+  ) => {
+    for (const child of children) {
+      const row = child.data;
+      if (!row || row.isPickDescendant) continue;
+      if (nodes.length >= BUILD_FROM_PART_MAX_NODES) return;
+      const shown = shownByMethod.get(row.makeMethodId) ?? new Set<string>();
+      shown.add(row.methodMaterialId);
+      shownByMethod.set(row.makeMethodId, shown);
+      const isMade = row.methodType === "Make to Order";
+      nodes.push({
+        key: child.id,
+        parentKey,
+        itemId: row.itemId,
+        trackedEntityId: null,
+        name: row.description || row.itemReadableId,
+        replenishment: isMade ? "Make" : "Buy"
+      });
+      if (isMade && level < args.depth) {
+        if (row.materialMakeMethodId) {
+          walkedMethods.add(row.materialMakeMethodId);
+        }
+        walk(child.children ?? [], child.id, level + 1);
+      }
+    }
+  };
+  walk(root?.children ?? [], null, 1);
+
+  // The lines get_method_tree dropped for a missing itemCost row.
+  const lines = await client
+    .from("methodMaterial")
+    .select("id, makeMethodId")
+    .in("makeMethodId", [...walkedMethods])
+    .eq("companyId", args.companyId);
+  if (lines.error) throw lines.error;
+  const skippedLines = (lines.data ?? []).filter(
+    (line) => !shownByMethod.get(line.makeMethodId)?.has(line.id)
+  ).length;
+
+  return { nodes, skippedLines };
+}
+
+/** One table of a template project, every column. */
+function ofTemplate(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  table: "projectElement" | "projectElementLink" | "projectState",
+  args: { companyId: string; templateProjectId: string }
+) {
+  return db
+    .selectFrom(table as "projectElement")
+    .selectAll()
+    .where("projectId", "=", args.templateProjectId)
+    .where("companyId", "=", args.companyId)
+    .execute();
+}
+
+/** A preview row of Build from part: one element it would create. */
+export type BuildFromPartPreviewRow = {
+  id: string;
+  parentId: string | null;
+  type: ProjectElementType;
+  name: string;
+  readableId: string;
+  itemId: string | null;
+  trackedEntityId: string | null;
+};
+
+type BuildRow = Record<string, unknown> & {
+  id: string;
+  parentId: string | null;
+  type: ProjectElementType;
+  name: string;
+  readableId: string;
+};
+
+type BuildTarget = {
+  identifier: string;
+  startSequence: number;
+  startSortOrder: number;
+  states: { id: string; group: ProjectStateGroup; isDefault: boolean }[];
+};
+
+/**
+ * Plans the elements Build from part makes under `parentId`. A Template
+ * source copies the template's elements down to `depth` levels with
+ * `planProjectCopy`; their states map to this project's default state of the
+ * same group. Returns the element rows (parents first), the template's links
+ * between them, and the count of BOM lines the source could not read.
+ */
+async function planBuildFromPart(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: BuildFromPartArgs & BuildTarget
+): Promise<{
+  rows: BuildRow[];
+  links: Record<string, unknown>[];
+  skippedLines: number;
+}> {
+  const stateOfGroup = (group: ProjectStateGroup) =>
+    args.states.find((s) => s.group === group && s.isDefault)?.id ??
+    args.states.find((s) => s.group === group)?.id;
+  const defaultStateId = stateOfGroup("Unstarted");
+  if (!defaultStateId) throw new Error("The project has no Unstarted state");
+
+  if ("templateProjectId" in args.source) {
+    const source = {
+      companyId: args.companyId,
+      templateProjectId: args.source.templateProjectId
+    };
+    const template = await db
+      .selectFrom("project")
+      .select(["id", "isTemplate"])
+      .where("id", "=", source.templateProjectId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!template?.isTemplate) throw new Error("The template was not found");
+    const [elements, links, templateStates] = await Promise.all([
+      ofTemplate(db, "projectElement", source),
+      ofTemplate(db, "projectElementLink", source),
+      ofTemplate(db, "projectState", source)
+    ]);
+
+    // Keep the template's elements down to `depth` levels.
+    const byId = new Map(elements.map((e) => [e.id, e]));
+    const levelOf = (id: string) => {
+      let level = 1;
+      let current = byId.get(id);
+      const seen = new Set<string>();
+      while (current?.parentId && !seen.has(current.id)) {
+        seen.add(current.id);
+        current = byId.get(current.parentId);
+        level++;
+      }
+      return level;
+    };
+    const keptElements = elements.filter((e) => levelOf(e.id) <= args.depth);
+    const groupOfState = new Map(
+      (
+        templateStates as unknown as { id: string; group: ProjectStateGroup }[]
+      ).map((state) => [state.id, state.group])
+    );
+
+    const plan = planProjectCopy(
+      {
+        states: [],
+        labels: [],
+        milestones: [],
+        elements: keptElements as unknown as ProjectCopyElement[],
+        elementLabels: [],
+        links: links as unknown as ProjectCopySource["links"],
+        materials: [],
+        labor: [],
+        costs: []
+      },
+      args.projectId,
+      args.identifier,
+      makeCopyId,
+      args.startSequence
+    );
+    let rootSort = args.startSortOrder;
+    const rows = plan.elements.map((element) => {
+      const group = groupOfState.get(element.stateId);
+      const isRoot = element.parentId === null;
+      return {
+        ...element,
+        parentId: element.parentId ?? args.parentId,
+        stateId: (group && stateOfGroup(group)) ?? defaultStateId,
+        sortOrder: isRoot
+          ? ++rootSort
+          : (element as Record<string, unknown>).sortOrder
+      } as unknown as BuildRow;
+    });
+    return { rows, links: plan.links, skippedLines: 0 };
+  }
+
+  let nodes: BuildSourceNode[];
+  let skippedLines = 0;
+  if ("trackedEntityId" in args.source) {
+    nodes = await loadSerialBuildNodes(db, {
+      companyId: args.companyId,
+      trackedEntityId: args.source.trackedEntityId,
+      depth: args.depth
+    });
+  } else {
+    const loaded = await loadItemBuildNodes(client, {
+      companyId: args.companyId,
+      itemId: args.source.itemId,
+      depth: args.depth
+    });
+    nodes = loaded.nodes;
+    skippedLines = loaded.skippedLines;
+  }
+  const rows: PlannedBuildElement[] = planElementsFromSource({
+    nodes,
+    parentId: args.parentId,
+    depth: args.depth,
+    includeBought: args.includeBought,
+    makeId: () => makeCopyId(projectCopyIdPrefixes.element),
+    startSequence: args.startSequence,
+    identifier: args.identifier,
+    defaultStateId,
+    startSortOrder: args.startSortOrder
+  });
+  return { rows, links: [], skippedLines };
+}
+
+/** Reads the project, its states and the parent for a build. */
+async function loadBuildTarget(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: { companyId: string; projectId: string; parentId: string | null },
+  lock: boolean
+): Promise<BuildTarget> {
+  let projectQuery = db
+    .selectFrom("project")
+    .select(["identifier", "nextElementSequence"])
+    .where("id", "=", args.projectId)
+    .where("companyId", "=", args.companyId);
+  if (lock) projectQuery = projectQuery.forUpdate();
+  const project = await projectQuery.executeTakeFirst();
+  if (!project) throw new Error("The project does not exist");
+  if (!project.identifier) throw new Error("The project has no identifier");
+
+  const siblings = db
+    .selectFrom("projectElement")
+    .select(sql<number>`COALESCE(MAX("sortOrder"), 0)`.as("maxSortOrder"))
+    .where("projectId", "=", args.projectId)
+    .where("companyId", "=", args.companyId);
+  const [states, parent, sortOrder] = await Promise.all([
+    db
+      .selectFrom("projectState")
+      .select(["id", "group", "isDefault"])
+      .where("projectId", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .orderBy("sortOrder", "asc")
+      .execute(),
+    args.parentId
+      ? db
+          .selectFrom("projectElement")
+          .select("type")
+          .where("id", "=", args.parentId)
+          .where("projectId", "=", args.projectId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst()
+      : Promise.resolve(null),
+    (args.parentId
+      ? siblings.where("parentId", "=", args.parentId)
+      : siblings.where("parentId", "is", null)
+    ).executeTakeFirstOrThrow()
+  ]);
+  if (args.parentId && !parent) {
+    throw new Error("The parent element does not exist");
+  }
+  if (parent?.type === "Parameter") {
+    throw new Error("A Parameter cannot have child elements");
+  }
+  return {
+    identifier: project.identifier,
+    startSequence: Number(project.nextElementSequence),
+    startSortOrder: Number(sortOrder.maxSortOrder),
+    states
+  };
+}
+
+/**
+ * The elements Build from part would create, with no insert: the Build from
+ * part drawer's preview.
+ */
+export async function previewBuildFromPart(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: BuildFromPartArgs
+): Promise<{ rows: BuildFromPartPreviewRow[]; skippedLines: number }> {
+  const target = await loadBuildTarget(db, args, false);
+  const plan = await planBuildFromPart(client, db, { ...args, ...target });
+  return {
+    rows: plan.rows.map((row) => ({
+      id: row.id,
+      parentId: row.parentId ?? null,
+      type: row.type,
+      name: row.name,
+      readableId: row.readableId,
+      itemId: (row.itemId as string | null | undefined) ?? null,
+      trackedEntityId:
+        (row.trackedEntityId as string | null | undefined) ?? null
+    })),
+    skippedLines: plan.skippedLines
+  };
+}
+
+/** Rows per insert statement of a build. */
+const BUILD_INSERT_CHUNK = 500;
+
+/**
+ * Creates elements under `parentId` from a serial's build history, an item's
+ * make method or a template, in one transaction. It locks the project row,
+ * numbers the elements from `nextElementSequence`, inserts them parents first
+ * in chunks of 500 (a template's links after them), and advances the
+ * sequence. Returns the number of elements created.
+ */
+export async function buildElementsFromPart(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: BuildFromPartArgs & { userId: string }
+): Promise<{ count: number; skippedLines: number }> {
+  return db.transaction().execute(async (trx) => {
+    const target = await loadBuildTarget(trx, args, true);
+    const plan = await planBuildFromPart(client, trx, { ...args, ...target });
+    if (plan.rows.length === 0) {
+      return { count: 0, skippedLines: plan.skippedLines };
+    }
+
+    const audit = {
+      companyId: args.companyId,
+      projectId: args.projectId,
+      createdBy: args.userId
+    };
+    const insertRows = async (
+      table: "projectElement" | "projectElementLink",
+      rows: Record<string, unknown>[]
+    ) => {
+      for (let i = 0; i < rows.length; i += BUILD_INSERT_CHUNK) {
+        await trx
+          .insertInto(table as "projectElement")
+          .values(
+            rows
+              .slice(i, i + BUILD_INSERT_CHUNK)
+              .map((row) => ({ ...row, ...audit })) as never
+          )
+          .execute();
+      }
+    };
+    await insertRows("projectElement", plan.rows);
+    await insertRows("projectElementLink", plan.links);
+
+    await trx
+      .updateTable("project")
+      .set({ nextElementSequence: target.startSequence + plan.rows.length })
+      .where("id", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    return { count: plan.rows.length, skippedLines: plan.skippedLines };
   });
 }
 

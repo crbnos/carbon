@@ -56,6 +56,7 @@ import {
   rollUpCostSummary
 } from "~/modules/projects";
 import { getProjectVerification } from "~/modules/projects/projects.server";
+import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
 import { ElementBoard } from "~/modules/projects/ui/Elements/ElementBoard";
 import { ElementGraph } from "~/modules/projects/ui/Elements/ElementGraph";
 import {
@@ -234,8 +235,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ProjectElementsRoute() {
   const { t } = useLingui();
-  const { projectId } = useParams();
+  const { projectId, elementId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
+  const [buildingFromPart, setBuildingFromPart] = useState(false);
 
   const {
     elements,
@@ -470,6 +472,7 @@ export default function ProjectElementsRoute() {
           display={display}
           onDisplayChange={setDisplayProperty}
           onNew={focusQuickAdd}
+          onBuildFromPart={() => setBuildingFromPart(true)}
           canCreate={layoutProps.canCreate}
           exportHref={
             layout === "reader"
@@ -552,6 +555,14 @@ export default function ProjectElementsRoute() {
         </div>
       </ResizablePanel>
       <RecordOutlet />
+      {buildingFromPart && (
+        <BuildFromPartDrawer
+          projectId={projectId}
+          elements={elements}
+          defaultParentId={elementId ?? null}
+          onClose={() => setBuildingFromPart(false)}
+        />
+      )}
     </ResizablePanelGroup>
   );
 }

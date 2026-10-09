@@ -51,6 +51,10 @@ msgstr "(excluded for this customer)"
 msgid "(Inactive)"
 msgstr "(Inactive)"
 
+#. placeholder {0}: data.preview.skippedLines
+msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+msgstr "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -62,6 +66,10 @@ msgstr "{0, plural, one {# day of slack} other {# days of slack}}"
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# day short} other {# days short}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
+msgstr "{0, plural, one {# element will be created} other {# elements will be created}}"
 
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
@@ -3934,6 +3942,9 @@ msgstr "Build any net-new work"
 msgid "Build for Fleet"
 msgstr "Build for Fleet"
 
+msgid "Build from part"
+msgstr "Build from part"
+
 msgid "Build integrations and customizations"
 msgstr "Build integrations and customizations"
 
@@ -4575,9 +4586,18 @@ msgstr "Choose a row on the left to see where its stock can come from."
 msgid "Choose a serial number"
 msgstr "Choose a serial number"
 
+msgid "Choose a source to see the elements it creates."
+msgstr "Choose a source to see the elements it creates."
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "choose a supplier for {0} on the job"
+
+msgid "Choose a template"
+msgstr "Choose a template"
+
+msgid "Choose an item"
+msgstr "Choose an item"
 
 msgid "Choose another file"
 msgstr "Choose another file"
@@ -5936,6 +5956,9 @@ msgstr "Create Change Notice"
 msgid "Create Contract"
 msgstr "Create Contract"
 
+msgid "Create elements"
+msgstr "Create elements"
+
 msgid "Create Forecast"
 msgstr "Create Forecast"
 
@@ -5993,6 +6016,9 @@ msgstr "Create Run"
 msgid "Create Supplier Return"
 msgstr "Create Supplier Return"
 
+msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
+msgstr "Create System elements from a serial's build history, an item's bill of materials or a template."
+
 msgid "Create the first element"
 msgstr "Create the first element"
 
@@ -6010,6 +6036,9 @@ msgstr "Create Work Center"
 
 msgid "Created"
 msgstr "Created"
+
+msgid "Created {count} elements from the part"
+msgstr "Created {count} elements from the part"
 
 msgid "Created <0/>"
 msgstr "Created <0/>"
@@ -7385,6 +7414,9 @@ msgstr "Depreciation Start"
 
 msgid "Depreciation Start Date"
 msgstr "Depreciation Start Date"
+
+msgid "Depth"
+msgstr "Depth"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
@@ -10908,6 +10940,9 @@ msgstr "Inbound inspection"
 
 msgid "Inbox"
 msgstr "Inbox"
+
+msgid "Include bought components"
+msgstr "Include bought components"
 
 msgid "Include extra parts in shipment"
 msgstr "Include extra parts in shipment"
@@ -15451,6 +15486,9 @@ msgstr "Parent Cost Center"
 
 msgid "Parent Department"
 msgstr "Parent Department"
+
+msgid "Parent element"
+msgstr "Parent element"
 
 msgid "Parent Group"
 msgstr "Parent Group"

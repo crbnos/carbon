@@ -51,6 +51,10 @@ msgstr "(इस ग्राहक के लिए बाहर रखा ग�
 msgid "(Inactive)"
 msgstr "(निष्क्रिय)"
 
+#. placeholder {0}: data.preview.skippedLines
+msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {इस समूह में # घटक} other {इस समूह में # घटक}}"
@@ -62,6 +66,10 @@ msgstr "{0, plural, one {# दिन का अतिरिक्त समय} 
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# दिन की कमी} other {# दिन की कमी}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
@@ -3934,6 +3942,9 @@ msgstr "कोई भी नया काम बनाएं"
 msgid "Build for Fleet"
 msgstr "फ्लीट के लिए निर्माण करें"
 
+msgid "Build from part"
+msgstr ""
+
 msgid "Build integrations and customizations"
 msgstr "एकीकरण और अनुकूलन बनाएं"
 
@@ -4575,9 +4586,18 @@ msgstr "यह देखने के लिए बाईं ओर की प�
 msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
 
+msgid "Choose a source to see the elements it creates."
+msgstr ""
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "जॉब पर {0} के लिए एक आपूर्तिकर्ता चुनें"
+
+msgid "Choose a template"
+msgstr ""
+
+msgid "Choose an item"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
@@ -5936,6 +5956,9 @@ msgstr "परिवर्तन सूचना बनाएं"
 msgid "Create Contract"
 msgstr "अनुबंध बनाएँ"
 
+msgid "Create elements"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "पूर्वानुमान बनाएं"
 
@@ -5993,6 +6016,9 @@ msgstr "रन बनाएँ"
 msgid "Create Supplier Return"
 msgstr "आपूर्तिकर्ता रिटर्न बनाएं"
 
+msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6010,6 +6036,9 @@ msgstr "वर्क सेंटर बनाएँ"
 
 msgid "Created"
 msgstr "बनाया गया"
+
+msgid "Created {count} elements from the part"
+msgstr ""
 
 msgid "Created <0/>"
 msgstr "<0/> बनाया गया"
@@ -7385,6 +7414,9 @@ msgstr "मूल्यह्रास शुरुआत"
 
 msgid "Depreciation Start Date"
 msgstr "मूल्यह्रास प्रारंभ तिथि"
+
+msgid "Depth"
+msgstr ""
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "इस आइटम की शेल्फ लाइफ को इसके घटकों की सबसे कम शेल्फ लाइफ से निकालें, ऊपर दिए गए डेज़ फील्ड को अनदेखा करते हुए।"
@@ -10908,6 +10940,9 @@ msgstr "इनबाउंड निरीक्षण"
 
 msgid "Inbox"
 msgstr "इनबॉक्स"
+
+msgid "Include bought components"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
@@ -15451,6 +15486,9 @@ msgstr "पैरेंट लागत केंद्र"
 
 msgid "Parent Department"
 msgstr "मूल विभाग"
+
+msgid "Parent element"
+msgstr ""
 
 msgid "Parent Group"
 msgstr "मूल समूह"

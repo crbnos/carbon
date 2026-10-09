@@ -51,6 +51,10 @@ msgstr "（この得意先から除外）"
 msgid "(Inactive)"
 msgstr "(無効)"
 
+#. placeholder {0}: data.preview.skippedLines
+msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {このグループ内の # 個のコンポーネント} other {このグループ内の # 個のコンポーネント}}"
@@ -62,6 +66,10 @@ msgstr "{0, plural, one {# 日のスラック} other {# 日のスラック}}"
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
@@ -3934,6 +3942,9 @@ msgstr "新しい作業を構築する"
 msgid "Build for Fleet"
 msgstr "フリート用に構築"
 
+msgid "Build from part"
+msgstr ""
+
 msgid "Build integrations and customizations"
 msgstr "連携とカスタマイズを構築"
 
@@ -4575,9 +4586,18 @@ msgstr "左側の行を選択して、在庫がどこから来るかを確認し
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
 
+msgid "Choose a source to see the elements it creates."
+msgstr ""
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "製造指図上の{0}の仕入先を選択してください"
+
+msgid "Choose a template"
+msgstr ""
+
+msgid "Choose an item"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "別のファイルを選択"
@@ -5936,6 +5956,9 @@ msgstr "変更通知を作成"
 msgid "Create Contract"
 msgstr "契約を作成"
 
+msgid "Create elements"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "予測を作成"
 
@@ -5993,6 +6016,9 @@ msgstr "実行を作成"
 msgid "Create Supplier Return"
 msgstr "仕入先返品を作成"
 
+msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6010,6 +6036,9 @@ msgstr "作業区を作成"
 
 msgid "Created"
 msgstr "作成日時"
+
+msgid "Created {count} elements from the part"
+msgstr ""
 
 msgid "Created <0/>"
 msgstr "作成済み <0/>"
@@ -7385,6 +7414,9 @@ msgstr "減価償却開始"
 
 msgid "Depreciation Start Date"
 msgstr "減価償却開始日"
+
+msgid "Depth"
+msgstr ""
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "この品目の保存期間を、その構成要素の最短保存期間から導出し、上記の日数フィールドを無視します。"
@@ -10908,6 +10940,9 @@ msgstr "受入検査"
 
 msgid "Inbox"
 msgstr "受信トレイ"
+
+msgid "Include bought components"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "出荷に追加部品を含める"
@@ -15451,6 +15486,9 @@ msgstr "親原価センター"
 
 msgid "Parent Department"
 msgstr "親部門"
+
+msgid "Parent element"
+msgstr ""
 
 msgid "Parent Group"
 msgstr "親グループ"

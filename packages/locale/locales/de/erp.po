@@ -51,6 +51,10 @@ msgstr "(für diesen Kunden ausgeschlossen)"
 msgid "(Inactive)"
 msgstr "(Inaktiv)"
 
+#. placeholder {0}: data.preview.skippedLines
+msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# Komponente in dieser Gruppe} other {# Komponenten in dieser Gruppe}}"
@@ -62,6 +66,10 @@ msgstr "{0, plural, one {# Tag Puffer} other {# Tage Puffer}}"
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# Tag zu kurz} other {# Tage zu kurz}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
@@ -3934,6 +3942,9 @@ msgstr "Erstellen Sie neue Arbeiten"
 msgid "Build for Fleet"
 msgstr "Für Flotte bauen"
 
+msgid "Build from part"
+msgstr ""
+
 msgid "Build integrations and customizations"
 msgstr "Integrationen und Anpassungen erstellen"
 
@@ -4575,9 +4586,18 @@ msgstr "Wählen Sie eine Zeile auf der linken Seite, um zu sehen, woher der Best
 msgid "Choose a serial number"
 msgstr "Wählen Sie eine Seriennummer"
 
+msgid "Choose a source to see the elements it creates."
+msgstr ""
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "Wählen Sie einen Lieferant für {0} beim Fertigungsauftrag aus"
+
+msgid "Choose a template"
+msgstr ""
+
+msgid "Choose an item"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "Wählen Sie eine andere Datei"
@@ -5936,6 +5956,9 @@ msgstr "Änderungsmitteilung erstellen"
 msgid "Create Contract"
 msgstr "Vertrag erstellen"
 
+msgid "Create elements"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "Prognose erstellen"
 
@@ -5993,6 +6016,9 @@ msgstr "Lauf erstellen"
 msgid "Create Supplier Return"
 msgstr "Lieferantenrückgabe erstellen"
 
+msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6010,6 +6036,9 @@ msgstr "Arbeitsplatz erstellen"
 
 msgid "Created"
 msgstr "Erstellt"
+
+msgid "Created {count} elements from the part"
+msgstr ""
 
 msgid "Created <0/>"
 msgstr "Erstellt <0/>"
@@ -7385,6 +7414,9 @@ msgstr "Abschreibungsbeginn"
 
 msgid "Depreciation Start Date"
 msgstr "Abschreibungsstartdatum"
+
+msgid "Depth"
+msgstr ""
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Leiten Sie die Haltbarkeit dieses Artikels von der kürzesten Haltbarkeit seiner Komponenten ab und ignorieren Sie das obige Feld „Tage\"."
@@ -10908,6 +10940,9 @@ msgstr "Wareneingangsprüfung"
 
 msgid "Inbox"
 msgstr "Posteingang"
+
+msgid "Include bought components"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "Zusätzliche Teile zur Lieferung hinzufügen"
@@ -15451,6 +15486,9 @@ msgstr "Übergeordnete Kostenstelle"
 
 msgid "Parent Department"
 msgstr "Übergeordnete Abteilung"
+
+msgid "Parent element"
+msgstr ""
 
 msgid "Parent Group"
 msgstr "Übergeordnete Gruppe"

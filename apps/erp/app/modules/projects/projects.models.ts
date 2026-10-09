@@ -2357,7 +2357,9 @@ export function planProjectCopy(
   source: ProjectCopySource,
   newProjectId: string,
   identifier: string,
-  makeId: (prefix: string) => string
+  makeId: (prefix: string) => string,
+  /** The first element sequence (default 1): Build from part numbers on. */
+  startSequence = 1
 ) {
   const remap = <T extends { id: string }>(rows: T[], prefix: string) =>
     new Map(rows.map((row) => [row.id, makeId(prefix)]));
@@ -2377,8 +2379,11 @@ export function planProjectCopy(
   const sequences = new Map<string, number>();
   ordered.forEach((element, index) => {
     elementIds.set(element.id, makeId(projectCopyIdPrefixes.element));
-    sequences.set(element.id, index + 1);
-    readableIds.set(element.readableId, `${identifier}-${index + 1}`);
+    sequences.set(element.id, startSequence + index);
+    readableIds.set(
+      element.readableId,
+      `${identifier}-${startSequence + index}`
+    );
   });
 
   // Parents first: an element's depth is one more than its parent's.
@@ -2492,8 +2497,160 @@ export function planProjectCopy(
     ),
     labor: planLines(source.labor, projectCopyIdPrefixes.labor),
     costs: planLines(source.costs, projectCopyIdPrefixes.cost),
-    nextElementSequence: ordered.length + 1
+    nextElementSequence: startSequence + ordered.length
   };
+}
+
+// --- Build from part ------------------------------------------------------------
+
+export const buildFromPartSources = ["Serial", "Item", "Template"] as const;
+export type BuildFromPartSource = (typeof buildFromPartSources)[number];
+
+/** The most levels Build from part walks below its source. */
+export const BUILD_FROM_PART_MAX_DEPTH = 5;
+/** The most nodes one build reads, as the traceability graph caps it. */
+export const BUILD_FROM_PART_MAX_NODES = 500;
+
+export const buildFromPartValidator = z
+  .object({
+    source: z.enum(buildFromPartSources, { error: "Source is required" }),
+    itemId: zfd.text(z.string().optional()),
+    trackedEntityId: zfd.text(z.string().optional()),
+    templateProjectId: zfd.text(z.string().optional()),
+    parentId: zfd.text(z.string().optional()),
+    depth: zfd.numeric(
+      z.number().int().min(1).max(BUILD_FROM_PART_MAX_DEPTH).default(2)
+    ),
+    includeBought: z.preprocess(
+      (v) => v === true || v === "on" || v === "true",
+      z.boolean()
+    )
+  })
+  .refine((data) => data.source !== "Serial" || !!data.trackedEntityId, {
+    message: "Serial is required",
+    path: ["trackedEntityId"]
+  })
+  .refine((data) => data.source !== "Item" || !!data.itemId, {
+    message: "Item is required",
+    path: ["itemId"]
+  })
+  .refine((data) => data.source !== "Template" || !!data.templateProjectId, {
+    message: "Template is required",
+    path: ["templateProjectId"]
+  });
+
+/** One node of a Build from part source tree (a serial's build or a BOM). */
+export type BuildSourceNode = {
+  key: string;
+  /** Null for a node on the first level below the source. */
+  parentKey: string | null;
+  itemId: string | null;
+  trackedEntityId?: string | null;
+  name: string;
+  replenishment: "Make" | "Buy";
+};
+
+/** A `projectElement` row that Build from part inserts. */
+export type PlannedBuildElement = {
+  id: string;
+  type: "System";
+  name: string;
+  parentId: string | null;
+  stateId: string;
+  isChargeable: true;
+  itemId: string | null;
+  trackedEntityId: string | null;
+  sequence: number;
+  readableId: string;
+  sortOrder: number;
+};
+
+/**
+ * Plans the elements of a source tree. It keeps the nodes down to `depth`
+ * levels below the source (a first-level node is level 1). Without
+ * `includeBought` it drops a Buy node that keeps no child. Each kept node is
+ * a chargeable System element in the default Unstarted state, with a new id,
+ * its parent remapped (a first-level node goes under `parentId`), and a
+ * readable id numbered from `startSequence`. The rows come parents first.
+ * `startSortOrder` places the first level after the parent's other children.
+ */
+export function planElementsFromSource(args: {
+  nodes: BuildSourceNode[];
+  parentId: string | null;
+  depth: number;
+  includeBought: boolean;
+  makeId: () => string;
+  startSequence: number;
+  identifier: string;
+  defaultStateId: string;
+  startSortOrder?: number;
+}): PlannedBuildElement[] {
+  const children = new Map<string | null, BuildSourceNode[]>();
+  for (const node of args.nodes) {
+    const siblings = children.get(node.parentKey) ?? [];
+    siblings.push(node);
+    children.set(node.parentKey, siblings);
+  }
+
+  // Bottom up: a node is kept when it is in depth and is made, is bought
+  // with includeBought, or keeps a child. `seen` stops a cycle in the source.
+  const kept = new Set<string>();
+  const seen = new Set<string>();
+  const keep = (node: BuildSourceNode, level: number): boolean => {
+    if (level > args.depth || seen.has(node.key)) return false;
+    seen.add(node.key);
+    let keepsChild = false;
+    for (const child of children.get(node.key) ?? []) {
+      if (keep(child, level + 1)) keepsChild = true;
+    }
+    const isKept =
+      keepsChild || node.replenishment === "Make" || args.includeBought;
+    if (isKept) kept.add(node.key);
+    return isKept;
+  };
+  for (const node of children.get(null) ?? []) keep(node, 1);
+
+  // Parents first: breadth first from the first level.
+  const rows: PlannedBuildElement[] = [];
+  const ids = new Map<string, string>();
+  let queue = (children.get(null) ?? []).filter((n) => kept.has(n.key));
+  let parentSortStart = args.startSortOrder ?? 0;
+  let isFirstLevel = true;
+  while (queue.length > 0) {
+    const next: BuildSourceNode[] = [];
+    const sortOrders = new Map<string | null, number>();
+    for (const node of queue) {
+      const id = args.makeId();
+      ids.set(node.key, id);
+      const parentId =
+        node.parentKey === null ? args.parentId : ids.get(node.parentKey)!;
+      const sortOrder =
+        (sortOrders.get(node.parentKey) ??
+          (isFirstLevel ? parentSortStart : 0)) + 1;
+      sortOrders.set(node.parentKey, sortOrder);
+      const sequence = args.startSequence + rows.length;
+      rows.push({
+        id,
+        type: "System",
+        name: node.name,
+        parentId,
+        stateId: args.defaultStateId,
+        isChargeable: true,
+        itemId: node.itemId,
+        trackedEntityId: node.trackedEntityId ?? null,
+        sequence,
+        readableId: `${args.identifier}-${sequence}`,
+        sortOrder
+      });
+      for (const child of children.get(node.key) ?? []) {
+        if (kept.has(child.key) && !ids.has(child.key)) next.push(child);
+      }
+    }
+    queue = next;
+    isFirstLevel = false;
+    parentSortStart = 0;
+  }
+  return rows;
 }
 
 // --- Jobs and purchase order lines from plan-line materials ---------------------

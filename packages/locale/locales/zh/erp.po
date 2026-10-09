@@ -51,6 +51,10 @@ msgstr "(已为此客户排除)"
 msgid "(Inactive)"
 msgstr "(已停用)"
 
+#. placeholder {0}: data.preview.skippedLines
+msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {此组中的 # 个组件} other {此组中的 # 个组件}}"
@@ -62,6 +66,10 @@ msgstr "{0, plural, one {# 天的松弛} other {# 天的松弛}}"
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
@@ -3934,6 +3942,9 @@ msgstr "构建任何全新工作"
 msgid "Build for Fleet"
 msgstr "为车队制造"
 
+msgid "Build from part"
+msgstr ""
+
 msgid "Build integrations and customizations"
 msgstr "构建集成和自定义"
 
@@ -4575,9 +4586,18 @@ msgstr "选择左侧的行以查看其库存可能来自何处。"
 msgid "Choose a serial number"
 msgstr "选择序列号"
 
+msgid "Choose a source to see the elements it creates."
+msgstr ""
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "为工单上的{0}选择供应商"
+
+msgid "Choose a template"
+msgstr ""
+
+msgid "Choose an item"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
@@ -5936,6 +5956,9 @@ msgstr "创建变更通知"
 msgid "Create Contract"
 msgstr "创建合约"
 
+msgid "Create elements"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "创建预测"
 
@@ -5993,6 +6016,9 @@ msgstr "创建凭证"
 msgid "Create Supplier Return"
 msgstr "创建供应商退货"
 
+msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6010,6 +6036,9 @@ msgstr "创建工作中心"
 
 msgid "Created"
 msgstr "已创建"
+
+msgid "Created {count} elements from the part"
+msgstr ""
 
 msgid "Created <0/>"
 msgstr "已创建 <0/>"
@@ -7385,6 +7414,9 @@ msgstr "折旧开始"
 
 msgid "Depreciation Start Date"
 msgstr "折旧开始日期"
+
+msgid "Depth"
+msgstr ""
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "从其组件的最短保质期推导该物料的保质期，忽略上面的天数字段。"
@@ -10908,6 +10940,9 @@ msgstr "来料检验"
 
 msgid "Inbox"
 msgstr "收件箱"
+
+msgid "Include bought components"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "在发货中包含额外零件"
@@ -15451,6 +15486,9 @@ msgstr "父成本中心"
 
 msgid "Parent Department"
 msgstr "上级部门"
+
+msgid "Parent element"
+msgstr ""
 
 msgid "Parent Group"
 msgstr "上级组"

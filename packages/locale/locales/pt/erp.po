@@ -51,6 +51,10 @@ msgstr "(excluído para este cliente)"
 msgid "(Inactive)"
 msgstr "(Inativo)"
 
+#. placeholder {0}: data.preview.skippedLines
+msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# componente neste grupo} other {# componentes neste grupo}}"
@@ -62,6 +66,10 @@ msgstr "{0, plural, one {# dia de folga} other {# dias de folga}}"
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# dia de falta} other {# dias de falta}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# element will be created} other {# elements will be created}}"
+msgstr ""
 
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
@@ -3934,6 +3942,9 @@ msgstr "Construir qualquer trabalho novo"
 msgid "Build for Fleet"
 msgstr "Construir para Frota"
 
+msgid "Build from part"
+msgstr ""
+
 msgid "Build integrations and customizations"
 msgstr "Criar integrações e personalizações"
 
@@ -4575,9 +4586,18 @@ msgstr "Escolha uma linha à esquerda para ver de onde seu estoque pode vir."
 msgid "Choose a serial number"
 msgstr "Escolha um número de série"
 
+msgid "Choose a source to see the elements it creates."
+msgstr ""
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "escolher um fornecedor para {0} na ordem de produção"
+
+msgid "Choose a template"
+msgstr ""
+
+msgid "Choose an item"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "Escolher outro arquivo"
@@ -5936,6 +5956,9 @@ msgstr "Criar Aviso de alteração"
 msgid "Create Contract"
 msgstr "Criar Contrato"
 
+msgid "Create elements"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "Criar Previsão"
 
@@ -5993,6 +6016,9 @@ msgstr "Criar Execução"
 msgid "Create Supplier Return"
 msgstr "Criar Devolução de Fornecedor"
 
+msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6010,6 +6036,9 @@ msgstr "Criar Centro de Trabalho"
 
 msgid "Created"
 msgstr "Criado"
+
+msgid "Created {count} elements from the part"
+msgstr ""
 
 msgid "Created <0/>"
 msgstr "Criado <0/>"
@@ -7385,6 +7414,9 @@ msgstr "Início da Depreciação"
 
 msgid "Depreciation Start Date"
 msgstr "Data de Início da Depreciação"
+
+msgid "Depth"
+msgstr ""
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "Derivar a vida de prateleira deste item da menor vida de prateleira de seus componentes, ignorando o campo Dias acima."
@@ -10908,6 +10940,9 @@ msgstr "Inspeção de recebimento"
 
 msgid "Inbox"
 msgstr "Caixa de entrada"
+
+msgid "Include bought components"
+msgstr ""
 
 msgid "Include extra parts in shipment"
 msgstr "Incluir peças extras na remessa"
@@ -15451,6 +15486,9 @@ msgstr "Centro de Custo Pai"
 
 msgid "Parent Department"
 msgstr "Departamento Pai"
+
+msgid "Parent element"
+msgstr ""
 
 msgid "Parent Group"
 msgstr "Grupo Pai"
