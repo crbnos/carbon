@@ -16527,6 +16527,9 @@ msgstr "प्रगति"
 msgid "Project"
 msgstr "प्रोजेक्ट"
 
+msgid "Project Change Requests"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -17944,6 +17947,9 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 
 msgid "Require an element on every project charge"
+msgstr ""
+
+msgid "Require approval before a change request changes a project's plan"
 msgstr ""
 
 msgid "Require approval before suppliers can be set to Active"

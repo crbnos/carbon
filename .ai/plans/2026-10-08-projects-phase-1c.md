@@ -42,7 +42,7 @@ Progress fields stay editable at all times: state, owner, priority, labels, date
 - [x] Task 7: Add the baseline compare page
 - [x] Task 8: Add the change request overlay and draft writes
 - [x] Task 9: Add submit, approve, reject and apply
-- [ ] Task 10: Add the approvals engine branch and notifications
+- [x] Task 10: Add the approvals engine branch and notifications
 - [ ] Task 11: Build the change request pages
 - [ ] Task 12: Add the plan lock
 - [ ] Task 13: Update the rule file, module AGENTS.md, docs and spec
@@ -710,4 +710,8 @@ ls .ai/playbooks/projects-phase-1c.md
 - Task 9: the status route's intents start from the statuses in `projectChangeRequestIntentFrom`. Reopen also starts from Approved. Cancel of a pending approval request goes through `cancelApprovalRequest`, which only the requester may do. The approval notifications carry `<projectId>:<crId>` as their document id, so their links can open the page without a lookup (Task 10).
 - Task 9: the 5 change request paths of Task 11 were added to `path.ts` here, because the status route redirects to the change request page. `getProjectChangeRequests` and `getProjectChangeRequest` (`@mcp read`) were added here too, so the MCP digest changed.
 - Task 9: a throwaway vitest run against this worktree's database ran the whole flow on a scratch project. It opened `CRTX-CR-1`, added a child element with a cost line, changed a budget and deleted an element; the live plan stayed as it was. The apply numbered the new element `CRTX-3`, wrote the budget and the cost line and set Applied with a baseline. A second change request then hit a live budget change and was refused with `ProjectChangeConflictError`. The reopen rebased its item onto the live budget. The project was then deleted; the script was not committed.
+- Task 10: step 1's `models.ts` part was done in Task 1. `approveRequest` and `rejectRequest` move the change request from In Review only, pinned to the request's company, in the same transaction. No projects code runs in `packages/ee`.
+- Task 10: a change request notification carries `<projectId>:<crId>` as its document id. `content.ts` reads the last part, so a bare change request id still resolves. `link.ts` and `Notifications.tsx` split it to build `path.to.projectChangeRequest`. In `Notifications.tsx` the new switch also sends a supplier approval to `path.to.supplierApproval`, as `link.ts` already does. The old ternary sent it to a purchase order page.
+- Task 10: the approval rules page loader passes `changeRequestRules` to `ApprovalRules`. The card offers **New Rule** only while no rule exists, as the quality document and supplier cards do (no amount tiers).
+- Task 10: `@carbon/ee` has no approvals test file, so `pnpm --filter @carbon/ee test -- approvals` finds none. The full `@carbon/ee` suite passes (1928). A throwaway vitest run against this worktree's database inserted an approval request for an In Review change request. `approveRequest` moved it to Approved and `rejectRequest` moved another to Rejected, each with `decidedBy` and the notes. The rows were deleted.
 

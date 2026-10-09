@@ -16527,6 +16527,9 @@ msgstr "Progreso"
 msgid "Project"
 msgstr "Proyecto"
 
+msgid "Project Change Requests"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -17944,6 +17947,9 @@ msgid "Require an authenticator app before anyone can open this company. Their o
 msgstr "Requiere una aplicación autenticadora antes de que alguien pueda abrir esta empresa. Sus otras empresas no se ven afectadas. Visita la <0>página de cuentas de empleados</0> para ver el estado de cada persona."
 
 msgid "Require an element on every project charge"
+msgstr ""
+
+msgid "Require approval before a change request changes a project's plan"
 msgstr ""
 
 msgid "Require approval before suppliers can be set to Active"

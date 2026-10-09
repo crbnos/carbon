@@ -110,6 +110,13 @@ function resolve(
         return path.to.qualityDocument(documentId);
       if (documentType === "supplier")
         return path.to.supplierApproval(documentId);
+      if (documentType === "projectChangeRequest") {
+        // "<projectId>:<changeRequestId>"
+        const [projectId, changeRequestId] = documentId.split(":");
+        return projectId && changeRequestId
+          ? path.to.projectChangeRequest(projectId, changeRequestId)
+          : null;
+      }
       return null;
     default:
       return null;

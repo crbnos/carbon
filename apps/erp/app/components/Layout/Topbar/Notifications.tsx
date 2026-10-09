@@ -265,6 +265,28 @@ function Notification({
   );
 }
 
+/** The page an approval notification opens, by its document type. */
+function approvalPath(
+  documentType: ApprovalDocumentType | undefined,
+  id: string
+): string {
+  switch (documentType) {
+    case "qualityDocument":
+      return path.to.qualityDocument(id);
+    case "supplier":
+      return path.to.supplierApproval(id);
+    case "projectChangeRequest": {
+      // "<projectId>:<changeRequestId>"
+      const [projectId, changeRequestId] = id.split(":");
+      return projectId && changeRequestId
+        ? path.to.projectChangeRequest(projectId, changeRequestId)
+        : path.to.projects;
+    }
+    default:
+      return path.to.purchaseOrderDetails(id);
+  }
+}
+
 function GenericNotification({
   id,
   event,
@@ -288,11 +310,7 @@ function GenericNotification({
       return (
         <Notification
           icon={<LuClipboardCheck />}
-          to={
-            documentType === "qualityDocument"
-              ? path.to.qualityDocument(id)
-              : path.to.purchaseOrderDetails(id)
-          }
+          to={approvalPath(documentType, id)}
           {...props}
         />
       );
