@@ -54,7 +54,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 15: Add the pure project posting helpers and tests
 - [x] Task 16: Add the `post-timesheet` server function
 - [x] Task 17: Add the `post-project-issue` server function
-- [ ] Task 18: Route job material issues to the project account
+- [x] Task 18: Route job material issues to the project account
 - [ ] Task 19: Route production events to the project account
 - [ ] Task 20: Change job completion for consume-to-project jobs
 - [ ] Task 21: Route PO receipts to the project account
@@ -2439,3 +2439,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 17: `assertCompanyRecords` accepts `project` and `item` (type union only). The function also re-reads `storageUnitId` and `trackedEntityId` under the company.
 - Task 17: an Issue is refused (400) when the bin, or the tracked entity, holds less than the quantity, as a negative adjustment is. A Serial or Batch item needs a `trackedEntityId`; its quantity is settled with `settleQuantity` (a Return brings a Consumed entity back to Available). New tracked entities are never created here.
 - Task 17: the plan line update touches the oldest `projectElementMaterial` row for the item when the element has several. The first-charge state change runs on an Issue only.
+- Task 18: `loadConsumeAccountingContext` has no job, so the job's charge is read by a new `loadJobProjectCharge(trx, companyId, jobId)` in `lib/project-posting.ts`. It returns null unless the job has `consumeToProject`, so other jobs pay one indexed read of `job` and post as before. For a consume-to-project job it loads the context, runs `assertChargeable("commitment")`, resolves the account on the company's today and refuses Statistical. Task 19 reuses it. The five dimension lookups in `issue` that load ItemPostingGroup / Item / Location now also load Project and ProjectElement; only the project lines are tagged with them.
+- Task 18: `issue` computes a consumption's cost (calculateCOGS and the costLedger row) only when accounting is enabled, in all four paths, so the `projectLedger` row is written there too. With accounting disabled no cost exists and no row is written; computing one would change the cost layers of every job. The row's `journalLineId` is the project debit line.
+- Task 18: `createMaterialWipEntries` takes an optional `projectCharge`. Its three callers (tracked consumption, `partToOperation`, `unconsumeTrackedEntities`) pass the project account as `wipAccount` and the charge; a return writes a negative `projectLedger` row and tags the credit line. `project-issue.test.ts` also covers a manual return (−10.00) and an ordinary job that still posts to WIP.
+- Task 18 (known gap, out of scope by the plan): `jobOperationScrap` still credits WIP with the material cost the backflush relieved, so for a consume-to-project job the scrap journal credits WIP that the issue never debited.

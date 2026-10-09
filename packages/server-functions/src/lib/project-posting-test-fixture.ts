@@ -364,6 +364,142 @@ export async function projectPostingFixture(
       });
       return { locationId, itemId };
     },
+    /** A consume-to-project job on the fixture's project and element: one
+     *  make method, one operation at a work center (labor 50.00 per hour),
+     *  and one Pull from Inventory material of `materialItemId` needing
+     *  `quantityPerParent` per unit for `jobQuantity` units. */
+    async addConsumeToProjectJob(
+      key: string,
+      args: {
+        locationId: string;
+        materialItemId: string;
+        quantityPerParent: number;
+        jobQuantity: number;
+        /** false: an ordinary job with no charge number. */
+        consumeToProject?: boolean;
+      }
+    ) {
+      const consumeToProject = args.consumeToProject ?? true;
+      const jobId = `${prefix}-job-${key}`;
+      const makeMethodId = `${prefix}-jmm-${key}`;
+      const operationId = `${prefix}-op-${key}`;
+      const materialId = `${prefix}-mat-${key}`;
+      const workCenterId = `${prefix}-wc-${key}`;
+      const finishedItemId = `${prefix}-fg-${key}`;
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("unitOfMeasure")
+          .values({ code: "EA", name: "Each", companyId, createdBy: USER })
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+        await trx
+          .insertInto("item")
+          .values({
+            id: finishedItemId,
+            readableId: `${prefix}-FG-${key}`,
+            name: `Assembly ${key}`,
+            type: "Part",
+            itemTrackingType: "Inventory",
+            replenishmentSystem: "Make",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("process")
+          .values({
+            id: `${prefix}-process-${key}`,
+            name: `Assemble ${key}`,
+            defaultStandardFactor: "Hours/Piece",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("workCenter")
+          .values({
+            id: workCenterId,
+            name: `Bench ${key}`,
+            laborRate: 50,
+            machineRate: 0,
+            overheadRate: 0,
+            locationId: args.locationId,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("job")
+          .values({
+            id: jobId,
+            jobId: `${prefix}-J-${key}`,
+            itemId: finishedItemId,
+            quantity: args.jobQuantity,
+            unitOfMeasureCode: "EA",
+            locationId: args.locationId,
+            projectId: consumeToProject ? projectId : null,
+            projectElementId: consumeToProject ? elementId : null,
+            consumeToProject,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        // The job insert may already have created its make method.
+        await trx
+          .deleteFrom("jobMakeMethod")
+          .where("jobId", "=", jobId)
+          .execute();
+        await trx
+          .insertInto("jobMakeMethod")
+          .values({
+            id: makeMethodId,
+            jobId,
+            itemId: finishedItemId,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("jobOperation")
+          .values({
+            id: operationId,
+            jobId,
+            jobMakeMethodId: makeMethodId,
+            processId: `${prefix}-process-${key}`,
+            workCenterId,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("jobMaterial")
+          .values({
+            id: materialId,
+            jobId,
+            jobMakeMethodId: makeMethodId,
+            jobOperationId: operationId,
+            itemId: args.materialItemId,
+            itemType: "Part",
+            methodType: "Pull from Inventory",
+            description: "Material",
+            quantity: args.quantityPerParent,
+            estimatedQuantity: args.quantityPerParent * args.jobQuantity,
+            defaultStorageUnit: false,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+      return {
+        jobId,
+        makeMethodId,
+        operationId,
+        materialId,
+        workCenterId,
+        finishedItemId
+      };
+    },
     async cleanup() {
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);

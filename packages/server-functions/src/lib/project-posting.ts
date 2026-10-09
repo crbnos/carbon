@@ -9,10 +9,10 @@
 // mirrors `resolveProjectPostingAccount` for the SQL posting paths.
 // Spec: .ai/specs/2026-10-03-projects.md (Cost treatment → posting account).
 
-import type { Database } from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { inOrder } from "@carbon/database/rows";
-import { round } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import { sql, type Transaction } from "kysely";
 
 export type ProjectCostTreatment =
@@ -413,4 +413,65 @@ export async function startElementsOnFirstCharge(
       AND started."group" = 'Started'
       AND started."isDefault"
   `.execute(trx);
+}
+
+/** Where a consume-to-project job's costs post instead of WIP. */
+export type JobProjectCharge = {
+  projectId: string;
+  projectElementId: string | null;
+  accountId: string;
+  /** The company's today, the date the account was resolved for. */
+  postingDate: string;
+};
+
+/**
+ * The project charge of a job, or null when the job does not consume to a
+ * project (every other job keeps posting to WIP). Refuses a project or
+ * element that takes no postings, and a Statistical treatment, which a
+ * consume-to-project job cannot have.
+ */
+export async function loadJobProjectCharge(
+  trx: Transaction<DB>,
+  companyId: string,
+  jobId: string
+): Promise<JobProjectCharge | null> {
+  const job = await trx
+    .selectFrom("job")
+    .select(["projectId", "projectElementId", "consumeToProject"])
+    .where("id", "=", jobId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!job?.consumeToProject || !job.projectId) return null;
+
+  const [contexts, timezone] = await inOrder([
+    () =>
+      loadProjectPostingContexts(trx, companyId, [
+        { projectId: job.projectId!, projectElementId: job.projectElementId }
+      ]),
+    () => getCompanyTimeZone(trx, companyId)
+  ]);
+  const context = contexts.get(
+    projectPostingKey(job.projectId, job.projectElementId)
+  );
+  if (!context) {
+    throw new ProjectChargeError("The job's project or element does not exist");
+  }
+  assertChargeable(context, "commitment");
+
+  const postingDate = datetime.today(timezone).toString();
+  const { treatment, accountId } = resolveProjectPostingAccount(
+    context,
+    postingDate
+  );
+  if (treatment === "Statistical" || !accountId) {
+    throw new ProjectChargeError(
+      `Project ${projectLabel(context.project)} is Statistical. A job cannot consume to a Statistical project.`
+    );
+  }
+  return {
+    projectId: job.projectId,
+    projectElementId: job.projectElementId,
+    accountId,
+    postingDate
+  };
 }

@@ -64,6 +64,11 @@ import {
   valueMovement
 } from "../lib/post-adjustment";
 import {
+  buildProjectLedgerRow,
+  type JobProjectCharge,
+  loadJobProjectCharge
+} from "../lib/project-posting";
+import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded
 } from "../lib/storage-units";
@@ -402,6 +407,17 @@ async function issueJobOperationMaterials(
       itemPostingGroupId: string | null;
       itemId: string | null;
       locationId: string | null;
+      projectId: string | null;
+      projectElementId: string | null;
+    }[] = [];
+
+    // A consume-to-project job charges its project account instead of WIP.
+    const projectCharge = await loadJobProjectCharge(trx, companyId, jobId);
+    const projectLedgerRows: {
+      itemId: string;
+      quantity: number;
+      amount: number;
+      lineIndex: number;
     }[] = [];
 
     const jobForLocation = await trx
@@ -450,9 +466,20 @@ async function issueJobOperationMaterials(
 
       const journalLineReference = nanoid();
 
+      if (projectCharge) {
+        projectLedgerRows.push({
+          itemId: ledger.itemId,
+          quantity: materialQuantity,
+          amount: cogsResult.totalCost,
+          lineIndex: journalLineInserts.length
+        });
+      }
+
       journalLineInserts.push({
-        accountId: accountDefaults.data.workInProgressAccount,
-        description: "WIP Account",
+        accountId:
+          projectCharge?.accountId ??
+          accountDefaults.data.workInProgressAccount,
+        description: projectCharge ? "Project Material" : "WIP Account",
         amount: debit("asset", cogsResult.totalCost),
         quantity: materialQuantity,
         documentType: "Job Consumption",
@@ -502,7 +529,11 @@ async function issueJobOperationMaterials(
           itemPostingGroupId:
             consumedPostingGroupMap.get(ledger.itemId) ?? null,
           itemId: ledger.itemId ?? null,
-          locationId: jobForLocation?.locationId ?? null
+          locationId: jobForLocation?.locationId ?? null,
+          // The debit (project) line carries the project tags.
+          projectId: i === 0 ? (projectCharge?.projectId ?? null) : null,
+          projectElementId:
+            i === 0 ? (projectCharge?.projectElementId ?? null) : null
         });
       }
     }
@@ -585,6 +616,22 @@ async function issueJobOperationMaterials(
               companyId
             });
           }
+          if (meta.projectId && dimensionMap.has("Project")) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("Project")!,
+              valueId: meta.projectId,
+              companyId
+            });
+          }
+          if (meta.projectElementId && dimensionMap.has("ProjectElement")) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("ProjectElement")!,
+              valueId: meta.projectElementId,
+              companyId
+            });
+          }
         });
 
         if (dimensionInserts.length > 0) {
@@ -594,10 +641,65 @@ async function issueJobOperationMaterials(
             .execute();
         }
       }
+
+      if (projectCharge && projectLedgerRows.length > 0) {
+        await insertJobProjectLedgerRows(trx, {
+          charge: projectCharge,
+          jobId,
+          companyId,
+          userId,
+          rows: projectLedgerRows.map((row) => ({
+            ...row,
+            journalLineId: journalLineResults[row.lineIndex]?.id ?? null
+          }))
+        });
+      }
     }
   }
 
   return { totalMaterialCost };
+}
+
+// One projectLedger Material row per consumption of a consume-to-project job
+// (a positive amount), or per return (a negative amount).
+async function insertJobProjectLedgerRows(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    charge: JobProjectCharge;
+    jobId: string;
+    companyId: string;
+    userId: string;
+    rows: {
+      itemId: string;
+      quantity: number;
+      amount: number;
+      journalLineId: string | null;
+    }[];
+  }
+) {
+  if (args.rows.length === 0) return;
+  await trx
+    .insertInto("projectLedger")
+    .values(
+      args.rows.map((row) =>
+        buildProjectLedgerRow({
+          companyId: args.companyId,
+          projectId: args.charge.projectId,
+          projectElementId: args.charge.projectElementId,
+          postingDate: args.charge.postingDate,
+          costType: "Material",
+          documentType: "Job Consumption",
+          documentId: args.jobId,
+          jobId: args.jobId,
+          itemId: row.itemId,
+          quantity: row.quantity,
+          amount: row.amount,
+          journalLineId: row.journalLineId,
+          createdBy: args.userId
+        })
+      )
+    )
+    .execute();
 }
 
 async function createMaterialWipEntries(
@@ -614,6 +716,10 @@ async function createMaterialWipEntries(
     operationId: string;
     description: string;
     wipAccount: string;
+    // Set for a consume-to-project job: `wipAccount` is then the project
+    // account, its lines carry the project tags, and each movement writes a
+    // projectLedger row.
+    projectCharge?: JobProjectCharge | null;
     rawMaterialsAccount: string;
     finishedGoodsAccount: string;
     dimensionMap: Map<string, string>;
@@ -636,6 +742,13 @@ async function createMaterialWipEntries(
     companyId,
     userId
   } = args;
+  const projectCharge = args.projectCharge ?? null;
+  const projectLedgerRows: {
+    itemId: string;
+    quantity: number;
+    amount: number;
+    lineIndex: number;
+  }[] = [];
 
   // Cost layer posts on the company business day, matching the caller's
   // itemLedger movement (was defaulting to CURRENT_DATE = UTC).
@@ -659,6 +772,7 @@ async function createMaterialWipEntries(
     itemPostingGroupId: string | null;
     itemId: string | null;
     locationId: string | null;
+    isWipLine: boolean;
   }[] = [];
 
   const uniqueItemIds = [...new Set(consumptionLedgers.map((l) => l.itemId))];
@@ -720,11 +834,22 @@ async function createMaterialWipEntries(
       { rawMaterialsAccount, finishedGoodsAccount }
     );
 
+    if (projectCharge) {
+      projectLedgerRows.push({
+        itemId: ledger.itemId,
+        quantity: isConsumption ? absQty : -absQty,
+        amount: isConsumption ? cost : -cost,
+        // The project line is first for a consumption, second for a return.
+        lineIndex: journalLineInserts.length + (isConsumption ? 0 : 1)
+      });
+    }
+    const wipDescription = projectCharge ? "Project Material" : "WIP Account";
+
     if (isConsumption) {
       journalLineInserts.push(
         {
           accountId: wipAccount,
-          description: "WIP Account",
+          description: wipDescription,
           amount: debit("asset", cost),
           quantity: absQty,
           documentType: "Job Consumption",
@@ -760,7 +885,7 @@ async function createMaterialWipEntries(
         },
         {
           accountId: wipAccount,
-          description: "WIP Account",
+          description: wipDescription,
           amount: credit("asset", cost),
           quantity: absQty,
           documentType: "Job Consumption",
@@ -793,7 +918,8 @@ async function createMaterialWipEntries(
       journalLineDimensionsMeta.push({
         itemPostingGroupId: consumedPostingGroupMap.get(ledger.itemId) ?? null,
         itemId: ledger.itemId ?? null,
-        locationId: jobLocationId
+        locationId: jobLocationId,
+        isWipLine: isConsumption ? i === 0 : i === 1
       });
     }
   }
@@ -871,6 +997,27 @@ async function createMaterialWipEntries(
           companyId
         });
       }
+      if (projectCharge && meta.isWipLine) {
+        if (dimensionMap.has("Project")) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("Project")!,
+            valueId: projectCharge.projectId,
+            companyId
+          });
+        }
+        if (
+          projectCharge.projectElementId &&
+          dimensionMap.has("ProjectElement")
+        ) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("ProjectElement")!,
+            valueId: projectCharge.projectElementId,
+            companyId
+          });
+        }
+      }
     });
 
     if (dimensionInserts.length > 0) {
@@ -879,6 +1026,21 @@ async function createMaterialWipEntries(
         .values(dimensionInserts)
         .execute();
     }
+  }
+
+  if (projectCharge) {
+    await insertJobProjectLedgerRows(trx, {
+      charge: projectCharge,
+      jobId,
+      companyId,
+      userId,
+      rows: projectLedgerRows.map((row) => ({
+        itemId: row.itemId,
+        quantity: row.quantity,
+        amount: row.amount,
+        journalLineId: journalLineResults[row.lineIndex]?.id ?? null
+      }))
+    });
   }
 }
 
@@ -1149,7 +1311,13 @@ async function loadConsumeAccountingContext(
         {
           companyGroupId: companyRecord.data.companyGroupId!,
           active: true,
-          entityType: ["ItemPostingGroup", "Item", "Location"]
+          entityType: [
+            "ItemPostingGroup",
+            "Item",
+            "Location",
+            "Project",
+            "ProjectElement"
+          ]
         },
         { columns: ["id", "entityType"] }
       )
@@ -1859,12 +2027,20 @@ async function consumeTrackedEntitiesIntoOperation(
       }));
 
     if (consumptionEntries.length > 0) {
+      const projectCharge = await loadJobProjectCharge(
+        trx,
+        companyId,
+        job?.id!
+      );
       await createMaterialWipEntries(trx, {
         consumptionLedgers: consumptionEntries,
         jobId: job?.id!,
         operationId: jobMaterial?.jobOperationId ?? actualMaterialId!,
         description: "Tracked Entity Material Issue",
-        wipAccount: accountDefaultsTracked.data.workInProgressAccount,
+        wipAccount:
+          projectCharge?.accountId ??
+          accountDefaultsTracked.data.workInProgressAccount,
+        projectCharge,
         rawMaterialsAccount: accountDefaultsTracked.data.rawMaterialsAccount,
         finishedGoodsAccount: accountDefaultsTracked.data.finishedGoodsAccount,
         dimensionMap: dimensionMapTracked,
@@ -2068,7 +2244,13 @@ const issue = defineServerFn({
               {
                 companyGroupId: companyRecord.data.companyGroupId!,
                 active: true,
-                entityType: ["ItemPostingGroup", "Item", "Location"]
+                entityType: [
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "Project",
+                  "ProjectElement"
+                ]
               },
               { columns: ["id", "entityType"] }
             )
@@ -2325,7 +2507,13 @@ const issue = defineServerFn({
               {
                 companyGroupId: companyRecordSerial.data.companyGroupId!,
                 active: true,
-                entityType: ["ItemPostingGroup", "Item", "Location"]
+                entityType: [
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "Project",
+                  "ProjectElement"
+                ]
               },
               { columns: ["id", "entityType"] }
             )
@@ -3057,7 +3245,13 @@ const issue = defineServerFn({
               {
                 companyGroupId: companyRecord.data.companyGroupId!,
                 active: true,
-                entityType: ["ItemPostingGroup", "Item", "Location"]
+                entityType: [
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "Project",
+                  "ProjectElement"
+                ]
               },
               { columns: ["id", "entityType"] }
             )
@@ -3346,6 +3540,11 @@ const issue = defineServerFn({
                   .executeTakeFirst()
               : null;
 
+            const projectCharge = await loadJobProjectCharge(
+              trx,
+              companyId,
+              jobOperation?.jobId!
+            );
             await createMaterialWipEntries(trx, {
               consumptionLedgers: itemLedgerInserts.map((l) => ({
                 itemId: l.itemId as string,
@@ -3355,7 +3554,10 @@ const issue = defineServerFn({
               jobId: jobOperation?.jobId!,
               operationId: id,
               description: "Manual Material Issue",
-              wipAccount: accountDefaults.data.workInProgressAccount,
+              wipAccount:
+                projectCharge?.accountId ??
+                accountDefaults.data.workInProgressAccount,
+              projectCharge,
               rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
               finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
               dimensionMap,
@@ -4390,7 +4592,13 @@ const issue = defineServerFn({
               {
                 companyGroupId: companyRecordUnconsume.data.companyGroupId!,
                 active: true,
-                entityType: ["ItemPostingGroup", "Item", "Location"]
+                entityType: [
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "Project",
+                  "ProjectElement"
+                ]
               },
               { columns: ["id", "entityType"] }
             )
@@ -4590,12 +4798,20 @@ const issue = defineServerFn({
                 quantity: Number(l.quantity)
               }));
 
+              const projectCharge = await loadJobProjectCharge(
+                trx,
+                companyId,
+                job?.id!
+              );
               await createMaterialWipEntries(trx, {
                 consumptionLedgers: returnEntries,
                 jobId: job?.id!,
                 operationId: jobMaterial?.jobOperationId ?? materialId,
                 description: "Unconsume Material Return",
-                wipAccount: accountDefaultsUnconsume.data.workInProgressAccount,
+                wipAccount:
+                  projectCharge?.accountId ??
+                  accountDefaultsUnconsume.data.workInProgressAccount,
+                projectCharge,
                 rawMaterialsAccount:
                   accountDefaultsUnconsume.data.rawMaterialsAccount,
                 finishedGoodsAccount:
