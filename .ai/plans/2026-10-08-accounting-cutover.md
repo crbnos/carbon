@@ -41,7 +41,7 @@
 - [x] Task 28: Add the `activate-accounting` server function
 - [x] Task 29: Handle voids of documents dated before the cutover
 - [x] Task 30: Start depreciation at the cutover
-- [ ] Task 31: Build the 5-step enable wizard
+- [x] Task 31: Build the 5-step enable wizard
 
 ### Phase D — Retire the flag
 - [ ] Task 32: Replace every ERP read of `accountingEnabled`
@@ -1430,3 +1430,7 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
   4. The default unit cost of a FIFO or LIFO item replays its layers dated before the cutover (`unitCostAtCutover`). Today's remaining quantity is wrong because relief after the cutover changed it. An Average item uses `itemCost.unitCost`.
   5. Open gaps: a PO line invoiced past its receipts before the cutover gets no open item. After the enable, an invoice clears GR/IR at the opening line's average cost, so receipts at different costs can leave a residual.
 - Task 29 changed while executing: the void of a sales or purchase invoice dated before the cutover fails and points to a credit memo or a debit memo. No builder covers a whole invoice posting. Only payment and memo voids build the posting again and negate it.
+- Task 31 changed while executing:
+  1. The inventory step edits the unit cost of an Average item only. A FIFO or LIFO item shows the value its layers had at the cutover, and a Standard item shows its standard cost. An edit to `itemCost.unitCost` does not reach the reset for them.
+  2. The trial balance CSV import is its own intent, `import-tb`. It saves nothing when a row has an error.
+  3. `no-unscoped-kysely-write` exempts `companySettings`. Its `id` is the company id, as for `company`.

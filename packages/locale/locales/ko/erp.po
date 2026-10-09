@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" 완료 — 설정 맵 항목 {0}개가 모두 설정되�
 msgid "(excluded for this customer)"
 msgstr "(이 고객에게는 제외됨)"
 
+msgid "(inactive account)"
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(비활성)"
 
@@ -110,6 +113,10 @@ msgstr "{0}은 이미 시작됨"
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0}개의 감가상각 자산 · {amount}"
+
+#. placeholder {0}: check.count
+msgid "{0} blocking records"
+msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -615,6 +622,9 @@ msgstr "1개의 감가상각 자산 · {amount}"
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1개 배치 가능한 공정은 배치에 포함되지 않음 — 배치될 때까지 개별적으로 실행됨"
 
+msgid "1 blocking record"
+msgstr ""
+
 msgid "1 can't be scheduled"
 msgstr "1개는 일정을 짤 수 없습니다"
 
@@ -1107,6 +1117,9 @@ msgstr "읽을 수 있는 고객 ID가 목록, 양식 및 드롭다운에 표시
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
 msgstr "읽을 수 있는 공급업체 ID가 목록, 양식 및 드롭다운에 표시됩니다."
 
+msgid "A readiness check fails. <0>Go to Readiness</0>"
+msgstr ""
+
 msgid "A receipt is created"
 msgstr "입고가 생성되었습니다"
 
@@ -1468,6 +1481,9 @@ msgstr "회계 기간"
 msgid "Accounting Periods"
 msgstr "회계 기간"
 
+msgid "Accounting setup"
+msgstr ""
+
 msgid "Accounting Treatment"
 msgstr "회계 처리"
 
@@ -1521,6 +1537,10 @@ msgstr "감가상각누계액(기초)"
 
 msgid "Accumulated Depreciation Account"
 msgstr "감가상각누계액 계정"
+
+#. placeholder {0}: asset.fixedAssetId
+msgid "Accumulated depreciation for {0}"
+msgstr ""
 
 msgid "Accumulated Depreciation on Disposal"
 msgstr "처분 시 감가상각누계액"
@@ -2362,6 +2382,10 @@ msgstr "그리고"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "그리고 {0}건 더 — 이를 해결하면 나머지를 볼 수 있습니다."
+
+#. placeholder {0}: check.count - check.items.length
+msgid "And {0} more. Resolve these to see the rest."
+msgstr ""
 
 msgid "and {hidden} more"
 msgstr "및 {hidden}개 더"
@@ -4158,8 +4182,17 @@ msgstr "Carbon 로고"
 msgid "Carbon only"
 msgstr "Carbon 전용"
 
+msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
+msgstr ""
+
 msgid "Carbon Posted"
 msgstr "Carbon 게시됨"
+
+msgid "Carbon posts every document dated on or after this day. Choose the first day of the current period or of one of the 3 periods before it."
+msgstr ""
+
+msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Carbon 값"
@@ -4374,6 +4407,9 @@ msgstr "계정과목표"
 
 msgid "Chat"
 msgstr "채팅"
+
+msgid "Check"
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
@@ -4722,6 +4758,10 @@ msgstr "칸반 완료 스캔에서 모든 수량을 완료 처리"
 
 msgid "Complete Job"
 msgstr "작업 완료"
+
+#. placeholder {0}: check.count
+msgid "Complete or cancel the {0} job(s) created before Carbon recorded their costs."
+msgstr ""
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "이 작업 지시를 완료하기 전에 MES에서 일련번호/배치를 완료하거나, 모든 공정을 완료로 표시하여 자동으로 완료되도록 하세요."
@@ -5136,6 +5176,12 @@ msgstr "외주 인력"
 
 msgid "Contractors"
 msgstr "외주 인력"
+
+msgid "Control"
+msgstr ""
+
+msgid "Control Account"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "리비전/ECO로 설계 변경을 관리하세요"
@@ -5939,6 +5985,10 @@ msgstr "크레딧 금액은 회사 기본 통화({currency})로 표시됩니다.
 msgid "Credit applied"
 msgstr "대변 적용됨"
 
+#. placeholder {0}: account.name
+msgid "Credit for {0}"
+msgstr ""
+
 msgid "Credit Memo"
 msgstr "대변전표"
 
@@ -6228,6 +6278,12 @@ msgstr "전환하고, 기존 시스템을 동결한 뒤, Carbon 운영 전환을
 msgid "Cutover checklist"
 msgstr "전환 체크리스트"
 
+msgid "Cutover date"
+msgstr ""
+
+msgid "Cutover Date"
+msgstr ""
+
 msgid "Cutover step"
 msgstr "전환 단계"
 
@@ -6404,6 +6460,10 @@ msgstr "차변 ({0})"
 
 msgid "Debit Account"
 msgstr "차변 계정"
+
+#. placeholder {0}: account.name
+msgid "Debit for {0}"
+msgstr ""
 
 msgid "Debit Memo"
 msgstr "차변전표"
@@ -7132,6 +7192,9 @@ msgstr "모션 플래너가 감지함"
 
 msgid "Developer"
 msgstr "개발자"
+
+msgid "Difference"
+msgstr ""
 
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "선택과 다릅니다 — 허용되지만 함께 중첩되는지 확인하세요"
@@ -8144,6 +8207,15 @@ msgstr "빈 목록"
 msgid "Empty work centers"
 msgstr "빈 작업장"
 
+msgid "Enable"
+msgstr ""
+
+msgid "Enable accounting"
+msgstr ""
+
+msgid "Enable Accounting"
+msgstr ""
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "데이터 변경 사항 추적을 시작하려면 설정에서 감사 로깅을 활성화하세요."
 
@@ -8349,6 +8421,9 @@ msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 클라이언트 암호를 입력한 후 저장하세요."
 
+msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
+msgstr ""
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
 
@@ -8408,6 +8483,9 @@ msgstr "누적 손익에 대한 자본 계정"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "통화 환산 조정용 자본 계정 (CTA)"
+
+msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
+msgstr ""
 
 msgid "Error"
 msgstr "오류"
@@ -8522,6 +8600,12 @@ msgstr "이벤트"
 
 msgid "Every 3 hours"
 msgstr "3시간마다"
+
+msgid "Every account default is set"
+msgstr ""
+
+msgid "Every check must pass before accounting can be enabled."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "모든 회사 범위의 레코드. 자격증명, 연동 토큰 및 웹훅은 포함되지 않습니다."
@@ -9150,6 +9234,9 @@ msgstr "슬라이드 저장 실패"
 msgid "Failed to save the change"
 msgstr "변경 사항을 저장하지 못했습니다."
 
+msgid "Failed to save the cost"
+msgstr ""
+
 msgid "Failed to save tools"
 msgstr "도구 저장 실패"
 
@@ -9227,6 +9314,9 @@ msgstr "썸네일을 업로드하지 못했습니다"
 
 msgid "Failed to upload: {reason}"
 msgstr "업로드 실패: {reason}"
+
+msgid "Failing"
+msgstr ""
 
 msgid "Failure"
 msgstr "실패"
@@ -9401,6 +9491,9 @@ msgstr "회계연도"
 msgid "Fiscal Year"
 msgstr "회계연도"
 
+msgid "Fiscal year and base currency are set"
+msgstr ""
+
 msgid "Fiscal Year Settings"
 msgstr "회계연도 설정"
 
@@ -9436,6 +9529,9 @@ msgstr "자산 클래스"
 
 msgid "Fixed Asset Class"
 msgstr "고정자산 클래스"
+
+msgid "Fixed assets"
+msgstr ""
 
 msgid "Fixed Assets"
 msgstr "고정자산"
@@ -10374,6 +10470,9 @@ msgstr "실행 리드"
 msgid "Import {label} CSV"
 msgstr "{label} CSV 가져오기"
 
+msgid "Import CSV"
+msgstr ""
+
 msgid "Import results"
 msgstr "가져오기 결과"
 
@@ -10729,6 +10828,9 @@ msgstr "재고"
 
 msgid "Inventory"
 msgstr "재고"
+
+msgid "Inventory Account"
+msgstr ""
 
 msgid "Inventory accuracy"
 msgstr "재고 정확도"
@@ -12354,6 +12456,12 @@ msgstr "데이터 마이그레이션"
 msgid "Migrating from another system?"
 msgstr "다른 시스템에서 마이그레이션 중입니까?"
 
+msgid "Migration Clearing"
+msgstr ""
+
+msgid "Migration Clearing must total zero. <0>Go to Trial balance</0>"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "최소 {minimumBatchQuantity} — 충족"
 
@@ -13263,6 +13371,9 @@ msgstr "아직 구성 요소 없음"
 msgid "No condition may match"
 msgstr "조건이 하나도 일치하지 않을 수 있습니다"
 
+msgid "No control account has a balance at the cutover."
+msgstr ""
+
 msgid "No conversion is required"
 msgstr "변환이 필요하지 않습니다"
 
@@ -13298,6 +13409,9 @@ msgstr "기본 첨부 파일이 아직 없습니다."
 
 msgid "No deposit has been received for this agreement."
 msgstr "이 계약에 대해 보증금이 수령되지 않았습니다."
+
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "구성된 차원 슬롯이 없습니다"
@@ -13371,6 +13485,9 @@ msgstr "이 항목에 대한 파일이 없습니다."
 msgid "No files uploaded"
 msgstr "업로드된 파일이 없습니다"
 
+msgid "No fixed asset was acquired before the cutover date."
+msgstr ""
+
 msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
 msgstr "사용 가능한 함대 유닛이 없습니다. 직렬화된 항목이 재고에서 자본화되거나 함대용으로 구축되면 함대에 참여합니다 — <0>함대</0> 페이지에서 확인하세요."
 
@@ -13409,6 +13526,9 @@ msgstr "설정된 이슈 유형이 없습니다"
 
 msgid "No issues yet"
 msgstr "아직 문제 없음"
+
+msgid "No item has stock on hand at the cutover date."
+msgstr ""
 
 msgid "No items"
 msgstr "품목 없음"
@@ -13488,6 +13608,9 @@ msgstr "이 사업장에서 다음 {horizon}일 이내에 완료될 것으로 �
 msgid "No open jobs for sales orders at this location."
 msgstr "이 사업장의 수주 관련 미결 작업 지시가 없습니다."
 
+msgid "No open jobs from before Carbon recorded their costs"
+msgstr ""
+
 msgid "No open lines. Add a service to amend."
 msgstr "열린 라인이 없습니다. 변경하려면 서비스를 추가하세요."
 
@@ -13566,6 +13689,9 @@ msgstr "계획 데이터가 없습니다"
 
 msgid "No posted journals in this period for this account"
 msgstr "이 계정의 이 기간에 전기된 전표가 없습니다."
+
+msgid "No posted opening balance"
+msgstr ""
 
 msgid "No pricing for selected quantity"
 msgstr "선택한 수량에 대한 가격 책정이 없습니다."
@@ -13743,6 +13869,9 @@ msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
 
 msgid "No unmapped values match a provider option name"
 msgstr "제공자 옵션 이름과 일치하는 매핑되지 않은 값이 없습니다"
+
+msgid "No unposted documents dated before the cutover"
+msgstr ""
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "이 위치의 이 공정에서 시작되지 않은 배치 처리되지 않은 작업이 없습니다."
@@ -14010,6 +14139,9 @@ msgstr "켜짐"
 msgid "On {sentDate}"
 msgstr "켬"
 
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
+msgstr ""
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "전환일 당일에는 아래 체크리스트를 순서대로 진행하세요. 승인 테스트는 범위 내 요구사항을 기준으로 하며, 지원 관련 세부 정보는 하단에 있습니다."
 
@@ -14258,6 +14390,9 @@ msgstr "MES에서 열기"
 msgid "Open Issues"
 msgstr "미결 이슈"
 
+msgid "Open items"
+msgstr ""
+
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "작업 지시 소요량 더하기 이 빈에서의 미결 이송"
 
@@ -14315,6 +14450,9 @@ msgstr "부분 조립 열기"
 msgid "Open task details"
 msgstr "작업 세부정보 열기"
 
+msgid "Open the books at a cutover date. Enabling accounting is one-way."
+msgstr ""
+
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government 연동을 열고 설정을 저장하여 다시 연동하세요."
 
@@ -14357,6 +14495,12 @@ msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상�
 
 msgid "Opening Balances"
 msgstr "개시잔액"
+
+msgid "Opening balances as of"
+msgstr ""
+
+msgid "Opening Value"
+msgstr ""
 
 msgid "Operating Expenses"
 msgstr "영업비용"
@@ -15371,6 +15515,10 @@ msgstr "올바른 계정 및 설명 코드로 전표를 전기"
 msgid "Post opening balances"
 msgstr "개시잔액 전기"
 
+#. placeholder {0}: check.count
+msgid "Post or delete the {0} document(s) dated before the cutover."
+msgstr ""
+
 msgid "Post Receipt"
 msgstr "입고 전기"
 
@@ -16363,6 +16511,9 @@ msgstr "표시 ID"
 
 msgid "Readable id with revision"
 msgstr "리비전이 있는 표시 ID"
+
+msgid "Readiness"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "문서를 읽는 중..."
@@ -18018,6 +18169,9 @@ msgstr "환율 저장"
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
 
+msgid "Save Trial Balance"
+msgstr ""
+
 msgid "Save view"
 msgstr "보기 저장"
 
@@ -18751,6 +18905,12 @@ msgstr "회계 처리를 확인하려면 계약의 시작일을 설정하세요.
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "작업을 중단한 시간을 설정하거나 여전히 작업 중임을 확인하세요."
+
+msgid "Set these account defaults to an active account."
+msgstr ""
+
+msgid "Set Up Accounting"
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "인증자 앱 설정"
@@ -19865,6 +20025,9 @@ msgstr "제안 알림"
 msgid "Suggestions"
 msgstr "제안"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "일요일"
 
@@ -20507,6 +20670,9 @@ msgstr "칸반 카드에 인쇄되는 코드로, 작업자가 스캔하여 작�
 msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 msgstr "국제적으로 은행을 식별하는 코드이며 8자리 또는 11자리입니다. 국경간 지불은 이것 없이는 라우팅되지 않으며, 국내 이송은 보통 로컬 라우팅 코드로 전달됩니다."
 
+msgid "The company already has a posted opening balance journal."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."
 
@@ -20524,6 +20690,12 @@ msgstr "외주 인력의 예상 주간 가용성; 이 외주 인력을 주 동�
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "이 로트/일련번호의 수정된 유효기한으로, 변경 후 기존 보유 재고가 유통기한 정책에 따라 재평가됩니다."
+
+msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr ""
+
+msgid "The CSV was not imported"
+msgstr ""
 
 msgid "The currencies you trade in and their rates"
 msgstr "거래에 사용하는 통화와 환율"
@@ -20561,6 +20733,9 @@ msgstr "가장 빠르게 도입에 성공하는 고객은 이 항목들을 잘 �
 
 msgid "The customers you sell and ship to"
 msgstr "판매 및 배송 대상 고객"
+
+msgid "The cutover date is valid"
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "재고가 이 아래로 내려가지 않기를 원하는 점선 임계값입니다."
@@ -20627,6 +20802,9 @@ msgstr "8D 품질 기법으로, 하드코딩되지 않고 부적합 워크플로
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "이 원가 센터를 담당하는 직원으로, 발주서 승인이 켜져 있을 때는 이에 대해 전기된 지출의 승인자입니다."
+
+msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
+msgstr ""
 
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "고객에게 견적을 제시하고 지불을 수령하는 데까지의 전체 상거래 흐름입니다: 견적 요청에서 견적서로, 수주로 진행되고, 출하, 송장, 그리고 결제됩니다."
@@ -20918,6 +21096,10 @@ msgstr "Onshape 연동이 만료되었습니다"
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government 연동이 만료되었습니다."
 
+#. placeholder {0}: formatDate( parseDate(cutoverDate).subtract({ days: 1 }).toString() )
+msgid "The opening balances are as of the end of {0}."
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "부품이 이동하는 공정 및 단계"
 
@@ -21138,6 +21320,9 @@ msgstr "이 입고가 전기되는 특정 구매발주, 반품 또는 이송; �
 msgid "The specific SO, transfer, or RMA this shipment posts against; available IDs depend on the source document type above."
 msgstr "이 출하가 전기되는 특정 판매주문, 이송 또는 RMA; 위 원본 문서 유형에 따라 사용 가능한 ID가 결정됩니다."
 
+msgid "The standard cost of the item."
+msgstr ""
+
 msgid "The standard dimensions your materials are stocked in"
 msgstr "자재를 보관하는 표준 치수"
 
@@ -21282,6 +21467,9 @@ msgstr "미국 세금 감가상각 시스템으로, IRS 자산 클래스 테이�
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "이 그룹에 속한 사용자입니다. 그룹 범위의 권한과 알림이 각 구성원에게 적용되며, 사용자는 여러 그룹에 속할 수 있습니다(유효 권한은 합집합입니다)."
 
+msgid "The value of the cost layers dated before the cutover."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "새 문서의 버전"
 
@@ -21409,6 +21597,9 @@ msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 �
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "이후에는 변경할 수 없습니다 — {integrationName}은(는) 연결된 회계 시스템을 하나만 허용하므로, 선택에 따라 Carbon이 수행할 수 있는 작업이 결정됩니다. 전환하려면 제거한 후 다시 연결해야 합니다."
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."
@@ -21971,6 +22162,10 @@ msgstr "주제"
 msgid "Total"
 msgstr "합계"
 
+#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
+msgid "Total (out of balance by {0})"
+msgstr ""
+
 #. placeholder {0}: total.className
 msgid "Total {0}"
 msgstr "총계 {0}"
@@ -22200,6 +22395,9 @@ msgstr "운송 및 기관"
 msgid "Trash"
 msgstr "휴지통"
 
+msgid "Trial balance"
+msgstr ""
+
 msgid "Trial Balance"
 msgstr "시산표"
 
@@ -22256,6 +22454,10 @@ msgstr "유형"
 
 msgid "Type '{' for a variable"
 msgstr "변수의 경우 '{'를 입력하세요."
+
+#. placeholder {0}: company.name
+msgid "Type {0} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "변수를 삽입하려면 {TRIGGER}를 입력하세요."
@@ -22370,6 +22572,10 @@ msgstr "항목 작업"
 
 msgid "Unit Cost"
 msgstr "단위원가"
+
+#. placeholder {0}: item.readableId
+msgid "Unit cost for {0}"
+msgstr ""
 
 msgid "Unit Inputs"
 msgstr "단위 입력"

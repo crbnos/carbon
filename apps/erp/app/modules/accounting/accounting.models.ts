@@ -483,6 +483,9 @@ export const defaultBalanceSheetAccountValidator = z.object({
   deferredTaxLiabilityAccountId: z.string().min(1, {
     message: "Deferred tax liability account is required"
   }),
+  // Optional here: a company may not have the account yet. The accounting
+  // enable wizard's readiness step requires it.
+  migrationClearingAccount: z.string().optional(),
   deferredRevenueAccount: z.string().optional(),
   contractAssetAccount: z.string().optional(),
   netInvestmentInLeasesAccount: z.string().optional()
@@ -1204,6 +1207,23 @@ export const openingTrialBalanceValidator = z.object({
     }
     return result;
   })
+});
+
+/** The prior system's trial balance as a CSV (`accountNumber, debit, credit`),
+ *  uploaded in the wizard. The route action parses it and maps the account
+ *  numbers to accounts. */
+export const openingTrialBalanceImportValidator = z.object({
+  cutoverDate: cutoverDateField,
+  csv: z.string().min(1, { message: "The CSV file is empty" })
+});
+
+/** The enable: the cutover date and the company name typed to confirm. */
+export const activateAccountingValidator = z.object({
+  cutoverDate: cutoverDateField,
+  confirmation: z
+    .string()
+    .trim()
+    .min(1, { message: "Type the company name to confirm" })
 });
 
 /** An asset's accumulated depreciation at the cutover, set in the wizard. */

@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" bitti — tüm {0} Kurulum Haritası öğesi yapılandır
 msgid "(excluded for this customer)"
 msgstr "(bu müşteri için hariç tutulmuş)"
 
+msgid "(inactive account)"
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(Pasif)"
 
@@ -110,6 +113,10 @@ msgstr "{0} zaten başlatıldı"
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} amortisman yapılacak kıymet · {amount}"
+
+#. placeholder {0}: check.count
+msgid "{0} blocking records"
+msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -615,6 +622,9 @@ msgstr "1 amortisman yapılacak kıymet · {amount}"
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 partiye alınabilir operasyon partide değil — partiye alınıncaya kadar tek tek çalışır"
 
+msgid "1 blocking record"
+msgstr ""
+
 msgid "1 can't be scheduled"
 msgstr "1 planlanmıyor"
 
@@ -1107,6 +1117,9 @@ msgstr "Okunabilir bir Müşteri ID'si listeler, formlar ve açılır listelerde
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
 msgstr "Okunabilir bir Tedarikçi ID'si listeler, formlar ve açılır listelerde görünür."
 
+msgid "A readiness check fails. <0>Go to Readiness</0>"
+msgstr ""
+
 msgid "A receipt is created"
 msgstr "Bir makbuz oluşturuldu"
 
@@ -1468,6 +1481,9 @@ msgstr "Muhasebe dönemi"
 msgid "Accounting Periods"
 msgstr "Muhasebe Dönemleri"
 
+msgid "Accounting setup"
+msgstr ""
+
 msgid "Accounting Treatment"
 msgstr "Muhasebe İşlemi"
 
@@ -1521,6 +1537,10 @@ msgstr "Birikmiş amortisman (açılış)"
 
 msgid "Accumulated Depreciation Account"
 msgstr "Birikmiş amortisman hesabı"
+
+#. placeholder {0}: asset.fixedAssetId
+msgid "Accumulated depreciation for {0}"
+msgstr ""
 
 msgid "Accumulated Depreciation on Disposal"
 msgstr "Elden Çıkarma Sırasında Birikmiş Amortisman"
@@ -2362,6 +2382,10 @@ msgstr "VE"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "Ve {0} tane daha — bunları çözmek için geri kalanını görmek için."
+
+#. placeholder {0}: check.count - check.items.length
+msgid "And {0} more. Resolve these to see the rest."
+msgstr ""
 
 msgid "and {hidden} more"
 msgstr "ve {hidden} tane daha"
@@ -4158,8 +4182,17 @@ msgstr "Carbon Logosu"
 msgid "Carbon only"
 msgstr "Yalnızca Carbon"
 
+msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
+msgstr ""
+
 msgid "Carbon Posted"
 msgstr "Carbon Kaydedildi"
+
+msgid "Carbon posts every document dated on or after this day. Choose the first day of the current period or of one of the 3 periods before it."
+msgstr ""
+
+msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Carbon değeri"
@@ -4374,6 +4407,9 @@ msgstr "Hesap Planı"
 
 msgid "Chat"
 msgstr "Sohbet"
+
+msgid "Check"
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
@@ -4722,6 +4758,10 @@ msgstr "Kanban tamamlama taramasında tüm miktarları tamamla"
 
 msgid "Complete Job"
 msgstr "İşi Tamamla"
+
+#. placeholder {0}: check.count
+msgid "Complete or cancel the {0} job(s) created before Carbon recorded their costs."
+msgstr ""
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Bu iş emrini tamamlamadan önce MES'te seri numaralarını/partileri tamamlayın veya otomatik olarak tamamlanması için her operasyonu Bitti olarak işaretleyin."
@@ -5136,6 +5176,12 @@ msgstr "Taşeron"
 
 msgid "Contractors"
 msgstr "Taşeronlar"
+
+msgid "Control"
+msgstr ""
+
+msgid "Control Account"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Tasarım değişikliklerini revizyonlar / ECO'lar ile kontrol edin"
@@ -5939,6 +5985,10 @@ msgstr "Alacak tutarları şirketin temel para birimi ({currency}) cinsindendir.
 msgid "Credit applied"
 msgstr "Alacak uygulandı"
 
+#. placeholder {0}: account.name
+msgid "Credit for {0}"
+msgstr ""
+
 msgid "Credit Memo"
 msgstr "Alacak dekontu"
 
@@ -6228,6 +6278,12 @@ msgstr "Geçiş yapın, eski sistemi dondurun ve Carbon'da canlı olduğunuzu do
 msgid "Cutover checklist"
 msgstr "Geçiş kontrol listesi"
 
+msgid "Cutover date"
+msgstr ""
+
+msgid "Cutover Date"
+msgstr ""
+
 msgid "Cutover step"
 msgstr "Geçiş adımı"
 
@@ -6404,6 +6460,10 @@ msgstr "Borç ({0})"
 
 msgid "Debit Account"
 msgstr "Borç Hesabı"
+
+#. placeholder {0}: account.name
+msgid "Debit for {0}"
+msgstr ""
 
 msgid "Debit Memo"
 msgstr "Borç Notu"
@@ -7132,6 +7192,9 @@ msgstr "Hareket planlayıcısı tarafından algılandı"
 
 msgid "Developer"
 msgstr "Geliştirici"
+
+msgid "Difference"
+msgstr ""
 
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "Seçimden farklı — izin verilir, ancak birlikte iç içe geçtiğini doğrulayın"
@@ -8144,6 +8207,15 @@ msgstr "Boş liste"
 msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
 
+msgid "Enable"
+msgstr ""
+
+msgid "Enable accounting"
+msgstr ""
+
+msgid "Enable Accounting"
+msgstr ""
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Verilerinizi izlemeye başlamak için ayarlar'dan denetim günlüklemesini etkinleştirin."
 
@@ -8349,6 +8421,9 @@ msgstr "Devam etmek için kimlik doğrulayıcı uygulamanızdan 6 haneli kodu gi
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci gizli anahtarını girin, ardından kaydedin."
 
+msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
+msgstr ""
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
 
@@ -8408,6 +8483,9 @@ msgstr "Birikmiş kar veya zarar için özkaynak hesabı"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Kur çevrimi düzeltmeleri (CTA) için özkaynak hesabı"
+
+msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
+msgstr ""
 
 msgid "Error"
 msgstr "Hata"
@@ -8522,6 +8600,12 @@ msgstr "Etkinlikler"
 
 msgid "Every 3 hours"
 msgstr "Her 3 saatte bir"
+
+msgid "Every account default is set"
+msgstr ""
+
+msgid "Every check must pass before accounting can be enabled."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon belirteçleri ve webhook'lar asla dahil edilmez."
@@ -9150,6 +9234,9 @@ msgstr "Slayt kaydedilemedi"
 msgid "Failed to save the change"
 msgstr "Değişikliği kaydetme başarısız oldu"
 
+msgid "Failed to save the cost"
+msgstr ""
+
 msgid "Failed to save tools"
 msgstr "Araç kaydedilemedi"
 
@@ -9227,6 +9314,9 @@ msgstr "Küçük resim yüklenemedi"
 
 msgid "Failed to upload: {reason}"
 msgstr "Yükleme başarısız: {reason}"
+
+msgid "Failing"
+msgstr ""
 
 msgid "Failure"
 msgstr "Başarısızlık"
@@ -9401,6 +9491,9 @@ msgstr "Mali yıl"
 msgid "Fiscal Year"
 msgstr "Mali Yılı"
 
+msgid "Fiscal year and base currency are set"
+msgstr ""
+
 msgid "Fiscal Year Settings"
 msgstr "Mali Yılı Ayarları"
 
@@ -9436,6 +9529,9 @@ msgstr "Varlık sınıfı"
 
 msgid "Fixed Asset Class"
 msgstr "Sabit Kıymet Sınıfı"
+
+msgid "Fixed assets"
+msgstr ""
 
 msgid "Fixed Assets"
 msgstr "Sabit kıymetler"
@@ -10374,6 +10470,9 @@ msgstr "Uygulama Müdürü"
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
 
+msgid "Import CSV"
+msgstr ""
+
 msgid "Import results"
 msgstr "İçe Aktarma Sonuçları"
 
@@ -10729,6 +10828,9 @@ msgstr "envanter"
 
 msgid "Inventory"
 msgstr "Stok"
+
+msgid "Inventory Account"
+msgstr ""
 
 msgid "Inventory accuracy"
 msgstr "Envanter doğruluğu"
@@ -12354,6 +12456,12 @@ msgstr "Verileri Taşı"
 msgid "Migrating from another system?"
 msgstr "Başka bir sistemden taşınıyor mu?"
 
+msgid "Migration Clearing"
+msgstr ""
+
+msgid "Migration Clearing must total zero. <0>Go to Trial balance</0>"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "en az {minimumBatchQuantity} — karşılandı"
 
@@ -13263,6 +13371,9 @@ msgstr "Henüz bileşen yok"
 msgid "No condition may match"
 msgstr "Hiçbir koşul eşleşemez"
 
+msgid "No control account has a balance at the cutover."
+msgstr ""
+
 msgid "No conversion is required"
 msgstr "Dönüşüm gerekmiyor"
 
@@ -13298,6 +13409,9 @@ msgstr "Henüz varsayılan ek dosya yok."
 
 msgid "No deposit has been received for this agreement."
 msgstr "Bu anlaşma için depozito alınmamıştır."
+
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "Yapılandırılmış boyut yuvası yok"
@@ -13371,6 +13485,9 @@ msgstr "Bu öğe için dosya yok."
 msgid "No files uploaded"
 msgstr "Yüklenmiş dosya yok"
 
+msgid "No fixed asset was acquired before the cutover date."
+msgstr ""
+
 msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
 msgstr "Kullanılabilir filo Adeti yok. Seriye sahip bir Stok kartı Envanter'den aktifleştirildiğinde veya filo için yapıldığında bir Adet filo'ya katılır, <0>Filo</0> sayfasında."
 
@@ -13409,6 +13526,9 @@ msgstr "Hiçbir sorun türü yapılandırılmamış"
 
 msgid "No issues yet"
 msgstr "Henüz sorun yok"
+
+msgid "No item has stock on hand at the cutover date."
+msgstr ""
 
 msgid "No items"
 msgstr "Öğe yok"
@@ -13488,6 +13608,9 @@ msgstr "Bu lokasyonda sonraki {horizon} gün içinde tamamlanması beklenen sat�
 msgid "No open jobs for sales orders at this location."
 msgstr "Bu lokasyonda satış siparişleri için açık iş emri yok."
 
+msgid "No open jobs from before Carbon recorded their costs"
+msgstr ""
+
 msgid "No open lines. Add a service to amend."
 msgstr "Açık satır yok. Değişiklik için bir hizmet ekleyin."
 
@@ -13566,6 +13689,9 @@ msgstr "Planlama verisi yok"
 
 msgid "No posted journals in this period for this account"
 msgstr "Bu dönem için bu hesapta muhasebeleştirilmiş muhasebe fişi yok"
+
+msgid "No posted opening balance"
+msgstr ""
 
 msgid "No pricing for selected quantity"
 msgstr "Seçilen miktar için fiyatlandırma yok"
@@ -13743,6 +13869,9 @@ msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşm�
 
 msgid "No unmapped values match a provider option name"
 msgstr "Eşlenmemiş değerler hiçbir sağlayıcı seçeneğinin adıyla eşleşmiyor"
+
+msgid "No unposted documents dated before the cutover"
+msgstr ""
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Bu konumdaki bu işlemde başlatılmamış, toplu işe eklenmemiş operasyon yok."
@@ -14010,6 +14139,9 @@ msgstr "Açık"
 msgid "On {sentDate}"
 msgstr "{sentDate} tarihinde"
 
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
+msgstr ""
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Geçiş gününde, aşağıdaki kontrol listesini sırayla çalışın. Kabul testleri kapsam içi gerekliliklerinizden gelir. Destek ayrıntıları altta yer alır."
 
@@ -14258,6 +14390,9 @@ msgstr "MES'te Aç"
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
+msgid "Open items"
+msgstr ""
+
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Bu gözden çıkan açık iş emri talebi ve beklemede transferler"
 
@@ -14315,6 +14450,9 @@ msgstr "Alt Montajı Aç"
 msgid "Open task details"
 msgstr "Görev ayrıntılarını aç"
 
+msgid "Open the books at a cutover date. Enabling accounting is one-way."
+msgstr ""
+
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government entegrasyonunu açın ve yeniden bağlanmak için ayarlarını kaydedin."
 
@@ -14357,6 +14495,12 @@ msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortism
 
 msgid "Opening Balances"
 msgstr "Açılış Bakiyeleri"
+
+msgid "Opening balances as of"
+msgstr ""
+
+msgid "Opening Value"
+msgstr ""
 
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
@@ -15371,6 +15515,10 @@ msgstr "Uygun Hesap ve açıklama kodlarıyla Muhasebe fişi girişlerini Muhase
 msgid "Post opening balances"
 msgstr "Açılış Bakiyelerini Muhasebeleştir"
 
+#. placeholder {0}: check.count
+msgid "Post or delete the {0} document(s) dated before the cutover."
+msgstr ""
+
 msgid "Post Receipt"
 msgstr "Makbuzu Kaydet"
 
@@ -16363,6 +16511,9 @@ msgstr "Okunabilir kimlik"
 
 msgid "Readable id with revision"
 msgstr "Revizyon içeren okunabilir kimlik"
+
+msgid "Readiness"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Belge okunuyor..."
@@ -18018,6 +18169,9 @@ msgstr "Kuru kaydet"
 msgid "Save the form you're editing"
 msgstr "Düzenlemekte olduğunuz formu kaydet"
 
+msgid "Save Trial Balance"
+msgstr ""
+
 msgid "Save view"
 msgstr "Görünümü kaydet"
 
@@ -18751,6 +18905,12 @@ msgstr "Muhasebe işlemini görmek için sözleşmenin başlangıç tarihini aya
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Çalışmayı durdurduğunuz zamanı ayarlayın veya hala çalışıyor olduğunuzu onaylayın."
+
+msgid "Set these account defaults to an active account."
+msgstr ""
+
+msgid "Set Up Accounting"
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Doğrulayıcı uygulamayı ayarla"
@@ -19865,6 +20025,9 @@ msgstr "Öneri Bildirimleri"
 msgid "Suggestions"
 msgstr "Öneriler"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Pazar"
 
@@ -20507,6 +20670,9 @@ msgstr "Operatörlerin işi tamamlandı olarak işaretlemek için taradığı ka
 msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 msgstr "Bir bankayı uluslararası olarak tanımlayan kod, 8 veya 11 karakter. Sınırlar arası bir ödeme bunu olmadan yönlendirilmeyecek, ancak yurtiçi havale genellikle yerel yönlendirme kodu yerine hareket eder."
 
+msgid "The company already has a posted opening balance journal."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"
 
@@ -20524,6 +20690,12 @@ msgstr "Taşeronun beklenen haftalık kullanılabilirliği; planlama bu taşeron
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Bu lot/seri numarası için düzeltilmiş son kullanma tarihi; mevcut eldeki stok, değişiklikten sonra raf ömrü politikasına göre yeniden değerlendirilir."
+
+msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr ""
+
+msgid "The CSV was not imported"
+msgstr ""
 
 msgid "The currencies you trade in and their rates"
 msgstr "Ticaret yaptığınız para birimleri ve bunların oranları"
@@ -20561,6 +20733,9 @@ msgstr "En hızlı canlı yayına geçen müşteriler bunları iyi bilirler. Tam
 
 msgid "The customers you sell and ship to"
 msgstr "Sattığınız ve sevk ettiğiniz müşteriler"
+
+msgid "The cutover date is valid"
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Envanteri aşağısına düşmesini istemediğiniz kesikli eşik."
@@ -20627,6 +20802,9 @@ msgstr "Sekiz disiplin kalite yöntemi, uygunsuzluk iş akışının görevleriy
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "Bu maliyet merkezi için sorumlu çalışan — satın alma siparişi onayları açık olduğunda, ona karşı kaydedilen harcamaların onaylayanı olur."
+
+msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
+msgstr ""
 
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "Müşteriye fiyat teklifi vermekten ödeme tahsilatına kadar uçtan uca ticari akış: RFQ'den fiyat teklifine satış siparişine, ardından sevkiyat, fatura ve ödenen ödemeye."
@@ -20918,6 +21096,10 @@ msgstr "Onshape bağlantısının süresi doldu"
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government bağlantısının süresi doldu"
 
+#. placeholder {0}: formatDate( parseDate(cutoverDate).subtract({ days: 1 }).toString() )
+msgid "The opening balances are as of the end of {0}."
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "Parçalarınızın geçtiği operasyonlar ve adımlar"
 
@@ -21138,6 +21320,9 @@ msgstr "Bu makbuzun nakledildiği spesifik PO, iade veya transfer; kullanılabil
 msgid "The specific SO, transfer, or RMA this shipment posts against; available IDs depend on the source document type above."
 msgstr "Bu sevkiyatın nakledildiği spesifik SO, transfer veya RMA; kullanılabilir kimlikler yukarıdaki kaynak belge türüne bağlıdır."
 
+msgid "The standard cost of the item."
+msgstr ""
+
 msgid "The standard dimensions your materials are stocked in"
 msgstr "Malzemelerinizin stoklandığı standart boyutlar"
 
@@ -21282,6 +21467,9 @@ msgstr "IRS mülkiyet sınıfı tabloları ile ABD vergi amortisman sistemi, kit
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Bu gruptaki kullanıcılar; grup kapsamlı izinler ve bildirimler her üyeye uygulanır ve kullanıcılar birden çok gruba ait olabilir (etkili izinler birleşimdir)."
 
+msgid "The value of the cost layers dated before the cutover."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "Yeni belgenin versiyonu"
 
@@ -21409,6 +21597,9 @@ msgstr "Bu yedek henüz kontrol edilmedi. Herhangi bir fark, geri yükleme çal�
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Bu daha sonra değiştirilemez — {integrationName} yalnızca bir bağlı muhasebe sistemine izin verir, bu nedenle seçim Carbon'un ne yapmasına izin verildiğini belirler. Geçiş yapmak için kaldırıp yeniden bağlanmanız gerekir."
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Bu Carbon örneğinde Onshape OAuth kimlik bilgileri eksik. Bir yöneticiden bunları ayarlamasını isteyin."
@@ -21971,6 +22162,10 @@ msgstr "Konu"
 msgid "Total"
 msgstr "Toplam"
 
+#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
+msgid "Total (out of balance by {0})"
+msgstr ""
+
 #. placeholder {0}: total.className
 msgid "Total {0}"
 msgstr "Toplam {0}"
@@ -22200,6 +22395,9 @@ msgstr "Geçiş ve Kurum"
 msgid "Trash"
 msgstr "Çöp Kutusu"
 
+msgid "Trial balance"
+msgstr ""
+
 msgid "Trial Balance"
 msgstr "Mizan"
 
@@ -22256,6 +22454,10 @@ msgstr "Tür"
 
 msgid "Type '{' for a variable"
 msgstr "Bir değişken için '{' yazın"
+
+#. placeholder {0}: company.name
+msgid "Type {0} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Bir değişken eklemek için {TRIGGER} yazın"
@@ -22370,6 +22572,10 @@ msgstr "Adet İşlemleri"
 
 msgid "Unit Cost"
 msgstr "Birim Maliyeti"
+
+#. placeholder {0}: item.readableId
+msgid "Unit cost for {0}"
+msgstr ""
 
 msgid "Unit Inputs"
 msgstr "Adet Girişleri"

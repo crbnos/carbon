@@ -35,6 +35,10 @@ export default function AccountingBetaGate() {
   const location = useLocation();
   const requestSuggestion = useUIStore((state) => state.requestSuggestion);
 
+  // The enable wizard is how a company turns accounting on, so it is never
+  // behind the gate.
+  if (location.pathname.startsWith(path.to.accountingActivation)) return null;
+
   const accountingEnabled = (settings as any).accountingEnabled ?? false;
   if (accountingEnabled) return null;
 

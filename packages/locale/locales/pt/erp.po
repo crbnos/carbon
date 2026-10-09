@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" está feito — todos os {0} itens do seu Mapa de Setup e
 msgid "(excluded for this customer)"
 msgstr "(excluído para este cliente)"
 
+msgid "(inactive account)"
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(Inativo)"
 
@@ -110,6 +113,10 @@ msgstr "{0} já iniciado"
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} ativos para depreciar · {amount}"
+
+#. placeholder {0}: check.count
+msgid "{0} blocking records"
+msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -615,6 +622,9 @@ msgstr "1 ativo para depreciar · {amount}"
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 operação agrupável não está em um lote de produção — ela é executada individualmente até ser agrupada"
 
+msgid "1 blocking record"
+msgstr ""
+
 msgid "1 can't be scheduled"
 msgstr "1 não pode ser programada"
 
@@ -1107,6 +1117,9 @@ msgstr "Um ID de Cliente legível aparece em listas, formulários e menus suspen
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
 msgstr "Um ID de Fornecedor legível aparece em listas, formulários e menus suspensos."
 
+msgid "A readiness check fails. <0>Go to Readiness</0>"
+msgstr ""
+
 msgid "A receipt is created"
 msgstr "Um recebimento é criado"
 
@@ -1468,6 +1481,9 @@ msgstr "Período contábil"
 msgid "Accounting Periods"
 msgstr "Períodos Contábeis"
 
+msgid "Accounting setup"
+msgstr ""
+
 msgid "Accounting Treatment"
 msgstr "Tratamento Contábil"
 
@@ -1521,6 +1537,10 @@ msgstr "Depreciação acumulada (abertura)"
 
 msgid "Accumulated Depreciation Account"
 msgstr "Conta de depreciação acumulada"
+
+#. placeholder {0}: asset.fixedAssetId
+msgid "Accumulated depreciation for {0}"
+msgstr ""
 
 msgid "Accumulated Depreciation on Disposal"
 msgstr "Depreciação acumulada em Baixa"
@@ -2362,6 +2382,10 @@ msgstr "E"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "E {0} mais — resolva estes para ver o resto."
+
+#. placeholder {0}: check.count - check.items.length
+msgid "And {0} more. Resolve these to see the rest."
+msgstr ""
 
 msgid "and {hidden} more"
 msgstr "e {hidden} mais"
@@ -4158,8 +4182,17 @@ msgstr "Logótipo do Carbon"
 msgid "Carbon only"
 msgstr "Apenas Carbon"
 
+msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
+msgstr ""
+
 msgid "Carbon Posted"
 msgstr "Enviado para o Carbon"
+
+msgid "Carbon posts every document dated on or after this day. Choose the first day of the current period or of one of the 3 periods before it."
+msgstr ""
+
+msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Valor Carbon"
@@ -4374,6 +4407,9 @@ msgstr "Plano de Contas"
 
 msgid "Chat"
 msgstr "Chat"
+
+msgid "Check"
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Verifique as operações à esquerda para construir o lote."
@@ -4722,6 +4758,10 @@ msgstr "Concluir todas as quantidades ao escanear a conclusão do kanban"
 
 msgid "Complete Job"
 msgstr "Concluir Trabalho"
+
+#. placeholder {0}: check.count
+msgid "Complete or cancel the {0} job(s) created before Carbon recorded their costs."
+msgstr ""
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Conclua os seriais/lotes no MES antes de concluir esta ordem de produção, ou marque cada operação como concluída para concluí-la automaticamente."
@@ -5136,6 +5176,12 @@ msgstr "Terceirizado"
 
 msgid "Contractors"
 msgstr "Terceirizados"
+
+msgid "Control"
+msgstr ""
+
+msgid "Control Account"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Controlar alterações de design com revisões / ECOs"
@@ -5939,6 +5985,10 @@ msgstr "Os valores de crédito estão na moeda base da empresa ({currency}). Os 
 msgid "Credit applied"
 msgstr "Crédito aplicado"
 
+#. placeholder {0}: account.name
+msgid "Credit for {0}"
+msgstr ""
+
 msgid "Credit Memo"
 msgstr "Nota de crédito"
 
@@ -6228,6 +6278,12 @@ msgstr "Migre, congele o sistema antigo e confirme que você está ativo no Carb
 msgid "Cutover checklist"
 msgstr "Lista de verificação de transição"
 
+msgid "Cutover date"
+msgstr ""
+
+msgid "Cutover Date"
+msgstr ""
+
 msgid "Cutover step"
 msgstr "Etapa de transição"
 
@@ -6404,6 +6460,10 @@ msgstr "Débito ({0})"
 
 msgid "Debit Account"
 msgstr "Conta contábil de débito"
+
+#. placeholder {0}: account.name
+msgid "Debit for {0}"
+msgstr ""
 
 msgid "Debit Memo"
 msgstr "Memorando de Débito"
@@ -7132,6 +7192,9 @@ msgstr "Detectado pelo planejador de movimento"
 
 msgid "Developer"
 msgstr "Desenvolvedor"
+
+msgid "Difference"
+msgstr ""
 
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "Difere da seleção — permitido, mas confirme que se encaixam"
@@ -8144,6 +8207,15 @@ msgstr "Lista vazia"
 msgid "Empty work centers"
 msgstr "Centros de trabalho vazios"
 
+msgid "Enable"
+msgstr ""
+
+msgid "Enable accounting"
+msgstr ""
+
+msgid "Enable Accounting"
+msgstr ""
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Ative o registro de auditoria nas configurações para começar a rastrear alterações nos seus dados."
 
@@ -8349,6 +8421,9 @@ msgstr "Introduza o código de 6 dígitos da sua aplicação autenticadora para 
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Insira a URL do Onshape, o ID do cliente e o segredo do cliente de seu aplicativo OAuth privado e depois salve."
 
+msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
+msgstr ""
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Insira a quantidade que esse movimento deveria ter sido. Um movimento oposto para a diferença é lançado ao lado do original, no período de tempo do original."
 
@@ -8408,6 +8483,9 @@ msgstr "Conta de patrimônio líquido para lucros ou perdas acumulados"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Conta de patrimônio líquido para ajustes de conversão de moeda (CTA)"
+
+msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
+msgstr ""
 
 msgid "Error"
 msgstr "Erro"
@@ -8522,6 +8600,12 @@ msgstr "Eventos"
 
 msgid "Every 3 hours"
 msgstr "A cada 3 horas"
+
+msgid "Every account default is set"
+msgstr ""
+
+msgid "Every check must pass before accounting can be enabled."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Todos os registros da empresa. Credenciais, tokens de integração e webhooks nunca são incluídos."
@@ -9150,6 +9234,9 @@ msgstr "Falha ao salvar slides"
 msgid "Failed to save the change"
 msgstr "Falha ao salvar a alteração"
 
+msgid "Failed to save the cost"
+msgstr ""
+
 msgid "Failed to save tools"
 msgstr "Falha ao salvar ferramentas"
 
@@ -9227,6 +9314,9 @@ msgstr "Falha ao enviar arquivo de miniatura"
 
 msgid "Failed to upload: {reason}"
 msgstr "Falha ao enviar arquivo: {reason}"
+
+msgid "Failing"
+msgstr ""
 
 msgid "Failure"
 msgstr "Falha"
@@ -9401,6 +9491,9 @@ msgstr "Ano fiscal"
 msgid "Fiscal Year"
 msgstr "Ano Fiscal"
 
+msgid "Fiscal year and base currency are set"
+msgstr ""
+
 msgid "Fiscal Year Settings"
 msgstr "Configurações do Ano Fiscal"
 
@@ -9436,6 +9529,9 @@ msgstr "Classe de ativo"
 
 msgid "Fixed Asset Class"
 msgstr "Classe de Ativo Fixo"
+
+msgid "Fixed assets"
+msgstr ""
 
 msgid "Fixed Assets"
 msgstr "Ativos Fixos"
@@ -10374,6 +10470,9 @@ msgstr "Líder de Implementação"
 msgid "Import {label} CSV"
 msgstr "Importar {label} CSV"
 
+msgid "Import CSV"
+msgstr ""
+
 msgid "Import results"
 msgstr "Resultados da Importação"
 
@@ -10729,6 +10828,9 @@ msgstr "inventário"
 
 msgid "Inventory"
 msgstr "Inventário"
+
+msgid "Inventory Account"
+msgstr ""
 
 msgid "Inventory accuracy"
 msgstr "Precisão do inventário"
@@ -12354,6 +12456,12 @@ msgstr "Migrar dados"
 msgid "Migrating from another system?"
 msgstr "Migrando de outro sistema?"
 
+msgid "Migration Clearing"
+msgstr ""
+
+msgid "Migration Clearing must total zero. <0>Go to Trial balance</0>"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "mín. {minimumBatchQuantity} — atendido"
 
@@ -13263,6 +13371,9 @@ msgstr "Nenhum componente ainda"
 msgid "No condition may match"
 msgstr "Nenhuma condição pode corresponder"
 
+msgid "No control account has a balance at the cutover."
+msgstr ""
+
 msgid "No conversion is required"
 msgstr "Nenhuma conversão é necessária"
 
@@ -13298,6 +13409,9 @@ msgstr "Nenhum anexo padrão ainda."
 
 msgid "No deposit has been received for this agreement."
 msgstr "Nenhum depósito foi recebido para este acordo."
+
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "Nenhum slot de dimensão configurado"
@@ -13371,6 +13485,9 @@ msgstr "Nenhum arquivo para este item."
 msgid "No files uploaded"
 msgstr "Nenhum arquivo enviado"
 
+msgid "No fixed asset was acquired before the cutover date."
+msgstr ""
+
 msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
 msgstr "Nenhuma unidade de frota disponível. Uma unidade entra na frota quando um item serializado é capitalizado do inventário ou construído para a frota, na página <0>Frota</0>."
 
@@ -13409,6 +13526,9 @@ msgstr "Nenhum tipo de problema configurado"
 
 msgid "No issues yet"
 msgstr "Sem problemas ainda"
+
+msgid "No item has stock on hand at the cutover date."
+msgstr ""
 
 msgid "No items"
 msgstr "Nenhum item"
@@ -13488,6 +13608,9 @@ msgstr "Nenhuma ordem de produção aberta para Pedidos de venda está prevista 
 msgid "No open jobs for sales orders at this location."
 msgstr "Nenhuma ordem de produção aberta para Pedidos de venda neste Local."
 
+msgid "No open jobs from before Carbon recorded their costs"
+msgstr ""
+
 msgid "No open lines. Add a service to amend."
 msgstr "Nenhuma linha aberta. Adicione um serviço para alterar."
 
@@ -13566,6 +13689,9 @@ msgstr "Sem dados de planejamento"
 
 msgid "No posted journals in this period for this account"
 msgstr "Nenhum diário lançado neste período para esta conta"
+
+msgid "No posted opening balance"
+msgstr ""
 
 msgid "No pricing for selected quantity"
 msgstr "Nenhuma precificação para a quantidade selecionada"
@@ -13743,6 +13869,9 @@ msgstr "Nenhuma conta não mapeada corresponde a um código de provedor"
 
 msgid "No unmapped values match a provider option name"
 msgstr "Nenhum valor não mapeado corresponde a um nome de opção de provedor"
+
+msgid "No unposted documents dated before the cutover"
+msgstr ""
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Nenhuma operação não iniciada e não em lote neste processo neste local."
@@ -14010,6 +14139,9 @@ msgstr "Ativado"
 msgid "On {sentDate}"
 msgstr "Ligado"
 
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
+msgstr ""
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "No dia de cutover, trabalhe a lista de verificação abaixo em ordem. Os testes de aceitação vêm dos seus requisitos no escopo. Os detalhes de suporte estão na parte inferior."
 
@@ -14258,6 +14390,9 @@ msgstr "Abrir no MES"
 msgid "Open Issues"
 msgstr "Problemas Abertos"
 
+msgid "Open items"
+msgstr ""
+
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Demanda aberta de ordem de produção mais transferências pendentes deste compartimento"
 
@@ -14315,6 +14450,9 @@ msgstr "Abrir Sub-Conjunto"
 msgid "Open task details"
 msgstr "Abrir detalhes da tarefa"
 
+msgid "Open the books at a cutover date. Enabling accounting is one-way."
+msgstr ""
+
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Abra a integração Onshape Government e salve suas configurações para conectar novamente."
 
@@ -14357,6 +14495,12 @@ msgstr "Saldo de abertura da depreciação já contabilizada antes de este ativo
 
 msgid "Opening Balances"
 msgstr "Saldos Iniciais"
+
+msgid "Opening balances as of"
+msgstr ""
+
+msgid "Opening Value"
+msgstr ""
 
 msgid "Operating Expenses"
 msgstr "Despesas Operacionais"
@@ -15371,6 +15515,10 @@ msgstr "Registar entradas de diário com códigos de conta e descrição apropri
 msgid "Post opening balances"
 msgstr "Contabilizar saldos iniciais"
 
+#. placeholder {0}: check.count
+msgid "Post or delete the {0} document(s) dated before the cutover."
+msgstr ""
+
 msgid "Post Receipt"
 msgstr "Lançar Recebimento"
 
@@ -16363,6 +16511,9 @@ msgstr "ID legível"
 
 msgid "Readable id with revision"
 msgstr "ID legível com revisão"
+
+msgid "Readiness"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Lendo o documento..."
@@ -18018,6 +18169,9 @@ msgstr "Salvar taxa"
 msgid "Save the form you're editing"
 msgstr "Salvar o formulário que você está editando"
 
+msgid "Save Trial Balance"
+msgstr ""
+
 msgid "Save view"
 msgstr "Salvar visualização"
 
@@ -18751,6 +18905,12 @@ msgstr "Defina a data de início do acordo para ver o tratamento contábil."
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Defina a hora em que você parou de trabalhar ou reconheça que ainda está trabalhando."
+
+msgid "Set these account defaults to an active account."
+msgstr ""
+
+msgid "Set Up Accounting"
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Configurar aplicativo autenticador"
@@ -19865,6 +20025,9 @@ msgstr "Notificações de Sugestões"
 msgid "Suggestions"
 msgstr "Sugestões"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Domingo"
 
@@ -20507,6 +20670,9 @@ msgstr "O código impresso no cartão kanban que os operadores escaneiam para ma
 msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 msgstr "O código que identifica um banco internacionalmente, com 8 ou 11 caracteres. Um pagamento transfronteiriço não será roteado sem ele, enquanto uma transferência doméstica geralmente usa o código de roteamento local em vez disso."
 
+msgid "The company already has a posted opening balance journal."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "O contrato não pode ser cancelado então"
 
@@ -20524,6 +20690,12 @@ msgstr "A disponibilidade semanal esperada do terceirizado; o agendamento usa is
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "A data de validade corrigida para este lote/número de série; o estoque existente em mãos é reavaliado em relação à política de vida útil após a alteração."
+
+msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr ""
+
+msgid "The CSV was not imported"
+msgstr ""
 
 msgid "The currencies you trade in and their rates"
 msgstr "As moedas em que você negocia e suas taxas"
@@ -20561,6 +20733,9 @@ msgstr "Os clientes que entram em produção mais rapidamente dominam bem esses 
 
 msgid "The customers you sell and ship to"
 msgstr "Os clientes para os quais você vende e envia"
+
+msgid "The cutover date is valid"
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "O limite tracejado abaixo do qual você não deseja que o inventário caia."
@@ -20627,6 +20802,9 @@ msgstr "O método de qualidade das oito disciplinas, modelado com as tarefas do 
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "O funcionário responsável por este centro de custo — quando as aprovações de pedidos de compra estão ativadas, é o aprovador para despesas registradas contra ele."
+
+msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
+msgstr ""
 
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "O fluxo comercial completo, desde orçar um cliente até cobrar o pagamento: RFQ para orçamento para pedido de venda, depois remessa, fatura e pagamento liquidado."
@@ -20918,6 +21096,10 @@ msgstr "A conexão do Onshape venceu"
 msgid "The Onshape Government connection expired"
 msgstr "A conexão do Onshape Government venceu"
 
+#. placeholder {0}: formatDate( parseDate(cutoverDate).subtract({ days: 1 }).toString() )
+msgid "The opening balances are as of the end of {0}."
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "As operações e etapas pelas quais suas peças passam"
 
@@ -21138,6 +21320,9 @@ msgstr "O PO, devolução ou transferência específica contra a qual esse receb
 msgid "The specific SO, transfer, or RMA this shipment posts against; available IDs depend on the source document type above."
 msgstr "O pedido de venda específico, transferência ou RMA em que esta remessa é contabilizada; os IDs disponíveis dependem do tipo de documento de origem acima."
 
+msgid "The standard cost of the item."
+msgstr ""
+
 msgid "The standard dimensions your materials are stocked in"
 msgstr "As dimensões padrão em que seus materiais são armazenados"
 
@@ -21282,6 +21467,9 @@ msgstr "O sistema de depreciação fiscal dos EUA com tabelas de classe de propr
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Os usuários neste grupo; permissões e notificações com escopo de grupo se aplicam a cada membro, e usuários podem pertencer a vários grupos (permissões efetivas são a união)."
 
+msgid "The value of the cost layers dated before the cutover."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "A versão do novo documento"
 
@@ -21409,6 +21597,9 @@ msgstr "Este backup ainda não foi verificado. As diferenças são encontradas q
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Isto não pode ser alterado depois — {integrationName} permite apenas um sistema contábil conectado, portanto a escolha decide o que o Carbon tem permissão para fazer. Para mudar, você desinstalaria e reconectaria."
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Esta instância do Carbon não tem credenciais OAuth do Onshape. Peça a um administrador para configurá-las."
@@ -21971,6 +22162,10 @@ msgstr "Tópico"
 msgid "Total"
 msgstr "Total"
 
+#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
+msgid "Total (out of balance by {0})"
+msgstr ""
+
 #. placeholder {0}: total.className
 msgid "Total {0}"
 msgstr "Total {0}"
@@ -22200,6 +22395,9 @@ msgstr "Trânsito e Instituição"
 msgid "Trash"
 msgstr "Lixo"
 
+msgid "Trial balance"
+msgstr ""
+
 msgid "Trial Balance"
 msgstr "Balancete"
 
@@ -22256,6 +22454,10 @@ msgstr "Tipo"
 
 msgid "Type '{' for a variable"
 msgstr "Digite '{' para uma variável"
+
+#. placeholder {0}: company.name
+msgid "Type {0} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Digite {TRIGGER} para inserir uma variável"
@@ -22370,6 +22572,10 @@ msgstr "Ações da unidade"
 
 msgid "Unit Cost"
 msgstr "Custo Unitário"
+
+#. placeholder {0}: item.readableId
+msgid "Unit cost for {0}"
+msgstr ""
 
 msgid "Unit Inputs"
 msgstr "Entradas de Unidade"

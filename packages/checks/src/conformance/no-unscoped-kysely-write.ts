@@ -23,8 +23,8 @@ import type { ConformanceCheck, Violation } from "../check";
  * The rule is deliberately blunt: scope the WRITE itself, even when the ids
  * were read under `companyId` a few lines up. A scoped read proves nothing
  * once the code is refactored so the ids come from somewhere else, and the
- * extra predicate costs nothing. The only exemption is `company`, whose `id`
- * IS the tenant.
+ * extra predicate costs nothing. The exemptions are `company` and
+ * `companySettings`, whose `id` IS the tenant.
  *
  * Scope: Node code that holds the superuser `db` — the ERP's modules and
  * routes, the MES app, `packages/jobs` and `packages/server-functions`. The
@@ -57,7 +57,7 @@ const SCOPED_PREFIXES = [
 ];
 
 /** Tables whose own `id` is the tenant key, or that are keyed by user alone. */
-const EXEMPT_TABLES = new Set(["company", "userPermission"]);
+const EXEMPT_TABLES = new Set(["company", "companySettings", "userPermission"]);
 
 const WRITE = /\.(updateTable|deleteFrom)\s*\(/g;
 const COMPANY_PREDICATE =

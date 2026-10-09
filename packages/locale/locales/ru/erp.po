@@ -48,6 +48,9 @@ msgstr "«{taskName}» готово — все {0} позиций графика
 msgid "(excluded for this customer)"
 msgstr "(исключено для этого покупателя)"
 
+msgid "(inactive account)"
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(Неактивный)"
 
@@ -110,6 +113,10 @@ msgstr "{0} уже начата"
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} активов к амортизации · {amount}"
+
+#. placeholder {0}: check.count
+msgid "{0} blocking records"
+msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -615,6 +622,9 @@ msgstr "1 актив к амортизации · {amount}"
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 группируемая операция не входит в серию — она выполняется отдельно до группировки"
 
+msgid "1 blocking record"
+msgstr ""
+
 msgid "1 can't be scheduled"
 msgstr "1 не может быть спланировано"
 
@@ -1107,6 +1117,9 @@ msgstr "Читаемый идентификатор покупателя ото�
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
 msgstr "Читаемый идентификатор поставщика отображается в списках, формах и раскрывающихся списках."
 
+msgid "A readiness check fails. <0>Go to Readiness</0>"
+msgstr ""
+
 msgid "A receipt is created"
 msgstr "Квитанция создана"
 
@@ -1468,6 +1481,9 @@ msgstr "Учетный период"
 msgid "Accounting Periods"
 msgstr "Учетные периоды"
 
+msgid "Accounting setup"
+msgstr ""
+
 msgid "Accounting Treatment"
 msgstr "Способ учета"
 
@@ -1521,6 +1537,10 @@ msgstr "Накопленная амортизация (открытие)"
 
 msgid "Accumulated Depreciation Account"
 msgstr "Счет накопленной амортизации"
+
+#. placeholder {0}: asset.fixedAssetId
+msgid "Accumulated depreciation for {0}"
+msgstr ""
 
 msgid "Accumulated Depreciation on Disposal"
 msgstr "Накопленная амортизация при выбытии"
@@ -2362,6 +2382,10 @@ msgstr "И"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "И {0} ещё — разрешите эти, чтобы увидеть остальное."
+
+#. placeholder {0}: check.count - check.items.length
+msgid "And {0} more. Resolve these to see the rest."
+msgstr ""
 
 msgid "and {hidden} more"
 msgstr "и {hidden} еще"
@@ -4158,8 +4182,17 @@ msgstr "Логотип Carbon"
 msgid "Carbon only"
 msgstr "Только Carbon"
 
+msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
+msgstr ""
+
 msgid "Carbon Posted"
 msgstr "Carbon проведен"
+
+msgid "Carbon posts every document dated on or after this day. Choose the first day of the current period or of one of the 3 periods before it."
+msgstr ""
+
+msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Значение Carbon"
@@ -4374,6 +4407,9 @@ msgstr "План счетов"
 
 msgid "Chat"
 msgstr "Чат"
+
+msgid "Check"
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
@@ -4722,6 +4758,10 @@ msgstr "Завершить все количества при сканирова
 
 msgid "Complete Job"
 msgstr "Завершить работу"
+
+#. placeholder {0}: check.count
+msgid "Complete or cancel the {0} job(s) created before Carbon recorded their costs."
+msgstr ""
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Завершите серийные номера/партии в MES перед завершением этого производственного заказа или отметьте каждую операцию как выполненную, чтобы он завершился автоматически."
@@ -5136,6 +5176,12 @@ msgstr "Подрядчик"
 
 msgid "Contractors"
 msgstr "Подрядчики"
+
+msgid "Control"
+msgstr ""
+
+msgid "Control Account"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Управление изменениями конструкции с помощью ревизий и ECO"
@@ -5939,6 +5985,10 @@ msgstr "Суммы зачётов указаны в базовой валюте 
 msgid "Credit applied"
 msgstr "Кредит применен"
 
+#. placeholder {0}: account.name
+msgid "Credit for {0}"
+msgstr ""
+
 msgid "Credit Memo"
 msgstr "Кредит-нота"
 
@@ -6228,6 +6278,12 @@ msgstr "Переключитесь, заморозьте старую систе
 msgid "Cutover checklist"
 msgstr "Контрольный список переключения"
 
+msgid "Cutover date"
+msgstr ""
+
+msgid "Cutover Date"
+msgstr ""
+
 msgid "Cutover step"
 msgstr "Шаг перехода"
 
@@ -6404,6 +6460,10 @@ msgstr "Дебет ({0})"
 
 msgid "Debit Account"
 msgstr "Счет дебета"
+
+#. placeholder {0}: account.name
+msgid "Debit for {0}"
+msgstr ""
 
 msgid "Debit Memo"
 msgstr "Дебет-нота"
@@ -7132,6 +7192,9 @@ msgstr "Обнаружено планировщиком движения"
 
 msgid "Developer"
 msgstr "Разработчик"
+
+msgid "Difference"
+msgstr ""
 
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "Отличается от выбора — допустимо, но убедитесь в их совместимости"
@@ -8144,6 +8207,15 @@ msgstr "Пустой список"
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
 
+msgid "Enable"
+msgstr ""
+
+msgid "Enable accounting"
+msgstr ""
+
+msgid "Enable Accounting"
+msgstr ""
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Включите аудит в настройках, чтобы начать отслеживать изменения ваших данных."
 
@@ -8349,6 +8421,9 @@ msgstr "Введите 6-значный код из приложения-аут�
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "Введите URL Onshape, ID клиента и клиентский секрет вашего приватного OAuth приложения, затем сохраните."
 
+msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
+msgstr ""
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
 
@@ -8408,6 +8483,9 @@ msgstr "Счет собственного капитала для накопле
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Счет собственного капитала для корректировок пересчета валют (CTA)"
+
+msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
+msgstr ""
 
 msgid "Error"
 msgstr "Ошибка"
@@ -8522,6 +8600,12 @@ msgstr "События"
 
 msgid "Every 3 hours"
 msgstr "Каждые 3 часа"
+
+msgid "Every account default is set"
+msgstr ""
+
+msgid "Every check must pass before accounting can be enabled."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Все записи компании. Учётные данные, токены интеграций и вебхуки никогда не включаются."
@@ -9150,6 +9234,9 @@ msgstr "Ошибка при сохранении слайдов"
 msgid "Failed to save the change"
 msgstr "Не удалось сохранить изменение"
 
+msgid "Failed to save the cost"
+msgstr ""
+
 msgid "Failed to save tools"
 msgstr "Ошибка при сохранении инструментов"
 
@@ -9227,6 +9314,9 @@ msgstr "Не удалось загрузить миниатюру"
 
 msgid "Failed to upload: {reason}"
 msgstr "Ошибка загрузки: {reason}"
+
+msgid "Failing"
+msgstr ""
 
 msgid "Failure"
 msgstr "Сбой"
@@ -9401,6 +9491,9 @@ msgstr "Финансовый год"
 msgid "Fiscal Year"
 msgstr "Финансовый год"
 
+msgid "Fiscal year and base currency are set"
+msgstr ""
+
 msgid "Fiscal Year Settings"
 msgstr "Настройки финансового года"
 
@@ -9436,6 +9529,9 @@ msgstr "Класс основных средств"
 
 msgid "Fixed Asset Class"
 msgstr "Класс основных средств"
+
+msgid "Fixed assets"
+msgstr ""
 
 msgid "Fixed Assets"
 msgstr "Основные средства"
@@ -10374,6 +10470,9 @@ msgstr "Руководитель внедрения"
 msgid "Import {label} CSV"
 msgstr "Импортировать {label} CSV"
 
+msgid "Import CSV"
+msgstr ""
+
 msgid "Import results"
 msgstr "Импортировать результаты"
 
@@ -10729,6 +10828,9 @@ msgstr "инвентарь"
 
 msgid "Inventory"
 msgstr "Инвентарь"
+
+msgid "Inventory Account"
+msgstr ""
 
 msgid "Inventory accuracy"
 msgstr "Точность инвентаризации"
@@ -12354,6 +12456,12 @@ msgstr "Перенос данных"
 msgid "Migrating from another system?"
 msgstr "Миграция из другой системы?"
 
+msgid "Migration Clearing"
+msgstr ""
+
+msgid "Migration Clearing must total zero. <0>Go to Trial balance</0>"
+msgstr ""
+
 msgid "min {minimumBatchQuantity} — met"
 msgstr "мин {minimumBatchQuantity} — достигнуто"
 
@@ -13263,6 +13371,9 @@ msgstr "Компонентов еще нет"
 msgid "No condition may match"
 msgstr "Ни одно условие не должно совпадать"
 
+msgid "No control account has a balance at the cutover."
+msgstr ""
+
 msgid "No conversion is required"
 msgstr "Преобразование не требуется"
 
@@ -13298,6 +13409,9 @@ msgstr "Пока нет вложений по умолчанию."
 
 msgid "No deposit has been received for this agreement."
 msgstr "Авансовый платеж не получен по этому соглашению."
+
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "Слоты измерений не настроены"
@@ -13371,6 +13485,9 @@ msgstr "Нет файлов для этого элемента."
 msgid "No files uploaded"
 msgstr "Файлы не загружены"
 
+msgid "No fixed asset was acquired before the cutover date."
+msgstr ""
+
 msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
 msgstr "Нет доступных единиц в автопарке. Единица присоединяется к автопарку, когда сериализованная номенклатура капитализируется из запасов или производится для автопарка на странице <0>Автопарк</0>."
 
@@ -13409,6 +13526,9 @@ msgstr "Типы проблем не настроены"
 
 msgid "No issues yet"
 msgstr "Никаких проблем пока нет"
+
+msgid "No item has stock on hand at the cutover date."
+msgstr ""
 
 msgid "No items"
 msgstr "Нет позиций"
@@ -13488,6 +13608,9 @@ msgstr "На этой площадке не прогнозируется зав�
 msgid "No open jobs for sales orders at this location."
 msgstr "На этой площадке нет открытых производственных заказов по заказам покупателей."
 
+msgid "No open jobs from before Carbon recorded their costs"
+msgstr ""
+
 msgid "No open lines. Add a service to amend."
 msgstr "Нет открытых строк. Добавьте услугу, чтобы внести изменение."
 
@@ -13566,6 +13689,9 @@ msgstr "Нет данных планирования"
 
 msgid "No posted journals in this period for this account"
 msgstr "Нет проведенных операций в этом периоде по этому счету"
+
+msgid "No posted opening balance"
+msgstr ""
 
 msgid "No pricing for selected quantity"
 msgstr "Нет ценообразования для выбранного количества"
@@ -13743,6 +13869,9 @@ msgstr "Ни один несопоставленный счет не совпа�
 
 msgid "No unmapped values match a provider option name"
 msgstr "Никакие неотображенные значения не совпадают с названием параметра провайдера"
+
+msgid "No unposted documents dated before the cutover"
+msgstr ""
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "На этом процессе в этом месте нет неначатых, необработанных операций."
@@ -14010,6 +14139,9 @@ msgstr "Включено"
 msgid "On {sentDate}"
 msgstr "На {sentDate}"
 
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
+msgstr ""
+
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "В день переключения выполняйте контрольный список ниже по порядку. Тесты приемки основаны на ваших требованиях в области действия. Детали поддержки находятся внизу."
 
@@ -14258,6 +14390,9 @@ msgstr "Открыть в MES"
 msgid "Open Issues"
 msgstr "Открытые проблемы"
 
+msgid "Open items"
+msgstr ""
+
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Открытая потребность производственного заказа плюс неурегулированные перемещения из этой ячейки"
 
@@ -14315,6 +14450,9 @@ msgstr "Открытая подсборка"
 msgid "Open task details"
 msgstr "Открыть детали задачи"
 
+msgid "Open the books at a cutover date. Enabling accounting is one-way."
+msgstr ""
+
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Откройте интеграцию Onshape Government и сохраните ее настройки для повторного подключения."
 
@@ -14357,6 +14495,12 @@ msgstr "Начальный остаток амортизации, уже учт�
 
 msgid "Opening Balances"
 msgstr "Начальные остатки"
+
+msgid "Opening balances as of"
+msgstr ""
+
+msgid "Opening Value"
+msgstr ""
 
 msgid "Operating Expenses"
 msgstr "Операционные расходы"
@@ -15371,6 +15515,10 @@ msgstr "Проводите операции журнала с правильны
 msgid "Post opening balances"
 msgstr "Провести начальные остатки"
 
+#. placeholder {0}: check.count
+msgid "Post or delete the {0} document(s) dated before the cutover."
+msgstr ""
+
 msgid "Post Receipt"
 msgstr "Отправить квитанцию"
 
@@ -16363,6 +16511,9 @@ msgstr "Читаемый идентификатор"
 
 msgid "Readable id with revision"
 msgstr "читаемый идентификатор с ревизией"
+
+msgid "Readiness"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Чтение документа..."
@@ -18018,6 +18169,9 @@ msgstr "Сохранить курс"
 msgid "Save the form you're editing"
 msgstr "Сохранить редактируемую форму"
 
+msgid "Save Trial Balance"
+msgstr ""
+
 msgid "Save view"
 msgstr "Сохранить представление"
 
@@ -18751,6 +18905,12 @@ msgstr "Установите дату начала соглашения для �
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Установите время, когда вы перестали работать, или подтвердите, что вы еще работаете."
+
+msgid "Set these account defaults to an active account."
+msgstr ""
+
+msgid "Set Up Accounting"
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Установить приложение аутентификации"
@@ -19865,6 +20025,9 @@ msgstr "Уведомления о предложениях"
 msgid "Suggestions"
 msgstr "Предложения"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Воскресенье"
 
@@ -20507,6 +20670,9 @@ msgstr "Код, напечатанный на карточке канбана, �
 msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 msgstr "Код, идентифицирующий банк на международном уровне, 8 или 11 символов. Международный платеж не будет маршрутизирован без него, тогда как внутренний денежный перевод обычно проходит по местному маршрутному коду."
 
+msgid "The company already has a posted opening balance journal."
+msgstr ""
+
 msgid "The contract cannot be cancelled then"
 msgstr "Контракт не может быть отменен тогда"
 
@@ -20524,6 +20690,12 @@ msgstr "Ожидаемая еженедельная доступность по�
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Исправленная дата истечения для этой партии/серийного номера; существующие запасы переоцениваются в соответствии с политикой полезной жизни после изменения."
+
+msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr ""
+
+msgid "The CSV was not imported"
+msgstr ""
 
 msgid "The currencies you trade in and their rates"
 msgstr "Валюты, в которых вы торгуете, и их курсы"
@@ -20561,6 +20733,9 @@ msgstr "Покупатели, которые быстрее других вне�
 
 msgid "The customers you sell and ship to"
 msgstr "Покупатели, которым вы продаете и отправляете товары"
+
+msgid "The cutover date is valid"
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Пунктирный порог, ниже которого вы не хотите, чтобы опускался инвентарь."
@@ -20627,6 +20802,9 @@ msgstr "Метод качества восьми дисциплин, модел�
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "Сотрудник, ответственный за этот центр затрат — когда утверждения заказов поставщику включены, они являются утверждающим лицом для расходов, проведенных по нему."
+
+msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
+msgstr ""
 
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "Полный коммерческий цикл от предложения покупателю до получения платежа: запрос цен, коммерческое предложение, заказ покупателя, затем отгрузка, счет-фактура и полученный платеж."
@@ -20918,6 +21096,10 @@ msgstr "Подключение Onshape истекло"
 msgid "The Onshape Government connection expired"
 msgstr "Срок действия подключения Onshape Government истек"
 
+#. placeholder {0}: formatDate( parseDate(cutoverDate).subtract({ days: 1 }).toString() )
+msgid "The opening balances are as of the end of {0}."
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "Операции и шаги, через которые переходят ваши детали"
 
@@ -21138,6 +21320,9 @@ msgstr "Конкретный закупочный заказ, возврат и�
 msgid "The specific SO, transfer, or RMA this shipment posts against; available IDs depend on the source document type above."
 msgstr "Конкретный заказ на продажу, перемещение или RMA, по которому провести отгрузку; доступные ID зависят от типа документа-основания выше."
 
+msgid "The standard cost of the item."
+msgstr ""
+
 msgid "The standard dimensions your materials are stocked in"
 msgstr "Стандартные измерения, в которых хранятся ваши материалы."
 
@@ -21282,6 +21467,9 @@ msgstr "Американская система налоговой аморти�
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "Пользователи в этой группе; права доступа и уведомления уровня группы применяются к каждому члену, и пользователи могут принадлежать к нескольким группам (эффективные права доступа — объединение)."
 
+msgid "The value of the cost layers dated before the cutover."
+msgstr ""
+
 msgid "The version of the new document"
 msgstr "Версия нового документа"
 
@@ -21409,6 +21597,9 @@ msgstr "Эта резервная копия еще не была провере
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Это нельзя изменить позже — {integrationName} позволяет подключить только одну систему учета, поэтому выбор определяет, что Carbon может делать. Чтобы переключиться, вам нужно удалить и переподключить интеграцию."
+
+msgid "This cannot be undone."
+msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "В этом экземпляре Carbon отсутствуют учётные данные OAuth для Onshape. Попросите администратора настроить их."
@@ -21971,6 +22162,10 @@ msgstr "Тема"
 msgid "Total"
 msgstr "Итого"
 
+#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
+msgid "Total (out of balance by {0})"
+msgstr ""
+
 #. placeholder {0}: total.className
 msgid "Total {0}"
 msgstr "Итого {0}"
@@ -22200,6 +22395,9 @@ msgstr "Транзит и учреждение"
 msgid "Trash"
 msgstr "Корзина"
 
+msgid "Trial balance"
+msgstr ""
+
 msgid "Trial Balance"
 msgstr "Сальдовая ведомость"
 
@@ -22256,6 +22454,10 @@ msgstr "Тип"
 
 msgid "Type '{' for a variable"
 msgstr "Введите '{' для переменной"
+
+#. placeholder {0}: company.name
+msgid "Type {0} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Введите {TRIGGER} для вставки переменной"
@@ -22370,6 +22572,10 @@ msgstr "Действия с единицей"
 
 msgid "Unit Cost"
 msgstr "Себестоимость за единицу"
+
+#. placeholder {0}: item.readableId
+msgid "Unit cost for {0}"
+msgstr ""
 
 msgid "Unit Inputs"
 msgstr "Входные данные единицы"

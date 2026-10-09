@@ -6,6 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
+import { CUTOVER_MAX_PERIODS_BACK } from "@carbon/database/accounting-cutover-reads";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
@@ -20,6 +21,7 @@ import {
   round,
   toStoredAmount
 } from "@carbon/utils";
+import { parseDate, startOfMonth } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -59,6 +61,49 @@ export {
   saveOpeningTrialBalance,
   updateCutoverAccumulatedDepreciation
 } from "@carbon/database/accounting-cutover-reads";
+
+/** The search param that carries the enable wizard's cutover date. */
+export const ACTIVATION_CUTOVER_PARAM = "cutover";
+
+function isCalendarDateString(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The cutover date the enable wizard works against: the `cutover` search
+ * param, else the first day of the company's current period. Periods are
+ * calendar months, as `cutoverDateError` reads them. Also returns the earliest
+ * and the latest cutover date that rule allows, for the wizard's date picker.
+ */
+export async function getActivationCutover(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  request: Request
+): Promise<{
+  cutoverDate: string;
+  earliestCutoverDate: string;
+  latestCutoverDate: string;
+}> {
+  const timeZone = await getCompanyTimeZone(client, companyId);
+  const currentPeriodStart = startOfMonth(datetime.today(timeZone));
+  const param = new URL(request.url).searchParams.get(ACTIVATION_CUTOVER_PARAM);
+  return {
+    cutoverDate:
+      param && isCalendarDateString(param)
+        ? param
+        : currentPeriodStart.toString(),
+    earliestCutoverDate: currentPeriodStart
+      .subtract({ months: CUTOVER_MAX_PERIODS_BACK })
+      .toString(),
+    latestCutoverDate: currentPeriodStart.toString()
+  };
+}
 
 /** The company's business day, `YYYY-MM-DD`. */
 export async function getCompanyToday(

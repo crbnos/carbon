@@ -43,7 +43,7 @@ type CutoverArgs = { companyId: string; cutoverDate: string };
 /** How many blocking documents or jobs a readiness check lists. */
 const READINESS_ITEM_LIMIT = 25;
 /** How many periods before the current one the cutover date may be. */
-const MAX_PERIODS_BACK = 3;
+export const CUTOVER_MAX_PERIODS_BACK = 3;
 
 export const ACCOUNTING_ALREADY_SET_UP = "Accounting is already set up.";
 
@@ -351,8 +351,8 @@ export function cutoverDateError(
   const current = startOfMonth(now);
   const periodsBack =
     current.year * 12 + current.month - (date.year * 12 + date.month);
-  if (periodsBack > MAX_PERIODS_BACK) {
-    return `The cutover date can be at most ${MAX_PERIODS_BACK} periods before the current period.`;
+  if (periodsBack > CUTOVER_MAX_PERIODS_BACK) {
+    return `The cutover date can be at most ${CUTOVER_MAX_PERIODS_BACK} periods before the current period.`;
   }
   return null;
 }
