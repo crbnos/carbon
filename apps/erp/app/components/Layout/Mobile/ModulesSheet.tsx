@@ -43,31 +43,41 @@ export function ModulesSheet({
           </BottomSheetTitle>
         </BottomSheetHeader>
         <BottomSheetBody>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-            <ImplementationData>
-              {(data) => {
-                const item = getImplementationNavItem(data, i18n);
-                return item ? <ModuleCard module={item} /> : null;
-              }}
-            </ImplementationData>
-            {modules.map((module) => (
-              <ModuleCard key={module.key} module={module} />
-            ))}
-          </div>
-          {settingsModule ? (
-            <div className="mt-4 border-t border-border pt-2">
-              <PrefetchLink
-                to={settingsModule.to}
-                className={sheetRowClassName}
-              >
-                <SheetRowContent
-                  icon={<settingsModule.icon />}
-                  label={settingsModule.name}
-                  trailing="drill"
-                />
-              </PrefetchLink>
+          {/* A tap closes the sheet even when the module is the current page,
+              where navigating leaves the path (and so the sheet) unchanged. */}
+          <div
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest("a")) {
+                onOpenChange(false);
+              }
+            }}
+          >
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              <ImplementationData>
+                {(data) => {
+                  const item = getImplementationNavItem(data, i18n);
+                  return item ? <ModuleCard module={item} /> : null;
+                }}
+              </ImplementationData>
+              {modules.map((module) => (
+                <ModuleCard key={module.key} module={module} />
+              ))}
             </div>
-          ) : null}
+            {settingsModule ? (
+              <div className="mt-4 border-t border-border pt-2">
+                <PrefetchLink
+                  to={settingsModule.to}
+                  className={sheetRowClassName}
+                >
+                  <SheetRowContent
+                    icon={<settingsModule.icon />}
+                    label={settingsModule.name}
+                    trailing="drill"
+                  />
+                </PrefetchLink>
+              </div>
+            ) : null}
+          </div>
         </BottomSheetBody>
       </BottomSheetContent>
     </BottomSheet>

@@ -10,8 +10,9 @@ import { File, toast, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
-import { LuUpload } from "react-icons/lu";
+import { LuPlus, LuUpload } from "react-icons/lu";
 import { useSubmit } from "react-router";
+import { AppBarAction } from "~/components/New";
 import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -89,13 +90,25 @@ const DocumentCreateForm = () => {
     });
   };
 
+  // Phones: a "+" in the app bar, like New on every other list.
+  if (isPhone) {
+    return (
+      <AppBarAction>
+        <File
+          isIcon
+          variant="ghost"
+          size="lg"
+          aria-label={t`Upload`}
+          onChange={uploadFile}
+        >
+          <LuPlus className="size-6" />
+        </File>
+      </AppBarAction>
+    );
+  }
+
   return (
-    <File
-      leftIcon={<LuUpload />}
-      onChange={uploadFile}
-      // Phones: Upload is the list's one primary action.
-      variant={isPhone ? "primary" : undefined}
-    >
+    <File leftIcon={<LuUpload />} onChange={uploadFile}>
       <Trans>Upload</Trans>
     </File>
   );
