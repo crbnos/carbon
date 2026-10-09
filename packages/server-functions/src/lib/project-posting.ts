@@ -12,7 +12,13 @@
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { inOrder } from "@carbon/database/rows";
-import { datetime, round, type ServiceCoverage } from "@carbon/utils";
+import {
+  type CoverageChargeType,
+  datetime,
+  resolveCoverage,
+  round,
+  type ServiceCoverage
+} from "@carbon/utils";
 import { type Kysely, sql, type Transaction } from "kysely";
 
 export type ProjectCostTreatment =
@@ -375,6 +381,9 @@ export function buildProjectLedgerRow(args: {
   amount: number;
   journalLineId?: string | null;
   reversalOfId?: string | null;
+  /** A Service project's charge: who pays for it. */
+  coverage?: ServiceCoverage | null;
+  coverageReason?: string | null;
   createdBy: string;
 }): ProjectLedgerInsert {
   return {
@@ -399,6 +408,8 @@ export function buildProjectLedgerRow(args: {
     amount: round(args.amount),
     journalLineId: args.journalLineId ?? null,
     reversalOfId: args.reversalOfId ?? null,
+    coverage: args.coverage ?? null,
+    coverageReason: args.coverageReason ?? null,
     createdBy: args.createdBy
   };
 }
@@ -932,6 +943,8 @@ export async function reverseProjectLedgerRows(
         unitOfMeasureCode: row.unitOfMeasureCode,
         amount: -Number(row.amount),
         reversalOfId: row.id,
+        coverage: row.coverage,
+        coverageReason: row.coverageReason,
         createdBy: args.userId
       })
     );
@@ -946,6 +959,8 @@ export async function reverseProjectLedgerRows(
 export type ServicePostingContext = {
   serviceOrderId: string;
   orderType: Database["public"]["Enums"]["serviceOrderType"];
+  /** The order's customer (null for a Refurbishment), for the Customer dimension. */
+  customerId: string | null;
   customerContractId: string | null;
   customerAssetId: string | null;
   laborWarrantyEndDate: string | null;
@@ -959,15 +974,22 @@ export type ServicePostingContext = {
 };
 
 /**
- * The service order of a Service project, its asset's warranty, the node's
- * installed component and the service labor price, in at most 3 queries.
- * Null when no service order owns the project.
+ * The service context of every (project, element) ref, keyed by
+ * `projectPostingKey`, in at most 3 queries for any number of refs: the
+ * service orders with their asset's warranty, the service labor price, and the
+ * nodes' installed components. A ref whose project no service order owns has
+ * no entry.
  */
-export async function loadServicePostingContext(
+export async function loadServicePostingContexts(
   trx: Kysely<DB>,
-  args: { companyId: string; projectId: string; elementId: string | null }
-): Promise<ServicePostingContext | null> {
-  const [order, labor] = await inOrder([
+  companyId: string,
+  refs: { projectId: string; projectElementId: string | null }[]
+): Promise<Map<string, ServicePostingContext>> {
+  const contexts = new Map<string, ServicePostingContext>();
+  if (refs.length === 0) return contexts;
+  const projectIds = [...new Set(refs.map((ref) => ref.projectId))];
+
+  const [orders, labor] = await inOrder([
     () =>
       trx
         .selectFrom("serviceOrder")
@@ -978,15 +1000,17 @@ export async function loadServicePostingContext(
         )
         .select([
           "serviceOrder.id",
+          "serviceOrder.projectId",
           "serviceOrder.type",
+          "serviceOrder.customerId",
           "serviceOrder.customerContractId",
           "serviceOrder.customerAssetId",
           "customerAsset.laborWarrantyEndDate",
           "customerAsset.partsWarrantyEndDate"
         ])
-        .where("serviceOrder.projectId", "=", args.projectId)
-        .where("serviceOrder.companyId", "=", args.companyId)
-        .executeTakeFirst(),
+        .where("serviceOrder.projectId", "in", projectIds)
+        .where("serviceOrder.companyId", "=", companyId)
+        .execute(),
     () =>
       trx
         .selectFrom("companySettings")
@@ -1003,15 +1027,37 @@ export async function loadServicePostingContext(
           "companySettings.serviceLaborItemId",
           "itemUnitSalePrice.unitSalePrice"
         ])
-        .where("companySettings.id", "=", args.companyId)
+        .where("companySettings.id", "=", companyId)
         .executeTakeFirst()
   ]);
-  if (!order) return null;
+  if (orders.length === 0) return contexts;
+  const orderByProject = new Map(
+    orders.map((order) => [order.projectId, order])
+  );
 
-  // The node's serial, matched to the asset's open component in one query.
-  const component =
-    args.elementId && order.customerAssetId
-      ? await trx
+  // The nodes' serials, matched to their assets' open components in one query.
+  const elementIds = [
+    ...new Set(
+      refs
+        .filter(
+          (ref) =>
+            ref.projectElementId &&
+            orderByProject.get(ref.projectId)?.customerAssetId
+        )
+        .map((ref) => ref.projectElementId as string)
+    )
+  ];
+  const assetIds = [
+    ...new Set(
+      orders
+        .map((order) => order.customerAssetId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const components =
+    elementIds.length === 0 || assetIds.length === 0
+      ? []
+      : await trx
           .selectFrom("customerAssetComponent")
           .innerJoin("projectElement", (join) =>
             join
@@ -1028,39 +1074,86 @@ export async function loadServicePostingContext(
           )
           .select([
             "customerAssetComponent.id",
-            "customerAssetComponent.partsWarrantyEndDate"
-          ])
-          .where("projectElement.id", "=", args.elementId)
-          .where(
             "customerAssetComponent.customerAssetId",
-            "=",
-            order.customerAssetId
-          )
-          .where("customerAssetComponent.companyId", "=", args.companyId)
+            "customerAssetComponent.partsWarrantyEndDate",
+            "projectElement.id as elementId"
+          ])
+          .where("projectElement.id", "in", elementIds)
+          .where("customerAssetComponent.customerAssetId", "in", assetIds)
+          .where("customerAssetComponent.companyId", "=", companyId)
           .where("customerAssetComponent.removedDate", "is", null)
           .orderBy("customerAssetComponent.installedDate", "desc")
-          .executeTakeFirst()
-      : undefined;
+          .orderBy("customerAssetComponent.id")
+          .execute();
 
   const laborItemId = labor?.serviceLaborItemId ?? null;
-  return {
-    serviceOrderId: order.id,
-    orderType: order.type,
-    customerContractId: order.customerContractId,
-    customerAssetId: order.customerAssetId,
-    // DATE columns arrive as YYYY-MM-DD strings from node-postgres.
-    laborWarrantyEndDate: order.laborWarrantyEndDate ?? null,
-    partsWarrantyEndDate: order.partsWarrantyEndDate ?? null,
-    componentId: component?.id ?? null,
-    componentPartsWarrantyEndDate: component?.partsWarrantyEndDate ?? null,
-    laborItemId,
-    laborPrice:
-      laborItemId &&
-      labor?.unitSalePrice !== null &&
-      labor?.unitSalePrice !== undefined
-        ? Number(labor.unitSalePrice)
-        : null
-  };
+  const laborPrice =
+    laborItemId &&
+    labor?.unitSalePrice !== null &&
+    labor?.unitSalePrice !== undefined
+      ? Number(labor.unitSalePrice)
+      : null;
+
+  for (const ref of refs) {
+    const order = orderByProject.get(ref.projectId);
+    if (!order) continue;
+    // The latest open component of the node's serial in this order's asset.
+    const component = ref.projectElementId
+      ? components.find(
+          (row) =>
+            row.elementId === ref.projectElementId &&
+            row.customerAssetId === order.customerAssetId
+        )
+      : undefined;
+    contexts.set(projectPostingKey(ref.projectId, ref.projectElementId), {
+      serviceOrderId: order.id,
+      orderType: order.type,
+      customerId: order.customerId,
+      customerContractId: order.customerContractId,
+      customerAssetId: order.customerAssetId,
+      // DATE columns arrive as YYYY-MM-DD strings from node-postgres.
+      laborWarrantyEndDate: order.laborWarrantyEndDate ?? null,
+      partsWarrantyEndDate: order.partsWarrantyEndDate ?? null,
+      componentId: component?.id ?? null,
+      componentPartsWarrantyEndDate: component?.partsWarrantyEndDate ?? null,
+      laborItemId,
+      laborPrice
+    });
+  }
+  return contexts;
+}
+
+/**
+ * The service order of a Service project, its asset's warranty, the node's
+ * installed component and the service labor price, in at most 3 queries.
+ * Null when no service order owns the project.
+ */
+export async function loadServicePostingContext(
+  trx: Kysely<DB>,
+  args: { companyId: string; projectId: string; elementId: string | null }
+): Promise<ServicePostingContext | null> {
+  const ref = { projectId: args.projectId, projectElementId: args.elementId };
+  const contexts = await loadServicePostingContexts(trx, args.companyId, [ref]);
+  return (
+    contexts.get(projectPostingKey(ref.projectId, ref.projectElementId)) ?? null
+  );
+}
+
+/** The coverage of one charge on a service order (`resolveCoverage`). */
+export function serviceChargeCoverage(
+  service: ServicePostingContext,
+  chargeType: CoverageChargeType,
+  serviceDate: string
+): ServiceCoverage {
+  return resolveCoverage({
+    chargeType,
+    serviceDate,
+    orderType: service.orderType,
+    laborWarrantyEndDate: service.laborWarrantyEndDate,
+    partsWarrantyEndDate: service.partsWarrantyEndDate,
+    componentPartsWarrantyEndDate: service.componentPartsWarrantyEndDate,
+    hasCoverageContract: Boolean(service.customerContractId)
+  });
 }
 
 type ProjectBillableItemInsert =

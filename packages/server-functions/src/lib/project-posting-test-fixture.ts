@@ -838,6 +838,192 @@ export async function projectPostingFixture(
       });
       return { invoiceId, lineIds };
     },
+    /** Makes the fixture's project a Service project (By Coverage) owned by
+     *  a Field Visit service order on a customer asset: a customer, a
+     *  serialized item and its serial, the asset with its warranty end
+     *  dates, Warranty Expense (`warranty`) and Cost of Goods Sold (`cogs`)
+     *  defaults, and, with `laborPrice`, a service labor item at that price. */
+    async addServiceOrder(
+      key: string,
+      args: {
+        laborWarrantyEndDate?: string | null;
+        partsWarrantyEndDate?: string | null;
+        laborPrice?: number;
+      } = {}
+    ) {
+      const customerId = `${prefix}-customer-${key}`;
+      const locationId = `${prefix}-svc-location-${key}`;
+      const subjectItemId = `${prefix}-subject-${key}`;
+      const subjectSerialId = `${prefix}-serial-${key}`;
+      const customerAssetId = `${prefix}-asset-${key}`;
+      const serviceOrderId = `${prefix}-svc-${key}`;
+      const laborItemId = `${prefix}-labor-item-${key}`;
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("account")
+          .values(
+            (
+              [
+                ["warranty", "Warranty expense"],
+                ["cogs", "Cost of goods sold"]
+              ] as const
+            ).map(([name, label]) => ({
+              id: account(name),
+              name: label,
+              class: "Expense" as const,
+              incomeBalance: "Income Statement" as const,
+              companyGroupId: groupId,
+              createdBy: USER
+            }))
+          )
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+        await trx
+          .updateTable("accountDefault")
+          .set({
+            warrantyExpenseAccount: account("warranty"),
+            costOfGoodsSoldAccount: account("cogs")
+          })
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
+          .insertInto("dimension")
+          .values({
+            id: dimension("Customer"),
+            name: "Customer",
+            entityType: "Customer",
+            companyGroupId: groupId,
+            createdBy: USER
+          })
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+        await trx
+          .insertInto("customer")
+          .values({ id: customerId, name: `Customer ${key}`, companyId })
+          .execute();
+        await trx
+          .insertInto("location")
+          .values({
+            id: locationId,
+            name: `Service ${key}`,
+            addressLine1: "1 Main St",
+            city: "Springfield",
+            postalCode: "00000",
+            timezone: "America/New_York",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("item")
+          .values({
+            id: subjectItemId,
+            readableId: `${prefix}-SUBJ-${key}`,
+            name: `Machine ${key}`,
+            type: "Part",
+            itemTrackingType: "Serial",
+            replenishmentSystem: "Make",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("trackedEntity")
+          .values({
+            id: subjectSerialId,
+            readableId: `SN-${key}`,
+            itemId: subjectItemId,
+            quantity: 1,
+            status: "Consumed",
+            sourceDocument: "Item",
+            sourceDocumentId: subjectItemId,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("customerAsset")
+          .values({
+            id: customerAssetId,
+            trackedEntityId: subjectSerialId,
+            itemId: subjectItemId,
+            customerId,
+            laborWarrantyEndDate: args.laborWarrantyEndDate ?? null,
+            partsWarrantyEndDate: args.partsWarrantyEndDate ?? null,
+            source: "Manual",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .updateTable("project")
+          .set({ projectType: "Service", costTreatment: "By Coverage" })
+          .where("id", "=", projectId)
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
+          .insertInto("serviceOrder")
+          .values({
+            id: serviceOrderId,
+            serviceOrderId: `SVC-${key}`,
+            type: "Field Visit",
+            status: "In Progress",
+            trackedEntityId: subjectSerialId,
+            itemId: subjectItemId,
+            customerAssetId,
+            customerId,
+            locationId,
+            projectId,
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        if (args.laborPrice !== undefined) {
+          await trx
+            .insertInto("item")
+            .values({
+              id: laborItemId,
+              readableId: `${prefix}-LABOR-${key}`,
+              name: "Service labor",
+              type: "Service",
+              itemTrackingType: "Non-Inventory",
+              replenishmentSystem: "Buy",
+              companyId,
+              createdBy: USER
+            })
+            .execute();
+          await trx
+            .deleteFrom("itemUnitSalePrice")
+            .where("itemId", "=", laborItemId)
+            .execute();
+          await trx
+            .insertInto("itemUnitSalePrice")
+            .values({
+              itemId: laborItemId,
+              unitSalePrice: args.laborPrice,
+              currencyCode: "USD",
+              companyId,
+              createdBy: USER
+            })
+            .execute();
+          await trx
+            .updateTable("companySettings")
+            .set({ serviceLaborItemId: laborItemId })
+            .where("id", "=", companyId)
+            .execute();
+        }
+      });
+      return {
+        customerId,
+        locationId,
+        subjectItemId,
+        subjectSerialId,
+        customerAssetId,
+        serviceOrderId,
+        laborItemId: args.laborPrice !== undefined ? laborItemId : null
+      };
+    },
     async cleanup() {
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);

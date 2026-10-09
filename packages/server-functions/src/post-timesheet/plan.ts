@@ -8,7 +8,7 @@
 // Statistical project posts nothing: the entry is only stamped Posted.
 // Spec: .ai/specs/2026-10-03-projects.md (Charging: the five entry points).
 
-import { credit, debit, round } from "@carbon/utils";
+import { credit, debit, round, type ServiceCoverage } from "@carbon/utils";
 import {
   assertChargeable,
   ProjectChargeError,
@@ -27,6 +27,11 @@ export type TimesheetPostingEntry = {
   laborCategoryId: string;
   hours: number;
   reversalOfId: string | null;
+  /** A Service project's entry: who pays for it (decides the account). */
+  coverage?: ServiceCoverage | null;
+  coverageReason?: string | null;
+  /** A Service project's customer, for the Customer dimension. */
+  customerId?: string | null;
 };
 
 export type TimesheetLaborRate = {
@@ -52,6 +57,7 @@ export type TimesheetJournalLine = {
   projectId: string;
   projectElementId: string | null;
   employeeId: string;
+  customerId: string | null;
 };
 
 export type TimesheetLedgerRow = {
@@ -67,6 +73,8 @@ export type TimesheetLedgerRow = {
   /** The asset a Capitalize entry builds, else null. */
   fixedAssetId: string | null;
   postCapitalization: boolean;
+  coverage: ServiceCoverage | null;
+  coverageReason: string | null;
 };
 
 export type TimesheetStamp = {
@@ -120,7 +128,7 @@ export function planTimesheetPosting(
     assertChargeable(ctx, entry.reversalOfId ? "commitment" : "new");
 
     const { treatment, accountId, fixedAssetId, postCapitalization } =
-      resolveProjectPostingAccount(ctx, entry.entryDate);
+      resolveProjectPostingAccount(ctx, entry.entryDate, entry.coverage);
 
     const original = entry.reversalOfId
       ? originals.get(entry.reversalOfId)
@@ -160,7 +168,10 @@ export function planTimesheetPosting(
       amount: cost,
       reversalOfId: original?.ledgerRowId ?? null,
       fixedAssetId,
-      postCapitalization
+      postCapitalization,
+      coverage: treatment === "By Coverage" ? (entry.coverage ?? null) : null,
+      coverageReason:
+        treatment === "By Coverage" ? (entry.coverageReason ?? null) : null
     });
 
     if (!options.accountingEnabled || cost === 0) continue;
@@ -175,13 +186,15 @@ export function planTimesheetPosting(
       postingDate: entry.entryDate,
       projectId: entry.projectId,
       projectElementId: entry.projectElementId,
-      employeeId: entry.employeeId
+      employeeId: entry.employeeId,
+      customerId: entry.customerId ?? null
     };
     plan.lines.push(
       {
         ...shared,
         accountId,
-        description: "Project Labor",
+        description:
+          treatment === "By Coverage" ? "Service Labor" : "Project Labor",
         amount: debit("expense", cost),
         isProjectDebit: true
       },

@@ -2737,6 +2737,10 @@ export async function createTimesheetCorrection(
       laborCategoryId: original.laborCategoryId,
       note: original.note,
       correctionReason: args.correctionReason,
+      // A service entry's coverage override travels to the replacement.
+      // post-timesheet posts the reversal at its original's coverage.
+      coverage: original.coverageReason ? original.coverage : null,
+      coverageReason: original.coverageReason,
       status: "Submitted" as const,
       submittedAt: now,
       createdBy: args.userId
