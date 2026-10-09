@@ -306,7 +306,8 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             name: "migrationClearingAccount",
             label: t`Migration Clearing`,
             description: t`Equity account that offsets the opening balances when accounting is set up. It must total zero.`,
-            badgeType: "Equity"
+            badgeType: "Equity",
+            termId: "account-default-migration-clearing"
           }
         ]
       },

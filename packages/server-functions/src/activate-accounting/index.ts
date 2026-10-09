@@ -80,7 +80,8 @@ const activateAccounting = defineServerFn({
         };
         const now = datetime.timestamp();
 
-        // 1. Lock the cutover stamp. Every posting reads it FOR SHARE.
+        // Spec section 5, step 1. Lock the cutover stamp. Every posting reads
+        // it FOR SHARE.
         const settings = await trx
           .selectFrom("companySettings")
           .select("accountingCutoverDate")
@@ -90,7 +91,7 @@ const activateAccounting = defineServerFn({
         if (!settings) throw new NotFoundError("Company settings not found");
         if (settings.accountingCutoverDate) refuse(ACCOUNTING_ALREADY_SET_UP);
 
-        // 2. The typed company name.
+        // Step 1, continued. The typed company name.
         const company = await trx
           .selectFrom("company")
           .select(["name", "companyGroupId"])
@@ -104,7 +105,8 @@ const activateAccounting = defineServerFn({
           refuse("Type the company name to confirm.");
         }
 
-        // 3. Every readiness check and Migration Clearing, under the lock.
+        // Step 1, continued. Every readiness check and Migration Clearing,
+        // under the lock.
         // These read the Provisional ledger, so they run before any write.
         const args = { companyId, cutoverDate };
         const readiness = await getActivationReadiness(trx, args);
@@ -125,7 +127,7 @@ const activateAccounting = defineServerFn({
           .where("companyId", "=", companyId)
           .executeTakeFirstOrThrow();
 
-        // 3a (spec step 1a). The journals of legacy documents dated on or
+        // Step 1a. The journals of legacy documents dated on or
         // after the cutover, Provisional, so the steps below treat them like
         // every other Provisional journal.
         const legacy = await journalLegacyDocuments(trx, {
@@ -136,7 +138,8 @@ const activateAccounting = defineServerFn({
           defaults
         });
 
-        // 4–7. Inventory as of the cutover, and the movements after it.
+        // Steps 2 and 3. Inventory as of the cutover, and the movements after
+        // it.
         await resetAndRecostInventory(trx, {
           companyId,
           userId,
@@ -146,7 +149,7 @@ const activateAccounting = defineServerFn({
           defaults
         });
 
-        // 8. Journals before the cutover leave the ledger for good.
+        // Step 4. Journals before the cutover leave the ledger for good.
         await trx
           .updateTable("journal")
           .set({ status: "Superseded", updatedBy: userId, updatedAt: now })
@@ -155,8 +158,9 @@ const activateAccounting = defineServerFn({
           .where("postingDate", "<", cutoverDate)
           .execute();
 
-        // 9. Recognition and lease interest due before the cutover is in the
-        // opening balance; no run posts it.
+        // Step 5. Recognition and lease interest due before the cutover is in
+        // the opening balance; no run posts it. Step 6 (fixed assets) writes
+        // nothing: the register already holds the values at the cutover.
         await trx
           .updateTable("revenueRecognitionSchedule")
           .set({
@@ -170,7 +174,7 @@ const activateAccounting = defineServerFn({
           .where("scheduledDate", "<", cutoverDate)
           .execute();
 
-        // 10. The opening journal, the day before the cutover. It replaces
+        // Step 7. The opening journal, the day before the cutover. It replaces
         // the Draft trial balance the wizard kept.
         const openingDate = dayBeforeCutover(cutoverDate);
         const draftTrialBalances = trx
@@ -250,18 +254,18 @@ const activateAccounting = defineServerFn({
           }
         }
 
-        // 11. Periods for the journals that stay. A Superseded journal keeps
+        // Step 8. Periods for the journals that stay. A Superseded journal keeps
         // none.
         const staying = { cutoverDate };
         await assignPeriods(trx, companyId, staying);
 
-        // 12. Stand-in lines written while a default was empty.
+        // Step 9. Stand-in lines written while a default was empty.
         await repointStandInLines(trx, companyId, staying, defaults);
 
-        // 13. Promote.
+        // Step 9, continued. Promote.
         await promoteJournals(trx, companyId, userId, staying);
 
-        // 14. Close every period before the cutover, oldest first. Not
+        // Step 10. Close every period before the cutover, oldest first. Not
         // closeAccountingPeriod: it opens its own transaction.
         const periodsToClose = await trx
           .selectFrom("accountingPeriod")
@@ -297,11 +301,12 @@ const activateAccounting = defineServerFn({
           }
         }
 
-        // 14a. Make the period that holds today Active, as the first posting
-        // would. The cutover is never after today, so step 14 never closes it.
+        // Step 10a. Make the period that holds today Active, as the first
+        // posting would. The cutover is never after today, so step 10 never
+        // closes it.
         await getCurrentAccountingPeriod(companyId, trx);
 
-        // 15. The stamp. One-way: a trigger refuses any later change.
+        // Step 11. The stamp. One-way: a trigger refuses any later change.
         await trx
           .updateTable("companySettings")
           .set({

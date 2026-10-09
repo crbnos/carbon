@@ -15,9 +15,32 @@ application logic), and that is meaningless to run a second time.
 2. For each workspace, `ci/src/migrations.ts` applies migrations
    (`supabase db push`), then calls `runPendingScripts`.
 3. That reads the **target database's own** `scriptRun` table, runs the listed
-   scripts with no row there, and inserts a row for each one that succeeds.
+   scripts with no row there (`tsx <file>`, one subprocess each), and reads each
+   exit code (`oneOffScriptOutcome` in `ci/src/one-off-scripts.ts`):
+   - `0` — completed. The runner inserts the script's `scriptRun` row.
+   - `75` (`ONE_OFF_SCRIPT_DEFERRED`, `EX_TEMPFAIL` in `sysexits.h`) — deferred.
+     The workspace is not ready for the script yet, usually because the runner
+     did not pass something it needs. The runner logs it, writes no row, and
+     does not fail the deploy. The next deploy runs it again.
+   - Anything else, or a signal — failed. No row, and the overall CI run fails.
+     The schema is already pushed, so the workspace's migration still succeeds.
 
 Nobody runs these by hand in production. Merging is what ships them.
+
+## The environment a script gets
+
+`oneOffScriptEnv` (`ci/src/one-off-scripts.ts`) builds it from the workspace's:
+
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, with the rest of the
+  workspace's Supabase settings.
+- `SUPABASE_DB_URL`: the workspace's pooler URL, as the deployed app gets it,
+  else its connection string when that starts with `postgresql://`. A workspace
+  with neither passes no `SUPABASE_DB_URL`.
+- **No database password.** The runner removes `SUPABASE_DB_PASSWORD`; only
+  `supabase db push` uses it. A script never needs it and must not read it.
+
+`scripts/lib/local-script-config.ts` lets a `.env.local` override the passed
+environment, which is why the runner spawns each script rather than importing it.
 
 ## Adding a script
 
@@ -29,9 +52,10 @@ Nobody runs these by hand in production. Merging is what ships them.
 2. Take configuration from `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in
    the environment; the runner injects the per-workspace values. A script that
    needs Postgres itself (a Kysely transaction, a server function) reads
-   `SUPABASE_DB_URL`: the workspace's pooler URL, as the deployed app gets it,
-   or its self-hosted connection string. Support `--dry-run` if the script
-   writes anything.
+   `SUPABASE_DB_URL` (see above). When it is absent, the script logs why and
+   exits `75`, so the workspace runs it on a later deploy rather than failing
+   this one — `journal-legacy-documents.ts` is the example. Say so in the
+   script's header. Support `--dry-run` if the script writes anything.
 3. Ship it **alongside a migration**, or it will not deploy on its own — the
    workflow only triggers on `packages/database/supabase/**` changes. Without
    one, run the workflow manually (`workflow_dispatch`).

@@ -38,19 +38,22 @@ what syncs follows from the statuses each path already filters on.
   earlier that the event path missed reaches the provider only through the journal backfill.
   The enable's "Cutover recost" journals are inserted Provisional with the source document's
   `sourceType` and are promoted with the rest.
-- **Rebuilt run journals are recorded `Excluded` (`CUTOVER_REBUILT`).** The enable writes
-  again the journals of legacy depreciation runs, scrap disposals and revenue recognition runs
-  dated on or after the cutover (`activate-accounting/legacy/runs.ts`). The reset deleted those
-  journals and their sync records, not the provider's copy. So `keepOutOfProviderSync` inserts,
-  for each such journal and each accounting integration of the company (active or not), an
-  `Excluded` `journalEntry` `push-to-accounting` operation with `errorCode` `CUTOVER_REBUILT`
-  (`CUTOVER_REBUILT_SYNC_CODE`) and idempotency key
+- **Every rebuilt legacy journal is recorded `Excluded` (`CUTOVER_REBUILT`).** The legacy
+  backfill (enable step 1a, `activate-accounting/legacy/`) and its repair
+  (`journal-legacy-documents`) write again the journals of legacy documents dated on or after
+  the cutover: invoices, memos, charges, reimbursements, payments, movements, and the
+  depreciation, scrap disposal and revenue recognition runs. The reset deleted those journals
+  and their sync records, not the provider's copy, and the rows cannot tell which documents
+  had one. So `insertProvisionalJournals` (`legacy/write.ts`) calls `keepOutOfProviderSync`
+  for EVERY journal it writes: for each journal and each accounting integration of the company
+  (active or not), it inserts an `Excluded` `journalEntry` `push-to-accounting` operation with
+  `errorCode` `CUTOVER_REBUILT` (`CUTOVER_REBUILT_SYNC_CODE`) and idempotency key
   `journalEntry:<id>:push-to-accounting:cutover-rebuilt`. The reconciler then decides
   "journal disposition already recorded", the journal backfill counts it as covered, and the
   period close's external-GL-sync check counts Excluded as terminal, so nothing pushes it. A
-  re-send from Sync Activity still pushes one on purpose. The other legacy journals the enable
-  writes (invoices, memos, payments, charges, reimbursements, movements) get no such row: they
-  are promoted and sync by the posting policy like any other promoted journal.
+  user sends the ones the provider lacks from Sync Activity, which pushes on purpose.
+  Journals the ordinary posting paths write, and the "Cutover recost" journals, get no such
+  row: they are promoted and sync by the posting policy.
 - **The opening journal never syncs.** It is a Posted `sourceType 'Opening Balance'` journal,
   and `POSTING_POLICY['Opening Balance'].syncable` is `false` (same exclusion as `Manual`).
 - **Documents sync by the DOCUMENT's status, not the journal's.** The cutover does not gate
@@ -59,8 +62,10 @@ what syncs follows from the statuses each path already filters on.
     journal, and those reads take `journal.status = 'Posted'` only (`loadBillCostingLines` /
     `loadChargeCostingLines` in `core/document-costing.ts`, the revenue-account read in
     `core/sales-invoice-source.ts`). With a Provisional journal they find nothing and park the
-    structured `UNMAPPED_ACCOUNTS` Warning (the bill message still says "Post the invoice with
-    accounting enabled, then retry"). After the enable a document dated on or after the cutover
+    structured `UNMAPPED_ACCOUNTS` Warning. A bill and a charge word it with
+    `noPostedJournalMessage` (`core/posting.ts`): "Cannot sync <subject>: it has no posted
+    <Purchase Invoice|Charge> journal. Either the <document> is not posted yet (post it, then
+    retry) or it is dated before your accounting cutover, so it never gets one." After the enable a document dated on or after the cutover
     has a Posted journal again (the bill re-drive picks a parked bill up once its journal is
     Posted); one dated before it has a Superseded journal and never finds one.
   - Payments, memos (`creditMemo` / `supplierCredit`) and reimbursements read no journal: each

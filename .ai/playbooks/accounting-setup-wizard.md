@@ -1,7 +1,8 @@
 # Accounting Setup Wizard (cutover activation)
 
 Last tested: 2026-10-09 (steps 1–3 PASS on "Company Without Accounting"; the legacy-window
-procedure below PASS end to end on "Legacy Window Test")
+procedure below PASS end to end on "Legacy Window Test"). Section G and the "Active" period
+check in section F are not run in the browser yet; they come from the code.
 Route: /x/settings/accounting → /x/accounting/activation/readiness
 
 ## Prerequisites
@@ -106,11 +107,35 @@ Keep the `costLedger` rows. If you made payments, memos or charges, set their `j
   no line on the Migration Clearing account.
 - Sales invoice → "Payment" link → `/x/payments/new?...&amount=<balance>`. The bank account is prefilled.
   `requestSubmit` "Save". Click "Post". Status becomes "Posted" and the invoice "Paid". AR = 0.
-- The same works from the purchase invoice (Disbursement). AP = 0.
+- The purchase invoice has the same "Payment" link. It opens `/x/payments/new?supplierId=…&invoiceId=…&amount=<balance>`.
+  Save and post the payment the same way. AP = 0.
 - `/x/accounting/journals` lists the rebuilt journals as Posted.
+- `/x/accounting/periods`: the period that holds today shows Status "Active" right after the enable.
+  No posting is needed first. The enable runs `getCurrentAccountingPeriod` (step 10a in
+  `packages/server-functions/src/activate-accounting/index.ts`).
+
+### G. Write missing journals (a company that already has a cutover)
+The enable writes the journals of legacy documents (step 1a). So a company that the current
+enable set up has none left. A company enabled before step 1a existed can still have them.
+
+1. Open Settings → Accounting (`/x/settings/accounting`).
+2. Find the warning alert in the "General Ledger" card. It shows only when the company has a cutover
+   and at least one posted document dated on or after the cutover with no journal (`hasLegacyDocuments`).
+3. Read the alert text: "N documents posted before Carbon kept journals have no journal."
+   Until the streamed count loads, it reads "Documents posted before Carbon kept journals have no journal."
+4. Click the button "Write missing journals". It is disabled unless the user can update both
+   settings and accounting.
+5. The toast reads "Wrote the missing journals of N documents" (or "Wrote the missing journal of 1 document").
+
+What the button does: the `journal-legacy-documents` server function runs the enable's step 1a again,
+in one transaction. It writes each missing journal, gives it a period, re-points its stand-in lines
+and promotes it to Posted. If one journal falls in a Closed or Locked period, the whole call fails
+and the error names the period. It writes nothing in that case.
 
 ## Selector Notes
 - The wizard step tabs are links in `navigation "Accounting setup"`.
+- "Write missing journals" is a button (role `button`) inside the warning alert of the "General Ledger" card.
+- The invoice "Payment" control is a link (role `link`), on both the sales and the purchase invoice.
 - "Next" is a link (not a button) once every check passes. It is a disabled button before that.
 - The hidden input for Migration Clearing is `input[name=migrationClearingAccount]`.
 
@@ -119,7 +144,5 @@ Keep the `costLedger` rows. If you made payments, memos or charges, set their `j
   has no journal. The Enable step lists it under "Documents posted before Carbon kept
   journals", and the enable writes its journal (verified 2026-10-09).
 - `agent-browser screenshot` with a RELATIVE path saves to a temp folder. Pass an absolute path.
-- After the enable, the cutover period shows Status "Inactive" until the next posting
-  marks it "Active" (`get-accounting-period.ts`, mode "current").
 - The enable writes no opening journal when every opening balance is zero.
 - Every page logs "Hydration failed" on a direct load in dev. This is app-wide, not the wizard.

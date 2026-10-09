@@ -910,7 +910,9 @@ enum values, document enums, indexes, RLS, event trigger, and the per-company
   invariant: Draft requires the journal and all posting/void audit fields to be null;
   Posted requires `postingDate`, `postedAt`, and `postedBy` with void audit fields null;
   Voided requires both posting and void audit fields. `journalId` remains optional for
-  Posted/Voided because accounting-disabled companies do not create a journal.
+  Posted/Voided: `20261008211304_reset-accounting` set it to NULL on every charge of every
+  company with no `JE-SEED-%` journal, and a charge posted while accounting was off never
+  had one. The enable's legacy backfill journals the charges dated on or after the cutover.
 
 ## Charges → the accounting provider
 
@@ -966,16 +968,24 @@ race.
   Payment/Cashback reject any coding lines; Charge/Credit/Repayment require finite,
   strictly positive line magnitudes summing to the header. Journal line ids are allocated
   before insertion and bound explicitly to dimensions, never inferred from RETURNING order.
-- **void**: only from Posted. When a journal exists, proves the original company-scoped
-  journal is Provisional or Posted (`OPEN_ITEM_JOURNAL_STATUSES`), source type `Charge`, and
-  every line points back to this document. It writes a new reversal with negated amounts,
-  copied dimensions and copied `accountDefaultRole`, at the current posting status
-  (Provisional before the cutover, with no period), then flips the document to Voided. A
-  charge with no journal (posted before every company wrote journals, or cleared by
-  `20261008211304_reset-accounting`) voids without fabricating one. A charge whose journal
-  the cutover Superseded fails this check ("Original charge journal has invalid provenance").
-  Reversal line ids are also allocated before insertion, preserving each original line's
-  dimension identity even if a database returns inserted rows in another order.
+- **void**: only from Posted. First, before any write, `voidCharge`
+  (`post-charge/post-charge-void.ts`) refuses a charge dated before the company's accounting
+  cutover (`postingDate ?? transactionDate`) through `refuseVoidBeforeCutover`
+  (`lib/cutover-void.ts`) with `CHARGE_VOID_BEFORE_CUTOVER_ERROR`: "This charge is from before
+  your accounting cutover. Record a journal entry to correct it instead." The enable
+  superseded that journal and opened its balances in the opening journal, so a reversal would
+  undo nothing. A company with no cutover passes. `voidReimbursement`
+  (`post-reimbursement/post-reimbursement-void.ts`) refuses the same way
+  (`postingDate ?? reimbursementDate`, `REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR`). When a
+  journal exists, the void then proves the original company-scoped journal is Provisional or
+  Posted (`OPEN_ITEM_JOURNAL_STATUSES`), source type `Charge`, and every line points back to
+  this document. It writes a new reversal with negated amounts, copied dimensions and copied
+  `accountDefaultRole`, at the current posting status (Provisional before the cutover, with no
+  period), then flips the document to Voided. A charge with no journal (cleared by
+  `20261008211304_reset-accounting`, or posted while accounting was off) voids without
+  fabricating one. Reversal line ids are also allocated before insertion, preserving
+  each original line's dimension identity even if a database returns inserted rows in another
+  order.
 
 ### The journal builder (`build-charge-journal.ts`)
 

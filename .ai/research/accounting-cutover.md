@@ -2,7 +2,9 @@
 
 ## Summary
 
-This survey asks how 7 ERPs move a running business onto a new general ledger. It covers per-document open items, the migration clearing account, the cutover date, and ledgers that record postings that do not count. All 7 products load open receivables and payables one document at a time, never as one control-account total. A payment after go-live then clears the migrated item like any other open item. SAP and the NetSuite and Dynamics 365 consultants post every load against a migration clearing account, and that account must total zero before go-live. No product has a standard open-item method for received-not-invoiced goods or WIP. Odoo's Invoicing Switch Threshold is the closest match to a provisional ledger. Odoo records journal entries from day one, and a date later decides which entries count.
+This survey asks how 7 ERPs move a running business onto a new general ledger. It covers per-document open items, the migration clearing account, the cutover date, and ledgers that record postings that do not count.
+
+All 7 products load open receivables and payables one document at a time, never as one control-account total. A payment after go-live then clears the migrated item like any other open item. SAP and the NetSuite and Dynamics 365 consultants post every load against a migration clearing account, and that account must total zero before go-live. No product has a standard open-item method for received-not-invoiced goods or WIP. Odoo's Invoicing Switch Threshold is the closest match to a provisional ledger. Odoo records journal entries from day one, and a date later decides which entries count.
 
 ## Competitors Surveyed
 
@@ -51,7 +53,7 @@ This survey asks how 7 ERPs move a running business onto a new general ledger. I
 
 ### 5. The cutover date is a period boundary, and earlier postings are blocked
 
-- **SAP**: the Migration Key Date is set per company code. The system fixes the date of every migration document to it. "Postings after this key date are not allowed" for the historical balance object.
+- **SAP**: each company code has its own Migration Key Date. SAP fixes the date of every migration document to it. "Postings after this key date are not allowed" for the historical balance object.
 - **NetSuite**: partners pick the first day of an accounting period. Oracle closes the periods before it.
 - **Dynamics 365 F&O**: consultants use the last closed period end and then set the period to On hold.
 - **Odoo**: the documentation recommends the end of the fiscal year. The Lock Everything date blocks earlier entries.
@@ -61,7 +63,7 @@ This survey asks how 7 ERPs move a running business onto a new general ledger. I
 
 - **SAP**: the inventory migration posts stock only (movement type 561), so no goods receipt from before go-live exists in the new system. A return of that stock uses movement type 161 on a return PO, because movement type 122 needs the original goods receipt. Users can post only in the current and the previous MM period.
 - **Dynamics 365 F&O**: the migration loads stock on hand and open orders only. "Cancel" of a product receipt posts on the original date, and inventory close blocks posting into a closed period. A return with no original order takes its cost from "Return cost price", else from the current cost.
-- **Business Central**: Undo Receipt and Undo Shipment post on the original date, and a closed inventory period blocks them. Undo also fails when any of the received quantity was consumed.
+- **Business Central**: Undo Receipt and Undo Shipment post on the original date, and a closed inventory period blocks them. Undo also fails when a later posting consumed any of the received quantity.
 - **NetSuite**: the go-live load is an inventory worksheet or adjustment, so no item receipt from before go-live exists. Oracle says: "To edit or delete a transaction in a closed period, you need to reopen the closed period." For a wrong receipt cost, the docs say to post an inventory adjustment in the current period.
 - **Odoo**: the source code refuses to cancel a done move: "Create a return in order to reverse the moves which took place." A customer return takes the cost of the original delivery's valuation layers.
 - **Acumatica**: a released IN Receipt has no Reverse action. The user posts an IN Issue or a negative IN Adjustment. A shipment that updated inventory needs an RC/RMA order.
@@ -73,7 +75,11 @@ This survey asks how 7 ERPs move a running business onto a new general ledger. I
 2. **Clearing account?** SAP, NetSuite partners, Dynamics 365 consultants and Odoo use a clearing account that must total zero. Business Central and Acumatica use the net-zero variant. QuickBooks Online uses one Opening Balance Equity account, which the user clears to retained earnings.
 3. **Paying or voiding a pre-go-live document?** A payment clears the migrated open item in every product. A reversal after go-live must post to the real revenue or expense account, not to the closed clearing account (NetSuite, Optimal Data). Dynamics 365 refuses to reverse a settled transaction, and asks for a new date when the period is closed.
 4. **Cutover date?** A period start, or the last closed period end (SAP, NetSuite, Dynamics 365). The products block earlier postings with a closed period or a lock date. Implementation guides load the documents created between the cutover date and go-live as a "delta load".
-5. **Ledgers that do not count?** Odoo's Invoicing Switch Threshold cancels every journal entry before a date "to start with a clean general ledger". Older invoices get the "Invoicing App Legacy" payment state. Acumatica's migration mode releases documents with no GL batch and marks them "Migrated". SAP's historical balance object posts balances before the key date, and the system reverses them in the key-date period. Dynamics 365 has posting layers, Business Central has statistical accounts, and NetSuite has non-posting transactions. No product promotes a provisional entry to a posted entry.
+5. **Ledgers that do not count?** No product promotes a provisional entry to a posted entry. The nearest mechanisms:
+   - **Odoo**: the Invoicing Switch Threshold cancels every journal entry before a date "to start with a clean general ledger". Older invoices get the "Invoicing App Legacy" payment state.
+   - **Acumatica**: migration mode releases documents with no GL batch and marks them "Migrated".
+   - **SAP**: the historical balance object posts balances before the key date. SAP reverses them in the key-date period.
+   - **Dynamics 365, Business Central and NetSuite**: Dynamics 365 has posting layers, Business Central has statistical accounts, and NetSuite has non-posting transactions.
 6. **Received-not-invoiced and WIP?** No product has a standard open-item method. SAP consultants clear received-not-invoiced before the key date. Dynamics 365 forums list 3 workarounds: a plain GL balance, a placeholder PO, or a real PO received again. No source covers WIP; the products load it as a GL balance.
 
 ## Competitor-Specific Details
@@ -104,7 +110,7 @@ This survey asks how 7 ERPs move a running business onto a new general ledger. I
 ### Odoo
 
 - The Invoicing app posts journal entries even when the company does not use Accounting. The Invoicing Switch Threshold is a date. On the switch, Odoo cancels every entry before it, and the entries after it stay posted. (Source: a forum thread and a mergebot pull request, not the product docs.)
-- The Opening Journal Entry is dated one day before the opening date. An "Automatic Balancing Line" puts any difference on Undistributed Profits/Losses.
+- Odoo dates the Opening Journal Entry one day before the opening date. An "Automatic Balancing Line" puts any difference on Undistributed Profits/Losses.
 - The Hard Lock date cannot be undone.
 
 ### Acumatica
@@ -117,10 +123,16 @@ This survey asks how 7 ERPs move a running business onto a new general ledger. I
 1. **Write one opening line per open document.** Use this for receivables, payables, credit memos and unapplied credits. It follows the consensus of all 7 products. Each line carries the document link, so the existing payment lookup finds a control line to clear.
 2. **Post every opening line and the trial balance against one Migration Clearing account.** Refuse to enable until it totals zero. This follows SAP and the NetSuite partners. It turns the sub-ledger-to-GL reconciliation into one number that a person can check before go-live.
 3. **Keep the provisional ledger as Odoo does.** Record the journal entries while accounting is off. At the switch, entries before the cutover date stop counting, and entries on or after it count. Carbon goes one step further than Odoo: it uses the provisional entries to compute the per-document opening amounts.
+
+   **What the spec chose:** Carbon keeps the provisional ledger, but receivables and payables do not open from it. Each opening amount is the document's total minus the settlements in effect on the day before the cutover date, in base currency (`getReceivableAndPayableItems`, `packages/database/src/accounting-cutover/open-items.ts`). The read refuses when that amount differs from the AR and AP aging readers. An unapplied payment credit opens from the payment's journal line, else from the payment and its settlements. Most invoices dated before the cutover date have no journal, because the reset deleted it.
 4. **Make the cutover date a period start, and block earlier postings after enable.** This follows SAP's key date, NetSuite's closed periods and Odoo's lock date.
 5. **Reverse a pre-cutover document against real accounts, never against the clearing account.** This follows the NetSuite guidance. After enable, the clearing account must stay at zero.
-6. **Treat received-not-invoiced and WIP as a decision for Carbon.** No product has a standard method. Carbon has the per-receipt and per-job provisional entries, so it can compute both per document. SAP's alternative is to require both to be cleared before cutover.
-7. **Refuse to void an inventory document dated before the cutover.** Point the user to a return or an inventory adjustment. All 6 products with inventory do this (pattern 6). Carbon already refuses a sales return receipt void once its layer is consumed (`post-receipt/index.ts:428`).
+
+   **What the spec chose:** Carbon refuses to void an invoice dated before the cutover date, because no builder rebuilds a whole invoice posting. The sales invoice void tells the user to issue a credit memo. The purchase invoice void tells the user to record a debit memo (`refuseVoidBeforeCutover`, `packages/server-functions/src/lib/cutover-void.ts`). A user can still void a payment or a memo dated before the cutover date. That void rebuilds the posting, negates it, and refuses any line on Migration Clearing (`assertNoMigrationClearing`). The void of a charge or a reimbursement dated before the cutover date refuses too.
+6. **Treat received-not-invoiced and WIP as a decision for Carbon.** No product has a standard method. Carbon has the per-receipt and per-job provisional entries, so it can compute both per document. SAP's alternative: the company clears both before cutover.
+
+   **What the spec chose:** both open per document. Received-not-invoiced opens per PO line on the GR/IR account (`getReceivedNotInvoicedItems`, `packages/database/src/accounting-cutover/open-items.ts`). The amount is the receipts before the cutover date at their receipt cost, less what the invoices before the cutover date cleared. The receipt cost is the receipt's GR/IR journal line, else its cost layers, else quantity × unit price. A purchase invoice dated on or after the cutover date finds the opening line by its `receipt:<poLineId>` reference. WIP opens per job from the job's lines on the WIP account dated before the cutover date (`getWorkInProgressItems`).
+7. **Refuse to void an inventory document dated before the cutover.** Point the user to a return or an inventory adjustment. All 6 products with inventory do this (pattern 6). Carbon already refuses a sales return receipt void once its layer is consumed (`post-receipt/index.ts:436`).
 
 ## Sources
 

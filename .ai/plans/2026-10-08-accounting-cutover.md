@@ -4,6 +4,24 @@
 **Research:** .ai/research/accounting-cutover.md
 **Branch:** accounting-reset-plan
 
+## Terms
+
+This plan uses each term below with one meaning only.
+
+| Term | Meaning |
+|---|---|
+| The cutover | The company's `companySettings.accountingCutoverDate`, the first day of a fiscal period. "Before the cutover" and "on or after the cutover" compare a posting date with this date. A company with no cutover has a null date. The UI calls it the "cutover date". |
+| The accounting reset | The migration `20261008211304_reset-accounting.sql`. It deleted the journals of every company except the demo-template companies and turned accounting off. |
+| Inventory reset | Step 2 of the enable. It closes the cost layers dated before the cutover and opens one layer per item. |
+| L | The `createdAt` of the company's first Provisional or Superseded journal. If the company has none, L is now. |
+| The enable | The `activate-accounting` server function. It runs in one Kysely transaction and sets the cutover. |
+| The enable wizard | The 5 steps under `/x/accounting/activation`: Readiness, Inventory, Fixed Assets, Trial Balance, Enable. The short form is "the wizard". |
+| Stand-in line | A journal line on `retainedEarningsAccount` whose `accountDefaultRole` names the empty default it wanted. Only a Provisional journal has one. |
+| Re-cost | The enable's new valuation of each outbound movement dated on or after the cutover, against the reset cost layers. |
+| Legacy document | A posted document dated on or after the cutover that has no journal line under its document keys. |
+| Legacy backfill | Step 1a of the enable. It writes the journal of each legacy document, as Provisional. |
+| The repair | The `journal-legacy-documents` server function. It runs the legacy backfill again for a company that has a cutover already. |
+
 ## Progress
 
 ### Phase A — Foundation (no behavior change)
@@ -60,12 +78,12 @@
 - [x] Task 41: Write the journals of legacy movements that stored a cost row
 - [x] Task 42: Write the cost rows and journals of legacy movements that stored none
 - [x] Task 43: Write the journals of legacy asset and revenue runs again
-- [x] Task 44: Show the legacy journals in the wizard and update the docs
+- [x] Task 44: Show the legacy journals in the enable wizard and update the docs
 - [x] Task 45: Verify the legacy window in the browser
 
 ## Dependencies
 
-- Task 1 must commit before Task 2 (a new enum value cannot be used in the transaction that adds it).
+- Task 1 must commit before Task 2. Postgres refuses a new enum value in the transaction that adds it.
 - Task 4 needs Tasks 1–3. Every later task needs Task 4.
 - Tasks 6, 7, 8, 9 and 10 need Task 5. They are independent of each other.
 - 🛑 Phase B (Tasks 11–24) must not start until every Phase A task is done. A Provisional journal written before the readers change counts in the balances.
@@ -81,7 +99,9 @@
 - Create each migration with `pnpm db:migrate:new <name>`. Never pick a timestamp by hand.
 - Apply migrations with `pnpm db:migrate`. It needs the local stack (`crbn up`). If the stack is down, STOP and ask the user to start it.
 - Typecheck one package at a time: `pnpm exec turbo run typecheck --filter=<pkg>`. Never run a whole-repo typecheck.
-- Read `.ai/lessons.md` sections "Journal debit/credit is derived from account class + amount sign" and "Carbon journal amounts are natural-balance-signed" before you write a journal line.
+- Before you write a journal line, read 2 sections of `.ai/lessons.md`:
+  - "Journal debit/credit is derived from account class + amount sign"
+  - "Carbon journal amounts are natural-balance-signed"
 - A server function database test uses `databaseTest` from `packages/server-functions/src/local-database-test-fixture.ts`. It skips without a local database. Run it with the stack up.
 - The 3 status lists from Task 5 are the only allowed journal status filters in new code.
 
@@ -186,6 +206,7 @@ If the container has another name, find it with `docker ps --format '{{.Names}}'
     WHERE sub."companyId" = cs."id" AND cs."accountingEnabled" = true
       AND cs."accountingCutoverDate" IS NULL;
     ```
+    The review fix in 38602af774 changed this filter. The committed migration selects a company that has a `JE-SEED-%` journal, not `accountingEnabled = true`. See Execution notes.
 10. Run `pnpm db:migrate`.
 
 **Verify:**
@@ -296,8 +317,10 @@ pnpm exec turbo run typecheck --filter=@carbon/database
    ): { accountId: string; accountDefaultRole: OptionalDefaultRole | null };
    ```
    - If `defaults[role]` is set, return it with `accountDefaultRole: null`.
+   - Else, if `role` has a fallback in `DEFAULT_FALLBACKS`, return the fallback with `accountDefaultRole: null`. This rule holds before and after the cutover.
    - Else, if `postingStatus` is `"Provisional"`, return `retainedEarningsAccount` with `accountDefaultRole: role`.
-   - Else throw `Error(\`Set the ${role} account default in Accounting → Defaults.\`)`.
+   - Else throw `MissingAccountDefaultError(role)`. Its status is 400. Its message is "Set the <label> account in Accounting → Default Accounts.", with the label from `OPTIONAL_DEFAULT_LABELS`.
+   The review fix in b9f897608c added the fallback rule and the error class. The first version of this task had neither.
 4. Import `Kysely` as a type only. Import `KyselyDatabase` from `./client` as a type.
 5. Write tests:
    - `postingStatusFor(null)` is `"Provisional"`; `postingStatusFor("2026-10-01")` is `"Posted"`.
@@ -342,7 +365,7 @@ pnpm exec turbo run typecheck --filter=@carbon/database
    docker exec carbon-carbon-accounting-reset-plan-postgres-1 psql -U postgres -d postgres -Atc "select proname, prosecdef from pg_proc where proname in ('accountTreeBalances','accountTreeBalancesByCompany','accountTreeBalancePeriodSeries','snapshotAccountingPeriodBalances','journalLinesByAccountNumber','journalDimensionPivot','journalDimensionPivotLines','get_inventory_tie_out') order by 1"
    ```
 3. Copy each function into the new migration. Replace each `<> 'Draft'` or `!= 'Draft'` on a journal status with `IN ('Posted', 'Reversed')`. Change nothing else.
-4. End each function with the security mode from step 2 (`SECURITY DEFINER` when `prosecdef` is `t`, else `SECURITY INVOKER`). `snapshotAccountingPeriodBalances` was altered to INVOKER by `20260925121735:2781`.
+4. End each function with the security mode from step 2 (`SECURITY DEFINER` when `prosecdef` is `t`, else `SECURITY INVOKER`). `20260925121735:2781` altered `snapshotAccountingPeriodBalances` to INVOKER.
 5. Keep the `assert_company_access` call in `get_inventory_tie_out` (`:1435`).
 6. For the `journalLines` view: `DROP VIEW IF EXISTS "journalLines";` then `CREATE VIEW` with `WHERE j."status" IN ('Posted', 'Reversed')`. Copy `WITH (SECURITY_INVOKER=true)` if the source has it.
 7. If `DROP VIEW` fails because another object depends on the view, STOP and report.
@@ -398,11 +421,23 @@ pnpm db:check:datasets
 
 **Steps:**
 1. Write one `ConformanceCheck` with `id: "journal-status-filter"`. Its `scan` branches on `file.endsWith(".sql")`.
-2. SQL side: flag a line that matches `/"?status"?\s*(<>|!=)\s*'Draft'/` when the file mentions `"journal"` and the migration filename is not older than the Task 6 migration. Set `provenance.since` to that migration's timestamp. Older files have false positives (`j` is also the alias of `job`).
-3. TS side: flag a line that matches `.neq("status", "Draft")` or `"status", "<>", "Draft"` or `"status", "!=", "Draft"` when the file contains the text `"journal"`.
-4. Set `message` to: "Filter journal status with GL_JOURNAL_STATUSES, DOCUMENT_JOURNAL_STATUSES or OPEN_ITEM_JOURNAL_STATUSES (@carbon/database/accounting-posting)."
-5. Write tests: one SQL hit, one SQL miss on an older file, one TS hit, one TS miss in a file without `"journal"`.
-6. Run `pnpm --filter @carbon/checks baseline`. Read the diff of `baseline.json`. Each new entry must be an existing hit, never a line you wrote.
+2. SQL side: flag a line that matches `/"?status"?\s*(<>|!=)\s*'Draft'/`. Flag it only when both of these are true:
+   - The file mentions `"journal"`.
+   - The migration is not older than the Task 6 migration.
+3. Set `provenance.since` to the timestamp of the Task 6 migration. Older files have false positives (`j` is also the alias of `job`).
+4. TS side: flag a line in a file that contains the text `"journal"`. The line matches one of these:
+   - `.neq("status", "Draft")`
+   - `"status", "<>", "Draft"`
+   - `"status", "!=", "Draft"`
+5. Set `message` to: "Filter journal status with GL_JOURNAL_STATUSES, DOCUMENT_JOURNAL_STATUSES or OPEN_ITEM_JOURNAL_STATUSES (@carbon/database/accounting-posting)."
+6. Write 4 tests:
+   - one SQL hit;
+   - one SQL miss on an older file;
+   - one TS hit;
+   - one TS miss in a file without `"journal"`.
+7. Run `pnpm --filter @carbon/checks baseline`. Read the diff of `baseline.json`. Each new entry must be an existing hit, never a line you wrote.
+
+The review fix in 188a710e24 changed the check after this task. It now checks one statement at a time, not one line. It also sees a qualified or aliased journal status and raw SQL in TS.
 
 **Verify:**
 ```bash
@@ -483,11 +518,19 @@ pnpm --filter erp exec vitest run app/modules/accounting/accounting.periods.test
 Each of Tasks 11–20 applies these steps to the files it lists. Read them once.
 
 1. Replace the function's `accountingEnabled` read with `const postingStatus = await journalPostingStatus(trx, companyId);` from `@carbon/database/journal-posting-status`. Call it inside the posting transaction, so the `FOR SHARE` lock holds until commit.
-2. If the function needs the status before its transaction opens (for example to resolve the accounting period first), read it there with `journalPostingStatus(db, companyId)`. Read it again inside the transaction with `journalPostingStatus(trx, companyId)`. If the two differ, throw `new Error("Accounting was just set up. Post the document again.")`. Do not restructure the function.
+2. If the function needs the status before its transaction opens, do these 3 things. (One example: the function resolves the accounting period first.)
+   1. Read the status there with `journalPostingStatus(db, companyId)`.
+   2. Inside the transaction, call `assertPostingStatusUnchanged(trx, companyId, postingStatus)`. It reads the status again and throws `POSTING_STATUS_CHANGED_ERROR` ("Accounting was just set up. Post the document again.") when the two differ.
+   3. Do not restructure the function.
+   The review fix in b9f897608c added `assertPostingStatusUnchanged`. It replaced about 40 inline copies of this check.
 3. Delete each branch on the flag that the task lists. Keep the branch body and make it unconditional.
 4. At each journal insert the task lists, replace `status: "Posted"` with `status: postingStatus`. Keep `postedAt` and `postedBy`.
 5. A branch marked J* also resolved the accounting period. Resolve it only when `postingStatus` is `"Posted"`. A Provisional journal gets `accountingPeriodId: null`, and no posting creates a period before the cutover (spec section 1 item 3).
-6. Where a builder reads one of the `OPTIONAL_DEFAULT_ROLES` from `accountDefault`, call `resolveDefaultAccount(defaults, role, postingStatus)`. Write its `accountId` on the line and its `accountDefaultRole` in the line's `accountDefaultRole` column. Remove any existing runtime fallback for that role only when `resolveDefaultAccount` covers the same case; keep `employeeReimbursementsPayableAccount ?? payablesAccount` (`post-reimbursement-post.ts:80`, `post-payment-transaction.ts:1020`) as it is.
+6. If a builder reads one of the `OPTIONAL_DEFAULT_ROLES` from `accountDefault`, change it in 3 ways:
+   1. Call `resolveDefaultAccount(defaults, role, postingStatus)`.
+   2. Write the returned `accountId` on the line. Write the returned `accountDefaultRole` in the line's `accountDefaultRole` column.
+   3. Remove an existing runtime fallback for that role only when `resolveDefaultAccount` covers the same case.
+   Keep `employeeReimbursementsPayableAccount ?? payablesAccount` (`post-reimbursement-post.ts:80`, `post-payment-transaction.ts:1020`) as it is. Since the review fix in b9f897608c, `DEFAULT_FALLBACKS` holds this fallback and 4 others.
 7. Run the task's Verify block. A test that set `accountingEnabled: false` and expected no journal now expects a Provisional journal. Update it.
 
 ---
@@ -663,7 +706,7 @@ grep -n "accountingEnabled" packages/server-functions/src/post-purchase-invoice/
    ```
 4. When the company has no cutover and the target has no control line, use the default control account. Copy the fallback from `packages/database/src/build-payment-journal.ts:274-275`.
 5. If the journal builder cannot take a default control account for a target, STOP and report.
-6. Update the 2 tests: with no cutover, a payment against an invoice with no journal posts a Provisional journal on the default receivables account.
+6. Update the 2 tests. Each test sets up a company with no cutover and an invoice with no journal. A payment against the invoice must post a Provisional journal on the default receivables account.
 
 **Verify:**
 ```bash
@@ -674,6 +717,8 @@ pnpm --filter @carbon/server-functions exec vitest run src/post-payment src/post
 ```
 
 **Out of scope:** voids of documents dated before the cutover (Task 29).
+
+The review fix in b9f897608c moved the payment and memo rebuilds into their own modules: `post-payment/rebuild-journal.ts` and `post-memo/rebuild-journal.ts`. Payment posting and the payment rebuild now share one input assembler, `assemblePaymentJournal` in `post-payment/journal-input.ts`. A parity test covers the 2.
 
 ---
 
@@ -790,10 +835,10 @@ grep -rn "accountingEnabled" packages/server-functions/src/post-asset-transfer p
 
 **Steps:**
 1. Run `pnpm db:migrate:new job-costing-always-post`.
-2. Copy `complete_job_to_inventory`. Make 3 changes:
+2. Copy `complete_job_to_inventory`. Make 4 changes:
    - Delete the flag read and early return at :600-610. Delete the variable at :38.
    - Replace `'Posted'` in the journal inserts at :734 and :952 with `journal_posting_status(p_company_id)`.
-   - Where the function resolves an accounting period for those journals, insert `NULL` instead when `journal_posting_status(p_company_id)` is `'Provisional'`. Create no period in that case.
+   - If `journal_posting_status(p_company_id)` is `'Provisional'`, give those journals a `NULL` period. Create no period in that case.
    - Add `AND j."status" IN ('Provisional', 'Posted', 'Reversed')` to the WIP sum at :873-880.
 3. Copy `backflush_job_materials`. Delete the flag read and early return at :193-203. Replace `'Posted'` at :274 with `journal_posting_status(p_company_id)`. Insert a `NULL` period for a Provisional journal, as in step 2.
 4. End `backflush_job_materials` with `SECURITY INVOKER` (set by `20260925121735:2761`). Check `complete_job_to_inventory`'s current `prosecdef` and keep it.
@@ -860,7 +905,9 @@ pnpm --filter @carbon/jobs exec vitest run src/inngest/functions/scheduled/reven
    - `accounting.service.ts`: `lockAccountingPeriod` :2638, `closeAccountingPeriod` :2709, `runIntercompanyMatching` :5598, `generateEliminations` :5608, `postJournalEntry` :6380, `reverseJournalEntry` :6662, `createDepreciationRun` :7370
    - `accounting.server.ts`: `postDisposal` :198, `postDepreciationRun` :723, `postRevenueRecognitionRun` :1231
 3. In `propose-revenue-recognition-run/index.ts:639` and `recalculate-revenue-recognition-run/index.ts:37`: select `accountingCutoverDate` with the function's `db`. If it is null, throw `new InvalidInputError("Set up accounting before you post journals, runs or period closes.")` from `../errors`.
-4. Write tests for `requireAccountingCutover` with a client stub that returns one `companySettings` row: a null date returns the error; a date returns no error.
+4. Write 2 tests for `requireAccountingCutover`. Use a client stub that returns one `companySettings` row.
+   - A null date returns the error.
+   - A date returns no error.
 
 **Verify:**
 ```bash
@@ -883,12 +930,18 @@ pnpm --filter erp exec vitest run app/modules/accounting
 
 **Steps:**
 1. Create a company with `create` and the seed path the precedent uses. Leave `accountingCutoverDate` null.
-2. Post one of each, in this order: receipt, shipment, sales invoice, purchase invoice, payment, memo, inventory adjustment, job material issue, job completion.
+2. Post 9 documents, in this order:
+   receipt, shipment, sales invoice, purchase invoice, payment, memo, inventory adjustment, job material issue, job completion.
 3. After each post, assert that every journal of the document has status `Provisional` and a null `accountingPeriodId`.
    Assert that the company has no `accountingPeriod` row.
 4. Assert that `accountTreeBalances` for the company returns 0 on every account.
 5. Assert that the shipment wrote a Sale `costLedger` row.
-6. Set the company's `scrapAccount` to null. Post an inventory adjustment that scraps stock. Assert the scrap line's `accountId` is the company's `retainedEarningsAccount` and its `accountDefaultRole` is `scrapAccount`.
+6. Set the company's `salesShippingRevenueAccount` to null. Post a sales invoice with shipping. Assert 2 things about the shipping line:
+   - Its `accountId` is the company's `retainedEarningsAccount`.
+   - Its `accountDefaultRole` is `salesShippingRevenueAccount`.
+7. Set the company's `scrapAccount` to null. Post a scrap. Assert that the scrap line is on `inventoryAdjustmentVarianceAccount`, with no `accountDefaultRole`.
+
+The first version of step 6 used `scrapAccount`. The review fix in b9f897608c gave `scrapAccount` a fallback in every state, so it never makes a stand-in line. The committed tests are in `always-post.test.ts` and `always-post-invoice.test.ts`.
 
 **Verify:**
 ```bash
@@ -956,17 +1009,22 @@ docker exec carbon-carbon-accounting-reset-plan-postgres-1 psql -U postgres -d p
    };
    export type TrialBalanceLine = { accountId: string; accountClass: OpenItem["accountClass"]; debit: number; credit: number };
    ```
-2. Give `OpenItem` 2 more fields: `originalAmount` (the document's original base control amount) and `settledBeforeCutover` (the base amount settled before the cutover). For an open item that is not a document (Inventory, Work in Progress, Fixed Asset Cost, Accumulated Depreciation, Deferred Revenue, Lease Net Investment), set `originalAmount = amount` and `settledBeforeCutover = 0`. `amount` is always `originalAmount − settledBeforeCutover`.
-3. Write `buildOpeningJournalLines(items, trialBalance, controlAccountIds, migrationClearing)`. It returns journal line inserts with natural-balance-signed `amount`, as the lessons require:
-   - Per open item: one line for `originalAmount` with its description and document keys. If `settledBeforeCutover` is not 0, a second line for `−settledBeforeCutover` with the same keys and the description `${description} (settled before cutover)`. The AR/AP readers and the payment lookup match descriptions exactly, so they ignore the second line, and the account nets to `amount` (spec section 4).
+2. Give `OpenItem` 2 more fields:
+   - `originalAmount`: the document's original control amount, in base currency.
+   - `settledBeforeCutover`: the base amount settled before the cutover.
+3. 6 open item types are not documents: Inventory, Work in Progress, Fixed Asset Cost, Accumulated Depreciation, Deferred Revenue and Lease Net Investment. For these, set `originalAmount = amount` and `settledBeforeCutover = 0`.
+4. `amount` is always `originalAmount − settledBeforeCutover`.
+5. Write `buildOpeningJournalLines(items, trialBalance, controlAccountIds, migrationClearing)`. It returns journal line inserts with natural-balance-signed `amount`, as the lessons require:
+   - Per open item: one line for `originalAmount`, with its description and document keys.
+   - Per open item with `settledBeforeCutover` not 0: a second line for `−settledBeforeCutover`. It has the same keys and the description `${description} (settled before cutover)`. The AR/AP readers and the payment lookup match descriptions exactly, so they ignore it. The account then nets to `amount` (spec section 4).
    - One Migration Clearing line per control account, offsetting the open items of that account.
    - One line per trial balance row on a non-control account, and one Migration Clearing line offsetting it.
    - No line for a trial balance row on a control account.
-4. Write `migrationClearingByAccount(items, trialBalance, controlAccountIds)`. It returns, per control account, `{ accountId, trialBalance, carbon, difference }` and a `total`. Enable needs `equals(total, 0, 0.01)`.
-5. Write `planInventoryReset(onHandAtCutover, unitCostByItem, layersBeforeCutover)`. Input on-hand is per item (sum across locations). It returns `layerIdsToClose` and one opening layer per item with on-hand above zero: `{ itemId, quantity, cost: round(quantity × unitCost), remainingQuantity: quantity }`.
-6. Write `recostOutbound(layers, outbound)`. `layers` are the opening layers and the inbound layers dated on or after the cutover, oldest first. `outbound` are the outbound `costLedger` rows dated on or after the cutover, in date then `entryNumber` order. It relieves FIFO and returns `{ costLedgerId, newCost, delta }` per outbound row and the new `remainingQuantity` per layer. Copy the FIFO rule from `packages/server-functions/src/lib/calculate-cogs.ts`.
-7. Use `round`, `equals` and `distributeRoundingResidual` from `@carbon/utils`. Never use `Math.round`.
-8. Write tests for each function:
+6. Write `migrationClearingByAccount(items, trialBalance, controlAccountIds)`. It returns, per control account, `{ accountId, trialBalance, carbon, difference }` and a `total`. The enable needs `equals(total, 0, 0.01)`.
+7. Write `planInventoryReset(onHandAtCutover, unitCostByItem, layersBeforeCutover)`. Input on-hand is per item (sum across locations). It returns `layerIdsToClose` and one opening layer per item with on-hand above zero: `{ itemId, quantity, cost: round(quantity × unitCost), remainingQuantity: quantity }`.
+8. Write `recostOutbound(layers, outbound)`. `layers` are the opening layers and the inbound layers dated on or after the cutover, oldest first. `outbound` are the outbound `costLedger` rows dated on or after the cutover, in date then `entryNumber` order. It relieves FIFO and returns `{ costLedgerId, newCost, delta }` per outbound row and the new `remainingQuantity` per layer. Copy the FIFO rule from `packages/server-functions/src/lib/calculate-cogs.ts`.
+9. Use `round`, `equals` and `distributeRoundingResidual` from `@carbon/utils`. Never use `Math.round`.
+10. Write tests for each function:
    - 2 open invoices on one receivables account and a trial balance that matches: difference 0, the journal balances.
    - An invoice of 100 with 40 settled before the cutover: 2 lines (+100 "Accounts Receivable", −40 "Accounts Receivable (settled before cutover)"), net 60.
    - The same with a trial balance 5.00 higher: difference 5.00 on that account.
@@ -984,6 +1042,10 @@ pnpm exec turbo run typecheck --filter=@carbon/database
 
 **Out of scope:** database reads (Task 27), writes (Task 28).
 
+At HEAD, 2 signatures differ from steps 7 and 8:
+- `planInventoryReset` takes the on-hand and the unit cost per item only. The enable closes the old layers in SQL (`resetAndRecostInventory`, `activate-accounting/recost.ts`).
+- `recostOutbound` takes one ordered list of layer and outbound events. It relieves them through `replayReliefs` in `@carbon/database/cost-relief`. `calculateCOGS` and the legacy movement costs use the same module (review fix b9f897608c).
+
 ---
 
 ## Task 27: Add the cutover read services
@@ -996,22 +1058,34 @@ pnpm exec turbo run typecheck --filter=@carbon/database
 
 **Steps:**
 1. Add `getActivationReadiness(client, db, { companyId, cutoverDate })`. It returns a list of checks `{ key, label, passed, detail }`:
-   - `account-defaults`: every `accountDefault` account column is set, `migrationClearingAccount` included. Return the empty column names in `detail`.
+   - `account-defaults`: every `accountDefault` account column is set to an active account, `migrationClearingAccount` included. Return the empty column names in `detail`.
+     At HEAD, 2 rules changed this check. A default with a fallback in `DEFAULT_FALLBACKS` may stay empty. Migration Clearing must be an active Equity account that is not a group (review fix 38602af774).
    - `fiscal-settings`: a `fiscalYearSettings` row exists.
    - `cutover-date`: the date is the start of a fiscal period. It is not after today in the company time zone. It is at most 3 periods before the current one.
    - `pending-documents`: no Draft or Pending receipt, shipment, invoice, payment or memo dated before the cutover. Return the documents, as `computePeriodReadiness` does.
-   - `legacy-jobs`: no open job created before L. L is `MIN("createdAt")` of the company's journals with status `Provisional` or `Superseded`, else now.
+   - `legacy-jobs`: no open job created before L (see Terms). The read takes `MIN("createdAt")` of the company's Provisional and Superseded journals.
    - `opening-balance`: no Posted journal with `sourceType 'Opening Balance'`.
 2. Add `getCutoverOpenItems(client, db, { companyId, cutoverDate })`. It returns `OpenItem[]` (Task 26) from these sources:
-   - Receivables and payables: per open invoice, `originalAmount` is its base total (the original control amount its posting writes) and `settledBeforeCutover` is the base sum of its `invoiceSettlement.appliedAmount` from payments posted before the cutover. Cross-check the open amount against `get_ar_open_by_customer` / `get_ap_open_by_supplier` as of the day before the cutover. An invoice with status Paid and no settlement counts as settled.
-   - Unapplied credits and deposits: per payment posted before the cutover, `originalAmount` is its unapplied cash at posting and `settledBeforeCutover` is what later settlements before the cutover applied of it. A deposit (`payment.rentalAgreementId` or `payment.salesOrderId`) goes to `prepaymentAccount` with description `CUSTOMER_DEPOSIT_DESCRIPTION`.
-   - Received not invoiced: purchase order lines, `quantityReceived − quantityInvoiced` at the cutover × the receipt layer's unit cost. The document line reference is `journalReference.to.receipt(poLineId)`.
+   - Receivables and payables, per open invoice:
+     - `originalAmount` is its base total. This is the original control amount its posting writes.
+     - `settledBeforeCutover` is the base sum of its `invoiceSettlement.appliedAmount` from payments posted before the cutover.
+     - Cross-check the open amount against `get_ar_open_by_customer` / `get_ap_open_by_supplier` as of the day before the cutover.
+     - An invoice with status Paid and no settlement counts as settled.
+   - Unapplied credits and deposits, per payment posted before the cutover:
+     - `originalAmount` is its unapplied cash at posting.
+     - `settledBeforeCutover` is the part of it that later settlements before the cutover applied.
+     - A deposit (`payment.rentalAgreementId` or `payment.salesOrderId`) goes to `prepaymentAccount` with description `CUSTOMER_DEPOSIT_DESCRIPTION`.
+   - Received not invoiced, per purchase order line: `quantityReceived − quantityInvoiced` at the cutover × the receipt layer's unit cost. The document line reference is `journalReference.to.receipt(poLineId)`.
    - Work in progress: per open job, the sum of its `DOCUMENT_JOURNAL_STATUSES` lines on `workInProgressAccount` dated before the cutover.
    - Deferred revenue: `revenueRecognitionSchedule` rows still Planned, dated on or after the cutover, on their credit account.
    - Lease net investment: `rentalLeaseScheduleLine.closingNetInvestment` of the last line before the cutover.
 3. Add `getCutoverInventory(client, db, { companyId, cutoverDate })`. It returns 3 values per item:
    - On-hand: the sum of `itemLedger.quantity` dated before the cutover.
-   - Default unit cost: the average of the open layers, else `itemCost.unitCost`.
+   - Default unit cost, by costing method:
+     - Standard: `itemCost.standardCost`.
+     - FIFO or LIFO: the value of the stock at the cutover, replayed from the layers dated before it (`unitCostAtCutover`).
+     - Average: `itemCost.unitCost`.
+     The first version of this task used the average of the open layers. Task 28 execution note 4 and the review fix in 188a710e24 replaced it.
    - Inventory account: from the item's posting group.
 4. Add `getCutoverFixedAssets(client, { companyId })`. Per asset not Disposed: cost, accumulated depreciation, class accounts.
 5. Add `saveOpeningTrialBalance(client, db, { companyId, cutoverDate, userId, lines })`. It keeps one Draft journal with `sourceType 'Opening Balance'`, dated the day before the cutover. It replaces the Draft's lines with `lines`.
@@ -1043,26 +1117,42 @@ pnpm --filter erp exec vitest run app/modules/accounting
 
 **Steps:**
 1. Input: `{ cutoverDate: string; confirmation: string }`. Permission: `update: accounting`.
-2. Open one Kysely transaction. Do these steps in order:
-   1. Select `companySettings` for the company `FOR UPDATE`. If `accountingCutoverDate` is set, throw "Accounting is already set up."
-   2. If `confirmation` is not the company name, throw "Type the company name to confirm."
-   3. Re-run every readiness check and `getMigrationClearing` with the transaction. If one fails, throw its message.
-   4. Inventory reset: run `planInventoryReset`. Set `remainingQuantity = 0` on the closed layers. Insert the opening layers with `documentType 'Purchase Receipt'`, `costLedgerType 'Direct Cost'`, `itemLedgerType 'Purchase'`, `postingDate` = the cutover.
-   5. Recost: run `recostOutbound`. Update `costLedger.cost` of each outbound row with a delta. Update `remainingQuantity` of each layer.
-   6. For each document with a delta: write one Provisional journal dated the document's posting date, description "Cutover recost". Find the document's inventory line and its pair by `journalLineReference`. Move the delta between those 2 accounts.
-   7. If a document's inventory line has no pair by `journalLineReference`, STOP and report. Do not guess the offset account.
-   8. Set every `Provisional` journal dated before the cutover to `Superseded`.
-   9. Set `revenueRecognitionSchedule` rows dated before the cutover with status Planned to Posted, `journalId` null. Do the same for lease Interest rows.
-   10. Insert the opening journal with `sourceType 'Opening Balance'` and status Posted. Date it the day before the cutover. Take its lines from `buildOpeningJournalLines`. Resolve its period with `resolveAccountingPeriod`, mode historical. Delete the Draft trial balance journal of Task 27.
-   11. Assign periods. For each `Provisional` journal dated on or after the cutover, set `accountingPeriodId` with `resolveAccountingPeriod` (`packages/server-functions/src/lib/get-accounting-period.ts:49`, mode historical). Resolve once per distinct month. Superseded journals keep a null period.
-   12. Re-point the stand-in schedule rows. A `revenueRecognitionSchedule` row has no role column, and `retainedEarningsAccount` never legitimately appears on one. For each Planned row of the company whose `debitAccountId` or `creditAccountId` is the company's `retainedEarningsAccount`:
-       - Debit side: `deferredRevenueAccount` for a Deferral row, `contractAssetAccount` for an Accrual row.
-       - Credit side: `rentalIncomeAccount` when the row has a `rentalAgreementLineId`, else `salesAccount`.
-       - If a row matches none of these cases, STOP and report.
-   13. Re-point the stand-in lines. Select the lines with `accountDefaultRole` set, in `Provisional` journals dated on or after the cutover. Set each line's `accountId` to the company's `accountDefault` value for its role. Set `accountDefaultRole` to null. Use one UPDATE per role.
-   14. Set every `Provisional` journal dated on or after the cutover to `Posted`, with `postedAt` and `postedBy`.
-   15. Close the periods that end before the cutover, oldest first: set `closeStatus 'Closed'`, `closedAt`, `closedBy`, then call `snapshotAccountingPeriodBalances` for each.
-   16. Update `companySettings`: `accountingCutoverDate`, `accountingActivatedAt = now`, `accountingActivatedBy = userId`.
+2. Open one Kysely transaction. Do the steps of spec section 5 in this order. The step numbers match the spec and the code comments in `activate-accounting/index.ts`, `promote.ts` and `recost.ts`.
+   - **Step 1. Lock and check.**
+     1. Select `companySettings` for the company `FOR UPDATE`. If `accountingCutoverDate` is set, throw "Accounting is already set up."
+     2. If `confirmation` is not the company name, throw "Type the company name to confirm."
+     3. Re-run every readiness check and `getMigrationClearing` with the transaction. If one fails, throw its message.
+   - **Step 1a. Legacy backfill.** Call `journalLegacyDocuments` (Tasks 39–43).
+   - **Step 2. Inventory reset.**
+     1. Set `remainingQuantity = 0` on each cost layer dated before the cutover.
+     2. Run `planInventoryReset`.
+     3. Insert the opening layers with `documentType 'Purchase Receipt'`, `costLedgerType 'Direct Cost'`, `itemLedgerType 'Purchase'`, `postingDate` = the cutover.
+   - **Step 3. Re-cost.**
+     1. Run `recostOutbound`.
+     2. Update `costLedger.cost` of each outbound row with a delta.
+     3. Update `remainingQuantity` of each layer.
+     4. For each document and posting date with a delta, write one Provisional journal with the description "Cutover recost". Date it that posting date.
+     5. Find the document's inventory line and its pair by `journalLineReference`. Move the delta between those 2 accounts.
+     6. If a document's inventory line has no pair by `journalLineReference`, STOP and report. Do not guess the offset account.
+   - **Step 4. Supersede.** Set every Provisional journal dated before the cutover to `Superseded`.
+   - **Step 5. Revenue recognition rows.** Set each Planned `revenueRecognitionSchedule` row dated before the cutover to Posted, with `journalId` null. Lease Interest rows are `revenueRecognitionSchedule` rows of type `Interest`, so the same UPDATE covers them.
+   - **Step 6. Fixed assets.** Write nothing. The register already holds the values at the cutover.
+   - **Step 7. Opening journal.**
+     1. Delete the Draft trial balance journal of Task 27.
+     2. Insert the opening journal with `sourceType 'Opening Balance'` and status Posted. Date it the day before the cutover.
+     3. Take its lines from `buildOpeningJournalLines`.
+     4. Resolve its period with `resolveAccountingPeriod`, mode historical.
+   - **Step 8. Assign periods.** For each Provisional journal dated on or after the cutover, set `accountingPeriodId` with `resolveAccountingPeriod` (`packages/server-functions/src/lib/get-accounting-period.ts:49`, mode historical). Resolve once per distinct month. Superseded journals keep a null period.
+   - **Step 9. Re-point the stand-in lines, then promote.**
+     1. Select the lines with `accountDefaultRole` set, in Provisional journals dated on or after the cutover.
+     2. Set each line's `accountId` to the company's `accountDefault` value for its role. Set `accountDefaultRole` to null. Use one UPDATE per role.
+     3. Move each intercompany elimination line copied from a stand-in line to the same account.
+     4. Set every Provisional journal dated on or after the cutover to `Posted`, with `postedAt` and `postedBy`.
+   - **Step 10. Close the periods before the cutover.** Take the periods that end before the cutover, oldest first. Set `closeStatus 'Closed'`, `closedAt` and `closedBy`. Then call `snapshotAccountingPeriodBalances` for each.
+   - **Step 10a. Make the current period Active.** Call `getCurrentAccountingPeriod`, as the first posting would. The cutover is never after today, so step 10 never closes this period.
+   - **Step 11. Stamp.** Update `companySettings`: `accountingCutoverDate`, `accountingActivatedAt = now`, `accountingActivatedBy = userId`.
+
+   The first version of this task also re-pointed stand-in `revenueRecognitionSchedule` rows by account. The review fix in b9f897608c removed that step: a schedule row never takes a stand-in. A service invoice with dates refuses an empty deferred revenue default before the cutover.
 3. Write a database test (`databaseTest`) with 1 open invoice, 1 receipt not invoiced and stock of 1 item. Assert after the enable:
    - No journal has status `Provisional`.
    - The opening journal balances and Migration Clearing sums to 0.
@@ -1089,20 +1179,31 @@ pnpm --filter @carbon/server-functions exec vitest run src/permissions-manifest.
 **Depends on:** Task 28
 **Files:**
 - Create: `packages/database/src/accounting-cutover-dates.ts` — `isBeforeCutover(postingDate: string, cutoverDate: string | null): boolean`, with a test
-- Modify: `packages/server-functions/src/post-sales-invoice/index.ts` (void at :2512)
-- Modify: `packages/server-functions/src/post-purchase-invoice/index.ts` (void at :374)
-- Modify: `packages/server-functions/src/post-payment/post-payment-transaction.ts` (void at :116-182)
-- Modify: `packages/server-functions/src/post-memo/post-memo-transaction.ts` (void at :135-177)
-- Modify: `packages/server-functions/src/post-receipt/index.ts` (void at :275), `post-shipment/index.ts` (voids at :3103, :4113, :4398), `post-inventory-adjustment/index.ts`, `post-inventory-count/index.ts`
+- Create: `packages/server-functions/src/lib/cutover-void.ts` — `refuseVoidBeforeCutover`, `assertNoMigrationClearing` and the refusal messages
+- Modify: `packages/server-functions/src/post-sales-invoice/index.ts`, `post-purchase-invoice/index.ts` (the invoice voids)
+- Modify: `packages/server-functions/src/post-payment/post-payment-transaction.ts`, `post-memo/post-memo-transaction.ts` (the payment and memo voids)
+- Modify: `packages/server-functions/src/post-receipt/index.ts`, `post-shipment/index.ts` (the inventory voids)
+- Modify: `packages/server-functions/src/post-charge/post-charge-void.ts`, `post-reimbursement/post-reimbursement-void.ts`
 
 **Steps:**
-1. For an invoice, payment or memo whose posting date is before the cutover: build the posting again and negate it. Use `buildSalesPostingLines` (`packages/database/src/sales-posting-amounts.ts:299`), `buildPaymentJournal` (`build-payment-journal.ts:128`) and `buildMemoJournal` (`build-memo-journal.ts:100`). Date the void today, in the current period. Status Posted.
-2. Never post a void line to `migrationClearingAccount`.
-3. If no builder exists for the purchase invoice posting, STOP and report.
-4. If an inventory document is dated before the cutover, refuse its void. This covers receipts, shipments, inventory adjustments and inventory counts. Throw: "This document is from before your accounting cutover. Record a return or an inventory adjustment instead."
-5. Add 2 database tests:
-   - A void of a pre-cutover invoice nets its receivables to 0 against the opening line.
-   - A void of a pre-cutover receipt throws the message.
+1. If a payment or memo is dated before the cutover, build its posting again and negate it. Use `rebuildPaymentJournal` (`post-payment/rebuild-journal.ts`) and `rebuildMemoJournal` (`post-memo/rebuild-journal.ts`). Date the void today, in the current period, with status Posted.
+2. Never post a void line to `migrationClearingAccount`. `assertNoMigrationClearing` refuses one.
+3. Refuse the void of each of these documents when it is dated before the cutover. Call `refuseVoidBeforeCutover` before any write.
+
+   | Document | Message constant | Message |
+   |---|---|---|
+   | Sales invoice | `SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR` | "This invoice is from before your accounting cutover. Issue a credit memo instead." |
+   | Purchase invoice | `PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR` | "This invoice is from before your accounting cutover. Record a debit memo instead." |
+   | Receipt, shipment | `INVENTORY_VOID_BEFORE_CUTOVER_ERROR` | "This document is from before your accounting cutover. Record a return or an inventory adjustment instead." |
+   | Charge | `CHARGE_VOID_BEFORE_CUTOVER_ERROR` | "This charge is from before your accounting cutover. Record a journal entry to correct it instead." |
+   | Reimbursement | `REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR` | "This reimbursement is from before your accounting cutover. Record a journal entry to correct it instead." |
+
+4. A contract or rental credit memo dated before the cutover also refuses its void, with `MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR` (`post-memo/rebuild-journal.ts`).
+5. Inventory adjustments and inventory counts have no void, so they need no change.
+6. Add database tests:
+   - A void of a payment or a memo dated before the cutover nets against its opening line.
+   - A void of each document in the step 3 table, dated before the cutover, throws its message.
+   The committed tests are in `activate-accounting/pre-cutover-voids.test.ts`, `always-post-cutover.test.ts` and `post-memo/memo-cutover.test.ts`.
 
 **Verify:**
 ```bash
@@ -1112,7 +1213,9 @@ pnpm --filter @carbon/server-functions test
 # Expected: all tests pass (with the stack up)
 ```
 
-**Out of scope:** charges and reimbursements (no cutover rule in the spec).
+**Out of scope:** none.
+
+This task changed while it ran. The first version built every invoice void again and refused nothing for charges and reimbursements. See Execution notes.
 
 ---
 
@@ -1125,7 +1228,10 @@ pnpm --filter @carbon/server-functions test
 
 **Steps:**
 1. Read `companySettings.accountingCutoverDate` in `buildDepreciationRunLines`.
-2. At :7301, set `lastPostedPeriodEnd` to the later of the posted run's `periodEnd` and the last day of the month before the cutover. Compare `YYYY-MM-DD` strings; use `@internationalized/date` for the month end.
+2. At :7301, set `lastPostedPeriodEnd` to the later of 2 dates:
+   - the posted run's `periodEnd`;
+   - the last day of the month before the cutover.
+   Compare `YYYY-MM-DD` strings. Use `@internationalized/date` for the month end.
 3. Add a test: an asset that started before the cutover, with no posted run, depreciates from the cutover month only.
 
 **Verify:**
@@ -1155,21 +1261,34 @@ pnpm --filter erp exec vitest run app/modules/accounting/accounting.utils.test.t
   - Inline unit cost edit: `apps/erp/app/routes/x+/items+/cost.$itemId.tsx` (`path.to.itemCostUpdate`)
 
 **Steps:**
-1. Steps, in order: `readiness`, `inventory`, `fixed-assets`, `trial-balance`, `enable`. Labels: "Readiness", "Inventory", "Fixed assets", "Trial balance", "Enable".
-2. `activation.tsx` loader: `requirePermissions(request, { view: "accounting" })`. If `accountingCutoverDate` is set, `throw redirect(path.to.accountingPeriods)`. Keep the chosen cutover date in the URL search param `cutover`.
+1. Steps, in order: `readiness`, `inventory`, `fixed-assets`, `trial-balance`, `enable`. Labels: "Readiness", "Inventory", "Fixed Assets", "Trial Balance", "Enable".
+2. `activation.tsx` loader: `requirePermissions(request, { view: "accounting" })`. If `accountingCutoverDate` is set, `throw redirect(path.to.accountingPeriods)`. Keep the chosen cutover in the URL search param `cutover`.
 3. `activation._index.tsx`: redirect to the readiness step. Export `middleware = [redirectBeforeLoaders(loader)]`.
-4. `readiness`: a period-start date picker (default: start of the current period) and the checklist from `getActivationReadiness`. Next is disabled until every check passes. The `account-defaults` row lists each empty default and links to `path.to.accountingDefaults`.
-5. `inventory`: `InventoryCostTable` from `getCutoverInventory`. Each unit cost is an inline `NumberControlled` with `INPUT_FORMAT.rate`. It posts to `path.to.itemCostUpdate`. Show the total per inventory account.
+4. `readiness`: a period-start date picker (default: start of the current period) and the checklist from `getActivationReadiness`. The step disables Next until every check passes. The `account-defaults` row lists each empty default and links to `path.to.accountingDefaults`.
+5. `inventory`: `InventoryCostTable` from `getCutoverInventory`. Show the total per inventory account.
+   - An Average item's unit cost is an inline `NumberControlled` with `INPUT_FORMAT.rate`. It posts to `path.to.itemCostUpdate`.
+   - Show the cost as read-only for a FIFO or LIFO item, a Standard item, or a user without `update: parts`.
+   The first version made every unit cost editable. See the Task 31 execution notes.
 6. `fixed-assets`: `FixedAssetDepreciationTable` from `getCutoverFixedAssets`. Accumulated depreciation is inline editable; the action intent `save-asset` calls `updateCutoverAccumulatedDepreciation`.
-7. `trial-balance`: `TrialBalanceEditor` (the chart of accounts with debit and credit inputs) and a CSV upload (`accountNumber, debit, credit`). Map account numbers to ids in the action. List unknown numbers as errors. Intent `save-tb` calls `saveOpeningTrialBalance`. Below it, `MigrationClearingTable` shows `getMigrationClearing`.
-8. `enable` shows 4 things:
-   - A summary: cutover date, open item count, Migration Clearing total.
-   - The text "This cannot be undone."
+7. `trial-balance`: `TrialBalanceEditor` (the chart of accounts with debit and credit inputs) and a CSV upload (`accountNumber, debit, credit`).
+   - Intent `save-tb` calls `saveOpeningTrialBalance` with the editor's lines.
+   - Intent `import-tb` parses the CSV with `parseTrialBalanceCsv` (`trial-balance-csv.ts`). It maps account numbers to ids and lists unknown numbers as errors. If a row has an error, it saves nothing.
+   - Below the editor, `MigrationClearingTable` shows `getMigrationClearing`.
+8. `enable` shows these things, in this order:
+   - A summary: the cutover, the opening balance date, the open item count and the Migration Clearing total.
+   - A link back to Readiness when a check fails. A link back to Trial Balance when Migration Clearing is not 0.
+   - The section "Documents Posted Before Carbon Kept Journals", when legacy documents exist. It shows the count per family (Task 44).
+   - The warning "This cannot be undone."
    - A text field for the company name.
-   - The button "Enable accounting". Disable the button unless the clearing total is 0 within 0.01. The action (`update: "accounting"`) invokes `activate-accounting` through `serverFns`, then `throw redirect(path.to.accountingPeriods)` with a success flash.
-9. Every action validates with `validator(schema).validate(formData)`. On failure, return `data({}, await flash(request, error(...)))`.
-10. Render `<RecordOutlet />` in the layout.
-11. Wrap every user-visible string in Lingui (`Trans` or `t`).
+   - The button "Enable accounting".
+9. Enable the button only when 3 things are true:
+   - Every readiness check passes.
+   - The clearing total is 0 within 0.01.
+   - The user has `update: accounting`.
+10. The enable action invokes `activate-accounting` through `serverFns`. Then it throws `redirect(path.to.accountingPeriods)` with a success flash.
+11. Every action validates with `validator(schema).validate(formData)`. On failure, return `data({}, await flash(request, error(...)))`.
+12. Render `<RecordOutlet />` in the layout.
+13. Wrap every user-visible string in Lingui (`Trans` or `t`).
 
 **Verify:**
 ```bash
@@ -1191,7 +1310,7 @@ pnpm --filter @carbon/checks test
 | File:line | Change |
 |---|---|
 | `modules/accounting/ui/AccountingBetaGate.tsx:38` | gate on `accountingCutoverDate == null`; the overlay's button links to `path.to.accountingActivation` with "Set up accounting" |
-| `routes/x+/accounting+/_index.tsx:17-21` | redirect to reports when the cutover is set, else to the activation wizard |
+| `routes/x+/accounting+/_index.tsx:17-21` | redirect to reports when the cutover is set, else to the enable wizard |
 | `routes/x+/accounting+/charts.tsx:132-143` | remove the Opening Balances button and mode; the wizard replaces it |
 | `modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTree.tsx:131,190,319` | show balances when the cutover is set |
 | `routes/x+/get-started+/_layout.tsx:177,241` | read the cutover |
@@ -1201,7 +1320,7 @@ pnpm --filter @carbon/checks test
 | `modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:343,715,737` | always show the Offset Account field |
 
 **Steps:**
-1. Add `hasAccountingCutover(settings): boolean` to `apps/erp/app/modules/accounting/accounting.models.ts`. It returns `settings?.accountingCutoverDate != null`.
+1. Add `hasAccountingCutover(settings): boolean`. It returns `settings?.accountingCutoverDate != null`. The review fix in f1fe2b6c81 moved it from `accounting.models.ts` to `accounting.utils.ts`. It is now the one way the ERP asks whether a company has a cutover.
 2. Make each change in the table. Client components read `useSettings()`. Loaders read `getCompanySettings`.
 3. Delete `createOpeningBalanceJournal`, `getExistingOpeningBalanceEntry` (`accounting.service.ts:6472`, `:6497`), `OpeningBalancePostModal.tsx` and `openingBalanceValidator`, if nothing else uses them.
 
@@ -1294,7 +1413,7 @@ pnpm db:check:datasets
 # Expected: all 4 datasets pass
 ```
 
-**Out of scope:** existing companies (Task 2 step 12).
+**Out of scope:** existing companies (Task 2 step 9).
 
 ---
 
@@ -1332,7 +1451,7 @@ pnpm exec turbo run typecheck --filter=erp --filter=@carbon/utils
 - Modify: `.claude/rules/accounting-sync-handlers.md` — Provisional and Superseded never sync; promotion syncs
 - Modify: `.claude/rules/onboarding-company-templates.md` — tier 01 sets the cutover
 - Modify: `docs/content/docs/reference/accounting.mdx` — use the `carbon-docs` skill; describe the enable wizard
-- Modify: `.ai/specs/implemented/2026-10-08-accounting-cutover.md` — status `implemented` once Task 38 passes; move to `.ai/specs/implemented/`
+- Modify: `.ai/specs/2026-10-08-accounting-cutover.md` — when Task 38 passes, set the status to `implemented` and move the file to `.ai/specs/implemented/`
 
 **Steps:**
 1. Update each file. Ground each sentence in the code you wrote.
@@ -1386,15 +1505,39 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 
 **Depends on:** Task 28
 **Files:**
-- Create: `packages/server-functions/src/activate-accounting/legacy/` — `index.ts` (`journalLegacyDocuments(trx, { companyId, userId, cutoverDate })`, returns the count per family), `detect.ts`, `write.ts` (one helper that inserts a Provisional journal, its lines and their dimensions), `sales-invoice.ts`, `purchase-invoice.ts`, and a test.
+- Create: `packages/server-functions/src/activate-accounting/legacy/`:
+  - `index.ts`: `journalLegacyDocuments(trx, { companyId, userId, cutoverDate })`. It returns the count per family.
+  - `write.ts`: one helper that inserts a Provisional journal, its lines and their dimensions.
+  - `sales-invoice.ts`, `purchase-invoice.ts` and a test.
+- Create: `packages/database/src/legacy-documents.ts` (export `@carbon/database/legacy-documents`). It holds the detection query of each family. The enable and `getLegacyDocumentCounts` (Task 44) read the same queries. The first version of this task put the detection in `legacy/detect.ts`; the review fixes moved it here.
 - Modify: `packages/server-functions/src/activate-accounting/index.ts` — call it as step 1a, after the readiness re-check and before the inventory reset.
 
 **Steps:**
-1. Detect a legacy invoice: posted (sales `Submitted`, `Partially Paid`, `Paid`; purchase `Open`, `Partially Paid`, `Paid`), `postingDate >= D`, and no `journalLine` with `documentType 'Invoice'` and its id in a journal of any status.
-2. Sales invoice: build the lines with `buildSalesPostingLines`, with accounts from `accountDefault` and the stand-in rule of `resolveDefaultAccount`. Book a contract, rental or fixed-asset line as plain revenue on the sales account. Use the same `documentLineReference` values and descriptions as `post-sales-invoice`, so payments find the control line.
-3. Purchase invoice: amounts from `calculatePurchasePostingAmounts`. Mirror the reference and description shapes of `post-purchase-invoice` (`purchase-invoice:<poLineId>` on GR/IR lines). A received PO line clears GR/IR at its receipt cost (receipt `costLedger` rows, else `receiptLine.unitPrice`), and the price difference goes to the purchase variance account. An unreceived quantity accrues GR/IR. A G/L line books its own `accountId`. A stock line with no PO books the inventory account.
-4. Convert to base at the document's `exchangeRate`. Write each journal `Provisional`, dated the invoice's `postingDate`, `sourceType` as the posting writes it, with no period.
-5. Add a database test: post a sales invoice and a purchase invoice in a company with no cutover, delete their journals (as the reset did), enable with a trial balance that ties, and assert: receivables and payables carry the invoices; a payment against the sales invoice posts; Migration Clearing is 0.
+1. Detect a legacy invoice. It has 3 properties:
+   - Its status is not Draft, Pending or Voided.
+   - Its `postingDate` is on or after the cutover.
+   - No `journalLine` with `documentType 'Invoice'` and its id exists, in a journal of any status.
+2. Sales invoice: build the lines with `buildSalesPostingLines`. Take the accounts from `accountDefault`, with the stand-in rule of `resolveDefaultAccount`.
+3. Book a contract, rental or fixed-asset line as plain revenue on the sales account.
+4. Use the same `documentLineReference` values and descriptions as `post-sales-invoice`. Payments find the control line by them.
+5. Purchase invoice: take the amounts from `calculatePurchasePostingAmounts`. Copy the reference and description shapes of `post-purchase-invoice` (`purchase-invoice:<poLineId>` on GR/IR lines). Book each line type as follows:
+
+   | Line | Booking |
+   |---|---|
+   | Received PO line | Clear GR/IR at its receipt cost (receipt `costLedger` rows, else `receiptLine.unitPrice`). Book the price difference to the purchase variance account. |
+   | Unreceived quantity | Accrue GR/IR. |
+   | G/L line | Book its own `accountId`. |
+   | Stock line with no PO | Book the inventory account. |
+
+6. Convert to base at the document's `exchangeRate`.
+7. Write each journal `Provisional`, with no period. Date it the invoice's `postingDate`. Use the `sourceType` the posting writes.
+8. Add a database test:
+   1. In a company with no cutover, post a sales invoice and a purchase invoice.
+   2. Delete their journals, as the accounting reset did.
+   3. Enable with a trial balance that ties.
+   4. Assert that receivables and payables carry the invoices.
+   5. Assert that a payment against the sales invoice posts.
+   6. Assert that Migration Clearing is 0.
 
 **Verify:** typecheck `@carbon/server-functions`; the new test and `src/activate-accounting` pass.
 
@@ -1402,54 +1545,64 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 
 **Depends on:** Task 39
 **Steps:**
-1. Export `rebuildMemoJournal` and `rebuildPaymentJournal`. Give the payment rebuild a fee override read from `externalIntegrationMapping` (`entityType 'payment'`, `metadata.feeAmount` when `feeCurrency` equals the payment currency).
-2. Book a contract or rental credit memo as a plain memo on the sales account.
-3. Extract the charge and reimbursement loaders enough to call `buildChargeJournal` and `buildReimbursementJournal` from stored rows.
-4. Order: memos, charges and reimbursements with the invoices; payments after them, in `postingDate` then `createdAt` order.
-5. Extend the test: a legacy payment against a legacy invoice dated on or after D nets receivables to the open balance.
+1. Build the memo and payment journals again from their stored rows. At HEAD the builders are `rebuildMemoJournals` (`post-memo/rebuild-journal.ts`) and `rebuildPaymentJournals` (`post-payment/rebuild-journal.ts`). Each takes a list of documents. The void of one document uses the single forms `rebuildMemoJournal` and `rebuildPaymentJournal` (Task 29).
+2. Take each payment's processor fee from `readPaymentProcessorFees` (`@carbon/database/payment-processor-fee`). It reads the payment's `externalIntegrationMapping` row with the same rules as `recordStripeConnectPayment`.
+3. Book a contract or rental credit memo as a plain memo on the sales account.
+4. Extract the charge and reimbursement loaders so that `buildChargeJournal` and `buildReimbursementJournal` can run from stored rows.
+5. Write memos, charges and reimbursements together with the invoices. Write payments after them, in `postingDate` then `createdAt` order.
+6. Extend the test. Post a legacy payment against a legacy invoice dated on or after the cutover. Assert that receivables net to the open balance.
 
 ## Task 41: Write the journals of legacy movements that stored a cost row
 
 **Depends on:** Task 40
 **Steps:**
-1. Drive the family from `costLedger` rows dated on or after D whose document has no journal line.
-2. PO receipt: inventory (or indirect cost for Non-Inventory, WIP for outside processing) against GR/IR, with `receipt:<poLineId>` and the quantity, as `post-receipt` writes them. Return receipt: inventory against COGS. Return shipments: as `post-shipment` writes them.
-3. Adjustments, scrap, counts, non-conformance scrap and maintenance parts: `buildAdjustmentJournalLines` with the offset each posting uses.
-4. Skip transfers (no cost row) and corrections (they share the original document's keys).
-4a. A sales shipment that has its "Sale" cost row (the company had accounting on before the reset) belongs here: COGS against inventory at the stored cost.
-5. Extend the test: a legacy receipt dated on or after D, then a purchase invoice after the enable clears GR/IR to 0.
+1. Find the movements from the `costLedger` rows dated on or after the cutover whose document has no journal line.
+2. PO receipt: book inventory against GR/IR, with `receipt:<poLineId>` and the quantity, as `post-receipt` writes them. A Non-Inventory line books indirect cost instead of inventory. An outside processing line books WIP.
+3. Return receipt: book inventory against COGS.
+4. Return shipments: book them as `post-shipment` writes them.
+5. Adjustments, scrap, counts, non-conformance scrap and maintenance parts: use `buildAdjustmentJournalLines` with the offset each posting uses.
+6. Skip transfers, because they have no cost row. Skip corrections, because they share the original document's keys.
+7. A sales shipment with a "Sale" cost row belongs here. (The company had accounting on before the accounting reset.) Book COGS against inventory at the stored cost.
+8. Extend the test: post a legacy receipt dated on or after the cutover. After the enable, a purchase invoice clears GR/IR to 0.
 
 ## Task 42: Write the cost rows and journals of legacy movements that stored none
 
 **Depends on:** Task 41
 **Steps:**
-1. Sales shipment and direct sales invoice lines: for each negative `itemLedger` row with no outbound `costLedger` row, write one at today's unit cost and a COGS/inventory journal pair.
+1. Sales shipment and direct sales invoice line: find each negative `itemLedger` row with no outbound `costLedger` row. Write a "Sale" cost row for it. The shipment and invoice builders of Tasks 39 and 41 then write its COGS/inventory pair.
 2. Job material issue and backflush: write the outbound cost row and a WIP/inventory pair (`material-issue:<operationId>`).
-3. Job output: write the finished-goods layer at the cost of the job's material issued in the window, and an inventory/WIP pair.
-4. Run before the inventory reset, so the re-cost step values FIFO and LIFO items against the layers.
-5. Extend the test: a legacy shipment dated on or after D; after the enable, inventory on the GL equals the open layers.
+3. Job output: write the finished-goods layer at the cost of the job's material issued on or after the cutover. Write an inventory/WIP pair.
+4. Cost each outbound row as `calculateCOGS` does. A FIFO or LIFO item relieves the open layers. A Standard item costs at its standard cost. An Average item costs at `itemCost.unitCost`. A return costs at today's unit cost.
+5. Run this step first in the legacy backfill, before the invoice and shipment builders. The inventory reset and the re-cost (steps 2 and 3) then value FIFO and LIFO items against the layers.
+6. Extend the test: post a legacy shipment dated on or after the cutover. After the enable, inventory on the GL equals the open layers.
 
 ## Task 43: Write the journals of legacy asset and revenue runs again
 
 **Depends on:** Task 42
 **Steps:**
-1. Depreciation run lines and disposals dated on or after D with a null `journalId`: write their journals again from the stored lines, as `postDepreciationRun` and `postDisposal` build them. Set `journalId`.
-2. Revenue recognition schedule rows Posted on or after D with a null `journalId`: the same, as `postRevenueRecognitionRun` builds them.
-3. Write them Provisional. Promotion posts them.
-4. A recreated depreciation or disposal journal may already sit in the accounting provider: the reset deleted the journal and its mapping, not the provider's copy. Find how the enable's promotion triggers provider sync, and keep recreated run journals out of it.
-5. `getLeaseNetInvestmentItems` joins the commencement journal. A legacy sales-type lease has none. Read the opening Net Investment from the lease rows instead, so the lease opens without a journal before the cutover.
+1. Find the depreciation run lines and disposals dated on or after the cutover with a null `journalId`. Write their journals again from the stored lines, as `postDepreciationRun` and `postDisposal` build them. Set `journalId`.
+2. Do the same for the revenue recognition schedule rows Posted on or after the cutover with a null `journalId`. Build them as `postRevenueRecognitionRun` does.
+3. Write them Provisional. Step 9 of the enable promotes them.
+4. Keep the recreated run journals out of provider sync. The accounting provider can already hold a copy. The accounting reset deleted the journal and its mapping, but not the provider's copy. At HEAD, `insertProvisionalJournals` (`legacy/write.ts`) records an Excluded sync operation with the code `CUTOVER_REBUILT` for every journal that the legacy backfill writes.
+5. `getLeaseNetInvestmentItems` joins the commencement journal, and a legacy sales-type lease has none. Read the opening Net Investment from the lease rows instead. The lease then opens with no journal before the cutover.
 
-## Task 44: Show the legacy journals in the wizard and update the docs
+## Task 44: Show the legacy journals in the enable wizard and update the docs
 
 **Steps:**
-1. Add `getLegacyDocumentCounts(db, { companyId, cutoverDate })` to the reads. The enable step shows "N documents posted before Carbon kept journals get their journals now", per family.
-2. Update `packages/server-functions/AGENTS.md`, the accounting module AGENTS.md and `docs/content/docs/reference/accounting.mdx`.
+1. Add `getLegacyDocumentCounts(db, { companyId, cutoverDate })` to the reads (`accounting-cutover/legacy-counts.ts`).
+2. On the Enable step, show the section "Documents Posted Before Carbon Kept Journals". Its description is "Carbon writes their journals when you enable accounting, with today's accounts and costs." Show one count per family.
+3. Update `packages/server-functions/AGENTS.md`, the accounting module AGENTS.md and `docs/content/docs/reference/accounting.mdx`.
 
 ## Task 45: Verify the legacy window in the browser
 
 **Steps:**
-1. Build a local company with legacy documents dated on or after the cutover (post, then delete their journals and clear the cutover, as the reset did).
-2. Run the wizard, enable, pay a legacy invoice, and check the receivables balance.
+1. Build a local company with legacy documents dated on or after the cutover:
+   1. Post the documents.
+   2. Delete their journals, as the accounting reset did.
+   3. Clear the cutover.
+2. Run the enable wizard and enable accounting.
+3. Pay a legacy invoice.
+4. Check the receivables balance.
 
 ---
 
@@ -1460,20 +1613,21 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 | A company with no cutover posts Provisional journals, and reports show nothing | 6, 11–21, 24 |
 | A shipment relieves cost layers with no cutover | 13, 24 |
 | A job completion writes the finished-goods layer with no cutover | 21, 24 |
-| A payment against a pre-L invoice posts with no cutover | 16, 24 |
-| An empty `scrapAccount` gives a stand-in line with its role; the enable re-points it | 5, 11, 24, 28 |
+| A payment against an invoice posted before L posts with no cutover | 16, 24 |
+| An empty default with no fallback gives a stand-in line with its role, and the enable re-points it. (At HEAD an empty `scrapAccount` falls back to `inventoryAdjustmentVarianceAccount`, so the test uses `salesShippingRevenueAccount`.) | 5, 11, 14, 24, 28 |
 | Readiness lists each empty account default | 27, 31 |
 | Mark Paid and Mark Unpaid are gone | 33 |
-| The wizard refuses a bad cutover date | 27, 31 |
+| The wizard refuses a bad cutover | 27, 31 |
 | One opening line per open invoice | 26, 27, 28 |
-| A 5.00 difference keeps Activate disabled | 26, 31 |
-| After enable: Provisional on or after D is Posted, before D is Superseded, none remain | 28 |
-| A shipment between D and enable carries the reset cost | 26, 28 |
-| A payment against a pre-D invoice posts | 25, 28 |
+| A 5.00 difference keeps "Enable accounting" disabled | 26, 31 |
+| After the enable: Provisional on or after the cutover is Posted, before the cutover is Superseded, none remain | 28 |
+| A shipment between the cutover and the enable carries the reset cost | 26, 28 |
+| A payment against an invoice dated before the cutover posts | 25, 28 |
 | A purchase invoice clears the opening GR/IR line | 27, 28 |
-| A void of a pre-D invoice reverses in the current period, never on Migration Clearing | 29 |
-| A void of a pre-D receipt fails with the cutover message | 29 |
-| A receipt dated before D fails; currency and fiscal start month are locked | 2, 28 |
+| A void of a payment dated before the cutover reverses in the current period, never on Migration Clearing | 29 |
+| A void of an invoice dated before the cutover fails with the credit memo or debit memo message | 29 |
+| A void of a receipt dated before the cutover fails with the cutover message | 29 |
+| A receipt dated before the cutover fails; currency and fiscal start month are locked | 2, 28 |
 | A Superseded journal cannot change; Provisional to Posted in a Closed period fails | 2 |
 | A posting waits for the enable lock, then posts as Posted | 5, 28 |
 | A new company posts as Posted | 35 |
@@ -1482,39 +1636,90 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 
 ## Execution notes
 
-- Task 10 changed while executing: a Provisional journal has no accounting period (spec section 1 item 3). Phase B shared step 5, Task 21, Task 24 and Task 28 follow from it.
-- Task 1 widened `journalEntryStatus`; the ERP typecheck then failed in the status badge and the provider journal schema. That fix (labels, colors, `journalEntryStatuses`, `core/models.ts`) is committed with Task 10, ahead of Task 36. Task 36 keeps the journal list filter and the document panels.
-- Shared step 2 amended while executing: a status read before the transaction is re-read under the lock inside it, and a mismatch throws. Most posting functions resolve the period before the transaction.
-- Task 21 copies both functions from `pg_get_functiondef` (the live definition). Its labor-absorption journal is still skipped when `laborAbsorptionAccount` or `overheadAbsorptionAccount` is empty, as before; it uses no stand-in line.
-- Task 11: after the cutover an empty `scrapAccount` still falls back to `inventoryAdjustmentVarianceAccount`, as it did before; only before the cutover does it become a stand-in line. `recost-serial-unit` now always needs an offset account, so the recost form must always show that field (Task 32).
-- The full server-functions suite can fail 1-2 database tests under parallel load (`rows.test.ts`, `post-charge-transaction.test.ts`); rerun them alone before treating a failure as real.
-- Task 14: before the cutover, sales invoice builders use a class-typed placeholder for an empty optional default and write Retained Earnings with the role on journal lines, schedule rows and intercompany elimination lines. Schedule rows have no role column, so Task 28 re-points them by account (step 12). The base-currency identity-rate guard and the currency-row check now run for every company (Q7, fail closed).
-- Task 16: a rental or contract credit memo still refuses before the cutover when `deferredRevenueAccount`, `contractAssetAccount` or `rentalIncomeAccount` is empty; its error names the default.
+### Changes while the tasks ran
+
+- Task 10 changed while it ran: a Provisional journal has no accounting period (spec section 1 item 3). Phase B shared step 5, Task 21, Task 24 and Task 28 follow from it.
+- Task 1 widened `journalEntryStatus`. The ERP typecheck then failed in the status badge and the provider journal schema. The Task 10 commit holds that fix (labels, colors, `journalEntryStatuses`, `core/models.ts`), ahead of Task 36. Task 36 keeps the journal list filter and the document panels.
+- Shared step 2 changed while it ran. A function that reads the status before its transaction reads it again under the lock inside it. A mismatch throws. The rule applies to each posting function that resolves the period before its transaction.
+- Task 21 copies both functions from `pg_get_functiondef` (the live definition). If `laborAbsorptionAccount` or `overheadAbsorptionAccount` is empty, it still skips the labor-absorption journal, as before. It writes no stand-in line.
+- Task 11: `recost-serial-unit` now always needs an offset account, so the serial unit cost form in `InventoryStorageUnits.tsx` must always show that field (Task 32). An empty `scrapAccount` falls back to `inventoryAdjustmentVarianceAccount` before and after the cutover. It never makes a stand-in line (review fix b9f897608c).
+- The full server-functions suite can fail 1 or 2 database tests under parallel load (`rows.test.ts`, `post-charge-transaction.test.ts`). Run them alone before you treat a failure as real.
+- Task 14: before the cutover, the sales invoice builders write a stand-in line for an empty optional default with no fallback. They use a class-typed placeholder and write the role on the journal line and on its intercompany elimination line. The base-currency identity-rate guard and the currency-row check now run for every company (Q7, fail closed).
+- Task 14, first version: the builders also wrote retained earnings on `revenueRecognitionSchedule` rows, and Task 28 re-pointed them by account. The review fix in b9f897608c removed both. A schedule row never takes a stand-in.
+- Task 16: before the cutover, a rental or contract credit memo still refuses when `deferredRevenueAccount`, `contractAssetAccount` or `rentalIncomeAccount` is empty. Its error names the default.
 - Voids copy `accountDefaultRole` from each original line to its reversal (Tasks 14, 15, 16).
-- Task 23: the guard tests live in `accounting.periods.test.ts` (it already has the client stub and module mocks). The payment test fixture now gives its company a cutover.
-- Task 20: capitalize with an entered cost and adjustCost now always need an offset account, so `capitalize.tsx` and `$fixedAssetId.adjust-cost.tsx` must always show that field (Task 32). Lease Interest schedule rows refuse with the existing message when their defaults are empty (no stand-in in a non-journal row).
-- Task 26: `recostOutbound` takes FIFO/LIFO movements only; Standard and Average items cost from `itemCost`, not layers.
+- Task 23: the guard tests live in `accounting.periods.test.ts`, because it already has the client stub and the module mocks. The payment test fixture now gives its company a cutover.
+- Task 20: capitalize with an entered cost and adjustCost now always need an offset account. So `capitalize.tsx` and `$fixedAssetId.adjust-cost.tsx` must always show that field (Task 32). If their defaults are empty, lease Interest schedule rows refuse with the existing message. A non-journal row has no stand-in.
+- Task 26: `recostOutbound` takes FIFO and LIFO movements only. Standard and Average items cost from `itemCost`, not from layers.
 - Task 30: the floor is the pure `depreciationFloor` in `accounting.utils.ts`, tested there.
-- Task 27 changed while executing: the cutover reads live once, in Kysely, in `packages/database/src/accounting-cutover-reads.ts` (export `./accounting-cutover-reads`, server-only). The wizard loaders call them through `accounting.server.ts` with `getDatabaseClient()`; Task 28 calls the same functions with its transaction. Two implementations of the open-item reads would drift. The writes (`saveOpeningTrialBalance`, `updateCutoverAccumulatedDepreciation`) take a Kysely handle too.
-- Task 27: deferred revenue opening items use the schedule row's DEBIT account (a Deferral row is the future recognition entry, Dr Deferred Revenue / Cr Sales). Purchase invoices are always described "Accounts Payable", as the posting writes. Received-not-invoiced must carry quantity for the purchase invoice's GR/IR walk; Task 28 adds it (see spec section 4).
-- Task 35: tier 01 sets the cutover only when the company has none (a re-apply keeps it, the cutover is one-way).
-- New UI strings are translated in one `/translate` batch at the end of Phase D, not per commit.
-- Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
+- Task 27 changed while it ran. The cutover reads live once, in Kysely, in `packages/database/src/accounting-cutover-reads.ts` (export `./accounting-cutover-reads`, server-only). Two implementations of the open-item reads would drift.
+  - Task 28 calls the same functions with its transaction.
+  - The writes (`saveOpeningTrialBalance`, `updateCutoverAccumulatedDepreciation`) take a Kysely handle too.
+  - The wizard loaders first called the reads through `accounting.server.ts`. Since the review fix in f1fe2b6c81, they import them directly, with `getDatabaseClient()`.
+- Task 27: a deferred revenue opening item uses the schedule row's DEBIT account. A Deferral row is the future recognition entry, Dr Deferred Revenue / Cr Sales. A purchase invoice always has the description "Accounts Payable", as the posting writes it. Received-not-invoiced must carry the quantity for the GR/IR walk of the purchase invoice. Task 28 adds it (spec section 4).
+- Task 35: tier 01 sets the cutover only when the company has none. A re-apply keeps it, because the cutover is one-way.
+- Run `/translate` once at the end of Phase D for the new UI strings, not once per commit.
+- The Task 1 commit holds Task 7 too. The pre-commit dataset check refuses the new enum values until the exclusions exist.
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.
-- A commit that touches a migration or `packages/database/src` needs `pnpm generate:mcp` first, then stage `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
+- Before a commit that touches a migration or `packages/database/src`, run `pnpm generate:mcp`. Then stage `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
 - The dataset and backup checks read `SUPABASE_DB_URL` from `.env` (port 54322). This worktree's stack is on `.env.local` (port 65067 since the stack restart). Export it before a commit: `export $(grep -E "^SUPABASE_DB_URL=" .env.local | xargs)`.
-- Task 28 changed while executing:
-  1. The enable writes one recost journal per document and posting date, not one per document. A job can issue material on more than one day.
-  2. A recost offset line takes its sign from the original pair, not from the account class. A stand-in line sits on retained earnings but carries the sign of the account it stands in for.
-  3. `recostOutbound` takes only layers dated on or before a movement. It takes the newest layer first for a LIFO item.
-  4. The default unit cost of a FIFO or LIFO item replays its layers dated before the cutover (`unitCostAtCutover`). Today's remaining quantity is wrong because relief after the cutover changed it. An Average item uses `itemCost.unitCost`.
-  5. Open gaps: a PO line invoiced past its receipts before the cutover gets no open item. After the enable, an invoice clears GR/IR at the opening line's average cost, so receipts at different costs can leave a residual.
-- Task 29 changed while executing: the void of a sales or purchase invoice dated before the cutover fails and points to a credit memo or a debit memo. No builder covers a whole invoice posting. Only payment and memo voids build the posting again and negate it.
-- Task 31 changed while executing:
-  1. The inventory step edits the unit cost of an Average item only. A FIFO or LIFO item shows the value its layers had at the cutover, and a Standard item shows its standard cost. An edit to `itemCost.unitCost` does not reach the reset for them.
-  2. The trial balance CSV import is its own intent, `import-tb`. It saves nothing when a row has an error.
-  3. `no-unscoped-kysely-write` exempts `companySettings`. Its `id` is the company id, as for `company`.
-- Task 40 added migration `20261009060609_legacy-journal-attach.sql`. The charge and reimbursement draft guards refused every Posted to Posted change, so the enable could not set `journalId`. The guards now allow one more change: a Posted row with no journal gets one, and nothing else changes.
-- Task 42 also journals job issue and completion cost rows whose journals the reset deleted (companies that had accounting on). Without it the re-cost refuses such a row with 409. A zero-cost pair takes its sign from the offset account class in `postRecostJournals`.
-- Task 38: every scripted gate passed on 2026-10-09 (migrate, datasets, backups, 8 typechecks, 5 test suites, lint). `rows.test.ts` fails under parallel load and passes alone. The browser runs covered the wizard, the enable, a payment against a legacy invoice and the readiness list. A database test covers the void of a receipt dated before the cutover; the browser company had no document before its cutover.
-- Translations ran in a clean worktree at HEAD, so uncommitted work stayed out of the catalogs. The glossary checker reports 34 terminology violations in the new strings. The repair is `.ai/plans/2026-08-27-translation-consistency-runbook.md`, not a re-run.
+- Task 28 changed while it ran:
+  1. The enable writes one re-cost journal per document and posting date, not one per document. A job can issue material on more than one day.
+  2. A re-cost offset line takes its sign from the original pair, not from the account class. A stand-in line sits on retained earnings but carries the sign of the account it stands in for.
+  3. `recostOutbound` takes only layers dated on or before a movement. For a LIFO item it takes the newest layer first.
+  4. The default unit cost of a FIFO or LIFO item replays its layers dated before the cutover (`unitCostAtCutover`). Today's remaining quantity is wrong, because relief after the cutover changed it. An Average item uses `itemCost.unitCost`. A Standard item uses `itemCost.standardCost`.
+  5. Open gaps: a PO line invoiced past its receipts before the cutover gets no open item. After the enable, an invoice clears GR/IR at the average cost of the opening line. So receipts at different costs can leave a residual.
+- Task 29 changed while it ran:
+  1. The void of a sales or purchase invoice dated before the cutover fails. Its message points to a credit memo or a debit memo. No builder covers a whole invoice posting.
+  2. Only payment and memo voids build the posting again and negate it.
+  3. Charge and reimbursement voids dated before the cutover fail too (`CHARGE_VOID_BEFORE_CUTOVER_ERROR`, `REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR` in `lib/cutover-void.ts`).
+  4. Inventory adjustments and inventory counts have no void, so the receipt and shipment voids are the only inventory voids that refuse.
+- Task 31 changed while it ran:
+  1. The inventory step edits the unit cost of an Average item only. A FIFO or LIFO item shows the value its layers had at the cutover. A Standard item shows its standard cost. For those items, an edit to `itemCost.unitCost` does not reach the inventory reset.
+  2. The trial balance CSV import is its own intent, `import-tb`. If a row has an error, it saves nothing.
+  3. `no-unscoped-kysely-write` first exempted `companySettings`. Since the review fix in 188a710e24, a write to `company` or `companySettings` must filter by `id`, because their `id` is the company id.
+- Task 39: the detection lives in `packages/database/src/legacy-documents.ts`, not in `legacy/detect.ts`. The enable and `getLegacyDocumentCounts` read the same queries.
+- Task 40 added migration `20261009060609_legacy-journal-attach.sql`. The charge and reimbursement draft guards refused every change from Posted to Posted, so the enable could not set `journalId`. The guards now allow one more change: a Posted row with no journal gets one, and nothing else changes.
+- Task 42 also journals job issue and job completion cost rows whose journals the accounting reset deleted (companies that had accounting on). Without it, the re-cost refuses such a row with 409. In `postRecostJournals`, a zero-cost pair takes its sign from the class of the offset account.
+- Task 38: every scripted gate passed on 2026-10-09: migrate, datasets, backups, 8 typechecks, 5 test suites and lint. `rows.test.ts` fails under parallel load and passes alone.
+  - The browser runs covered the wizard, the enable, a payment against a legacy invoice and the readiness list.
+  - A database test covers the void of a receipt dated before the cutover. The browser company had no document before its cutover.
+- The translation run used a clean worktree at HEAD, so uncommitted work stayed out of the catalogs. The glossary checker reports 34 terminology violations in the new strings. To fix them, follow `.ai/plans/2026-08-27-translation-consistency-runbook.md`. Do not run `/translate` again.
+
+### Review fixes (2026-10-09)
+
+**38602af774 — the cutover schema and reads**
+- The migration `20261009004448` sets the cutover of a demo-template company by its `JE-SEED-%` journal, the test the accounting reset used. It no longer reads `accountingEnabled`, because only the dev CLI set that flag.
+- A dataset apply can move a cutover that is already set. The tiers set the session flag `app.dataset_apply`, and the config-lock trigger allows the change only under it.
+- `journal_posting_status` reads `companySettings` `FOR SHARE`. So the SQL job costing waits for the enable, as the TS `journalPostingStatus` does.
+- Migration Clearing must be an Equity account. The opening journal signs each line by its account class, and `buildOpeningJournalLines` asserts that it balances.
+- The unapplied credit of a legacy payment opens from the payment and its settlements.
+- RLS keeps clients off Provisional and Superseded journals (`20261009145218`). The journal attach guard of a charge or reimbursement takes only a journal with a line for that document (`20261009145057`).
+- The cutover reads split into one module per wizard step under `packages/database/src/accounting-cutover/`. The shared constants and the natural-sign helper live in `shared.ts`.
+
+**b9f897608c — the posting paths, the enable and the legacy backfill**
+- Return shipments and the sales return receipt refuse when the defaults read fails. Before, they skipped the journal.
+- `assertPostingStatusUnchanged` (`@carbon/database/journal-posting-status`) replaces about 40 inline copies of the status re-read.
+- Payment posting and its rebuild share one input assembler, `assemblePaymentJournal` (`post-payment/journal-input.ts`). A parity test covers them. The rebuilds moved to `post-payment/rebuild-journal.ts` and `post-memo/rebuild-journal.ts`.
+- A default with a fallback (`DEFAULT_FALLBACKS`) uses the fallback before and after the cutover. A schedule row never takes a stand-in. A missing default throws `MissingAccountDefaultError`, status 400, with the label from `OPTIONAL_DEFAULT_LABELS`.
+- The AGPL helper `@carbon/database/payment-processor-fee` replaces the copied processor fee logic.
+- After the enable, a time entry posted before the cutover refuses a re-post, a reversal or an edit (`TIME_ENTRY_BEFORE_CUTOVER_ERROR`).
+- One cost-relief engine, `@carbon/database/cost-relief`, drives COGS, the legacy backfill and the re-cost. A job return is not a cost layer. The re-cost keeps the cost of a serial unit revaluation (`recost-serial-unit`, `costLedgerType` "Revaluation").
+- The legacy detection leaves out a document whose builder writes no line. Each outbound cost row carries a journal pair, so the re-cost never refuses with a 409.
+- A legacy backfill journal with a stored cost stays out of provider sync. An intercompany elimination line moves with the stand-in line it copies.
+- The repair (`journal-legacy-documents`) skips only data refusals. A one-off script can defer with exit code 75 (`ONE_OFF_SCRIPT_DEFERRED`) instead of failing the deploy.
+
+**f1fe2b6c81 — the enable wizard and the accounting module**
+- `hasAccountingCutover` (`accounting.utils.ts`) is the one way the ERP asks whether a company has a cutover. Shared constants come from `@carbon/database/accounting-cutover`. The routes import the reads directly, with no pass-through layer.
+- Asset registration requires its posting. It reads the status once, inside the transaction.
+- The trial balance CSV import uses a pure parser with tests (`trial-balance-csv.ts`). It refuses an ambiguous amount. Before, it stripped commas.
+- The server computes the inventory totals. A user without `update: parts` sees each cost as read-only. The wizard translates the readiness details, plurals, statuses and CSV errors.
+- The settings action checks permissions before it reads the form.
+
+**188a710e24 — the journal status check and the last review gaps**
+- `journal-status-filter` checks one statement at a time. It sees a qualified or aliased journal status and raw SQL in TS, and it drops 2 false positives. The dead Draft filter on `journalLines` is gone from `accounting.service.ts`.
+- `insertProvisionalJournals` keeps each journal that the legacy backfill or the repair writes out of provider sync (code `CUTOVER_REBUILT`). The sync warnings stay true after the cutover.
+- A write to `company` or `companySettings` must filter by `id` (`no-unscoped-kysely-write`).
+- The ee Stripe fees use the AGPL processor-fee helper. The sync code uses the shared status lists. The revenue recognition cron reads its companies in one query.
+- Settings asks `hasLegacyDocuments` (one EXISTS) and streams the count. Readiness returns reason codes that the wizard translates. The opening inventory and the reads share one valuation and layer rule.
+- An outbound adjustment always writes its journal pair, also at zero (`lib/post-adjustment.ts`).

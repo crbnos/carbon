@@ -27,7 +27,7 @@ A machine you buy for the shop comes onto the books one of two ways, and both st
 When the receipt posts (or a purchase invoice for the line posts with no receipt), Carbon debits the asset account, credits goods-received-not-invoiced, **adds** the cost to the asset, stamps the dates, and flips it from **"Draft"** to **"Active"**. Because the cost is added, an asset can accumulate value across several receipts.
 
 <Callout tone="blue" badge="BEFORE THE CUTOVER" title="The asset moves before accounting is set up; the ledger waits.">
-Before the company sets up accounting, receiving still adds the cost and activates the asset, but its journal is Provisional and counts in no balance. The setup's **Fixed assets** step opens each asset at its cost and accumulated depreciation on the cutover date. See [setting up accounting](/docs/reference/accounting#setting-up-accounting).
+Before the company sets up accounting, receiving still adds the cost and activates the asset, but its journal is Provisional and counts in no balance. The setup's **Fixed assets** step opens each asset at its cost and its accumulated depreciation as of the day before the cutover. See [setting up accounting](/docs/reference/accounting#setting-up-accounting).
 </Callout>
 
 <Screenshot src="/screens/fa-register.png" label="Fixed asset — register" caption="Bringing an asset to Active with its acquisition cost and depreciation start date." ratio="wide" />

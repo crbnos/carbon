@@ -187,7 +187,9 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   per-item grouping, the cost replay, the scatter back onto source rows and the
   journal filter. The transaction body only inserts what it returns.
   `packages/server-functions/src/lib/plan-adjustment.test.ts` covers mixed items, repeated rows for one item,
-  a zero-cost item, accounting disabled and a Non-Inventory / zero-quantity row.
+  valuing against open layers, a zero-cost item (a layer, no journal) and a
+  Non-Inventory / zero-quantity row. A row's journal depends only on its cost,
+  never on the cutover: `postsJournal = cost !== 0`.
 - **Cost layers are replayed, not hoisted.** `bookAdjustment` re-reads the item's
   open layers before every increase, so row n+1 sees the layer row n wrote.
   `planIncreaseUnitCosts` reproduces that in memory from one snapshot per item.

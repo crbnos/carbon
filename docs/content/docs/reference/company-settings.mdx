@@ -67,6 +67,8 @@ The row also stores **notification groups**, AP and AR email addresses, and defa
 Every company posts journals for every receipt, shipment, invoice, payment and job. Before accounting is set up they are *Provisional* and count nowhere. Setting up accounting is one-way: Settings → Accounting shows "Accounting since" the cutover date, or a **Set up accounting** button. See [setting up accounting](/docs/reference/accounting#setting-up-accounting).
 </Callout>
 
+After accounting is set up, Settings → Accounting can also show a warning: documents posted before Carbon kept journals that have no journal. These are posted documents dated on or after the cutover. Press **Write missing journals** to write and post their journals with today's account defaults and item costs. The button needs permission to update settings and to update accounting.
+
 ## Base currency
 
 Each company has one `baseCurrencyCode`. Carbon converts foreign-currency transactions at their exchange rate and stores posted amounts in the base currency. The value is chosen during onboarding and denominates the company's posting history. After accounting is set up, a database trigger refuses any change to it. A subsidiary can use a different base currency from its parent; consolidation handles the conversion.
@@ -97,6 +99,9 @@ Billing needs company ownership *and* a Cloud environment; self-hosted editions 
 
 ### Nothing shows in the reports though jobs and invoices complete
 The company has no `accountingCutoverDate`, so its journals are Provisional and no report counts them. Set up accounting from Settings → Accounting. Journals dated on or after the cutover date become Posted; earlier ones become "Before cutover" and the opening journal replaces them.
+
+### "… documents posted before Carbon kept journals have no journal."
+The warning on Settings → Accounting. `hasLegacyDocuments` found posted documents dated on or after `accountingCutoverDate` with no journal. **Write missing journals** runs the `journal-legacy-documents` server function, which writes them in one transaction and refuses all of them if one falls in a Closed or Locked period. A payment against such a document fails with "Target is missing its original control account" until it runs.
 
 ### My theme changed but a colleague still sees the old one
 Theme is per-user (a cookie), not per-company. Document templates carry a separate theme setting.

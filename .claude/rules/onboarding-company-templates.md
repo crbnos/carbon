@@ -91,7 +91,8 @@ around its generic FK-null + topological delete, all inside the apply transactio
    type (invoices, payments, memos, receipts, shipments, `Inventory Adjustment`) whose
    lines — or `payment`/`memo.journalId` — point at a row it is about to delete gets a
    negated Posted `VOID …` entry dated today, the original left Posted, as the posting
-   functions void.
+   functions void. The select takes `status = 'Posted'` only: a `Provisional` journal of a
+   company with no cutover yet is neither voided nor deleted (`journal` is preserved).
 1. **Non-Draft `salesInvoice` / `purchaseInvoice` rows are set back to `Draft`.** The
    `prevent_posted_{sales,purchase}_invoice_deletion` sync interceptors refuse deleting any
    other status and run even under `app.sync_in_progress`. This is a re-seed clear, not an
@@ -329,18 +330,26 @@ every plant work center and running work on several.
 ## The company has an accounting cutover
 
 Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the earliest seeded
-period (`monthBack(anchor, SEEDED_PERIOD_MONTHS - 1)`), with `accountingActivatedAt` and
-`accountingActivatedBy` = the applying user. So every seeded journal is on or after the
-cutover and is `Posted`, and every document the user posts afterwards writes a `Posted`
+period (`monthBack(anchor, SEEDED_PERIOD_MONTHS - 1)`), `accountingActivatedAt` to the
+timestamp of the anchor day at `00:00:00Z` (`resolveTimestamp(anchor, 0, "00:00:00")`), and
+`accountingActivatedBy` to the applying user. So every seeded journal is on or after the
+cutover and none is `Provisional`: the document journals are `Posted`, and the authored manual
+entries include a `Draft` one (`JE-SEED-001`) and a `Reversed` one (`JE-SEED-004`, with its
+Posted reversal). The validator's `journalStatus` coverage set is the enum minus
+`Provisional` and `Superseded`. Every document the user posts afterwards writes a `Posted`
 journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover).
 
-It writes the three columns on every apply, even when the company already has a cutover.
+It writes the three columns on every apply with an UPSERT (`ON CONFLICT ("id") DO UPDATE`,
+no `WHERE`), even when the company already has a cutover.
 A company always has one by then: `seed-company` stamps the first day of the current month
 (onboarding runs it before the template job), and an app-created company applied through
 Settings → Demo Data has its own. Kept, that later date would put up to eleven months of
 seeded Posted journals before the cutover, where a void is refused and the readers above
-assume none exist. The cutover is otherwise one-way: `check_accounting_config_locked`
-(`20261009145057_accounting-cutover-guards.sql`) refuses any change once
+assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
+`companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
+runs `check_accounting_config_locked()` (redefined in
+`20261009145057_accounting-cutover-guards.sql`), which refuses a change of
+`accountingCutoverDate`, `accountingActivatedAt` or `accountingActivatedBy` once the OLD row's
 `accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
 role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with
 `SET LOCAL`, next to `app.sync_in_progress`, so the bypass ends with the apply's

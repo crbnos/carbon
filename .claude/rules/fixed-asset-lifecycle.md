@@ -470,8 +470,10 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   `locationId`, `transferDate`): asset must be `Active` or `Fully
   Depreciated` (`ADJUSTABLE_ASSET_STATUSES`, re-checked under `FOR UPDATE`
   in the transaction). Posts Dr class `assetAccountId` / Cr `offsetAccountId`
-  (description `Capitalized Cost`; required and validated when accounting is
-  on, ignored when off), `acquisitionCost += amount`, and the status from
+  (description `Capitalized Cost`). The offset account is always required:
+  the validator types it optional, but `getOffsetAccount`
+  (`lib/offset-account.ts`) refuses a missing one and anything but an active
+  posting account of the company group. `acquisitionCost += amount`, and the status from
   `statusAfterCostAdjustment` (Fully Depreciated → Active when NBV is above
   residual again). Fills an unset asset location from `locationId` (the
   route asks for one only when the asset has none). Transfer: `type 'Cost

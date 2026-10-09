@@ -47,7 +47,7 @@ function scopedJournals(trx: KyselyTx, companyId: string, scope: JournalScope) {
 }
 
 /**
- * Step 11. Gives every Provisional journal in the scope the period that
+ * Step 8. Gives every Provisional journal in the scope the period that
  * holds its date, resolving each month once.
  */
 export async function assignPeriods(
@@ -100,7 +100,7 @@ const isOptionalDefaultRole = (role: string): role is OptionalDefaultRole =>
   OPTIONAL_DEFAULTS.has(role);
 
 /**
- * Step 12. A stand-in line sits on retained earnings and names the default it
+ * Step 9. A stand-in line sits on retained earnings and names the default it
  * wanted. Before promotion it moves to that default, one UPDATE per role. An
  * intercompany elimination line copies the account of the journal line it
  * mirrors (post-sales-invoice and post-purchase-invoice copy it when they
@@ -154,7 +154,7 @@ export async function repointStandInLines(
   }
 }
 
-/** Step 13. Promotes the Provisional journals in the scope to Posted. */
+/** Step 9, continued. Promotes the Provisional journals in the scope to Posted. */
 export async function promoteJournals(
   trx: KyselyTx,
   companyId: string,

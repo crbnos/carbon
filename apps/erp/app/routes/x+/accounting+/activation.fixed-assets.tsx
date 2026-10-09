@@ -130,7 +130,7 @@ export default function AccountingActivationFixedAssetsRoute() {
           description={
             <Trans>
               No depreciation run happens before the cutover. Enter each asset's
-              accumulated depreciation as of the cutover date.
+              accumulated depreciation as of the day before the cutover.
             </Trans>
           }
         >

@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Steps 4–7 of the enable (.ai/specs/implemented/2026-10-08-accounting-cutover.md
-// section 5, steps 2 and 3): inventory as of the cutover date, and the
+// Steps 2 and 3 of the enable (.ai/specs/implemented/2026-10-08-accounting-cutover.md
+// section 5): inventory as of the cutover date, and the
 // outbound movements after it valued against it.
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
