@@ -48,6 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id: stepId,
     motion: validation.data.motion,
     camera: validation.data.camera,
+    reset: validation.data.reset,
     updatedBy: userId
   });
   logAssemblyStep("motion.updateResult", {

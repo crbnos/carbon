@@ -630,8 +630,12 @@ export default function AssemblyInstructionRoute() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const saveMotion = useCallback(
-    (stepId: string, body: { motion?: Motion; camera?: CameraPose | null }) => {
+    (
+      stepId: string,
+      body: { motion?: Motion; camera?: CameraPose | null; reset?: boolean }
+    ) => {
       const formData = new FormData();
+      if (body.reset) formData.set("reset", "on");
       if (body.motion !== undefined) {
         formData.set("motion", JSON.stringify(body.motion));
       }
@@ -677,8 +681,8 @@ export default function AssemblyInstructionRoute() {
     [saveMotion, editingUnitId]
   );
 
-  const onResetUnitMotion = useCallback(
-    (headerId: string) => saveMotion(headerId, { motion: { type: "none" } }),
+  const onResetMotion = useCallback(
+    (stepId: string) => saveMotion(stepId, { reset: true }),
     [saveMotion]
   );
 
@@ -882,7 +886,7 @@ export default function AssemblyInstructionRoute() {
                   editingUnitId={isEditingSelected ? editingUnitId : null}
                   onEditMotion={onEditMotion}
                   onStopEditMotion={onStopEditMotion}
-                  onResetUnitMotion={onResetUnitMotion}
+                  onResetMotion={onResetMotion}
                   onSetCamera={onSetCamera}
                   onClearCamera={onClearCamera}
                   stepMaterials={selectedStepMaterials}

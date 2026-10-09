@@ -1407,8 +1407,32 @@ export const stepPlanWarningsSchema = z.object({
    * the support polygon of the parts below it) — likely needs a fixture or a
    * second hand. Diagnostic only; never blocks generation or playback.
    */
-  needsSupport: z.boolean().optional()
+  needsSupport: z.boolean().optional(),
+  /**
+   * The motion the step had before the author first drew a path (the
+   * planner's, or `none`). Present = the path is hand-drawn, which also
+   * overrides `flagged`; Reset puts it back. A re-plan rewrites `warnings`,
+   * so it clears this together with the drawn path it replaces.
+   */
+  plannedMotion: z.unknown().optional()
 });
+
+/**
+ * The step's motion was drawn by hand in the path editor (see `plannedMotion`).
+ * The planner stores `none` on a flagged step, so a flagged step that moves was
+ * drawn too — paths drawn before `plannedMotion` existed carry no marker.
+ */
+export function hasCustomMotion(warnings: unknown, motion: unknown): boolean {
+  const parsed = stepPlanWarningsSchema.safeParse(warnings).data;
+  if (parsed?.plannedMotion !== undefined) return true;
+  return (
+    parsed?.flagged === true &&
+    typeof motion === "object" &&
+    motion !== null &&
+    "type" in motion &&
+    motion.type !== "none"
+  );
+}
 
 const jsonField = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((raw) => {
@@ -1582,6 +1606,8 @@ export const assemblyInstructionStepNewValidator = assemblyInstructionStepFields
  */
 export const assemblyInstructionStepMotionValidator = z.object({
   motion: jsonField(motionSchema.optional()),
+  // Put back the motion the step had before the author first drew a path.
+  reset: zfd.checkbox(),
   camera: jsonField(cameraSchema.nullable().optional())
 });
 

@@ -100,6 +100,7 @@ import {
   cameraSchema,
   fastenerSchema,
   getAssemblyModelState,
+  hasCustomMotion,
   isJobLocked,
   isJobOrderStatusHidden,
   JOB_LOCKED_STATUSES,
@@ -7881,13 +7882,51 @@ export async function updateAssemblyStepMotion(
     id: string;
     motion?: z.infer<typeof motionSchema>;
     camera?: z.infer<typeof cameraSchema> | null;
+    /** Put back the motion the step had before its path was first drawn. */
+    reset?: boolean;
     updatedBy: string;
   }
 ) {
+  let motionPatch: { motion?: Json; warnings?: Json | null } = {};
+  if (data.reset || data.motion !== undefined) {
+    const current = await client
+      .from("assemblyInstructionStep")
+      .select("motion, warnings")
+      .eq("id", data.id)
+      .single();
+    if (current.error) return { data: null, error: current.error };
+    // The first hand-drawn edit keeps the planner's motion in
+    // `warnings.plannedMotion`; Reset restores it and drops the marker.
+    const warnings =
+      current.data.warnings &&
+      typeof current.data.warnings === "object" &&
+      !Array.isArray(current.data.warnings)
+        ? (current.data.warnings as Record<string, Json | undefined>)
+        : {};
+    const { plannedMotion, ...rest } = warnings;
+    if (data.reset) {
+      motionPatch = {
+        motion: plannedMotion ?? { type: "none" },
+        warnings: Object.keys(rest).length > 0 ? (rest as Json) : null
+      };
+    } else {
+      motionPatch = {
+        motion: data.motion as Json,
+        ...(plannedMotion === undefined
+          ? {
+              warnings: {
+                ...rest,
+                plannedMotion: current.data.motion
+              } as Json
+            }
+          : {})
+      };
+    }
+  }
   return client
     .from("assemblyInstructionStep")
     .update({
-      ...(data.motion !== undefined ? { motion: data.motion as Json } : {}),
+      ...motionPatch,
       ...(data.camera !== undefined
         ? { camera: data.camera as Json | null }
         : {}),
@@ -10462,8 +10501,11 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     camera: camera.success ? camera.data : null,
     fastener: fastener.success ? fastener.data : null,
     durationSeconds: step.durationSeconds,
+    // A hand-drawn path overrides the planner's "no clear path" flag.
     flagged:
-      planWarnings.success && planWarnings.data.flagged === true
+      planWarnings.success &&
+      planWarnings.data.flagged === true &&
+      !hasCustomMotion(step.warnings, step.motion)
         ? true
         : undefined
   };

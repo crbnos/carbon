@@ -69,6 +69,7 @@ import { path } from "~/utils/path";
 import {
   assemblyInstructionStepValidator,
   fastenerSchema,
+  hasCustomMotion,
   stepPlanWarningsSchema
 } from "../../production.models";
 import type { FlattenedBomMaterial } from "../../production.service";
@@ -116,8 +117,8 @@ type AssemblyInstructionPropertiesProps = {
   /** Opens the editor on a step's motion, or on a sub-assembly it carries in */
   onEditMotion: (stepId: string, unitHeaderId?: string) => void;
   onStopEditMotion: () => void;
-  /** Clears a sub-assembly's path back to the automatic glide */
-  onResetUnitMotion: (headerId: string) => void;
+  /** Puts back the motion a step or sub-assembly had before its path was drawn */
+  onResetMotion: (stepId: string) => void;
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
   /** Every step of the instruction, in play order — numbering and sub-assemblies */
@@ -147,7 +148,7 @@ const AssemblyInstructionProperties = ({
   editingUnitId,
   onEditMotion,
   onStopEditMotion,
-  onResetUnitMotion,
+  onResetMotion,
   onSetCamera,
   onClearCamera,
   viewerSteps,
@@ -198,7 +199,7 @@ const AssemblyInstructionProperties = ({
           describeStep(toStepDescriptor(step), graphIndex, units))) ||
       t`Untitled step`;
   const planFlag = useMemo(
-    () => (step ? getPlanFlag(step.warnings, graphIndex) : null),
+    () => (step ? getPlanFlag(step, graphIndex) : null),
     [step, graphIndex]
   );
 
@@ -285,7 +286,7 @@ const AssemblyInstructionProperties = ({
           editingUnitId={editingUnitId}
           onEditMotion={onEditMotion}
           onStopEditMotion={onStopEditMotion}
-          onResetUnitMotion={onResetUnitMotion}
+          onResetMotion={onResetMotion}
         />
       ) : step ? (
         <Tabs defaultValue="details" className="w-full px-4 pb-2 pt-3">
@@ -326,7 +327,7 @@ const AssemblyInstructionProperties = ({
               editingUnitId={editingUnitId}
               onEditMotion={onEditMotion}
               onStopEditMotion={onStopEditMotion}
-              onResetUnitMotion={onResetUnitMotion}
+              onResetMotion={onResetMotion}
               onSetCamera={onSetCamera}
               onClearCamera={onClearCamera}
               viewerSteps={viewerSteps}
@@ -388,11 +389,18 @@ const AssemblyInstructionProperties = ({
  * fades them in at the seated pose; a manual motion overrides the flag.
  */
 function getPlanFlag(
-  warnings: unknown,
+  step: Pick<AssemblyInstructionStepRow, "warnings" | "motion">,
   graphIndex: AssemblyGraphIndex | null
 ): { blockers: string[] } | null {
-  const parsed = stepPlanWarningsSchema.safeParse(warnings);
-  if (!parsed.success || parsed.data.flagged !== true) return null;
+  const parsed = stepPlanWarningsSchema.safeParse(step.warnings);
+  // A hand-drawn path overrides the planner's flag.
+  if (
+    !parsed.success ||
+    parsed.data.flagged !== true ||
+    hasCustomMotion(step.warnings, step.motion)
+  ) {
+    return null;
+  }
   const blockers = (parsed.data.blockedBy ?? [])
     .map((nodeId) => graphIndex?.nodesById.get(nodeId)?.name)
     .filter((name): name is string => Boolean(name));
@@ -451,7 +459,7 @@ function StepForm({
   editingUnitId,
   onEditMotion,
   onStopEditMotion,
-  onResetUnitMotion,
+  onResetMotion,
   onSetCamera,
   onClearCamera,
   viewerSteps,
@@ -477,7 +485,7 @@ function StepForm({
   editingUnitId: string | null;
   onEditMotion: (stepId: string, unitHeaderId?: string) => void;
   onStopEditMotion: () => void;
-  onResetUnitMotion: (headerId: string) => void;
+  onResetMotion: (stepId: string) => void;
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
   viewerSteps: AssemblyStep[];
@@ -537,9 +545,10 @@ function StepForm({
   }, [componentNodeIds, step.fastener, graphIndex, units]);
 
   const planFlag = useMemo(
-    () => getPlanFlag(step.warnings, graphIndex),
-    [step.warnings, graphIndex]
+    () => getPlanFlag(step, graphIndex),
+    [step, graphIndex]
   );
+  const customMotion = hasCustomMotion(step.warnings, step.motion);
 
   const carriedIn = useMemo(
     () =>
@@ -681,13 +690,15 @@ function StepForm({
                 </LabelWithHelp>
               }
               value={
-                planFlag ? (
+                isEditingMotion ? (
+                  <Trans>Drag the red waypoints in the viewer</Trans>
+                ) : customMotion ? (
+                  <Trans>Custom path</Trans>
+                ) : planFlag ? (
                   <span className="inline-flex items-center gap-1">
                     <LuTriangleAlert className="size-3.5 shrink-0 text-amber-500" />
                     <Trans>No clear path</Trans>
                   </span>
-                ) : isEditingMotion ? (
-                  <Trans>Drag the red waypoints in the viewer</Trans>
                 ) : componentNodeIds.length === 0 ? (
                   <Trans>Add components first</Trans>
                 ) : (
@@ -696,20 +707,33 @@ function StepForm({
               }
             >
               {!isDisabled && (
-                <Button
-                  variant={isEditingMotion ? "primary" : "secondary"}
-                  size="sm"
-                  isDisabled={componentNodeIds.length === 0}
-                  onClick={() =>
-                    isEditingMotion ? onStopEditMotion() : onEditMotion(step.id)
-                  }
-                >
-                  {isEditingMotion ? (
-                    <Trans>Done Editing Path</Trans>
-                  ) : (
-                    <Trans>Edit Path</Trans>
+                <HStack spacing={1} className="shrink-0">
+                  {customMotion && !isEditingMotion && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onResetMotion(step.id)}
+                    >
+                      <Trans>Reset</Trans>
+                    </Button>
                   )}
-                </Button>
+                  <Button
+                    variant={isEditingMotion ? "primary" : "secondary"}
+                    size="sm"
+                    isDisabled={componentNodeIds.length === 0}
+                    onClick={() =>
+                      isEditingMotion
+                        ? onStopEditMotion()
+                        : onEditMotion(step.id)
+                    }
+                  >
+                    {isEditingMotion ? (
+                      <Trans>Done Editing Path</Trans>
+                    ) : (
+                      <Trans>Edit Path</Trans>
+                    )}
+                  </Button>
+                </HStack>
               )}
             </PlaybackRow>
             {carriedIn.map((header) => (
@@ -721,7 +745,7 @@ function StepForm({
                 isDisabled={isDisabled}
                 onEdit={() => onEditMotion(step.id, header.id)}
                 onStopEdit={onStopEditMotion}
-                onReset={() => onResetUnitMotion(header.id)}
+                onReset={() => onResetMotion(header.id)}
               />
             ))}
             <PlaybackRow

@@ -47,7 +47,7 @@ type AssemblySubAssemblyPropertiesProps = {
   editingUnitId: string | null;
   onEditMotion: (stepId: string, unitHeaderId?: string) => void;
   onStopEditMotion: () => void;
-  onResetUnitMotion: (headerId: string) => void;
+  onResetMotion: (stepId: string) => void;
 };
 
 /**
@@ -68,7 +68,7 @@ export default function AssemblySubAssemblyProperties({
   editingUnitId,
   onEditMotion,
   onStopEditMotion,
-  onResetUnitMotion
+  onResetMotion
 }: AssemblySubAssemblyPropertiesProps) {
   const { id: instructionId } = useParams();
   if (!instructionId) throw new Error("Could not find id");
@@ -302,7 +302,7 @@ export default function AssemblySubAssemblyProperties({
               isDisabled={isDisabled}
               onEdit={() => onEditMotion(step.id, step.id)}
               onStopEdit={onStopEditMotion}
-              onReset={() => onResetUnitMotion(step.id)}
+              onReset={() => onResetMotion(step.id)}
             />
           )}
           {!usedIn && (
