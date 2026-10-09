@@ -669,6 +669,9 @@ async function insertJobProjectLedgerRows(
     jobId: string;
     companyId: string;
     userId: string;
+    /** "Job Consumption" unless given ("Scrap" for scrap relieved from the
+     *  project). */
+    documentType?: string;
     rows: {
       itemId: string;
       quantity: number;
@@ -688,7 +691,7 @@ async function insertJobProjectLedgerRows(
           projectElementId: args.charge.projectElementId,
           postingDate: args.charge.postingDate,
           costType: "Material",
-          documentType: "Job Consumption",
+          documentType: args.documentType ?? "Job Consumption",
           documentId: args.jobId,
           jobId: args.jobId,
           itemId: row.itemId,
@@ -2819,7 +2822,9 @@ const issue = defineServerFn({
                   "Location",
                   "ScrapReason",
                   "WorkCenter",
-                  "Employee"
+                  "Employee",
+                  "Project",
+                  "ProjectElement"
                 ]
               },
               { columns: ["id", "entityType"] }
@@ -3067,6 +3072,13 @@ const issue = defineServerFn({
             const scrapCost =
               backflush.totalMaterialCost + priorUnitMaterialCost * quantity;
             if (scrapCost > 0) {
+              // A consume-to-project job charged its material to the project,
+              // not WIP, so the scrap is relieved from the project account.
+              const scrapProjectCharge = await loadJobProjectCharge(
+                trx,
+                companyId,
+                job.id
+              );
               const accountingPeriodId = await getCurrentAccountingPeriod(
                 companyId,
                 trx,
@@ -3116,8 +3128,11 @@ const issue = defineServerFn({
                   {
                     journalId: journalResult.id,
                     accountId:
+                      scrapProjectCharge?.accountId ??
                       accountDefaultsScrapOp.data.workInProgressAccount,
-                    description: "WIP Account",
+                    description: scrapProjectCharge
+                      ? "Project Material"
+                      : "WIP Account",
                     amount: credit("asset", scrapCost),
                     quantity,
                     documentType: "Scrap",
@@ -3146,24 +3161,55 @@ const issue = defineServerFn({
                 ["WorkCenter", operation.workCenterId ?? null],
                 ["Employee", userId]
               ];
-              const dimensionInserts = journalLineResults.flatMap((line) =>
-                scrapDimensionValues
-                  .filter(
-                    ([entityType, valueId]) =>
-                      dimensionMapScrapOp.has(entityType) && valueId
-                  )
-                  .map(([entityType, valueId]) => ({
-                    journalLineId: line.id,
-                    dimensionId: dimensionMapScrapOp.get(entityType)!,
-                    valueId: valueId as string,
-                    companyId
-                  }))
+              const dimensionInserts = journalLineResults.flatMap(
+                (line, index) =>
+                  [
+                    ...scrapDimensionValues,
+                    // The project tags go on the project credit only.
+                    ...(scrapProjectCharge && index === 1
+                      ? ([
+                          ["Project", scrapProjectCharge.projectId],
+                          [
+                            "ProjectElement",
+                            scrapProjectCharge.projectElementId
+                          ]
+                        ] as Array<[string, string | null]>)
+                      : [])
+                  ]
+                    .filter(
+                      ([entityType, valueId]) =>
+                        dimensionMapScrapOp.has(entityType) && valueId
+                    )
+                    .map(([entityType, valueId]) => ({
+                      journalLineId: line.id,
+                      dimensionId: dimensionMapScrapOp.get(entityType)!,
+                      valueId: valueId as string,
+                      companyId
+                    }))
               );
               if (dimensionInserts.length > 0) {
                 await trx
                   .insertInto("journalLineDimension")
                   .values(dimensionInserts)
                   .execute();
+              }
+
+              if (scrapProjectCharge && makeMethod.itemId) {
+                await insertJobProjectLedgerRows(trx, {
+                  charge: scrapProjectCharge,
+                  jobId: job.id,
+                  companyId,
+                  userId,
+                  documentType: "Scrap",
+                  rows: [
+                    {
+                      itemId: makeMethod.itemId,
+                      quantity: -quantity,
+                      amount: -scrapCost,
+                      journalLineId: journalLineResults[1]?.id ?? null
+                    }
+                  ]
+                });
               }
             }
           }
@@ -3658,7 +3704,9 @@ const issue = defineServerFn({
                   "Location",
                   "ScrapReason",
                   "WorkCenter",
-                  "Employee"
+                  "Employee",
+                  "Project",
+                  "ProjectElement"
                 ]
               },
               { columns: ["id", "entityType"] }
@@ -3880,6 +3928,11 @@ const issue = defineServerFn({
               accountingPeriodIdScrap &&
               scrapCost > 0
             ) {
+              // A consume-to-project job charged the part to the project, not
+              // WIP, so the scrap is relieved from the project account.
+              const scrapProjectCharge = job?.id
+                ? await loadJobProjectCharge(trx, companyId, job.id)
+                : null;
               const journalEntryId = await getNextSequence(
                 trx,
                 "journalEntry",
@@ -3923,8 +3976,12 @@ const issue = defineServerFn({
                   },
                   {
                     journalId: journalResult.id,
-                    accountId: accountDefaultsScrap.data.workInProgressAccount,
-                    description: "WIP Account",
+                    accountId:
+                      scrapProjectCharge?.accountId ??
+                      accountDefaultsScrap.data.workInProgressAccount,
+                    description: scrapProjectCharge
+                      ? "Project Material"
+                      : "WIP Account",
                     amount: credit("asset", scrapCost),
                     quantity,
                     documentType: "Scrap",
@@ -3945,24 +4002,55 @@ const issue = defineServerFn({
                 ["WorkCenter", scrapWorkCenterId],
                 ["Employee", userId]
               ];
-              const dimensionInserts = journalLineResults.flatMap((line) =>
-                scrapDimensionValues
-                  .filter(
-                    ([entityType, valueId]) =>
-                      dimensionMapScrap.has(entityType) && valueId
-                  )
-                  .map(([entityType, valueId]) => ({
-                    journalLineId: line.id,
-                    dimensionId: dimensionMapScrap.get(entityType)!,
-                    valueId: valueId as string,
-                    companyId
-                  }))
+              const dimensionInserts = journalLineResults.flatMap(
+                (line, index) =>
+                  [
+                    ...scrapDimensionValues,
+                    // The project tags go on the project credit only.
+                    ...(scrapProjectCharge && index === 1
+                      ? ([
+                          ["Project", scrapProjectCharge.projectId],
+                          [
+                            "ProjectElement",
+                            scrapProjectCharge.projectElementId
+                          ]
+                        ] as Array<[string, string | null]>)
+                      : [])
+                  ]
+                    .filter(
+                      ([entityType, valueId]) =>
+                        dimensionMapScrap.has(entityType) && valueId
+                    )
+                    .map(([entityType, valueId]) => ({
+                      journalLineId: line.id,
+                      dimensionId: dimensionMapScrap.get(entityType)!,
+                      valueId: valueId as string,
+                      companyId
+                    }))
               );
               if (dimensionInserts.length > 0) {
                 await trx
                   .insertInto("journalLineDimension")
                   .values(dimensionInserts)
                   .execute();
+              }
+
+              if (scrapProjectCharge && job?.id) {
+                await insertJobProjectLedgerRows(trx, {
+                  charge: scrapProjectCharge,
+                  jobId: job.id,
+                  companyId,
+                  userId,
+                  documentType: "Scrap",
+                  rows: [
+                    {
+                      itemId: consumedItemId,
+                      quantity: -quantity,
+                      amount: -scrapCost,
+                      journalLineId: journalLineResults[1]?.id ?? null
+                    }
+                  ]
+                });
               }
             }
 

@@ -400,3 +400,98 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "scrapping on a consume-to-project job relieves the project account, not WIP",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("rivet", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const job = await f.addConsumeToProjectJob("e", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 3,
+        jobQuantity: 2
+      });
+      const scrapReasonId = `${f.prefix}-scrap-reason`;
+      await f.db
+        .insertInto("scrapReason")
+        .values({
+          id: scrapReasonId,
+          name: "Damaged",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+
+      const scrapped = await issue(f.ctx, {
+        type: "jobOperationScrap",
+        jobOperationId: job.operationId,
+        quantity: 1,
+        scrapReasonId
+      });
+      expect(scrapped.error).toBeNull();
+
+      const scrapLines = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Scrap")
+        .where("documentId", "=", job.jobId)
+        .orderBy("accountId")
+        .execute();
+      expect(
+        Object.fromEntries(
+          scrapLines.map((line) => [line.accountId, Number(line.amount)])
+        )
+      ).toEqual({
+        [f.account("adjustment-variance")]: 30,
+        [f.account("project-expense")]: -30
+      });
+
+      const wipLines = await f.db
+        .selectFrom("journalLine")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("accountId", "=", f.account("wip"))
+        .execute();
+      expect(wipLines).toEqual([]);
+
+      // The project account nets to zero: the scrapped units' material went
+      // in with the backflush and out with the scrap.
+      const projectAccountNet = await f.db
+        .selectFrom("journalLine")
+        .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+        .where("companyId", "=", f.companyId)
+        .where("accountId", "=", f.account("project-expense"))
+        .executeTakeFirst();
+      expect(Number(projectAccountNet?.amount ?? 0)).toEqual(0);
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["documentType", "quantity", "amount", "journalLineId"])
+        .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      const projectCredit = scrapLines.find(
+        (line) => line.accountId === f.account("project-expense")
+      );
+      expect(
+        ledger.map((row) => [
+          row.documentType,
+          Number(row.quantity),
+          Number(row.amount)
+        ])
+      ).toEqual([
+        ["Job Consumption", 3, 30],
+        ["Scrap", -1, -30]
+      ]);
+      expect(ledger[1]!.journalLineId).toEqual(projectCredit!.id);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
