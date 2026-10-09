@@ -869,6 +869,8 @@ export const manifest = {
     update: false
   }),
   kanban: company("inventory"),
+  laborCategory: company("projects"),
+  laborCategoryRate: company("projects"),
   lessonCompletion: policies({
     select: owner("userId"),
     insert: owner("userId")
@@ -1087,7 +1089,25 @@ export const manifest = {
   process: company("resources"),
   productionEvent: company("production", { read: "production_view" }),
   productionQuantity: company("production"),
-  project: company("accounting"),
+  project: company("projects"),
+  projectElement: company("projects"),
+  projectElementComment: company("projects", {
+    create: "employee",
+    update: and(owner("createdBy"), inCompany("companyId", "employee")),
+    delete: owner("createdBy")
+  }),
+  projectElementCost: company("projects"),
+  projectElementLabel: company("projects"),
+  projectElementLabor: company("projects"),
+  projectElementMaterial: company("projects"),
+  projectLabel: company("projects"),
+  projectLedger: company("projects", {
+    create: false,
+    update: false,
+    delete: false
+  }),
+  projectMilestone: company("projects"),
+  projectState: company("projects"),
   purchaseInvoice: company("invoicing", { read: "invoicing_view" }),
   purchaseInvoiceDelivery: company("invoicing", { read: "invoicing_view" }),
   purchaseInvoiceLine: company("invoicing", { read: "invoicing_view" }),
@@ -1522,6 +1542,35 @@ export const manifest = {
       inCompany("companyId", "people_update")
     ),
     delete: inCompany("companyId", "people_delete")
+  }),
+  timesheetEntry: policies({
+    select: or(owner("employeeId"), inCompany("companyId", "projects_view")),
+    insert: and(
+      owner("employeeId"),
+      inCompany("companyId", "employee"),
+      where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
+    ),
+    update: {
+      using: or(
+        and(
+          owner("employeeId"),
+          where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
+        ),
+        inCompany("companyId", "projects_update")
+      ),
+      check: or(
+        and(
+          owner("employeeId"),
+          inCompany("companyId", "employee"),
+          where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
+        ),
+        inCompany("companyId", "projects_update")
+      )
+    },
+    delete: and(
+      owner("employeeId"),
+      where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
+    )
   }),
   tool: company("parts"),
   trackedActivity: company("inventory", { create: "employee" }),

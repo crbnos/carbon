@@ -43,8 +43,8 @@ Phase 1c gets baselines and change requests.
 - [x] Task 4: Create the time and ledger tables migration
 - [x] Task 5: Create the backfill migration
 - [x] Task 6: Create the SQL functions migration
-- [ ] Task 7: Apply migrations and regenerate types
-- [ ] Task 8: Add authz rules and ship the RLS migration
+- [x] Task 7: Apply migrations and regenerate types
+- [x] Task 8: Add authz rules and ship the RLS migration
 - [ ] Task 9: Register backup id references and audit config
 - [ ] Task 10: Update seed data for new companies
 - [ ] Task 11: Add the projects module models
@@ -2398,3 +2398,7 @@ ls .ai/playbooks/projects-phase-1a.md
 - Tasks 3–7: `pnpm db:migrate` applies each migration, then its last step (`authz sync`) fails because the new tables have no manifest rule yet. That is expected until Task 8 adds the rules; each migration was confirmed applied in `supabase_migrations.schema_migrations`.
 - Task 3: composite FK columns are indexed as their full column list (`("projectId", "companyId")`, `("parentId", "projectId", "companyId")`), named `<table>_<firstColumn>_idx`.
 - Task 6: the migration ends with `NOTIFY pgrst, 'reload schema';` so PostgREST sees the two new functions (lessons: "Appending SQL to an already-applied migration silently does nothing", corollary).
+- Task 7: nothing left to commit on its own. Each earlier migration commit already carried its regenerated types. Its checks were run (`"Projects"` ×2, `projectElement: {` ×1, `@carbon/database` typecheck green) and its box is ticked in the Task 8 commit. `packages/database/supabase/functions/lib/types.ts` does not exist in this tree.
+- Task 8, `projectElementComment`: the update rule is `and(owner("createdBy"), inCompany("companyId", "employee"))`, not bare `owner("createdBy")`. With no `where`, the WITH CHECK reuses USING, and an owner-only check lets the author move the row to another company (`authz-manifest.md` gotcha).
+- Task 8, `timesheetEntry`: the owner branches of INSERT and of the UPDATE WITH CHECK also require `status = 'Draft'`. The plan's check (`inCompany(employee)`) let an employee set their own Draft row to Approved or Posted through the API. Submit, corrections and posting run over Kysely, so they are not affected. `projects_update` holders still edit any row.
+- Task 8: `vitest run src/authz` needs `@carbon/config` built (`turbo run build --filter=@carbon/config`) and `SUPABASE_DB_URL` set to this worktree's database; with both, 33/33 pass.
