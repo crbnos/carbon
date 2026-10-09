@@ -51,7 +51,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 12: Add the project and workspace service functions
 - [x] Task 13: Add the element service functions
 - [x] Task 14: Add the time, labor category and ledger service functions
-- [ ] Task 15: Add the pure project posting helpers and tests
+- [x] Task 15: Add the pure project posting helpers and tests
 - [ ] Task 16: Add the `post-timesheet` server function
 - [ ] Task 17: Add the `post-project-issue` server function
 - [ ] Task 18: Route job material issues to the project account
@@ -2426,3 +2426,6 @@ ls .ai/playbooks/projects-phase-1a.md
 - Task 14: `createTimesheetCorrection` also refuses an entry that is already corrected (a reversal exists) and a reversal itself.
 - Task 14: `getTimesheetApprovals` takes `{ ownerId: string | null }`. The route passes null when the user has `projects_update`, else the user id; the service cannot read permissions. The week is the Monday from `weekStartOf` (models).
 - Task 14: a throwaway vitest run against this worktree's database submitted one Draft entry, then corrected it after a manual Posted stamp: a −6 h reversal and a 4 h replacement, both Submitted. A second correction was refused. The rows were deleted. Importing `projects.service.ts` in a plain vitest run needs `~/utils/query` and `~/utils/supabase` mocked, because they reach the glossary's Lingui macros.
+- Task 15: `ProjectPostingProject` gains optional `identifier` and `name`, and `ProjectPostingElement` an optional `readableId`. They are for the refusal messages only ("Project ST is Closed…"). `loadProjectPostingContexts` fills them. The file also exports `projectPostingKey(projectId, projectElementId)`, the map key, so callers do not rebuild it by hand.
+- Task 15: an explicit account comes from the same node that sets the treatment (the element or ancestor override, else the project), as in the SQL `project_posting_account`. An account on an element that has no treatment of its own is ignored.
+- Task 15: 11 pure tests pass. A throwaway database test (rolled back) checked `loadProjectPostingContexts` on a two-level tree: the ancestor override, the `stateGroup` join and a missing project. `resolveProjectPostingAccount` and the SQL `project_posting_account` gave the same account. The full `@carbon/server-functions` suite passes (398) with `SUPABASE_DB_URL` on port 60387.
