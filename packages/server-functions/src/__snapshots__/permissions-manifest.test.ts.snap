@@ -113,6 +113,10 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "create": "invoicing",
     "update": "sales",
   },
+  "create-service-order-invoice": {
+    "create": "invoicing",
+    "update": "service",
+  },
   "finalize-purchasing-rfq": {
     "create": "purchasing",
   },

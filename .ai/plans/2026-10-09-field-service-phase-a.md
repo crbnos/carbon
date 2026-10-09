@@ -44,7 +44,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 10: Add `post-project-expense` and the coverage reclass
 - [x] Task 11: Create customer assets in `post-shipment`
 - [x] Task 12: Stop the second stock relief and release billable item stamps
-- [ ] Task 13: Add `create-service-order-invoice`
+- [x] Task 13: Add `create-service-order-invoice`
 - [ ] Task 14: Hide Service projects outside Service
 - [ ] Task 15: Make My Timesheet personal
 - [ ] Task 16: Add the service models and services
@@ -1241,3 +1241,8 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 12: `projectBillableItem.salesInvoiceLineId` has an FK with `ON DELETE SET NULL`, so a deleted line already loses the stamp, but the item stays Billed. `releaseServiceOrderStamps` (`sales.server.ts`, called first by `releaseRecurringInvoiceStamps`) sets the items back to Unbilled. When the invoice has no other stamped line, it clears `salesInvoice.serviceOrderId`.
 - Task 12 (deviation): the release also moves the order from Closed back to Completed and clears `serviceOrder.salesInvoiceId`. Task 13 closes the order at invoicing and refuses any order that is not Completed, so without this step a deleted Draft invoice would leave the order impossible to invoice again.
 - Task 12: no ERP database test exists for the release functions. The release SQL was checked by hand against the local database. `erp` and `@carbon/server-functions` typecheck green. The invoice, payment, memo and contract and rental invoice suites pass (67).
+- Task 13: the header takes the customer's `customerPayment` (invoice customer, contact, site and payment term) and currency, at `get_exchange_rate`, as `convert` does. `customerReference` is the order's readable id. `serviceOrder.salesInvoiceId` is stamped beside the Closed status, so a deleted Draft can reopen the order (Task 12 note). Unit prices stay in base currency with the invoice's exchange rate, as other sales lines do.
+- Task 13: tax is 0. The customer has no default tax rate (`customerTax` holds only the exemption), and the plan leaves tax rules out of scope.
+- Task 13: the plan also handles items on no node (or on a node outside the tree): they come last under "Other charges". A node with no unbilled item in its subtree gives no line, so a fixed-price node with nothing left to bill does not bill its price again. A Comment line has quantity 0. A line's unit is the charge's ledger unit (HR for time), else EA.
+- Task 13: a covered item on an order with a coverage contract reads "(Covered by contract CON000012)" on the invoice; the billable item keeps "(Covered by contract)".
+- Task 13: tests: the plan's 3 `plan.test.ts` cases, and a database test (`create-service-order-invoice.test.ts`) that posts 2 h of time and a 40.00 expense, refuses an order that is not Completed, then drafts the invoice (a heading and 2 Service lines, 230.00), stamps both items Billed and closes the order. The permissions snapshot gains the function, reviewed. The full server-functions suite passes (452); `@carbon/server-functions`, `@carbon/jobs`, `erp` and `mes` typecheck green.

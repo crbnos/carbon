@@ -18,6 +18,8 @@ const registry = {
   "close-job": () => import("./close-job"),
   "create-contract-invoices": () => import("./create-contract-invoices"),
   "create-rental-invoices": () => import("./create-rental-invoices"),
+  "create-service-order-invoice": () =>
+    import("./create-service-order-invoice"),
   convert: () => import("./convert"),
   "correct-stock-movement": () => import("./correct-stock-movement"),
   create: () => import("./create"),
