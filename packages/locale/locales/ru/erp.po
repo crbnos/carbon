@@ -1323,6 +1323,9 @@ msgstr "Отдельный график для налоговой отчетно
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Услуга — это платная деятельность, которая покупается или выполняется — она никогда не отправляется, не принимается и не хранится на складе"
 
+msgid "A service order started from this template copies its nodes and their plan lines. Open a node to plan its materials, labor and other costs; the estimate prices them at sale prices."
+msgstr ""
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Набор организаций под одним владельцем, которые используют конфигурацию уровня группы — план счетов, валюты и измерения — так чтобы одна и та же установка бухгалтерии охватывала каждую организацию в группе."
 
@@ -8882,6 +8885,9 @@ msgstr "Применить обязательную проверку и указ
 msgid "Engagement tier"
 msgstr "Уровень взаимодействия"
 
+msgid "Engine rebuild"
+msgstr ""
+
 msgid "Engineering"
 msgstr "Инженерия"
 
@@ -13929,6 +13935,9 @@ msgstr "Новая услуга"
 msgid "New Service Order"
 msgstr ""
 
+msgid "New Service Template"
+msgstr ""
+
 msgid "New Shift"
 msgstr "Новая смена"
 
@@ -14482,6 +14491,9 @@ msgstr ""
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
+msgid "No nodes yet. Add the first node."
+msgstr ""
+
 msgid "No notes"
 msgstr "Нет примечаний"
 
@@ -14871,6 +14883,9 @@ msgid "Node"
 msgstr ""
 
 msgid "Node type"
+msgstr ""
+
+msgid "Nodes"
 msgstr ""
 
 msgid "Nom"
@@ -15453,6 +15468,9 @@ msgstr "Открытая подсборка"
 
 msgid "Open task details"
 msgstr "Открыть детали задачи"
+
+msgid "Open Template"
+msgstr ""
 
 msgid "Open the first change request"
 msgstr ""
@@ -16427,6 +16445,9 @@ msgstr "Запланировано на основе счетов-фактур. 
 
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "Запланировано на основе строк. Редактирование ячейки сохраняет график."
+
+msgid "Planned Hours"
+msgstr ""
 
 msgid "Planned invoices"
 msgstr "Запланированные счета-фактуры"

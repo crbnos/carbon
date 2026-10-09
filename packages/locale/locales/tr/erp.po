@@ -1323,6 +1323,9 @@ msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdi�
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabilir bir etkinliktir — hiçbir zaman gönderilmez, alınmaz veya depolanmaz"
 
+msgid "A service order started from this template copies its nodes and their plan lines. Open a node to plan its materials, labor and other costs; the estimate prices them at sale prices."
+msgstr ""
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Tek bir sahip altında, grup kapsamlı yapılandırmayı — hesap planı, para birimleri ve boyutlar — paylaşan, böylece aynı muhasebe kurulumunun gruptaki her şirketi kapsadığı şirketler kümesi."
 
@@ -8882,6 +8885,9 @@ msgstr "Mal kabul, sevkiyat, transfer ve düzeltmelerde madde başına doğrulam
 msgid "Engagement tier"
 msgstr "Katılım seviyesi"
 
+msgid "Engine rebuild"
+msgstr ""
+
 msgid "Engineering"
 msgstr "Mühendislik"
 
@@ -13929,6 +13935,9 @@ msgstr "Yeni Hizmet"
 msgid "New Service Order"
 msgstr ""
 
+msgid "New Service Template"
+msgstr ""
+
 msgid "New Shift"
 msgstr "Yeni Vardiya"
 
@@ -14482,6 +14491,9 @@ msgstr ""
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
+msgid "No nodes yet. Add the first node."
+msgstr ""
+
 msgid "No notes"
 msgstr "Notlar yok"
 
@@ -14871,6 +14883,9 @@ msgid "Node"
 msgstr ""
 
 msgid "Node type"
+msgstr ""
+
+msgid "Nodes"
 msgstr ""
 
 msgid "Nom"
@@ -15453,6 +15468,9 @@ msgstr "Alt Montajı Aç"
 
 msgid "Open task details"
 msgstr "Görev ayrıntılarını aç"
+
+msgid "Open Template"
+msgstr ""
 
 msgid "Open the first change request"
 msgstr ""
@@ -16427,6 +16445,9 @@ msgstr "Faturalardan planlandı. Bir hücreyi düzenleme, planı kaydeder."
 
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "Satırlardan planlandı. Bir hücreyi düzenleme, çizelgeyi kaydeder."
+
+msgid "Planned Hours"
+msgstr ""
 
 msgid "Planned invoices"
 msgstr "Planlanmış Faturalar"

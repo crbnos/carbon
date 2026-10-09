@@ -628,6 +628,20 @@ export async function upsertServiceVisit(
 const WORK_NODE_COLUMNS =
   "id, parentId, readableId, name, type, sortOrder, itemId, trackedEntityId, fixedPrice, item:item!projectElement_item_fkey(id, readableIdWithRevision, name), trackedEntity:trackedEntity!projectElement_trackedEntityId_fkey(id, readableId)" as const;
 
+/** The nodes of a work tree (an order's or a template's), by sort order. */
+export async function getServiceWorkNodes(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("projectElement")
+    .select(WORK_NODE_COLUMNS)
+    .eq("projectId", projectId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true });
+}
+
 /**
  * An order's work tree with what feeds its totals: the nodes, every ledger
  * row of the order's project, and its billable items. Three queries;
@@ -639,12 +653,7 @@ export async function getServiceWork(
   companyId: string
 ) {
   const [elements, ledger, billable] = await Promise.all([
-    client
-      .from("projectElement")
-      .select(WORK_NODE_COLUMNS)
-      .eq("projectId", projectId)
-      .eq("companyId", companyId)
-      .order("sortOrder", { ascending: true }),
+    getServiceWorkNodes(client, projectId, companyId),
     client
       .from("projectLedger")
       .select("projectElementId, costType, quantity, amount, coverage")
@@ -939,6 +948,49 @@ export async function getServiceEstimateInputs(
     },
     error: null
   };
+}
+
+// --- Service templates ---------------------------------------------------------
+
+/**
+ * Lists the company's service templates (Service projects that are
+ * templates) with their node count and how many orders started from each.
+ */
+export async function getServiceTemplates(
+  client: Client,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("project")
+    .select(
+      "id, name, identifier, createdAt, updatedAt, nodes:projectElement!projectElement_project_fkey(count), uses:serviceOrder!serviceOrder_template_fkey(count)",
+      { count: LIST_COUNT }
+    )
+    .eq("companyId", companyId)
+    .eq("projectType", "Service")
+    .eq("isTemplate", true);
+  if (args.search) query = query.ilike("name", `%${args.search}%`);
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+/** One service template. */
+export async function getServiceTemplate(
+  client: Client,
+  templateId: string,
+  companyId: string
+) {
+  return client
+    .from("project")
+    .select("id, name, identifier, createdAt")
+    .eq("id", templateId)
+    .eq("companyId", companyId)
+    .eq("projectType", "Service")
+    .eq("isTemplate", true)
+    .single();
 }
 
 // --- Billable items ----------------------------------------------------------

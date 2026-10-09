@@ -72,18 +72,36 @@ export default function WorkTree({
   totals,
   isDisabled,
   onBuildTree,
-  estimateHref
+  estimateHref,
+  action,
+  nodeHref,
+  planTotals
 }: {
   nodes: ServiceWorkNode[];
   totals: Map<string, WorkTotals>;
   isDisabled: boolean;
-  onBuildTree: () => void;
+  /** Opens Build Tree; without it the button is not shown. */
+  onBuildTree?: () => void;
   /** The estimate PDF of the tree, when it has one. */
   estimateHref?: string;
+  /** Where nodes are added and deleted; the order's Work route by default. */
+  action?: string;
+  /** Where a node opens; the order's node peek by default. */
+  nodeHref?: (nodeId: string) => string;
+  /**
+   * A template's plan instead of an order's charges: each node's planned
+   * hours and its estimate at sale prices. The coverage, cost and billable
+   * columns give way to these.
+   */
+  planTotals?: Map<string, { hours: number; estimate: number }>;
 }) {
   const { t } = useLingui();
   const { id, elementId } = useParams();
   if (!id) throw new Error("id not found");
+  const workAction = action ?? path.to.serviceOrderWork(id);
+  const hrefOf =
+    nodeHref ?? ((nodeId: string) => path.to.serviceOrderWorkNode(id, nodeId));
+  const isPlan = planTotals !== undefined;
 
   const formatCurrency = useCurrencyFormatter();
   const formatQuantity = useQuantityFormatter();
@@ -119,7 +137,7 @@ export default function WorkTree({
         name: name.trim(),
         parentId: parent?.id ?? ""
       },
-      { method: "post", action: path.to.serviceOrderWork(id) }
+      { method: "post", action: workAction }
     );
   };
 
@@ -139,22 +157,29 @@ export default function WorkTree({
               </a>
             </Button>
           )}
-          <Button
-            variant="secondary"
-            leftIcon={<LuGitBranch />}
-            isDisabled={isDisabled}
-            onClick={onBuildTree}
-          >
-            <Trans>Build Tree</Trans>
-          </Button>
+          {onBuildTree && (
+            <Button
+              variant="secondary"
+              leftIcon={<LuGitBranch />}
+              isDisabled={isDisabled}
+              onClick={onBuildTree}
+            >
+              <Trans>Build Tree</Trans>
+            </Button>
+          )}
         </CardAction>
       </HStack>
       <CardContent className="flex flex-col gap-4">
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            <Trans>
-              No work yet. Build the tree from the unit, or add the first node.
-            </Trans>
+            {isPlan ? (
+              <Trans>No nodes yet. Add the first node.</Trans>
+            ) : (
+              <Trans>
+                No work yet. Build the tree from the unit, or add the first
+                node.
+              </Trans>
+            )}
           </p>
         ) : (
           <Table>
@@ -163,21 +188,34 @@ export default function WorkTree({
                 <Th className="w-full">
                   <Trans>Node</Trans>
                 </Th>
-                <Th>
-                  <Trans>Coverage</Trans>
-                </Th>
-                <Th className="text-right">
-                  <Trans>Hours</Trans>
-                </Th>
-                <Th className="text-right">
-                  <Trans>Part Cost</Trans>
-                </Th>
-                <Th className="text-right">
-                  <Trans>Cost</Trans>
-                </Th>
-                <Th className="text-right">
-                  <Trans>Billable</Trans>
-                </Th>
+                {isPlan ? (
+                  <>
+                    <Th className="text-right">
+                      <Trans>Planned Hours</Trans>
+                    </Th>
+                    <Th className="text-right">
+                      <Trans>Estimate</Trans>
+                    </Th>
+                  </>
+                ) : (
+                  <>
+                    <Th>
+                      <Trans>Coverage</Trans>
+                    </Th>
+                    <Th className="text-right">
+                      <Trans>Hours</Trans>
+                    </Th>
+                    <Th className="text-right">
+                      <Trans>Part Cost</Trans>
+                    </Th>
+                    <Th className="text-right">
+                      <Trans>Cost</Trans>
+                    </Th>
+                    <Th className="text-right">
+                      <Trans>Billable</Trans>
+                    </Th>
+                  </>
+                )}
                 <Th className="text-right">
                   <Trans>Fixed Price</Trans>
                 </Th>
@@ -187,6 +225,7 @@ export default function WorkTree({
             <Tbody>
               {rows.map(({ node, depth }) => {
                 const nodeTotals = totals.get(node.id) ?? EMPTY_TOTALS;
+                const nodePlan = planTotals?.get(node.id);
                 return (
                   <Tr
                     key={node.id}
@@ -197,7 +236,7 @@ export default function WorkTree({
                   >
                     <Td>
                       <Link
-                        to={path.to.serviceOrderWorkNode(id, node.id)}
+                        to={hrefOf(node.id)}
                         className="flex min-w-0 items-center gap-2"
                         style={{ paddingLeft: `${depth * 1.25}rem` }}
                       >
@@ -213,25 +252,41 @@ export default function WorkTree({
                         )}
                       </Link>
                     </Td>
-                    <Td>
-                      <div className="flex flex-wrap gap-1">
-                        {nodeTotals.coverages.map((coverage) => (
-                          <CoveragePill key={coverage} coverage={coverage} />
-                        ))}
-                      </div>
-                    </Td>
-                    <Td className="text-right tabular-nums">
-                      {formatQuantity(nodeTotals.hours)}
-                    </Td>
-                    <Td className="text-right tabular-nums">
-                      {formatCurrency.format(nodeTotals.partCost)}
-                    </Td>
-                    <Td className="text-right tabular-nums">
-                      {formatCurrency.format(nodeTotals.cost)}
-                    </Td>
-                    <Td className="text-right tabular-nums">
-                      {formatCurrency.format(nodeTotals.billable)}
-                    </Td>
+                    {isPlan ? (
+                      <>
+                        <Td className="text-right tabular-nums">
+                          {formatQuantity(nodePlan?.hours ?? 0)}
+                        </Td>
+                        <Td className="text-right tabular-nums">
+                          {formatCurrency.format(nodePlan?.estimate ?? 0)}
+                        </Td>
+                      </>
+                    ) : (
+                      <>
+                        <Td>
+                          <div className="flex flex-wrap gap-1">
+                            {nodeTotals.coverages.map((coverage) => (
+                              <CoveragePill
+                                key={coverage}
+                                coverage={coverage}
+                              />
+                            ))}
+                          </div>
+                        </Td>
+                        <Td className="text-right tabular-nums">
+                          {formatQuantity(nodeTotals.hours)}
+                        </Td>
+                        <Td className="text-right tabular-nums">
+                          {formatCurrency.format(nodeTotals.partCost)}
+                        </Td>
+                        <Td className="text-right tabular-nums">
+                          {formatCurrency.format(nodeTotals.cost)}
+                        </Td>
+                        <Td className="text-right tabular-nums">
+                          {formatCurrency.format(nodeTotals.billable)}
+                        </Td>
+                      </>
+                    )}
                     <Td className="text-right tabular-nums">
                       {node.fixedPrice === null
                         ? "—"
@@ -341,7 +396,7 @@ export default function WorkTree({
 
       {deleting && (
         <ConfirmDelete
-          action={path.to.serviceOrderWork(id)}
+          action={workAction}
           isOpen
           name={`${deleting.readableId} ${deleting.name}`}
           text={t`Are you sure you want to delete ${deleting.readableId} and the nodes under it? This cannot be undone.`}

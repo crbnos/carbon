@@ -1323,6 +1323,9 @@ msgstr "当税收规则要求与账面折旧不同的方法时，用于税收报
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "服务是一种可计费活动，可以购买或执行——它从不被运送、接收或存储"
 
+msgid "A service order started from this template copies its nodes and their plan lines. Open a node to plan its materials, labor and other costs; the estimate prices them at sale prices."
+msgstr ""
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "一组由单一所有者拥有的公司，共享组范围的配置——会计科目表、货币和维度——使得相同的会计设置适用于组中的每家公司。"
 
@@ -8882,6 +8885,9 @@ msgstr "在收据、发货、转移和调整中强制执行按项目验证和指
 msgid "Engagement tier"
 msgstr "参与层级"
 
+msgid "Engine rebuild"
+msgstr ""
+
 msgid "Engineering"
 msgstr "工程"
 
@@ -13929,6 +13935,9 @@ msgstr "新服务"
 msgid "New Service Order"
 msgstr ""
 
+msgid "New Service Template"
+msgstr ""
+
 msgid "New Shift"
 msgstr "新班次"
 
@@ -14482,6 +14491,9 @@ msgstr ""
 msgid "No new notifications"
 msgstr "没有新通知"
 
+msgid "No nodes yet. Add the first node."
+msgstr ""
+
 msgid "No notes"
 msgstr "没有备注"
 
@@ -14871,6 +14883,9 @@ msgid "Node"
 msgstr ""
 
 msgid "Node type"
+msgstr ""
+
+msgid "Nodes"
 msgstr ""
 
 msgid "Nom"
@@ -15453,6 +15468,9 @@ msgstr "打开子装配"
 
 msgid "Open task details"
 msgstr "打开任务详情"
+
+msgid "Open Template"
+msgstr ""
 
 msgid "Open the first change request"
 msgstr ""
@@ -16427,6 +16445,9 @@ msgstr "从发票计划。编辑单元格保存计划。"
 
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "从行计划。编辑单元格保存排程。"
+
+msgid "Planned Hours"
+msgstr ""
 
 msgid "Planned invoices"
 msgstr "已计划发票"

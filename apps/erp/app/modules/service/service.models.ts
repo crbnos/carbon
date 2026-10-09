@@ -363,6 +363,22 @@ export const serviceNodeFixedPriceValidator = z.object({
   )
 });
 
+/** A service template: a named work tree with plan lines to start from. */
+export const serviceTemplateValidator = z.object({
+  name: z.string().trim().min(1, { message: "Name is required" })
+});
+
+/**
+ * A template's identifier: `TPL-` and the first 6 characters of its id after
+ * the prefix, in capitals, so its nodes read `TPL-4F9A2C-3`.
+ */
+export function serviceTemplateIdentifier(projectId: string): string {
+  const body = projectId.includes("_")
+    ? projectId.slice(projectId.indexOf("_") + 1)
+    : projectId;
+  return `TPL-${body.slice(0, 6).toUpperCase()}`;
+}
+
 // --- Work --------------------------------------------------------------------
 
 /** The node types a service order's work tree offers (no engineering types). */

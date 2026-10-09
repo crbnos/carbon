@@ -2473,6 +2473,12 @@ export type BuildFromPartArgs = {
     | { templateProjectId: string };
   depth: number;
   includeBought: boolean;
+  /**
+   * A Template source also copies the plan lines (materials, labor, other
+   * costs) of the elements it copies. A service order takes them, so its
+   * estimate has prices; Projects' Build from part does not.
+   */
+  includePlanLines?: boolean;
 };
 
 /**
@@ -2685,7 +2691,13 @@ async function loadItemBuildNodes(
 /** One table of a template project, every column. */
 function ofTemplate(
   db: Kysely<KyselyDatabase> | KyselyTx,
-  table: "projectElement" | "projectElementLink" | "projectState",
+  table:
+    | "projectElement"
+    | "projectElementLink"
+    | "projectState"
+    | "projectElementMaterial"
+    | "projectElementLabor"
+    | "projectElementCost",
   args: { companyId: string; templateProjectId: string }
 ) {
   return db
@@ -2736,6 +2748,11 @@ async function planBuildFromPart(
 ): Promise<{
   rows: BuildRow[];
   links: Record<string, unknown>[];
+  planLines?: {
+    materials: Record<string, unknown>[];
+    labor: Record<string, unknown>[];
+    costs: Record<string, unknown>[];
+  };
   skippedLines: number;
 }> {
   const stateOfGroup = (group: ProjectStateGroup) =>
@@ -2756,11 +2773,22 @@ async function planBuildFromPart(
       .where("companyId", "=", args.companyId)
       .executeTakeFirst();
     if (!template?.isTemplate) throw new Error("The template was not found");
-    const [elements, links, templateStates] = await Promise.all([
-      ofTemplate(db, "projectElement", source),
-      ofTemplate(db, "projectElementLink", source),
-      ofTemplate(db, "projectState", source)
-    ]);
+    const noRows = Promise.resolve([] as Record<string, unknown>[]);
+    const [elements, links, templateStates, materials, labor, costs] =
+      await Promise.all([
+        ofTemplate(db, "projectElement", source),
+        ofTemplate(db, "projectElementLink", source),
+        ofTemplate(db, "projectState", source),
+        args.includePlanLines
+          ? ofTemplate(db, "projectElementMaterial", source)
+          : noRows,
+        args.includePlanLines
+          ? ofTemplate(db, "projectElementLabor", source)
+          : noRows,
+        args.includePlanLines
+          ? ofTemplate(db, "projectElementCost", source)
+          : noRows
+      ]);
 
     // Keep the template's elements down to `depth` levels.
     const byId = new Map(elements.map((e) => [e.id, e]));
@@ -2790,9 +2818,9 @@ async function planBuildFromPart(
         elements: keptElements as unknown as ProjectCopyElement[],
         elementLabels: [],
         links: links as unknown as ProjectCopySource["links"],
-        materials: [],
-        labor: [],
-        costs: []
+        materials: materials as unknown as ProjectCopySource["materials"],
+        labor: labor as unknown as ProjectCopySource["labor"],
+        costs: costs as unknown as ProjectCopySource["costs"]
       },
       args.projectId,
       args.identifier,
@@ -2812,7 +2840,18 @@ async function planBuildFromPart(
           : (element as Record<string, unknown>).sortOrder
       } as unknown as BuildRow;
     });
-    return { rows, links: plan.links, skippedLines: 0 };
+    return {
+      rows,
+      links: plan.links,
+      planLines: args.includePlanLines
+        ? {
+            materials: plan.materials,
+            labor: plan.labor,
+            costs: plan.costs
+          }
+        : undefined,
+      skippedLines: 0
+    };
   }
 
   let nodes: BuildSourceNode[];
@@ -2971,7 +3010,12 @@ export async function insertElementsFromPart(
     createdBy: args.userId
   };
   const insertRows = async (
-    table: "projectElement" | "projectElementLink",
+    table:
+      | "projectElement"
+      | "projectElementLink"
+      | "projectElementMaterial"
+      | "projectElementLabor"
+      | "projectElementCost",
     rows: Record<string, unknown>[]
   ) => {
     for (let i = 0; i < rows.length; i += BUILD_INSERT_CHUNK) {
@@ -2987,6 +3031,11 @@ export async function insertElementsFromPart(
   };
   await insertRows("projectElement", plan.rows);
   await insertRows("projectElementLink", plan.links);
+  if (plan.planLines) {
+    await insertRows("projectElementMaterial", plan.planLines.materials);
+    await insertRows("projectElementLabor", plan.planLines.labor);
+    await insertRows("projectElementCost", plan.planLines.costs);
+  }
 
   await trx
     .updateTable("project")

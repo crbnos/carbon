@@ -109,7 +109,9 @@ export function ElementPlanLines({
   planLines,
   laborCategories,
   defaultLocationId,
-  isDisabled
+  isDisabled,
+  action: actionOverride,
+  canSupply = true
 }: {
   projectId: string;
   elementId: string;
@@ -118,6 +120,10 @@ export function ElementPlanLines({
   /** The project's location: where a job made from a material is built. */
   defaultLocationId?: string | null;
   isDisabled: boolean;
+  /** The plan route; a service template posts to its own. */
+  action?: string;
+  /** Offers Create Job and Create PO Line on a material (not on a template). */
+  canSupply?: boolean;
 }) {
   const { t } = useLingui();
   const formatMoney = useCurrencyFormatter();
@@ -132,10 +138,12 @@ export function ElementPlanLines({
   const canCreateJob = permissions.can("create", "production");
   const canCreatePurchaseOrderLine = permissions.can("create", "purchasing");
   const changeRequestId = useActiveChangeRequestId();
-  const action = withChangeRequest(
-    path.to.projectElementPlan(projectId, elementId),
-    changeRequestId
-  );
+  const action =
+    actionOverride ??
+    withChangeRequest(
+      path.to.projectElementPlan(projectId, elementId),
+      changeRequestId
+    );
 
   const rowActions = (
     onEdit: () => void,
@@ -249,7 +257,8 @@ export function ElementPlanLines({
                   id: line.id,
                   name: line.item?.readableIdWithRevision ?? t`Material`
                 }),
-              line.methodType === "Make to Order" && !line.jobId ? (
+              !canSupply ? null : line.methodType === "Make to Order" &&
+                !line.jobId ? (
                 <IconButton
                   aria-label={t`Create Job`}
                   icon={<LuFactory />}

@@ -10,6 +10,7 @@ import {
   canOverrideCoverage,
   summarizeWork,
   rollUpOrderStatus,
+  serviceTemplateIdentifier,
   warrantyStatus
 } from "~/modules/service/service.models";
 
@@ -338,6 +339,12 @@ describe("buildServiceEstimate", () => {
     });
     expect(estimate.nodes[0]!.lines[0]!.unitPrice).toBeNull();
     expect(estimate.total).toBe(0);
+  });
+});
+
+describe("serviceTemplateIdentifier", () => {
+  it("takes TPL- and the first 6 characters after the prefix, in capitals", () => {
+    expect(serviceTemplateIdentifier("prj_4f9a2cXyZ")).toBe("TPL-4F9A2C");
   });
 });
 

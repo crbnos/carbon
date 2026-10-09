@@ -15,7 +15,10 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
-import { BUILD_FROM_PART_MAX_DEPTH } from "../projects/projects.models";
+import {
+  BUILD_FROM_PART_MAX_DEPTH,
+  defaultProjectStates
+} from "../projects/projects.models";
 import {
   createServiceProject,
   insertElementsFromPart
@@ -27,9 +30,14 @@ import type {
   ServiceVisitStatus,
   serviceExpenseValidator,
   serviceOrderValidator,
+  serviceTemplateValidator,
   serviceVisitValidator
 } from "./service.models";
-import { canMoveVisit, rollUpOrderStatus } from "./service.models";
+import {
+  canMoveVisit,
+  rollUpOrderStatus,
+  serviceTemplateIdentifier
+} from "./service.models";
 
 type ProjectStatus = Database["public"]["Enums"]["projectStatus"];
 
@@ -183,6 +191,9 @@ export async function createServiceOrder(
         // made; a bill of materials lists every bought screw, so it keeps
         // only the made lines.
         includeBought: "trackedEntityId" in source,
+        // A template's plan lines come with its nodes, so the estimate has
+        // prices.
+        includePlanLines: true,
         userId
       });
     }
@@ -262,6 +273,64 @@ export async function registerCustomerAsset(
       })
       .returning("id")
       .executeTakeFirstOrThrow();
+  });
+}
+
+/**
+ * Creates a service template in one transaction: a Draft Service project
+ * marked as a template (By Coverage, as every Service project), with the
+ * default states, and its identifier set from its id
+ * (`serviceTemplateIdentifier`). Returns its id.
+ */
+export async function createServiceTemplate(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof serviceTemplateValidator> & {
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ id: string }> {
+  const { companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const project = await trx
+      .insertInto("project")
+      .values({
+        name: args.name,
+        projectType: "Service",
+        isTemplate: true,
+        status: "Draft",
+        costTreatment: "By Coverage",
+        priority: "None",
+        active: true,
+        companyId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    await trx
+      .updateTable("project")
+      .set({ identifier: serviceTemplateIdentifier(project.id) })
+      .where("id", "=", project.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    await trx
+      .insertInto("projectState")
+      .values(
+        defaultProjectStates.map((state) => ({
+          projectId: project.id,
+          companyId,
+          name: state.name,
+          group: state.group,
+          color: state.color,
+          sortOrder: state.sortOrder,
+          isDefault: state.isDefault,
+          createdBy: userId
+        }))
+      )
+      .execute();
+
+    return { id: project.id };
   });
 }
 

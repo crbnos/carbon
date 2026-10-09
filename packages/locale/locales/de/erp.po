@@ -1323,6 +1323,9 @@ msgstr "Ein separater Plan für die Steuermeldung, wenn Steuerregeln eine Method
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Eine Dienstleistung ist eine abrechenbare Tätigkeit, die gekauft oder erbracht wird – sie wird nie versandt, empfangen oder gelagert"
 
+msgid "A service order started from this template copies its nodes and their plan lines. Open a node to plan its materials, labor and other costs; the estimate prices them at sale prices."
+msgstr ""
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Eine Reihe von Unternehmen unter einem Eigentümer, die eine Gruppenkonfiguration teilen — der Kontenplan, Währungen und Dimensionen — so dass die gleiche Buchhaltungseinrichtung alle Unternehmen in der Gruppe umfasst."
 
@@ -8882,6 +8885,9 @@ msgstr "Erzwingen Sie artikelspezifische Validierung und Richtlinien über Waren
 msgid "Engagement tier"
 msgstr "Engagement-Stufe"
 
+msgid "Engine rebuild"
+msgstr ""
+
 msgid "Engineering"
 msgstr "Ingenieurwesen"
 
@@ -13929,6 +13935,9 @@ msgstr "Neue Dienstleistung"
 msgid "New Service Order"
 msgstr ""
 
+msgid "New Service Template"
+msgstr ""
+
 msgid "New Shift"
 msgstr "Neue Schicht"
 
@@ -14482,6 +14491,9 @@ msgstr ""
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
 
+msgid "No nodes yet. Add the first node."
+msgstr ""
+
 msgid "No notes"
 msgstr "Keine Notizen"
 
@@ -14871,6 +14883,9 @@ msgid "Node"
 msgstr ""
 
 msgid "Node type"
+msgstr ""
+
+msgid "Nodes"
 msgstr ""
 
 msgid "Nom"
@@ -15453,6 +15468,9 @@ msgstr "Baugruppe öffnen"
 
 msgid "Open task details"
 msgstr "Aufgabendetails öffnen"
+
+msgid "Open Template"
+msgstr ""
 
 msgid "Open the first change request"
 msgstr ""
@@ -16427,6 +16445,9 @@ msgstr "Von den Rechnungen geplant. Das Bearbeiten einer Zelle speichert den Pla
 
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "Von den Positionen geplant. Das Bearbeiten einer Zelle speichert den Terminplan."
+
+msgid "Planned Hours"
+msgstr ""
 
 msgid "Planned invoices"
 msgstr "Geplante Rechnungen"

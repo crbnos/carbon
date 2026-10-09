@@ -1323,6 +1323,9 @@ msgstr "कर रिपोर्टिंग के लिए एक अलग 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "एक सेवा एक बिलयोग्य गतिविधि है जो खरीदी या प्रदर्शन की जाती है — इसे कभी भेजा नहीं जाता, प्राप्त नहीं किया जाता, या स्टॉक नहीं किया जाता"
 
+msgid "A service order started from this template copies its nodes and their plan lines. Open a node to plan its materials, labor and other costs; the estimate prices them at sale prices."
+msgstr ""
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "एक मालिक के तहत कंपनियों का एक समूह जो समूह-scoped कॉन्फ़िगरेशन साझा करते हैं — खातों का चार्ट, मुद्राएं, और आयाम — ताकि समान लेखांकन सेटअप समूह में प्रत्येक कंपनी को span करता है।"
 
@@ -8882,6 +8885,9 @@ msgstr "रसीदों, शिपमेंट, ट्रांसफर औ�
 msgid "Engagement tier"
 msgstr "एनगेजमेंट टियर"
 
+msgid "Engine rebuild"
+msgstr ""
+
 msgid "Engineering"
 msgstr "इंजीनियरिंग"
 
@@ -13929,6 +13935,9 @@ msgstr "नई सेवा"
 msgid "New Service Order"
 msgstr ""
 
+msgid "New Service Template"
+msgstr ""
+
 msgid "New Shift"
 msgstr "नई शिफ्ट"
 
@@ -14482,6 +14491,9 @@ msgstr ""
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
 
+msgid "No nodes yet. Add the first node."
+msgstr ""
+
 msgid "No notes"
 msgstr "कोई नोट नहीं"
 
@@ -14871,6 +14883,9 @@ msgid "Node"
 msgstr ""
 
 msgid "Node type"
+msgstr ""
+
+msgid "Nodes"
 msgstr ""
 
 msgid "Nom"
@@ -15453,6 +15468,9 @@ msgstr "उप-असेंबली खोलें"
 
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
+
+msgid "Open Template"
+msgstr ""
 
 msgid "Open the first change request"
 msgstr ""
@@ -16427,6 +16445,9 @@ msgstr "चालानों से योजनाबद्ध। एक स�
 
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "पंक्तियों से योजनाबद्ध। एक सेल को संपादित करना शेड्यूल को सहेजता है।"
+
+msgid "Planned Hours"
+msgstr ""
 
 msgid "Planned invoices"
 msgstr "योजनाबद्ध चालान"

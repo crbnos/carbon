@@ -1323,6 +1323,9 @@ msgstr "A separate schedule for tax reporting when tax rules require a method di
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 
+msgid "A service order started from this template copies its nodes and their plan lines. Open a node to plan its materials, labor and other costs; the estimate prices them at sale prices."
+msgstr "A service order started from this template copies its nodes and their plan lines. Open a node to plan its materials, labor and other costs; the estimate prices them at sale prices."
+
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 
@@ -8882,6 +8885,9 @@ msgstr "Enforce per-item validation and guidelines across receipts, shipments, t
 msgid "Engagement tier"
 msgstr "Engagement tier"
 
+msgid "Engine rebuild"
+msgstr "Engine rebuild"
+
 msgid "Engineering"
 msgstr "Engineering"
 
@@ -13929,6 +13935,9 @@ msgstr "New Service"
 msgid "New Service Order"
 msgstr "New Service Order"
 
+msgid "New Service Template"
+msgstr "New Service Template"
+
 msgid "New Shift"
 msgstr "New Shift"
 
@@ -14482,6 +14491,9 @@ msgstr "No milestones yet. Add one, then set it on the elements it covers."
 msgid "No new notifications"
 msgstr "No new notifications"
 
+msgid "No nodes yet. Add the first node."
+msgstr "No nodes yet. Add the first node."
+
 msgid "No notes"
 msgstr "No notes"
 
@@ -14872,6 +14884,9 @@ msgstr "Node"
 
 msgid "Node type"
 msgstr "Node type"
+
+msgid "Nodes"
+msgstr "Nodes"
 
 msgid "Nom"
 msgstr "Nom"
@@ -15453,6 +15468,9 @@ msgstr "Open Sub-Assembly"
 
 msgid "Open task details"
 msgstr "Open task details"
+
+msgid "Open Template"
+msgstr "Open Template"
 
 msgid "Open the first change request"
 msgstr "Open the first change request"
@@ -16427,6 +16445,9 @@ msgstr "Planned from the invoices. Editing a cell saves the plan."
 
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "Planned from the lines. Editing a cell saves the schedule."
+
+msgid "Planned Hours"
+msgstr "Planned Hours"
 
 msgid "Planned invoices"
 msgstr "Planned invoices"

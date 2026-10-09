@@ -147,6 +147,7 @@ export async function action({
   try {
     const result = await buildElementsFromPart(client, getDatabaseClient(), {
       ...toBuildArgs(validation.data, companyId, order.projectId),
+      includePlanLines: true,
       userId
     });
     return { ...result, error: null };
