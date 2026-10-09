@@ -846,7 +846,10 @@ function PurchaseInvoiceRow({ doc }: { doc: PurchaseInvoice }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink className="max-md:min-h-11" to={path.to.salesRfq(doc.id!)}>
+        <Hyperlink
+          className="max-md:min-h-11"
+          to={path.to.purchaseInvoice(doc.id!)}
+        >
           <HStack spacing={1}>
             <LuCreditCard className="size-4" />
             <span>{doc.invoiceId}</span>
