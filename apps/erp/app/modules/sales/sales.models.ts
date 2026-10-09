@@ -1525,45 +1525,12 @@ export const rentalAgreementChargeValidator = z.object({
  *  (spec §4): a new asset in the Rental Fleet class, or finished goods. */
 export const rentalResidualDestinations = ["Fleet", "Inventory"] as const;
 
-export const rentalAgreementReturnValidator = z
-  .object({
-    rentalAgreementLineId: z
-      .string()
-      .min(1, { message: "Rental agreement line is required" }),
-    returnedAt: z.string().min(1, { message: "Return date is required" }),
-    meterIn: zfd.numeric(z.number().min(0).optional()),
-    returnNotes: zfd.text(z.string().optional()),
-    takeOutOfService: zfd.checkbox(),
-    outOfServiceReason: zfd.text(z.string().optional()),
-    /** Posted by the form for a Sale line so the destination can be
-     *  required client-side; the route re-reads the line's classification. */
-    isSalesType: zfd.checkbox({ trueValue: "true" }),
-    residualDestination: zfd.text(z.enum(rentalResidualDestinations).optional())
-  })
-  .refine(
-    (data) => (data.takeOutOfService ? !!data.outOfServiceReason : true),
-    {
-      message: "A reason is required to take the unit out of service",
-      path: ["outOfServiceReason"]
-    }
-  )
-  .refine((data) => (data.isSalesType ? !!data.residualDestination : true), {
-    message: "Choose where the returned unit goes",
-    path: ["residualDestination"]
-  })
-  .refine(
-    (data) =>
-      !(
-        data.isSalesType &&
-        data.residualDestination === "Inventory" &&
-        data.takeOutOfService
-      ),
-    {
-      message:
-        "A unit returned to inventory cannot be taken out of service; return it to the fleet instead",
-      path: ["takeOutOfService"]
-    }
-  );
+export const rentalAgreementReleaseValidator = z.object({
+  rentalAgreementLineId: z
+    .string()
+    .min(1, { message: "Rental agreement line is required" }),
+  returnedAt: z.string().min(1, { message: "Release date is required" })
+});
 
 export const lessorClassificationOverrides = ["Rental", "Sale"] as const;
 

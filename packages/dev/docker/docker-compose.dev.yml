@@ -264,7 +264,7 @@ services:
         limits:
           memory: ${MEM_META:-128m}
           cpus: ${CPU_META:-0.25}
-    profiles: ["full"]
+    profiles: ["full", "studio"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -284,7 +284,7 @@ services:
         limits:
           memory: ${MEM_STUDIO:-384m}
           cpus: ${CPU_STUDIO:-0.5}
-    profiles: ["full"]
+    profiles: ["full", "studio"]
     depends_on:
       meta:
         condition: service_started

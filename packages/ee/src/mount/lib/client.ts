@@ -11,8 +11,14 @@ import {
   MOUNT_API_VERSION,
   MOUNT_DEFAULT_BASE_URL
 } from "./constants";
+import {
+  describeHealthcheckFailure,
+  type MountHealthcheckStep,
+  toMountApiError
+} from "./errors";
 import { getMountIntegration, MOUNT_INTEGRATION_ID } from "./service";
 import {
+  MountApiError,
   type MountChange,
   type MountCompany,
   type MountCompanyInput,
@@ -42,6 +48,12 @@ type CachedToken = {
   accessToken: string;
   expiresAt: number;
   connection: string;
+  /**
+   * A 403 on this token is Mount's real answer: the token was issued for a
+   * health check or right after a 403, so it already carries the client's
+   * current Member ID and permissions.
+   */
+  forbiddenIsFinal: boolean;
 };
 
 const TOKEN_EXPIRY_MARGIN_MS = 60_000;
@@ -56,6 +68,8 @@ export class MountClient {
   >();
   /** Domain setting (identifier or title) -> id, per company. */
   private domainIds = new Map<string, string>();
+  /** Companies whose next token is exchanged because of a 403. */
+  private reissueAfterForbidden = new Set<string>();
 
   constructor() {
     this.instance = axios.create({
@@ -94,7 +108,14 @@ export class MountClient {
       return await pending.exchange;
     }
 
-    const exchange = this.exchangeToken(companyId, settings, connection);
+    const forbiddenIsFinal =
+      force || this.reissueAfterForbidden.delete(companyId);
+    const exchange = this.exchangeToken(
+      companyId,
+      settings,
+      connection,
+      forbiddenIsFinal
+    );
     this.inflight.set(companyId, { connection, exchange });
     try {
       return await exchange;
@@ -108,7 +129,8 @@ export class MountClient {
   private async exchangeToken(
     companyId: string,
     settings: MountSettings,
-    connection: string
+    connection: string,
+    forbiddenIsFinal: boolean
   ): Promise<string> {
     const body = new URLSearchParams({
       grant_type: "client_credentials",
@@ -116,19 +138,23 @@ export class MountClient {
       client_secret: settings.clientSecret
     });
 
-    const response = await this.instance.request<{
-      accessToken: string;
-      expiresAt: string;
-    }>({
-      method: "POST",
-      baseURL: settings.baseUrl || MOUNT_DEFAULT_BASE_URL,
-      url: "/auth/v2/token",
-      data: body.toString(),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "X-Tenant": settings.tenant
-      }
-    });
+    const response = await this.instance
+      .request<{
+        accessToken: string;
+        expiresAt: string;
+      }>({
+        method: "POST",
+        baseURL: settings.baseUrl || MOUNT_DEFAULT_BASE_URL,
+        url: "/auth/v2/token",
+        data: body.toString(),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-Tenant": settings.tenant
+        }
+      })
+      .catch((error) => {
+        throw toMountApiError(error);
+      });
 
     const { accessToken, expiresAt } = response.data;
     if (!accessToken) {
@@ -138,7 +164,8 @@ export class MountClient {
     this.tokens.set(companyId, {
       accessToken,
       expiresAt: Date.parse(expiresAt),
-      connection
+      connection,
+      forbiddenIsFinal
     });
 
     return accessToken;
@@ -241,6 +268,11 @@ export class MountClient {
   ): Promise<T> {
     const settings = await this.getSettings(companyId);
     const accessToken = await this.getAccessToken(companyId, settings);
+    // Read with the token, not when its request fails: by then another
+    // request may have replaced it with one whose 403 is final.
+    const cached = this.tokens.get(companyId);
+    const forbiddenIsFinal =
+      cached?.accessToken === accessToken && cached.forbiddenIsFinal;
     const domainId = withDomain
       ? await this.resolveDomainId(companyId, settings)
       : null;
@@ -264,34 +296,59 @@ export class MountClient {
 
       return response.data;
     } catch (error) {
+      const status = axios.isAxiosError(error)
+        ? error.response?.status
+        : undefined;
       // A token revoked or invalidated mid-life reads as 401. Re-exchange once
       // and replay; a second 401 is a real credential problem, not staleness.
-      if (
-        retryOnUnauthorized &&
-        axios.isAxiosError(error) &&
-        error.response?.status === 401
-      ) {
-        this.invalidateToken(companyId);
+      // Mount fixes a token's member when it issues it, so a 403 can also be a
+      // token from before an admin set the client's Member ID or granted that
+      // member access. Re-exchange once per token for that; a 403 on a token
+      // issued after one is a real permission problem.
+      const staleForbidden = status === 403 && !forbiddenIsFinal;
+      if (retryOnUnauthorized && (status === 401 || staleForbidden)) {
+        // When another request already replaced this token, replay with
+        // that one instead of exchanging again.
+        if (this.tokens.get(companyId)?.accessToken === accessToken) {
+          this.invalidateToken(companyId);
+          if (staleForbidden) this.reissueAfterForbidden.add(companyId);
+        }
         return await this.request<T>(companyId, config, {
           retryOnUnauthorized: false,
           withDomain
         });
       }
-      throw error;
+      throw toMountApiError(error);
     }
   }
 
-  async healthcheck(companyId: string) {
+  /**
+   * Whether Carbon can reach the tenant with the saved settings and, when it
+   * cannot, why. Always exchanges a new token: a cached one says whether the
+   * connection worked when it was issued, and fixes made in Mount, such as
+   * setting the client's Member ID, only reach a new token.
+   */
+  async healthcheck(
+    companyId: string
+  ): Promise<{ healthy: boolean; reason?: string }> {
+    let step: MountHealthcheckStep = "settings";
     try {
+      const settings = await this.getSettings(companyId);
+      step = "token";
+      await this.getAccessToken(companyId, settings, { force: true });
+      step = "read";
       await this.request(companyId, {
         method: "GET",
         path: "/Companies",
         params: { $top: 1 }
       });
-      return true;
+      return { healthy: true };
     } catch (error) {
-      logger.error("Mount healthcheck failed", { companyId, error });
-      return false;
+      logger.error("Mount healthcheck failed", { companyId, step, error });
+      return {
+        healthy: false,
+        reason: describeHealthcheckFailure(step, error)
+      };
     }
   }
 
@@ -315,19 +372,6 @@ export class MountClient {
       params: { $filter: `slug eq '${escapeODataString(slug)}'` }
     });
     const [match] = MountObjectDefinitionSchema.array().parse(data);
-    return match ?? null;
-  }
-
-  async findCompanyTypeByTitle(
-    companyId: string,
-    title: string
-  ): Promise<MountCompanyType | null> {
-    const data = await this.request<unknown[]>(companyId, {
-      method: "GET",
-      path: "/CompanyTypes",
-      params: { $filter: `title eq '${escapeODataString(title)}'` }
-    });
-    const [match] = MountCompanyTypeSchema.array().parse(data);
     return match ?? null;
   }
 
@@ -426,7 +470,7 @@ export class MountClient {
         data: input
       });
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
+      if (error instanceof MountApiError && error.status === 404) {
         throw new MountNotFoundError(collection, mountId);
       }
       throw error;

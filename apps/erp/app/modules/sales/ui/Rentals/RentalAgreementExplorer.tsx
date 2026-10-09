@@ -19,6 +19,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuBadgeDollarSign,
   LuCirclePlus,
+  LuCircleSlash,
   LuEllipsisVertical,
   LuTrash,
   LuTruck,
@@ -160,7 +161,11 @@ function ExplorerLine({
   const to = path.to.rentalAgreementLine(agreementId, line.id);
   const isSelected = location.pathname === to;
   const hasActions =
-    state.canDeliver || state.canReturn || state.canSell || state.canDelete;
+    state.canDeliver ||
+    state.canReturn ||
+    state.canRelease ||
+    state.canSell ||
+    state.canDelete;
 
   return (
     <HStack
@@ -216,6 +221,15 @@ function ExplorerLine({
                 >
                   <DropdownMenuIcon icon={<LuUndo2 />} />
                   <Trans>Return</Trans>
+                </DropdownMenuItem>
+              )}
+              {state.canRelease && (
+                <DropdownMenuItem
+                  disabled={state.releaseDisabled}
+                  onClick={() => onAction("release", line)}
+                >
+                  <DropdownMenuIcon icon={<LuCircleSlash />} />
+                  <Trans>Release unit</Trans>
                 </DropdownMenuItem>
               )}
               {state.canSell && (

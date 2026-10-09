@@ -9,6 +9,9 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  DatePicker,
+  FormControl,
+  FormLabel,
   HStack,
   Modal,
   ModalBody,
@@ -29,7 +32,7 @@ import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
 import { DateTime } from "~/components";
-import { useSettings, useUser } from "~/hooks";
+import { useCompanyToday, useSettings, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { Shipment, ShipmentLine } from "../..";
@@ -50,7 +53,12 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
       id: string;
       shipped: boolean;
     }[];
+    rentalLines: { id: string; shipped: boolean }[];
   }>(path.to.shipment(shipmentId));
+
+  const isRental = routeData?.shipment?.sourceDocument === "Rental Agreement";
+  const companyToday = useCompanyToday();
+  const [postingDate, setPostingDate] = useState(companyToday);
 
   // Return-to-customer shipments (source "Sales Return Order") ship returned
   // stock, which is deliberately On Hold until shipped back — mirror the
@@ -122,8 +130,11 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
     const hasFaLines = (routeData?.fixedAssetLines ?? []).some(
       (line) => line.shipped
     );
+    const hasRentalLines = (routeData?.rentalLines ?? []).some(
+      (line) => line.shipped
+    );
 
-    if (!hasShipmentLines && !hasFaLines) {
+    if (!hasShipmentLines && !hasFaLines && !hasRentalLines) {
       setValidationErrors([
         {
           itemReadableId: null,
@@ -267,6 +278,19 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           <p className="text-sm text-muted-foreground mb-4">
             <Trans>Are you sure you want to post this shipment?</Trans>
           </p>
+          {isRental && (
+            <FormControl className="mb-4">
+              <FormLabel>
+                <Trans>Delivered on</Trans>
+              </FormLabel>
+              <DatePicker
+                aria-label={t`Delivered on`}
+                value={parseDate(postingDate)}
+                maxValue={parseDate(companyToday)}
+                onChange={(d) => d && setPostingDate(d.toString())}
+              />
+            </FormControl>
+          )}
           {validationErrors.length > 0 && (
             <Alert variant="destructive">
               <LuTriangleAlert className="h-4 w-4" />
@@ -350,7 +374,9 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                ruleViolations.submit(new FormData());
+                const formData = new FormData();
+                if (isRental) formData.set("postingDate", postingDate);
+                ruleViolations.submit(formData);
               }}
             >
               <Button

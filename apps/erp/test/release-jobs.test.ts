@@ -36,10 +36,14 @@ vi.mock("../app/modules/production/production.service", () => ({
 }));
 
 import {
+  recalculateJobRequirements,
   runMRP,
   updateJobStatus
 } from "../app/modules/production/production.service";
-import { releaseJobs } from "../app/modules/production/production.server";
+import {
+  planDraftJob,
+  releaseJobs
+} from "../app/modules/production/production.server";
 
 // The release-date write: a chainable, thenable stand-in for the user client.
 function clientWith(stamp: { error: null | { message: string } }) {
@@ -105,5 +109,75 @@ describe("releaseJobs", () => {
       purchaseOrdersBySupplierId: {},
       releasedJobIds: ["job-1"]
     });
+  });
+});
+
+// The planning drawer's Plan on a Draft job follows releaseJobs' order: MRP
+// must never count a job as supply while its requirements are stale.
+describe("planDraftJob", () => {
+  const plan = () =>
+    planDraftJob({
+      client: {} as any,
+      db: {} as any,
+      jobId: "job-1",
+      companyId: "company-1",
+      userId: "user-1"
+    });
+
+  it("recalculates, flips only from Draft, then runs MRP", async () => {
+    const order: string[] = [];
+    vi.mocked(recalculateJobRequirements).mockImplementationOnce(async () => {
+      order.push("recalculate");
+      return { data: null, error: null } as any;
+    });
+    vi.mocked(updateJobStatus).mockImplementationOnce(async () => {
+      order.push("flip");
+      return { error: null, updated: true } as any;
+    });
+    vi.mocked(runMRP).mockImplementationOnce(async () => {
+      order.push("mrp");
+      return { data: null, error: null } as any;
+    });
+
+    expect(await plan()).toEqual({ updated: true });
+    expect(order).toEqual(["recalculate", "flip", "mrp"]);
+    expect(vi.mocked(updateJobStatus).mock.calls[0]?.[1]).toMatchObject({
+      status: "Planned",
+      fromStatuses: ["Draft"]
+    });
+  });
+
+  it("leaves the job Draft, and runs no MRP, when the recalculation fails", async () => {
+    vi.mocked(recalculateJobRequirements).mockResolvedValueOnce({
+      data: null,
+      error: { message: "boom" }
+    } as any);
+
+    const result = await plan();
+    expect(result.updated).toBe(false);
+    expect(result.error).toBeTruthy();
+    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(runMRP).not.toHaveBeenCalled();
+  });
+
+  it("runs no MRP when the job is no longer Draft", async () => {
+    vi.mocked(updateJobStatus).mockResolvedValueOnce({
+      error: null,
+      updated: false
+    } as any);
+
+    expect(await plan()).toEqual({ updated: false });
+    expect(runMRP).not.toHaveBeenCalled();
+  });
+
+  it("keeps the job Planned and warns when MRP fails", async () => {
+    vi.mocked(runMRP).mockResolvedValueOnce({
+      data: null,
+      error: new Error("planning blew up")
+    });
+
+    const result = await plan();
+    expect(result.updated).toBe(true);
+    expect(result.warning).toBeTruthy();
   });
 });

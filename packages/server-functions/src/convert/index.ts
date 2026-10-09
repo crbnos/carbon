@@ -1434,6 +1434,7 @@ const convert = defineServerFn({
         // Each shipped fixed asset line counts as quantity 1
         for (const line of shipmentFixedAssetLines.data) {
           const lineId = line.salesOrderLineId;
+          if (!lineId) continue;
           quantitiesByLine[lineId] = (quantitiesByLine[lineId] || 0) + 1;
         }
 

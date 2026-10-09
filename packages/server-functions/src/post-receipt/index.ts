@@ -41,7 +41,7 @@ import type { Insertable } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
@@ -50,12 +50,18 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { postRentalReceipt } from "./rental-agreement";
 
 const logger = getLogger("server-functions", "post-receipt");
 
 export const postReceiptInput = z.object({
   type: z.enum(["post", "void"]).default("post"),
-  receiptId: z.string()
+  receiptId: z.string(),
+  /** The return date of a rental receipt. Other sources ignore it. */
+  postingDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
 });
 
 /** Posts or voids a receipt: stock, tracked entities, cost layers and journal. */
@@ -63,7 +69,7 @@ const postReceipt = defineServerFn({
   name: "post-receipt",
   input: postReceiptInput,
   permissions: { update: "inventory" },
-  async run(ctx, { type, receiptId }) {
+  async run(ctx, { type, receiptId, postingDate }) {
     const { db, companyId, userId } = ctx;
 
     logger.info({ type, receiptId, userId, companyId });
@@ -274,6 +280,12 @@ const postReceipt = defineServerFn({
         if (receiptHeader.invoiced) {
           throw new Error(
             "Cannot void a receipt created by a purchase invoice. Void the invoice instead."
+          );
+        }
+
+        if (receiptHeader.sourceDocument === "Rental Agreement") {
+          throw new InvalidInputError(
+            "A rental return cannot be voided. Correct the unit by hand."
           );
         }
 
@@ -1891,20 +1903,21 @@ const postReceipt = defineServerFn({
           const { data: receiptFaLines } = await many(
             db,
             "receiptFixedAssetLine",
-            { receiptId, received: true },
+            { receiptId, received: true, companyId },
             { columns: ["id", "purchaseOrderLineId", "serialNumber"] }
           );
+          const poFaLines = (receiptFaLines ?? []).filter(
+            (r): r is typeof r & { purchaseOrderLineId: string } =>
+              r.purchaseOrderLineId !== null
+          );
           const receivedFaPoLineIds = new Set(
-            (receiptFaLines ?? []).map((r) => r.purchaseOrderLineId)
+            poFaLines.map((r) => r.purchaseOrderLineId)
           );
           const faSerialNumbers = new Map(
-            (receiptFaLines ?? []).map((r) => [
-              r.purchaseOrderLineId,
-              r.serialNumber
-            ])
+            poFaLines.map((r) => [r.purchaseOrderLineId, r.serialNumber])
           );
           const faReceiptLineIds = new Map<string, string>();
-          for (const r of receiptFaLines ?? []) {
+          for (const r of poFaLines) {
             faReceiptLineIds.set(r.purchaseOrderLineId, r.id);
           }
           // A Construction in Progress asset records every posting that adds to
@@ -3548,6 +3561,16 @@ const postReceipt = defineServerFn({
               .execute();
           });
 
+          break;
+        }
+        case "Rental Agreement": {
+          await postRentalReceipt(db, {
+            receiptId,
+            companyId,
+            userId,
+            today,
+            postingDate
+          });
           break;
         }
         default: {

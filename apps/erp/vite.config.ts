@@ -79,6 +79,15 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
      * Bundling it lets each importer keep its own version.
      */
     "zustand",
+    /**
+     * @carbon/react imports each avatar style's JSON with a dynamic import().
+     * Externalized, Node loads that JSON natively and refuses it without an
+     * import attribute (ERR_IMPORT_ATTRIBUTE_MISSING), so /file/avatar fails.
+     * The attribute cannot go in the source: Vite passes it to the browser,
+     * which then rejects the JSON it serves as JavaScript. Bundled, Vite turns
+     * the JSON into a module on both sides.
+     */
+    "@dicebear/styles",
   ];
 
   return {

@@ -3,11 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { EPSILON } from "@carbon/utils";
 import { z } from "zod";
 
 /**
  * Input contract and pure helpers for `post-asset-transfer`. No I/O and no
- * imports beyond zod and the generated types, so the server function's own
+ * imports beyond zod, the generated types and `@carbon/utils`, so the server function's own
  * logic can be pinned without a database.
  */
 
@@ -29,7 +30,14 @@ export const capitalizeValidator = z.object({
   transferDate: calendarDate,
   name: z.string().optional().nullable(),
   // An existing Draft asset to fill; otherwise the function creates one.
-  fixedAssetId: z.string().optional().nullable()
+  fixedAssetId: z.string().optional().nullable(),
+  // What the unit cost to make, for a unit inventory carries at nothing (a job
+  // that recorded no production or material, a no-cost issue). Refused for a
+  // unit that carries a cost: that value moves from inventory as it is.
+  cost: z.number().positive().optional().nullable(),
+  // The other side of an entered cost: where that value was booked when it
+  // was spent. Required with `cost` when accounting is enabled.
+  offsetAccountId: z.string().optional().nullable()
 });
 
 /** Return an asset to stock at its net book value. */
@@ -56,11 +64,26 @@ export const capitalizeCipValidator = z.object({
   inServiceDate: calendarDate
 });
 
+/**
+ * Raise an asset's cost after it was capitalized (post-capitalization): Dr the
+ * class asset account / Cr `offsetAccountId`. Raise only — lowering a cost is
+ * a write-down.
+ */
+export const adjustCostValidator = z.object({
+  type: z.literal("adjustCost"),
+  fixedAssetId: z.string().min(1),
+  amount: z.number().positive(),
+  offsetAccountId: z.string().optional().nullable(),
+  locationId: z.string().min(1),
+  transferDate: calendarDate
+});
+
 export const postAssetTransferInput = z.discriminatedUnion("type", [
   capitalizeValidator,
   returnValidator,
   attachJobValidator,
-  capitalizeCipValidator
+  capitalizeCipValidator,
+  adjustCostValidator
 ]);
 
 export type AssetTransferInput = z.output<typeof postAssetTransferInput>;
@@ -106,3 +129,54 @@ export const CLOSED_JOB_STATUSES: ReadonlySet<
 export const RETURNABLE_ASSET_STATUSES: ReadonlySet<
   Database["public"]["Enums"]["fixedAssetStatus"]
 > = new Set(["Active", "Fully Depreciated"] as const);
+
+/** Asset statuses whose cost can be adjusted. */
+export const ADJUSTABLE_ASSET_STATUSES: ReadonlySet<
+  Database["public"]["Enums"]["fixedAssetStatus"]
+> = new Set(["Active", "Fully Depreciated"] as const);
+
+/**
+ * The cost a unit is capitalized at: what inventory carries it at, or — only
+ * when that is nothing — the cost the user entered. Returns the refusal
+ * message instead when neither gives the asset a value, or when a cost is
+ * entered for a unit that already carries one.
+ */
+export function resolveCapitalizationCost(args: {
+  carried: number;
+  entered: number | null | undefined;
+  serial: string;
+  itemReadableId: string;
+}): { cost: number; source: "inventory" | "entered" } | { error: string } {
+  const { carried, entered, serial, itemReadableId } = args;
+  if (carried > 0) {
+    if (entered != null) {
+      return {
+        error: `${serial} is carried in inventory at a cost, so it is capitalized at that cost; clear the entered cost`
+      };
+    }
+    return { cost: carried, source: "inventory" };
+  }
+  if (entered != null && entered > 0) {
+    return { cost: entered, source: "entered" };
+  }
+  return {
+    error: `${serial} has no cost in inventory, so the asset would be worth nothing. Enter what it cost, or set a unit cost on ${itemReadableId}, then capitalize it.`
+  };
+}
+
+/**
+ * An asset's status once its cost is raised: a Fully Depreciated asset whose
+ * net book value is above its residual again has depreciation left to take,
+ * so it returns to Active and the depreciation runs pick it up.
+ */
+export function statusAfterCostAdjustment(args: {
+  status: Database["public"]["Enums"]["fixedAssetStatus"];
+  acquisitionCost: number;
+  accumulatedDepreciation: number;
+  residualValuePercent: number;
+}): Database["public"]["Enums"]["fixedAssetStatus"] {
+  if (args.status !== "Fully Depreciated") return args.status;
+  const residual = args.acquisitionCost * (args.residualValuePercent / 100);
+  const remaining = args.acquisitionCost - args.accumulatedDepreciation;
+  return remaining - residual > EPSILON ? "Active" : args.status;
+}
