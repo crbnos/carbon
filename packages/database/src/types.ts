@@ -91910,6 +91910,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      sync_advance_document_sequence: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       sync_archive_other_procedures: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
