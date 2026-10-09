@@ -4393,9 +4393,6 @@ msgstr "勘定科目表"
 msgid "Chat"
 msgstr "チャット"
 
-msgid "Check"
-msgstr ""
-
 msgid "Check operations on the left to build the batch."
 msgstr "左側の工程をチェックしてバッチを構築してください。"
 
@@ -13367,9 +13364,6 @@ msgstr "顧客レンタル料金がありません。"
 
 msgid "No Data"
 msgstr "データなし"
-
-msgid "No data exists"
-msgstr "データが存在しません"
 
 msgid "No data yet"
 msgstr "データはまだありません"

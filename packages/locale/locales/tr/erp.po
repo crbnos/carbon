@@ -4393,9 +4393,6 @@ msgstr "Hesap Planı"
 msgid "Chat"
 msgstr "Sohbet"
 
-msgid "Check"
-msgstr ""
-
 msgid "Check operations on the left to build the batch."
 msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
 
@@ -13367,9 +13364,6 @@ msgstr "Müşteri kira oranı yok."
 
 msgid "No Data"
 msgstr "Veri Yok"
-
-msgid "No data exists"
-msgstr "Veri mevcut değil"
 
 msgid "No data yet"
 msgstr "Henüz veri yok"

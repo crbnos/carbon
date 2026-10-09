@@ -89,27 +89,15 @@ export default function ReadinessChecklist({
   }, [groups]);
 
   return (
-    <Table>
-      <Thead>
-        <Tr>
-          <Th>
-            <Trans>Check</Trans>
-          </Th>
-          <Th className="w-40">
-            <Trans>Status</Trans>
-          </Th>
-        </Tr>
-      </Thead>
-      <Tbody>
-        {checks.map((check) => (
-          <ReadinessCheckRow
-            key={check.key}
-            check={check}
-            defaultLabels={defaultLabels}
-          />
-        ))}
-      </Tbody>
-    </Table>
+    <ul className="divide-y divide-border rounded-lg border border-border">
+      {checks.map((check) => (
+        <ReadinessCheckRow
+          key={check.key}
+          check={check}
+          defaultLabels={defaultLabels}
+        />
+      ))}
+    </ul>
   );
 }
 
@@ -162,41 +150,37 @@ function ReadinessCheckRow({
       })();
 
   return (
-    <Tr>
-      <Td className="font-medium">
-        <div className="flex flex-col gap-1">
-          <span>{label}</span>
-          {detail && (
-            <span className="text-xs font-normal text-muted-foreground">
-              {detail}
-            </span>
-          )}
-          {check.key === "account-defaults" && check.items.length > 0 && (
-            <ul className="flex flex-col gap-0.5 text-xs font-normal">
-              {check.items.map((item) => (
-                <li key={item.id}>
-                  <Link
-                    to={path.to.accountingDefaults}
-                    className="text-primary hover:underline"
-                  >
-                    {defaultLabels.get(item.id) ?? item.readableId}
-                  </Link>
-                  {item.status === "Inactive" && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      <Trans>(inactive account)</Trans>
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-          {check.key !== "account-defaults" && check.items.length > 0 && (
-            <ReadinessItemsPopover check={check} label={label} />
-          )}
-        </div>
-      </Td>
-      <Td>
+    <li className="flex items-center justify-between gap-4 px-4 py-3">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <span className="text-sm font-medium">{label}</span>
+        {detail && (
+          <span className="text-sm text-muted-foreground">{detail}</span>
+        )}
+        {check.key === "account-defaults" && check.items.length > 0 && (
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+            {check.items.map((item) => (
+              <li key={item.id}>
+                <Link
+                  to={path.to.accountingDefaults}
+                  className="text-primary underline underline-offset-4"
+                >
+                  {defaultLabels.get(item.id) ?? item.readableId}
+                </Link>
+                {item.status === "Inactive" && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    <Trans>(inactive account)</Trans>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {check.key !== "account-defaults" && check.items.length > 0 && (
+          <ReadinessItemsPopover check={check} label={label} />
+        )}
+      </div>
+      <div className="shrink-0">
         {check.passed ? (
           <Status color="green">
             <Trans>Passed</Trans>
@@ -206,8 +190,8 @@ function ReadinessCheckRow({
             <Trans>Failing</Trans>
           </Status>
         )}
-      </Td>
-    </Tr>
+      </div>
+    </li>
   );
 }
 
@@ -224,7 +208,7 @@ function ReadinessItemsPopover({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="w-fit text-xs font-normal text-primary hover:underline"
+          className="w-fit text-sm text-primary underline underline-offset-4"
         >
           {check.count === 1 ? (
             <Trans>1 blocking record</Trans>

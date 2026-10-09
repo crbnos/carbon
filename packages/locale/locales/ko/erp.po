@@ -4393,9 +4393,6 @@ msgstr "계정과목표"
 msgid "Chat"
 msgstr "채팅"
 
-msgid "Check"
-msgstr ""
-
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
 
@@ -13367,9 +13364,6 @@ msgstr "고객 임차료가 없습니다."
 
 msgid "No Data"
 msgstr "데이터 없음"
-
-msgid "No data exists"
-msgstr "존재하는 데이터가 없습니다"
 
 msgid "No data yet"
 msgstr "아직 데이터가 없습니다"

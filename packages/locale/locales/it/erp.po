@@ -4393,9 +4393,6 @@ msgstr "Piano dei Conti"
 msgid "Chat"
 msgstr "Chat"
 
-msgid "Check"
-msgstr ""
-
 msgid "Check operations on the left to build the batch."
 msgstr "Seleziona le operazioni a sinistra per creare il batch."
 
@@ -13367,9 +13364,6 @@ msgstr "Nessuna tariffa di noleggio del cliente."
 
 msgid "No Data"
 msgstr "Nessun dato"
-
-msgid "No data exists"
-msgstr "Non esistono dati"
 
 msgid "No data yet"
 msgstr "Ancora nessun dato"

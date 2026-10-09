@@ -4393,9 +4393,6 @@ msgstr "Chart of Accounts"
 msgid "Chat"
 msgstr "Chat"
 
-msgid "Check"
-msgstr "Check"
-
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
 
@@ -13367,9 +13364,6 @@ msgstr "No customer rental rates."
 
 msgid "No Data"
 msgstr "No Data"
-
-msgid "No data exists"
-msgstr "No data exists"
 
 msgid "No data yet"
 msgstr "No data yet"

@@ -4393,9 +4393,6 @@ msgstr "会计科目表"
 msgid "Chat"
 msgstr "聊天"
 
-msgid "Check"
-msgstr ""
-
 msgid "Check operations on the left to build the batch."
 msgstr "勾选左侧的操作以构建批次。"
 
@@ -13367,9 +13364,6 @@ msgstr "没有客户租赁费率。"
 
 msgid "No Data"
 msgstr "无数据"
-
-msgid "No data exists"
-msgstr "没有数据存在"
 
 msgid "No data yet"
 msgstr "暂无数据"

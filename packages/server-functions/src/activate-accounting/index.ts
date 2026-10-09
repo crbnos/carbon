@@ -46,7 +46,8 @@ export const activateAccountingInput = z.object({
 
 export type ActivateAccountingResult = {
   cutoverDate: string;
-  openingJournalId: string;
+  /** Null when nothing was open and the trial balance was empty. */
+  openingJournalId: string | null;
 };
 
 /** Migration Clearing must total zero within this. */
@@ -183,51 +184,57 @@ const activateAccounting = defineServerFn({
           clearing.controlAccountIds,
           clearing.migrationClearingAccountId
         );
-        const openingPeriod = await resolveAccountingPeriod(
-          trx,
-          companyId,
-          openingDate,
-          "historical"
-        );
-        const openingJournal = await trx
-          .insertInto("journal")
-          .values({
-            journalEntryId: await getNextSequence(
-              trx,
-              "journalEntry",
-              companyId
-            ),
-            accountingPeriodId: openingPeriod.id,
-            description: OPENING_JOURNAL_DESCRIPTION,
-            postingDate: openingDate,
-            sourceType: "Opening Balance",
-            status: "Posted",
-            postedAt: now(),
-            postedBy: userId,
+        // A company with nothing open and no trial balance opens with no
+        // journal at all, rather than an empty one.
+        let openingJournalId: string | null = null;
+        if (openingLines.length > 0) {
+          const openingPeriod = await resolveAccountingPeriod(
+            trx,
             companyId,
-            createdBy: userId
-          })
-          .returning("id")
-          .executeTakeFirstOrThrow();
-        for (const rows of chunks(openingLines)) {
-          await trx
-            .insertInto("journalLine")
-            .values(
-              rows.map((line) => ({
-                journalId: openingJournal.id,
-                accountId: line.accountId,
-                amount: line.amount,
-                description: line.description,
-                documentType: line.documentType as JournalLineDocumentType,
-                documentId: line.documentId,
-                documentLineReference: line.documentLineReference,
-                quantity: line.quantity ?? 0,
-                journalLineReference: nanoid(),
-                companyId,
-                createdBy: userId
-              }))
-            )
-            .execute();
+            openingDate,
+            "historical"
+          );
+          const openingJournal = await trx
+            .insertInto("journal")
+            .values({
+              journalEntryId: await getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              ),
+              accountingPeriodId: openingPeriod.id,
+              description: OPENING_JOURNAL_DESCRIPTION,
+              postingDate: openingDate,
+              sourceType: "Opening Balance",
+              status: "Posted",
+              postedAt: now(),
+              postedBy: userId,
+              companyId,
+              createdBy: userId
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          openingJournalId = openingJournal.id;
+          for (const rows of chunks(openingLines)) {
+            await trx
+              .insertInto("journalLine")
+              .values(
+                rows.map((line) => ({
+                  journalId: openingJournal.id,
+                  accountId: line.accountId,
+                  amount: line.amount,
+                  description: line.description,
+                  documentType: line.documentType as JournalLineDocumentType,
+                  documentId: line.documentId,
+                  documentLineReference: line.documentLineReference,
+                  quantity: line.quantity ?? 0,
+                  journalLineReference: nanoid(),
+                  companyId,
+                  createdBy: userId
+                }))
+              )
+              .execute();
+          }
         }
 
         // 11. Periods for the journals that stay. A Superseded journal keeps
@@ -300,7 +307,7 @@ const activateAccounting = defineServerFn({
           .where("id", "=", companyId)
           .execute();
 
-        return { cutoverDate, openingJournalId: openingJournal.id };
+        return { cutoverDate, openingJournalId };
       });
   }
 });

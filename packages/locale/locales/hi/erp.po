@@ -4393,9 +4393,6 @@ msgstr "खातों का चार्ट"
 msgid "Chat"
 msgstr "चैट"
 
-msgid "Check"
-msgstr ""
-
 msgid "Check operations on the left to build the batch."
 msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
 
@@ -13367,9 +13364,6 @@ msgstr "कोई ग्राहक किराया दरें नही�
 
 msgid "No Data"
 msgstr "कोई डेटा नहीं"
-
-msgid "No data exists"
-msgstr "कोई डेटा मौजूद नहीं है"
 
 msgid "No data yet"
 msgstr "अभी तक कोई डेटा नहीं"

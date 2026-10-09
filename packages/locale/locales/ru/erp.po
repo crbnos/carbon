@@ -4393,9 +4393,6 @@ msgstr "План счетов"
 msgid "Chat"
 msgstr "Чат"
 
-msgid "Check"
-msgstr ""
-
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
 
@@ -13367,9 +13364,6 @@ msgstr "Нет тарифов аренды клиента."
 
 msgid "No Data"
 msgstr "Нет данных"
-
-msgid "No data exists"
-msgstr "Данные не существуют"
 
 msgid "No data yet"
 msgstr "Данных пока нет"

@@ -4393,9 +4393,6 @@ msgstr "Plan de Cuentas"
 msgid "Chat"
 msgstr "Chat"
 
-msgid "Check"
-msgstr ""
-
 msgid "Check operations on the left to build the batch."
 msgstr "Marque las operaciones a la izquierda para construir el lote."
 
@@ -13367,9 +13364,6 @@ msgstr "Sin tasas de alquiler para clientes."
 
 msgid "No Data"
 msgstr "Sin datos"
-
-msgid "No data exists"
-msgstr "No existen datos"
 
 msgid "No data yet"
 msgstr "Aún no hay datos"
