@@ -11,6 +11,8 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
+import { toSafeHref } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
@@ -36,6 +38,7 @@ const CustomFormInlineFields = ({
   isDisabled = false,
   onUpdate
 }: CustomFormInlineFieldsProps) => {
+  const { t } = useLingui();
   const customFormSchema = useCustomFieldsSchema();
   const tableFields = customFormSchema?.[table];
 
@@ -222,8 +225,14 @@ const CustomFormInlineFields = ({
                   defaultValues={{
                     [field.id]: fields[field.id] as string
                   }}
+                  // Inline mode saves on blur only when this passes, so a value
+                  // the full form would refuse stays in the input.
                   validator={z.object({
-                    [field.id]: zfd.text(z.string().optional())
+                    [field.id]: zfd
+                      .text(z.string().optional())
+                      .refine((value) => !value || toSafeHref(value) !== null, {
+                        message: t`Enter a web address, such as https://example.com`
+                      })
                   })}
                   className="w-full"
                 >

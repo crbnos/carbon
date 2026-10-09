@@ -1,8 +1,9 @@
 -- Link: a custom field whose value is a web address, shown as a clickable link.
-ALTER TABLE "attributeDataType" ADD COLUMN "isLink" BOOLEAN NOT NULL DEFAULT false;
+-- Every statement is guarded so a retry over partial progress completes.
+ALTER TABLE "attributeDataType" ADD COLUMN IF NOT EXISTS "isLink" BOOLEAN NOT NULL DEFAULT false;
 
 -- Exactly one flag per data type, now including isLink.
-ALTER TABLE "attributeDataType" DROP CONSTRAINT "userAttributeDataType_singleDataType";
+ALTER TABLE "attributeDataType" DROP CONSTRAINT IF EXISTS "userAttributeDataType_singleDataType";
 
 ALTER TABLE "attributeDataType" ADD CONSTRAINT "userAttributeDataType_singleDataType"
   CHECK (
@@ -21,7 +22,8 @@ ALTER TABLE "attributeDataType" ADD CONSTRAINT "userAttributeDataType_singleData
 -- The app's DataType enum names ids, so the row takes its id explicitly rather
 -- than whatever the sequence hands out next.
 INSERT INTO "attributeDataType" ("id", "label", "isLink")
-VALUES (10, 'Link', true);
+VALUES (10, 'Link', true)
+ON CONFLICT ("id") DO NOTHING;
 
 SELECT setval(
   pg_get_serial_sequence('"attributeDataType"', 'id'),

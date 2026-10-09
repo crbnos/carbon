@@ -29,14 +29,26 @@ const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
   const customFormSchema = useCustomFieldsSchema();
   const tableFields = customFormSchema?.[table];
   const additionalValidatorCtx = useAdditionalValidatorsContext();
-  const tagsKey = tags.join(",");
+  // A stable memo key that keeps each tag whole; joining on "," split a tag
+  // containing a comma into two.
+  const tagsKey = JSON.stringify(tags);
 
+  // The fields this record shows. Rendering and validation both read it, so a
+  // hidden required field can never block the save.
   const visibleFields = useMemo(() => {
     if (!tableFields) return [];
-    return tableFields.filter((field) => {
-      if (!field.tags || field.tags.length === 0) return true;
-      return field.tags.some((tag) => tagsKey.split(",").includes(tag));
-    });
+    const recordTags: string[] = JSON.parse(tagsKey);
+    return [...tableFields]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .filter((field) => {
+        if (
+          !field.tags ||
+          !Array.isArray(field.tags) ||
+          field.tags.length === 0
+        )
+          return true;
+        return field.tags.some((tag) => recordTags.includes(tag));
+      });
   }, [tableFields, tagsKey]);
 
   const requiredFieldNames = useMemo(
@@ -93,113 +105,102 @@ const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
 
   return (
     <>
-      {tableFields
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .filter((field) => {
-          if (
-            !field.tags ||
-            !Array.isArray(field.tags) ||
-            field.tags.length === 0
-          )
-            return true;
-          return field.tags.some((tag) => tags.includes(tag));
-        })
-        .map((field) => {
-          const isRequired = field.required ?? false;
-          switch (field.dataTypeId) {
-            case DataType.Boolean:
-              return (
-                <Boolean
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                />
-              );
-            case DataType.Date:
-              return (
-                <DatePicker
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                  isRequired={isRequired}
-                />
-              );
-            case DataType.List:
-              return (
-                <Select
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                  placeholder={`Select ${field.name}`}
-                  isRequired={isRequired}
-                  options={
-                    field.listOptions?.map((o) => ({
-                      label: o,
-                      value: o
-                    })) ?? []
-                  }
-                />
-              );
-            case DataType.Numeric:
-              return (
-                <Number
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                  isRequired={isRequired}
-                />
-              );
-            case DataType.Text:
-              return (
-                <Input
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                  isRequired={isRequired}
-                />
-              );
-            case DataType.Link:
-              return (
-                <Input
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                  isRequired={isRequired}
-                  inputMode="url"
-                  placeholder="https://"
-                />
-              );
-            case DataType.User:
-              return (
-                <Employee
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                  isRequired={isRequired}
-                />
-              );
-            case DataType.Customer:
-              return (
-                <Customer
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                  isRequired={isRequired}
-                />
-              );
-            case DataType.Supplier:
-              return (
-                <Supplier
-                  key={field.id}
-                  name={getCustomFieldName(field.id)}
-                  label={field.name}
-                  isRequired={isRequired}
-                />
-              );
-            default:
-              return null;
-          }
-        })}
+      {visibleFields.map((field) => {
+        const isRequired = field.required ?? false;
+        switch (field.dataTypeId) {
+          case DataType.Boolean:
+            return (
+              <Boolean
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+              />
+            );
+          case DataType.Date:
+            return (
+              <DatePicker
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+                isRequired={isRequired}
+              />
+            );
+          case DataType.List:
+            return (
+              <Select
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+                placeholder={`Select ${field.name}`}
+                isRequired={isRequired}
+                options={
+                  field.listOptions?.map((o) => ({
+                    label: o,
+                    value: o
+                  })) ?? []
+                }
+              />
+            );
+          case DataType.Numeric:
+            return (
+              <Number
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+                isRequired={isRequired}
+              />
+            );
+          case DataType.Text:
+            return (
+              <Input
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+                isRequired={isRequired}
+              />
+            );
+          case DataType.Link:
+            return (
+              <Input
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+                isRequired={isRequired}
+                inputMode="url"
+                placeholder="https://"
+              />
+            );
+          case DataType.User:
+            return (
+              <Employee
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+                isRequired={isRequired}
+              />
+            );
+          case DataType.Customer:
+            return (
+              <Customer
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+                isRequired={isRequired}
+              />
+            );
+          case DataType.Supplier:
+            return (
+              <Supplier
+                key={field.id}
+                name={getCustomFieldName(field.id)}
+                label={field.name}
+                isRequired={isRequired}
+              />
+            );
+          default:
+            return null;
+        }
+      })}
     </>
   );
 };
