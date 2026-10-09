@@ -64,7 +64,7 @@
 - [x] Task 26: Add the milestone burn chart
 - [x] Task 27: Add part links and item values
 - [x] Task 28: Add Build from part
-- [ ] Task 29: Add the element history by part
+- [x] Task 29: Add the element history by part
 - [ ] Task 30: Extend the demo datasets
 - [ ] Task 31: Update the rule file, module AGENTS.md, docs and spec
 - [ ] Task 32: Verify in the browser
@@ -1553,3 +1553,4 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 28: `$projectId.elements.build.tsx` is a resource route. Its loader returns the templates and the preview, and its action builds. The drawer is local state on the Elements page, opened from **New → Build from part**. Its controls are comboboxes that reload the preview. A form would have to submit before it could preview.
 - Task 28: a throwaway vitest run against this worktree's database previewed the satellite item SAT-1000. It gave 10 elements at depth 2 (6 Make to Order sub-assemblies), and 30 with bought components. A serial's build gave 4 reaction wheels linked to their serials and 2 consumed lots. A build created the 10 elements and advanced `nextElementSequence` from 1 to 11. The rows were deleted and the sequence was restored. The script was not committed.
 - Task 28: a test that imports `projects.server.ts` needs `@lingui/core/macro` mocked. The import chain reaches the docs glossary (`msg`), which the vitest config does not compile.
+- Task 29: migration `20261009131946_element-history-by-item.sql` is the plan's function as written. `getElementHistoryByItem` (`projects.service.ts`) calls it with `.single()`. `getProjectElementPage` reads it in its second parallel batch, only for an element with an `itemId`, and logs a failure without failing the page. The Budget section shows the line above its table. The average counts the element itself when it has ledger rows, as the function has no element argument.

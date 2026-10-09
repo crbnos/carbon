@@ -15592,6 +15592,9 @@ msgstr "Passkeys"
 msgid "Passkeys are disabled"
 msgstr "Passkeys are disabled"
 
+msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
+msgstr "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
+
 msgid "Past due"
 msgstr "Past due"
 

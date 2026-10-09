@@ -40,6 +40,7 @@ import {
   rollUpRequirementStatus
 } from "./projects.models";
 import {
+  getElementHistoryByItem,
   getItemNumericCustomFields,
   getLaborCategoriesList,
   getProjectCostSummary,
@@ -1621,7 +1622,7 @@ export async function getProjectElementPage(
     return { data: null, error: null };
   }
 
-  const [verification, qualityDocuments] = await Promise.all([
+  const [verification, qualityDocuments, itemHistory] = await Promise.all([
     getProjectVerification(client, {
       companyId: args.companyId,
       projectId: args.projectId,
@@ -1635,8 +1636,19 @@ export async function getProjectElementPage(
           .eq("companyId", args.companyId)
           .order("name", { ascending: true })
           .order("version", { ascending: false })
-      : Promise.resolve({ data: [], error: null })
+      : Promise.resolve({ data: [], error: null }),
+    // A linked part: what other elements on the same part have charged.
+    element.data.itemId
+      ? getElementHistoryByItem(client, args.companyId, element.data.itemId)
+      : Promise.resolve({ data: null, error: null })
   ]);
+  if (itemHistory.error) {
+    logger.error("Failed to load the element history by part", {
+      companyId: args.companyId,
+      elementId: args.elementId,
+      error: itemHistory.error
+    });
+  }
   if (verification.error || !verification.data) {
     return {
       data: null,
@@ -1708,7 +1720,8 @@ export async function getProjectElementPage(
       openTime: timeAndMaterials.openTime,
       ...verification.data,
       qualityDocuments: qualityDocuments.data ?? [],
-      itemFields
+      itemFields,
+      itemHistory: itemHistory.data ?? null
     },
     error: null
   };

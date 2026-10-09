@@ -15592,6 +15592,9 @@ msgstr "Passkey"
 msgid "Passkeys are disabled"
 msgstr "Le passkey sono disabilitate"
 
+msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
+msgstr ""
+
 msgid "Past due"
 msgstr "Scaduto"
 

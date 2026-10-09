@@ -15592,6 +15592,9 @@ msgstr "패스키"
 msgid "Passkeys are disabled"
 msgstr "패스키가 비활성화되었습니다"
 
+msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
+msgstr ""
+
 msgid "Past due"
 msgstr "기한 초과"
 

@@ -1724,6 +1724,25 @@ export async function getProjectItemValues(
 }
 
 /**
+ * What the elements linked to an item have charged, averaged per element:
+ * labor hours, material cost and the last posting date
+ * (`get_element_history_by_item`). Only elements with a ledger row count.
+ * @mcp read
+ */
+export async function getElementHistoryByItem(
+  client: Client,
+  companyId: string,
+  itemId: string
+) {
+  return client
+    .rpc("get_element_history_by_item", {
+      p_company_id: companyId,
+      p_item_id: itemId
+    })
+    .single();
+}
+
+/**
  * The active Numeric custom fields of an item type, for a Parameter's
  * **Part field**. A type with no typed custom field table has none.
  * @mcp read

@@ -15592,6 +15592,9 @@ msgstr "Llaves de acceso"
 msgid "Passkeys are disabled"
 msgstr "Las llaves de acceso están deshabilitadas"
 
+msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
+msgstr ""
+
 msgid "Past due"
 msgstr "Vencido"
 

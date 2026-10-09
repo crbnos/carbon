@@ -15592,6 +15592,9 @@ msgstr "通行密钥"
 msgid "Passkeys are disabled"
 msgstr "通行密钥已禁用"
 
+msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
+msgstr ""
+
 msgid "Past due"
 msgstr "逾期"
 

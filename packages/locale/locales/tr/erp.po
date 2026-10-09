@@ -15592,6 +15592,9 @@ msgstr "Geçiş Anahtarları"
 msgid "Passkeys are disabled"
 msgstr "Geçiş Anahtarları Devre Dışı Bırakılmış"
 
+msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
+msgstr ""
+
 msgid "Past due"
 msgstr "Vadesi geçmiş"
 

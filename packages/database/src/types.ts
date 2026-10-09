@@ -93042,6 +93042,15 @@ export type Database = {
         Args: { p_storage_unit_id: string }
         Returns: string
       }
+      get_element_history_by_item: {
+        Args: { p_company_id: string; p_item_id: string }
+        Returns: {
+          averageHours: number
+          averageMaterialCost: number
+          elementCount: number
+          lastPostingDate: string
+        }[]
+      }
       get_entity_audit_log: {
         Args: {
           p_company_id: string

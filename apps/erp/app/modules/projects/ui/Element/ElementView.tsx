@@ -40,7 +40,12 @@ import {
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { AuditLogFeed } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  usePermissions,
+  useQuantityFormatter,
+  useUser
+} from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
@@ -104,6 +109,7 @@ export function ElementView({
   requirementStatus,
   qualityDocuments,
   itemFields,
+  itemHistory,
   states,
   labels,
   milestones,
@@ -355,6 +361,7 @@ export function ElementView({
               element={element}
               elements={elements}
               costSummary={costSummary}
+              itemHistory={itemHistory}
             />
           </Section>
           <Section title={t`Activity`}>
@@ -491,10 +498,15 @@ function Section({
 function ElementBudget({
   element,
   elements,
-  costSummary
-}: Pick<ProjectElementPage, "element" | "elements" | "costSummary">) {
+  costSummary,
+  itemHistory
+}: Pick<
+  ProjectElementPage,
+  "element" | "elements" | "costSummary" | "itemHistory"
+>) {
   const { t } = useLingui();
   const formatMoney = useCurrencyFormatter();
+  const formatQuantity = useQuantityFormatter();
 
   const { own, subtree, subtreeBudget } = useMemo(() => {
     const { byElement } = rollUpCostSummary(elements, costSummary);
@@ -570,30 +582,43 @@ function ElementBudget({
       }
     ];
 
+  const pastCount = itemHistory?.elementCount ?? 0;
+  const pastHours = formatQuantity(Number(itemHistory?.averageHours ?? 0));
+  const pastMaterial = formatMoney.format(
+    Number(itemHistory?.averageMaterialCost ?? 0)
+  );
+
   return (
-    <div className="w-full overflow-x-auto rounded-md border border-border">
-      <TableBase full>
-        <Thead>
-          <Tr>
-            <Th />
-            <Th>
-              <Trans>This element</Trans>
-            </Th>
-            <Th>
-              <Trans>With children</Trans>
-            </Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {rows.map((row) => (
-            <Tr key={row.label}>
-              <Td className="text-muted-foreground">{row.label}</Td>
-              <Td>{money(row.own)}</Td>
-              <Td>{money(row.subtree)}</Td>
+    <div className="flex w-full flex-col gap-2">
+      {element.itemId && pastCount > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {t`Past average: ${pastHours} h and ${pastMaterial} in materials over ${pastCount} elements`}
+        </p>
+      )}
+      <div className="w-full overflow-x-auto rounded-md border border-border">
+        <TableBase full>
+          <Thead>
+            <Tr>
+              <Th />
+              <Th>
+                <Trans>This element</Trans>
+              </Th>
+              <Th>
+                <Trans>With children</Trans>
+              </Th>
             </Tr>
-          ))}
-        </Tbody>
-      </TableBase>
+          </Thead>
+          <Tbody>
+            {rows.map((row) => (
+              <Tr key={row.label}>
+                <Td className="text-muted-foreground">{row.label}</Td>
+                <Td>{money(row.own)}</Td>
+                <Td>{money(row.subtree)}</Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </TableBase>
+      </div>
     </div>
   );
 }

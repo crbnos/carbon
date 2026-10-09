@@ -15592,6 +15592,9 @@ msgstr "पासकीज़"
 msgid "Passkeys are disabled"
 msgstr "पासकीज़ अक्षम हैं"
 
+msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
+msgstr ""
+
 msgid "Past due"
 msgstr "अतिदेय"
 
