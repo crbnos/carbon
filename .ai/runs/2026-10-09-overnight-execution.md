@@ -53,3 +53,12 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 01:40 | — | specs, research and plans committed (`31c08fa359`) | done |
 | 02:20 | Projects 1a | Tasks 1–10 | done (`9a2ccc3bd1`…`d13d3e68b2`); `@carbon/ee` typecheck waits for Task 25 |
 | 02:25 | Plans 4a, 4b, 5a–5d | written | committed |
+| 03:00 | Projects 1a | Tasks 25, 11–15, 24 | done (`61fabb33f1`…`e91a3157de`); typecheck green |
+| 03:25 | Projects 1a | Tasks 16–19 | done (`3d8f5237bb`…`a70669a821`) |
+| 03:55 | Projects 1a | Tasks 20–23 + scrap fix | done (`bd371e2f97`…`3b4c6c22b9`); server-functions suite 416 passed |
+
+## Follow-ups found during execution
+
+- A receipt still makes an inspection lot for a stocked item that the project consumes at receipt (Phase 1a Task 21).
+- `POSTING_POLICY` syncs `Timesheet` and `Project Issue` journals to external ledgers by default, as `Maintenance Event` does. Confirm with Brad.
+- Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts` fail sometimes in full runs and pass alone.
