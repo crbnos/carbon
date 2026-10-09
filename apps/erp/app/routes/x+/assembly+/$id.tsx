@@ -424,6 +424,10 @@ export default function AssemblyInstructionRoute() {
   const carriedIn = (activeInfo?.carriesIn ?? []).filter(
     (headerId) => headerId !== playerStepId
   );
+  const pathToolLabels = useMemo(
+    () => ({ move: t`Move`, rotate: t`Rotate` }),
+    [t]
+  );
   const carryInLabel =
     carriedIn.length > 0
       ? carriedIn
@@ -445,6 +449,7 @@ export default function AssemblyInstructionRoute() {
       setIsAddingComponents(false);
       // Leave any open motion-path edit session when moving to another step.
       setEditingStepId(null);
+      setEditingUnitId(null);
       setDraftMotion(null);
       // Changing steps drops any isolate — the new step's parts should be visible.
       setFocusedNodeIds([]);
@@ -618,12 +623,22 @@ export default function AssemblyInstructionRoute() {
   const playerRef = useRef<AssemblyPlayerHandle>(null);
   const motionFetcher = useFetcher<{ success: boolean }>();
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  // Editing the path of a sub-assembly the step carries in (saved on its
+  // header row) instead of the step's own motion.
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
   const [draftMotion, setDraftMotion] = useState<Motion | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingMotion = useRef<{ targetId: string; motion: Motion } | null>(
+    null
+  );
 
   const saveMotion = useCallback(
-    (stepId: string, body: { motion?: Motion; camera?: CameraPose | null }) => {
+    (
+      stepId: string,
+      body: { motion?: Motion; camera?: CameraPose | null; reset?: boolean }
+    ) => {
       const formData = new FormData();
+      if (body.reset) formData.set("reset", "on");
       if (body.motion !== undefined) {
         formData.set("motion", JSON.stringify(body.motion));
       }
@@ -638,28 +653,58 @@ export default function AssemblyInstructionRoute() {
     [motionFetcher, id]
   );
 
+  // The drag autosave waits 400 ms; leaving or switching an edit sends it now.
+  const flushMotionSave = useCallback(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = null;
+    const pending = pendingMotion.current;
+    pendingMotion.current = null;
+    if (pending) saveMotion(pending.targetId, { motion: pending.motion });
+  }, [saveMotion]);
+
   const onEditMotion = useCallback(
-    (stepId: string) => {
-      const viewerStep = viewerSteps.find((s) => s.id === stepId);
+    (stepId: string, unitHeaderId?: string) => {
+      flushMotionSave();
+      const edited = viewerSteps.find((s) => s.id === (unitHeaderId ?? stepId));
       setSelectedStepId(stepId);
       setEditingStepId(stepId);
-      setDraftMotion(viewerStep?.motion ?? { type: "none" });
+      setEditingUnitId(unitHeaderId ?? null);
+      setDraftMotion(edited?.motion ?? { type: "none" });
     },
-    [viewerSteps]
+    [viewerSteps, flushMotionSave]
   );
 
   const onStopEditMotion = useCallback(() => {
+    flushMotionSave();
     setEditingStepId(null);
+    setEditingUnitId(null);
     setDraftMotion(null);
-  }, []);
+  }, [flushMotionSave]);
 
   const onMotionChange = useCallback(
     (stepId: string, motion: Motion) => {
       setDraftMotion(motion);
+      // A sub-assembly's path lives on its header row.
+      pendingMotion.current = { targetId: editingUnitId ?? stepId, motion };
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => saveMotion(stepId, { motion }), 400);
+      saveTimer.current = setTimeout(flushMotionSave, 400);
     },
-    [saveMotion]
+    [flushMotionSave, editingUnitId]
+  );
+
+  const onResetMotion = useCallback(
+    (stepId: string) => {
+      // A drag still waiting to save on this row must not land after the reset.
+      if (pendingMotion.current?.targetId === stepId) {
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+        pendingMotion.current = null;
+      } else {
+        flushMotionSave();
+      }
+      saveMotion(stepId, { reset: true });
+    },
+    [saveMotion, flushMotionSave]
   );
 
   const onSetCamera = useCallback(
@@ -679,8 +724,14 @@ export default function AssemblyInstructionRoute() {
     [saveMotion]
   );
 
-  const isEditingSelectedMotion =
+  const isEditingSelected =
     editingStepId !== null && selectedStep?.id === editingStepId;
+  const isEditingSelectedMotion = isEditingSelected && editingUnitId === null;
+  const editingUnitPartIds = useMemo(
+    () =>
+      editingUnitId ? subAssemblyPartIds(viewerSteps, editingUnitId) : null,
+    [editingUnitId, viewerSteps]
+  );
 
   return (
     <PanelProvider key={id}>
@@ -754,6 +805,7 @@ export default function AssemblyInstructionRoute() {
                           scopeStepIds={scopeStepIds}
                           isolationLabel={isolationLabel}
                           carryInLabel={carryInLabel}
+                          pathToolLabels={pathToolLabels}
                           activeStepIndex={Math.max(playerStepIndex, 0)}
                           playFromStepIndex={playFromStepIndex}
                           playStepNonce={playStepNonce}
@@ -770,10 +822,14 @@ export default function AssemblyInstructionRoute() {
                           focusedNodeIds={focusedNodeIds}
                           readOnly={isDisabled}
                           editMotion={
-                            editingStepId &&
-                            selectedStep?.id === editingStepId &&
-                            draftMotion
-                              ? { stepId: editingStepId, motion: draftMotion }
+                            editingStepId && isEditingSelected && draftMotion
+                              ? {
+                                  stepId: editingStepId,
+                                  motion: draftMotion,
+                                  ...(editingUnitPartIds
+                                    ? { nodeIds: editingUnitPartIds }
+                                    : {})
+                                }
                               : null
                           }
                           onMotionChange={onMotionChange}
@@ -848,8 +904,10 @@ export default function AssemblyInstructionRoute() {
                   hiddenNodeIds={selectedHiddenNodeIds}
                   onSetHiddenComponents={onSetHiddenComponents}
                   isEditingMotion={isEditingSelectedMotion}
+                  editingUnitId={isEditingSelected ? editingUnitId : null}
                   onEditMotion={onEditMotion}
                   onStopEditMotion={onStopEditMotion}
+                  onResetMotion={onResetMotion}
                   onSetCamera={onSetCamera}
                   onClearCamera={onClearCamera}
                   stepMaterials={selectedStepMaterials}

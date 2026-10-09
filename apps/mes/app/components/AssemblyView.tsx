@@ -48,13 +48,12 @@ import {
   useShortcutKeys
 } from "@carbon/react";
 import { distinctItemText, formatDurationMilliseconds } from "@carbon/utils";
-import type {
-  AssemblyStep,
-  CameraPose,
-  Fastener,
-  Motion
+import type { AssemblyStep, CameraPose, Fastener } from "@carbon/viewer";
+import {
+  AssemblyPlayer,
+  buildSubAssemblyPlan,
+  isPlayableMotion
 } from "@carbon/viewer";
-import { AssemblyPlayer, buildSubAssemblyPlan } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -215,14 +214,11 @@ type AssemblyPlayback = {
   }[];
 };
 
-const playerMotionTypes = ["linear", "L", "helix", "path", "none"];
-
 /** Opens a sub-assembly: the step bar and the player show only its steps. */
 const SUB_ASSEMBLY_PARAM = "subAssembly";
 
 // DB row → @carbon/viewer AssemblyStep.
 function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
-  const motion = step.motion as Motion | null;
   const warnings = step.warnings as { flagged?: boolean } | null;
   return {
     id: step.id,
@@ -233,12 +229,7 @@ function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
     parentStepId: step.parentStepId ?? null,
     usedInStepId: step.usedInStepId ?? null,
     isSubAssembly: step.isSubAssembly,
-    motion:
-      motion &&
-      typeof motion === "object" &&
-      playerMotionTypes.includes(motion.type)
-        ? motion
-        : { type: "none" },
+    motion: isPlayableMotion(step.motion) ? step.motion : { type: "none" },
     camera: (step.camera as CameraPose | null) ?? null,
     fastener: (step.fastener as Fastener | null) ?? null,
     durationSeconds: step.durationSeconds,

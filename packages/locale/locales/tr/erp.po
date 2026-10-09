@@ -475,6 +475,9 @@ msgstr "{name} {end} tarihinde sona eriyor ({was} idi)"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} {end} tarihinde sona eriyor (daha önce açıktı)"
 
+msgid "{name} path"
+msgstr "{name} yolu"
+
 msgid "{name} replaced"
 msgstr "{name} değiştirildi"
 
@@ -6063,6 +6066,9 @@ msgstr "Özel Alanlar"
 
 msgid "Custom fields are not available for items yet."
 msgstr "Özel alanlar henüz öğeler için kullanılabilir değildir."
+
+msgid "Custom path"
+msgstr "Özel yolu"
 
 msgid "Custom SOW · we manage"
 msgstr "Özel SOW · biz yönetiriz"
@@ -17696,6 +17702,9 @@ msgstr "Yeni çalışanlar için varsayılan izinleri ayarlayan roller"
 msgid "Room to grow without bolting on more tools"
 msgstr "Daha fazla araç eklemeden büyüme için yer"
 
+msgid "Rotate"
+msgstr "Döndür"
+
 msgid "Rounding Account"
 msgstr "Yuvarlama hesabı"
 
@@ -19777,6 +19786,9 @@ msgstr "Alt-Montaj {number}"
 msgid "Sub-assembly expiries only"
 msgstr "Yalnızca alt montaj son kullanma tarihleri"
 
+msgid "Sub-assembly path"
+msgstr "Alt-montaj yolu"
+
 msgid "Sub-Departments"
 msgstr "Alt Departmanlar"
 
@@ -20977,8 +20989,11 @@ msgstr "Parça, ihtiyacı olan üst öğe inşa edildiğinde kendi işi olarak �
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni iş veya satın alma siparişi yok."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "Bu adımın bileşenlerinin oynatma sırasında hareket ettiği yol; modelden hesaplanmış veya Yolu Düzenle ile elle çizilmiş."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "Bitmiş bir alt-montajın montajla birleştirildiğinde tek bir parça olarak izlediği yolu. Adımın kendi parçalarından önce gelir; Yolu Düzenle ile bir yol çizemeyene kadar, yapının yanından kaymaya devam eder."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "Bu adımın bileşenlerinin oynatma sırasında yerlerine gitmesi için izlediği yolu; modelden çıkarılan ya da Yolu Düzenle ile el ile çizilen, burada bir parçanın herhangi bir nokta üzerinde döndürülebilir."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Carbon tarafındaki uygulamanızı yönetecek Personel ve onlara ulaşmanız için nasıl yapılır."

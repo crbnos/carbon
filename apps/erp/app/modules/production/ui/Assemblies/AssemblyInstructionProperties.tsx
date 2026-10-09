@@ -69,6 +69,7 @@ import { path } from "~/utils/path";
 import {
   assemblyInstructionStepValidator,
   fastenerSchema,
+  hasCustomMotion,
   stepPlanWarningsSchema
 } from "../../production.models";
 import type { FlattenedBomMaterial } from "../../production.service";
@@ -85,6 +86,7 @@ import AssemblyStepMaterials from "./AssemblyStepMaterials";
 import AssemblyStepSlides from "./AssemblyStepSlides";
 import { AssemblyStepStatus, normalizeStepStatus } from "./AssemblyStepStatus";
 import AssemblyStepTools from "./AssemblyStepTools";
+import SubAssemblyPathRow from "./AssemblySubAssemblyPathRow";
 import AssemblySubAssemblyProperties from "./AssemblySubAssemblyProperties";
 
 type AssemblyInstructionPropertiesProps = {
@@ -110,8 +112,13 @@ type AssemblyInstructionPropertiesProps = {
   onSetHiddenComponents: (nodeIds: string[]) => void;
   /** The active step's motion path is open in the 3D editor */
   isEditingMotion: boolean;
-  onEditMotion: (stepId: string) => void;
+  /** The sub-assembly whose joining path is open in the 3D editor, if any */
+  editingUnitId: string | null;
+  /** Opens the editor on a step's motion, or on a sub-assembly it carries in */
+  onEditMotion: (stepId: string, unitHeaderId?: string) => void;
   onStopEditMotion: () => void;
+  /** Puts back the motion a step or sub-assembly had before its path was drawn */
+  onResetMotion: (stepId: string) => void;
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
   /** Every step of the instruction, in play order — numbering and sub-assemblies */
@@ -138,8 +145,10 @@ const AssemblyInstructionProperties = ({
   hiddenNodeIds,
   onSetHiddenComponents,
   isEditingMotion,
+  editingUnitId,
   onEditMotion,
   onStopEditMotion,
+  onResetMotion,
   onSetCamera,
   onClearCamera,
   viewerSteps,
@@ -190,7 +199,7 @@ const AssemblyInstructionProperties = ({
           describeStep(toStepDescriptor(step), graphIndex, units))) ||
       t`Untitled step`;
   const planFlag = useMemo(
-    () => (step ? getPlanFlag(step.warnings, graphIndex) : null),
+    () => (step ? getPlanFlag(step, graphIndex) : null),
     [step, graphIndex]
   );
 
@@ -274,6 +283,10 @@ const AssemblyInstructionProperties = ({
           onSelectStep={onSelectStep}
           onSetCamera={onSetCamera}
           onClearCamera={onClearCamera}
+          editingUnitId={editingUnitId}
+          onEditMotion={onEditMotion}
+          onStopEditMotion={onStopEditMotion}
+          onResetMotion={onResetMotion}
         />
       ) : step ? (
         <Tabs defaultValue="details" className="w-full px-4 pb-2 pt-3">
@@ -311,8 +324,10 @@ const AssemblyInstructionProperties = ({
               hiddenNodeIds={hiddenNodeIds}
               onSetHiddenComponents={onSetHiddenComponents}
               isEditingMotion={isEditingMotion}
+              editingUnitId={editingUnitId}
               onEditMotion={onEditMotion}
               onStopEditMotion={onStopEditMotion}
+              onResetMotion={onResetMotion}
               onSetCamera={onSetCamera}
               onClearCamera={onClearCamera}
               viewerSteps={viewerSteps}
@@ -374,11 +389,18 @@ const AssemblyInstructionProperties = ({
  * fades them in at the seated pose; a manual motion overrides the flag.
  */
 function getPlanFlag(
-  warnings: unknown,
+  step: Pick<AssemblyInstructionStepRow, "warnings" | "motion">,
   graphIndex: AssemblyGraphIndex | null
 ): { blockers: string[] } | null {
-  const parsed = stepPlanWarningsSchema.safeParse(warnings);
-  if (!parsed.success || parsed.data.flagged !== true) return null;
+  const parsed = stepPlanWarningsSchema.safeParse(step.warnings);
+  // A hand-drawn path overrides the planner's flag.
+  if (
+    !parsed.success ||
+    parsed.data.flagged !== true ||
+    hasCustomMotion(step.warnings, step.motion)
+  ) {
+    return null;
+  }
   const blockers = (parsed.data.blockedBy ?? [])
     .map((nodeId) => graphIndex?.nodesById.get(nodeId)?.name)
     .filter((name): name is string => Boolean(name));
@@ -434,8 +456,10 @@ function StepForm({
   hiddenNodeIds,
   onSetHiddenComponents,
   isEditingMotion,
+  editingUnitId,
   onEditMotion,
   onStopEditMotion,
+  onResetMotion,
   onSetCamera,
   onClearCamera,
   viewerSteps,
@@ -458,8 +482,10 @@ function StepForm({
   hiddenNodeIds: string[];
   onSetHiddenComponents: (nodeIds: string[]) => void;
   isEditingMotion: boolean;
-  onEditMotion: (stepId: string) => void;
+  editingUnitId: string | null;
+  onEditMotion: (stepId: string, unitHeaderId?: string) => void;
   onStopEditMotion: () => void;
+  onResetMotion: (stepId: string) => void;
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
   viewerSteps: AssemblyStep[];
@@ -519,8 +545,19 @@ function StepForm({
   }, [componentNodeIds, step.fastener, graphIndex, units]);
 
   const planFlag = useMemo(
-    () => getPlanFlag(step.warnings, graphIndex),
-    [step.warnings, graphIndex]
+    () => getPlanFlag(step, graphIndex),
+    [step, graphIndex]
+  );
+  const customMotion = hasCustomMotion(step.warnings, step.motion);
+
+  const carriedIn = useMemo(
+    () =>
+      viewerSteps.filter(
+        (viewerStep) =>
+          subPlan.get(viewerStep.id)?.isHeader &&
+          viewerStep.usedInStepId === step.id
+      ),
+    [viewerSteps, subPlan, step.id]
   );
 
   return (
@@ -653,13 +690,15 @@ function StepForm({
                 </LabelWithHelp>
               }
               value={
-                planFlag ? (
+                isEditingMotion ? (
+                  <Trans>Drag the red waypoints in the viewer</Trans>
+                ) : customMotion ? (
+                  <Trans>Custom path</Trans>
+                ) : planFlag ? (
                   <span className="inline-flex items-center gap-1">
                     <LuTriangleAlert className="size-3.5 shrink-0 text-amber-500" />
                     <Trans>No clear path</Trans>
                   </span>
-                ) : isEditingMotion ? (
-                  <Trans>Drag the red waypoints in the viewer</Trans>
                 ) : componentNodeIds.length === 0 ? (
                   <Trans>Add components first</Trans>
                 ) : (
@@ -668,22 +707,47 @@ function StepForm({
               }
             >
               {!isDisabled && (
-                <Button
-                  variant={isEditingMotion ? "primary" : "secondary"}
-                  size="sm"
-                  isDisabled={componentNodeIds.length === 0}
-                  onClick={() =>
-                    isEditingMotion ? onStopEditMotion() : onEditMotion(step.id)
-                  }
-                >
-                  {isEditingMotion ? (
-                    <Trans>Done Editing Path</Trans>
-                  ) : (
-                    <Trans>Edit Path</Trans>
+                <HStack spacing={1} className="shrink-0">
+                  {customMotion && !isEditingMotion && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onResetMotion(step.id)}
+                    >
+                      <Trans>Reset</Trans>
+                    </Button>
                   )}
-                </Button>
+                  <Button
+                    variant={isEditingMotion ? "primary" : "secondary"}
+                    size="sm"
+                    isDisabled={componentNodeIds.length === 0}
+                    onClick={() =>
+                      isEditingMotion
+                        ? onStopEditMotion()
+                        : onEditMotion(step.id)
+                    }
+                  >
+                    {isEditingMotion ? (
+                      <Trans>Done Editing Path</Trans>
+                    ) : (
+                      <Trans>Edit Path</Trans>
+                    )}
+                  </Button>
+                </HStack>
               )}
             </PlaybackRow>
+            {carriedIn.map((header) => (
+              <SubAssemblyPathRow
+                key={header.id}
+                name={titleOf(header.id)}
+                hasPath={header.motion.type !== "none"}
+                isEditing={editingUnitId === header.id}
+                isDisabled={isDisabled}
+                onEdit={() => onEditMotion(step.id, header.id)}
+                onStopEdit={onStopEditMotion}
+                onReset={() => onResetMotion(header.id)}
+              />
+            ))}
             <PlaybackRow
               label={
                 <LabelWithHelp termId="assembly-step-camera" variant="inline">

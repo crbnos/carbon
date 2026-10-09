@@ -21,7 +21,7 @@ import {
 // a step (drag autosave + "Set view"/"Clear view"), leaving the rest untouched.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -48,6 +48,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id: stepId,
     motion: validation.data.motion,
     camera: validation.data.camera,
+    reset: validation.data.reset,
+    companyId,
     updatedBy: userId
   });
   logAssemblyStep("motion.updateResult", {

@@ -475,6 +475,9 @@ msgstr "{name} 在 {end} 结束（之前是 {was}）"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} 在 {end} 结束（之前是开放式）"
 
+msgid "{name} path"
+msgstr "{name}路径"
+
 msgid "{name} replaced"
 msgstr "{name} 已替换"
 
@@ -6063,6 +6066,9 @@ msgstr "自定义字段"
 
 msgid "Custom fields are not available for items yet."
 msgstr "暂不支持物料的自定义字段。"
+
+msgid "Custom path"
+msgstr "自定义路径"
 
 msgid "Custom SOW · we manage"
 msgstr "自定义 SOW · 我们管理"
@@ -17696,6 +17702,9 @@ msgstr "为新员工设置默认权限的角色"
 msgid "Room to grow without bolting on more tools"
 msgstr "无需添加更多工具即可扩展"
 
+msgid "Rotate"
+msgstr "旋转"
+
 msgid "Rounding Account"
 msgstr "舍入账户"
 
@@ -19777,6 +19786,9 @@ msgstr "子装配体 {number}"
 msgid "Sub-assembly expiries only"
 msgstr "仅子组件过期日期"
 
+msgid "Sub-assembly path"
+msgstr "子装配体路径"
+
 msgid "Sub-Departments"
 msgstr "子部门"
 
@@ -20977,8 +20989,11 @@ msgstr "当需要该零件的父级被构造时，该零件被制造为其自己
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "构建其父级时，从现有库存中获取该零件 - 无新工作或采购订单。"
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "此步骤的组件在回放期间进入位置的路径；从模型中计算得出，或使用「编辑路径」手绘。"
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "已完成的子装配体加入构建时作为整体所走的路径。它在该步骤的零件之前到达；在您使用编辑路径绘制之前，它从构建旁边滑入。"
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "该步骤的零件在播放期间进入到位所走的路径；从模型计算或使用编辑路径手工绘制，其中零件也可以在任何路点处被旋转。"
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Carbon 方面将运行您的实施的人员，以及如何联系他们。"

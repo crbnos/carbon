@@ -475,6 +475,9 @@ msgstr "{name} は {end} に終了します（以前は {was}）"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} は {end} に終了します（以前は期限なし）"
 
+msgid "{name} path"
+msgstr "{name}パス"
+
 msgid "{name} replaced"
 msgstr "{name} は交換されました"
 
@@ -6063,6 +6066,9 @@ msgstr "カスタムフィールド"
 
 msgid "Custom fields are not available for items yet."
 msgstr "品目のカスタムフィールドはまだ利用可能ではありません。"
+
+msgid "Custom path"
+msgstr "カスタムパス"
 
 msgid "Custom SOW · we manage"
 msgstr "カスタムSOW · 当社が管理"
@@ -17696,6 +17702,9 @@ msgstr "新しい従業員のデフォルト権限を設定するロール"
 msgid "Room to grow without bolting on more tools"
 msgstr "さらに多くのツールを追加することなく成長する余地"
 
+msgid "Rotate"
+msgstr "回転"
+
 msgid "Rounding Account"
 msgstr "丸めアカウント"
 
@@ -19777,6 +19786,9 @@ msgstr "サブアセンブリ {number}"
 msgid "Sub-assembly expiries only"
 msgstr "サブアセンブリの有効期限のみ"
 
+msgid "Sub-assembly path"
+msgstr "部分組立パス"
+
 msgid "Sub-Departments"
 msgstr "サブ部門"
 
@@ -20977,8 +20989,11 @@ msgstr "必要な親が構築される場合、部品は独自のジョブとし
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "部品はその親製品が製造されるときに既存在庫から取得されます。新しい製造指図または発注書は作成されません。"
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "このステップのコンポーネントが再生中に所定の位置に移動するパス。モデルから計算されるか、パスの編集で手動で描画されます"
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "完成した部分組立がビルドに加わる際に1つのピースとして移動するパス。ステップの部品より前に到着します。編集パスで描くまでは、ビルドの脇からスライドして現れます。"
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "再生中にこのステップのコンポーネントが所定の位置に移動するパス。モデルから計算されるか、編集パスで手描きされます。各ウェイポイントで部品を回転させることもできます。"
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "実装を実施する Carbon 側の人員および連絡方法"

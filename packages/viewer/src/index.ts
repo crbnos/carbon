@@ -28,6 +28,7 @@ export {
 export {
   buildStepClip,
   displayMotionForStep,
+  isPlayableMotion,
   type MotionKeyframeOptions,
   type MotionKeyframes,
   motionDuration,

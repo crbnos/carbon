@@ -3,10 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
- * Shared contracts for animated work instructions (Phase 0).
- * These types mirror `docs/specs/animated-work-instructions-contracts.md` exactly.
- * Change them only by updating the geometry service, the ERP/Inngest layer, and
- * this package together.
+ * Shared contracts for animated work instructions. This file IS the contract:
+ * the geometry service writes these shapes into plan.json, the ERP/Inngest
+ * layer stores them on steps, and the player animates them. Change a shape the
+ * geometry service emits only by updating it, the ERP/Inngest layer, and this
+ * package together. `waypoints` is editor-only — the geometry service never
+ * reads or writes it.
  */
 
 export type Vec3 = [number, number, number];
@@ -52,6 +54,18 @@ export type PathMotion = {
   keyframes: { t: number; position: Vec3; quaternion: Quat }[];
 };
 
+/**
+ * Editor-authored path with rotation. Poses are RELATIVE to the moving set's
+ * seated pose: each waypoint turns the set by `rotation` about its seated
+ * center, then shifts it by `offset`. So one motion applies to a single part,
+ * a rigid group, or a whole sub-assembly. First = start, last = seat
+ * (offset [0,0,0], rotation [0,0,0,1]).
+ */
+export type WaypointsMotion = {
+  type: "waypoints";
+  waypoints: { offset: Vec3; rotation: Quat }[];
+};
+
 /** No geometry motion (process-only step: cure, inspect, torque pattern). */
 export type NoneMotion = {
   type: "none";
@@ -68,6 +82,7 @@ export type Motion =
   | LMotion
   | HelixMotion
   | PathMotion
+  | WaypointsMotion
   | NoneMotion;
 
 /** Step camera. `null` on a step means the viewer auto-frames the active components. */

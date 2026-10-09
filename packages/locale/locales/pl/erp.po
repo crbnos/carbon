@@ -475,6 +475,9 @@ msgstr "{name} kończy się {end} (było {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} kończy się {end} (było otwarte)"
 
+msgid "{name} path"
+msgstr "{name} ścieżka"
+
 msgid "{name} replaced"
 msgstr "{name} zastąpiono"
 
@@ -6063,6 +6066,9 @@ msgstr "Pola niestandardowe"
 
 msgid "Custom fields are not available for items yet."
 msgstr "Pola niestandardowe nie są jeszcze dostępne dla artykułów."
+
+msgid "Custom path"
+msgstr "Niestandardowa ścieżka"
 
 msgid "Custom SOW · we manage"
 msgstr "Niestandardowy SOW · zarządzamy"
@@ -17696,6 +17702,9 @@ msgstr "Role, które ustawiają domyślne uprawnienia dla nowych pracowników"
 msgid "Room to grow without bolting on more tools"
 msgstr "Miejsce do wzrostu bez dodawania kolejnych narzędzi"
 
+msgid "Rotate"
+msgstr "Obróć"
+
 msgid "Rounding Account"
 msgstr "Konto zaokrąglające"
 
@@ -19777,6 +19786,9 @@ msgstr "Podzespół {number}"
 msgid "Sub-assembly expiries only"
 msgstr "Tylko wygaśnięcia podzespołów"
 
+msgid "Sub-assembly path"
+msgstr "Ścieżka podzespołu"
+
 msgid "Sub-Departments"
 msgstr "Poddziały"
 
@@ -20977,8 +20989,11 @@ msgstr "Część jest wytwarzana jako swoje własne zadanie, gdy rodzic, który 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Część jest pobierana z istniejących zapasów, gdy jego rodzic jest zbudowany - bez nowego zadania lub zamówienia zakupu."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "Ścieżka, którą komponenty tego kroku przechodzą podczas odtwarzania; wyznaczona z modelu lub narysowana ręcznie za pomocą opcji Edytuj ścieżkę."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "Ścieżka, jaką pokonuje gotowy podzespół jako jeden element, gdy dołącza się do budowy. Pojawia się przed własnymi częściami kroku; dopóki jej nie narysujesz za pomocą Edytuj ścieżkę, wsuwa się ze strony budowy."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "Ścieżka, jaką komponenty tego kroku trafiają na miejsce podczas odtwarzania; wyznaczona na podstawie modelu lub narysowana ręcznie za pomocą Edytuj ścieżkę, gdzie część może być również obrócona w każdym punkcie."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Pracownicy po stronie Carbon, którzy będą prowadzić Twoje wdrożenie, oraz jak ich osiągnąć."

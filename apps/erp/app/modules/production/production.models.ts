@@ -1305,10 +1305,24 @@ export const assemblyStepStatuses = ["Todo", "Review", "Done"] as const;
 
 const vector3 = z.tuple([z.number(), z.number(), z.number()]);
 const quaternion = z.tuple([z.number(), z.number(), z.number(), z.number()]);
+const unitQuaternion = quaternion.refine(
+  ([x, y, z, w]) => Math.abs(Math.hypot(x, y, z, w) - 1) < 1e-3,
+  { message: "Rotation must be a unit quaternion" }
+);
+
+/** A waypoint at the seated pose: no offset and no turn (either quaternion sign). */
+function isSeatWaypoint(
+  waypoint: { offset: number[]; rotation: number[] } | undefined
+): boolean {
+  if (!waypoint) return false;
+  const [ox = 0, oy = 0, oz = 0] = waypoint.offset;
+  const w = waypoint.rotation[3] ?? 0;
+  return Math.hypot(ox, oy, oz) < 1e-3 && Math.abs(Math.abs(w) - 1) < 1e-6;
+}
 
 /**
- * Insertion motion of a step's parts. See
- * docs/specs/animated-work-instructions-contracts.md §4.
+ * Insertion motion of a step's parts. Mirrors `Motion` in
+ * `packages/viewer/src/types.ts`, the shared contract.
  */
 export const motionSchema = z.discriminatedUnion("type", [
   z.object({
@@ -1348,6 +1362,17 @@ export const motionSchema = z.discriminatedUnion("type", [
         })
       )
       .min(2)
+  }),
+  // Editor-drawn path with rotation: poses relative to the seated pose. The
+  // last waypoint is the seat itself (no offset, no turn).
+  z.object({
+    type: z.literal("waypoints"),
+    waypoints: z
+      .array(z.object({ offset: vector3, rotation: unitQuaternion }))
+      .min(2)
+      .refine((waypoints) => isSeatWaypoint(waypoints[waypoints.length - 1]), {
+        message: "The last waypoint must be the seated pose"
+      })
   }),
   z.object({ type: z.literal("none") })
 ]);
@@ -1389,8 +1414,32 @@ export const stepPlanWarningsSchema = z.object({
    * the support polygon of the parts below it) — likely needs a fixture or a
    * second hand. Diagnostic only; never blocks generation or playback.
    */
-  needsSupport: z.boolean().optional()
+  needsSupport: z.boolean().optional(),
+  /**
+   * The motion the step had before the author first drew a path (the
+   * planner's, or `none`). Present = the path is hand-drawn, which also
+   * overrides `flagged`; Reset puts it back. A re-plan rewrites `warnings`,
+   * so it clears this together with the drawn path it replaces.
+   */
+  plannedMotion: z.unknown().optional()
 });
+
+/**
+ * The step's motion was drawn by hand in the path editor (see `plannedMotion`).
+ * The planner stores `none` on a flagged step, so a flagged step that moves was
+ * drawn too — paths drawn before `plannedMotion` existed carry no marker.
+ */
+export function hasCustomMotion(warnings: unknown, motion: unknown): boolean {
+  const parsed = stepPlanWarningsSchema.safeParse(warnings).data;
+  if (parsed?.plannedMotion !== undefined) return true;
+  return (
+    parsed?.flagged === true &&
+    typeof motion === "object" &&
+    motion !== null &&
+    "type" in motion &&
+    motion.type !== "none"
+  );
+}
 
 const jsonField = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((raw) => {
@@ -1564,6 +1613,8 @@ export const assemblyInstructionStepNewValidator = assemblyInstructionStepFields
  */
 export const assemblyInstructionStepMotionValidator = z.object({
   motion: jsonField(motionSchema.optional()),
+  // Put back the motion the step had before the author first drew a path.
+  reset: zfd.checkbox(),
   camera: jsonField(cameraSchema.nullable().optional())
 });
 
