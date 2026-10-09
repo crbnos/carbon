@@ -2,6 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+// The journal statuses each kind of reader may read
+// (.ai/specs/2026-10-08-accounting-cutover.md section 2). A Provisional
+// journal counts nowhere until the accounting cutover; a Superseded one never
+// counts again.
+
+// Statuses a balance, report, snapshot, tie-out or sync counts.
+export const GL_JOURNAL_STATUSES = ["Posted", "Reversed"] as const;
+// Statuses a reader that follows one document's chain reads: void builders,
+// GR/IR, WIP sums, intercompany lookups.
+export const DOCUMENT_JOURNAL_STATUSES = [
+  "Provisional",
+  "Posted",
+  "Reversed"
+] as const;
+// Statuses an open-item lookup reads: payment control lines and the memo,
+// charge and reimbursement void checks.
+export const OPEN_ITEM_JOURNAL_STATUSES = ["Provisional", "Posted"] as const;
+
 export const RECEIVABLE_POSTING_DESCRIPTIONS = [
   "Accounts Receivable",
   "IC Receivables"
