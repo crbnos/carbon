@@ -35,7 +35,7 @@ Progress fields stay editable at all times: state, owner, priority, labels, date
 
 - [x] Task 1: Create the Phase 1c enum migration
 - [x] Task 2: Create the baselines and change requests migration
-- [ ] Task 3: Apply migrations, regenerate types, ship RLS
+- [x] Task 3: Apply migrations, regenerate types, ship RLS
 - [ ] Task 4: Move the diff engine to `modules/shared`
 - [ ] Task 5: Move the diff UI to shared components
 - [ ] Task 6: Add the plan snapshot and the baseline service
@@ -680,3 +680,4 @@ ls .ai/playbooks/projects-phase-1c.md
 - Task 2: the `targetId` of `projectChangeRequestItem`, `projectChangeRequestComment` and `projectChangeRequestView` points at one of 5 tables, so no FK can hold it. All 3 are in `ID_REF_COLUMNS` (`packages/jobs/src/backups/id-refs.ts`). Known gap: the ids inside the JSONB columns (`projectBaseline.snapshot`, `projectChangeRequestItem.payload` and `baseRow`) are not rewritten by a restore into another company.
 - Task 2: the `approvalRequests` view joins `projectChangeRequest` on `documentId` and `companyId`; the other branches are unchanged from `20260310005407`.
 - Task 2: the migration was applied in this task, as in Phase 1a Tasks 3–7. Its `authz sync` step fails until Task 3 adds the manifest rules. The migration is recorded with 35 statements in `supabase_migrations.schema_migrations`.
+- Task 3: the `projectChangeRequestComment` update rule is `and(owner("createdBy"), inCompany("companyId", "employee"))`, not bare `owner("createdBy")`, for the reason of Phase 1a Task 8: with no `where`, the WITH CHECK reuses USING, and an owner-only check lets the author move the row to another company. `authz migration projects-1c-rls` wrote `20261009135302_projects-1c-rls.sql` for the 5 tables, and a second `pnpm db:migrate` recorded it. `vitest run src/authz` passes (33).

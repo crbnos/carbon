@@ -1090,6 +1090,23 @@ export const manifest = {
   productionEvent: company("production", { read: "production_view" }),
   productionQuantity: company("production"),
   project: company("projects"),
+  projectBaseline: company("projects", { update: false, delete: false }),
+  projectChangeRequest: company("projects"),
+  projectChangeRequestComment: company("projects", {
+    create: "employee",
+    update: and(owner("createdBy"), inCompany("companyId", "employee")),
+    delete: owner("createdBy")
+  }),
+  projectChangeRequestItem: company("projects"),
+  projectChangeRequestView: policies({
+    select: owner("userId"),
+    insert: and(owner("userId"), inCompany("companyId", "employee")),
+    update: {
+      using: owner("userId"),
+      check: and(owner("userId"), inCompany("companyId", "employee"))
+    },
+    delete: owner("userId")
+  }),
   projectElement: company("projects"),
   projectElementComment: company("projects", {
     create: "employee",
