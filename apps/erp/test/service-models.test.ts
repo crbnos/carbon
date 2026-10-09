@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canMoveServiceOrder,
+  canMoveVisit,
   canOverrideCoverage,
   summarizeWork,
   rollUpOrderStatus,
@@ -211,5 +212,22 @@ describe("canOverrideCoverage", () => {
     expect(
       canOverrideCoverage({ id: "r", reversalOfId: "a" }, reversed, null)
     ).toBe(false);
+  });
+});
+
+describe("canMoveVisit", () => {
+  it("walks a visit from scheduled to completed", () => {
+    expect(canMoveVisit("Scheduled", "Traveling")).toBe(true);
+    expect(canMoveVisit("Scheduled", "On Site")).toBe(true);
+    expect(canMoveVisit("Traveling", "On Site")).toBe(true);
+    expect(canMoveVisit("On Site", "Completed")).toBe(true);
+    expect(canMoveVisit("Scheduled", "Completed")).toBe(false);
+    expect(canMoveVisit("Traveling", "Scheduled")).toBe(false);
+  });
+
+  it("cancels an open visit only", () => {
+    expect(canMoveVisit("On Site", "Cancelled")).toBe(true);
+    expect(canMoveVisit("Completed", "Cancelled")).toBe(false);
+    expect(canMoveVisit("Cancelled", "Scheduled")).toBe(false);
   });
 });

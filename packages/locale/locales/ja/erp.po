@@ -2270,11 +2270,17 @@ msgstr "すべてのシフト"
 msgid "All slotted dimension values are mapped"
 msgstr "すべてのスロット化されたディメンション値がマップされています"
 
+msgid "All statuses"
+msgstr ""
+
 msgid "All steps"
 msgstr "すべてのステップ"
 
 msgid "All Suppliers"
 msgstr "すべての仕入先"
+
+msgid "All technicians"
+msgstr ""
 
 msgid "All Time"
 msgstr "すべての期間"
@@ -3254,6 +3260,12 @@ msgstr "本当ですか？"
 
 msgid "Arrears"
 msgstr "延滞"
+
+msgid "Arrive"
+msgstr ""
+
+msgid "Arrived <0/>"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "工場の処理待ちキューの最前列に割り込むように。"
@@ -4235,6 +4247,9 @@ msgstr "SO をキャンセル + {0} 件選択"
 msgid "Cancel SO only"
 msgstr "SO のみをキャンセル"
 
+msgid "Cancel Visit"
+msgstr ""
+
 msgid "Canceled"
 msgstr "キャンセル済み"
 
@@ -4717,6 +4732,9 @@ msgstr "MRPの自動再計算のタイミングを選択してください。計
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "品目、見積、製造指図上の部品表エクスプローラーが各明細を説明またはアイテムIDのどちらでラベル付けするかを選択します。"
+
+msgid "Choose who goes to the unit, and when."
+msgstr ""
 
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
@@ -9751,6 +9769,9 @@ msgstr "見積明細を更新できませんでした"
 msgid "Failed to update supplier quote line"
 msgstr "仕入先見積行の更新に失敗しました"
 
+msgid "Failed to update the visit"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "サムネイルパスの更新に失敗しました"
 
@@ -11605,6 +11626,9 @@ msgstr "請求"
 
 msgid "is"
 msgstr "です"
+
+msgid "Is all the work on this unit done? If it is, the service order is completed and ready to invoice. If not, it stays In Progress for another visit."
+msgstr ""
 
 msgid "is any of"
 msgstr "のいずれかである"
@@ -14748,6 +14772,12 @@ msgstr ""
 msgid "No versions available"
 msgstr "利用可能なバージョンがありません"
 
+msgid "No visits are planned in these days."
+msgstr ""
+
+msgid "No visits yet. Schedule one to send a technician."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。実在庫がマイナスになり、数量が調整されるまで続きます。"
 
@@ -14761,6 +14791,9 @@ msgid "No work centers exist"
 msgstr "作業区がありません"
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "No, More Work"
 msgstr ""
 
 msgid "Node"
@@ -14826,6 +14859,9 @@ msgstr "未設定"
 msgid "Not Configured"
 msgstr "未設定"
 
+msgid "Not done"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
@@ -14834,6 +14870,9 @@ msgstr "個データが不足しています"
 
 msgid "Not feasible"
 msgstr "実現不可能"
+
+msgid "Not planned"
+msgstr ""
 
 msgid "Not reached"
 msgstr "未到達"
@@ -18320,11 +18359,17 @@ msgstr "修理が必要"
 msgid "Requires staffing"
 msgstr "スタッフが必要"
 
+msgid "Reschedule"
+msgstr ""
+
 msgid "Reschedule tolerance"
 msgstr "再スケジュール許容日数"
 
 msgid "Reschedule Tolerance"
 msgstr "スケジュール変更許容値"
+
+msgid "Reschedule Visit"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "予備床"
@@ -19265,6 +19310,9 @@ msgstr "スケジュール古くなった理由"
 
 msgid "Schedule regenerated"
 msgstr "スケジュール再生成完了"
+
+msgid "Schedule Visit"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "スケジュール済み"
@@ -20691,6 +20739,9 @@ msgstr "税年度の開始"
 msgid "Start Time"
 msgstr "開始時刻"
 
+msgid "Start Travel"
+msgstr ""
+
 msgid "Start with"
 msgstr "まず"
 
@@ -21592,6 +21643,9 @@ msgid "Technically complete"
 msgstr ""
 
 msgid "Technically Complete"
+msgstr ""
+
+msgid "Technician"
 msgstr ""
 
 msgid "Technicians"
@@ -23577,6 +23631,9 @@ msgstr "トランジット・機関番号"
 msgid "Trash"
 msgstr "ゴミ箱"
 
+msgid "Travel started <0/>"
+msgstr ""
+
 msgid "Traveling"
 msgstr ""
 
@@ -24617,6 +24674,9 @@ msgstr "可視性"
 msgid "Visible on a user's public profile"
 msgstr "ユーザーの公開プロフィールに表示されます"
 
+msgid "Visits"
+msgstr ""
+
 msgid "Void"
 msgstr "取消"
 
@@ -25338,6 +25398,9 @@ msgstr "作業区"
 msgid "Work Centers"
 msgstr "作業区"
 
+msgid "Work complete?"
+msgstr ""
+
 msgid "Work in process (WIP)"
 msgstr "仕掛品(WIP)"
 
@@ -25422,6 +25485,9 @@ msgstr "はい、却下"
 
 msgid "Yes, Update IDs"
 msgstr "はい、IDを更新"
+
+msgid "Yes, Work Complete"
+msgstr ""
 
 msgid "You"
 msgstr "あなた"

@@ -2270,11 +2270,17 @@ msgstr "所有班次"
 msgid "All slotted dimension values are mapped"
 msgstr "所有分配维度的值都已映射"
 
+msgid "All statuses"
+msgstr ""
+
 msgid "All steps"
 msgstr "所有步骤"
 
 msgid "All Suppliers"
 msgstr "所有供应商"
+
+msgid "All technicians"
+msgstr ""
 
 msgid "All Time"
 msgstr "所有时间"
@@ -3254,6 +3260,12 @@ msgstr "你确定吗？"
 
 msgid "Arrears"
 msgstr "逾期"
+
+msgid "Arrive"
+msgstr ""
+
+msgid "Arrived <0/>"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "就像它跳到了车间队列的最前面。"
@@ -4235,6 +4247,9 @@ msgstr "取消 SO + {0} 已选择"
 msgid "Cancel SO only"
 msgstr "仅取消销售订单"
 
+msgid "Cancel Visit"
+msgstr ""
+
 msgid "Canceled"
 msgstr "已取消"
 
@@ -4717,6 +4732,9 @@ msgstr "选择MRP何时自动重新计算。您可以随时在计划页面上使
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "选择物料清单浏览器是否在物料、报价单和工单上用描述或物料 ID 标记每行。"
+
+msgid "Choose who goes to the unit, and when."
+msgstr ""
 
 msgid "Choose your style"
 msgstr "选择您的风格"
@@ -9751,6 +9769,9 @@ msgstr "未能更新报价行"
 msgid "Failed to update supplier quote line"
 msgstr "未能更新供应商报价行"
 
+msgid "Failed to update the visit"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "无法更新缩略图路径"
 
@@ -11605,6 +11626,9 @@ msgstr "开票"
 
 msgid "is"
 msgstr "是"
+
+msgid "Is all the work on this unit done? If it is, the service order is completed and ready to invoice. If not, it stays In Progress for another visit."
+msgstr ""
 
 msgid "is any of"
 msgstr "是以下任何一个"
@@ -14748,6 +14772,12 @@ msgstr ""
 msgid "No versions available"
 msgstr "没有可用的版本"
 
+msgid "No visits are planned in these days."
+msgstr ""
+
+msgid "No visits yet. Schedule one to send a technician."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
 
@@ -14761,6 +14791,9 @@ msgid "No work centers exist"
 msgstr "没有工作中心存在"
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "No, More Work"
 msgstr ""
 
 msgid "Node"
@@ -14826,6 +14859,9 @@ msgstr "未配置"
 msgid "Not Configured"
 msgstr "未配置"
 
+msgid "Not done"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
@@ -14834,6 +14870,9 @@ msgstr "单位数据不足"
 
 msgid "Not feasible"
 msgstr "不可行"
+
+msgid "Not planned"
+msgstr ""
 
 msgid "Not reached"
 msgstr "未到达"
@@ -18320,11 +18359,17 @@ msgstr "需要维修"
 msgid "Requires staffing"
 msgstr "需要人工配置"
 
+msgid "Reschedule"
+msgstr ""
+
 msgid "Reschedule tolerance"
 msgstr "改期容差"
 
 msgid "Reschedule Tolerance"
 msgstr "重新安排容差"
+
+msgid "Reschedule Visit"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "储备下限"
@@ -19265,6 +19310,9 @@ msgstr "排程过时原因"
 
 msgid "Schedule regenerated"
 msgstr "排程已重新生成"
+
+msgid "Schedule Visit"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "已计划"
@@ -20691,6 +20739,9 @@ msgstr "税年开始"
 msgid "Start Time"
 msgstr "开始时间"
 
+msgid "Start Travel"
+msgstr ""
+
 msgid "Start with"
 msgstr "从以下开始"
 
@@ -21592,6 +21643,9 @@ msgid "Technically complete"
 msgstr ""
 
 msgid "Technically Complete"
+msgstr ""
+
+msgid "Technician"
 msgstr ""
 
 msgid "Technicians"
@@ -23577,6 +23631,9 @@ msgstr "中转与机构"
 msgid "Trash"
 msgstr "垃圾桶"
 
+msgid "Travel started <0/>"
+msgstr ""
+
 msgid "Traveling"
 msgstr ""
 
@@ -24617,6 +24674,9 @@ msgstr "可见性"
 msgid "Visible on a user's public profile"
 msgstr "在用户的公开资料中可见"
 
+msgid "Visits"
+msgstr ""
+
 msgid "Void"
 msgstr "作废"
 
@@ -25338,6 +25398,9 @@ msgstr "工作中心"
 msgid "Work Centers"
 msgstr "工作中心"
 
+msgid "Work complete?"
+msgstr ""
+
 msgid "Work in process (WIP)"
 msgstr "在制品(WIP)"
 
@@ -25422,6 +25485,9 @@ msgstr "是的，拒绝"
 
 msgid "Yes, Update IDs"
 msgstr "是的，更新 ID"
+
+msgid "Yes, Work Complete"
+msgstr ""
 
 msgid "You"
 msgstr "你"

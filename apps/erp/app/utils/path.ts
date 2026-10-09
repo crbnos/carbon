@@ -1820,6 +1820,8 @@ export const path = {
     newServiceOrder: `${x}/service-orders/new`,
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
+    newServiceVisit: (orderId: string) =>
+      generatePath(`${x}/service-order/${orderId}/visits/new`),
     newShift: `${x}/people/shifts/new`,
     newShipment: `${x}/shipment/new`,
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
@@ -2447,6 +2449,8 @@ export const path = {
     serviceTemplates: `${x}/service-orders/templates`,
     serviceVisit: (orderId: string, visitId: string) =>
       generatePath(`${x}/service-order/${orderId}/visits/${visitId}`),
+    serviceVisitStatus: (orderId: string, visitId: string) =>
+      generatePath(`${x}/service-order/${orderId}/visits/${visitId}/status`),
     settings: `${x}/settings`,
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,

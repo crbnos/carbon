@@ -2270,11 +2270,17 @@ msgstr "Все смены"
 msgid "All slotted dimension values are mapped"
 msgstr "Все значения измерений сопоставлены"
 
+msgid "All statuses"
+msgstr ""
+
 msgid "All steps"
 msgstr "Все шаги"
 
 msgid "All Suppliers"
 msgstr "Все поставщики"
+
+msgid "All technicians"
+msgstr ""
 
 msgid "All Time"
 msgstr "Все время"
@@ -3254,6 +3260,12 @@ msgstr "Вы уверены?"
 
 msgid "Arrears"
 msgstr "Задолженность"
+
+msgid "Arrive"
+msgstr ""
+
+msgid "Arrived <0/>"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "Как будто прыгнула в начало цеховой очереди"
@@ -4235,6 +4247,9 @@ msgstr "Отменить ПЗ + {0} выбрано"
 msgid "Cancel SO only"
 msgstr "Отменить только ПЗ"
 
+msgid "Cancel Visit"
+msgstr ""
+
 msgid "Canceled"
 msgstr "Отменено"
 
@@ -4717,6 +4732,9 @@ msgstr "Выберите, когда MRP будет пересчитыватьс
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Выберите, будут ли подписаны каждая строка спецификации на номенклатуре, коммерческих предложениях и производственных заказах с описанием или кодом номенклатуры."
+
+msgid "Choose who goes to the unit, and when."
+msgstr ""
 
 msgid "Choose your style"
 msgstr "Выберите свой стиль"
@@ -9751,6 +9769,9 @@ msgstr "Не удалось обновить строку предложения
 msgid "Failed to update supplier quote line"
 msgstr "Не удалось обновить строку предложения поставщика"
 
+msgid "Failed to update the visit"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "Не удалось обновить путь миниатюры"
 
@@ -11605,6 +11626,9 @@ msgstr "Выставление счетов"
 
 msgid "is"
 msgstr "это"
+
+msgid "Is all the work on this unit done? If it is, the service order is completed and ready to invoice. If not, it stays In Progress for another visit."
+msgstr ""
 
 msgid "is any of"
 msgstr "является одним из"
@@ -14748,6 +14772,12 @@ msgstr ""
 msgid "No versions available"
 msgstr "Нет доступных версий"
 
+msgid "No visits are planned in these days."
+msgstr ""
+
+msgid "No visits yet. Schedule one to send a technician."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его отобрать — остаток на руках станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
@@ -14761,6 +14791,9 @@ msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "No, More Work"
 msgstr ""
 
 msgid "Node"
@@ -14826,6 +14859,9 @@ msgstr "Не настроено"
 msgid "Not Configured"
 msgstr "Не настроено"
 
+msgid "Not done"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
 
@@ -14834,6 +14870,9 @@ msgstr "Недостаточно данных единицы"
 
 msgid "Not feasible"
 msgstr "Невозможно выполнить"
+
+msgid "Not planned"
+msgstr ""
 
 msgid "Not reached"
 msgstr "Не достигнуто"
@@ -18320,11 +18359,17 @@ msgstr "Требует ремонта"
 msgid "Requires staffing"
 msgstr "Требует персонала"
 
+msgid "Reschedule"
+msgstr ""
+
 msgid "Reschedule tolerance"
 msgstr "Допуск переноса"
 
 msgid "Reschedule Tolerance"
 msgstr "Допуск переноса"
+
+msgid "Reschedule Visit"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "Минимальный уровень запаса"
@@ -19265,6 +19310,9 @@ msgstr "Причина неактуальности графика"
 
 msgid "Schedule regenerated"
 msgstr "График пересчитан"
+
+msgid "Schedule Visit"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "Запланировано"
@@ -20691,6 +20739,9 @@ msgstr "Начало налогового года"
 msgid "Start Time"
 msgstr "Время начала"
 
+msgid "Start Travel"
+msgstr ""
+
 msgid "Start with"
 msgstr "Начните с"
 
@@ -21592,6 +21643,9 @@ msgid "Technically complete"
 msgstr ""
 
 msgid "Technically Complete"
+msgstr ""
+
+msgid "Technician"
 msgstr ""
 
 msgid "Technicians"
@@ -23577,6 +23631,9 @@ msgstr "Транзит и учреждение"
 msgid "Trash"
 msgstr "Корзина"
 
+msgid "Travel started <0/>"
+msgstr ""
+
 msgid "Traveling"
 msgstr ""
 
@@ -24617,6 +24674,9 @@ msgstr "Видимость"
 msgid "Visible on a user's public profile"
 msgstr "Видно в общедоступном профиле пользователя"
 
+msgid "Visits"
+msgstr ""
+
 msgid "Void"
 msgstr "Аннулировать"
 
@@ -25338,6 +25398,9 @@ msgstr "Рабочие центры"
 msgid "Work Centers"
 msgstr "Рабочие центры"
 
+msgid "Work complete?"
+msgstr ""
+
 msgid "Work in process (WIP)"
 msgstr "Незавершенное производство (WIP)"
 
@@ -25422,6 +25485,9 @@ msgstr "Да, отклонить"
 
 msgid "Yes, Update IDs"
 msgstr "Да, обновить ID"
+
+msgid "Yes, Work Complete"
+msgstr ""
 
 msgid "You"
 msgstr "Вы"

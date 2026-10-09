@@ -184,6 +184,27 @@ export function canMoveServiceOrder(
   }
 }
 
+/**
+ * Whether a visit may move from `from` to `to`: a scheduled visit starts
+ * travel or arrives, a traveling visit arrives, a visit on site completes,
+ * and any visit not yet done can be cancelled.
+ */
+export function canMoveVisit(
+  from: ServiceVisitStatus,
+  to: ServiceVisitStatus
+): boolean {
+  switch (from) {
+    case "Scheduled":
+      return to === "Traveling" || to === "On Site" || to === "Cancelled";
+    case "Traveling":
+      return to === "On Site" || to === "Cancelled";
+    case "On Site":
+      return to === "Completed" || to === "Cancelled";
+    default:
+      return false;
+  }
+}
+
 const optionalDate = zfd.text(
   z
     .string()

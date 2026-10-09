@@ -24,10 +24,12 @@ import type {
   coverageOverrideValidator,
   customerAssetValidator,
   ServiceOrderStatus,
+  ServiceVisitStatus,
   serviceExpenseValidator,
-  serviceOrderValidator
+  serviceOrderValidator,
+  serviceVisitValidator
 } from "./service.models";
-import { rollUpOrderStatus } from "./service.models";
+import { canMoveVisit, rollUpOrderStatus } from "./service.models";
 
 type ProjectStatus = Database["public"]["Enums"]["projectStatus"];
 
@@ -566,4 +568,144 @@ export async function reclassServiceCharge(
     return posting.error.message || "Failed to change the coverage";
   }
   return null;
+}
+
+// --- Visits ----------------------------------------------------------------------
+
+/**
+ * Schedules a visit, or moves a scheduled visit's technician and window, in
+ * one transaction with the order's status roll-up. A closed or cancelled
+ * order takes no visit; only a Scheduled visit can be moved.
+ */
+export async function scheduleServiceVisit(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof serviceVisitValidator> & {
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ id: string }> {
+  const { companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("serviceOrder")
+      .select(["id", "status"])
+      .where("id", "=", args.serviceOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new ServiceOrderError("The service order was not found");
+    if (order.status === "Closed" || order.status === "Cancelled") {
+      throw new ServiceOrderError(
+        `A ${order.status.toLowerCase()} service order takes no visits`
+      );
+    }
+
+    const now = datetime.timestamp();
+    let id: string;
+    if (args.id) {
+      const visit = await trx
+        .updateTable("serviceVisit")
+        .set({
+          technicianId: args.technicianId,
+          plannedStart: args.plannedStart ?? null,
+          plannedEnd: args.plannedEnd ?? null,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", args.id)
+        .where("serviceOrderId", "=", order.id)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Scheduled")
+        .returning("id")
+        .executeTakeFirst();
+      if (!visit) {
+        throw new ServiceOrderError("Only a scheduled visit can be moved");
+      }
+      id = visit.id;
+    } else {
+      const visit = await trx
+        .insertInto("serviceVisit")
+        .values({
+          serviceOrderId: order.id,
+          technicianId: args.technicianId,
+          plannedStart: args.plannedStart ?? null,
+          plannedEnd: args.plannedEnd ?? null,
+          companyId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      id = visit.id;
+    }
+
+    await syncServiceOrderStatus(trx, {
+      companyId,
+      serviceOrderId: order.id,
+      userId
+    });
+    return { id };
+  });
+}
+
+/**
+ * Moves a visit to its next status and stamps when it happened: travel
+ * started, arrived, completed. A completing visit answers **Work complete?**:
+ * yes completes the order, no leaves it In Progress. Then the order's status
+ * rolls up, in the same transaction. `technicianId`, when given, limits the
+ * change to that technician's own visit.
+ */
+export async function setServiceVisitStatus(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    serviceOrderId: string;
+    serviceVisitId: string;
+    status: ServiceVisitStatus;
+    workComplete: boolean;
+    technicianId?: string;
+  }
+): Promise<void> {
+  const { companyId, userId } = args;
+  await db.transaction().execute(async (trx) => {
+    const visit = await trx
+      .selectFrom("serviceVisit")
+      .select(["id", "status", "technicianId"])
+      .where("id", "=", args.serviceVisitId)
+      .where("serviceOrderId", "=", args.serviceOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!visit) throw new ServiceOrderError("The visit was not found");
+    if (args.technicianId && visit.technicianId !== args.technicianId) {
+      throw new ServiceOrderError("This visit belongs to another technician");
+    }
+    if (!canMoveVisit(visit.status, args.status)) {
+      throw new ServiceOrderError(
+        `A ${visit.status.toLowerCase()} visit cannot move to ${args.status.toLowerCase()}`
+      );
+    }
+
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("serviceVisit")
+      .set({
+        status: args.status,
+        ...(args.status === "Traveling" ? { travelStartedAt: now } : {}),
+        ...(args.status === "On Site" ? { arrivedAt: now } : {}),
+        ...(args.status === "Completed" ? { completedAt: now } : {}),
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", visit.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    await syncServiceOrderStatus(trx, {
+      companyId,
+      serviceOrderId: args.serviceOrderId,
+      userId,
+      workComplete: args.status === "Completed" && args.workComplete
+    });
+  });
 }

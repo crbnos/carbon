@@ -2270,11 +2270,17 @@ msgstr "모든 교대조"
 msgid "All slotted dimension values are mapped"
 msgstr "모든 슬롯된 차원 값이 매핑되었습니다"
 
+msgid "All statuses"
+msgstr ""
+
 msgid "All steps"
 msgstr "모든 단계"
 
 msgid "All Suppliers"
 msgstr "모든 공급업체"
+
+msgid "All technicians"
+msgstr ""
 
 msgid "All Time"
 msgstr "전체 기간"
@@ -3254,6 +3260,12 @@ msgstr "확실합니까?"
 
 msgid "Arrears"
 msgstr "연체금"
+
+msgid "Arrive"
+msgstr ""
+
+msgid "Arrived <0/>"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "마치 공장의 대기열 맨 앞으로 뛰어든 것처럼."
@@ -4235,6 +4247,9 @@ msgstr "판매주문 + 선택한 {0}개 취소"
 msgid "Cancel SO only"
 msgstr "판매주문만 취소"
 
+msgid "Cancel Visit"
+msgstr ""
+
 msgid "Canceled"
 msgstr "취소됨"
 
@@ -4717,6 +4732,9 @@ msgstr "MRP이 자동으로 다시 계산할 시간을 선택하세요. 계획 �
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "품목, 견적서 및 작업 지시의 BoM 탐색기에서 각 라인을 설명으로 표시할지 품목 ID로 표시할지 선택하세요."
+
+msgid "Choose who goes to the unit, and when."
+msgstr ""
 
 msgid "Choose your style"
 msgstr "스타일을 선택하세요"
@@ -9751,6 +9769,9 @@ msgstr "견적 라인을 업데이트하지 못했습니다"
 msgid "Failed to update supplier quote line"
 msgstr "공급업체 견적 라인을 업데이트하지 못했습니다"
 
+msgid "Failed to update the visit"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "썸네일 경로를 업데이트하지 못했습니다"
 
@@ -11605,6 +11626,9 @@ msgstr "송장 관리"
 
 msgid "is"
 msgstr "같음"
+
+msgid "Is all the work on this unit done? If it is, the service order is completed and ready to invoice. If not, it stays In Progress for another visit."
+msgstr ""
 
 msgid "is any of"
 msgstr "다음 중 하나임"
@@ -14748,6 +14772,12 @@ msgstr ""
 msgid "No versions available"
 msgstr "가용한 버전이 없습니다"
 
+msgid "No visits are planned in these days."
+msgstr ""
+
+msgid "No visits yet. Schedule one to send a technician."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
@@ -14761,6 +14791,9 @@ msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "No, More Work"
 msgstr ""
 
 msgid "Node"
@@ -14826,6 +14859,9 @@ msgstr "구성되지 않음"
 msgid "Not Configured"
 msgstr "미설정"
 
+msgid "Not done"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
@@ -14834,6 +14870,9 @@ msgstr "개에 대한 데이터가 부족합니다."
 
 msgid "Not feasible"
 msgstr "불가능"
+
+msgid "Not planned"
+msgstr ""
 
 msgid "Not reached"
 msgstr "도달하지 않음"
@@ -18320,11 +18359,17 @@ msgstr "수리 필요"
 msgid "Requires staffing"
 msgstr "인력 필수"
 
+msgid "Reschedule"
+msgstr ""
+
 msgid "Reschedule tolerance"
 msgstr "재일정 허용 범위"
 
 msgid "Reschedule Tolerance"
 msgstr "재일정 허용도"
+
+msgid "Reschedule Visit"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "예약 최저 수량"
@@ -19265,6 +19310,9 @@ msgstr "일정 만료 사유"
 
 msgid "Schedule regenerated"
 msgstr "일정 재생성됨"
+
+msgid "Schedule Visit"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "예정됨"
@@ -20691,6 +20739,9 @@ msgstr "회계연도 시작"
 msgid "Start Time"
 msgstr "시작 시간"
 
+msgid "Start Travel"
+msgstr ""
+
 msgid "Start with"
 msgstr "…부터 시작"
 
@@ -21592,6 +21643,9 @@ msgid "Technically complete"
 msgstr ""
 
 msgid "Technically Complete"
+msgstr ""
+
+msgid "Technician"
 msgstr ""
 
 msgid "Technicians"
@@ -23577,6 +23631,9 @@ msgstr "운송 및 기관"
 msgid "Trash"
 msgstr "휴지통"
 
+msgid "Travel started <0/>"
+msgstr ""
+
 msgid "Traveling"
 msgstr ""
 
@@ -24617,6 +24674,9 @@ msgstr "공개 범위"
 msgid "Visible on a user's public profile"
 msgstr "사용자의 공개 프로필에 표시됩니다"
 
+msgid "Visits"
+msgstr ""
+
 msgid "Void"
 msgstr "무효 처리"
 
@@ -25338,6 +25398,9 @@ msgstr "작업장"
 msgid "Work Centers"
 msgstr "작업장"
 
+msgid "Work complete?"
+msgstr ""
+
 msgid "Work in process (WIP)"
 msgstr "재공품(WIP)"
 
@@ -25422,6 +25485,9 @@ msgstr "예, 거부"
 
 msgid "Yes, Update IDs"
 msgstr "예, ID 업데이트"
+
+msgid "Yes, Work Complete"
+msgstr ""
 
 msgid "You"
 msgstr "나"

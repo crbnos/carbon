@@ -474,14 +474,15 @@ export async function updateServiceOrder(
 // --- Visits ------------------------------------------------------------------
 
 /**
- * Lists visits, with their order, customer, site and subject. Filters: a
- * technician, a planned-start window (`from` inclusive, `to` exclusive;
+ * Lists visits, with their order, customer, site and subject. Filters: an
+ * order, a technician, a planned-start window (`from` inclusive, `to` exclusive;
  * timestamps) and statuses.
  */
 export async function getServiceVisits(
   client: Client,
   companyId: string,
   args: {
+    serviceOrderId?: string | null;
     technicianId?: string | null;
     from?: string | null;
     to?: string | null;
@@ -495,6 +496,9 @@ export async function getServiceVisits(
     )
     .eq("companyId", companyId);
 
+  if (args.serviceOrderId) {
+    query = query.eq("serviceOrderId", args.serviceOrderId);
+  }
   if (args.technicianId) query = query.eq("technicianId", args.technicianId);
   if (args.from) query = query.gte("plannedStart", args.from);
   if (args.to) query = query.lt("plannedStart", args.to);

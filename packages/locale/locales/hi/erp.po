@@ -2270,11 +2270,17 @@ msgstr "सभी शिफ्ट"
 msgid "All slotted dimension values are mapped"
 msgstr "सभी स्लॉटेड आयाम मान मैप किए गए हैं"
 
+msgid "All statuses"
+msgstr ""
+
 msgid "All steps"
 msgstr "सभी चरण"
 
 msgid "All Suppliers"
 msgstr "सभी आपूर्तिकर्ता"
+
+msgid "All technicians"
+msgstr ""
 
 msgid "All Time"
 msgstr "सभी समय"
@@ -3254,6 +3260,12 @@ msgstr "क्या आप सुनिश्चित हैं?"
 
 msgid "Arrears"
 msgstr "बकाया"
+
+msgid "Arrive"
+msgstr ""
+
+msgid "Arrived <0/>"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "मानो यह कार्यशाला की कतार के आगे कूद गया हो।"
@@ -4235,6 +4247,9 @@ msgstr "SO रद्द करें + {0} चयनित"
 msgid "Cancel SO only"
 msgstr "केवल SO रद्द करें"
 
+msgid "Cancel Visit"
+msgstr ""
+
 msgid "Canceled"
 msgstr "रद्द किया गया"
 
@@ -4717,6 +4732,9 @@ msgstr "चुनें कि MRP अपने आप कब पुनर्ग
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "चुनें कि आइटम, कोटेशन और जॉब पर बिल ऑफ मैटेरियल एक्सप्लोरर प्रत्येक पंक्ति को इसके विवरण या आइटम ID के साथ दिखाएगा।"
+
+msgid "Choose who goes to the unit, and when."
+msgstr ""
 
 msgid "Choose your style"
 msgstr "अपनी शैली चुनें"
@@ -9751,6 +9769,9 @@ msgstr "कोटेशन पंक्ति अपडेट करने म�
 msgid "Failed to update supplier quote line"
 msgstr "आपूर्तिकर्ता कोटेशन पंक्ति अपडेट करने में विफल"
 
+msgid "Failed to update the visit"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "थंबनेल पथ अपडेट करने में विफल"
 
@@ -11605,6 +11626,9 @@ msgstr "बिलिंग"
 
 msgid "is"
 msgstr "है"
+
+msgid "Is all the work on this unit done? If it is, the service order is completed and ready to invoice. If not, it stays In Progress for another visit."
+msgstr ""
 
 msgid "is any of"
 msgstr "इनमें से कोई भी है"
@@ -14748,6 +14772,12 @@ msgstr ""
 msgid "No versions available"
 msgstr "कोई संस्करण उपलब्ध नहीं है"
 
+msgid "No visits are planned in these days."
+msgstr ""
+
+msgid "No visits yet. Schedule one to send a technician."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — गणना के समाधान तक हाथ पर नकारात्मक हो जाएगा।"
 
@@ -14761,6 +14791,9 @@ msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "No, More Work"
 msgstr ""
 
 msgid "Node"
@@ -14826,6 +14859,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
+msgid "Not done"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 
@@ -14834,6 +14870,9 @@ msgstr "पर्याप्त यूनिट डेटा नहीं"
 
 msgid "Not feasible"
 msgstr "संभव नहीं"
+
+msgid "Not planned"
+msgstr ""
 
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
@@ -18320,11 +18359,17 @@ msgstr "मरम्मत की आवश्यकता है"
 msgid "Requires staffing"
 msgstr "स्टाफिंग आवश्यक है"
 
+msgid "Reschedule"
+msgstr ""
+
 msgid "Reschedule tolerance"
 msgstr "पुनर्निर्धारण सहिष्णुता"
 
 msgid "Reschedule Tolerance"
 msgstr "पुनर्निर्धारण सहनशीलता"
+
+msgid "Reschedule Visit"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
@@ -19265,6 +19310,9 @@ msgstr "शेड्यूल पुरातन कारण"
 
 msgid "Schedule regenerated"
 msgstr "शेड्यूल पुनर्जनित"
+
+msgid "Schedule Visit"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "अनुसूचित"
@@ -20691,6 +20739,9 @@ msgstr "कर वर्ष की शुरुआत"
 msgid "Start Time"
 msgstr "शुरुआत का समय"
 
+msgid "Start Travel"
+msgstr ""
+
 msgid "Start with"
 msgstr "शुरुआत करें"
 
@@ -21592,6 +21643,9 @@ msgid "Technically complete"
 msgstr ""
 
 msgid "Technically Complete"
+msgstr ""
+
+msgid "Technician"
 msgstr ""
 
 msgid "Technicians"
@@ -23577,6 +23631,9 @@ msgstr "ट्रांजिट और संस्था"
 msgid "Trash"
 msgstr "ट्रैश"
 
+msgid "Travel started <0/>"
+msgstr ""
+
 msgid "Traveling"
 msgstr ""
 
@@ -24617,6 +24674,9 @@ msgstr "दृश्यता"
 msgid "Visible on a user's public profile"
 msgstr "उपयोगकर्ता की सार्वजनिक प्रोफ़ाइल पर दृश्यमान"
 
+msgid "Visits"
+msgstr ""
+
 msgid "Void"
 msgstr "अमान्य करें"
 
@@ -25338,6 +25398,9 @@ msgstr "वर्क सेंटर"
 msgid "Work Centers"
 msgstr "वर्क सेंटर"
 
+msgid "Work complete?"
+msgstr ""
+
 msgid "Work in process (WIP)"
 msgstr "प्रक्रिया में कार्य (WIP)"
 
@@ -25422,6 +25485,9 @@ msgstr "हाँ, अस्वीकार करें"
 
 msgid "Yes, Update IDs"
 msgstr "हाँ, आईडी अपडेट करें"
+
+msgid "Yes, Work Complete"
+msgstr ""
 
 msgid "You"
 msgstr "आप"

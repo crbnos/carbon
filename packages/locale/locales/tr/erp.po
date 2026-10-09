@@ -2270,11 +2270,17 @@ msgstr "Tüm Vardiyalar"
 msgid "All slotted dimension values are mapped"
 msgstr "Tüm boyut değerleri eşlendi"
 
+msgid "All statuses"
+msgstr ""
+
 msgid "All steps"
 msgstr "Tüm adımlar"
 
 msgid "All Suppliers"
 msgstr "Tüm Tedarikçiler"
+
+msgid "All technicians"
+msgstr ""
 
 msgid "All Time"
 msgstr "Her Zaman"
@@ -3254,6 +3260,12 @@ msgstr "Emin misiniz?"
 
 msgid "Arrears"
 msgstr "Gecikmeler"
+
+msgid "Arrive"
+msgstr ""
+
+msgid "Arrived <0/>"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "Sanki atölyenin kuyruğunun başına geçmiş gibi."
@@ -4235,6 +4247,9 @@ msgstr "SO'yu İptal Et + {0} seçili"
 msgid "Cancel SO only"
 msgstr "Siparişten sadece iptal et"
 
+msgid "Cancel Visit"
+msgstr ""
+
 msgid "Canceled"
 msgstr "İptal edildi"
 
@@ -4717,6 +4732,9 @@ msgstr "MRP'nin otomatik olarak ne zaman yeniden hesaplandığını seçin. Plan
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Stok kartları, teklifler ve iş emirlerindeki malzeme ağacı gezgininin her satırı açıklama veya stok kartı kimliğiyle etiketleyip etiketlemeyeceğini seçin."
+
+msgid "Choose who goes to the unit, and when."
+msgstr ""
 
 msgid "Choose your style"
 msgstr "Stilini seçin"
@@ -9751,6 +9769,9 @@ msgstr "Teklif satırını güncelleme başarısız oldu"
 msgid "Failed to update supplier quote line"
 msgstr "Tedarikçi teklif satırı güncellenemedi"
 
+msgid "Failed to update the visit"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "Küçük resim yolu güncellenemedi"
 
@@ -11605,6 +11626,9 @@ msgstr "Faturalama"
 
 msgid "is"
 msgstr "eşittir"
+
+msgid "Is all the work on this unit done? If it is, the service order is completed and ready to invoice. If not, it stays In Progress for another visit."
+msgstr ""
 
 msgid "is any of"
 msgstr "herhangi biri"
@@ -14748,6 +14772,12 @@ msgstr ""
 msgid "No versions available"
 msgstr "Kullanılabilir sürüm yok"
 
+msgid "No visits are planned in these days."
+msgstr ""
+
+msgid "No visits yet. Schedule one to send a technician."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden düzenlenene kadar eldeki stok negatif olacaktır, ancak yine de alabilirsiniz."
 
@@ -14761,6 +14791,9 @@ msgid "No work centers exist"
 msgstr "İş merkezi bulunmamaktadır"
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "No, More Work"
 msgstr ""
 
 msgid "Node"
@@ -14826,6 +14859,9 @@ msgstr "Yapılandırılmadı"
 msgid "Not Configured"
 msgstr "Yapılandırılmadı"
 
+msgid "Not done"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli İş emri yok"
 
@@ -14834,6 +14870,9 @@ msgstr "Yetersiz adet verisi"
 
 msgid "Not feasible"
 msgstr "Gerçekleştirilemez"
+
+msgid "Not planned"
+msgstr ""
 
 msgid "Not reached"
 msgstr "Ulaşılmadı"
@@ -18320,11 +18359,17 @@ msgstr "Onarım Gerektirir"
 msgid "Requires staffing"
 msgstr "Personel gerektirir"
 
+msgid "Reschedule"
+msgstr ""
+
 msgid "Reschedule tolerance"
 msgstr "Yeniden planlama toleransı"
 
 msgid "Reschedule Tolerance"
 msgstr "Yeniden Planlama Toleransı"
+
+msgid "Reschedule Visit"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "Rezerv tabanı"
@@ -19265,6 +19310,9 @@ msgstr "Çizelge süresi dolma sebebi"
 
 msgid "Schedule regenerated"
 msgstr "Çizelge yeniden oluşturuldu"
+
+msgid "Schedule Visit"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "Zamanlandı"
@@ -20691,6 +20739,9 @@ msgstr "Vergi Yılı Başlangıcı"
 msgid "Start Time"
 msgstr "Başlangıç Saati"
 
+msgid "Start Travel"
+msgstr ""
+
 msgid "Start with"
 msgstr "Başla"
 
@@ -21592,6 +21643,9 @@ msgid "Technically complete"
 msgstr ""
 
 msgid "Technically Complete"
+msgstr ""
+
+msgid "Technician"
 msgstr ""
 
 msgid "Technicians"
@@ -23577,6 +23631,9 @@ msgstr "Geçiş ve Kurum"
 msgid "Trash"
 msgstr "Çöp Kutusu"
 
+msgid "Travel started <0/>"
+msgstr ""
+
 msgid "Traveling"
 msgstr ""
 
@@ -24617,6 +24674,9 @@ msgstr "Görünürlük"
 msgid "Visible on a user's public profile"
 msgstr "Kullanıcının herkese açık profilinde görünür"
 
+msgid "Visits"
+msgstr ""
+
 msgid "Void"
 msgstr "Hükümsüz kıl"
 
@@ -25338,6 +25398,9 @@ msgstr "İş merkezleri"
 msgid "Work Centers"
 msgstr "İş Merkezleri"
 
+msgid "Work complete?"
+msgstr ""
+
 msgid "Work in process (WIP)"
 msgstr "Üretim'de çalışma (Yarı mamul)"
 
@@ -25422,6 +25485,9 @@ msgstr "Evet, Reddet"
 
 msgid "Yes, Update IDs"
 msgstr "Evet, Kimlikleri Güncelle"
+
+msgid "Yes, Work Complete"
+msgstr ""
 
 msgid "You"
 msgstr "Sen"

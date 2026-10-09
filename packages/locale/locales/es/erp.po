@@ -2270,11 +2270,17 @@ msgstr "Todos los turnos"
 msgid "All slotted dimension values are mapped"
 msgstr "Todos los valores de dimensión asignados están mapeados"
 
+msgid "All statuses"
+msgstr ""
+
 msgid "All steps"
 msgstr "Todos los pasos"
 
 msgid "All Suppliers"
 msgstr "Todos los proveedores"
+
+msgid "All technicians"
+msgstr ""
 
 msgid "All Time"
 msgstr "Todo el tiempo"
@@ -3254,6 +3260,12 @@ msgstr "¿Estás seguro?"
 
 msgid "Arrears"
 msgstr "Atrasos"
+
+msgid "Arrive"
+msgstr ""
+
+msgid "Arrived <0/>"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "Como si saltara al frente de la cola de la tienda."
@@ -4235,6 +4247,9 @@ msgstr "Cancelar SO + {0} seleccionados"
 msgid "Cancel SO only"
 msgstr "Cancelar SO solamente"
 
+msgid "Cancel Visit"
+msgstr ""
+
 msgid "Canceled"
 msgstr "Cancelado"
 
@@ -4717,6 +4732,9 @@ msgstr "Elige cuándo MRP se recalcula automáticamente. Aún puedes ejecutarlo 
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Elija si el explorador de lista de materiales en artículos, cotizaciones y órdenes de trabajo etiqueta cada línea con su descripción o el ID del artículo."
+
+msgid "Choose who goes to the unit, and when."
+msgstr ""
 
 msgid "Choose your style"
 msgstr "Elige tu estilo"
@@ -9751,6 +9769,9 @@ msgstr "Error al actualizar la línea de cotización"
 msgid "Failed to update supplier quote line"
 msgstr "Error al actualizar la línea de cotización del proveedor"
 
+msgid "Failed to update the visit"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "Error al actualizar la ruta de la miniatura"
 
@@ -11605,6 +11626,9 @@ msgstr "Facturación"
 
 msgid "is"
 msgstr "es"
+
+msgid "Is all the work on this unit done? If it is, the service order is completed and ready to invoice. If not, it stays In Progress for another visit."
+msgstr ""
 
 msgid "is any of"
 msgstr "es cualquiera de"
@@ -14748,6 +14772,12 @@ msgstr ""
 msgid "No versions available"
 msgstr "No hay versiones disponibles"
 
+msgid "No visits are planned in these days."
+msgstr ""
+
+msgid "No visits yet. Schedule one to send a technician."
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
 
@@ -14761,6 +14791,9 @@ msgid "No work centers exist"
 msgstr "No existen centros de trabajo"
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "No, More Work"
 msgstr ""
 
 msgid "Node"
@@ -14826,6 +14859,9 @@ msgstr "No configurado"
 msgid "Not Configured"
 msgstr "No configurado"
 
+msgid "Not done"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "No hay suficientes órdenes de trabajo para cubrir la cantidad"
 
@@ -14834,6 +14870,9 @@ msgstr "Datos de unidad insuficientes"
 
 msgid "Not feasible"
 msgstr "No es viable"
+
+msgid "Not planned"
+msgstr ""
 
 msgid "Not reached"
 msgstr "No alcanzado"
@@ -18320,11 +18359,17 @@ msgstr "Requiere Reparación"
 msgid "Requires staffing"
 msgstr "Requiere personal"
 
+msgid "Reschedule"
+msgstr ""
+
 msgid "Reschedule tolerance"
 msgstr "Tolerancia de reprogramación"
 
 msgid "Reschedule Tolerance"
 msgstr "Tolerancia de Reprogramación"
+
+msgid "Reschedule Visit"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "Piso de reserva"
@@ -19265,6 +19310,9 @@ msgstr "Motivo del programa desactualizado"
 
 msgid "Schedule regenerated"
 msgstr "Programa regenerado"
+
+msgid "Schedule Visit"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "Programado"
@@ -20691,6 +20739,9 @@ msgstr "Inicio del año fiscal"
 msgid "Start Time"
 msgstr "Hora de Inicio"
 
+msgid "Start Travel"
+msgstr ""
+
 msgid "Start with"
 msgstr "Comienza con"
 
@@ -21592,6 +21643,9 @@ msgid "Technically complete"
 msgstr ""
 
 msgid "Technically Complete"
+msgstr ""
+
+msgid "Technician"
 msgstr ""
 
 msgid "Technicians"
@@ -23577,6 +23631,9 @@ msgstr "Tránsito e institución"
 msgid "Trash"
 msgstr "Papelera"
 
+msgid "Travel started <0/>"
+msgstr ""
+
 msgid "Traveling"
 msgstr ""
 
@@ -24617,6 +24674,9 @@ msgstr "Visibilidad"
 msgid "Visible on a user's public profile"
 msgstr "Visible en el perfil público de un usuario"
 
+msgid "Visits"
+msgstr ""
+
 msgid "Void"
 msgstr "Anular"
 
@@ -25338,6 +25398,9 @@ msgstr "Centros de trabajo"
 msgid "Work Centers"
 msgstr "Centros de Trabajo"
 
+msgid "Work complete?"
+msgstr ""
+
 msgid "Work in process (WIP)"
 msgstr "Producto en proceso (WIP)"
 
@@ -25422,6 +25485,9 @@ msgstr "Sí, Rechazar"
 
 msgid "Yes, Update IDs"
 msgstr "Sí, Actualizar IDs"
+
+msgid "Yes, Work Complete"
+msgstr ""
 
 msgid "You"
 msgstr "Tú"
