@@ -71,6 +71,7 @@ pnpm --filter @carbon/erp test
 - `updateItemMethodAndSourcing` — cascades replenishment/sourcing changes to Draft method materials
 - `getItemCost` / `getItemQuantities` / `getItemDemand` / `getItemSupply` — cost and planning reads
 - `getSupplierParts` / `getSupplierPriceBreaksForItems` / `lookupBuyPrice` — vendor pricing (the latter two in base per inventory unit, for costing); `getSupplierPartPricing` — a part's price + breaks with its currency's current rate, for `resolveSupplierPrice` on a purchase document
+- `getSupplierPartsBySupplier` — every active supplier part naming one supplier, with its item embedded, paged past the 1000-row cap (`fetchAllRecords`); backs the supplier's **Parts** tab (`x+/supplier+/$supplierId.parts.tsx`, `purchasing/ui/Supplier/SupplierParts.tsx`, client-side search). Its New / edit drawers post to the picked item's own purchasing routes (`SupplierPartForm` with `selectItem`), so every item-type edit route returns `{ success }` instead of redirecting
 - `upsertPickMethodWithShelfLife` — pick method with shelf life configuration
 - `getConfigurationParameters` / `getConfigurationRules` — product configurator
 - `createItemDocumentUploadUrl` — MCP file upload (step 1): presigned URL for an item document (`parts/{itemId}` folder); pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"

@@ -96,7 +96,7 @@ const CardAction = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("flex flex-col py-2 px-4", className)}
+      className={cn("flex flex-col py-2 px-4 pr-6", className)}
       {...props}
     />
   )

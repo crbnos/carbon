@@ -50,6 +50,7 @@ import {
   CustomFormFields,
   Hidden,
   Input,
+  Item,
   Number,
   Submit,
   Supplier,
@@ -62,8 +63,25 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
+import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { supplierPartValidator } from "../../items.models";
+
+/** The item types a supplier part can be saved for: each has a purchasing route. */
+export const supplierPartItemTypes = [
+  "Part",
+  "Material",
+  "Tool",
+  "Consumable",
+  "Service"
+] as const;
+export type SupplierPartItemType = (typeof supplierPartItemTypes)[number];
+
+export function isSupplierPartItemType(
+  type: string | null | undefined
+): type is SupplierPartItemType {
+  return supplierPartItemTypes.includes(type as SupplierPartItemType);
+}
 
 type PriceBreak = {
   quantity: number;
@@ -97,10 +115,15 @@ type PurchaseHistoryItem = {
 
 type SupplierPartFormProps = {
   initialValues: z.infer<typeof supplierPartValidator>;
-  type: "Part" | "Service" | "Tool" | "Consumable" | "Material";
+  type: SupplierPartItemType;
   unitOfMeasureCode: string;
   priceBreaks?: PriceBreak[];
   purchasingHistory?: PurchaseHistoryItem[];
+  // Opened from a supplier rather than an item: the item is picked in the form
+  // and the supplier is fixed. The picked item decides the type and unit.
+  selectItem?: boolean;
+  // Items the picker leaves out: those the supplier already has a supplier part for.
+  excludeItemIds?: string[];
   onClose: () => void;
 };
 
@@ -110,6 +133,8 @@ const SupplierPartForm = ({
   unitOfMeasureCode,
   priceBreaks: initialPriceBreaks = [],
   purchasingHistory = [],
+  selectItem = false,
+  excludeItemIds,
   onClose
 }: SupplierPartFormProps) => {
   const permissions = usePermissions();
@@ -146,6 +171,19 @@ const SupplierPartForm = ({
     itemId = initialValues.itemId;
   }
 
+  const [items] = useItems();
+  const [selectedItemId, setSelectedItemId] = useState(initialValues.itemId);
+  const selectedItem = selectItem
+    ? items.find((item) => item.id === selectedItemId)
+    : undefined;
+  const itemType =
+    selectedItem && isSupplierPartItemType(selectedItem.type)
+      ? selectedItem.type
+      : type;
+  const inventoryCode = selectItem
+    ? selectedItem?.unitOfMeasureCode
+    : unitOfMeasureCode;
+
   const [purchaseUnitOfMeasure, setPurchaseUnitOfMeasure] = useState<
     string | undefined
   >(initialValues.supplierUnitOfMeasureCode);
@@ -167,7 +205,12 @@ const SupplierPartForm = ({
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
 
-  const action = getAction(isEditing, type, itemId, initialValues.id);
+  const action = getAction(
+    isEditing,
+    itemType,
+    selectItem ? selectedItemId : itemId,
+    initialValues.id
+  );
   const fetcher = useFetcher<{ success: boolean; message: string }>();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: onClose must be excluded — it is a new ref each render in route components, which would cause an infinite re-fire loop
@@ -203,14 +246,27 @@ const SupplierPartForm = ({
           </DrawerHeader>
           <DrawerBody>
             <Hidden name="id" />
-            <Hidden name="itemId" />
+            {!selectItem && <Hidden name="itemId" />}
             <Hidden name="priceBreaks" value={JSON.stringify(priceBreaks)} />
 
             <VStack spacing={4}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+                {selectItem && (
+                  <Item
+                    name="itemId"
+                    label={t`Item`}
+                    type="Item"
+                    validItemTypes={[...supplierPartItemTypes]}
+                    replenishmentSystem="Buy"
+                    blacklist={excludeItemIds}
+                    isOptional={false}
+                    onChange={(value) => setSelectedItemId(value?.value ?? "")}
+                  />
+                )}
                 <Supplier
                   name="supplierId"
                   label={t`Supplier`}
+                  isReadOnly={selectItem}
                   onChange={(value) => onSupplierChange(value?.value)}
                 />
                 <Input
@@ -247,7 +303,7 @@ const SupplierPartForm = ({
                   name="conversionFactor"
                   label={t`Conversion Factor`}
                   termId="conversion-factor"
-                  inventoryCode={unitOfMeasureCode ?? undefined}
+                  inventoryCode={inventoryCode ?? undefined}
                   purchasingCode={purchaseUnitOfMeasure}
                 />
                 <Number
@@ -282,6 +338,7 @@ const SupplierPartForm = ({
                 isDisabled={
                   isDisabled ||
                   hasInvalidPriceBreaks ||
+                  (selectItem && !selectedItemId) ||
                   fetcher.state !== "idle"
                 }
                 isLoading={fetcher.state !== "idle"}
