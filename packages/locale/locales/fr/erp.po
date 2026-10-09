@@ -7825,6 +7825,9 @@ msgstr "Chaque montant part de ce que la ligne a à facturer."
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Chaque montant part de ce que la ligne a à reconnaître."
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
 
@@ -15621,6 +15624,9 @@ msgstr "Épingler ou dépingler"
 msgid "Pinned"
 msgstr "Épinglé"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "Plan"
 
@@ -22105,6 +22111,9 @@ msgstr "Ce code PIN ne sera plus affiché. Vous en aurez besoin pour quitter le 
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Ce prix a été saisi manuellement, donc aucune règle de tarification n'a été appliquée."
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "ce bon de commande"

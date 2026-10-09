@@ -7825,6 +7825,9 @@ msgstr "Each amount starts at what the line has left to invoice."
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Each amount starts at what the line has left to recognize."
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr "Each asset moves into its in-service class and starts depreciating from the in-service date."
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
 
@@ -15621,6 +15624,9 @@ msgstr "Pin or unpin"
 msgid "Pinned"
 msgstr "Pinned"
 
+msgid "Place in Service"
+msgstr "Place in Service"
+
 msgid "Plan"
 msgstr "Plan"
 
@@ -22105,6 +22111,9 @@ msgstr "This PIN will not be shown again. You will need it to exit console mode 
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "This price was entered manually, so no pricing rules were applied."
+
+msgid "This project has no asset under construction."
+msgstr "This project has no asset under construction."
 
 msgid "this purchase order"
 msgstr "this purchase order"

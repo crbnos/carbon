@@ -7825,6 +7825,9 @@ msgstr "Ogni importo inizia da quello che rimane da fatturare della riga."
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Ogni importo inizia da quello che rimane da riconoscere della riga."
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Ogni cella mostra le persone assegnate rispetto alle persone di cui il lavoro del giorno ha bisogno."
 
@@ -15621,6 +15624,9 @@ msgstr "Fissa o scollega"
 msgid "Pinned"
 msgstr "Fissato"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "Piano"
 
@@ -22105,6 +22111,9 @@ msgstr "Questo PIN non verrà più visualizzato. Ne avrai bisogno per uscire dal
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Questo prezzo è stato inserito manualmente, quindi nessuna regola di prezzo è stata applicata."
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "questo ordine di acquisto"

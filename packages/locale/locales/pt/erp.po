@@ -7825,6 +7825,9 @@ msgstr "Cada valor começa com o que a linha ainda tem a faturar."
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Cada valor começa com o que a linha ainda tem a reconhecer."
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Cada célula mostra as pessoas atribuídas em comparação com as pessoas que o trabalho do dia precisa."
 
@@ -15621,6 +15624,9 @@ msgstr "Fixar ou desafixar"
 msgid "Pinned"
 msgstr "Fixado"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "Plano"
 
@@ -22105,6 +22111,9 @@ msgstr "Este PIN não será exibido novamente. Você precisará dele para sair d
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Este preço foi inserido manualmente, portanto nenhuma regra de precificação foi aplicada."
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "este pedido de compra"

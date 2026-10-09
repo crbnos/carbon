@@ -7825,6 +7825,9 @@ msgstr "每个金额从该行剩余的待开票部分开始"
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "每个金额从该行剩余的待确认部分开始"
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
@@ -15621,6 +15624,9 @@ msgstr "固定或取消固定"
 msgid "Pinned"
 msgstr "已固定"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "计划"
 
@@ -22105,6 +22111,9 @@ msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "此价格手动输入，因此未应用定价规则。"
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "此采购订单"

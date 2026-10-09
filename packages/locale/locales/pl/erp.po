@@ -7825,6 +7825,9 @@ msgstr "Każda kwota wynosi pozostałej do zafakturowania kwocie Pozycji."
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Każda kwota wynosi pozostałej do ujęcia kwocie Pozycji."
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "W każdej komórce znajdują się przydzieleni pracownicy w stosunku do pracowników potrzebnych do pracy tego dnia."
 
@@ -15621,6 +15624,9 @@ msgstr "Przypnij lub odepnij"
 msgid "Pinned"
 msgstr "Przypięte"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "Plan"
 
@@ -22105,6 +22111,9 @@ msgstr "Ten PIN nie będzie już więcej wyświetlany. Będzie ci potrzebny do w
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Ta cena została wprowadzona ręcznie, dlatego nie zastosowano żadnych reguł cenowych."
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "to zamówienie zakupu"

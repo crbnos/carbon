@@ -245,6 +245,108 @@ export async function ensureCapitalAssets(
   });
 }
 
+export type ProjectCapitalAsset = {
+  id: string;
+  fixedAssetId: string;
+  name: string;
+  status: Database["public"]["Enums"]["fixedAssetStatus"];
+  className: string;
+  /** Σ fixedAssetCipCost: what a capitalization moves. */
+  cipTotal: number;
+  /** The final-asset element that holds the asset; null for the project's. */
+  elementId: string | null;
+  elementReadableId: string | null;
+};
+
+/**
+ * The capital assets of a project: its own asset and the asset of each
+ * final-asset element, with each asset's CIP total. One query.
+ */
+export async function getProjectCapitalAssets(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; projectId: string }
+): Promise<ProjectCapitalAsset[]> {
+  const rows = await sql<{
+    id: string;
+    fixedAssetId: string;
+    name: string;
+    status: Database["public"]["Enums"]["fixedAssetStatus"];
+    className: string;
+    cipTotal: number | null;
+    elementId: string | null;
+    elementReadableId: string | null;
+  }>`
+    WITH holders AS (
+      SELECT p."fixedAssetId", NULL::text AS "elementId", NULL::text AS "elementReadableId"
+      FROM "project" p
+      WHERE p."id" = ${args.projectId} AND p."companyId" = ${args.companyId}
+        AND p."fixedAssetId" IS NOT NULL
+      UNION ALL
+      SELECT e."fixedAssetId", e."id", e."readableId"
+      FROM "projectElement" e
+      WHERE e."projectId" = ${args.projectId} AND e."companyId" = ${args.companyId}
+        AND e."isFinalAsset" AND e."fixedAssetId" IS NOT NULL
+    )
+    SELECT a."id", a."fixedAssetId", a."name", a."status", c."name" AS "className",
+      (SELECT SUM(cc."amount") FROM "fixedAssetCipCost" cc
+        WHERE cc."fixedAssetId" = a."id" AND cc."companyId" = a."companyId"
+          AND NOT cc."postCapitalization") AS "cipTotal",
+      h."elementId", h."elementReadableId"
+    FROM holders h
+    JOIN "fixedAsset" a ON a."id" = h."fixedAssetId" AND a."companyId" = ${args.companyId}
+    JOIN "fixedAssetClass" c ON c."id" = a."fixedAssetClassId"
+    ORDER BY h."elementReadableId" NULLS FIRST
+  `.execute(db);
+  return rows.rows.map((row) => ({
+    ...row,
+    cipTotal: Number(row.cipTotal ?? 0)
+  }));
+}
+
+/**
+ * Moves elements and all their descendants to the project's default
+ * Completed state (else its first Completed state), in one statement. Used
+ * when their asset goes into service.
+ */
+export async function completeElementSubtrees(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    projectId: string;
+    elementIds: string[];
+    userId: string;
+  }
+): Promise<void> {
+  if (args.elementIds.length === 0) return;
+  await sql`
+    WITH RECURSIVE subtree AS (
+      SELECT e."id" FROM "projectElement" e
+      WHERE e."id" IN (${sql.join(args.elementIds)})
+        AND e."projectId" = ${args.projectId}
+        AND e."companyId" = ${args.companyId}
+      UNION
+      SELECT c."id" FROM "projectElement" c
+      JOIN subtree s ON c."parentId" = s."id"
+      WHERE c."companyId" = ${args.companyId}
+    ), completed AS (
+      SELECT st."id" FROM "projectState" st
+      WHERE st."projectId" = ${args.projectId}
+        AND st."companyId" = ${args.companyId}
+        AND st."group" = 'Completed'
+      ORDER BY st."isDefault" DESC, st."sortOrder", st."id"
+      LIMIT 1
+    )
+    UPDATE "projectElement" e
+    SET "stateId" = completed."id",
+      "completedAt" = COALESCE(e."completedAt", NOW()),
+      "updatedBy" = ${args.userId},
+      "updatedAt" = NOW()
+    FROM completed
+    WHERE e."id" IN (SELECT "id" FROM subtree)
+      AND e."companyId" = ${args.companyId}
+  `.execute(db);
+}
+
 /**
  * Inserts an element, in one transaction. The project's sequence gives the
  * element its readable id (`ST-12`). An empty state takes the project's

@@ -1994,6 +1994,8 @@ export const path = {
     projectLogTime: `${x}/projects/log-time`,
     projectMilestones: (id: string) =>
       generatePath(`${x}/project/${id}/milestones`),
+    projectPlaceInService: (id: string) =>
+      generatePath(`${x}/project/${id}/place-in-service`),
     projectSettings: (id: string) =>
       generatePath(`${x}/project/${id}/settings`),
     projectStatus: (id: string) => generatePath(`${x}/project/${id}/status`),

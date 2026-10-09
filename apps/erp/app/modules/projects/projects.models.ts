@@ -222,6 +222,15 @@ export const projectStatusValidator = z.object({
   status: z.enum(projectStatuses, { error: "Status is required" })
 });
 
+/** Place in service: capitalize a capital project's assets under construction. */
+export const placeInServiceValidator = z.object({
+  fixedAssetIds: zfd.repeatable(
+    z.array(z.string().min(1)).min(1, { message: "Select at least one asset" })
+  ),
+  toClassId: z.string().min(1, { message: "Asset class is required" }),
+  inServiceDate: z.string().min(1, { message: "In-service date is required" })
+});
+
 export const projectStateValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),

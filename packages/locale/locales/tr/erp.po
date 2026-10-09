@@ -7825,6 +7825,9 @@ msgstr "Her tutar, satırın faturalandırılacak kalanından başlar."
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Her tutar, satırın muhasebeleştirilecek kalanından başlar."
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
 
@@ -15621,6 +15624,9 @@ msgstr "Sabitle veya kaldır"
 msgid "Pinned"
 msgstr "Sabitlenmiş"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "Plan"
 
@@ -22105,6 +22111,9 @@ msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan �
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Bu fiyat manuel olarak girildi, bu nedenle hiçbir fiyatlandırma kuralı uygulanmadı."
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "bu satın alma siparişi"

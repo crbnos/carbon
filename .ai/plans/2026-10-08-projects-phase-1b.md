@@ -45,7 +45,7 @@
 - [x] Task 7: Create CIP assets on release and on marking a final asset
 - [x] Task 8: Write CIP cost rows from the project posting paths
 - [x] Task 9: Charge Capitalize jobs through `job.fixedAssetId`
-- [ ] Task 10: Add Place in service
+- [x] Task 10: Add Place in service
 - [ ] Task 11: Post late costs to the Active asset and fix the void guards
 - [ ] Task 12: Move Straight Line depreciation to a remaining-life basis
 - [ ] Task 13: Add the capital project fields to the project and element UI
@@ -1474,3 +1474,8 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 9: in `JobForm`, a Capitalize charge number sets Complete To to Asset Under Construction and disables it, shows the target asset read-only, and turns Consume to project off. Picking another charge number returns Complete To to Inventory. The `new.tsx` loader still offers no asset list while `CONSTRUCTION_IN_PROGRESS_ENABLED` is false, so the label comes from the charge number row.
 - Task 9: a capital job keeps the Make to Asset item rule: an untracked item needs a quantity of 1.
 - Task 9: the fixture's `addCapitalAsset` adds the `fixedAsset` and `fixedAssetTransfer` sequences. The pgTAP scripts `job-completion-to-asset`, `job-completion-received-quantity`, `job-completion-operation-quantities` and `rpc-privileges` pass.
+- Task 10: `$projectId.place-in-service.tsx` is a resource route (a loader and an action, no page). `PlaceInServiceModal` loads it with a fetcher when it opens and posts to it, so it opens over any project page. The buttons that open it (element sidebar and project header) are wired in Task 13, which edits those files and adds the asset status they need.
+- Task 10: the action requires `update: projects` and `create: accounting`. `post-asset-transfer` declares `create: accounting`, as the fixed asset capitalize route does, so the plan's `update: accounting` would let a user through the route and fail in the server function.
+- Task 10: the action calls `invokeAssetTransfer` once per selected asset. Each call is its own transfer document and transaction, so one refusal leaves the others capitalized. That is the plan's intent; it is not a query loop.
+- Task 10: `projects.server.ts` gains `getProjectCapitalAssets` (the project's asset and each final-asset element's asset, with the CIP total of rows that are not `postCapitalization`, in one query) and `completeElementSubtrees` (the elements and all descendants to the default Completed state, else the first Completed state, in one recursive `UPDATE`). The plan named `updateProjectElementField`; it takes one id list and has no descendant walk, so one statement replaces it.
+- Task 10: a throwaway vitest run against this worktree's database listed both assets of a new capital project with a CIP total of 45 from 2 rows, and completed a final-asset element and its child while a third element kept its state. The rows were deleted. The script was not committed.

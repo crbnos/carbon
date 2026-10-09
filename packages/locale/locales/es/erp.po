@@ -7825,6 +7825,9 @@ msgstr "Cada monto comienza con lo que la línea tiene pendiente de facturación
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Cada monto comienza con lo que la línea tiene pendiente de reconocer."
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Cada celda muestra las personas asignadas frente a las personas que el trabajo del día necesita."
 
@@ -15621,6 +15624,9 @@ msgstr "Fijar o desfijar"
 msgid "Pinned"
 msgstr "Fijado"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "Plan"
 
@@ -22105,6 +22111,9 @@ msgstr "Este PIN no se mostrará nuevamente. Lo necesitará para salir del modo 
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Este precio se ingresó manualmente, por lo que no se aplicaron reglas de precios."
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "esta orden de compra"

@@ -7825,6 +7825,9 @@ msgstr "各金額は明細が請求待ちしている金額から始まります
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "各金額は明細が計上待ちしている金額から始まります。"
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
 
@@ -15621,6 +15624,9 @@ msgstr "ピン留めまたはピン留め解除"
 msgid "Pinned"
 msgstr "ピン留め"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "計画"
 
@@ -22105,6 +22111,9 @@ msgstr "このPINは再度表示されません。MES 端末でコンソール�
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "この発注書"

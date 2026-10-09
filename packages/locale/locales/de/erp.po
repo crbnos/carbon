@@ -7825,6 +7825,9 @@ msgstr "Jeder Betrag beginnt bei dem, was die Position übrig zu fakturieren hat
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Jeder Betrag beginnt bei dem, was die Position noch nicht verbucht hat."
 
+msgid "Each asset moves into its in-service class and starts depreciating from the in-service date."
+msgstr ""
+
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Jede Zelle zeigt die zugewiesenen Personen gegen die Personen, die die Tagesarbeit benötigt."
 
@@ -15621,6 +15624,9 @@ msgstr "Anheften oder Abheften"
 msgid "Pinned"
 msgstr "Angeheftet"
 
+msgid "Place in Service"
+msgstr ""
+
 msgid "Plan"
 msgstr "Plan"
 
@@ -22105,6 +22111,9 @@ msgstr "Diese PIN wird nicht mehr angezeigt. Sie benötigen sie, um den Konsolen
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Dieser Preis wurde manuell eingegeben, daher wurden keine Preisregeln angewendet."
+
+msgid "This project has no asset under construction."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "diese Bestellung"
