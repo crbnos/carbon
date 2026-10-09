@@ -3881,6 +3881,12 @@ msgstr "Parcourir la bibliothèque"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Parcourez la version publiée en lecture seule. Vous pouvez toujours réarranger les étapes pour nettoyer la mise en page."
 
+msgid "Browser notifications"
+msgstr "Notifications du navigateur"
+
+msgid "Browser notifications are on for this browser."
+msgstr "Les notifications du navigateur sont activées pour ce navigateur."
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7285,6 +7291,9 @@ msgstr "Direction"
 msgid "Directions"
 msgstr "Directions"
 
+msgid "Disable"
+msgstr "Désactiver"
+
 msgid "Disabled"
 msgstr "Désactivé"
 
@@ -8245,8 +8254,14 @@ msgstr "Liste vide"
 msgid "Empty work centers"
 msgstr "Postes de travail vides"
 
+msgid "Enable"
+msgstr "Activer"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Activez la journalisation d'audit dans les paramètres pour commencer à suivre les modifications apportées à vos données."
+
+msgid "Enable browser notifications"
+msgstr "Activer les notifications du navigateur"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Activez les devis numériques pour votre société. Cela vous permettra d'envoyer des devis numériques à vos clients et leur permettra de les accepter en ligne."
@@ -9101,8 +9116,14 @@ msgstr "Échec de la création du poste de travail : {0}"
 msgid "Failed to delete file from old location"
 msgstr "Impossible de supprimer le fichier de l'ancien emplacement"
 
+msgid "Failed to disable browser notifications"
+msgstr "Impossible de désactiver les notifications du navigateur"
+
 msgid "Failed to download file for moving"
 msgstr "Échec du téléchargement du fichier pour le déplacement"
+
+msgid "Failed to enable browser notifications"
+msgstr "Impossible d'activer les notifications du navigateur"
 
 msgid "Failed to fetch item costs"
 msgstr "Échec de la récupération des coûts des articles"
@@ -9826,6 +9847,9 @@ msgstr "Commencer"
 
 msgid "Get Started"
 msgstr "Commencer"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "Recevez vos notifications Carbon au fur et à mesure."
 
 msgid "Gets the summary for every agreement"
 msgstr "Obtient le résumé pour chaque accord"
@@ -14028,6 +14052,9 @@ msgstr "Pas assez de données sur l'unité"
 msgid "Not feasible"
 msgstr "Non réalisable"
 
+msgid "Not now"
+msgstr "Pas maintenant"
+
 msgid "Not reached"
 msgstr "Non atteint"
 
@@ -14130,6 +14157,9 @@ msgstr "Type de notification"
 
 msgid "Notifications"
 msgstr "Notifications"
+
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Les notifications sont bloquées pour Carbon dans les paramètres du site de ce navigateur."
 
 msgid "Notify"
 msgstr "Notifier"
@@ -21668,6 +21698,9 @@ msgstr "Cette sauvegarde n'a pas pu être complétée."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Cette sauvegarde n'a pas encore été vérifiée. Toute différence est trouvée lors de l'exécution de la restauration."
+
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "Ce navigateur ne supporte pas les notifications push. Sur iPhone ou iPad, ajoutez d'abord Carbon à l'écran d'accueil."
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "Cela ne peut pas être modifié ultérieurement — {integrationName} n'autorise qu'un seul système comptable connecté, donc le choix détermine ce que Carbon est autorisé à faire. Pour changer, vous devriez désinstaller et reconnecter."

@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { NotificationPreferenceChannel } from "@carbon/notifications";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "~/utils/supabase";
 
@@ -55,7 +57,7 @@ export async function upsertNotificationPreference(
     userId: string;
     companyId: string;
     topic: string;
-    channel: "email" | "slack";
+    channel: NotificationPreferenceChannel;
     enabled: boolean;
   }
 ) {
@@ -66,6 +68,68 @@ export async function upsertNotificationPreference(
     },
     { onConflict: "userId,companyId,channel,topic" }
   );
+}
+
+/** Reads this browser's push subscription for the user. */
+export async function getPushSubscription(
+  client: SupabaseClient<Database>,
+  args: { userId: string; endpoint: string }
+) {
+  return client
+    .from("pushSubscription")
+    .select("id")
+    .eq("userId", args.userId)
+    .eq("endpoint", args.endpoint)
+    .maybeSingle();
+}
+
+/** Saves this browser's push subscription for the user. One row per browser;
+ * companyId is the company it was enabled from. */
+export async function upsertPushSubscription(
+  client: SupabaseClient<Database>,
+  subscription: {
+    userId: string;
+    companyId: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    userAgent: string | null;
+  }
+) {
+  return client
+    .from("pushSubscription")
+    .upsert(
+      { ...subscription, updatedAt: datetime.timestamp() },
+      { onConflict: "endpoint" }
+    )
+    .select("id")
+    .single();
+}
+
+/** Removes every user's push subscription for a browser endpoint, or every
+ * user's but one with `exceptUserId`. Pass the service-role client: RLS shows
+ * a user only their own rows. */
+export async function deleteBrowserPushSubscriptions(
+  client: SupabaseClient<Database>,
+  args: { endpoint: string; exceptUserId?: string }
+) {
+  const query = client
+    .from("pushSubscription")
+    .delete()
+    .eq("endpoint", args.endpoint);
+  return args.exceptUserId ? query.neq("userId", args.exceptUserId) : query;
+}
+
+/** Removes this browser's push subscription for the user. */
+export async function deletePushSubscription(
+  client: SupabaseClient<Database>,
+  args: { userId: string; endpoint: string }
+) {
+  return client
+    .from("pushSubscription")
+    .delete()
+    .eq("userId", args.userId)
+    .eq("endpoint", args.endpoint);
 }
 
 /** @mcp delete */

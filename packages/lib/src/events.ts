@@ -52,6 +52,20 @@ export type Events = {
     };
   };
 
+  // Web Push events: one per pushSubscription row. userId is the recipient:
+  // send-push only sends when the row still belongs to them.
+  "carbon/send-push": {
+    data: {
+      subscriptionId: string;
+      userId: string;
+      companyId: string;
+      title: string;
+      body: string;
+      url: string;
+      tag: string;
+    };
+  };
+
   // Email events
   "carbon/send-email": {
     data: {

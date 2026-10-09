@@ -3881,6 +3881,12 @@ msgstr "ライブラリを参照"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "公開済バージョンを読み取り専用で閲覧できます。レイアウトを整理するためにステップを並び替えることもできます。"
 
+msgid "Browser notifications"
+msgstr "ブラウザー通知"
+
+msgid "Browser notifications are on for this browser."
+msgstr "このブラウザーではブラウザー通知が有効です。"
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7285,6 +7291,9 @@ msgstr "方向"
 msgid "Directions"
 msgstr "方向"
 
+msgid "Disable"
+msgstr "無効にする"
+
 msgid "Disabled"
 msgstr "無効"
 
@@ -8245,8 +8254,14 @@ msgstr "空のリスト"
 msgid "Empty work centers"
 msgstr "作業区がありません"
 
+msgid "Enable"
+msgstr "有効にする"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "設定で監査ログを有効にして、データへの変更の追跡を開始します。"
+
+msgid "Enable browser notifications"
+msgstr "ブラウザー通知を有効にする"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "会社のデジタル見積を有効にします。これにより、デジタル見積を得意先に送信し、オンラインで承諾させることができます。"
@@ -9101,8 +9116,14 @@ msgstr "作業区を作成できませんでした: {0}"
 msgid "Failed to delete file from old location"
 msgstr "古い場所からファイルを削除できませんでした"
 
+msgid "Failed to disable browser notifications"
+msgstr "ブラウザー通知を無効にできませんでした"
+
 msgid "Failed to download file for moving"
 msgstr "ファイルの移動用ダウンロードに失敗しました"
+
+msgid "Failed to enable browser notifications"
+msgstr "ブラウザー通知を有効にできませんでした"
 
 msgid "Failed to fetch item costs"
 msgstr "品目の原価を取得できませんでした"
@@ -9826,6 +9847,9 @@ msgstr "始めましょう"
 
 msgid "Get Started"
 msgstr "はじめる"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "Carbonからの通知がリアルタイムで届きます。"
 
 msgid "Gets the summary for every agreement"
 msgstr "すべての協定のサマリーを取得します"
@@ -14028,6 +14052,9 @@ msgstr "個データが不足しています"
 msgid "Not feasible"
 msgstr "実現不可能"
 
+msgid "Not now"
+msgstr "後で"
+
 msgid "Not reached"
 msgstr "未到達"
 
@@ -14130,6 +14157,9 @@ msgstr "通知タイプ"
 
 msgid "Notifications"
 msgstr "通知"
+
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "このブラウザのサイト設定でCarbonの通知がブロックされています。"
 
 msgid "Notify"
 msgstr "通知"
@@ -21668,6 +21698,9 @@ msgstr "このバックアップを完了できませんでした。"
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "このバックアップはまだチェックされていません。違いは復元の実行時に見つかります。"
+
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "このブラウザはプッシュ通知に対応していません。iPhoneまたはiPadの場合は、まずCarbonをホーム画面に追加してください。"
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "これは後で変更することはできません — {integrationName}は接続できる会計システムが1つだけに限定されているため、この選択はCarbonが実行できることを決定します。切り替えるには、アンインストールして再度接続する必要があります。"

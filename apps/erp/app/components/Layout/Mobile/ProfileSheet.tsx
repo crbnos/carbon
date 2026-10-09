@@ -29,12 +29,13 @@ import type { AccountMenuItem } from "~/components/AvatarMenu";
 import { useAccountMenu } from "~/components/AvatarMenu";
 import { useUser } from "~/hooks";
 import { useNotifications } from "~/hooks/useNotifications";
+import { useRestoreBrowserNotifications } from "~/hooks/usePushSubscription";
 import { path } from "~/utils/path";
 import {
   useCompanyGroups,
   useCompanySwitchRedirect
 } from "../Topbar/CompanySwitcher";
-import { NotificationsPanel } from "../Topbar/Notifications";
+import { NotificationsPanel, usePushPublicKey } from "../Topbar/Notifications";
 import { SheetRowButton, SheetRowContent, SheetRowGroup } from "./SheetRow";
 
 /** Consecutive items with the same `group`, as the desktop separators split them. */
@@ -74,6 +75,12 @@ export function ProfileSheet({
   const switchRedirect = useCompanySwitchRedirect();
   const notifications = useNotifications({
     companyId: user.company.id,
+    userId: user.id
+  });
+  // Always mounted on phones, like the desktop bell: restores a signed-back-in
+  // user's browser notifications.
+  useRestoreBrowserNotifications({
+    publicKey: usePushPublicKey(),
     userId: user.id
   });
   const unread = notifications.notifications.filter((n) => !n.read).length;

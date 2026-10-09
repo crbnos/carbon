@@ -3881,6 +3881,12 @@ msgstr "Browse library"
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 
+msgid "Browser notifications"
+msgstr "Browser notifications"
+
+msgid "Browser notifications are on for this browser."
+msgstr "Browser notifications are on for this browser."
+
 msgid "BSB"
 msgstr "BSB"
 
@@ -7285,6 +7291,9 @@ msgstr "Direction"
 msgid "Directions"
 msgstr "Directions"
 
+msgid "Disable"
+msgstr "Disable"
+
 msgid "Disabled"
 msgstr "Disabled"
 
@@ -8245,8 +8254,14 @@ msgstr "Empty list"
 msgid "Empty work centers"
 msgstr "Empty work centers"
 
+msgid "Enable"
+msgstr "Enable"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Enable audit logging in settings to start tracking changes to your data."
+
+msgid "Enable browser notifications"
+msgstr "Enable browser notifications"
 
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
@@ -9101,8 +9116,14 @@ msgstr "Failed to create work center: {0}"
 msgid "Failed to delete file from old location"
 msgstr "Failed to delete file from old location"
 
+msgid "Failed to disable browser notifications"
+msgstr "Failed to disable browser notifications"
+
 msgid "Failed to download file for moving"
 msgstr "Failed to download file for moving"
+
+msgid "Failed to enable browser notifications"
+msgstr "Failed to enable browser notifications"
 
 msgid "Failed to fetch item costs"
 msgstr "Failed to fetch item costs"
@@ -9826,6 +9847,9 @@ msgstr "Get started"
 
 msgid "Get Started"
 msgstr "Get Started"
+
+msgid "Get your Carbon notifications as they happen."
+msgstr "Get your Carbon notifications as they happen."
 
 msgid "Gets the summary for every agreement"
 msgstr "Gets the summary for every agreement"
@@ -14028,6 +14052,9 @@ msgstr "Not enough unit data"
 msgid "Not feasible"
 msgstr "Not feasible"
 
+msgid "Not now"
+msgstr "Not now"
+
 msgid "Not reached"
 msgstr "Not reached"
 
@@ -14130,6 +14157,9 @@ msgstr "Notification Type"
 
 msgid "Notifications"
 msgstr "Notifications"
+
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "Notifications are blocked for Carbon in this browser's site settings."
 
 msgid "Notify"
 msgstr "Notify"
@@ -21668,6 +21698,9 @@ msgstr "This backup could not be completed."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "This backup hasn't been checked yet. Any differences are found when the restore runs."
+
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
 
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
