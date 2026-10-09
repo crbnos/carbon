@@ -65235,6 +65235,7 @@ export type Database = {
           projectId: string
           resolution: Json | null
           salesInvoiceId: string | null
+          salesReturnOrderLineId: string | null
           serviceOrderId: string
           serviceTemplateId: string | null
           status: Database["public"]["Enums"]["serviceOrderStatus"]
@@ -65267,6 +65268,7 @@ export type Database = {
           projectId: string
           resolution?: Json | null
           salesInvoiceId?: string | null
+          salesReturnOrderLineId?: string | null
           serviceOrderId: string
           serviceTemplateId?: string | null
           status?: Database["public"]["Enums"]["serviceOrderStatus"]
@@ -65299,6 +65301,7 @@ export type Database = {
           projectId?: string
           resolution?: Json | null
           salesInvoiceId?: string | null
+          salesReturnOrderLineId?: string | null
           serviceOrderId?: string
           serviceTemplateId?: string | null
           status?: Database["public"]["Enums"]["serviceOrderStatus"]
@@ -65551,6 +65554,13 @@ export type Database = {
             columns: ["projectId", "companyId"]
             isOneToOne: false
             referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceOrder_rmaLine_fkey"
+            columns: ["salesReturnOrderLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesReturnOrderLine"
             referencedColumns: ["id", "companyId"]
           },
           {

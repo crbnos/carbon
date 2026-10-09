@@ -76867,6 +76867,9 @@ export default {
             $ref: "#/parameters/rowFilter.serviceOrder.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.serviceOrder.salesReturnOrderLineId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -77016,6 +77019,9 @@ export default {
             $ref: "#/parameters/rowFilter.serviceOrder.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.serviceOrder.salesReturnOrderLineId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -77117,6 +77123,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serviceOrder.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.salesReturnOrderLineId"
           },
           {
             $ref: "#/parameters/body.serviceOrder"
@@ -157653,6 +157662,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        salesReturnOrderLineId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -212990,6 +213003,12 @@ export default {
     },
     "rowFilter.serviceOrder.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.serviceOrder.salesReturnOrderLineId": {
+      name: "salesReturnOrderLineId",
       required: false,
       in: "query",
       type: "string"
