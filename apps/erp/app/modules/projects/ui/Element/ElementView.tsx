@@ -337,6 +337,7 @@ export function ElementView({
               elementId={element.id}
               planLines={planLines}
               laborCategories={laborCategories}
+              defaultLocationId={project?.locationId}
               isDisabled={!canUpdate}
             />
           </Section>

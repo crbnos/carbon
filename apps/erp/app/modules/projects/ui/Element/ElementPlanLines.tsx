@@ -5,12 +5,15 @@
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
+  Alert,
+  AlertDescription,
   Button,
   HStack,
   IconButton,
   Modal,
   ModalBody,
   ModalContent,
+  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalOverlay,
@@ -27,12 +30,20 @@ import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { LuPencil, LuPlus, LuTrash } from "react-icons/lu";
+import {
+  LuFactory,
+  LuPencil,
+  LuPlus,
+  LuTrash,
+  LuTriangleAlert
+} from "react-icons/lu";
+import { Link } from "react-router";
 import {
   DatePicker,
   Hidden,
   Input,
   Item,
+  Location,
   Number as NumberField,
   Select,
   Submit
@@ -42,15 +53,18 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter,
   useDateFormatter,
+  usePermissions,
   useQuantityFormatter,
   useUser
 } from "~/hooks";
 import { methodType } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import {
+  createJobFromMaterialValidator,
   projectElementCostValidator,
   projectElementLaborValidator,
-  projectElementMaterialValidator
+  projectElementMaterialValidator,
+  remainingMaterialQuantity
 } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
 
@@ -84,12 +98,15 @@ export function ElementPlanLines({
   elementId,
   planLines,
   laborCategories,
+  defaultLocationId,
   isDisabled
 }: {
   projectId: string;
   elementId: string;
   planLines: PlanLines;
   laborCategories: { id: string; name: string }[];
+  /** The project's location: where a job made from a material is built. */
+  defaultLocationId?: string | null;
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
@@ -99,11 +116,19 @@ export function ElementPlanLines({
   const methodLabels = useMethodTypeLabels();
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<Deleting | null>(null);
+  const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
+  const permissions = usePermissions();
+  const canCreateJob = permissions.can("create", "production");
   const action = path.to.projectElementPlan(projectId, elementId);
 
-  const rowActions = (onEdit: () => void, onDelete: () => void) => (
+  const rowActions = (
+    onEdit: () => void,
+    onDelete: () => void,
+    extra?: ReactNode
+  ) => (
     <Td className="w-16">
       <HStack spacing={0} className="justify-end">
+        {extra}
         <IconButton
           aria-label={t`Edit`}
           icon={<LuPencil />}
@@ -166,7 +191,17 @@ export function ElementPlanLines({
               </div>
             </Td>
             <Td className="whitespace-nowrap">
-              {methodLabels[line.methodType]}
+              <div className="flex flex-col">
+                <span>{methodLabels[line.methodType]}</span>
+                {line.job && (
+                  <Link
+                    to={path.to.job(line.job.id)}
+                    className="text-xs text-muted-foreground hover:underline"
+                  >
+                    {line.job.jobId}
+                  </Link>
+                )}
+              </div>
             </Td>
             <Td className="whitespace-nowrap tabular-nums">
               {formatQuantity(Number(line.quantity))}{" "}
@@ -187,7 +222,17 @@ export function ElementPlanLines({
                   kind: "material",
                   id: line.id,
                   name: line.item?.readableIdWithRevision ?? t`Material`
-                })
+                }),
+              line.methodType === "Make to Order" && !line.jobId ? (
+                <IconButton
+                  aria-label={t`Create Job`}
+                  icon={<LuFactory />}
+                  variant="ghost"
+                  size="sm"
+                  isDisabled={!canCreateJob}
+                  onClick={() => setCreatingJob(line)}
+                />
+              ) : null
             )}
           </Tr>
         ))}
@@ -286,6 +331,15 @@ export function ElementPlanLines({
           editing={editing}
           laborCategories={laborCategories}
           onClose={() => setEditing(null)}
+        />
+      )}
+      {creatingJob && (
+        <CreateJobModal
+          projectId={projectId}
+          elementId={elementId}
+          line={creatingJob}
+          defaultLocationId={defaultLocationId}
+          onClose={() => setCreatingJob(null)}
         />
       )}
       {deleting && (
@@ -545,6 +599,88 @@ function PlanLineModal({
           <ModalTitle>{title}</ModalTitle>
         </ModalHeader>
         {body}
+      </ModalContent>
+    </Modal>
+  );
+}
+
+/**
+ * Create Job for a Make to Order material: the quantity still needed, by the
+ * plan line's required date, at the project's location. The action
+ * redirects to the new job; a refusal shows in the modal.
+ */
+function CreateJobModal({
+  projectId,
+  elementId,
+  line,
+  defaultLocationId,
+  onClose
+}: {
+  projectId: string;
+  elementId: string;
+  line: MaterialLine;
+  defaultLocationId?: string | null;
+  onClose: () => void;
+}) {
+  const { t } = useLingui();
+  const { defaults } = useUser();
+  const fetcher = useAction<{ error?: { message: string } }>();
+  const errorMessage =
+    fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
+
+  return (
+    <Modal open onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <ValidatedForm
+          validator={createJobFromMaterialValidator}
+          method="post"
+          action={path.to.projectElementCreateJob(projectId, elementId)}
+          fetcher={fetcher}
+          defaultValues={{
+            materialId: line.id,
+            quantity: remainingMaterialQuantity(line) || Number(line.quantity),
+            dueDate: line.requiredDate ?? undefined,
+            locationId: defaultLocationId ?? defaults?.locationId ?? ""
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Create Job</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              {line.item?.readableIdWithRevision} {line.item?.name}
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <Hidden name="materialId" />
+            <VStack spacing={4}>
+              {errorMessage && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+              <NumberField
+                name="quantity"
+                label={t`Quantity`}
+                minValue={0}
+                formatOptions={INPUT_FORMAT.quantity}
+                step={INPUT_STEP.quantity}
+              />
+              <DatePicker name="dueDate" label={t`Due Date`} />
+              <Location name="locationId" label={t`Location`} />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit withBlocker={false}>
+              <Trans>Create Job</Trans>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
       </ModalContent>
     </Modal>
   );

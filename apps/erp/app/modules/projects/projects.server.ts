@@ -266,6 +266,54 @@ export async function copyProject(
 }
 
 /**
+ * What a job created on a charge number builds into: the project's cost
+ * treatment and, for Capitalize, the asset under construction (the element's
+ * own when it is a final asset, else its nearest final-asset ancestor's, else
+ * the project's), as `getChargeNumbers` resolves it. One query.
+ */
+export async function getJobChargeTarget(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    projectId: string;
+    projectElementId: string | null;
+  }
+): Promise<{
+  costTreatment: Database["public"]["Enums"]["projectCostTreatment"];
+  fixedAssetId: string | null;
+} | null> {
+  const result = await sql<{
+    costTreatment: Database["public"]["Enums"]["projectCostTreatment"];
+    fixedAssetId: string | null;
+  }>`
+    WITH RECURSIVE chain AS (
+      SELECT e."id", e."parentId", e."isFinalAsset", e."fixedAssetId", 0 AS depth
+      FROM "projectElement" e
+      WHERE e."id" = ${args.projectElementId}
+        AND e."projectId" = ${args.projectId}
+        AND e."companyId" = ${args.companyId}
+      UNION ALL
+      SELECT p."id", p."parentId", p."isFinalAsset", p."fixedAssetId", chain.depth + 1
+      FROM "projectElement" p
+      JOIN chain ON p."id" = chain."parentId"
+      WHERE p."companyId" = ${args.companyId} AND chain.depth < 100
+    )
+    SELECT
+      pr."costTreatment",
+      CASE
+        WHEN pr."costTreatment" <> 'Capitalize' THEN NULL
+        -- The nearest final asset decides, even before its asset exists.
+        WHEN EXISTS (SELECT 1 FROM chain c WHERE c."isFinalAsset") THEN
+          (SELECT c."fixedAssetId" FROM chain c WHERE c."isFinalAsset" ORDER BY c.depth LIMIT 1)
+        ELSE pr."fixedAssetId"
+      END AS "fixedAssetId"
+    FROM "project" pr
+    WHERE pr."id" = ${args.projectId} AND pr."companyId" = ${args.companyId}
+  `.execute(db);
+  return result.rows[0] ?? null;
+}
+
+/**
  * Creates the CIP assets of a capital project, in one transaction: the
  * project's own asset, and one asset per final-asset element that has none.
  * Each asset starts Under Construction at cost 0 in the project's CIP class,

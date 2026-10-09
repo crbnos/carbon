@@ -65920,6 +65920,12 @@ export default {
             $ref: "#/parameters/rowFilter.projectElementMaterial.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElementMaterial.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementMaterial.purchaseOrderLineId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -66024,6 +66030,12 @@ export default {
             $ref: "#/parameters/rowFilter.projectElementMaterial.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElementMaterial.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementMaterial.purchaseOrderLineId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -66080,6 +66092,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectElementMaterial.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementMaterial.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementMaterial.purchaseOrderLineId"
           },
           {
             $ref: "#/parameters/body.projectElementMaterial"
@@ -149351,6 +149369,18 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrderLine.id`.<fk table='purchaseOrderLine' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -202854,6 +202884,18 @@ export default {
     },
     "rowFilter.projectElementMaterial.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementMaterial.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementMaterial.purchaseOrderLineId": {
+      name: "purchaseOrderLineId",
       required: false,
       in: "query",
       type: "string"

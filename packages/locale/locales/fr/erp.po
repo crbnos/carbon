@@ -5933,6 +5933,9 @@ msgstr "Créer une prévision"
 msgid "Create Issue"
 msgstr "Créer un problème"
 
+msgid "Create Job"
+msgstr ""
+
 msgid "Create Jobs"
 msgstr "Créer des ordres de fabrication"
 

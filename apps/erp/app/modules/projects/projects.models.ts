@@ -2350,7 +2350,7 @@ export const projectCopyIdPrefixes = {
  * renumbered from 1 in the source's sequence order and returned parents
  * first; formulas name the new readable ids. What belongs to the source's
  * history is cleared: the element's asset, a test verdict, a link's suspect
- * flag and review, a material's issued quantity.
+ * flag and review, a material's issued quantity and its job or PO line.
  */
 export function planProjectCopy(
   source: ProjectCopySource,
@@ -2482,10 +2482,38 @@ export function planProjectCopy(
         reviewedBy: null
       })),
     materials: planLines(source.materials, projectCopyIdPrefixes.material).map(
-      (material) => ({ ...material, quantityIssued: 0 })
+      (material) => ({
+        ...material,
+        quantityIssued: 0,
+        jobId: null,
+        purchaseOrderLineId: null
+      })
     ),
     labor: planLines(source.labor, projectCopyIdPrefixes.labor),
     costs: planLines(source.costs, projectCopyIdPrefixes.cost),
     nextElementSequence: ordered.length + 1
   };
+}
+
+// --- Jobs and purchase order lines from plan-line materials ---------------------
+
+/** Create Job from a Make to Order plan-line material. */
+export const createJobFromMaterialValidator = z.object({
+  materialId: z.string().min(1, { message: "Material is required" }),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be greater than 0" })
+  ),
+  dueDate: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" })
+});
+
+/**
+ * The quantity a plan-line material still needs: planned less issued, never
+ * below zero.
+ */
+export function remainingMaterialQuantity(line: {
+  quantity: number | string;
+  quantityIssued: number | string | null;
+}) {
+  return Math.max(0, Number(line.quantity) - Number(line.quantityIssued ?? 0));
 }

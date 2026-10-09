@@ -46741,9 +46741,11 @@ export type Database = {
           createdBy: string
           id: string
           itemId: string
+          jobId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           projectElementId: string
           projectId: string
+          purchaseOrderLineId: string | null
           quantity: number
           quantityIssued: number
           requiredDate: string | null
@@ -46758,9 +46760,11 @@ export type Database = {
           createdBy: string
           id?: string
           itemId: string
+          jobId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           projectElementId: string
           projectId: string
+          purchaseOrderLineId?: string | null
           quantity: number
           quantityIssued?: number
           requiredDate?: string | null
@@ -46775,9 +46779,11 @@ export type Database = {
           createdBy?: string
           id?: string
           itemId?: string
+          jobId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           projectElementId?: string
           projectId?: string
+          purchaseOrderLineId?: string | null
           quantity?: number
           quantityIssued?: number
           requiredDate?: string | null
@@ -46897,6 +46903,48 @@ export type Database = {
             columns: ["itemId"]
             isOneToOne: false
             referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "openProductionOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "openPurchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLines"
             referencedColumns: ["id"]
           },
           {

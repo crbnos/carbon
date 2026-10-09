@@ -5933,6 +5933,9 @@ msgstr "예측 생성"
 msgid "Create Issue"
 msgstr "이슈 생성"
 
+msgid "Create Job"
+msgstr ""
+
 msgid "Create Jobs"
 msgstr "작업 지시 생성"
 

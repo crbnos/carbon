@@ -5933,6 +5933,9 @@ msgstr "Tahmin Oluştur"
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
 
+msgid "Create Job"
+msgstr ""
+
 msgid "Create Jobs"
 msgstr "İş emirleri oluştur"
 

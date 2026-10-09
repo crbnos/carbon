@@ -58,7 +58,7 @@
 - [x] Task 20: Add the Reader PDF
 - [x] Task 21: Add saved views and per-user preferences
 - [x] Task 22: Add project templates
-- [ ] Task 23: Add Create Job from a plan-line material
+- [x] Task 23: Add Create Job from a plan-line material
 - [ ] Task 24: Add Create PO line from a plan-line material
 - [ ] Task 25: Add charge numbers to reimbursement lines and show them on charges
 - [ ] Task 26: Add the milestone burn chart
@@ -1524,3 +1524,7 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 22: the **Copy from** value is read from the form data, not added to `projectValidator`, because `updateProject` writes every validated field to the row. The new project route lists the company's active projects, templates first, and `?copyFrom=<id>` preselects one.
 - Task 22: the project header has no menu before this task, so it gains a **More** menu with the **Template** check item and **Copy project** (the new project form with this project preselected). The Template flag posts to a new resource route, `$projectId.template.tsx` (`update: projects`), through `updateProjectTemplate`. Neither function carries an `@mcp` tag.
 - Task 22: `projects-copy.test.ts` has the plan's 4 cases. A throwaway vitest run against this worktree's database copied a project of 3 elements (2 under a parent), 1 link and 1 material: the copy was a Draft with 3 elements, the link pointed at the copied elements, and the material's issued quantity was 0. The rows were deleted. The script was not committed.
+- Task 23 (missing prerequisite): `projectElementMaterial` had no `jobId` or `purchaseOrderLineId` column. The spec names both, but the Phase 1a migration left them out, and Tasks 23 and 24 stamp them. Migration `20261009123021_project-material-job-po-line.sql` adds both (nullable, `ON DELETE SET NULL`, indexed). `job` and `purchaseOrderLine` have a single-column primary key, so the FKs are single-column, as in Task 2; with an FK, the backup restore remaps them and `ID_REF_COLUMNS` needs no entry. `planProjectCopy` (Task 22) clears both on a copied material.
+- Task 23: `insertJob` already took `projectId`, `projectElementId`, `consumeToProject` and `fixedAssetId` (Phase 1a and Task 9), so it did not change. The route is an action-only resource route; the modal in `ElementPlanLines` posts to it and shows a refusal inline. It takes the treatment and the target asset from the new `getJobChargeTarget` (`projects.server.ts`, one recursive query), which resolves the target as `getChargeNumbers` does: the nearest final asset's asset, else the project's. Statistical makes an ordinary job tagged with the charge number. A Capitalize project with no asset yet (not released) is refused.
+- Task 23: the action also runs the checks of `job+/new.tsx` that apply: `requireCompanyRecord` on the location, the unreleased change order check, `chargeNumberError` and the Make to Asset item rule. The material's `jobId` is written with the service role, because creating a job needs `create: production` and `view: projects`, not the right to edit the plan. A failure to write it is logged; the job stays.
+- Task 23: the plan-line material read embeds the job (`job:job!projectElementMaterial_jobId_fkey(id, jobId)`), and the Method cell links it. The **Create Job** row action shows for a Make to Order material with no job and needs `create: production`.

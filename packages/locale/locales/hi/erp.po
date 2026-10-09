@@ -5933,6 +5933,9 @@ msgstr "पूर्वानुमान बनाएं"
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
 
+msgid "Create Job"
+msgstr ""
+
 msgid "Create Jobs"
 msgstr "जॉब बनाएँ"
 

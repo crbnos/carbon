@@ -5933,6 +5933,9 @@ msgstr "Prognose erstellen"
 msgid "Create Issue"
 msgstr "Problem erstellen"
 
+msgid "Create Job"
+msgstr ""
+
 msgid "Create Jobs"
 msgstr "Fertigungsaufträge erstellen"
 
