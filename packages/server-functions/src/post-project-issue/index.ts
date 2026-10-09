@@ -2,9 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getCompanyTimeZone } from "@carbon/database";
+import { Constants, getCompanyTimeZone } from "@carbon/database";
 import { inOrder, rpcRows, single } from "@carbon/database/rows";
-import { datetime, round, settleQuantity } from "@carbon/utils";
+import {
+  datetime,
+  round,
+  type ServiceCoverage,
+  settleQuantity
+} from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
@@ -17,11 +22,19 @@ import {
   assertChargeable,
   buildProjectLedgerRow,
   loadProjectPostingContexts,
+  loadServicePostingContext,
   ProjectChargeError,
   projectPostingKey,
   resolveProjectPostingAccount,
+  serviceChargeCoverage,
   startElementsOnFirstCharge
 } from "../lib/project-posting";
+import {
+  findServiceIssueToReturn,
+  installServicePart,
+  type ServiceIssue,
+  uninstallServicePart
+} from "./service";
 
 export const postProjectIssueInput = z.object({
   projectId: z.string(),
@@ -31,7 +44,16 @@ export const postProjectIssueInput = z.object({
   storageUnitId: z.string().optional().nullable(),
   trackedEntityId: z.string().optional().nullable(),
   quantity: z.number().gt(0),
-  direction: z.enum(["Issue", "Return"])
+  direction: z.enum(["Issue", "Return"]),
+  /** A Service project's issue: the user's coverage, with its reason. */
+  coverage: z
+    .enum(Constants.public.Enums.serviceCoverage)
+    .optional()
+    .nullable(),
+  coverageReason: z.string().optional().nullable(),
+  /** A Service project's return: the issue it reverses (else the latest
+   *  open issue of the same part to the node). */
+  returnOfProjectLedgerId: z.string().optional().nullable()
 });
 
 export type PostProjectIssueResult = {
@@ -53,6 +75,12 @@ export type PostProjectIssueResult = {
  * A Return values the stock at the item's current cost (the increase rule of
  * `bookAdjustment`), and the ledger row uses that same cost, so the project
  * total equals the GL.
+ *
+ * On a Service project (By Coverage) the charge's coverage decides the
+ * account: the user's override with a reason, else `resolveCoverage` for a
+ * part. The issue writes a billable item and installs the part in the
+ * customer asset (`installServicePart`). A return reverses one whole issue at
+ * its coverage (`reversalOfId` on the ledger row) and undoes the install.
  */
 const postProjectIssue = defineServerFn({
   name: "post-project-issue",
@@ -120,7 +148,7 @@ const postProjectIssue = defineServerFn({
           db,
           "item",
           { id: itemId, companyId },
-          { columns: ["itemTrackingType", "replenishmentSystem"] }
+          { columns: ["name", "itemTrackingType", "replenishmentSystem"] }
         ),
       () =>
         single(
@@ -170,7 +198,8 @@ const postProjectIssue = defineServerFn({
             "ItemPostingGroup",
             "Location",
             "Project",
-            "ProjectElement"
+            "ProjectElement",
+            "Customer"
           ])
           .execute(),
       () =>
@@ -235,7 +264,48 @@ const postProjectIssue = defineServerFn({
       if (!context) throw new NotFoundError("Project element not found");
       assertChargeable(context, isIssue ? "new" : "commitment");
 
-      const resolved = resolveProjectPostingAccount(context, postingDate);
+      // A Service project: the coverage decides the account.
+      const service =
+        context.project.costTreatment === "By Coverage"
+          ? await loadServicePostingContext(trx, {
+              companyId,
+              projectId,
+              elementId: projectElementId
+            })
+          : null;
+      if (context.project.costTreatment === "By Coverage" && !service) {
+        throw new ProjectChargeError(
+          "No service order owns the project of this issue"
+        );
+      }
+      let coverage: ServiceCoverage | null = null;
+      let coverageReason: string | null = null;
+      let returnedIssue: ServiceIssue | null = null;
+      if (service && isIssue) {
+        const override = input.coverage && input.coverageReason?.trim();
+        coverage = override
+          ? input.coverage!
+          : serviceChargeCoverage(service, "Part", postingDate);
+        coverageReason = override ? input.coverageReason!.trim() : null;
+      } else if (service) {
+        returnedIssue = await findServiceIssueToReturn(trx, {
+          companyId,
+          projectId,
+          projectElementId,
+          itemId,
+          trackedEntityId,
+          quantity,
+          returnOfProjectLedgerId: input.returnOfProjectLedgerId ?? null
+        });
+        coverage = returnedIssue.coverage;
+        coverageReason = returnedIssue.coverageReason;
+      }
+
+      const resolved = resolveProjectPostingAccount(
+        context,
+        postingDate,
+        coverage
+      );
       const { treatment, accountId } = resolved;
       const isStatistical = treatment === "Statistical";
       const offsetAccount = isStatistical
@@ -317,7 +387,9 @@ const postProjectIssue = defineServerFn({
               offsetAccount,
               offsetDescription: isStatistical
                 ? "Indirect Cost"
-                : "Project Material",
+                : service
+                  ? "Service Material"
+                  : "Project Material",
               sourceType: "Project Issue",
               description: `${isIssue ? "Issue to" : "Return from"} Project ${
                 context.project.identifier || context.project.name || projectId
@@ -333,6 +405,9 @@ const postProjectIssue = defineServerFn({
                         valueId: projectElementId
                       }
                     ]
+                  : []),
+                ...(service?.customerId
+                  ? [{ entityType: "Customer", valueId: service.customerId }]
                   : [])
               ]
             }
@@ -355,12 +430,41 @@ const postProjectIssue = defineServerFn({
               itemId,
               quantity: isIssue ? quantity : -quantity,
               amount: isIssue ? booked.cost : -booked.cost,
+              reversalOfId: returnedIssue?.id ?? null,
+              coverage,
+              coverageReason,
               createdBy: userId
             })
           )
           .returning("id")
           .executeTakeFirstOrThrow();
         projectLedgerId = row.id;
+
+        if (service && isIssue && coverage) {
+          await installServicePart(trx, {
+            companyId,
+            userId,
+            service,
+            projectId,
+            projectElementId,
+            projectLedgerId: row.id,
+            itemId,
+            itemName: itemResult.data.name,
+            trackedEntityId,
+            quantity,
+            postingDate,
+            coverage
+          });
+        } else if (service && returnedIssue) {
+          await uninstallServicePart(trx, {
+            companyId,
+            userId,
+            service,
+            projectElementId,
+            issueLedgerId: returnedIssue.id,
+            returnLedgerId: row.id
+          });
+        }
 
         // An issue to a Capitalize project builds its asset.
         await writeProjectCipRows(trx, {

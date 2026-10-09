@@ -958,11 +958,15 @@ export async function reverseProjectLedgerRows(
 /** What a charge on a Service project needs to decide its coverage and price. */
 export type ServicePostingContext = {
   serviceOrderId: string;
+  /** The readable id (SVC000123). */
+  serviceOrderReadableId: string;
   orderType: Database["public"]["Enums"]["serviceOrderType"];
   /** The order's customer (null for a Refurbishment), for the Customer dimension. */
   customerId: string | null;
   customerContractId: string | null;
   customerAssetId: string | null;
+  /** The asset's serial: the output of an installed part's genealogy. */
+  assetTrackedEntityId: string | null;
   laborWarrantyEndDate: string | null;
   partsWarrantyEndDate: string | null;
   /** The node's installed component: the open component holding its serial. */
@@ -1000,11 +1004,13 @@ export async function loadServicePostingContexts(
         )
         .select([
           "serviceOrder.id",
+          "serviceOrder.serviceOrderId",
           "serviceOrder.projectId",
           "serviceOrder.type",
           "serviceOrder.customerId",
           "serviceOrder.customerContractId",
           "serviceOrder.customerAssetId",
+          "customerAsset.trackedEntityId as assetTrackedEntityId",
           "customerAsset.laborWarrantyEndDate",
           "customerAsset.partsWarrantyEndDate"
         ])
@@ -1107,10 +1113,12 @@ export async function loadServicePostingContexts(
       : undefined;
     contexts.set(projectPostingKey(ref.projectId, ref.projectElementId), {
       serviceOrderId: order.id,
+      serviceOrderReadableId: order.serviceOrderId,
       orderType: order.type,
       customerId: order.customerId,
       customerContractId: order.customerContractId,
       customerAssetId: order.customerAssetId,
+      assetTrackedEntityId: order.assetTrackedEntityId ?? null,
       // DATE columns arrive as YYYY-MM-DD strings from node-postgres.
       laborWarrantyEndDate: order.laborWarrantyEndDate ?? null,
       partsWarrantyEndDate: order.partsWarrantyEndDate ?? null,

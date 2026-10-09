@@ -40,7 +40,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 6: Add `resolveCoverage` and the coverage account
 - [x] Task 7: Add `buildBillableItem` to the project posting helpers
 - [x] Task 8: Post service time in `post-timesheet`
-- [ ] Task 9: Post service parts and install components in `post-project-issue`
+- [x] Task 9: Post service parts and install components in `post-project-issue`
 - [ ] Task 10: Add `post-project-expense` and the coverage reclass
 - [ ] Task 11: Create customer assets in `post-shipment`
 - [ ] Task 12: Stop the second stock relief and release billable item stamps
@@ -1220,3 +1220,9 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 8: a Service entry's journal line says "Service Labor" and carries the Customer dimension (the order's customer), as the spec's *Accounting* section asks. The billable item's description is the entry's note, else "Labor", and its `itemId` is the service labor item.
 - Task 8: a Service entry whose project no service order owns is refused ("No service order owns the project of this timesheet entry").
 - Task 8: the fixture gains `addServiceOrder` (`project-posting-test-fixture.ts`). The suite adds 3 cases: a Draft Standard entry stays unposted, the plan's Warranty case (Dr Warranty Expense 170.00 / Cr Labor Absorption, a 0.00 billable item, Customer tag), and a correction of a Billable entry (credit to Cost of Goods Sold, the item written off). The full server-functions suite passes (439) except `get-accounting-period` and `post-charge-concurrency`, which pass alone (the known shared-database races).
+- Task 9: `post-project-issue` takes 3 optional inputs: `coverage` and `coverageReason` (an override counts only with a reason) and `returnOfProjectLedgerId`. A Service project is one whose `costTreatment` is By Coverage; the CHECK ties it to `projectType`, so a Standard issue pays no extra query.
+- Task 9 (🛑 design decision): a return was not linked to its issue. A Service return now reverses one whole open issue: the named one, else the latest open issue of the same item and serial or batch to the same node (`findServiceIssueToReturn`). The return's ledger row sets `reversalOfId` to the issue's row, which closes it, and posts at the issue's coverage. A partial return of a Service issue is refused ("Return the whole quantity of one issue"). Standard returns are unchanged.
+- Task 9: the install, the replace and the genealogy live in `post-project-issue/service.ts`. The `Service` activity carries the attribute `{ "Project Issue": <ledger id> }`, so a return deletes exactly the activity its issue wrote. The return restores the replaced component only when no other part this order installed still sits on the node.
+- Task 9: the `Service` activity is written for any tracked issue (serial or batch). Build from part still nets only `Consume` and `Unconsume`, so it does not show a `Service` replacement yet.
+- Task 9: the service context gains `serviceOrderReadableId` and `assetTrackedEntityId` (same query). The journal carries the Customer dimension and says "Service Material". The billable item's description is the item name, priced at the item's `itemUnitSalePrice.unitSalePrice`.
+- Task 9: 2 new database tests (the plan's install and return cases). The project server-function tests (44) pass; `@carbon/server-functions` and `erp` typecheck green.
