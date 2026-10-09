@@ -13,15 +13,16 @@
 // deferred revenue are as of the day before the cutover
 // (`getDepreciationAfterCutover`, `getDeferredRevenueItems`).
 //
-// Ported from apps/erp/app/modules/accounting/accounting.server.ts, which the
-// server function cannot import:
-// - `postDepreciationRun`: one journal per line with a book amount, and one
-//   deferred tax journal per run and month, with today's tax settings;
-// - `postDisposal`: the scrap journal;
-// - `postRevenueRecognitionRun`: one journal per run and month, two lines per
-//   row, signed by account class, and the journal
-//   columns of the run, the contract ledger entries and the lease schedule
-//   lines.
+// The lines are built by the same builders the ERP posts runs with
+// (@carbon/database/run-journals):
+// - `buildDepreciationJournals`: one journal per line with a book amount, and
+//   `buildDeferredTaxJournals`: one deferred tax journal per run and month,
+//   with today's tax settings;
+// - `buildDisposalJournal`: the scrap journal;
+// - `buildRecognitionJournals`: one journal per run and month, two lines per
+//   row, signed by account class; this file sets the journal columns of the
+//   run, the schedule rows, the contract ledger entries and the lease
+//   schedule lines.
 // The ERP dates a month in a Closed period on the run's period end; there is
 // no period yet, so every journal takes its own month.
 //
@@ -47,27 +48,31 @@ import {
   REBUILT_DISPOSAL_METHOD
 } from "@carbon/database/legacy-documents";
 import {
-  type AccountClass,
-  chunkArray,
-  equals,
-  isAccountClass,
-  round,
-  toStoredAmount
-} from "@carbon/utils";
+  buildDeferredTaxJournals,
+  buildDepreciationJournals,
+  buildDisposalJournal,
+  buildRecognitionJournals,
+  type DeferredTaxSettings,
+  type DepreciationRunLine,
+  type Disposal,
+  deferredTaxSettings,
+  type RecognitionScheduleRow,
+  type RecognitionSources,
+  type RunJournal,
+  recognitionAccountWithoutClass
+} from "@carbon/database/run-journals";
+import { type AccountClass, chunkArray, isAccountClass } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { InvalidInputError } from "../../errors";
 import {
-  type DimensionEntityType,
   insertProvisionalJournals,
   type LegacyJournal,
-  type LegacyJournalLine,
   ROWS_PER_STATEMENT,
   readByIds
 } from "./write";
 
-type Enums = Database["public"]["Enums"];
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 
 /** The runs and disposals the enable wrote a journal for. */
@@ -79,170 +84,79 @@ export type LegacyRunCounts = Pick<
 /** A journal and the rows that store its id. */
 type Built<T> = { journal: LegacyJournal; attach: T };
 
+/** A built run journal, dated, with a new reference on each line. */
+function legacyJournal(
+  journal: RunJournal,
+  postingDate: string
+): LegacyJournal {
+  return {
+    description: journal.description,
+    postingDate,
+    sourceType: journal.sourceType,
+    lines: journal.lines.map((line) => ({
+      ...line,
+      journalLineReference: nanoid()
+    }))
+  };
+}
+
 /** The month end of a `YYYY-MM-DD` date. */
 function monthEndOf(date: string): string {
   return endOfMonth(parseDate(date)).toString();
-}
-
-function line(
-  accountId: string,
-  description: string,
-  amount: number,
-  dimensions: LegacyJournalLine["dimensions"],
-  document: Pick<LegacyJournalLine, "documentType" | "documentId"> = {}
-): LegacyJournalLine {
-  return {
-    accountId,
-    description,
-    amount,
-    journalLineReference: nanoid(),
-    ...document,
-    dimensions
-  };
 }
 
 // ---------------------------------------------------------------------------
 // Depreciation
 // ---------------------------------------------------------------------------
 
-export type DepreciationRunLineRow = {
-  id: string;
+export type DepreciationRunLineRow = DepreciationRunLine & {
   depreciationRunId: string;
   runReadableId: string;
-  /** The line's month, else the run's period end. */
-  monthEnd: string;
-  amount: number;
-  taxAmount: number | null;
   journalId: string | null;
   deferredTaxJournalId: string | null;
-  assetReadableId: string;
-  locationId: string | null;
-  fixedAssetClassId: string;
-  depreciationExpenseAccountId: string;
-  accumulatedDepreciationAccountId: string;
-};
-
-function assetDimensions(row: {
-  locationId: string | null;
-  fixedAssetClassId: string;
-}): Partial<Record<DimensionEntityType, string | null>> {
-  return { Location: row.locationId, FixedAssetClass: row.fixedAssetClassId };
-}
-
-/** One journal per line with a book amount and no journal, as
- *  `postDepreciationRun` writes it (accounting.server.ts). */
-export function buildDepreciationJournals(
-  lines: DepreciationRunLineRow[]
-): Built<{ runId: string; lineIds: string[] }>[] {
-  return lines
-    .filter((row) => row.journalId === null && !equals(row.amount, 0))
-    .map((row) => ({
-      journal: {
-        description: `Depreciation: ${row.assetReadableId}`,
-        postingDate: row.monthEnd,
-        sourceType: "Asset Depreciation",
-        lines: [
-          line(
-            row.depreciationExpenseAccountId,
-            "Depreciation Expense",
-            toStoredAmount(row.amount, 0, "Expense"),
-            assetDimensions(row)
-          ),
-          line(
-            row.accumulatedDepreciationAccountId,
-            "Accumulated Depreciation",
-            toStoredAmount(0, row.amount, "Asset"),
-            assetDimensions(row)
-          )
-        ]
-      },
-      attach: { runId: row.depreciationRunId, lineIds: [row.id] }
-    }));
-}
-
-export type DeferredTaxSettings = {
-  taxRate: number;
-  dtlAccountId: string;
-  dtExpenseAccountId: string;
 };
 
 /**
- * One deferred tax journal per run and month with no deferred tax journal,
- * as `postDepreciationRun` writes it (accounting.server.ts), with
- * today's settings. A month whose lines all have no tax amount was built
- * with tax depreciation off, so it had no deferred tax journal.
+ * The depreciation journals the legacy lines miss: one per line with a book
+ * amount and no journal, and one deferred tax journal per run and month with
+ * none, with today's settings. A month whose lines all have no tax amount
+ * was built with tax depreciation off, so it had no deferred tax journal.
  */
-export function buildDeferredTaxJournals(
-  lines: DepreciationRunLineRow[],
+export function buildLegacyDepreciationJournals(
+  rows: DepreciationRunLineRow[],
   settings: DeferredTaxSettings | null
-): Built<{ runId: string; lineIds: string[] }>[] {
-  if (!settings) return [];
-  const { taxRate, dtlAccountId, dtExpenseAccountId } = settings;
-  const months = Map.groupBy(
-    lines.filter((row) => row.deferredTaxJournalId === null),
-    (row) => `${row.depreciationRunId}|${row.monthEnd}`
+): {
+  depreciation: Built<{ runId: string; lineIds: string[] }>[];
+  deferredTax: Built<{ runId: string; lineIds: string[] }>[];
+} {
+  const runByLine = new Map(rows.map((row) => [row.id, row.depreciationRunId]));
+  const depreciation = buildDepreciationJournals(
+    rows.filter((row) => row.journalId === null)
+  ).map((journal) => ({
+    journal: legacyJournal(journal, journal.monthEnd),
+    attach: { runId: runByLine.get(journal.lineId)!, lineIds: [journal.lineId] }
+  }));
+
+  const runs = Map.groupBy(
+    rows.filter((row) => row.deferredTaxJournalId === null),
+    (row) => row.depreciationRunId
   );
-  const built: Built<{ runId: string; lineIds: string[] }>[] = [];
-  for (const monthLines of months.values()) {
-    if (monthLines.every((row) => row.taxAmount === null)) continue;
-    const first = monthLines[0]!;
-    const diffByGroup = new Map<
-      string,
-      { locationId: string | null; fixedAssetClassId: string; diff: number }
-    >();
-    for (const row of monthLines) {
-      const diff = (row.taxAmount ?? 0) - row.amount;
-      const key = `${row.locationId ?? ""}|${row.fixedAssetClassId}`;
-      const existing = diffByGroup.get(key);
-      if (existing) existing.diff += diff;
-      else
-        diffByGroup.set(key, {
-          locationId: row.locationId,
-          fixedAssetClassId: row.fixedAssetClassId,
-          diff
-        });
-    }
-    const total = [...diffByGroup.values()].reduce(
-      (sum, group) => sum + group.diff,
-      0
+  const deferredTax = [...runs].flatMap(([runId, runLines]) => {
+    const taxedMonths = new Set(
+      runLines
+        .filter((row) => row.taxAmount !== null)
+        .map((row) => row.monthEnd)
     );
-    const dtlAmount = Math.abs(total * (taxRate / 100));
-    if (dtlAmount <= 0.01) continue;
-    const isLiability = total > 0;
-    const journalLines = [...diffByGroup.values()]
-      .filter((group) => Math.abs(group.diff * (taxRate / 100)) > 0.01)
-      .flatMap((group) => {
-        const amount = round(Math.abs(group.diff * (taxRate / 100)));
-        const dimensions = assetDimensions(group);
-        return [
-          line(
-            isLiability ? dtExpenseAccountId : dtlAccountId,
-            isLiability ? "Deferred Tax Expense" : "Deferred Tax Liability",
-            toStoredAmount(amount, 0, isLiability ? "Expense" : "Liability"),
-            dimensions
-          ),
-          line(
-            isLiability ? dtlAccountId : dtExpenseAccountId,
-            isLiability ? "Deferred Tax Liability" : "Deferred Tax Benefit",
-            toStoredAmount(0, amount, isLiability ? "Liability" : "Expense"),
-            dimensions
-          )
-        ];
-      });
-    built.push({
-      journal: {
-        description: `Deferred Tax: Depreciation ${first.runReadableId}`,
-        postingDate: first.monthEnd,
-        sourceType: "Asset Depreciation",
-        lines: journalLines
-      },
-      attach: {
-        runId: first.depreciationRunId,
-        lineIds: monthLines.map((row) => row.id)
-      }
-    });
-  }
-  return built;
+    return buildDeferredTaxJournals({
+      runReadableId: runLines[0]!.runReadableId,
+      lines: runLines.filter((row) => taxedMonths.has(row.monthEnd)),
+      settings
+    }).map((journal) => ({
+      journal: legacyJournal(journal, journal.monthEnd),
+      attach: { runId, lineIds: journal.lineIds }
+    }));
+  });
+  return { depreciation, deferredTax };
 }
 
 async function loadDepreciationRunLines(
@@ -275,71 +189,17 @@ async function loadDepreciationRunLines(
 // Disposal
 // ---------------------------------------------------------------------------
 
-export type DisposalRow = {
-  id: string;
-  assetReadableId: string;
-  disposalDate: string;
-  acquisitionCost: number;
-  accumulatedDepreciation: number;
-  locationId: string | null;
-  fixedAssetClassId: string;
-  assetAccountId: string;
-  accumulatedDepreciationAccountId: string;
-  lossOnDisposalAccountId: string;
-};
-
-/** The scrap journal, as `postDisposal` writes it (accounting.server.ts):
- *  proceeds are 0, so the whole net book value is a loss. */
-export function buildDisposalJournal(row: DisposalRow): LegacyJournal {
-  const nbv = row.acquisitionCost - row.accumulatedDepreciation;
-  const dimensions = assetDimensions(row);
-  const lines: LegacyJournalLine[] = [];
-  if (row.accumulatedDepreciation > 0) {
-    lines.push(
-      line(
-        row.accumulatedDepreciationAccountId,
-        "Clear accumulated depreciation",
-        toStoredAmount(row.accumulatedDepreciation, 0, "Asset"),
-        dimensions
-      )
-    );
-  }
-  if (nbv > 0) {
-    lines.push(
-      line(
-        row.lossOnDisposalAccountId,
-        "Loss on disposal (scrap)",
-        toStoredAmount(nbv, 0, "Expense"),
-        dimensions
-      )
-    );
-  }
-  lines.push(
-    line(
-      row.assetAccountId,
-      "Remove asset at cost",
-      toStoredAmount(0, row.acquisitionCost, "Asset"),
-      dimensions
-    )
-  );
-  return {
-    description: `Asset Disposal: ${row.assetReadableId} (${REBUILT_DISPOSAL_METHOD})`,
-    postingDate: row.disposalDate,
-    sourceType: "Asset Disposal",
-    lines
-  };
-}
-
 /** Scrap disposals on or after the cutover with no journal. The asset's
  *  cost and accumulated depreciation did not change after its disposal. */
 async function loadDisposals(
   trx: KyselyTx,
   companyId: string,
   cutoverDate: string
-): Promise<DisposalRow[]> {
+): Promise<(Disposal & { id: string })[]> {
   const rows = await legacyDisposals(trx, { companyId, cutoverDate }).execute();
   return rows.map((row) => ({
     ...row,
+    disposalMethod: REBUILT_DISPOSAL_METHOD,
     acquisitionCost: Number(row.acquisitionCost),
     accumulatedDepreciation: Number(row.accumulatedDepreciation)
   }));
@@ -349,134 +209,85 @@ async function loadDisposals(
 // Revenue recognition
 // ---------------------------------------------------------------------------
 
-type RevenueScheduleType = Enums["revenueScheduleType"];
-
-const REVENUE_LINE_DESCRIPTIONS: Record<
-  RevenueScheduleType,
-  { debit: string; credit: string }
-> = {
-  Deferral: {
-    debit: "Deferred revenue released",
-    credit: "Revenue recognized"
-  },
-  Accrual: { debit: "Unbilled rent accrued", credit: "Rental income accrued" },
-  Interest: {
-    debit: "Net investment interest",
-    credit: "Lease interest income"
-  }
-};
-
-export type RecognitionRow = {
-  scheduleId: string;
+export type RecognitionRow = RecognitionScheduleRow & {
   runId: string;
   runReadableId: string;
   runPeriodEnd: string;
-  scheduledDate: string;
-  type: RevenueScheduleType;
-  /** The run line's amount, as the run posted it. */
-  amount: number;
-  debitAccountId: string;
-  creditAccountId: string;
-  isContractRow: boolean;
-  rentalLeaseScheduleLineId: string | null;
-  document: Pick<LegacyJournalLine, "documentType" | "documentId">;
-  dimensions: Partial<Record<DimensionEntityType, string | null>>;
 };
 
 /**
- * One journal per run and month, two lines per row with an amount, as
- * `postRevenueRecognitionRun` writes it (accounting.server.ts). A
- * negative row (a credit memo's deferral) reverses the legs.
+ * The journals of the legacy recognition rows, one per run and month (the
+ * row's `postingDate` is its month end). The run's journal is the one of its
+ * own period, else its latest month's.
  */
-export function buildRecognitionJournals(
+export function buildLegacyRecognitionJournals(
   rows: RecognitionRow[],
+  sources: RecognitionSources,
   classById: Map<string, AccountClass>
 ): Built<{
   runId: string;
-  runPeriodEnd: string;
-  monthEnd: string;
   scheduleIds: string[];
+  leaseScheduleLineIds: string[];
+  isRunJournal: boolean;
 }>[] {
-  const groups = Map.groupBy(
-    rows,
-    (row) => `${row.runId}|${monthEndOf(row.scheduledDate)}`
+  const unclassified = recognitionAccountWithoutClass(rows, classById);
+  if (unclassified) {
+    throw new InvalidInputError(
+      `Account ${unclassified} on the revenue schedule has no class. Set its class in Accounting → Chart of Accounts.`
+    );
+  }
+  return [...Map.groupBy(rows, (row) => row.runId)].flatMap(
+    ([runId, runRows]) => {
+      const { journals, runJournal } = buildRecognitionJournals({
+        runReadableId: runRows[0]!.runReadableId,
+        runPeriodEnd: runRows[0]!.runPeriodEnd,
+        rows: runRows,
+        sources,
+        classById
+      });
+      return journals.map((journal) => ({
+        journal: legacyJournal(journal, journal.postingDate),
+        attach: {
+          runId,
+          scheduleIds: journal.scheduleIds,
+          leaseScheduleLineIds: journal.leaseScheduleLineIds,
+          isRunJournal: journal === runJournal
+        }
+      }));
+    }
   );
-  return [...groups.values()].map((groupRows) => {
-    const first = groupRows[0]!;
-    const monthEnd = monthEndOf(first.scheduledDate);
-    const lines = groupRows.flatMap((row) => {
-      if (row.amount === 0) return [];
-      const descriptions =
-        row.isContractRow && row.type === "Accrual"
-          ? { debit: "Contract asset accrued", credit: "Revenue recognized" }
-          : REVENUE_LINE_DESCRIPTIONS[row.type];
-      const magnitude = Math.abs(row.amount);
-      const debitClass = classById.get(row.debitAccountId);
-      const creditClass = classById.get(row.creditAccountId);
-      if (!debitClass || !creditClass) {
-        throw new InvalidInputError(
-          `Account ${debitClass ? row.creditAccountId : row.debitAccountId} on the revenue schedule has no class. Set its class in Accounting → Chart of Accounts.`
-        );
-      }
-      const debitAmount =
-        row.amount > 0
-          ? toStoredAmount(magnitude, 0, debitClass)
-          : toStoredAmount(0, magnitude, debitClass);
-      const creditAmount =
-        row.amount > 0
-          ? toStoredAmount(0, magnitude, creditClass)
-          : toStoredAmount(magnitude, 0, creditClass);
-      return [
-        line(
-          row.debitAccountId,
-          descriptions.debit,
-          debitAmount,
-          row.dimensions,
-          row.document
-        ),
-        line(
-          row.creditAccountId,
-          descriptions.credit,
-          creditAmount,
-          row.dimensions,
-          row.document
-        )
-      ];
-    });
-    return {
-      journal: {
-        description: `Revenue Recognition ${first.runReadableId}`,
-        postingDate: monthEnd,
-        sourceType: "Revenue Recognition",
-        lines
-      },
-      attach: {
-        runId: first.runId,
-        runPeriodEnd: first.runPeriodEnd,
-        monthEnd,
-        scheduleIds: groupRows.map((row) => row.scheduleId)
-      }
-    };
-  });
 }
 
 /**
  * Schedule rows a Posted run recognized on or after the cutover, with no
- * journal, and the source each row's journal lines reference: the invoice,
- * else the rental agreement, else the contract, as
- * `postRevenueRecognitionRun` references them.
+ * journal, the sources their journal lines reference (the invoice, else the
+ * rental agreement, else the contract) and the class of their accounts.
  */
 async function loadRecognitionRows(
   trx: KyselyTx,
   companyId: string,
   companyGroupId: string,
   cutoverDate: string
-): Promise<{ rows: RecognitionRow[]; classById: Map<string, AccountClass> }> {
+): Promise<{
+  rows: RecognitionRow[];
+  sources: RecognitionSources;
+  classById: Map<string, AccountClass>;
+}> {
   const scheduled = await legacyRecognitionSchedule(trx, {
     companyId,
     cutoverDate
   }).execute();
-  if (scheduled.length === 0) return { rows: [], classById: new Map() };
+  if (scheduled.length === 0) {
+    return {
+      rows: [],
+      sources: {
+        invoiceLines: new Map(),
+        rentalLines: new Map(),
+        contractLines: new Map()
+      },
+      classById: new Map()
+    };
+  }
 
   const invoiceLines = await readByIds(
     scheduled.map((row) => row.salesInvoiceLineId),
@@ -562,58 +373,33 @@ async function loadRecognitionRows(
     if (isAccountClass(account.class)) classById.set(account.id, account.class);
   }
 
-  const invoiceLineById = new Map(invoiceLines.map((row) => [row.id, row]));
-  const rentalLineById = new Map(rentalLines.map((row) => [row.id, row]));
-  const contractLineById = new Map(contractLines.map((row) => [row.id, row]));
-
-  const rows = scheduled.map((row): RecognitionRow => {
-    const invoice = row.salesInvoiceLineId
-      ? invoiceLineById.get(row.salesInvoiceLineId)
-      : undefined;
-    const rental =
-      !invoice && row.rentalAgreementLineId
-        ? rentalLineById.get(row.rentalAgreementLineId)
-        : undefined;
-    const contract =
-      !invoice && !rental && row.customerContractLineId
-        ? contractLineById.get(row.customerContractLineId)
-        : undefined;
-    const document: RecognitionRow["document"] = invoice
-      ? { documentType: "Invoice", documentId: invoice.invoiceId }
-      : rental
-        ? {
-            documentType: "Rental Agreement",
-            documentId: rental.rentalAgreementId
-          }
-        : contract
-          ? {
-              documentType: "Contract",
-              documentId: contract.customerContractId
-            }
-          : {};
-    const source = invoice ?? rental ?? contract;
-    return {
+  const rows = scheduled.map(
+    (row): RecognitionRow => ({
       scheduleId: row.scheduleId,
       runId: row.runId,
       runReadableId: row.runReadableId,
       runPeriodEnd: row.runPeriodEnd,
-      scheduledDate: row.scheduledDate,
+      // Every journal takes its own month: there is no period yet.
+      postingDate: monthEndOf(row.scheduledDate),
       type: row.type,
       amount: Number(row.amount),
       debitAccountId: row.debitAccountId,
       creditAccountId: row.creditAccountId,
-      isContractRow: row.customerContractLineId !== null,
-      rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId,
-      document,
-      dimensions: {
-        Customer: source?.customerId ?? null,
-        Item: source?.itemId ?? null,
-        Location: source && "locationId" in source ? source.locationId : null,
-        Project: source && "projectId" in source ? source.projectId : null
-      }
-    };
-  });
-  return { rows, classById };
+      salesInvoiceLineId: row.salesInvoiceLineId,
+      rentalAgreementLineId: row.rentalAgreementLineId,
+      customerContractLineId: row.customerContractLineId,
+      rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId
+    })
+  );
+  return {
+    rows,
+    sources: {
+      invoiceLines: new Map(invoiceLines.map((row) => [row.id, row])),
+      rentalLines: new Map(rentalLines.map((row) => [row.id, row])),
+      contractLines: new Map(contractLines.map((row) => [row.id, row]))
+    },
+    classById
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -686,34 +472,37 @@ export async function journalLegacyRuns(
     .select(["assetTaxDepreciationEnabled", "assetTaxRate"])
     .where("id", "=", companyId)
     .executeTakeFirst();
-  const taxRate = Number(settings?.assetTaxRate ?? 0);
-  const taxSettings: DeferredTaxSettings | null =
-    settings?.assetTaxDepreciationEnabled &&
-    taxRate &&
-    defaults.deferredTaxLiabilityAccountId &&
-    defaults.deferredTaxExpenseAccountId
-      ? {
-          taxRate,
-          dtlAccountId: defaults.deferredTaxLiabilityAccountId,
-          dtExpenseAccountId: defaults.deferredTaxExpenseAccountId
-        }
-      : null;
+  const taxSettings = deferredTaxSettings({
+    enabled: settings?.assetTaxDepreciationEnabled,
+    taxRate: Number(settings?.assetTaxRate ?? 0),
+    dtlAccountId: defaults.deferredTaxLiabilityAccountId,
+    dtExpenseAccountId: defaults.deferredTaxExpenseAccountId
+  });
 
   const runLines = await loadDepreciationRunLines(trx, companyId, cutoverDate);
-  const depreciation = buildDepreciationJournals(runLines);
-  const deferredTax = buildDeferredTaxJournals(runLines, taxSettings);
+  const { depreciation, deferredTax } = buildLegacyDepreciationJournals(
+    runLines,
+    taxSettings
+  );
   const disposalRows = await loadDisposals(trx, companyId, cutoverDate);
-  const disposals = disposalRows.map((row) => ({
-    journal: buildDisposalJournal(row),
-    attach: { disposalId: row.id }
-  }));
-  const { rows: recognitionRows, classById } = await loadRecognitionRows(
+  const disposals = disposalRows.map((row) => {
+    const journal = buildDisposalJournal(row);
+    return {
+      journal: legacyJournal(journal, journal.postingDate),
+      attach: { disposalId: row.id }
+    };
+  });
+  const recognitionFacts = await loadRecognitionRows(
     trx,
     companyId,
     companyGroupId,
     cutoverDate
   );
-  const recognition = buildRecognitionJournals(recognitionRows, classById);
+  const recognition = buildLegacyRecognitionJournals(
+    recognitionFacts.rows,
+    recognitionFacts.sources,
+    recognitionFacts.classById
+  );
 
   const built = [...depreciation, ...deferredTax, ...disposals, ...recognition];
   const ids = await insertProvisionalJournals(trx, {
@@ -790,28 +579,17 @@ export async function journalLegacyRuns(
   await setJournalColumn(trx, {
     companyId,
     table: "rentalLeaseScheduleLine",
-    rows: recognitionRows.flatMap((row) => {
-      const journalId = journalBySchedule.get(row.scheduleId);
-      return row.rentalLeaseScheduleLineId && journalId
-        ? [{ id: row.rentalLeaseScheduleLineId, journalId }]
-        : [];
-    })
+    rows: recognitionIds.flatMap(({ item, journalId }) =>
+      item.attach.leaseScheduleLineIds.map((id) => ({ id, journalId }))
+    )
   });
   // The run names the journal of its own period, else its latest month's.
   await setJournalColumn(trx, {
     companyId,
     table: "revenueRecognitionRun",
-    rows: [...Map.groupBy(recognitionIds, ({ item }) => item.attach.runId)].map(
-      ([runId, journals]) => {
-        const byMonth = [...journals].sort((a, b) =>
-          a.item.attach.monthEnd.localeCompare(b.item.attach.monthEnd)
-        );
-        const own = byMonth.find(
-          ({ item }) => item.attach.monthEnd === item.attach.runPeriodEnd
-        );
-        return { id: runId, journalId: (own ?? byMonth.at(-1)!).journalId };
-      }
-    )
+    rows: recognitionIds
+      .filter(({ item }) => item.attach.isRunJournal)
+      .map(({ item, journalId }) => ({ id: item.attach.runId, journalId }))
   });
 
   return {

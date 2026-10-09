@@ -31,11 +31,9 @@ import {
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
-  buildJournalLineDimensionInserts,
   credit,
   datetime,
   debit,
-  type JournalDimensionMeta,
   resolveReturnUnitCost,
   round,
   settleQuantity,
@@ -58,7 +56,16 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import {
+  buildPurchaseReceiptJournalLines,
+  buildSalesReturnReceiptJournalLines,
+  type FixedAssetReceiptLine,
+  type PurchaseReceiptLine,
+  purchaseReceiptLineCosts,
+  type SalesReturnReceiptLine
+} from "./posting-lines";
 import { postRentalReceipt } from "./rental-agreement";
 import { planReceiptVoidCostLedger } from "./void-cost-ledger";
 
@@ -739,6 +746,40 @@ const postReceipt = defineServerFn({
         // Reduced acquisition cost per CIP asset, written inside the void transaction
         const cipAssetUpdatesVoid = new Map<string, number>();
 
+        type VoidedAsset = Pick<
+          Tables["fixedAsset"]["Row"],
+          "id" | "acquisitionCost" | "status"
+        > & {
+          fixedAssetClass: Pick<
+            Tables["fixedAssetClass"]["Row"],
+            "isConstructionInProgress"
+          > | null;
+        };
+        const voidedAssets: { data: VoidedAsset[] } =
+          faPoLinesForVoid.length > 0
+            ? await many<"fixedAsset", VoidedAsset>(
+                db,
+                "fixedAsset",
+                {
+                  companyId,
+                  id: faPoLinesForVoid.map((line) => line.assetId!)
+                },
+                {
+                  columns: ["id", "acquisitionCost", "status"],
+                  embed: {
+                    fixedAssetClass: {
+                      table: "fixedAssetClass",
+                      via: "fixedAssetClassId",
+                      columns: ["isConstructionInProgress"]
+                    }
+                  }
+                }
+              )
+            : { data: [] };
+        const voidedAssetById = new Map(
+          voidedAssets.data.map((asset) => [asset.id, asset])
+        );
+
         for (const faPoLine of faPoLinesForVoid) {
           const hasReceiptEntries = originalJournalLines.some(
             (jl) =>
@@ -761,43 +802,14 @@ const postReceipt = defineServerFn({
               )
               .reduce((sum, jl) => sum + Math.abs(jl.amount ?? 0), 0);
 
-            const assetRecord = await single<
-              "fixedAsset",
-              Pick<
-                Tables["fixedAsset"]["Row"],
-                "id" | "acquisitionCost" | "status"
-              > & {
-                fixedAssetClass: Pick<
-                  Tables["fixedAssetClass"]["Row"],
-                  "isConstructionInProgress"
-                > | null;
-              }
-            >(
-              db,
-              "fixedAsset",
-              { id: faPoLine.assetId! },
-              {
-                columns: ["id", "acquisitionCost", "status"],
-                embed: {
-                  fixedAssetClass: {
-                    table: "fixedAssetClass",
-                    via: "fixedAssetClassId",
-                    columns: ["isConstructionInProgress"]
-                  }
-                }
-              }
-            );
-
-            if (!assetRecord.error && assetRecord.data) {
-              fixedAssetWrites.overlay(faPoLine.assetId!, assetRecord.data);
+            const asset = voidedAssetById.get(faPoLine.assetId!);
+            if (asset) {
+              fixedAssetWrites.overlay(faPoLine.assetId!, asset);
               const isConstructionInProgress =
                 cipCostByAssetVoid.has(faPoLine.assetId!) ||
-                Boolean(
-                  (assetRecord.data.fixedAssetClass as any)
-                    ?.isConstructionInProgress
-                );
+                Boolean(asset.fixedAssetClass?.isConstructionInProgress);
               if (isConstructionInProgress) {
-                if (assetRecord.data.status !== "Under Construction") {
+                if (asset.status !== "Under Construction") {
                   throw new Error(
                     "Asset was capitalized; reverse the capitalization first"
                   );
@@ -806,10 +818,7 @@ const postReceipt = defineServerFn({
                 if (cipCost !== undefined) {
                   cipAssetUpdatesVoid.set(
                     faPoLine.assetId!,
-                    Math.max(
-                      0,
-                      round(Number(assetRecord.data.acquisitionCost) - cipCost)
-                    )
+                    Math.max(0, round(Number(asset.acquisitionCost) - cipCost))
                   );
                   continue;
                 }
@@ -821,17 +830,14 @@ const postReceipt = defineServerFn({
 
               const newAcquisitionCost = Math.max(
                 0,
-                Number(assetRecord.data.acquisitionCost) - receiptCost
+                Number(asset.acquisitionCost) - receiptCost
               );
               const faUpdate: Database["public"]["Tables"]["fixedAsset"]["Update"] =
                 {
                   acquisitionCost: newAcquisitionCost,
                   updatedBy: userId
                 };
-              if (
-                newAcquisitionCost === 0 &&
-                assetRecord.data.status === "Active"
-              ) {
+              if (newAcquisitionCost === 0 && asset.status === "Active") {
                 faUpdate.status = "Draft";
                 faUpdate.acquisitionDate = null;
                 faUpdate.depreciationStartDate = null;
@@ -1139,17 +1145,19 @@ const postReceipt = defineServerFn({
             await inOrder([
               () =>
                 single(db, "purchaseOrder", {
+                  companyId,
                   id: receiptHeader.sourceDocumentId
                 }),
               () =>
                 many(db, "purchaseOrderLine", {
+                  companyId,
                   purchaseOrderId: receiptHeader.sourceDocumentId
                 }),
               () =>
                 single(
                   db,
                   "purchaseOrderDelivery",
-                  { id: receiptHeader.sourceDocumentId },
+                  { companyId, id: receiptHeader.sourceDocumentId },
                   { columns: ["supplierShippingCost"] }
                 )
             ]);
@@ -1172,20 +1180,6 @@ const postReceipt = defineServerFn({
             (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) /
             (purchaseOrder.data?.exchangeRate || 1);
 
-          const totalLinesCost = receiptLines.data.reduce(
-            (acc, receiptLine) => {
-              const safeReceivedQuantity =
-                isNaN(receiptLine.receivedQuantity) ||
-                receiptLine.receivedQuantity == null
-                  ? 0
-                  : receiptLine.receivedQuantity;
-              const lineCost =
-                Math.abs(safeReceivedQuantity) * (receiptLine.unitPrice ?? 0);
-              return acc + lineCost;
-            },
-            0
-          );
-
           const supplier = await single(db, "supplier", {
             id: purchaseOrder.data.supplierId,
             companyId
@@ -1203,27 +1197,13 @@ const postReceipt = defineServerFn({
             isInvoiceFirst?: boolean;
             poLineId?: string;
           })[] = [];
-          // Negative receipts consume layers at layer cost inside the
-          // transaction (calculateCOGS); GL amounts are patched to match.
-          // fallbackCost (PO cost) is used when no layers yield a cost.
+          // Negative receipt lines (by index) consume layers at layer cost
+          // inside the transaction (calculateCOGS), and book what they
+          // relieved. The PO cost is used when no layers yield a cost.
           const negativeReceiptConsumptions: {
+            index: number;
             itemId: string;
             quantity: number;
-            fallbackCost: number;
-            grIrLineIndex: number | null;
-            inventoryLineIndex: number | null;
-          }[] = [];
-          const journalLineInserts: Omit<
-            Database["public"]["Tables"]["journalLine"]["Insert"],
-            "journalId"
-          >[] = [];
-          const journalLineDimensionsMeta: {
-            supplierTypeId: string | null;
-            itemPostingGroupId: string | null;
-            itemId: string | null;
-            locationId: string | null;
-            processId: string | null;
-            fixedAssetClassId: string | null;
           }[] = [];
 
           const isOutsideProcessing =
@@ -1238,7 +1218,7 @@ const postReceipt = defineServerFn({
               const jobOps = await many(
                 db,
                 "jobOperation",
-                { id: jobOpIds },
+                { companyId, id: jobOpIds },
                 { columns: ["id", "processId"] }
               );
               for (const op of jobOps.data ?? []) {
@@ -1589,185 +1569,111 @@ const postReceipt = defineServerFn({
                 );
               }
             }
+
+            // Units invoiced before receipt with no accrual to clear stay at
+            // PO cost, so GR/IR keeps the difference to the invoice's cost.
+            // A service or fixed asset invoice accrues nothing on GR/IR.
+            const unaccrued = [...invoiceFirstQtyByPoLine.entries()].filter(
+              ([poLineId]) => {
+                const lineType = purchaseOrderLines.data.find(
+                  (pol) => pol.id === poLineId
+                )?.purchaseOrderLineType;
+                return (
+                  !accrualUnitCostByPoLine.has(poLineId) &&
+                  lineType !== "Service" &&
+                  lineType !== "Fixed Asset" &&
+                  lineType !== "G/L Account"
+                );
+              }
+            );
+            if (unaccrued.length > 0) {
+              logger.warn(
+                "Units invoiced before receipt have no GR/IR accrual; the receipt costs them at PO cost",
+                {
+                  companyId,
+                  receiptId,
+                  purchaseOrderLines: unaccrued.map(
+                    ([purchaseOrderLineId, quantity]) => ({
+                      purchaseOrderLineId,
+                      quantity
+                    })
+                  )
+                }
+              );
+            }
           }
 
-          for await (const receiptLine of receiptLines.data) {
-            const jlStartIdx = journalLineInserts.length;
-
-            const receiptLineItem = items.data.find(
-              (item) => item.id === receiptLine.itemId
-            );
-            const itemTrackingType =
-              receiptLineItem?.itemTrackingType ?? "Inventory";
-
-            const receivedQuantity =
-              isNaN(receiptLine.receivedQuantity) ||
-              receiptLine.receivedQuantity == null
-                ? 0
-                : receiptLine.receivedQuantity;
-            const isNegativeReceipt = receivedQuantity < 0;
-            const absReceivedQuantity = Math.abs(receivedQuantity);
-
-            // Line cost at PO price + proportional shipping.
-            const lineCost = absReceivedQuantity * receiptLine.unitPrice;
-            const lineValuePercentage =
-              totalLinesCost === 0 ? 0 : lineCost / totalLinesCost;
-            const lineWeightedShippingCost = shippingCost * lineValuePercentage;
-            const cost = lineCost + lineWeightedShippingCost;
-            const poUnitCost =
-              absReceivedQuantity > 0 ? cost / absReceivedQuantity : 0;
-
-            const createsLayers =
-              itemTrackingType !== "Non-Inventory" &&
-              !isOutsideProcessing &&
-              !!receiptLine.itemId &&
-              absReceivedQuantity > 0;
-
-            // Invoice-first split: the portion of this line that was invoiced
-            // before receipt is valued at the accrual (invoice) unit cost — the
-            // actual cost is already known, so no variance arises. The
-            // remainder stays at PO cost until its invoice adjusts it.
-            const poLineId = receiptLine.lineId;
-            let invoiceFirstQty = 0;
-            let accrualUnitCost = 0;
-            if (
-              !isNegativeReceipt &&
-              poLineId &&
-              invoiceFirstQtyByPoLine.has(poLineId)
-            ) {
-              const remainingInvoiceFirstQty =
-                invoiceFirstQtyByPoLine.get(poLineId)!;
-              const claimedQty = Math.min(
-                absReceivedQuantity,
-                remainingInvoiceFirstQty
-              );
-              const claimedUnitCost = accrualUnitCostByPoLine.get(poLineId);
-              // A recorded accrual basis is claimed even at zero unit cost
-              // (zero-priced invoices); only a missing basis falls through to
-              // the normal PO-cost path.
-              if (claimedQty > 0 && claimedUnitCost !== undefined) {
-                invoiceFirstQty = claimedQty;
-                accrualUnitCost = claimedUnitCost;
-                invoiceFirstQtyByPoLine.set(
-                  poLineId,
-                  remainingInvoiceFirstQty - claimedQty
-                );
+          const itemById = new Map(items.data.map((item) => [item.id, item]));
+          const itemPostingGroupByItem = new Map(
+            itemCosts.data.map((cost) => [cost.itemId, cost.itemPostingGroupId])
+          );
+          const purchaseOrderLineById = new Map(
+            purchaseOrderLines.data.map((line) => [line.id, line])
+          );
+          const receiptJournalLines: PurchaseReceiptLine[] =
+            receiptLines.data.map((receiptLine) => {
+              const item = receiptLine.itemId
+                ? itemById.get(receiptLine.itemId)
+                : undefined;
+              const jobOperationId = receiptLine.lineId
+                ? purchaseOrderLineById.get(receiptLine.lineId)?.jobOperationId
+                : null;
+              return {
+                purchaseOrderLineId: receiptLine.lineId,
+                itemId: receiptLine.itemId,
+                quantity:
+                  isNaN(receiptLine.receivedQuantity) ||
+                  receiptLine.receivedQuantity == null
+                    ? 0
+                    : receiptLine.receivedQuantity,
+                unitPrice: receiptLine.unitPrice,
+                itemTrackingType: item?.itemTrackingType,
+                replenishmentSystem: item?.replenishmentSystem,
+                itemPostingGroupId: receiptLine.itemId
+                  ? (itemPostingGroupByItem.get(receiptLine.itemId) ?? null)
+                  : null,
+                locationId: receiptLine.locationId ?? null,
+                processId: jobOperationId
+                  ? (processIdByJobOperationId.get(jobOperationId) ?? null)
+                  : null
+              };
+            });
+          // Line cost at PO price + proportional shipping. The portion of a
+          // line invoiced before receipt is valued at the accrual (invoice)
+          // unit cost, so the invoice's GR/IR accrual clears exactly — no
+          // PPV. The remainder stays at PO cost until its invoice adjusts it.
+          const receiptLineCosts = purchaseReceiptLineCosts(
+            receiptJournalLines,
+            {
+              shippingCost,
+              isOutsideProcessing,
+              invoiceFirst: {
+                quantity: invoiceFirstQtyByPoLine,
+                unitCost: accrualUnitCostByPoLine
               }
             }
-            const normalQty = absReceivedQuantity - invoiceFirstQty;
-            const invoiceFirstPortionCost = invoiceFirstQty * accrualUnitCost;
-            const normalPortionCost = normalQty * poUnitCost;
-            const glCost = invoiceFirstPortionCost + normalPortionCost;
+          );
 
-            if (absReceivedQuantity > 0) {
-              const journalLineReference = nanoid();
+          for (const [index, receiptLine] of receiptLines.data.entries()) {
+            const {
+              quantity: receivedQuantity,
+              createsLayers,
+              invoiceFirstQuantity: invoiceFirstQty,
+              invoiceFirstCost: invoiceFirstPortionCost,
+              normalQuantity: normalQty,
+              normalCost: normalPortionCost
+            } = receiptLineCosts[index]!;
+            const itemTrackingType =
+              receiptJournalLines[index]!.itemTrackingType ?? "Inventory";
+            const isNegativeReceipt = receivedQuantity < 0;
+            const poLineId = receiptLine.lineId;
 
-              // Determine the debit account based on item type
-              let debitAccount: string;
-              let debitDescription: string;
-
-              if (
-                itemTrackingType !== "Non-Inventory" &&
-                !isOutsideProcessing
-              ) {
-                const inventoryAccount = resolveInventoryAccount(
-                  receiptLineItem?.replenishmentSystem ?? null,
-                  accountDefaults.data
-                );
-                debitAccount = inventoryAccount.account;
-                debitDescription = inventoryAccount.description;
-              } else if (isOutsideProcessing) {
-                debitAccount = accountDefaults.data.workInProgressAccount;
-                debitDescription = "WIP Account";
-              } else {
-                debitAccount = accountDefaults.data.indirectCostAccount;
-                debitDescription = "Indirect Cost Account";
-              }
-
-              if (isNegativeReceipt) {
-                // Amounts are placeholders at PO cost; for layer-backed lines
-                // they are patched to the consumed layer cost inside the
-                // transaction (calculateCOGS).
-                const grIrLineIndex = journalLineInserts.length;
-                journalLineInserts.push({
-                  accountId:
-                    accountDefaults.data.goodsReceivedNotInvoicedAccount,
-                  description: "Goods Received Not Invoiced",
-                  amount: round(debit("liability", cost)),
-                  quantity: round(absReceivedQuantity),
-                  documentType: "Receipt",
-                  documentId: receiptHeader.id ?? undefined,
-                  externalDocumentId:
-                    purchaseOrder.data?.supplierReference ?? undefined,
-                  documentLineReference: journalReference.to.receipt(
-                    receiptLine.lineId!
-                  ),
-                  journalLineReference,
-                  companyId
-                });
-
-                const inventoryLineIndex = journalLineInserts.length;
-                journalLineInserts.push({
-                  accountId: debitAccount,
-                  description: debitDescription,
-                  amount: round(credit("asset", cost)),
-                  quantity: round(absReceivedQuantity),
-                  documentType: "Receipt",
-                  documentId: receiptHeader.id ?? undefined,
-                  externalDocumentId:
-                    purchaseOrder.data?.supplierReference ?? undefined,
-                  documentLineReference: journalReference.to.receipt(
-                    receiptLine.lineId!
-                  ),
-                  journalLineReference,
-                  companyId
-                });
-
-                if (createsLayers) {
-                  negativeReceiptConsumptions.push({
-                    itemId: receiptLine.itemId!,
-                    quantity: absReceivedQuantity,
-                    fallbackCost: cost,
-                    grIrLineIndex,
-                    inventoryLineIndex
-                  });
-                }
-              } else {
-                // The invoice-first portion posts at accrual (invoice) cost so
-                // the invoice's GR/IR debit accrual clears exactly — no PPV.
-                journalLineInserts.push({
-                  accountId: debitAccount,
-                  description: debitDescription,
-                  amount: round(debit("asset", glCost)),
-                  quantity: round(absReceivedQuantity),
-                  documentType: "Receipt",
-                  documentId: receiptHeader.id ?? undefined,
-                  externalDocumentId:
-                    purchaseOrder.data?.supplierReference ?? undefined,
-                  documentLineReference: journalReference.to.receipt(
-                    receiptLine.lineId!
-                  ),
-                  journalLineReference,
-                  companyId
-                });
-
-                journalLineInserts.push({
-                  accountId:
-                    accountDefaults.data.goodsReceivedNotInvoicedAccount,
-                  description: "Goods Received Not Invoiced",
-                  amount: round(credit("liability", glCost)),
-                  quantity: round(absReceivedQuantity),
-                  documentType: "Receipt",
-                  documentId: receiptHeader.id ?? undefined,
-                  externalDocumentId:
-                    purchaseOrder.data?.supplierReference ?? undefined,
-                  documentLineReference: journalReference.to.receipt(
-                    receiptLine.lineId!
-                  ),
-                  journalLineReference,
-                  companyId
-                });
-              }
+            if (createsLayers && isNegativeReceipt) {
+              negativeReceiptConsumptions.push({
+                index,
+                itemId: receiptLine.itemId!,
+                quantity: Math.abs(receivedQuantity)
+              });
             }
 
             // Cost layers: the receipt is the sole creator of purchase layers.
@@ -1907,28 +1813,6 @@ const postReceipt = defineServerFn({
                 });
               }
             }
-
-            // Track dimensions for this receipt line's journal lines
-            const jlCount = journalLineInserts.length - jlStartIdx;
-            const lineItemPostingGroupId =
-              itemCosts.data.find((cost) => cost.itemId === receiptLine.itemId)
-                ?.itemPostingGroupId ?? null;
-            const poLine = purchaseOrderLines.data.find(
-              (pol) => pol.id === receiptLine.lineId
-            );
-            const lineProcessId = poLine?.jobOperationId
-              ? (processIdByJobOperationId.get(poLine.jobOperationId) ?? null)
-              : null;
-            for (let i = 0; i < jlCount; i++) {
-              journalLineDimensionsMeta.push({
-                supplierTypeId: supplier.data.supplierTypeId ?? null,
-                itemPostingGroupId: lineItemPostingGroupId,
-                itemId: receiptLine.itemId ?? null,
-                locationId: receiptLine.locationId ?? null,
-                processId: lineProcessId,
-                fixedAssetClassId: null
-              });
-            }
           }
 
           // Process Fixed Asset PO lines (no receipt lines — handled directly from PO)
@@ -1970,125 +1854,95 @@ const postReceipt = defineServerFn({
               receivedFaPoLineIds.has(pol.id)
           );
 
+          const fixedAssetJournalLines: FixedAssetReceiptLine[] = [];
+          type ReceivedAsset = Pick<
+            Tables["fixedAsset"]["Row"],
+            | "id"
+            | "status"
+            | "acquisitionDate"
+            | "depreciationStartDate"
+            | "acquisitionCost"
+            | "locationId"
+            | "fixedAssetClassId"
+          > & {
+            fixedAssetClass: Pick<
+              Tables["fixedAssetClass"]["Row"],
+              "assetAccountId" | "isConstructionInProgress"
+            > | null;
+          };
+          const faAssets: { data: ReceivedAsset[] } =
+            faPurchaseOrderLines.length > 0
+              ? await many<"fixedAsset", ReceivedAsset>(
+                  db,
+                  "fixedAsset",
+                  {
+                    companyId,
+                    id: faPurchaseOrderLines.map((line) => line.assetId!)
+                  },
+                  {
+                    columns: [
+                      "id",
+                      "status",
+                      "acquisitionDate",
+                      "depreciationStartDate",
+                      "acquisitionCost",
+                      "locationId",
+                      "fixedAssetClassId"
+                    ],
+                    embed: {
+                      fixedAssetClass: {
+                        table: "fixedAssetClass",
+                        via: "fixedAssetClassId",
+                        columns: ["assetAccountId", "isConstructionInProgress"]
+                      }
+                    }
+                  }
+                )
+              : { data: [] };
+          const faAssetById = new Map(
+            faAssets.data.map((asset) => [asset.id, asset])
+          );
+
           for (const faPoLine of faPurchaseOrderLines) {
             const quantity = faPoLine.purchaseQuantity ?? 1;
             const unitPrice = faPoLine.unitPrice ?? 0;
             const cost = quantity * unitPrice;
 
-            const assetRecord = await single<
-              "fixedAsset",
-              Pick<
-                Tables["fixedAsset"]["Row"],
-                | "id"
-                | "status"
-                | "acquisitionDate"
-                | "depreciationStartDate"
-                | "acquisitionCost"
-                | "locationId"
-                | "fixedAssetClassId"
-              > & {
-                fixedAssetClass: Pick<
-                  Tables["fixedAssetClass"]["Row"],
-                  "assetAccountId" | "isConstructionInProgress"
-                > | null;
-              }
-            >(
-              db,
-              "fixedAsset",
-              { id: faPoLine.assetId! },
-              {
-                columns: [
-                  "id",
-                  "status",
-                  "acquisitionDate",
-                  "depreciationStartDate",
-                  "acquisitionCost",
-                  "locationId",
-                  "fixedAssetClassId"
-                ],
-                embed: {
-                  fixedAssetClass: {
-                    table: "fixedAssetClass",
-                    via: "fixedAssetClassId",
-                    columns: ["assetAccountId", "isConstructionInProgress"]
-                  }
-                }
-              }
-            );
-
-            if (assetRecord.error)
-              throw new Error("Failed to fetch fixed asset");
-            fixedAssetWrites.overlay(faPoLine.assetId!, assetRecord.data);
+            const asset = faAssetById.get(faPoLine.assetId!);
+            if (!asset) throw new Error("Failed to fetch fixed asset");
+            fixedAssetWrites.overlay(faPoLine.assetId!, asset);
 
             const isConstructionInProgress = Boolean(
-              (assetRecord.data.fixedAssetClass as any)
-                ?.isConstructionInProgress
+              asset.fixedAssetClass?.isConstructionInProgress
             );
 
-            const journalLineRef = nanoid();
-
-            journalLineInserts.push({
-              accountId: (assetRecord.data.fixedAssetClass as any)
-                .assetAccountId,
-              description: "Fixed Asset Acquisition",
-              amount: round(debit("asset", cost)),
-              quantity: round(quantity),
-              documentType: "Receipt",
-              documentId: receiptHeader.id ?? undefined,
-              externalDocumentId:
-                purchaseOrder.data?.supplierReference ?? undefined,
-              documentLineReference: journalReference.to.receipt(faPoLine.id!),
-              journalLineReference: journalLineRef,
-              companyId
+            fixedAssetJournalLines.push({
+              purchaseOrderLineId: faPoLine.id,
+              quantity,
+              cost,
+              assetAccountId: asset.fixedAssetClass!.assetAccountId,
+              fixedAssetClassId: asset.fixedAssetClassId ?? null,
+              locationId:
+                faPoLine.locationId ??
+                receiptHeader.locationId ??
+                asset.locationId ??
+                null
             });
-
-            journalLineInserts.push({
-              accountId: accountDefaults.data.goodsReceivedNotInvoicedAccount,
-              description: "Goods Received Not Invoiced",
-              amount: round(credit("liability", cost)),
-              quantity: round(quantity),
-              documentType: "Receipt",
-              documentId: receiptHeader.id ?? undefined,
-              externalDocumentId:
-                purchaseOrder.data?.supplierReference ?? undefined,
-              documentLineReference: journalReference.to.receipt(faPoLine.id!),
-              journalLineReference: journalLineRef,
-              companyId
-            });
-
-            for (let i = 0; i < 2; i++) {
-              journalLineDimensionsMeta.push({
-                supplierTypeId: supplier.data.supplierTypeId ?? null,
-                itemPostingGroupId: null,
-                itemId: null,
-                locationId:
-                  faPoLine.locationId ??
-                  receiptHeader.locationId ??
-                  assetRecord.data.locationId ??
-                  null,
-                processId: null,
-                fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null
-              });
-            }
 
             const updateData: Database["public"]["Tables"]["fixedAsset"]["Update"] =
               {
-                acquisitionCost:
-                  (Number(assetRecord.data.acquisitionCost) ?? 0) + cost,
+                acquisitionCost: (Number(asset.acquisitionCost) ?? 0) + cost,
                 updatedBy: userId
               };
-            if (!assetRecord.data.acquisitionDate) {
+            if (!asset.acquisitionDate) {
               updateData.acquisitionDate = today;
             }
             // A CIP asset does not depreciate until it is capitalized, so its
             // depreciation start date stays null and it goes Under Construction.
-            if (
-              !isConstructionInProgress &&
-              !assetRecord.data.depreciationStartDate
-            ) {
+            if (!isConstructionInProgress && !asset.depreciationStartDate) {
               updateData.depreciationStartDate = today;
             }
-            if (assetRecord.data.status === "Draft") {
+            if (asset.status === "Draft") {
               updateData.status = isConstructionInProgress
                 ? "Under Construction"
                 : "Active";
@@ -2138,8 +1992,9 @@ const postReceipt = defineServerFn({
             await assertPostingStatusUnchanged(trx, companyId, postingStatus);
             await fixedAssetWrites.apply(trx, companyId);
             // Negative receipts: consume layers at layer cost (FIFO/LIFO with
-            // adjustment children) and patch the placeholder GL amounts so the
-            // GL credit matches what actually left the subledger.
+            // adjustment children), and the journal books what was relieved so
+            // the GL credit matches what actually left the subledger.
+            const relievedCostByLine = new Map<number, number>();
             for (const consumption of negativeReceiptConsumptions) {
               const cogsResult = await calculateCOGS(trx, {
                 itemId: consumption.itemId,
@@ -2154,16 +2009,8 @@ const postReceipt = defineServerFn({
               const consumedCost =
                 cogsResult.layersConsumed.length > 0 || cogsResult.totalCost > 0
                   ? cogsResult.totalCost
-                  : consumption.fallbackCost;
-              if (consumption.grIrLineIndex !== null) {
-                journalLineInserts[consumption.grIrLineIndex]!.amount = round(
-                  debit("liability", consumedCost)
-                );
-              }
-              if (consumption.inventoryLineIndex !== null) {
-                journalLineInserts[consumption.inventoryLineIndex]!.amount =
-                  round(credit("asset", consumedCost));
-              }
+                  : receiptLineCosts[consumption.index]!.cost;
+              relievedCostByLine.set(consumption.index, consumedCost);
               costLedgerInserts.push({
                 itemLedgerType: "Purchase",
                 costLedgerType: "Direct Cost",
@@ -2377,8 +2224,22 @@ const postReceipt = defineServerFn({
               .where("companyId", "=", companyId)
               .execute();
 
+            const journalLines = buildPurchaseReceiptJournalLines({
+              documentId: receiptHeader.id,
+              externalDocumentId: purchaseOrder.data.supplierReference,
+              isOutsideProcessing,
+              supplierId: purchaseOrder.data.supplierId,
+              supplierTypeId: supplier.data.supplierTypeId ?? null,
+              accounts: accountDefaults.data,
+              lines: receiptJournalLines.map((line, index) => ({
+                ...line,
+                cost:
+                  relievedCostByLine.get(index) ?? receiptLineCosts[index]!.cost
+              })),
+              fixedAssets: fixedAssetJournalLines
+            });
             let receiptJournalId: string | null = null;
-            if (journalLineInserts.length > 0) {
+            if (journalLines.length > 0) {
               const journalEntryId = await getNextSequence(
                 trx,
                 "journalEntry",
@@ -2406,100 +2267,26 @@ const postReceipt = defineServerFn({
               const journalLineResults = await trx
                 .insertInto("journalLine")
                 .values(
-                  journalLineInserts.map((line) => ({
+                  journalLines.map(({ dimensions: _, ...line }) => ({
                     ...line,
-                    journalId: journalResult.id
+                    journalId: journalResult.id,
+                    companyId
                   }))
                 )
                 .returning(["id"])
                 .execute();
 
-              // Insert automatic dimensions for journal lines
-              if (dimensionMap.size > 0) {
-                const journalLineDimensionInserts: {
-                  journalLineId: string;
-                  dimensionId: string;
-                  valueId: string;
-                  companyId: string;
-                }[] = [];
-
-                journalLineResults.forEach((jl, index) => {
-                  const meta = journalLineDimensionsMeta[index];
-                  if (!meta) return;
-
-                  if (meta.supplierTypeId && dimensionMap.has("SupplierType")) {
-                    journalLineDimensionInserts.push({
-                      journalLineId: jl.id,
-                      dimensionId: dimensionMap.get("SupplierType")!,
-                      valueId: meta.supplierTypeId,
-                      companyId
-                    });
-                  }
-                  if (
-                    meta.itemPostingGroupId &&
-                    dimensionMap.has("ItemPostingGroup")
-                  ) {
-                    journalLineDimensionInserts.push({
-                      journalLineId: jl.id,
-                      dimensionId: dimensionMap.get("ItemPostingGroup")!,
-                      valueId: meta.itemPostingGroupId,
-                      companyId
-                    });
-                  }
-                  if (meta.itemId && dimensionMap.has("Item")) {
-                    journalLineDimensionInserts.push({
-                      journalLineId: jl.id,
-                      dimensionId: dimensionMap.get("Item")!,
-                      valueId: meta.itemId,
-                      companyId
-                    });
-                  }
-                  if (
-                    purchaseOrder.data.supplierId &&
-                    dimensionMap.has("Supplier")
-                  ) {
-                    journalLineDimensionInserts.push({
-                      journalLineId: jl.id,
-                      dimensionId: dimensionMap.get("Supplier")!,
-                      valueId: purchaseOrder.data.supplierId,
-                      companyId
-                    });
-                  }
-                  if (meta.locationId && dimensionMap.has("Location")) {
-                    journalLineDimensionInserts.push({
-                      journalLineId: jl.id,
-                      dimensionId: dimensionMap.get("Location")!,
-                      valueId: meta.locationId,
-                      companyId
-                    });
-                  }
-                  if (meta.processId && dimensionMap.has("Process")) {
-                    journalLineDimensionInserts.push({
-                      journalLineId: jl.id,
-                      dimensionId: dimensionMap.get("Process")!,
-                      valueId: meta.processId,
-                      companyId
-                    });
-                  }
-                  if (
-                    meta.fixedAssetClassId &&
-                    dimensionMap.has("FixedAssetClass")
-                  ) {
-                    journalLineDimensionInserts.push({
-                      journalLineId: jl.id,
-                      dimensionId: dimensionMap.get("FixedAssetClass")!,
-                      valueId: meta.fixedAssetClassId,
-                      companyId
-                    });
-                  }
-                });
-
-                if (journalLineDimensionInserts.length > 0) {
-                  await trx
-                    .insertInto("journalLineDimension")
-                    .values(journalLineDimensionInserts)
-                    .execute();
-                }
+              const journalLineDimensionInserts = journalLineDimensionRows({
+                journalLineIds: journalLineResults.map((jl) => jl.id),
+                lines: journalLines,
+                dimensionIdByEntity: dimensionMap,
+                companyId
+              });
+              if (journalLineDimensionInserts.length > 0) {
+                await trx
+                  .insertInto("journalLineDimension")
+                  .values(journalLineDimensionInserts)
+                  .execute();
               }
             }
 
@@ -2716,7 +2503,7 @@ const postReceipt = defineServerFn({
             const shipmentLines = await many(
               db,
               "shipmentLine",
-              { id: linkedShipmentLineIds },
+              { companyId, id: linkedShipmentLineIds },
               { columns: ["id", "shipmentId"] }
             );
             // A failed read must abort, not fall back: an empty map here would
@@ -2781,13 +2568,11 @@ const postReceipt = defineServerFn({
             [];
           const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
             [];
-          const journalLineInserts: Omit<
-            Database["public"]["Tables"]["journalLine"]["Insert"],
-            "journalId"
-          >[] = [];
-          // Index-parallel to journalLineInserts: dimension #i belongs to
-          // journal line #i.
-          const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
+          const returnJournalLines: SalesReturnReceiptLine[] = [];
+          const itemById = new Map(items.data.map((item) => [item.id, item]));
+          const itemPostingGroupByItem = new Map(
+            itemCosts.data.map((cost) => [cost.itemId, cost.itemPostingGroupId])
+          );
           const returnLineUpdates: Record<
             string,
             { quantityReceived: number; updatedBy: string }
@@ -2817,7 +2602,7 @@ const postReceipt = defineServerFn({
             if (safeReceivedQuantity <= 0) continue;
             const receivedQuantity = safeReceivedQuantity;
 
-            const item = items.data.find((i) => i.id === receiptLine.itemId);
+            const item = itemById.get(receiptLine.itemId);
             const itemTrackingType = item?.itemTrackingType ?? "Inventory";
 
             // Cost resolution: zero-value reason -> 0; linked -> original
@@ -2971,57 +2756,16 @@ const postReceipt = defineServerFn({
 
             // Journal: Dr Inventory / Cr COGS at the re-entry value. Zero-value
             // re-entries post no journal.
-            if (cost > 0) {
-              const journalLineReference = nanoid();
-              const inventoryAccount = resolveInventoryAccount(
-                item?.replenishmentSystem ?? null,
-                accountDefaults.data
-              );
-
-              journalLineInserts.push({
-                accountId: inventoryAccount.account,
-                description: inventoryAccount.description,
-                amount: round(debit("asset", cost)),
-                quantity: round(receivedQuantity),
-                documentType: "Receipt",
-                documentId: receiptHeader.id ?? undefined,
-                externalDocumentId:
-                  receiptHeader.externalDocumentId ?? undefined,
-                documentLineReference: journalReference.to.receipt(
-                  receiptLine.lineId
-                ),
-                journalLineReference,
-                companyId
-              });
-
-              journalLineInserts.push({
-                accountId: accountDefaults.data.costOfGoodsSoldAccount,
-                description: "Cost of Goods Sold",
-                amount: round(credit("expense", cost)),
-                quantity: round(receivedQuantity),
-                documentType: "Receipt",
-                documentId: receiptHeader.id ?? undefined,
-                externalDocumentId:
-                  receiptHeader.externalDocumentId ?? undefined,
-                documentLineReference: journalReference.to.receipt(
-                  receiptLine.lineId
-                ),
-                journalLineReference,
-                companyId
-              });
-              // Two journal lines were pushed for this line — one dimension meta
-              // entry each, index-aligned.
-              const meta = {
-                itemId: receiptLine.itemId,
-                itemPostingGroupId:
-                  itemCosts.data.find((c) => c.itemId === receiptLine.itemId)
-                    ?.itemPostingGroupId ?? null,
-                locationId: receiptLine.locationId,
-                customerId: salesReturnOrder.data.customerId,
-                customerTypeId
-              };
-              journalLineDimensionsMeta.push(meta, { ...meta });
-            }
+            returnJournalLines.push({
+              returnLineId: receiptLine.lineId,
+              itemId: receiptLine.itemId,
+              quantity: receivedQuantity,
+              cost,
+              replenishmentSystem: item?.replenishmentSystem,
+              itemPostingGroupId:
+                itemPostingGroupByItem.get(receiptLine.itemId) ?? null,
+              locationId: receiptLine.locationId
+            });
 
             const existingUpdate = returnLineUpdates[returnLine.id];
             returnLineUpdates[returnLine.id] = {
@@ -3032,9 +2776,18 @@ const postReceipt = defineServerFn({
             };
           }
 
+          const journalLines = buildSalesReturnReceiptJournalLines({
+            documentId: receiptHeader.id,
+            externalDocumentId: receiptHeader.externalDocumentId,
+            customerId: salesReturnOrder.data.customerId,
+            customerTypeId,
+            accounts: accountDefaults.data,
+            lines: returnJournalLines
+          });
+
           // A Provisional journal has no accounting period.
           const accountingPeriodId =
-            postingStatus === "Posted" && journalLineInserts.length > 0
+            postingStatus === "Posted" && journalLines.length > 0
               ? await getCurrentAccountingPeriod(companyId, db, today)
               : null;
 
@@ -3115,7 +2868,7 @@ const postReceipt = defineServerFn({
               .where("companyId", "=", companyId)
               .execute();
 
-            if (journalLineInserts.length > 0) {
+            if (journalLines.length > 0) {
               const journalEntryId = await getNextSequence(
                 trx,
                 "journalEntry",
@@ -3142,21 +2895,21 @@ const postReceipt = defineServerFn({
               const journalLineResults = await trx
                 .insertInto("journalLine")
                 .values(
-                  journalLineInserts.map((line) => ({
+                  journalLines.map(({ dimensions: _, ...line }) => ({
                     ...line,
-                    journalId: journalResult.id
+                    journalId: journalResult.id,
+                    companyId
                   }))
                 )
                 .returning(["id"])
                 .execute();
 
-              const journalLineDimensionInserts =
-                buildJournalLineDimensionInserts({
-                  journalLineIds: journalLineResults.map((jl) => jl.id),
-                  meta: journalLineDimensionsMeta,
-                  dimensionMap,
-                  companyId
-                });
+              const journalLineDimensionInserts = journalLineDimensionRows({
+                journalLineIds: journalLineResults.map((jl) => jl.id),
+                lines: journalLines,
+                dimensionIdByEntity: dimensionMap,
+                companyId
+              });
               if (journalLineDimensionInserts.length > 0) {
                 await trx
                   .insertInto("journalLineDimension")

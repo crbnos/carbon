@@ -135,6 +135,11 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   flips tracked entities to `Available` (**`On Hold` if the item has a Receipt-usage inspection
   document assignment**), and
   creates one `inspection` lot per inspected line (see `inspection-system.md`).
+  The PO and sales return journal lines are built by the pure `post-receipt/posting-lines.ts`
+  (`purchaseReceiptLineCosts` values each PO line: shipping share, invoice-first
+  claim; a negative line books what `calculateCOGS` relieved inside the transaction);
+  the legacy backfill (`activate-accounting/legacy/receipt.ts`) calls the same builders
+  with the stored cost rows.
 - **post-shipment** handles `Rental Agreement` (puts each ticked unit On Rent on the delivery
   date; no `itemLedger`, `costLedger` or journal; `post-shipment/rental-agreement.ts`), `Sales Order`, `Purchase Order`, `Outbound Transfer`,
   `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
@@ -144,13 +149,18 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
   `quantitySent`/`sentComplete` and SO `status`, updates `job.quantityShipped`/status for Job
   fulfillment, and **splits** batch tracked entities when shipped qty < entity qty.
+  The shipment journal lines (SO pairs, fixed asset sale lines, return pairs) are built
+  by the pure `post-shipment/posting-lines.ts` from facts the posting gathers; the
+  accounting cutover's legacy backfill (`activate-accounting/legacy/shipment.ts`) calls
+  the same builders with the stored cost rows.
 **GL dimensions on return journals.** Every return-flow journal (post-shipment
 `Sales Return Order` + `Purchase Return Order`, post-receipt `Sales Return Order`)
 attaches automatic `journalLineDimension` rows — item, item posting group
 (`itemCost.itemPostingGroupId`), party (supplier/customer + type), and location —
-built index-parallel to the journal lines and emitted through the shared pure
-`buildJournalLineDimensionInserts` (`@carbon/utils` `journal-dimensions.ts`), gated
-by the company group's configured `dimension` rows. The journalLine insert must
+built index-parallel to the journal lines, gated by the company group's configured
+`dimension` rows. post-shipment and post-receipt carry them on each built line
+(`dimensions`, by entity type) and write them with `journalLineDimensionRows`
+(`src/lib/journal-line-dimensions.ts`). The journalLine insert must
 `.returning(["id"])` so dimension #i binds to line #i. The **void** cases copy the
 original lines' dimensions onto the reversing lines (read `journalLineDimension` by
 `journalLineId`, re-attach by position) so a void mirrors the posting. `post-memo`

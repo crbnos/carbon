@@ -2,12 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  type AccountClass,
-  type AccountType,
-  credit,
-  debit
-} from "@carbon/database/ledger";
+import type { AccountClass } from "@carbon/database/ledger";
 import type { CalendarDate } from "@internationalized/date";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { formatDate } from "./date";
@@ -18,7 +13,8 @@ export {
   accountTypeFromClass,
   credit,
   debit,
-  isAccountClass
+  isAccountClass,
+  toStoredAmount
 } from "@carbon/database/ledger";
 
 function isNaturalDebitAccount(cls: AccountClass): boolean {
@@ -41,16 +37,6 @@ export function toDisplayCredit(
     ? amount < 0
     : amount > 0;
   return isCredit ? Math.abs(amount) : 0;
-}
-
-export function toStoredAmount(
-  debitAmount: number,
-  creditAmount: number,
-  accountClass: AccountClass
-): number {
-  const type = accountClass.toLowerCase() as AccountType;
-  if (debitAmount > 0) return debit(type, debitAmount);
-  return credit(type, creditAmount);
 }
 
 // Posting source distinguishes operational documents (receipts, shipments,

@@ -6,57 +6,50 @@
 // writes today, from the stored invoice, with today's account defaults
 // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
 //
-// Mirrors post-sales-invoice/index.ts:
-// - receivables, revenue, shipping and tax through `buildSalesPostingLines`,
-//   with the same context (`sales-invoice:<salesOrderLineId>`, the customer
-//   reference, the intercompany partner) and metadata;
-// - the COGS pair of a direct line (no sales order, not Make to Order,
-//   inventory-tracked) at the cost its cost row stored, at zero too. A
+// It reads the stored facts and builds the journal with the posting's own
+// builder (post-sales-invoice/posting-lines.ts): the same accounts, stand-ins,
+// legs, COGS pair and dimensions. Two facts differ, and both are passed to
+// the builder as choices:
+// - Revenue. A contract, rental or fixed-asset line books plain revenue on
+//   the sales account, so the backfill reads no contract, rental or asset
+//   accounts. A line with Deferral schedule rows dated on or after the
+//   cutover credits their sum to the rows' deferred revenue account, as the
+//   posting deferred it; a recognition run (or the enable's rebuild of a
+//   posted run) moves those rows to revenue. Rows dated before the cutover
+//   were settled in the opening balance with no journal, so their share books
+//   to sales.
+// - Cost. The COGS pair of a direct line (no sales order, not Make to Order,
+//   inventory-tracked) is at the cost its cost row stored, at zero too. A
 //   legacy direct line stored no cost row; the enable writes it first
-//   (movement-cost.ts), so its pair is built here, once;
-// - the dimensions of every line.
+//   (movement-cost.ts), so its pair is built here, once. A line with no cost
+//   row gets no pair.
 // An invoice none of whose lines posts (`legacySalesInvoices`) is not found.
-// A contract, rental or fixed-asset line books plain revenue on the sales
-// account. A line with Deferral schedule rows dated on or after the cutover
-// credits their sum to the rows' deferred revenue account, as the posting
-// deferred it; a recognition run (or the enable's rebuild of a posted run)
-// moves those rows to revenue. Rows dated before the cutover were settled
-// in the opening balance with no journal, so their share books to sales.
 // Not rebuilt: the intercompany transaction record, schedule rows, contract
 // movements and asset disposals. They are not journal lines, and the
 // posting already wrote what it writes for every company.
 
-import { type Database, journalReference } from "@carbon/database";
+import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
-import { resolveDefaultAccount } from "@carbon/database/journal-posting-status";
 import { legacySalesInvoices } from "@carbon/database/legacy-documents";
 import {
   allocateSalesHeaderShipping,
-  buildSalesPostingLines,
-  credit,
-  debit,
   round,
-  type SalesPostingAccount,
-  type SalesPostingMetadata,
-  type SalesRevenueLeg
+  type SalesPostingAccount
 } from "@carbon/utils";
 import { sql } from "kysely";
-import { nanoid } from "nanoid";
-import { ServerFnError } from "../../errors";
-import { resolveInventoryAccount } from "../../lib/get-posting-group";
-import { salesInvoiceStandIns } from "../../lib/sales-invoice-stand-ins";
-import { type LegacyJournal, type LegacyJournalLine, readByIds } from "./write";
+import {
+  planSalesInvoiceAccounts,
+  resolveSalesInvoiceAccounts
+} from "../../post-sales-invoice/posting-accounts";
+import {
+  buildSalesInvoiceJournal,
+  type SalesInvoiceLine,
+  type SalesLineRevenue,
+  salesLineDimensions
+} from "../../post-sales-invoice/posting-lines";
+import { type LegacyJournal, readByIds } from "./write";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
-
-const ITEM_LINE_TYPES = new Set([
-  "Part",
-  "Service",
-  "Consumable",
-  "Fixture",
-  "Material",
-  "Tool"
-]);
 
 export async function buildLegacySalesInvoiceJournals(
   trx: KyselyTx,
@@ -132,7 +125,7 @@ export async function buildLegacySalesInvoiceJournals(
     (ids) =>
       trx
         .selectFrom("salesOrderLine")
-        .select(["id", "locationId"])
+        .select(["id", "locationId", "sentComplete"])
         .where("companyId", "=", companyId)
         .where("id", "in", ids)
         .execute()
@@ -152,7 +145,7 @@ export async function buildLegacySalesInvoiceJournals(
     (ids) =>
       trx
         .selectFrom("rentalAgreementLine")
-        .select(["id", "itemId"])
+        .select(["id", "rentalAgreementId", "itemId", "lessorClassification"])
         .where("companyId", "=", companyId)
         .where("id", "in", ids)
         .execute()
@@ -190,252 +183,126 @@ export async function buildLegacySalesInvoiceJournals(
       .execute()
   );
 
-  // Accounts, with the stand-in rule of a posting before the cutover: the
-  // enable writes these journals Provisional.
-  const standIns = salesInvoiceStandIns(defaults, "Provisional");
-  const receivablesIds = {
-    standard: defaults.receivablesAccount,
-    // An empty intercompany default falls back to receivables.
-    intercompany: resolveDefaultAccount(
-      defaults,
-      "intercompanyReceivablesAccount",
-      "Provisional"
-    ).accountId
-  };
-  const shippingAccountId = standIns.defaultId("salesShippingRevenueAccount");
-  if (!shippingAccountId) {
-    throw new ServerFnError(
-      "A Provisional sales invoice journal found no shipping revenue account or stand-in."
-    );
-  }
-  const accountIds = new Set<string>([
-    receivablesIds.standard,
-    receivablesIds.intercompany,
-    defaults.salesAccount,
-    shippingAccountId,
-    defaults.salesTaxPayableAccount,
-    ...deferrals.map((row) => row.debitAccountId)
-  ]);
-  const accountRows = await readByIds(
-    [...accountIds].filter((id) => !standIns.isPlaceholder(id)),
-    (ids) =>
-      trx
-        .selectFrom("account")
-        .select(["id", "class", "active", "isGroup"])
-        .where("companyGroupId", "=", companyGroupId)
-        .where("id", "in", ids)
-        .execute()
+  // The posting's accounts, with the stand-in rule of a posting before the
+  // cutover: the enable writes these journals Provisional. Plain revenue
+  // needs no deferral, rental or contract default; the deferral rows name
+  // their own accounts.
+  const plan = planSalesInvoiceAccounts(defaults, "Provisional", {
+    deferredRevenue: false,
+    rental: null,
+    contract: false,
+    accountIds: deferrals.map((row) => row.debitAccountId)
+  });
+  const accountRows = await readByIds(plan.accountIds, (ids) =>
+    trx
+      .selectFrom("account")
+      .select(["id", "class", "active", "isGroup"])
+      .where("companyGroupId", "=", companyGroupId)
+      .where("id", "in", ids)
+      .execute()
   );
-  const accountsById = new Map<string, SalesPostingAccount>(
-    accountRows.map((row) => [
-      row.id,
-      // Read by the company group, so it is the group's.
-      { ...row, companyGroupId }
-    ])
+  const accounts = resolveSalesInvoiceAccounts(
+    plan,
+    // Read by the company group, so it is the group's.
+    accountRows.map((row): SalesPostingAccount => ({ ...row, companyGroupId })),
+    companyGroupId
   );
-  for (const placeholder of standIns.placeholderAccounts(companyGroupId)) {
-    accountsById.set(placeholder.id, placeholder);
-  }
-  const account = (id: string) => accountsById.get(id);
 
   const linesByInvoice = Map.groupBy(lines, (line) => line.invoiceId);
   const shippingByInvoice = new Map(
     shipments.map((row) => [row.id, Number(row.shippingCost ?? 0)])
   );
   const customerById = new Map(customers.map((row) => [row.id, row]));
-  const itemById = new Map(items.map((row) => [row.id, row]));
-  const postingGroupByItem = new Map(
-    itemCosts.map((row) => [row.itemId, row.itemPostingGroupId])
-  );
-  const salesOrderLineById = new Map(
-    salesOrderLines.map((row) => [row.id, row])
-  );
-  const assetById = new Map(assets.map((row) => [row.id, row]));
-  const agreementLineById = new Map(agreementLines.map((row) => [row.id, row]));
   const deferralsByLine = Map.groupBy(
     deferrals,
     (row) => row.salesInvoiceLineId
   );
   const costRowsByInvoice = Map.groupBy(costRows, (row) => row.documentId);
+  const facts = {
+    companyId,
+    companyGroupId,
+    items: new Map(items.map((row) => [row.id, row])),
+    postingGroups: new Map(
+      itemCosts.map((row) => [row.itemId, row.itemPostingGroupId])
+    ),
+    salesOrderLines: new Map(salesOrderLines.map((row) => [row.id, row])),
+    assets: new Map(assets.map((row) => [row.id, row])),
+    rentalAgreementLines: new Map(agreementLines.map((row) => [row.id, row])),
+    accounts,
+    contract: null,
+    rental: null,
+    disposal: null
+  };
+
+  // A line with deferral rows credits them, and the rest to sales; every
+  // other line books plain revenue.
+  const revenue = (line: SalesInvoiceLine): SalesLineRevenue => {
+    const deferred = deferralsByLine.get(line.id) ?? [];
+    if (deferred.length === 0) return { book: "sales" };
+    return {
+      book: "legs",
+      legs: [
+        ...deferred.map((row) => ({
+          account: accounts.account(row.debitAccountId),
+          accountClass: "Liability" as const,
+          description: "Deferred Revenue",
+          amount: Number(row.amount)
+        })),
+        {
+          account: accounts.account(defaults.salesAccount),
+          accountClass: "Revenue" as const,
+          description: "Sales Account"
+        }
+      ]
+    };
+  };
 
   return invoices.map((invoice) => {
     const customer = invoice.customerId
       ? customerById.get(invoice.customerId)
       : undefined;
-    const intercompanyPartnerId = customer?.intercompanyCompanyId ?? null;
-    const chargeAccounts = {
-      receivables: account(
-        intercompanyPartnerId
-          ? receivablesIds.intercompany
-          : receivablesIds.standard
-      ),
-      sales: account(defaults.salesAccount),
-      shipping: account(shippingAccountId),
-      tax: account(defaults.salesTaxPayableAccount)
-    };
     const invoiceLines = linesByInvoice.get(invoice.id) ?? [];
-    const headerShipping = allocateSalesHeaderShipping(
-      invoiceLines,
-      shippingByInvoice.get(invoice.id) ?? 0
-    );
     const unusedCostRows = [...(costRowsByInvoice.get(invoice.id) ?? [])];
-    const journalLines: LegacyJournalLine[] = [];
-    const push = (
-      line: Omit<LegacyJournalLine, "dimensions">,
-      meta: SalesPostingMetadata
-    ) => {
-      journalLines.push({
-        ...standIns.storedLine(line),
-        dimensions: {
-          CustomerType: meta.customerTypeId,
-          ItemPostingGroup: meta.itemPostingGroupId,
-          Location: meta.locationId,
-          CostCenter: meta.costCenterId,
-          FixedAssetClass: meta.fixedAssetClassId,
-          Item: meta.itemId,
-          Project: meta.projectId ?? null,
-          Customer: invoice.customerId
-        }
-      });
+    // The cost row of a direct line: the first unused one of its item and
+    // quantity, else of its item.
+    const directCost = (line: SalesInvoiceLine): number | null => {
+      if (!line.itemId) return null;
+      const quantity = round(Number(line.quantity));
+      const sameItem = unusedCostRows.filter(
+        (row) => row.itemId === line.itemId
+      );
+      const costRow =
+        sameItem.find((row) => round(-Number(row.quantity)) === quantity) ??
+        sameItem[0];
+      if (!costRow) return null;
+      unusedCostRows.splice(unusedCostRows.indexOf(costRow), 1);
+      return -Number(costRow.cost);
     };
-
-    for (const invoiceLine of invoiceLines) {
-      if (invoiceLine.invoiceLineType === "Comment") continue;
-      const isAsset = invoiceLine.invoiceLineType === "Fixed Asset";
-      const isRental = invoiceLine.invoiceLineType === "Rental";
-      const asset = invoiceLine.assetId
-        ? assetById.get(invoiceLine.assetId)
-        : undefined;
-      const agreementLine = invoiceLine.rentalAgreementLineId
-        ? agreementLineById.get(invoiceLine.rentalAgreementLineId)
-        : undefined;
-      const metadata: SalesPostingMetadata = {
-        customerTypeId: customer?.customerTypeId ?? null,
-        itemPostingGroupId:
-          isAsset || isRental || !invoiceLine.itemId
-            ? null
-            : (postingGroupByItem.get(invoiceLine.itemId) ?? null),
-        itemId: isAsset
-          ? null
-          : isRental
-            ? (agreementLine?.itemId ?? null)
-            : (invoiceLine.itemId ?? null),
-        locationId: isAsset
-          ? (invoiceLine.locationId ??
-            (invoiceLine.salesOrderLineId
-              ? salesOrderLineById.get(invoiceLine.salesOrderLineId)?.locationId
-              : null) ??
-            asset?.locationId ??
-            null)
-          : (invoiceLine.locationId ?? null),
-        costCenterId: null,
-        fixedAssetClassId: isAsset ? (asset?.fixedAssetClassId ?? null) : null,
-        projectId: invoiceLine.projectId ?? null
-      };
-      const deferred = deferralsByLine.get(invoiceLine.id) ?? [];
-      const revenueLegs: SalesRevenueLeg[] | undefined =
-        deferred.length > 0
-          ? [
-              ...deferred.map((row) => ({
-                account: account(row.debitAccountId),
-                accountClass: "Liability" as const,
-                description: "Deferred Revenue",
-                amount: Number(row.amount)
-              })),
-              {
-                account: chargeAccounts.sales,
-                accountClass: "Revenue" as const,
-                description: "Sales Account"
-              }
-            ]
-          : undefined;
-      const charges = buildSalesPostingLines({
-        line: {
-          ...invoiceLine,
-          // A contract, rental or fixed-asset line books plain revenue.
-          invoiceLineType:
-            isAsset || isRental ? "Part" : invoiceLine.invoiceLineType,
-          allocatedHeaderShipping: headerShipping.get(invoiceLine.id) ?? 0
-        },
-        context: {
-          companyId,
-          companyGroupId,
-          documentId: invoice.id,
-          externalDocumentId: invoice.customerReference,
-          documentLineReference: invoiceLine.salesOrderLineId
-            ? journalReference.to.salesInvoice(invoiceLine.salesOrderLineId)
-            : null,
-          journalLineReference: nanoid(),
-          intercompanyPartnerId
-        },
-        accounts: chargeAccounts,
-        revenueLegs,
-        metadata
-      });
-      charges.lines.forEach((line, index) => {
-        push(line, charges.metadata[index] ?? metadata);
-      });
-
-      // The COGS pair of a direct line, at the cost its cost row stored.
-      const item = invoiceLine.itemId
-        ? itemById.get(invoiceLine.itemId)
-        : undefined;
-      if (
-        ITEM_LINE_TYPES.has(invoiceLine.invoiceLineType) &&
-        invoiceLine.itemId &&
-        invoiceLine.salesOrderLineId === null &&
-        invoiceLine.methodType !== "Make to Order" &&
-        (item?.itemTrackingType ?? "Inventory") === "Inventory"
-      ) {
-        const quantity = round(Number(invoiceLine.quantity));
-        const sameItem = unusedCostRows.filter(
-          (row) => row.itemId === invoiceLine.itemId
-        );
-        const costRow =
-          sameItem.find((row) => round(-Number(row.quantity)) === quantity) ??
-          sameItem[0];
-        if (costRow) {
-          unusedCostRows.splice(unusedCostRows.indexOf(costRow), 1);
-          const cost = -Number(costRow.cost);
-          const inventoryAccount = resolveInventoryAccount(
-            item?.replenishmentSystem ?? null,
-            defaults
-          );
-          const keys = {
-            quantity,
-            documentType: "Invoice" as const,
-            documentId: invoice.id,
-            externalDocumentId: invoice.customerReference,
-            journalLineReference: nanoid()
-          };
-          const cogsMetadata = { ...metadata, projectId: null };
-          push(
-            {
-              accountId: defaults.costOfGoodsSoldAccount,
-              description: "Cost of Goods Sold",
-              amount: round(debit("expense", cost)),
-              ...keys
-            },
-            cogsMetadata
-          );
-          push(
-            {
-              accountId: inventoryAccount.account,
-              description: inventoryAccount.description,
-              amount: round(credit("asset", cost)),
-              ...keys
-            },
-            cogsMetadata
-          );
-        }
-      }
-    }
+    const journal = buildSalesInvoiceJournal({
+      ...facts,
+      invoice,
+      customerTypeId: customer?.customerTypeId ?? null,
+      intercompanyPartnerId: customer?.intercompanyCompanyId ?? null,
+      lines: invoiceLines,
+      headerShipping: allocateSalesHeaderShipping(
+        invoiceLines,
+        shippingByInvoice.get(invoice.id) ?? 0
+      ),
+      revenue,
+      directCost
+    });
 
     return {
       description: `Sales Invoice ${invoice.invoiceId}`,
       postingDate: String(invoice.postingDate),
       sourceType: "Sales Invoice" as const,
-      lines: journalLines
+      lines: journal.lines.map((line, index) => ({
+        ...accounts.standIns.storedLine(line),
+        dimensions: salesLineDimensions(
+          journal.metadata[index]!,
+          invoice.customerId
+        )
+      }))
     };
   });
 }

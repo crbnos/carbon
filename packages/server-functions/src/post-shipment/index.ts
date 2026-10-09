@@ -8,8 +8,9 @@ import {
   type Json,
   journalReference
 } from "@carbon/database";
-import type { KyselyDatabase } from "@carbon/database/client";
+import type { KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
+  type AutomaticJournalStatus,
   assertPostingStatusUnchanged,
   journalPostingStatus
 } from "@carbon/database/journal-posting-status";
@@ -29,12 +30,8 @@ import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
   buildBatchSplitRecords,
-  buildJournalLineDimensionInserts,
-  credit,
   datetime,
-  debit,
   isFullDraw,
-  type JournalDimensionMeta,
   round,
   type TrackedEntityAttributes
 } from "@carbon/utils";
@@ -52,11 +49,19 @@ import {
 import { documentJournalLines } from "../lib/document-journal-lines";
 import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
-import {
-  getDefaultPostingGroup,
-  resolveInventoryAccount
-} from "../lib/get-posting-group";
+import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import {
+  buildReturnShipmentJournal,
+  buildSalesShipmentJournal,
+  type FixedAssetSale,
+  netBookValue,
+  type ReturnShipmentItem,
+  type SalesShipmentLine,
+  type ShipmentJournal,
+  shippedQuantityByItem
+} from "./posting-lines";
 import { postRentalShipment, voidRentalShipment } from "./rental-agreement";
 
 const logger = getLogger("server-functions", "post-shipment");
@@ -163,7 +168,7 @@ const postShipment = defineServerFn({
           many(
             db,
             "job",
-            { id: jobIds },
+            { companyId, id: jobIds },
             {
               columns: [
                 "id",
@@ -208,7 +213,7 @@ const postShipment = defineServerFn({
                     single(
                       db,
                       "salesOrderShipment",
-                      { id: shipmentHeader.sourceDocumentId },
+                      { companyId, id: shipmentHeader.sourceDocumentId },
                       { columns: ["shippingCost"] }
                     )
                 ]);
@@ -249,24 +254,28 @@ const postShipment = defineServerFn({
                 throw new Error("Error getting account defaults");
               }
 
-              const dimensions = await many(
-                db,
-                "dimension",
-                {
-                  companyGroupId: companyGroupId!,
-                  active: true,
-                  entityType: [
-                    "Customer",
-                    "CustomerType",
-                    "Item",
-                    "ItemPostingGroup",
-                    "Location",
-                    "CostCenter",
-                    "FixedAssetClass"
-                  ]
-                },
-                { columns: ["id", "entityType"] }
-              );
+              // Guarded like the return-shipment branches: a company with no
+              // group has no dimensions to read.
+              const dimensions = companyGroupId
+                ? await many(
+                    db,
+                    "dimension",
+                    {
+                      companyGroupId,
+                      active: true,
+                      entityType: [
+                        "Customer",
+                        "CustomerType",
+                        "Item",
+                        "ItemPostingGroup",
+                        "Location",
+                        "CostCenter",
+                        "FixedAssetClass"
+                      ]
+                    },
+                    { columns: ["id", "entityType"] }
+                  )
+                : null;
 
               const dimensionMap = new Map<string, string>();
               if (dimensions?.data) {
@@ -278,20 +287,10 @@ const postShipment = defineServerFn({
               const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
                 [];
 
-              const journalLineInserts: Omit<
-                Database["public"]["Tables"]["journalLine"]["Insert"],
-                "journalId"
-              >[] = [];
-
-              const journalLineDimensionsMeta: {
-                customerTypeId: string | null;
-                itemId: string | null;
-                itemPostingGroupId: string | null;
-                locationId: string | null;
-                // Always null: salesOrderLine has no cost center column.
-                costCenterId: string | null;
-                fixedAssetClassId: string | null;
-              }[] = [];
+              // The journal's facts; the lines are built once the
+              // transaction has relieved each item's cost.
+              const journalShipmentLines: SalesShipmentLine[] = [];
+              const fixedAssetSales: FixedAssetSale[] = [];
 
               const jobUpdates: Record<
                 string,
@@ -498,66 +497,19 @@ const postShipment = defineServerFn({
                   });
                 }
 
-                // COGS journal entries for this shipment line
-                if (
-                  shipmentLine.itemId &&
-                  shippedQuantity > 0 &&
-                  itemTrackingType !== "Non-Inventory"
-                ) {
-                  const itemPostingGroupId =
+                journalShipmentLines.push({
+                  shipmentLineId: shipmentLine.id,
+                  itemId: shipmentLine.itemId,
+                  shippedQuantity,
+                  itemTrackingType,
+                  replenishmentSystem:
+                    shipmentLineItem?.replenishmentSystem ?? null,
+                  itemPostingGroupId:
                     itemCosts.data.find(
                       (cost) => cost.itemId === shipmentLine.itemId
-                    )?.itemPostingGroupId ?? null;
-
-                  const journalLineReference = nanoid();
-
-                  journalLineInserts.push({
-                    accountId: accountDefaults.data.costOfGoodsSoldAccount,
-                    description: "Cost of Goods Sold",
-                    amount: 0,
-                    quantity: round(shippedQuantity),
-                    documentType: "Sales Shipment",
-                    documentId: shipmentHeader.id,
-                    externalDocumentId:
-                      salesOrder.data?.customerReference ?? undefined,
-                    documentLineReference: journalReference.to.shipment(
-                      shipmentLine.id
-                    ),
-                    journalLineReference,
-                    companyId
-                  });
-
-                  const inventoryAccount = resolveInventoryAccount(
-                    shipmentLineItem?.replenishmentSystem ?? null,
-                    accountDefaults.data
-                  );
-                  journalLineInserts.push({
-                    accountId: inventoryAccount.account,
-                    description: inventoryAccount.description,
-                    amount: 0,
-                    quantity: round(shippedQuantity),
-                    documentType: "Sales Shipment",
-                    documentId: shipmentHeader.id,
-                    externalDocumentId:
-                      salesOrder.data?.customerReference ?? undefined,
-                    documentLineReference: journalReference.to.shipment(
-                      shipmentLine.id
-                    ),
-                    journalLineReference,
-                    companyId
-                  });
-
-                  for (let i = 0; i < 2; i++) {
-                    journalLineDimensionsMeta.push({
-                      customerTypeId: customer.data.customerTypeId ?? null,
-                      itemId: shipmentLine.itemId ?? null,
-                      itemPostingGroupId,
-                      locationId: shipmentLine.locationId ?? locationId ?? null,
-                      costCenterId: null,
-                      fixedAssetClassId: null
-                    });
-                  }
-                }
+                    )?.itemPostingGroupId ?? null,
+                  locationId: shipmentLine.locationId ?? locationId ?? null
+                });
               }
 
               const shipmentLinesBySalesOrderLineId = shipmentLines.data.reduce<
@@ -674,7 +626,7 @@ const postShipment = defineServerFn({
                 >(
                   db,
                   "fixedAsset",
-                  { id: faSoLine.assetId! },
+                  { companyId, id: faSoLine.assetId! },
                   {
                     columns: [
                       "id",
@@ -702,102 +654,22 @@ const postShipment = defineServerFn({
                   throw new Error("Failed to fetch fixed asset for disposal");
                 fixedAssetWrites.overlay(faSoLine.assetId!, assetRecord.data);
 
-                const assetClass = assetRecord.data.fixedAssetClass as any;
-                const acquisitionCost =
-                  Number(assetRecord.data.acquisitionCost) ?? 0;
-                const accumulatedDepreciation =
-                  Number(assetRecord.data.accumulatedDepreciation) ?? 0;
-                const nbv = acquisitionCost - accumulatedDepreciation;
-
-                if (accumulatedDepreciation > 0) {
-                  const jlRef = nanoid();
-                  journalLineInserts.push({
-                    accountId: assetClass.accumulatedDepreciationAccountId,
-                    description: "Clear accumulated depreciation",
-                    amount: round(debit("asset", accumulatedDepreciation)),
-                    quantity: 1,
-                    documentType: "Sales Shipment",
-                    documentId: shipmentHeader.id,
-                    externalDocumentId:
-                      salesOrder.data?.customerReference ?? undefined,
-                    documentLineReference: journalReference.to.shipment(
-                      faSoLine.id
-                    ),
-                    journalLineReference: jlRef,
-                    companyId
-                  });
-
-                  journalLineDimensionsMeta.push({
-                    customerTypeId: customer.data.customerTypeId ?? null,
-                    itemId: null,
-                    itemPostingGroupId: null,
-                    locationId:
-                      locationId ?? assetRecord.data.locationId ?? null,
-                    costCenterId: null,
-                    fixedAssetClassId:
-                      assetRecord.data.fixedAssetClassId ?? null
-                  });
-                }
-
-                if (nbv > 0) {
-                  const nbvJlRef = nanoid();
-                  journalLineInserts.push({
-                    accountId: assetClass.writeOffAccountId,
-                    // writeOffAccountId is used here as a disposal clearing /
-                    // holding account: the NBV parks here (a balance-sheet
-                    // holding, not a P&L loss) until the invoice recognizes
-                    // proceeds and clears it back to zero — no interim full loss.
-                    description: "Transfer net book value to disposal clearing",
-                    amount: round(debit("expense", nbv)),
-                    quantity: 1,
-                    documentType: "Sales Shipment",
-                    documentId: shipmentHeader.id,
-                    externalDocumentId:
-                      salesOrder.data?.customerReference ?? undefined,
-                    documentLineReference: journalReference.to.shipment(
-                      faSoLine.id
-                    ),
-                    journalLineReference: nbvJlRef,
-                    companyId
-                  });
-
-                  journalLineDimensionsMeta.push({
-                    customerTypeId: customer.data.customerTypeId ?? null,
-                    itemId: null,
-                    itemPostingGroupId: null,
-                    locationId:
-                      locationId ?? assetRecord.data.locationId ?? null,
-                    costCenterId: null,
-                    fixedAssetClassId:
-                      assetRecord.data.fixedAssetClassId ?? null
-                  });
-                }
-
-                const removeJlRef = nanoid();
-                journalLineInserts.push({
-                  accountId: assetClass.assetAccountId,
-                  description: "Remove asset at cost",
-                  amount: round(credit("asset", acquisitionCost)),
-                  quantity: 1,
-                  documentType: "Sales Shipment",
-                  documentId: shipmentHeader.id,
-                  externalDocumentId:
-                    salesOrder.data?.customerReference ?? undefined,
-                  documentLineReference: journalReference.to.shipment(
-                    faSoLine.id
+                const assetClass = assetRecord.data.fixedAssetClass!;
+                const fixedAssetSale: FixedAssetSale = {
+                  salesOrderLineId: faSoLine.id,
+                  acquisitionCost: Number(assetRecord.data.acquisitionCost),
+                  accumulatedDepreciation: Number(
+                    assetRecord.data.accumulatedDepreciation
                   ),
-                  journalLineReference: removeJlRef,
-                  companyId
-                });
-
-                journalLineDimensionsMeta.push({
-                  customerTypeId: customer.data.customerTypeId ?? null,
-                  itemId: null,
-                  itemPostingGroupId: null,
+                  assetAccountId: assetClass.assetAccountId,
+                  accumulatedDepreciationAccountId:
+                    assetClass.accumulatedDepreciationAccountId,
+                  writeOffAccountId: assetClass.writeOffAccountId,
                   locationId: locationId ?? assetRecord.data.locationId ?? null,
-                  costCenterId: null,
                   fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null
-                });
+                };
+                fixedAssetSales.push(fixedAssetSale);
+                const nbv = netBookValue(fixedAssetSale);
 
                 fixedAssetWrites.patch(faSoLine.assetId!, {
                   status: "Disposed",
@@ -1215,206 +1087,61 @@ const postShipment = defineServerFn({
                   }
                 }
 
-                // Calculate COGS and create journal entries
-                if (journalLineInserts.length > 0) {
-                  const itemShipmentQuantities = new Map<
-                    string,
-                    { totalQuantity: number; lineIndices: number[] }
-                  >();
-
-                  for (let i = 0; i < journalLineInserts.length; i += 2) {
-                    const jl = journalLineInserts[i];
-                    const ref = jl!.documentLineReference;
-                    const shipmentLine = shipmentLines.data.find(
-                      (sl) => ref === journalReference.to.shipment(sl.id)
-                    );
-                    if (!shipmentLine?.itemId) continue;
-
-                    const existing = itemShipmentQuantities.get(
-                      shipmentLine.itemId
-                    );
-                    if (existing) {
-                      existing.totalQuantity += jl!.quantity ?? 0;
-                      existing.lineIndices.push(i);
-                    } else {
-                      itemShipmentQuantities.set(shipmentLine.itemId, {
-                        totalQuantity: jl!.quantity ?? 0,
-                        lineIndices: [i]
-                      });
-                    }
-                  }
-
-                  for (const [itemId, info] of itemShipmentQuantities) {
-                    const cogsResult = await calculateCOGS(trx, {
-                      itemId,
-                      quantity: info.totalQuantity,
-                      companyId,
-                      trackedEntityIds: leavingTrackedEntityIds(
-                        itemLedgerInserts,
-                        itemId
-                      )
-                    });
-
-                    let costAssigned = 0;
-                    for (let idx = 0; idx < info.lineIndices.length; idx++) {
-                      const jlIdx = info.lineIndices[idx]!;
-                      const lineQty = journalLineInserts[jlIdx]!.quantity ?? 0;
-                      const lineCost =
-                        idx === info.lineIndices.length - 1
-                          ? cogsResult.totalCost - costAssigned
-                          : (lineQty / info.totalQuantity) *
-                            cogsResult.totalCost;
-
-                      costAssigned += lineCost;
-                      journalLineInserts[jlIdx]!.amount = round(
-                        debit("expense", lineCost)
-                      );
-                      journalLineInserts[jlIdx! + 1]!.amount = round(
-                        credit("asset", lineCost)
-                      );
-                    }
-
-                    await trx
-                      .insertInto("costLedger")
-                      .values({
-                        itemLedgerType: "Sale",
-                        costLedgerType: "Direct Cost",
-                        adjustment: false,
-                        documentType: "Sales Shipment",
-                        documentId: shipmentHeader.id ?? "",
-                        itemId,
-                        quantity: round(-info.totalQuantity),
-                        cost: round(-cogsResult.totalCost),
-                        remainingQuantity: 0,
-                        companyId,
-                        postingDate: today
-                      })
-                      .execute();
-                  }
-
-                  const journalEntryId = await getNextSequence(
-                    trx,
-                    "journalEntry",
-                    companyId
-                  );
-
-                  const journalResult = await trx
-                    .insertInto("journal")
-                    .values({
-                      journalEntryId,
-                      accountingPeriodId,
-                      description: `Sales Shipment ${shipmentHeader.shipmentId}`,
-                      postingDate: today,
-                      companyId,
-                      sourceType: "Sales Shipment",
-                      status: postingStatus,
-                      postedAt: datetime.timestamp(),
-                      postedBy: userId,
-                      createdBy: userId
-                    })
-                    .returning(["id"])
-                    .executeTakeFirstOrThrow();
-
-                  const journalLineResults = await trx
-                    .insertInto("journalLine")
-                    .values(
-                      journalLineInserts.map((line) => ({
-                        ...line,
-                        journalId: journalResult.id
-                      }))
+                // Relieve each item's cost, then write the journal.
+                const relievedCostByItem = new Map<string, number>();
+                for (const [itemId, quantity] of shippedQuantityByItem(
+                  journalShipmentLines
+                )) {
+                  const cogsResult = await calculateCOGS(trx, {
+                    itemId,
+                    quantity,
+                    companyId,
+                    trackedEntityIds: leavingTrackedEntityIds(
+                      itemLedgerInserts,
+                      itemId
                     )
-                    .returning(["id"])
+                  });
+                  relievedCostByItem.set(itemId, cogsResult.totalCost);
+
+                  await trx
+                    .insertInto("costLedger")
+                    .values({
+                      itemLedgerType: "Sale",
+                      costLedgerType: "Direct Cost",
+                      adjustment: false,
+                      documentType: "Sales Shipment",
+                      documentId: shipmentHeader.id ?? "",
+                      itemId,
+                      quantity: round(-quantity),
+                      cost: round(-cogsResult.totalCost),
+                      remainingQuantity: 0,
+                      companyId,
+                      postingDate: today
+                    })
                     .execute();
+                }
 
-                  if (dimensionMap.size > 0) {
-                    const journalLineDimensionInserts: {
-                      journalLineId: string;
-                      dimensionId: string;
-                      valueId: string;
-                      companyId: string;
-                    }[] = [];
-
-                    journalLineResults.forEach((jl, index) => {
-                      const meta = journalLineDimensionsMeta[index];
-                      if (!meta) return;
-
-                      if (
-                        salesOrder.data?.customerId &&
-                        dimensionMap.has("Customer")
-                      ) {
-                        journalLineDimensionInserts.push({
-                          journalLineId: jl.id,
-                          dimensionId: dimensionMap.get("Customer")!,
-                          valueId: salesOrder.data.customerId,
-                          companyId
-                        });
-                      }
-                      if (
-                        meta.customerTypeId &&
-                        dimensionMap.has("CustomerType")
-                      ) {
-                        journalLineDimensionInserts.push({
-                          journalLineId: jl.id,
-                          dimensionId: dimensionMap.get("CustomerType")!,
-                          valueId: meta.customerTypeId,
-                          companyId
-                        });
-                      }
-                      if (meta.itemId && dimensionMap.has("Item")) {
-                        journalLineDimensionInserts.push({
-                          journalLineId: jl.id,
-                          dimensionId: dimensionMap.get("Item")!,
-                          valueId: meta.itemId,
-                          companyId
-                        });
-                      }
-                      if (
-                        meta.itemPostingGroupId &&
-                        dimensionMap.has("ItemPostingGroup")
-                      ) {
-                        journalLineDimensionInserts.push({
-                          journalLineId: jl.id,
-                          dimensionId: dimensionMap.get("ItemPostingGroup")!,
-                          valueId: meta.itemPostingGroupId,
-                          companyId
-                        });
-                      }
-                      if (meta.locationId && dimensionMap.has("Location")) {
-                        journalLineDimensionInserts.push({
-                          journalLineId: jl.id,
-                          dimensionId: dimensionMap.get("Location")!,
-                          valueId: meta.locationId,
-                          companyId
-                        });
-                      }
-                      if (meta.costCenterId && dimensionMap.has("CostCenter")) {
-                        journalLineDimensionInserts.push({
-                          journalLineId: jl.id,
-                          dimensionId: dimensionMap.get("CostCenter")!,
-                          valueId: meta.costCenterId,
-                          companyId
-                        });
-                      }
-                      if (
-                        meta.fixedAssetClassId &&
-                        dimensionMap.has("FixedAssetClass")
-                      ) {
-                        journalLineDimensionInserts.push({
-                          journalLineId: jl.id,
-                          dimensionId: dimensionMap.get("FixedAssetClass")!,
-                          valueId: meta.fixedAssetClassId,
-                          companyId
-                        });
-                      }
-                    });
-
-                    if (journalLineDimensionInserts.length > 0) {
-                      await trx
-                        .insertInto("journalLineDimension")
-                        .values(journalLineDimensionInserts)
-                        .execute();
-                    }
-                  }
+                const journal = buildSalesShipmentJournal({
+                  shipmentId: shipmentHeader.id,
+                  shipmentReadableId: shipmentHeader.shipmentId,
+                  externalDocumentId: salesOrder.data.customerReference,
+                  customerId: salesOrder.data.customerId,
+                  customerTypeId: customer.data.customerTypeId ?? null,
+                  defaults: accountDefaults.data,
+                  lines: journalShipmentLines,
+                  relievedCostByItem,
+                  fixedAssetSales
+                });
+                if (journal.lines.length > 0) {
+                  await insertShipmentJournal(trx, {
+                    journal,
+                    accountingPeriodId,
+                    postingDate: today,
+                    postingStatus,
+                    dimensionIdByEntity: dimensionMap,
+                    companyId,
+                    userId
+                  });
                 }
               });
               break;
@@ -2196,14 +1923,7 @@ const postShipment = defineServerFn({
                   postingStatus
                 );
 
-                const journalLineInserts: Omit<
-                  Database["public"]["Tables"]["journalLine"]["Insert"],
-                  "journalId"
-                >[] = [];
-                // Index-parallel to journalLineInserts: dimension #i belongs to
-                // journal line #i.
-                const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
-
+                const returnedItems: ReturnShipmentItem[] = [];
                 for (const [itemId, quantity] of Object.entries(
                   itemShipmentQuantities
                 )) {
@@ -2237,105 +1957,39 @@ const postShipment = defineServerFn({
                     })
                     .execute();
 
-                  // Written even at zero cost: the accounting cutover's re-cost revalues
-                  // this outbound row against its journal pair.
-                  const journalLineReference = nanoid();
-                  const item = items.data.find((i) => i.id === itemId);
-                  const inventoryAccount = resolveInventoryAccount(
-                    item?.replenishmentSystem ?? null,
-                    accountDefaults.data
-                  );
-                  journalLineInserts.push({
-                    accountId: accountDefaults.data.costOfGoodsSoldAccount,
-                    description: "Cost of Goods Sold",
-                    amount: round(debit("expense", cogsResult.totalCost)),
-                    quantity: round(quantity),
-                    documentType: "Return Order",
-                    documentId: shipmentHeader.id ?? undefined,
-                    documentLineReference: journalReference.to.shipment(
-                      shipmentHeader.id ?? ""
-                    ),
-                    journalLineReference,
-                    companyId
-                  });
-                  journalLineInserts.push({
-                    accountId: inventoryAccount.account,
-                    description: inventoryAccount.description,
-                    amount: round(credit("asset", cogsResult.totalCost)),
-                    quantity: round(quantity),
-                    documentType: "Return Order",
-                    documentId: shipmentHeader.id ?? undefined,
-                    documentLineReference: journalReference.to.shipment(
-                      shipmentHeader.id ?? ""
-                    ),
-                    journalLineReference,
-                    companyId
-                  });
-                  // Two journal lines were pushed for this item — one
-                  // dimension meta entry each, index-aligned.
-                  const meta = {
+                  returnedItems.push({
                     itemId,
+                    quantity,
+                    cost: cogsResult.totalCost,
+                    replenishmentSystem:
+                      items.data.find((i) => i.id === itemId)
+                        ?.replenishmentSystem ?? null,
                     itemPostingGroupId:
                       itemCosts.data.find((c) => c.itemId === itemId)
-                        ?.itemPostingGroupId ?? null,
-                    locationId: shipmentHeader.locationId,
-                    customerId: salesReturnOrder.data.customerId,
-                    customerTypeId
-                  };
-                  journalLineDimensionsMeta.push(meta, { ...meta });
+                        ?.itemPostingGroupId ?? null
+                  });
                 }
 
-                if (journalLineInserts.length > 0) {
-                  const journalEntryId = await getNextSequence(
-                    trx,
-                    "journalEntry",
-                    companyId
-                  );
-                  const journalResult = await trx
-                    .insertInto("journal")
-                    .values({
-                      journalEntryId,
-                      accountingPeriodId,
-                      description: `Return Shipment ${shipmentHeader.shipmentId}`,
-                      postingDate: today,
-                      companyId,
-                      // Distinct source type: these are NOT sales shipments —
-                      // "Sales Shipment" here double-counted return-to-customer
-                      // movements in shipment/COGS reporting and pushed the
-                      // journal through the always-on external-sync policy
-                      // instead of the opt-in return types.
-                      sourceType: "Sales Return Shipment",
-                      status: postingStatus,
-                      postedAt: datetime.timestamp(),
-                      postedBy: userId,
-                      createdBy: userId
-                    })
-                    .returning(["id"])
-                    .executeTakeFirstOrThrow();
-                  const journalLineResults = await trx
-                    .insertInto("journalLine")
-                    .values(
-                      journalLineInserts.map((line) => ({
-                        ...line,
-                        journalId: journalResult.id
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
-
-                  const journalLineDimensionInserts =
-                    buildJournalLineDimensionInserts({
-                      journalLineIds: journalLineResults.map((jl) => jl.id),
-                      meta: journalLineDimensionsMeta,
-                      dimensionMap,
-                      companyId
-                    });
-                  if (journalLineDimensionInserts.length > 0) {
-                    await trx
-                      .insertInto("journalLineDimension")
-                      .values(journalLineDimensionInserts)
-                      .execute();
-                  }
+                const journal = buildReturnShipmentJournal({
+                  sourceDocument: "Sales Return Order",
+                  shipmentId: shipmentHeader.id,
+                  shipmentReadableId: shipmentHeader.shipmentId,
+                  locationId: shipmentHeader.locationId,
+                  partyId: salesReturnOrder.data.customerId,
+                  partyTypeId: customerTypeId,
+                  defaults: accountDefaults.data,
+                  items: returnedItems
+                });
+                if (journal.lines.length > 0) {
+                  await insertShipmentJournal(trx, {
+                    journal,
+                    accountingPeriodId,
+                    postingDate: today,
+                    postingStatus,
+                    dimensionIdByEntity: dimensionMap,
+                    companyId,
+                    userId
+                  });
                 }
 
                 if (itemLedgerInserts.length > 0) {
@@ -2775,14 +2429,7 @@ const postShipment = defineServerFn({
                   });
                 }
 
-                const journalLineInserts: Omit<
-                  Database["public"]["Tables"]["journalLine"]["Insert"],
-                  "journalId"
-                >[] = [];
-                // Index-parallel to journalLineInserts: dimension #i belongs to
-                // journal line #i.
-                const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
-
+                const returnedItems: ReturnShipmentItem[] = [];
                 for (const [itemId, quantity] of Object.entries(
                   itemShipmentQuantities
                 )) {
@@ -2816,101 +2463,39 @@ const postShipment = defineServerFn({
                     })
                     .execute();
 
-                  // Written even at zero cost: the accounting cutover's re-cost revalues
-                  // this outbound row against its journal pair.
-                  const journalLineReference = nanoid();
-                  const item = items.data.find((i) => i.id === itemId);
-                  const inventoryAccount = resolveInventoryAccount(
-                    item?.replenishmentSystem ?? null,
-                    accountDefaults.data
-                  );
-                  journalLineInserts.push({
-                    accountId:
-                      accountDefaults.data.goodsReceivedNotInvoicedAccount,
-                    description: "Goods Received Not Invoiced",
-                    amount: round(debit("liability", cogsResult.totalCost)),
-                    quantity: round(quantity),
-                    documentType: "Return Order",
-                    documentId: shipmentHeader.id ?? undefined,
-                    documentLineReference: journalReference.to.shipment(
-                      shipmentHeader.id ?? ""
-                    ),
-                    journalLineReference,
-                    companyId
-                  });
-                  journalLineInserts.push({
-                    accountId: inventoryAccount.account,
-                    description: inventoryAccount.description,
-                    amount: round(credit("asset", cogsResult.totalCost)),
-                    quantity: round(quantity),
-                    documentType: "Return Order",
-                    documentId: shipmentHeader.id ?? undefined,
-                    documentLineReference: journalReference.to.shipment(
-                      shipmentHeader.id ?? ""
-                    ),
-                    journalLineReference,
-                    companyId
-                  });
-                  // Two journal lines were pushed for this item — one
-                  // dimension meta entry each, index-aligned.
-                  const meta = {
+                  returnedItems.push({
                     itemId,
+                    quantity,
+                    cost: cogsResult.totalCost,
+                    replenishmentSystem:
+                      items.data.find((i) => i.id === itemId)
+                        ?.replenishmentSystem ?? null,
                     itemPostingGroupId:
                       itemCosts.data.find((c) => c.itemId === itemId)
-                        ?.itemPostingGroupId ?? null,
-                    locationId: shipmentHeader.locationId,
-                    supplierId: purchaseReturnOrder.data.supplierId,
-                    supplierTypeId
-                  };
-                  journalLineDimensionsMeta.push(meta, { ...meta });
+                        ?.itemPostingGroupId ?? null
+                  });
                 }
 
-                if (journalLineInserts.length > 0) {
-                  const journalEntryId = await getNextSequence(
-                    trx,
-                    "journalEntry",
-                    companyId
-                  );
-                  const journalResult = await trx
-                    .insertInto("journal")
-                    .values({
-                      journalEntryId,
-                      accountingPeriodId,
-                      description: `Purchase Return Shipment ${shipmentHeader.shipmentId}`,
-                      postingDate: today,
-                      companyId,
-                      sourceType: "Purchase Return Shipment",
-                      status: postingStatus,
-                      postedAt: datetime.timestamp(),
-                      postedBy: userId,
-                      createdBy: userId
-                    })
-                    .returning(["id"])
-                    .executeTakeFirstOrThrow();
-                  const journalLineResults = await trx
-                    .insertInto("journalLine")
-                    .values(
-                      journalLineInserts.map((line) => ({
-                        ...line,
-                        journalId: journalResult.id
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
-
-                  const journalLineDimensionInserts =
-                    buildJournalLineDimensionInserts({
-                      journalLineIds: journalLineResults.map((jl) => jl.id),
-                      meta: journalLineDimensionsMeta,
-                      dimensionMap,
-                      companyId
-                    });
-                  if (journalLineDimensionInserts.length > 0) {
-                    await trx
-                      .insertInto("journalLineDimension")
-                      .values(journalLineDimensionInserts)
-                      .execute();
-                  }
+                const journal = buildReturnShipmentJournal({
+                  sourceDocument: "Purchase Return Order",
+                  shipmentId: shipmentHeader.id,
+                  shipmentReadableId: shipmentHeader.shipmentId,
+                  locationId: shipmentHeader.locationId,
+                  partyId: purchaseReturnOrder.data.supplierId,
+                  partyTypeId: supplierTypeId,
+                  defaults: accountDefaults.data,
+                  items: returnedItems
+                });
+                if (journal.lines.length > 0) {
+                  await insertShipmentJournal(trx, {
+                    journal,
+                    accountingPeriodId,
+                    postingDate: today,
+                    postingStatus,
+                    dimensionIdByEntity: dimensionMap,
+                    companyId,
+                    userId
+                  });
                 }
 
                 if (itemLedgerInserts.length > 0) {
@@ -4726,3 +4311,67 @@ const postShipment = defineServerFn({
 });
 
 export default postShipment;
+
+/** Writes a shipment's journal, its lines and the lines' dimensions. */
+async function insertShipmentJournal(
+  trx: KyselyTx,
+  {
+    journal,
+    accountingPeriodId,
+    postingDate,
+    postingStatus,
+    dimensionIdByEntity,
+    companyId,
+    userId
+  }: {
+    journal: ShipmentJournal;
+    accountingPeriodId: string | null;
+    postingDate: string;
+    postingStatus: AutomaticJournalStatus;
+    dimensionIdByEntity: ReadonlyMap<string, string>;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
+  const journalResult = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId,
+      description: journal.description,
+      postingDate,
+      companyId,
+      sourceType: journal.sourceType,
+      status: postingStatus,
+      postedAt: datetime.timestamp(),
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+  const journalLineResults = await trx
+    .insertInto("journalLine")
+    .values(
+      journal.lines.map(({ dimensions: _, ...line }) => ({
+        ...line,
+        journalId: journalResult.id,
+        companyId
+      }))
+    )
+    .returning(["id"])
+    .execute();
+
+  const dimensionRows = journalLineDimensionRows({
+    journalLineIds: journalLineResults.map((line) => line.id),
+    lines: journal.lines,
+    dimensionIdByEntity,
+    companyId
+  });
+  if (dimensionRows.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(dimensionRows)
+      .execute();
+  }
+}

@@ -6,19 +6,11 @@
 // writes today, from the stored invoice, with today's account defaults
 // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a). Amounts come from
 // `calculatePurchasePostingAmounts`, which converts the header freight at the
-// invoice's exchange rate as the posting does.
-//
-// Mirrors post-purchase-invoice/index.ts:
-// - a stock line with no PO: inventory (indirect cost for Non-Inventory, WIP
-//   when no receipt was posted with it) against payables;
-// - a PO line: GR/IR Clearing at the receipt cost of the units it clears,
-//   the variance on inventory and purchase variance, payables at invoice
-//   cost; the units it does not clear accrue GR/IR, or indirect cost for a
-//   service. All on `purchase-invoice:<poLineId>`;
-// - a fixed asset line and a G/L line;
-// - the dimensions of every line.
-// Every line but a comment is written, at zero too, so an invoice with one
-// is journaled (`legacyPurchaseInvoices` leaves out a comment-only one).
+// invoice's exchange rate as the posting does. The lines and their dimensions
+// come from `buildPurchaseInvoicePostingLines`, the posting's own builder; this
+// file only reads the facts it needs from the stored rows. Every line but a
+// comment is written, at zero too, so an invoice with one is journaled
+// (`legacyPurchaseInvoices` leaves out a comment-only one).
 //
 // The GR/IR walk of the posting reads the receipts' journals, which a legacy
 // receipt does not have. So a receipt's cost is its cost layers, else its
@@ -35,25 +27,25 @@
 // variance, so a company that wrote no children books all of it there.
 
 import type { Database } from "@carbon/database";
-import { journalReference } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveDefaultAccount } from "@carbon/database/journal-posting-status";
 import {
   legacyPurchaseInvoices,
   POSTED_INVOICE_EXCLUDED_STATUSES
 } from "@carbon/database/legacy-documents";
-import { credit, debit, EPSILON, round } from "@carbon/utils";
+import { EPSILON } from "@carbon/utils";
 import { sql } from "kysely";
-import { nanoid } from "nanoid";
 import { InvalidInputError } from "../../errors";
-import { resolveInventoryAccount } from "../../lib/get-posting-group";
+import {
+  buildPurchaseInvoicePostingLines,
+  isItemLineType,
+  type PurchaseInvoiceItem,
+  type PurchaseInvoicePostingLine
+} from "../../post-purchase-invoice/posting-lines";
 import { calculatePurchasePostingAmounts } from "../../post-purchase-invoice/purchase-posting-amounts";
-import { type LegacyJournal, type LegacyJournalLine, readByIds } from "./write";
+import { type LegacyJournal, readByIds } from "./write";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
-
-/** The posting's threshold for a variance worth a line. */
-const VARIANCE_THRESHOLD = 0.005;
 
 type ReceiptGroup = { postingDate: string; quantity: number; cost: number };
 
@@ -288,15 +280,6 @@ export async function buildLegacyPurchaseInvoiceJournals(
   const supplierById = new Map(suppliers.map((row) => [row.id, row]));
   const itemById = new Map(items.map((row) => [row.id, row]));
   const itemCostByItem = new Map(itemCosts.map((row) => [row.itemId, row]));
-  const costingMethodOf = (itemId: string) => {
-    const itemCost = itemCostByItem.get(itemId);
-    if (!itemCost) {
-      throw new InvalidInputError(
-        `Item ${itemId} on a purchase invoice has no cost record, so its invoice cannot be journaled.`
-      );
-    }
-    return itemCost.costingMethod;
-  };
   const purchaseOrderLineById = new Map(
     purchaseOrderLines.map((row) => [row.id, row])
   );
@@ -383,275 +366,76 @@ export async function buildLegacyPurchaseInvoiceJournals(
         supplierShippingCost: shippingByInvoice.get(invoice.id) ?? 0
       }).map((amounts) => [amounts.id, amounts])
     );
+    const postingDate = String(invoice.postingDate);
+    /** The receipts the posting saw: posted on or before the invoice. */
+    const receiptsBefore = (purchaseOrderLineId: string) =>
+      (receiptsByLine.get(purchaseOrderLineId) ?? []).filter(
+        (group) => group.postingDate <= postingDate
+      );
 
-    // The variance of this invoice's PO lines per item, to share its write-up.
-    const varianceByItem = new Map<string, number>();
-    const journalLines: LegacyJournalLine[] = [];
-    type Line = Omit<LegacyJournalLine, "dimensions" | "documentType">;
-    type Dimensions = {
-      supplierTypeId: string | null;
-      itemPostingGroupId: string | null;
-      itemId: string | null;
-      locationId: string | null;
-      costCenterId: string | null;
-      projectId: string | null;
-      processId: string | null;
-      fixedAssetClassId: string | null;
-    };
-    const push = (line: Line, meta: Dimensions) =>
-      journalLines.push({
-        ...line,
-        documentType: "Invoice",
-        documentId: invoice.id,
-        externalDocumentId: invoice.supplierReference,
-        dimensions: {
-          SupplierType: meta.supplierTypeId,
-          ItemPostingGroup: meta.itemPostingGroupId,
-          Item: meta.itemId,
-          Supplier: invoice.supplierId,
-          Location: meta.locationId,
-          CostCenter: meta.costCenterId,
-          Project: meta.projectId,
-          Process: meta.processId,
-          FixedAssetClass: meta.fixedAssetClassId
-        }
-      });
-    const payable = (
-      amount: number,
-      quantity: number,
-      keys: {
-        journalLineReference: string;
-        documentLineReference?: string | null;
-        accrual?: boolean;
-      }
-    ): Line => ({
-      accountId: payables.accountId,
-      accountDefaultRole: payables.accountDefaultRole,
-      description: "Accounts Payable",
-      amount: round(credit("liability", amount)),
-      quantity: round(quantity),
-      journalLineReference: keys.journalLineReference,
-      documentLineReference: keys.documentLineReference ?? null,
-      ...(keys.accrual ? { accrual: true } : {})
-    });
-
-    // Write-ups to share, per item, across this invoice's PO lines.
-    const pendingWriteUps: {
-      itemId: string;
-      variance: number;
-      apply: (share: number) => void;
-    }[] = [];
-
+    const postingLines: PurchaseInvoicePostingLine[] = [];
     for (const invoiceLine of invoiceLines) {
       if (invoiceLine.invoiceLineType === "Comment") continue;
-      const amounts = amountsByLine.get(invoiceLine.id)!;
-      const quantity = amounts.inventoryQuantity;
-      const total = amounts.totalBaseCost;
-      const unitCost = amounts.inventoryUnitCost;
+      const base = {
+        id: invoiceLine.id,
+        invoiceLineType: invoiceLine.invoiceLineType,
+        locationId: invoiceLine.locationId ?? null,
+        amounts: amountsByLine.get(invoiceLine.id)!
+      };
       const purchaseOrderLineId = invoiceLine.purchaseOrderLineId;
-      const reference = purchaseOrderLineId
-        ? journalReference.to.purchaseInvoice(purchaseOrderLineId)
-        : null;
       const purchaseOrderLine = purchaseOrderLineId
         ? purchaseOrderLineById.get(purchaseOrderLineId)
         : undefined;
-      const item = invoiceLine.itemId
-        ? itemById.get(invoiceLine.itemId)
-        : undefined;
-      const itemCost = invoiceLine.itemId
-        ? itemCostByItem.get(invoiceLine.itemId)
-        : undefined;
-      const trackingType = item?.itemTrackingType ?? "Inventory";
-      const itemMeta: Dimensions = {
-        supplierTypeId: supplier?.supplierTypeId ?? null,
-        itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
-        itemId: invoiceLine.itemId ?? null,
-        locationId: invoiceLine.locationId ?? null,
-        costCenterId: null,
-        projectId: null,
-        processId: purchaseOrderLine?.jobOperationId
-          ? (processByOperation.get(purchaseOrderLine.jobOperationId) ?? null)
-          : null,
-        fixedAssetClassId: null
-      };
+
+      if (isItemLineType(invoiceLine.invoiceLineType)) {
+        const item = invoiceLine.itemId
+          ? itemById.get(invoiceLine.itemId)
+          : undefined;
+        const itemCost = invoiceLine.itemId
+          ? itemCostByItem.get(invoiceLine.itemId)
+          : undefined;
+        const itemFacts: PurchaseInvoiceItem = {
+          itemId: invoiceLine.itemId ?? null,
+          itemTrackingType: item?.itemTrackingType ?? null,
+          replenishmentSystem: item?.replenishmentSystem ?? null,
+          itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
+          costingMethod: itemCost?.costingMethod ?? null
+        };
+        const itemKey = `${invoice.id}:${invoiceLine.itemId}`;
+        if (!purchaseOrderLineId) {
+          postingLines.push({
+            ...base,
+            kind: "direct",
+            item: itemFacts,
+            receivedWithInvoice: receivedWithInvoiceKeys.has(itemKey)
+          });
+          continue;
+        }
+        const receipts = receiptsBefore(purchaseOrderLineId);
+        postingLines.push({
+          ...base,
+          kind: "ordered",
+          item: itemFacts,
+          purchaseOrderLine: {
+            purchaseOrderLineId,
+            quantityReceived: receipts.reduce(
+              (sum, group) => sum + group.quantity,
+              0
+            ),
+            quantityInvoiced: invoicedBefore(invoice.id, purchaseOrderLineId),
+            receiptGroups: receipts,
+            isOutsideProcessing: Boolean(purchaseOrderLine?.jobOperationId),
+            processId: purchaseOrderLine?.jobOperationId
+              ? (processByOperation.get(purchaseOrderLine.jobOperationId) ??
+                null)
+              : null,
+            coverage: { storedWriteUp: writeUpByInvoiceItem.get(itemKey) ?? 0 }
+          }
+        });
+        continue;
+      }
 
       switch (invoiceLine.invoiceLineType) {
-        case "Part":
-        case "Service":
-        case "Consumable":
-        case "Fixture":
-        case "Material":
-        case "Tool": {
-          if (!purchaseOrderLineId) {
-            // A direct invoice receives the goods itself.
-            let debitAccount: string;
-            let debitDescription: string;
-            if (
-              trackingType === "Inventory" &&
-              receivedWithInvoiceKeys.has(`${invoice.id}:${invoiceLine.itemId}`)
-            ) {
-              const inventory = resolveInventoryAccount(
-                item?.replenishmentSystem ?? null,
-                defaults
-              );
-              debitAccount = inventory.account;
-              debitDescription = inventory.description;
-            } else if (trackingType === "Non-Inventory") {
-              debitAccount = defaults.indirectCostAccount;
-              debitDescription = "Indirect Cost Account";
-            } else {
-              debitAccount = defaults.workInProgressAccount;
-              debitDescription = "WIP Account";
-            }
-            const journalLineReference = nanoid();
-            const meta = { ...itemMeta, processId: null };
-            push(
-              {
-                accountId: debitAccount,
-                description: debitDescription,
-                amount: round(debit("asset", total)),
-                quantity: round(quantity),
-                journalLineReference
-              },
-              meta
-            );
-            push(payable(total, quantity, { journalLineReference }), meta);
-            break;
-          }
-
-          // Received units clear GR/IR at their receipt cost.
-          const receipts = (
-            receiptsByLine.get(purchaseOrderLineId) ?? []
-          ).filter((group) => group.postingDate <= String(invoice.postingDate));
-          const received = receipts.reduce(
-            (sum, group) => sum + group.quantity,
-            0
-          );
-          const invoiced = invoicedBefore(invoice.id, purchaseOrderLineId);
-          const quantityToReverse = Math.max(
-            0,
-            Math.min(quantity, received - invoiced)
-          );
-          if (quantityToReverse > 0) {
-            // Skip the units invoiced before, cost the next ones.
-            let skip = received > invoiced ? invoiced : 0;
-            let take = quantityToReverse;
-            let receiptCost = 0;
-            for (const group of receipts) {
-              if (group.quantity <= 0) continue;
-              const skipped = Math.min(skip, group.quantity);
-              skip -= skipped;
-              const taken = Math.min(take, group.quantity - skipped);
-              receiptCost += taken * (group.cost / group.quantity);
-              take -= taken;
-            }
-            const invoiceCost = quantityToReverse * unitCost;
-            const variance = invoiceCost - receiptCost;
-            const journalLineReference = nanoid();
-            const keys = {
-              quantity: round(quantityToReverse),
-              documentLineReference: reference,
-              journalLineReference
-            };
-            push(
-              {
-                accountId: defaults.goodsReceivedNotInvoicedAccount,
-                description: "GR/IR Clearing",
-                amount: round(debit("liability", receiptCost)),
-                ...keys
-              },
-              itemMeta
-            );
-            // The variance: on inventory for the write-up the posting stored,
-            // the rest on purchase variance. A line that wrote up layers waits
-            // until each item's write-up is shared across the invoice's lines.
-            const usesLayers =
-              !purchaseOrderLine?.jobOperationId &&
-              trackingType !== "Non-Inventory" &&
-              Boolean(invoiceLine.itemId) &&
-              costingMethodOf(invoiceLine.itemId!) !== "Standard";
-            const apply = (inventoryShare: number) => {
-              const ppvShare = variance - inventoryShare;
-              if (Math.abs(inventoryShare) > VARIANCE_THRESHOLD) {
-                const inventory = resolveInventoryAccount(
-                  item?.replenishmentSystem ?? null,
-                  defaults
-                );
-                push(
-                  {
-                    accountId: inventory.account,
-                    description: inventory.description,
-                    amount: round(debit("asset", inventoryShare)),
-                    ...keys
-                  },
-                  itemMeta
-                );
-              }
-              if (Math.abs(ppvShare) > VARIANCE_THRESHOLD) {
-                push(
-                  {
-                    accountId: defaults.purchaseVarianceAccount,
-                    description: "Purchase Price Variance",
-                    amount: round(debit("expense", ppvShare)),
-                    ...keys
-                  },
-                  itemMeta
-                );
-              }
-            };
-            if (usesLayers && Math.abs(variance) > VARIANCE_THRESHOLD) {
-              pendingWriteUps.push({
-                itemId: invoiceLine.itemId!,
-                variance,
-                apply
-              });
-              varianceByItem.set(
-                invoiceLine.itemId!,
-                (varianceByItem.get(invoiceLine.itemId!) ?? 0) + variance
-              );
-            } else {
-              apply(0);
-            }
-            push(payable(invoiceCost, quantityToReverse, keys), itemMeta);
-          }
-
-          // Units not yet received accrue GR/IR; a service expenses them.
-          if (quantity > quantityToReverse) {
-            const quantityToAccrue = quantity - quantityToReverse;
-            const accrualCost = quantityToAccrue * unitCost;
-            const isService = invoiceLine.invoiceLineType === "Service";
-            const keys = {
-              quantity: round(quantityToAccrue),
-              documentLineReference: reference,
-              journalLineReference: nanoid()
-            };
-            push(
-              isService
-                ? {
-                    accountId: defaults.indirectCostAccount,
-                    description: "Indirect Cost Account",
-                    amount: round(debit("asset", accrualCost)),
-                    ...keys
-                  }
-                : {
-                    accountId: defaults.goodsReceivedNotInvoicedAccount,
-                    description: "GR/IR Clearing",
-                    accrual: true,
-                    amount: round(debit("liability", accrualCost)),
-                    ...keys
-                  },
-              itemMeta
-            );
-            push(
-              payable(accrualCost, quantityToAccrue, {
-                ...keys,
-                ...(isService ? {} : { accrual: true })
-              }),
-              itemMeta
-            );
-          }
-          break;
-        }
         case "Fixed Asset": {
           if (!invoiceLine.assetId) {
             throw new InvalidInputError(
@@ -665,68 +449,25 @@ export async function buildLegacyPurchaseInvoiceJournals(
             );
           }
           const receipts = purchaseOrderLineId
-            ? (receiptsByLine.get(purchaseOrderLineId) ?? []).filter(
-                (group) => group.postingDate <= String(invoice.postingDate)
-              )
+            ? receiptsBefore(purchaseOrderLineId)
             : [];
-          const meta: Dimensions = {
-            supplierTypeId: supplier?.supplierTypeId ?? null,
-            itemPostingGroupId: null,
-            itemId: null,
-            locationId:
-              invoiceLine.locationId ??
-              purchaseOrderLine?.locationId ??
-              asset.locationId,
-            costCenterId: null,
-            projectId: null,
-            processId: null,
-            fixedAssetClassId: asset.fixedAssetClassId
-          };
-          const journalLineReference = nanoid();
-          const keys = {
-            quantity: round(quantity),
-            documentLineReference: reference,
-            journalLineReference
-          };
-          if (receipts.length > 0) {
-            // Received: clear GR/IR at the receipt cost.
-            const receiptCost = receipts.reduce(
-              (sum, group) => sum + group.cost,
-              0
-            );
-            const variance = total - receiptCost;
-            push(
-              {
-                accountId: defaults.goodsReceivedNotInvoicedAccount,
-                description: "GR/IR Clearing",
-                amount: round(debit("liability", receiptCost)),
-                ...keys
-              },
-              meta
-            );
-            if (Math.abs(variance) > VARIANCE_THRESHOLD) {
-              push(
-                {
-                  accountId: defaults.purchaseVarianceAccount,
-                  description: "Purchase Price Variance",
-                  amount: round(debit("expense", variance)),
-                  ...keys
-                },
-                meta
-              );
-            }
-          } else {
-            push(
-              {
-                accountId: asset.assetAccountId,
-                description: "Fixed Asset Acquisition",
-                amount: round(debit("asset", total)),
-                ...keys
-              },
-              meta
-            );
-          }
-          push(payable(total, quantity, keys), meta);
+          postingLines.push({
+            ...base,
+            kind: "fixedAsset",
+            purchaseOrderLineId,
+            purchaseOrderLineLocationId: purchaseOrderLine?.locationId ?? null,
+            assetLocationId: asset.locationId,
+            fixedAssetClassId: asset.fixedAssetClassId,
+            acquisition:
+              receipts.length > 0
+                ? {
+                    receiptCost: receipts.reduce(
+                      (sum, group) => sum + group.cost,
+                      0
+                    )
+                  }
+                : { assetAccountId: asset.assetAccountId }
+          });
           break;
         }
         case "G/L Account": {
@@ -743,31 +484,14 @@ export async function buildLegacyPurchaseInvoiceJournals(
               `Purchase invoice ${invoice.invoiceId} has a G/L line on ${glAccount.name}, a group account. Move the line to a posting account.`
             );
           }
-          const meta: Dimensions = {
-            supplierTypeId: null,
-            itemPostingGroupId: null,
-            itemId: null,
-            locationId: invoiceLine.locationId ?? null,
+          postingLines.push({
+            ...base,
+            kind: "glAccount",
+            purchaseOrderLineId,
+            account: glAccount,
             costCenterId: invoiceLine.costCenterId ?? null,
-            projectId: invoiceLine.projectId ?? null,
-            processId: null,
-            fixedAssetClassId: null
-          };
-          const keys = {
-            quantity: round(quantity),
-            documentLineReference: reference,
-            journalLineReference: nanoid()
-          };
-          push(
-            {
-              accountId: glAccount.id,
-              description: glAccount.name,
-              amount: round(debit("asset", total)),
-              ...keys
-            },
-            meta
-          );
-          push(payable(total, quantity, keys), meta);
+            projectId: invoiceLine.projectId ?? null
+          });
           break;
         }
         default:
@@ -777,23 +501,20 @@ export async function buildLegacyPurchaseInvoiceJournals(
       }
     }
 
-    // The write-up the posting stored for an item, shared across its lines
-    // in proportion to their variance.
-    for (const pending of pendingWriteUps) {
-      const writeUp = writeUpByInvoiceItem.get(
-        `${invoice.id}:${pending.itemId}`
-      );
-      const itemVariance = varianceByItem.get(pending.itemId) ?? 0;
-      const share =
-        writeUp && Math.abs(itemVariance) > EPSILON
-          ? writeUp * (pending.variance / itemVariance)
-          : 0;
-      pending.apply(share);
-    }
-
+    const { lines: journalLines } = buildPurchaseInvoicePostingLines({
+      invoice: {
+        id: invoice.id,
+        supplierId: invoice.supplierId,
+        supplierReference: invoice.supplierReference
+      },
+      supplierTypeId: supplier?.supplierTypeId ?? null,
+      accounts: defaults,
+      payables,
+      lines: postingLines
+    });
     return {
       description: `Purchase Invoice ${invoice.invoiceId}`,
-      postingDate: String(invoice.postingDate),
+      postingDate,
       sourceType: "Purchase Invoice" as const,
       lines: journalLines
     };

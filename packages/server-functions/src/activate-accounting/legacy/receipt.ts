@@ -5,21 +5,17 @@
 // The journals of legacy receipts: the lines `post-receipt` writes today,
 // from the stored receipt and the cost rows it stored, with today's account
 // defaults (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a).
+// Both build their lines through post-receipt/posting-lines.ts; this file
+// only gathers the facts from the stored rows.
 //
-// Mirrors post-receipt/index.ts:
-// - a purchase order receipt: per receipt line, inventory (indirect cost for
-//   a Non-Inventory item, WIP for outside processing) against GR/IR, on
-//   `receipt:<poLineId>` with the received
-//   quantity, which the purchase invoice's GR/IR walk reads. A negative line
-//   reverses the pair. A line that stored cost rows books what they stored;
-//   one that stored none (Non-Inventory, outside processing) books its PO
-//   cost with its share of the order's shipping, as the posting costs it.
-//   A fixed asset line has no receipt line and no cost row, and is not
-//   rebuilt: the asset register and the opening fixed asset lines carry it;
-// - a sales return receipt: inventory against COGS at the cost its cost row
-//   stored, per receipt line with a positive cost. The detection leaves out
-//   a return with none (`legacyReceipts`), as the posting books no
-//   zero-value re-entry.
+// - A purchase order receipt: a line that stored cost rows books what they
+//   stored; one that stored none (Non-Inventory, outside processing) books
+//   its PO cost with its share of the order's shipping, as the posting costs
+//   it. A fixed asset line has no receipt line and no cost row, and is not
+//   rebuilt: the asset register and the opening fixed asset lines carry it.
+// - A sales return receipt: each receipt line with a positive cost, at the
+//   cost its cost row stored. The detection leaves out a return with none
+//   (`legacyReceipts`), as the posting books no zero-value re-entry.
 //
 // Cost rows are stored per receipt line but carry no line id. The rows of
 // one item and sign are shared across that item's lines: by PO cost for a
@@ -31,16 +27,19 @@
 // a Non-Inventory item is not rebuilt: it stored no cost row.
 
 import type { Database } from "@carbon/database";
-import { journalReference } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { legacyReceipts } from "@carbon/database/legacy-documents";
-import { credit, debit, EPSILON, round } from "@carbon/utils";
+import { EPSILON } from "@carbon/utils";
 import { sql } from "kysely";
-import { nanoid } from "nanoid";
-import { resolveInventoryAccount } from "../../lib/get-posting-group";
+import {
+  buildPurchaseReceiptJournalLines,
+  buildSalesReturnReceiptJournalLines,
+  type PurchaseReceiptLine,
+  type PurchaseReceiptLineCost,
+  purchaseReceiptLineCosts
+} from "../../post-receipt/posting-lines";
 import {
   type LegacyJournal,
-  type LegacyJournalLine,
   postedQuantity,
   readByIds,
   readItems,
@@ -242,146 +241,97 @@ export async function buildLegacyPurchaseReceiptJournals(
       (receipt.sourceDocumentId
         ? (shippingByOrder.get(receipt.sourceDocumentId) ?? 0)
         : 0) / (Number(order?.exchangeRate) || 1);
-    const receiptLineRows = linesByReceipt.get(receipt.id) ?? [];
-    const totalLinesCost = receiptLineRows.reduce(
-      (sum, line) =>
-        sum +
-        Math.abs(postedQuantity(line.receivedQuantity)) *
-          Number(line.unitPrice ?? 0),
-      0
-    );
-    // The PO cost of a line: price × quantity and its share of shipping.
-    const poCost = (line: (typeof receiptLineRows)[number]) => {
-      const lineCost =
-        Math.abs(postedQuantity(line.receivedQuantity)) *
-        Number(line.unitPrice ?? 0);
-      const percentage = totalLinesCost === 0 ? 0 : lineCost / totalLinesCost;
-      return lineCost + shippingCost * percentage;
-    };
-    const createsLayers = (line: (typeof receiptLineRows)[number]) => {
-      const trackingType = line.itemId
-        ? (itemById.get(line.itemId)?.itemTrackingType ?? "Inventory")
-        : "Inventory";
-      return (
-        trackingType !== "Non-Inventory" &&
-        !isOutsideProcessing &&
-        Boolean(line.itemId) &&
-        postedQuantity(line.receivedQuantity) !== 0
-      );
-    };
-
-    // The cost each layer line stored, shared across its item and sign.
-    const costByLine = new Map<string, number>();
-    const layerGroups = Map.groupBy(
-      receiptLineRows.filter(createsLayers),
-      (line) =>
-        `${line.itemId}:${postedQuantity(line.receivedQuantity) > 0 ? "in" : "out"}`
-    );
-    for (const group of layerGroups.values()) {
-      const first = group[0]!;
-      const inbound = postedQuantity(first.receivedQuantity) > 0;
-      const rows = stored.get(`${receipt.id}:${first.itemId}`);
-      // The posting stores the cost it relieved, its PO cost fallback
-      // included; a line with no stored row books its PO cost.
-      const total = inbound
-        ? (rows?.inbound ?? 0)
-        : rows?.hasOutbound
-          ? -rows.outbound
-          : group.reduce((sum, line) => sum + poCost(line), 0);
-      const shares = share(total, group.map(poCost));
-      for (const [index, line] of group.entries()) {
-        costByLine.set(line.id, shares[index]!);
-      }
-    }
-
-    const journalLines: LegacyJournalLine[] = [];
-    for (const line of receiptLineRows) {
-      const quantity = postedQuantity(line.receivedQuantity);
-      const absQuantity = Math.abs(quantity);
-      if (absQuantity <= 0) continue;
+    const receiptJournalLines: PurchaseReceiptLine[] = (
+      linesByReceipt.get(receipt.id) ?? []
+    ).map((line) => {
       const item = line.itemId ? itemById.get(line.itemId) : undefined;
-      const trackingType = item?.itemTrackingType ?? "Inventory";
-      const cost = costByLine.get(line.id) ?? poCost(line);
-
-      let debitAccount: string;
-      let debitDescription: string;
-      if (trackingType !== "Non-Inventory" && !isOutsideProcessing) {
-        const inventory = resolveInventoryAccount(
-          item?.replenishmentSystem ?? null,
-          defaults
-        );
-        debitAccount = inventory.account;
-        debitDescription = inventory.description;
-      } else if (isOutsideProcessing) {
-        debitAccount = defaults.workInProgressAccount;
-        debitDescription = "WIP Account";
-      } else {
-        debitAccount = defaults.indirectCostAccount;
-        debitDescription = "Indirect Cost Account";
-      }
-
       const jobOperationId = line.lineId
         ? jobOperationByLine.get(line.lineId)
         : undefined;
-      const dimensions = {
-        SupplierType: order?.supplierId
-          ? (supplierTypeById.get(order.supplierId) ?? null)
-          : null,
-        ItemPostingGroup: line.itemId
+      return {
+        purchaseOrderLineId: line.lineId,
+        itemId: line.itemId,
+        quantity: postedQuantity(line.receivedQuantity),
+        unitPrice: Number(line.unitPrice ?? 0),
+        itemTrackingType: item?.itemTrackingType,
+        replenishmentSystem: item?.replenishmentSystem,
+        itemPostingGroupId: line.itemId
           ? (postingGroupByItem.get(line.itemId) ?? null)
           : null,
-        Item: line.itemId,
-        Supplier: order?.supplierId ?? null,
-        Location: line.locationId,
-        Process:
+        locationId: line.locationId,
+        processId:
           isOutsideProcessing && jobOperationId
             ? (processByOperation.get(jobOperationId) ?? null)
             : null
       };
-      const keys = {
-        quantity: round(absQuantity),
-        documentType: "Receipt" as const,
-        documentId: receipt.id,
-        externalDocumentId: order?.supplierReference ?? null,
-        documentLineReference: journalReference.to.receipt(String(line.lineId)),
-        journalLineReference: nanoid(),
-        dimensions
-      };
-      const goodsReceived = {
-        ...keys,
-        accountId: defaults.goodsReceivedNotInvoicedAccount,
-        description: "Goods Received Not Invoiced"
-      };
-      if (quantity < 0) {
-        journalLines.push(
-          { ...goodsReceived, amount: round(debit("liability", cost)) },
-          {
-            ...keys,
-            accountId: debitAccount,
-            description: debitDescription,
-            amount: round(credit("asset", cost))
-          }
-        );
-      } else {
-        journalLines.push(
-          {
-            ...keys,
-            accountId: debitAccount,
-            description: debitDescription,
-            amount: round(debit("asset", cost))
-          },
-          { ...goodsReceived, amount: round(credit("liability", cost)) }
-        );
-      }
-    }
+    });
+    const costs = purchaseReceiptLineCosts(receiptJournalLines, {
+      shippingCost,
+      isOutsideProcessing
+    });
+    const storedCost = storedLayerCosts(receiptJournalLines, costs, (itemId) =>
+      stored.get(`${receipt.id}:${itemId}`)
+    );
 
     return {
       description: `Purchase Receipt ${receipt.receiptId}`,
       postingDate: String(receipt.postingDate),
       sourceType: "Purchase Receipt" as const,
-      lines: journalLines
+      lines: buildPurchaseReceiptJournalLines({
+        documentId: receipt.id,
+        externalDocumentId: order?.supplierReference ?? null,
+        isOutsideProcessing,
+        supplierId: order?.supplierId ?? null,
+        supplierTypeId: order?.supplierId
+          ? (supplierTypeById.get(order.supplierId) ?? null)
+          : null,
+        accounts: defaults,
+        lines: receiptJournalLines.map((line, index) => ({
+          ...line,
+          cost: storedCost.get(index) ?? costs[index]!.cost
+        })),
+        fixedAssets: []
+      })
     };
   });
+}
+
+/**
+ * The cost each layer line stored, by line index, shared across the lines of
+ * its item and sign by PO cost. The posting stores the cost it relieved, its
+ * PO cost fallback included; an outbound group with no stored row books its
+ * PO cost.
+ */
+function storedLayerCosts(
+  lines: PurchaseReceiptLine[],
+  costs: PurchaseReceiptLineCost[],
+  storedFor: (
+    itemId: string
+  ) => { inbound: number; outbound: number; hasOutbound: boolean } | undefined
+): Map<number, number> {
+  const costByLine = new Map<number, number>();
+  const layerGroups = Map.groupBy(
+    lines.flatMap((line, index) =>
+      costs[index]!.createsLayers ? [{ line, index }] : []
+    ),
+    ({ line }) => `${line.itemId}:${line.quantity > 0 ? "in" : "out"}`
+  );
+  for (const group of layerGroups.values()) {
+    const { line: first } = group[0]!;
+    const rows = storedFor(String(first.itemId));
+    const poCosts = group.map(({ index }) => costs[index]!.poCost);
+    const total =
+      first.quantity > 0
+        ? (rows?.inbound ?? 0)
+        : rows?.hasOutbound
+          ? -rows.outbound
+          : poCosts.reduce((sum, cost) => sum + cost, 0);
+    const shares = share(total, poCosts);
+    for (const [position, { index }] of group.entries()) {
+      costByLine.set(index, shares[position]!);
+    }
+  }
+  return costByLine;
 }
 
 export async function buildLegacySalesReturnReceiptJournals(
@@ -464,51 +414,27 @@ export async function buildLegacySalesReturnReceiptJournals(
       }
     }
 
-    const journalLines: LegacyJournalLine[] = [];
-    for (const line of layerLines) {
-      const cost = costByLine.get(line.id) ?? 0;
-      // A zero-value re-entry posts no journal.
-      if (!(cost > 0)) continue;
-      const quantity = postedQuantity(line.receivedQuantity);
-      const itemId = line.itemId as string;
-      const inventory = resolveInventoryAccount(
-        itemById.get(itemId)?.replenishmentSystem ?? null,
-        defaults
-      );
-      const keys = {
-        quantity: round(quantity),
-        documentType: "Receipt" as const,
-        documentId: receipt.id,
-        externalDocumentId: receipt.externalDocumentId ?? null,
-        documentLineReference: journalReference.to.receipt(
-          line.lineId as string
-        ),
-        journalLineReference: nanoid(),
-        dimensions: {
-          Item: itemId,
-          ItemPostingGroup: postingGroupByItem.get(itemId) ?? null,
-          Location: line.locationId,
-          Customer: customerId,
-          CustomerType: customerId
-            ? (customerTypeById.get(customerId) ?? null)
-            : null
-        }
-      };
-      journalLines.push(
-        {
-          ...keys,
-          accountId: inventory.account,
-          description: inventory.description,
-          amount: round(debit("asset", cost))
-        },
-        {
-          ...keys,
-          accountId: defaults.costOfGoodsSoldAccount,
-          description: "Cost of Goods Sold",
-          amount: round(credit("expense", cost))
-        }
-      );
-    }
+    const journalLines = buildSalesReturnReceiptJournalLines({
+      documentId: receipt.id,
+      externalDocumentId: receipt.externalDocumentId ?? null,
+      customerId,
+      customerTypeId: customerId
+        ? (customerTypeById.get(customerId) ?? null)
+        : null,
+      accounts: defaults,
+      lines: layerLines.map((line) => {
+        const itemId = line.itemId as string;
+        return {
+          returnLineId: line.lineId as string,
+          itemId,
+          quantity: postedQuantity(line.receivedQuantity),
+          cost: costByLine.get(line.id) ?? 0,
+          replenishmentSystem: itemById.get(itemId)?.replenishmentSystem,
+          itemPostingGroupId: postingGroupByItem.get(itemId) ?? null,
+          locationId: line.locationId
+        };
+      })
+    });
 
     return {
       description: `Sales Return Receipt ${receipt.receiptId}`,

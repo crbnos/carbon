@@ -33,6 +33,7 @@
     "./contract-revenue-schedule": "./src/contract-revenue-schedule.ts",
     "./contract-position": "./src/contract-position.ts",
     "./revenue-schedule": "./src/revenue-schedule.ts",
+    "./run-journals": "./src/run-journals.ts",
     "./picked-consumption": "./src/picked-consumption.ts",
     "./realtime-tables": "./src/realtime-tables.ts",
     "./posting": "./src/posting.ts",
