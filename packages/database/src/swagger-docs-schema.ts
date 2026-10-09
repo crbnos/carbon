@@ -4630,6 +4630,9 @@ export default {
             $ref: "#/parameters/rowFilter.reimbursementLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.reimbursementLine.projectElementId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -4731,6 +4734,9 @@ export default {
             $ref: "#/parameters/rowFilter.reimbursementLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.reimbursementLine.projectElementId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -4784,6 +4790,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.reimbursementLine.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.projectElementId"
           },
           {
             $ref: "#/parameters/body.reimbursementLine"
@@ -35343,6 +35352,294 @@ export default {
         tags: ["trackedActivityInput"]
       }
     },
+    "/projectLedger": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.costType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.reversalOfId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.unallowable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectLedger"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectLedger"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectLedger"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectLedger"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.costType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.reversalOfId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.unallowable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectLedger"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.costType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.unitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.reversalOfId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.unallowable"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.projectLedger"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectLedger"]
+      }
+    },
     "/consumable": {
       get: {
         parameters: [
@@ -37776,6 +38073,204 @@ export default {
         tags: ["intercompanyTransaction"]
       }
     },
+    "/projectElementLabor": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.hours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.startDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectElementLabor"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectElementLabor"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectElementLabor"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectElementLabor"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.hours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.startDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectElementLabor"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.hours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.startDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElementLabor.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.projectElementLabor"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectElementLabor"]
+      }
+    },
     "/job": {
       get: {
         parameters: [
@@ -37907,6 +38402,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.consumeToProject"
           },
           {
             $ref: "#/parameters/select"
@@ -38097,6 +38601,15 @@ export default {
             $ref: "#/parameters/rowFilter.job.fixedAssetId"
           },
           {
+            $ref: "#/parameters/rowFilter.job.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.consumeToProject"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -38237,6 +38750,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.consumeToProject"
           },
           {
             $ref: "#/parameters/body.job"
@@ -43471,6 +43993,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.projectElementId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43680,6 +44208,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.projectElementId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -43841,6 +44375,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.projectElementId"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine"
@@ -44161,6 +44701,12 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.projectExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.projectWorkInProgressAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -44406,6 +44952,12 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.projectExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.projectWorkInProgressAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -44603,6 +45155,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.projectExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.projectWorkInProgressAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -44833,6 +45391,303 @@ export default {
           }
         },
         tags: ["warehouse"]
+      }
+    },
+    "/timesheetEntry": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.entryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.hours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.rejectionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.costRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.reversalOfId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.correctionReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/timesheetEntry"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["timesheetEntry"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.timesheetEntry"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["timesheetEntry"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.entryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.hours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.rejectionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.costRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.reversalOfId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.correctionReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["timesheetEntry"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.entryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.hours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.note"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.rejectionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.costRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.reversalOfId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.correctionReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.timesheetEntry"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["timesheetEntry"]
       }
     },
     "/salesOrderCustomers": {
@@ -50731,6 +51586,9 @@ export default {
             $ref: "#/parameters/rowFilter.chargeLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.chargeLine.projectElementId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -50832,6 +51690,9 @@ export default {
             $ref: "#/parameters/rowFilter.chargeLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.chargeLine.projectElementId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -50885,6 +51746,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.chargeLine.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.projectElementId"
           },
           {
             $ref: "#/parameters/body.chargeLine"
@@ -51781,6 +52645,177 @@ export default {
           }
         },
         tags: ["storageUnit"]
+      }
+    },
+    "/laborCategory": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/laborCategory"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["laborCategory"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.laborCategory"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["laborCategory"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["laborCategory"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.laborCategory"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["laborCategory"]
       }
     },
     "/rentalAgreementLine": {
@@ -52939,6 +53974,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectElementId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -53124,6 +54162,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectElementId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -53261,6 +54302,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectElementId"
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine"
@@ -74880,6 +75924,177 @@ export default {
         tags: ["attributeDataType"]
       }
     },
+    "/laborCategoryRate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.effectiveFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.costRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/laborCategoryRate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["laborCategoryRate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.laborCategoryRate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["laborCategoryRate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.effectiveFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.costRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["laborCategoryRate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.effectiveFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.costRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.laborCategoryRate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["laborCategoryRate"]
+      }
+    },
     "/qualityDocuments": {
       get: {
         parameters: [
@@ -76738,6 +77953,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.employeeJob.laborCategoryId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -76833,6 +78051,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.employeeJob.laborCategoryId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -76880,6 +78101,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employeeJob.tags"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeJob.laborCategoryId"
           },
           {
             $ref: "#/parameters/body.employeeJob"
@@ -101137,6 +102361,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireProjectElement"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -101391,6 +102621,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireProjectElement"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -101597,6 +102833,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireProjectElement"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -118402,6 +119644,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -132990,6 +134236,132 @@ export default {
       },
       type: "object"
     },
+    projectLedger: {
+      required: [
+        "id",
+        "companyId",
+        "projectId",
+        "postingDate",
+        "costType",
+        "documentType",
+        "documentId",
+        "amount",
+        "unallowable",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pjl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        postingDate: {
+          format: "date",
+          type: "string"
+        },
+        costType: {
+          enum: [
+            "Material",
+            "Labor",
+            "Machine",
+            "Overhead",
+            "Outside Processing",
+            "Purchased Service",
+            "Other Direct",
+            "Material Variance",
+            "Payback Variance",
+            "Burden"
+          ],
+          format: 'public."projectCostType"',
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        documentLineId: {
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          format: "text",
+          type: "string"
+        },
+        employeeId: {
+          format: "text",
+          type: "string"
+        },
+        laborCategoryId: {
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        journalLineId: {
+          format: "text",
+          type: "string"
+        },
+        reversalOfId: {
+          format: "text",
+          type: "string"
+        },
+        unallowable: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     consumable: {
       required: ["id", "approved", "companyId", "createdBy", "createdAt"],
       properties: {
@@ -134173,6 +135545,78 @@ export default {
       },
       type: "object"
     },
+    projectElementLabor: {
+      required: [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "laborCategoryId",
+        "hours",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pjr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        laborCategoryId: {
+          format: "text",
+          type: "string"
+        },
+        hours: {
+          format: "numeric",
+          type: "number"
+        },
+        startDate: {
+          format: "date",
+          type: "string"
+        },
+        endDate: {
+          format: "date",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     job: {
       required: [
         "id",
@@ -134190,7 +135634,8 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
-        "priority"
+        "priority",
+        "consumeToProject"
       ],
       properties: {
         id: {
@@ -134416,6 +135861,19 @@ export default {
             "Note:\nThis is a Foreign Key to `fixedAsset.id`.<fk table='fixedAsset' column='id'/>",
           format: "text",
           type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        consumeToProject: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -136846,6 +138304,14 @@ export default {
         taxAmount: {
           format: "numeric",
           type: "number"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -137390,6 +138856,18 @@ export default {
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
           type: "string"
+        },
+        projectExpenseAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectWorkInProgressAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -137460,6 +138938,132 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    timesheetEntry: {
+      required: [
+        "id",
+        "companyId",
+        "employeeId",
+        "entryDate",
+        "projectId",
+        "laborCategoryId",
+        "hours",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('tse'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        employeeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        entryDate: {
+          format: "date",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        laborCategoryId: {
+          format: "text",
+          type: "string"
+        },
+        hours: {
+          format: "numeric",
+          type: "number"
+        },
+        note: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Submitted", "Approved", "Posted", "Rejected"],
+          format: 'public."timesheetEntryStatus"',
+          type: "string"
+        },
+        submittedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        approvedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        approvedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        rejectionNote: {
+          format: "text",
+          type: "string"
+        },
+        costRate: {
+          format: "numeric",
+          type: "number"
+        },
+        reversalOfId: {
+          format: "text",
+          type: "string"
+        },
+        correctionReason: {
+          format: "text",
+          type: "string"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
           type: "string"
         },
         createdBy: {
@@ -140324,6 +141928,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -140692,6 +142300,58 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        }
+      },
+      type: "object"
+    },
+    laborCategory: {
+      required: ["id", "companyId", "name", "active", "createdBy", "createdAt"],
+      properties: {
+        id: {
+          default: "public.id('lbc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -141372,6 +143032,10 @@ export default {
           type: "number"
         },
         projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
           format: "text",
           type: "string"
         }
@@ -151571,6 +153235,65 @@ export default {
       },
       type: "object"
     },
+    laborCategoryRate: {
+      required: [
+        "id",
+        "companyId",
+        "laborCategoryId",
+        "effectiveFrom",
+        "costRate",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('lbr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        laborCategoryId: {
+          format: "text",
+          type: "string"
+        },
+        effectiveFrom: {
+          format: "date",
+          type: "string"
+        },
+        costRate: {
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     qualityDocuments: {
       properties: {
         id: {
@@ -152486,6 +154209,10 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        laborCategoryId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -164327,7 +166054,9 @@ export default {
         "leaseSubstantiallyAllThresholdPercent",
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
-        "invoiceNotificationGroup"
+        "invoiceNotificationGroup",
+        "timesheetApprovalRequired",
+        "requireProjectElement"
       ],
       properties: {
         id: {
@@ -164686,6 +166415,16 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        timesheetApprovalRequired: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        requireProjectElement: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -167735,6 +169474,12 @@ export default {
     },
     "rowFilter.reimbursementLine.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.projectElementId": {
+      name: "projectElementId",
       required: false,
       in: "query",
       type: "string"
@@ -184195,6 +185940,147 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.projectLedger": {
+      name: "projectLedger",
+      description: "projectLedger",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectLedger"
+      }
+    },
+    "rowFilter.projectLedger.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.postingDate": {
+      name: "postingDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.costType": {
+      name: "costType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.documentLineId": {
+      name: "documentLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.laborCategoryId": {
+      name: "laborCategoryId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.journalLineId": {
+      name: "journalLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.reversalOfId": {
+      name: "reversalOfId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.unallowable": {
+      name: "unallowable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.consumable": {
       name: "consumable",
       description: "consumable",
@@ -185461,6 +187347,87 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.projectElementLabor": {
+      name: "projectElementLabor",
+      description: "projectElementLabor",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectElementLabor"
+      }
+    },
+    "rowFilter.projectElementLabor.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.laborCategoryId": {
+      name: "laborCategoryId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.hours": {
+      name: "hours",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.startDate": {
+      name: "startDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.endDate": {
+      name: "endDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElementLabor.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.job": {
       name: "job",
       description: "job",
@@ -185728,6 +187695,24 @@ export default {
     },
     "rowFilter.job.fixedAssetId": {
       name: "fixedAssetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.consumeToProject": {
+      name: "consumeToProject",
       required: false,
       in: "query",
       type: "string"
@@ -188428,6 +190413,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderLine.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLine.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.stockTransferLines": {
       name: "stockTransferLines",
       description: "stockTransferLines",
@@ -188964,6 +190961,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.accountDefault.projectExpenseAccount": {
+      name: "projectExpenseAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.projectWorkInProgressAccount": {
+      name: "projectWorkInProgressAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.warehouse": {
       name: "warehouse",
       description: "warehouse",
@@ -189052,6 +191061,153 @@ export default {
       type: "string"
     },
     "rowFilter.warehouse.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.timesheetEntry": {
+      name: "timesheetEntry",
+      description: "timesheetEntry",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/timesheetEntry"
+      }
+    },
+    "rowFilter.timesheetEntry.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.entryDate": {
+      name: "entryDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.laborCategoryId": {
+      name: "laborCategoryId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.hours": {
+      name: "hours",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.note": {
+      name: "note",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.submittedAt": {
+      name: "submittedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.approvedBy": {
+      name: "approvedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.approvedAt": {
+      name: "approvedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.rejectionNote": {
+      name: "rejectionNote",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.costRate": {
+      name: "costRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.reversalOfId": {
+      name: "reversalOfId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.correctionReason": {
+      name: "correctionReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.journalId": {
+      name: "journalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",
@@ -192138,6 +194294,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.chargeLine.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.quoteMaterial": {
       name: "quoteMaterial",
       description: "quoteMaterial",
@@ -192518,6 +194680,69 @@ export default {
     },
     "rowFilter.storageUnit.isWorkCenterDefault": {
       name: "isWorkCenterDefault",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.laborCategory": {
+      name: "laborCategory",
+      description: "laborCategory",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/laborCategory"
+      }
+    },
+    "rowFilter.laborCategory.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategory.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategory.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategory.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategory.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategory.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategory.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategory.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategory.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -193301,6 +195526,12 @@ export default {
     },
     "rowFilter.purchaseInvoiceLine.projectId": {
       name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLine.projectElementId": {
+      name: "projectElementId",
       required: false,
       in: "query",
       type: "string"
@@ -204780,6 +207011,69 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.laborCategoryRate": {
+      name: "laborCategoryRate",
+      description: "laborCategoryRate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/laborCategoryRate"
+      }
+    },
+    "rowFilter.laborCategoryRate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.laborCategoryId": {
+      name: "laborCategoryId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.effectiveFrom": {
+      name: "effectiveFrom",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.costRate": {
+      name: "costRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.qualityDocuments": {
       name: "qualityDocuments",
       description: "qualityDocuments",
@@ -205720,6 +208014,12 @@ export default {
     },
     "rowFilter.employeeJob.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeeJob.laborCategoryId": {
+      name: "laborCategoryId",
       required: false,
       in: "query",
       type: "string"
@@ -219336,6 +221636,18 @@ export default {
     },
     "rowFilter.companySettings.invoiceNotificationGroup": {
       name: "invoiceNotificationGroup",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.timesheetApprovalRequired": {
+      name: "timesheetApprovalRequired",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireProjectElement": {
+      name: "requireProjectElement",
       required: false,
       in: "query",
       type: "string"

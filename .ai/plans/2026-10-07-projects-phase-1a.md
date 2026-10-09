@@ -40,7 +40,7 @@ Phase 1c gets baselines and change requests.
 - [x] Task 1: Create the enum migration
 - [x] Task 2: Create the Projects module and permissions migration
 - [x] Task 3: Create the workspace tables migration
-- [ ] Task 4: Create the time and ledger tables migration
+- [x] Task 4: Create the time and ledger tables migration
 - [ ] Task 5: Create the backfill migration
 - [ ] Task 6: Create the SQL functions migration
 - [ ] Task 7: Apply migrations and regenerate types

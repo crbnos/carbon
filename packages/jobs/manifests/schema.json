@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009054539",
+  "schemaVersion": "20261009054838",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-09T05:47:55.630Z",
+  "exportedAt": "2026-10-09T05:50:38.354Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -99,7 +99,9 @@
         "rentalIncomeAccount",
         "leaseRevenueAccount",
         "leaseInterestIncomeAccount",
-        "netInvestmentInLeasesAccount"
+        "netInvestmentInLeasesAccount",
+        "projectExpenseAccount",
+        "projectWorkInProgressAccount"
       ]
     },
     {
@@ -454,7 +456,9 @@
         "leaseSubstantiallyAllThresholdPercent",
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
-        "invoiceNotificationGroup"
+        "invoiceNotificationGroup",
+        "timesheetApprovalRequired",
+        "requireProjectElement"
       ]
     },
     {
@@ -1172,6 +1176,36 @@
         "valueId",
         "companyId",
         "createdAt"
+      ]
+    },
+    {
+      "name": "laborCategory",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "description",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "laborCategoryRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "laborCategoryId",
+        "effectiveFrom",
+        "costRate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -2132,7 +2166,8 @@
         "updatedBy",
         "customFields",
         "departmentId",
-        "tags"
+        "tags",
+        "laborCategoryId"
       ]
     },
     {
@@ -3857,26 +3892,6 @@
       ]
     },
     {
-      "name": "chargeLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "chargeId",
-        "accountId",
-        "costCenterId",
-        "projectId",
-        "description",
-        "amount",
-        "sequence",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields"
-      ]
-    },
-    {
       "name": "contractor",
       "rows": 0,
       "columns": [
@@ -4298,6 +4313,27 @@
       ]
     },
     {
+      "name": "chargeLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "chargeId",
+        "accountId",
+        "costCenterId",
+        "projectId",
+        "description",
+        "amount",
+        "sequence",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "projectElementId"
+      ]
+    },
+    {
       "name": "projectElementComment",
       "rows": 0,
       "columns": [
@@ -4339,6 +4375,24 @@
       ]
     },
     {
+      "name": "projectElementLabor",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "laborCategoryId",
+        "hours",
+        "startDate",
+        "endDate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "projectElementMaterial",
       "rows": 0,
       "columns": [
@@ -4360,6 +4414,34 @@
       ]
     },
     {
+      "name": "projectLedger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "postingDate",
+        "costType",
+        "documentType",
+        "documentId",
+        "documentLineId",
+        "jobId",
+        "itemId",
+        "employeeId",
+        "laborCategoryId",
+        "supplierId",
+        "quantity",
+        "unitOfMeasureCode",
+        "amount",
+        "journalLineId",
+        "reversalOfId",
+        "unallowable",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
       "name": "reimbursementLine",
       "rows": 0,
       "columns": [
@@ -4376,7 +4458,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "projectElementId"
       ]
     },
     {
@@ -4930,6 +5013,35 @@
       ]
     },
     {
+      "name": "timesheetEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "employeeId",
+        "entryDate",
+        "projectId",
+        "projectElementId",
+        "laborCategoryId",
+        "hours",
+        "note",
+        "status",
+        "submittedAt",
+        "approvedBy",
+        "approvedAt",
+        "rejectionNote",
+        "costRate",
+        "reversalOfId",
+        "correctionReason",
+        "journalId",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "customerContractLedgerEntry",
       "rows": 0,
       "columns": [
@@ -5052,7 +5164,10 @@
         "scheduleOutdatedReason",
         "scheduleOutdatedAt",
         "fixedAssetClassId",
-        "fixedAssetId"
+        "fixedAssetId",
+        "projectId",
+        "projectElementId",
+        "consumeToProject"
       ]
     },
     {
@@ -6233,7 +6348,9 @@
         "costCenterId",
         "ownerId",
         "sortOrder",
-        "supplierPartId"
+        "supplierPartId",
+        "projectId",
+        "projectElementId"
       ]
     },
     {
@@ -7155,7 +7272,8 @@
         "requiredDate",
         "ownerId",
         "sortOrder",
-        "projectId"
+        "projectId",
+        "projectElementId"
       ]
     },
     {
