@@ -50,7 +50,8 @@ import { path } from "~/utils/path";
 import {
   isSalesReturnOrderLocked,
   salesReturnDispositionType,
-  salesReturnOrderLineValidator
+  salesReturnOrderLineValidator,
+  salesReturnPreReceiptDispositions
 } from "../../sales.models";
 import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 
@@ -250,6 +251,17 @@ const SalesReturnOrderLineForm = ({
     (line?.disposition as string | undefined) ?? "Pending"
   );
   const quantityReceived = line?.quantityReceived ?? 0;
+  // Before receipt a line is Pending or Repair (serialized items only); after
+  // receipt Repair is fixed, and the other values are offered without it.
+  const isRepairLocked = quantityReceived > 0 && line?.disposition === "Repair";
+  const dispositionOptions: readonly string[] =
+    quantityReceived === 0
+      ? salesReturnPreReceiptDispositions.filter(
+          (option) => option !== "Repair" || itemData.trackingType === "Serial"
+        )
+      : salesReturnDispositionType.filter(
+          (option) => option !== "Repair" || line?.disposition === "Repair"
+        );
 
   const onDispositionChange = (value: string) => {
     if (!line?.id) return;
@@ -448,7 +460,7 @@ const SalesReturnOrderLineForm = ({
                       value={disposition}
                       onValueChange={onDispositionChange}
                       disabled={
-                        quantityReceived === 0 ||
+                        isRepairLocked ||
                         // Not isLocked: full receipt auto-completes the RMA,
                         // and disposition happens after goods arrive.
                         status === "Cancelled" ||
@@ -460,7 +472,7 @@ const SalesReturnOrderLineForm = ({
                         <SelectValue placeholder={t`Select disposition`} />
                       </SelectTrigger>
                       <SelectContent>
-                        {salesReturnDispositionType.map((option) => (
+                        {dispositionOptions.map((option) => (
                           <SelectItem key={option} value={option}>
                             {option}
                           </SelectItem>

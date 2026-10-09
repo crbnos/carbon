@@ -1263,12 +1263,19 @@ export const salesReturnDispositionType = [
   // "No Action Required",
   "Pending",
   // "Quarantine",
-  // "Repair",
+  "Repair",
   "Return to Customer",
   "Rework",
   "Scrap",
   "Use As Is"
 ] as const;
+
+/** Why a line's Repair disposition cannot change once it has received. */
+export const REPAIR_DISPOSITION_LOCKED_MESSAGE =
+  "A line's Repair disposition is set before receipt and cannot change after it. Void the receipt to change it.";
+
+/** The dispositions a line can take before any quantity is received. */
+export const salesReturnPreReceiptDispositions = ["Pending", "Repair"] as const;
 
 export const SALES_RETURN_ORDER_LOCKED_STATUSES = [
   "Completed",

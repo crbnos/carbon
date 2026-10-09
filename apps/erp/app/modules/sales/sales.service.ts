@@ -98,7 +98,8 @@ import {
   contractEndDate,
   costCategoryKeys,
   isQuoteLocked,
-  OPEN_SALES_ORDER_STATUSES
+  OPEN_SALES_ORDER_STATUSES,
+  REPAIR_DISPOSITION_LOCKED_MESSAGE
 } from "./sales.models";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
@@ -8338,7 +8339,9 @@ export async function createReplacementSalesOrder(
 }
 
 /**
- * Set an RMA line's disposition. "Use As Is" additionally releases the line's
+ * Set an RMA line's disposition. Before any quantity is received, only
+ * Pending and Repair (serialized items only) are allowed; once any is
+ * received, a change to or from Repair is refused. "Use As Is" additionally releases the line's
  * returned (On Hold) tracked entities to Available and records one
  * `trackedActivity` (+ one input per entity) for the genealogy — the same
  * shape the NCR disposition writes. Scrap/Rework are set via Issue escalation
@@ -8364,7 +8367,7 @@ export async function setSalesReturnOrderLineDisposition(
   const line = await client
     .from("salesReturnOrderLine")
     .select(
-      "id, salesReturnOrderId, quantityReceived, salesReturnOrder(status)"
+      "id, salesReturnOrderId, quantityReceived, disposition, salesReturnOrder(status), item(itemTrackingType)"
     )
     .eq("id", lineId)
     .eq("companyId", companyId)
@@ -8385,16 +8388,88 @@ export async function setSalesReturnOrderLineDisposition(
     };
   }
 
-  if (
-    disposition !== "Pending" &&
-    Number(line.data.quantityReceived ?? 0) <= 0
-  ) {
+  const isReceived = Number(line.data.quantityReceived ?? 0) > 0;
+  // Repair is decided before receipt: the receipt of a Repair line posts no
+  // stock, so it is the only value a line can take before any quantity is
+  // received, and it cannot change once any is.
+  if (!isReceived && disposition !== "Pending" && disposition !== "Repair") {
     return {
       data: null,
       error: {
         message: "Cannot set a disposition before any quantity is received"
       } as PostgrestError
     };
+  }
+  const touchesRepair =
+    disposition !== line.data.disposition &&
+    (disposition === "Repair" || line.data.disposition === "Repair");
+  if (touchesRepair && isReceived) {
+    return {
+      data: null,
+      error: {
+        message: REPAIR_DISPOSITION_LOCKED_MESSAGE
+      } as PostgrestError
+    };
+  }
+  if (
+    disposition === "Repair" &&
+    (line.data.item as { itemTrackingType: string } | null)
+      ?.itemTrackingType !== "Serial"
+  ) {
+    return {
+      data: null,
+      error: {
+        message: "Only a serialized item can be returned for repair"
+      } as PostgrestError
+    };
+  }
+
+  // A change to or from Repair is written under the return order's row lock,
+  // the lock post-receipt holds while it posts, and re-checks the received
+  // quantity there: a receipt posted in between would otherwise leave the
+  // line's stock wrong.
+  if (touchesRepair) {
+    try {
+      await db.transaction().execute(async (trx) => {
+        const lockedOrder = await trx
+          .selectFrom("salesReturnOrder")
+          .select(["status"])
+          .where("id", "=", line.data.salesReturnOrderId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+        if (lockedOrder.status === "Cancelled") {
+          throw new Error(
+            `Cannot change disposition on a ${lockedOrder.status} return order`
+          );
+        }
+        const lockedLine = await trx
+          .selectFrom("salesReturnOrderLine")
+          .select(["quantityReceived"])
+          .where("id", "=", lineId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirstOrThrow();
+        if (Number(lockedLine.quantityReceived ?? 0) > 0) {
+          throw new Error(REPAIR_DISPOSITION_LOCKED_MESSAGE);
+        }
+        await trx
+          .updateTable("salesReturnOrderLine")
+          .set({
+            disposition,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", lineId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+    } catch (err) {
+      return {
+        data: null,
+        error: { message: (err as Error).message } as PostgrestError
+      };
+    }
+    return { data: { id: lineId }, error: null };
   }
 
   if (disposition !== "Use As Is") {

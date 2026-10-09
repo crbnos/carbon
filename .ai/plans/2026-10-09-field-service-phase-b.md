@@ -38,7 +38,7 @@ Task 12 records these in the spec.
 
 - [x] Task 1: Add the service order link migration
 - [x] Task 2: Move service order creation into a shared helper
-- [ ] Task 3: Allow `Repair` before receipt and lock it after
+- [x] Task 3: Allow `Repair` before receipt and lock it after
 - [ ] Task 4: Post a `Repair` receipt with no ledger
 - [ ] Task 5: Void a `Repair` receipt
 - [ ] Task 6: Let the return shipment take `Repair` serials
@@ -427,3 +427,6 @@ ls .ai/playbooks/field-service-phase-b.md
 - Task 2 (deviation): the ERP `createServiceProject` is removed, not kept: its only caller was `createServiceOrder`, which now calls `insertServiceOrder`. No route called it. `createServiceOrder` keeps its signature. The service `AGENTS.md` names the new helpers.
 - Task 2 (fix found by the test): the project of an order was named "<serial> — <customer>", and a project's name is unique in its company (`project_companyId_name_key`). So a unit's second service order, after the first was Closed, failed on insert. The name is now "<order id> — <serial> — <customer>". A Depot Repair order on a unit that had a Field Visit order hits the same case.
 - Task 2: `service-orders.test.ts` (3 database cases): the order, its Service project (Released, By Coverage, identifier = the order id) and 6 states; a forced error rolls back all three and the sequence; `ensureCustomerAsset` returns the existing asset, and creates a Manual one for an unregistered serial.
+- Task 3: the non-Use-As-Is path of `setSalesReturnOrderLineDisposition` had no row lock (only Use As Is opens a transaction). So a change to or from `Repair` now writes in its own transaction under the return order's row lock (the lock `post-receipt` takes) and re-reads `quantityReceived` there. Task 4 closes the other side: `post-receipt` re-reads the dispositions under that lock. The refusal text is `REPAIR_DISPOSITION_LOCKED_MESSAGE` (`sales.models.ts`); `salesReturnPreReceiptDispositions` lists Pending and Repair.
+- Task 3: the line's Issue route (`$id.$lineId.issue.tsx`) writes Scrap or Rework directly, not through the setter, so it refuses a `Repair` line too. The line form offers **Repair** before receipt only for a serial-tracked item.
+- Task 3: the disposition route needed no change: `Repair` posts like the other plain values.
