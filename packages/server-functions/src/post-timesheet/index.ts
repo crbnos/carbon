@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { journalReference } from "@carbon/database";
+import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { inOrder, single } from "@carbon/database/rows";
 import { datetime } from "@carbon/utils";
-import { sql } from "kysely";
+import { type Selectable, sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -128,7 +129,10 @@ const postTimesheet = defineServerFn({
               .execute(),
           async () =>
             originalIds.length === 0
-              ? []
+              ? ([] as Pick<
+                  Selectable<DB["timesheetEntry"]>,
+                  "id" | "costRate"
+                >[])
               : trx
                   .selectFrom("timesheetEntry")
                   .select(["id", "costRate"])
@@ -137,7 +141,10 @@ const postTimesheet = defineServerFn({
                   .execute(),
           async () =>
             originalIds.length === 0
-              ? []
+              ? ([] as Pick<
+                  Selectable<DB["projectLedger"]>,
+                  "id" | "documentId"
+                >[])
               : trx
                   .selectFrom("projectLedger")
                   .select(["id", "documentId"])
