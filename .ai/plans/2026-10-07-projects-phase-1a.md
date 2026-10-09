@@ -38,7 +38,7 @@ Phase 1c gets baselines and change requests.
 ## Progress
 
 - [x] Task 1: Create the enum migration
-- [ ] Task 2: Create the Projects module and permissions migration
+- [x] Task 2: Create the Projects module and permissions migration
 - [ ] Task 3: Create the workspace tables migration
 - [ ] Task 4: Create the time and ledger tables migration
 - [ ] Task 5: Create the backfill migration
@@ -2390,3 +2390,8 @@ ls .ai/playbooks/projects-phase-1a.md
 ```
 
 **Out of scope:** the Phase 1b acceptance criteria (verification, allocation, Tree, Timeline, Reader, baselines).
+
+## Execution notes
+
+- Tasks 1–6: each migration was applied with `pnpm db:migrate` before its commit, and the regenerated `types.ts`, `swagger-docs-schema.ts` and MCP `tool-manifest.digest.json` were committed with it. The pre-commit `check:manifest` gate refuses a migration commit whose digest is stale, so the type regeneration could not wait for Task 7.
+- The shell exports `SUPABASE_DB_URL` for port 54322, which `.env.local` does not override, so the backup check skipped silently. Commits ran with `SUPABASE_DB_URL` pointed at this worktree's database (port 60387), so the dataset and backup checks ran for real.
