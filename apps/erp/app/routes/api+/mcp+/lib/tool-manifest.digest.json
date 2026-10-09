@@ -1,5 +1,5 @@
 {
-  "totalTools": 1543,
+  "totalTools": 1540,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -20,7 +20,6 @@
     {"name":"accounting_createFiscalYearPeriods","classification":"WRITE","paramCount":1,"schema":"de7d8726d5e4","response":"none","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"accounting:create","paginates":false},
     {"name":"accounting_createIntercompanyTransaction","classification":"WRITE","paramCount":8,"schema":"9c3c11f4059c","response":"3797626bd17e","injectAuth":"companyGroupId+companyId+createdBy+updatedBy+userId","permission":"accounting:create","paginates":false},
     {"name":"accounting_createJournalEntry","classification":"WRITE","paramCount":5,"schema":"a6a3192fb898","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"accounting:create","paginates":false},
-    {"name":"accounting_createOpeningBalanceJournal","classification":"DESTRUCTIVE","paramCount":2,"schema":"827e7a256f6c","response":"3797626bd17e","injectAuth":"companyGroupId+companyId+createdBy+updatedBy+userId","permission":"accounting:create","paginates":false},
     {"name":"accounting_deleteAccount","classification":"DESTRUCTIVE","paramCount":1,"schema":"ecb746f60913","response":"bcde375ebd4c","injectAuth":"companyId","permission":"accounting:delete","paginates":false},
     {"name":"accounting_deleteAccountingPeriod","classification":"DESTRUCTIVE","paramCount":1,"schema":"7e5905ac5974","response":"none","injectAuth":"companyId","permission":"accounting:delete","paginates":false},
     {"name":"accounting_deleteCostCenter","classification":"DESTRUCTIVE","paramCount":1,"schema":"f8a3e6fec03f","response":"bcde375ebd4c","injectAuth":"companyId","permission":"accounting:delete","paginates":false},
@@ -74,7 +73,6 @@
     {"name":"accounting_getExchangeRate","classification":"READ","paramCount":1,"schema":"cc2bce783cc5","response":"cddf8275afa1","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getExchangeRateHistory","classification":"READ","paramCount":1,"schema":"cc2bce783cc5","response":"ab784d246338","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getExchangeRates","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"7089bfe7df7a","injectAuth":"companyId","permission":"accounting:view","paginates":false},
-    {"name":"accounting_getExistingOpeningBalanceEntry","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"3797626bd17e","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getFinancialStatementBalances","classification":"READ","paramCount":3,"schema":"267691af8c66","response":"f561243f144b","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getFinancialStatementPeriodSeries","classification":"READ","paramCount":3,"schema":"27a6e6386ed2","response":"5483e69d7515","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getFiscalCalendarCommitted","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"854b90f7a9d3","injectAuth":"companyId","permission":"accounting:view","paginates":false},
@@ -1439,7 +1437,6 @@
     {"name":"settings_getWebhooks","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"f236afae1a37","injectAuth":"companyId","permission":"settings:view","paginates":true,"defaults":"always"},
     {"name":"settings_getWebhookTables","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"633f9f3bffc6","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_resolveSections","classification":"WRITE","paramCount":1,"schema":"0eb0c2be01ed","response":"59781d2a00b3","injectAuth":"companyId","permission":"settings:update","paginates":false},
-    {"name":"settings_updateAccountingEnabledSetting","classification":"WRITE","paramCount":1,"schema":"82d5e14a67e0","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateAccountsPayableAddressSetting","classification":"WRITE","paramCount":1,"schema":"7a679bb0d746","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateAccountsPayableBillingAddress","classification":"WRITE","paramCount":10,"schema":"1d9ef8425567","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false,"context":"updatedBy=userId"},
     {"name":"settings_updateAccountsReceivableAddressSetting","classification":"WRITE","paramCount":1,"schema":"aee1361e5321","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},

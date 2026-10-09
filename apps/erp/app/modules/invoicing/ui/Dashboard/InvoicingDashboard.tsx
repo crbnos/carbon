@@ -57,7 +57,7 @@ export type RecentPayment = {
 
 type InvoicingDashboardProps = {
   asOfDate: string;
-  accountingEnabled: boolean;
+  accountingSetUp: boolean;
   ar: AgingTotals;
   ap: AgingTotals;
   arTieOut: TieOut;
@@ -170,7 +170,7 @@ const AgingCard = ({
 };
 
 const InvoicingDashboard = ({
-  accountingEnabled,
+  accountingSetUp,
   ar,
   ap,
   arTieOut,
@@ -258,7 +258,7 @@ const InvoicingDashboard = ({
           icon={<LuClock />}
           totals={ar}
           tieOut={arTieOut}
-          showTieOut={accountingEnabled}
+          showTieOut={accountingSetUp}
           bucketLabels={bucketLabels}
           format={format}
         />
@@ -267,7 +267,7 @@ const InvoicingDashboard = ({
           icon={<LuClock />}
           totals={ap}
           tieOut={apTieOut}
-          showTieOut={accountingEnabled}
+          showTieOut={accountingSetUp}
           bucketLabels={bucketLabels}
           format={format}
         />

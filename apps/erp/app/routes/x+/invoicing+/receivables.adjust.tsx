@@ -10,6 +10,7 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   getDefaultAccounts,
+  hasAccountingCutover,
   saveJournalEntryWithLines
 } from "~/modules/accounting";
 import { getArTieOut } from "~/modules/invoicing";
@@ -28,17 +29,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, { create: "accounting" });
 
-  // Adjusting entries only make sense when journals are being posted.
+  // Adjusting entries only make sense once journals count (after the cutover).
   const companySettings = await getCompanySettings(client, companyId);
-  if (
-    !(
-      (companySettings.data as { accountingEnabled?: boolean } | null)
-        ?.accountingEnabled ?? false
-    )
-  ) {
+  if (!hasAccountingCutover(companySettings.data)) {
     throw redirect(
       path.to.receivables,
-      await flash(request, error(null, "Accounting is not enabled"))
+      await flash(request, error(null, "Accounting is not set up"))
     );
   }
 

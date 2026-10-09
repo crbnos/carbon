@@ -7,6 +7,7 @@ import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { hasAccountingCutover } from "~/modules/accounting";
 import {
   getInventoryValuation,
   getInventoryValuationTieOut,
@@ -36,16 +37,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     url.searchParams.get("groupBy") === "item" ? "item" : "location";
   const locationId = url.searchParams.get("locationId") || null;
 
-  // The tie-out only means something when journals are being posted — skip it
-  // entirely when accounting is disabled (tieOut: null hides the panel).
+  // The tie-out only means something once journals count — skip it entirely
+  // before the accounting cutover (tieOut: null hides the panel).
   const companySettings = await getCompanySettings(client, companyId);
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
+  const accountingSetUp = hasAccountingCutover(companySettings.data);
 
   const [valuation, tieOut, locations] = await Promise.all([
     getInventoryValuation(client, companyId, { asOfDate, locationId }),
-    accountingEnabled
+    accountingSetUp
       ? getInventoryValuationTieOut(client, companyId, asOfDate)
       : Promise.resolve({ data: null, error: null }),
     client

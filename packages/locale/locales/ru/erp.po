@@ -377,9 +377,6 @@ msgstr "{componentCount, plural, one {# компонент} other {# компо�
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} конфликтов"
 
-msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr "{count, plural, one {# счет с остатком} other {# счетов с остатком}}"
-
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
@@ -1279,9 +1276,6 @@ msgstr "Статус отгрузки изменился"
 msgid "A shipment's tracking number changes"
 msgstr "Номер отслеживания отгрузки изменился"
 
-msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr "Одна сбалансированная проводка будет проведена на дату, указанную ниже, с разницей, отнесенной на счет нераспределенной прибыли."
-
 msgid "A step needs a name."
 msgstr "Шаг должен иметь имя."
 
@@ -1460,17 +1454,11 @@ msgstr "бухгалтерия"
 msgid "Accounting"
 msgstr "Бухгалтерия"
 
-msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
-msgstr "Бухгалтерия сейчас находится на этапе бета-тестирования. Запросите доступ для включения отчетов, операций, учетных периодов, основных средств и многого другого."
+msgid "Accounting is not set up"
+msgstr ""
 
-msgid "Accounting is disabled"
-msgstr "Бухгалтерский учет отключен"
-
-msgid "Accounting is disabled for this company."
-msgstr "Бухгалтерия отключена для этой организации."
-
-msgid "Accounting is enabled"
-msgstr "Бухгалтерский учет включен"
+msgid "Accounting is not set up for this company."
+msgstr ""
 
 msgid "Accounting period"
 msgstr "Учетный период"
@@ -1482,6 +1470,9 @@ msgid "Accounting Periods"
 msgstr "Учетные периоды"
 
 msgid "Accounting setup"
+msgstr ""
+
+msgid "Accounting since {cutoverDate}"
 msgstr ""
 
 msgid "Accounting Treatment"
@@ -1513,6 +1504,9 @@ msgstr "Дебиторская задолженность за суммы, пр�
 
 msgid "Accrual"
 msgstr "Начисление"
+
+msgid "Accrual accounting with journal entries, financial reports, and general ledger posting."
+msgstr ""
 
 msgid "Accruals"
 msgstr "Начисления"
@@ -2006,9 +2000,6 @@ msgstr "Адрес строка1"
 msgid "Address line2"
 msgstr "Адрес строка2"
 
-msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
-msgstr "Добавляет себестоимость, которая не была отнесена на актив, такую как затраты труда и материалов производственного заказа, который не был зафиксирован."
-
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Добавляет себестоимость, которая не была отнесена на актив, такую как затраты труда и материалов производственного заказа, который не был зафиксирован. Стоимость проводится на актив со счета, с которого она была потрачена: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
 
@@ -2181,9 +2172,6 @@ msgstr "Распределено"
 
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
-
-msgid "Alpha"
-msgstr "Альфа"
 
 msgid "also at {otherStationNames}"
 msgstr "также на {otherStationNames}"
@@ -3135,9 +3123,6 @@ msgstr "На дату"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "По состоянию на {0}"
-
-msgid "As of date"
-msgstr "На дату"
 
 msgid "As of:"
 msgstr "По состоянию на:"
@@ -8222,9 +8207,6 @@ msgstr "Включите аудит в настройках, чтобы нача
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Включить цифровые коммерческие предложения для вашей организации. Это позволит вам отправлять цифровые коммерческие предложения вашим покупателям и позволит им принимать их онлайн."
 
-msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
-msgstr "Включить полный учет по методу начисления с записями операций, финансовыми отчетами и отражением в главной книге."
-
 msgid "Enable in Settings"
 msgstr "Включить в настройках"
 
@@ -8248,9 +8230,6 @@ msgstr "Включите, чтобы разрешить символы нижн�
 
 msgid "Enable to allow shared workstation mode."
 msgstr "Включите, чтобы разрешить режим общей рабочей станции."
-
-msgid "Enable to automatically post transactions to the general ledger."
-msgstr "Включите, чтобы автоматически отправлять транзакции в главную книгу."
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "Включите, чтобы заблокировать выпуск или проведение для покупателя без контактного лица или площадки."
@@ -8426,9 +8405,6 @@ msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
-
-msgid "Enter what it cost to make."
-msgstr "Введите себестоимость производства."
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Введите себестоимость производства. Стоимость проводится на актив со счета, с которого она была потрачена: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
@@ -14483,18 +14459,8 @@ msgstr "Открытие"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Открытие операции запускает её таймер, поэтому время отсчитывается с момента начала работы."
 
-msgid "Opening Balance"
-msgstr "Начальный остаток"
-
-#. placeholder {0}: account.name
-msgid "Opening balance for {0}"
-msgstr "Начальный остаток для {0}"
-
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Начальный остаток амортизации, уже учтенный до добавления этого актива в Carbon (используйте 0 для новых приобретений)."
-
-msgid "Opening Balances"
-msgstr "Начальные остатки"
 
 msgid "Opening balances as of"
 msgstr ""
@@ -15511,9 +15477,6 @@ msgstr "Провести счет-фактуру"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Проводите операции журнала с правильными кодами счетов и описания"
-
-msgid "Post opening balances"
-msgstr "Провести начальные остатки"
 
 #. placeholder {0}: check.count
 msgid "Post or delete the {0} document(s) dated before the cutover."
@@ -17241,9 +17204,6 @@ msgstr "Перепечать"
 msgid "Request a new invite"
 msgstr "Запросить новое приглашение"
 
-msgid "Request access"
-msgstr "Запросить доступ"
-
 msgid "Request Approval"
 msgstr "Запросить утверждение"
 
@@ -18909,7 +18869,13 @@ msgstr "Установите время, когда вы перестали ра
 msgid "Set these account defaults to an active account."
 msgstr ""
 
+msgid "Set up accounting"
+msgstr ""
+
 msgid "Set Up Accounting"
+msgstr ""
+
+msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
 msgstr ""
 
 msgid "Set up authenticator app"
@@ -18936,9 +18902,6 @@ msgstr "Установить версию {0} как активную верси
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Установите местоположение по умолчанию в настройках профиля, чтобы выбрать единицу хранения."
-
-msgid "Sets what this unit is carried at in inventory."
-msgstr "Задает себестоимость единицы в запасах."
 
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Задает себестоимость единицы в запасах. Разница проводится между запасами и счетом, с которого была потрачена себестоимость: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
@@ -22355,6 +22318,9 @@ msgstr "Дата транзакции"
 
 msgid "Transaction ID"
 msgstr "ID транзакции"
+
+msgid "Transactions post provisional journal entries until you set up accounting."
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Операции создадут записи и обновят Главную книгу"

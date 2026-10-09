@@ -19,7 +19,6 @@ import {
 import { FixedAssetCapitalizeForm } from "~/modules/accounting/ui/FixedAssets";
 import { getTrackedEntity } from "~/modules/inventory";
 import { getItem } from "~/modules/items";
-import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -60,7 +59,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     capitalization,
     assetClasses,
     timeZone,
-    companySettings,
     accountDefaults
   ] = await Promise.all([
     getTrackedEntity(client, trackedEntityId),
@@ -80,7 +78,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("isConstructionInProgress", false)
       .order("name"),
     getCompanyTimeZone(client, companyId),
-    getCompanySettings(client, companyId),
     getDefaultAccounts(client, companyId)
   ]);
 
@@ -110,10 +107,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
-
   const classes = assetClasses.data ?? [];
   const rentalFleetClassId =
     classes.find((c) => c.name === RENTAL_FLEET_CLASS_NAME)?.id ?? "";
@@ -133,7 +126,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // spent from this year.
       offsetAccountId: accountDefaults.data?.retainedEarningsAccount ?? ""
     },
-    accountingEnabled,
     assetClasses: classes,
     item: {
       readableId: item.data.readableIdWithRevision ?? item.data.readableId,
@@ -204,14 +196,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function CapitalizeFixedAssetRoute() {
-  const {
-    initialValues,
-    assetClasses,
-    item,
-    serialNumber,
-    cost,
-    accountingEnabled
-  } = useLoaderData<typeof loader>();
+  const { initialValues, assetClasses, item, serialNumber, cost } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   return (
@@ -221,7 +207,6 @@ export default function CapitalizeFixedAssetRoute() {
       item={item}
       serialNumber={serialNumber}
       cost={cost}
-      accountingEnabled={accountingEnabled}
       onClose={() => navigate(-1)}
     />
   );

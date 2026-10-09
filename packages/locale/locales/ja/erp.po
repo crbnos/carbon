@@ -377,9 +377,6 @@ msgstr "{componentCount, plural, one {# コンポーネント} other {# コン�
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 個の競合"
 
-msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残高のある勘定}}"
-
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
@@ -1279,9 +1276,6 @@ msgstr "出荷のステータスが変更される"
 msgid "A shipment's tracking number changes"
 msgstr "出荷の追跡番号が変更される"
 
-msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr "1 つの仕訳行が以下の日付で転記され、差分が利益剰余金にオフセットされます。"
-
 msgid "A step needs a name."
 msgstr "ステップには名前が必要です。"
 
@@ -1460,17 +1454,11 @@ msgstr "会計"
 msgid "Accounting"
 msgstr "会計"
 
-msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
-msgstr "会計機能は現在ベータ版です。レポート、仕訳帳、会計期間、固定資産などを有効にするためにアクセスをリクエストしてください。"
+msgid "Accounting is not set up"
+msgstr ""
 
-msgid "Accounting is disabled"
-msgstr "会計は無効です"
-
-msgid "Accounting is disabled for this company."
-msgstr "この会社では会計機能が無効になっています。"
-
-msgid "Accounting is enabled"
-msgstr "会計が有効です"
+msgid "Accounting is not set up for this company."
+msgstr ""
 
 msgid "Accounting period"
 msgstr "会計期間"
@@ -1482,6 +1470,9 @@ msgid "Accounting Periods"
 msgstr "会計期間"
 
 msgid "Accounting setup"
+msgstr ""
+
+msgid "Accounting since {cutoverDate}"
 msgstr ""
 
 msgid "Accounting Treatment"
@@ -1513,6 +1504,9 @@ msgstr "得意先から支払われるべき金額の売掛金"
 
 msgid "Accrual"
 msgstr "未請求売上"
+
+msgid "Accrual accounting with journal entries, financial reports, and general ledger posting."
+msgstr ""
 
 msgid "Accruals"
 msgstr "未請求売上"
@@ -2006,9 +2000,6 @@ msgstr "住所 行1"
 msgid "Address line2"
 msgstr "住所 行2"
 
-msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
-msgstr "資産に計上されなかった原価を追加します。例えば、記録されていない製造指図の労務と材料など。"
-
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "資産に計上されなかった原価を追加します。例えば、記録されていない製造指図の労務と材料などです。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
 
@@ -2181,9 +2172,6 @@ msgstr "配置済み"
 
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
-
-msgid "Alpha"
-msgstr "アルファ"
 
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}でも実施中"
@@ -3135,9 +3123,6 @@ msgstr "現在時点で"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "{0}時点で"
-
-msgid "As of date"
-msgstr "対象日付"
 
 msgid "As of:"
 msgstr "以下の日付時点:"
@@ -8222,9 +8207,6 @@ msgstr "設定で監査ログを有効にして、データへの変更の追跡
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "会社のデジタル見積を有効にします。これにより、デジタル見積を得意先に送信し、オンラインで承諾させることができます。"
 
-msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
-msgstr "完全な発生主義会計を有効にし、仕訳帳エントリ、財務報告書、および総勘定元帳への転記を行います。"
-
 msgid "Enable in Settings"
 msgstr "設定で有効にする"
 
@@ -8248,9 +8230,6 @@ msgstr "アイテムIDで小文字を許可するには有効にしてくださ�
 
 msgid "Enable to allow shared workstation mode."
 msgstr "共有ワークステーションモードを有効にします。"
-
-msgid "Enable to automatically post transactions to the general ledger."
-msgstr "自動的にトランザクションを総勘定元帳に転記するには有効にしてください。"
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "担当者または拠点がない得意先の発行または転記をブロックするために有効にします。"
@@ -8426,9 +8405,6 @@ msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
-
-msgid "Enter what it cost to make."
-msgstr "製造にかかった原価を入力してください。"
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "製造にかかった原価を入力してください。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
@@ -14483,18 +14459,8 @@ msgstr "開始残高"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "操作を開くとそのタイマーが開始され、作業開始時点から時間が追跡されます。"
 
-msgid "Opening Balance"
-msgstr "初期残高"
-
-#. placeholder {0}: account.name
-msgid "Opening balance for {0}"
-msgstr "{0}の初期残高"
-
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "このアセットがCarbonに追加される前に既に予約されていた減価償却の期首残高（新規取得の場合は0を使用してください）。"
-
-msgid "Opening Balances"
-msgstr "初期残高"
 
 msgid "Opening balances as of"
 msgstr ""
@@ -15511,9 +15477,6 @@ msgstr "請求書を転記"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "適切なアカウントと説明コードを使用して仕訳を転記する"
-
-msgid "Post opening balances"
-msgstr "初期残高を転記"
 
 #. placeholder {0}: check.count
 msgid "Post or delete the {0} document(s) dated before the cutover."
@@ -17241,9 +17204,6 @@ msgstr "再印刷"
 msgid "Request a new invite"
 msgstr "新しい招待をリクエストする"
 
-msgid "Request access"
-msgstr "アクセスをリクエスト"
-
 msgid "Request Approval"
 msgstr "承認を依頼"
 
@@ -18909,7 +18869,13 @@ msgstr "仕事を停止した時刻を設定するか、まだ仕事中である
 msgid "Set these account defaults to an active account."
 msgstr ""
 
+msgid "Set up accounting"
+msgstr ""
+
 msgid "Set Up Accounting"
+msgstr ""
+
+msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
 msgstr ""
 
 msgid "Set up authenticator app"
@@ -18936,9 +18902,6 @@ msgstr "バージョン {0} をアクティブバージョンとして設定し�
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "プロフィール設定でデフォルトの場所を設定して、保管ユニットを選択してください。"
-
-msgid "Sets what this unit is carried at in inventory."
-msgstr "この個が在庫で計上されている価値を設定します。"
 
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "この個が在庫で計上されている価値を設定します。差額は在庫と支出元の勘定との間で計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
@@ -22355,6 +22318,9 @@ msgstr "取引日付"
 
 msgid "Transaction ID"
 msgstr "取引ID"
+
+msgid "Transactions post provisional journal entries until you set up accounting."
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "トランザクションは仕訳帳エントリを作成し、総勘定元帳を更新します。"

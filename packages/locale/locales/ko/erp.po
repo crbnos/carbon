@@ -377,9 +377,6 @@ msgstr "{componentCount, plural, one {# 구성품} other {# 구성품}}"
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount}개 충돌"
 
-msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr "{count, plural, one {# 잔액이 있는 계정} other {# 잔액이 있는 계정}}"
-
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
@@ -1279,9 +1276,6 @@ msgstr "출하의 상태가 변경됨"
 msgid "A shipment's tracking number changes"
 msgstr "출하의 추적 번호가 변경됨"
 
-msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr "하나의 균형잡힌 분개가 아래의 날짜로 전기되며, 차액은 이익잉여금으로 상계됩니다."
-
 msgid "A step needs a name."
 msgstr "단계에 이름이 필요합니다."
 
@@ -1460,17 +1454,11 @@ msgstr "회계"
 msgid "Accounting"
 msgstr "회계"
 
-msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
-msgstr "회계는 현재 베타 단계입니다. 보고, 전표, 회계 기간, 고정자산 등을 사용하려면 액세스를 요청하세요."
+msgid "Accounting is not set up"
+msgstr ""
 
-msgid "Accounting is disabled"
-msgstr "회계가 비활성화됨"
-
-msgid "Accounting is disabled for this company."
-msgstr "이 회사에서는 회계가 비활성화되어 있습니다."
-
-msgid "Accounting is enabled"
-msgstr "회계가 활성화됨"
+msgid "Accounting is not set up for this company."
+msgstr ""
 
 msgid "Accounting period"
 msgstr "회계 기간"
@@ -1482,6 +1470,9 @@ msgid "Accounting Periods"
 msgstr "회계 기간"
 
 msgid "Accounting setup"
+msgstr ""
+
+msgid "Accounting since {cutoverDate}"
 msgstr ""
 
 msgid "Accounting Treatment"
@@ -1513,6 +1504,9 @@ msgstr "고객이 지급할 금액에 대한 매출채권"
 
 msgid "Accrual"
 msgstr "당기발생"
+
+msgid "Accrual accounting with journal entries, financial reports, and general ledger posting."
+msgstr ""
 
 msgid "Accruals"
 msgstr "당기발생"
@@ -2006,9 +2000,6 @@ msgstr "주소 라인1"
 msgid "Address line2"
 msgstr "주소 라인2"
 
-msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
-msgstr "자산이 청구되지 않은 원가를 추가합니다. 예를 들어, 비용을 기록하지 않은 작업 지시의 노무와 자재입니다."
-
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "자산이 청구되지 않은 원가를 추가합니다. 예를 들어, 비용을 기록하지 않은 작업 지시의 노무와 자재입니다. 이 금액은 지출된 계정에서 자산으로 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
 
@@ -2181,9 +2172,6 @@ msgstr "할당됨"
 
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
-
-msgid "Alpha"
-msgstr "알파"
 
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}에서도"
@@ -3135,9 +3123,6 @@ msgstr "기준"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "{0} 기준"
-
-msgid "As of date"
-msgstr "기준일"
 
 msgid "As of:"
 msgstr "기준:"
@@ -8222,9 +8207,6 @@ msgstr "데이터 변경 사항 추적을 시작하려면 설정에서 감사 �
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "회사의 디지털 견적서를 활성화하세요. 이렇게 하면 고객에게 디지털 견적서를 보낼 수 있으며, 고객이 온라인에서 수락할 수 있습니다."
 
-msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
-msgstr "전표, 재무 보고서, 총계정원장 전기를 포함한 완전 발생주의 회계를 활성화하세요."
-
 msgid "Enable in Settings"
 msgstr "설정에서 활성화"
 
@@ -8248,9 +8230,6 @@ msgstr "항목 ID에 소문자 사용을 허용하려면 활성화하세요."
 
 msgid "Enable to allow shared workstation mode."
 msgstr "공유 워크스테이션 모드를 허용하려면 활성화하세요."
-
-msgid "Enable to automatically post transactions to the general ledger."
-msgstr "거래를 총계정원장에 자동으로 전기하려면 활성화하세요."
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "담당자 또는 사업장이 없는 고객의 경우 발급 또는 전기를 차단하려면 활성화합니다."
@@ -8426,9 +8405,6 @@ msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
-
-msgid "Enter what it cost to make."
-msgstr "사내 생산 원가를 입력하십시오."
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "사내 생산 원가를 입력하십시오. 이 금액은 지출된 계정에서 자산으로 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
@@ -14483,18 +14459,8 @@ msgstr "기초"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "작업을 열면 타이머가 시작되므로 작업이 시작되는 순간부터 시간이 추적됩니다."
 
-msgid "Opening Balance"
-msgstr "개시잔액"
-
-#. placeholder {0}: account.name
-msgid "Opening balance for {0}"
-msgstr "{0}의 개시잔액"
-
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상각의 기초 잔액입니다(신규 취득 자산은 0을 사용하세요)."
-
-msgid "Opening Balances"
-msgstr "개시잔액"
 
 msgid "Opening balances as of"
 msgstr ""
@@ -15511,9 +15477,6 @@ msgstr "송장 전기"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "올바른 계정 및 설명 코드로 전표를 전기"
-
-msgid "Post opening balances"
-msgstr "개시잔액 전기"
 
 #. placeholder {0}: check.count
 msgid "Post or delete the {0} document(s) dated before the cutover."
@@ -17241,9 +17204,6 @@ msgstr "재출력"
 msgid "Request a new invite"
 msgstr "새 초대권 요청"
 
-msgid "Request access"
-msgstr "액세스 요청"
-
 msgid "Request Approval"
 msgstr "승인 요청"
 
@@ -18909,7 +18869,13 @@ msgstr "작업을 중단한 시간을 설정하거나 여전히 작업 중임을
 msgid "Set these account defaults to an active account."
 msgstr ""
 
+msgid "Set up accounting"
+msgstr ""
+
 msgid "Set Up Accounting"
+msgstr ""
+
+msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
 msgstr ""
 
 msgid "Set up authenticator app"
@@ -18936,9 +18902,6 @@ msgstr "버전 {0}을(를) 활성 버전으로 설정하시겠습니까?"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "프로필 설정에서 기본 사업장을 설정하여 보관 단위를 선택하세요."
-
-msgid "Sets what this unit is carried at in inventory."
-msgstr "이 자산의 재고 계상 금액을 설정합니다."
 
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "이 자산의 재고 계상 금액을 설정합니다. 차이는 재고와 비용이 지출된 계정 간에 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
@@ -22355,6 +22318,9 @@ msgstr "거래 일자"
 
 msgid "Transaction ID"
 msgstr "거래 ID"
+
+msgid "Transactions post provisional journal entries until you set up accounting."
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "거래에 따라 전표 항목이 생성되고 총계정원장이 업데이트됩니다."

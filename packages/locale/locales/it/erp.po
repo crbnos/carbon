@@ -377,9 +377,6 @@ msgstr "{componentCount, plural, one {# componente} other {# componenti}}"
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} conflitti"
 
-msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr "{count, plural, one {# conto con saldo} other {# conti con saldo}}"
-
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# corso} other {# corsi}}"
 
@@ -1279,9 +1276,6 @@ msgstr "Lo stato della spedizione cambia"
 msgid "A shipment's tracking number changes"
 msgstr "Il numero di tracciamento di una spedizione cambia"
 
-msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr "Una singola riga di registrazione bilanciata sarà registrata alla data indicata di seguito, con la differenza compensata agli Utili non distribuiti."
-
 msgid "A step needs a name."
 msgstr "Un passaggio ha bisogno di un nome."
 
@@ -1460,17 +1454,11 @@ msgstr "contabilità"
 msgid "Accounting"
 msgstr "Contabilità"
 
-msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
-msgstr "La Contabilità è attualmente in beta. Richiedi accesso per abilitare report, registrazioni contabili, periodi contabili, cespiti e altro."
+msgid "Accounting is not set up"
+msgstr ""
 
-msgid "Accounting is disabled"
-msgstr "La contabilità è disabilitata"
-
-msgid "Accounting is disabled for this company."
-msgstr "La contabilità è disabilitata per questa azienda."
-
-msgid "Accounting is enabled"
-msgstr "La contabilità è abilitata"
+msgid "Accounting is not set up for this company."
+msgstr ""
 
 msgid "Accounting period"
 msgstr "Periodo contabile"
@@ -1482,6 +1470,9 @@ msgid "Accounting Periods"
 msgstr "Periodi Contabili"
 
 msgid "Accounting setup"
+msgstr ""
+
+msgid "Accounting since {cutoverDate}"
 msgstr ""
 
 msgid "Accounting Treatment"
@@ -1513,6 +1504,9 @@ msgstr "Crediti verso clienti per importi dovuti dai clienti."
 
 msgid "Accrual"
 msgstr "Rateo"
+
+msgid "Accrual accounting with journal entries, financial reports, and general ledger posting."
+msgstr ""
 
 msgid "Accruals"
 msgstr "Ratei"
@@ -2006,9 +2000,6 @@ msgstr "Riga indirizzo 1"
 msgid "Address line2"
 msgstr "Riga indirizzo 2"
 
-msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
-msgstr "Aggiunge il costo che l'asset non è mai stato addebitato, come la manodopera e il materiale di un ordine di produzione che non ha registrato nulla."
-
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Aggiunge il costo che l'asset non è mai stato addebitato, come la manodopera e il materiale di un ordine di produzione che non ha registrato nulla. Il valore è registrato nell'asset dal conto da cui è stato speso: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
 
@@ -2181,9 +2172,6 @@ msgstr "Allocato"
 
 msgid "Allows acknowledge & continue"
 msgstr "Consente di riconoscere e continuare"
-
-msgid "Alpha"
-msgstr "Alpha"
 
 msgid "also at {otherStationNames}"
 msgstr "anche presso {otherStationNames}"
@@ -3135,9 +3123,6 @@ msgstr "Al"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "Al {0}"
-
-msgid "As of date"
-msgstr "Data al"
 
 msgid "As of:"
 msgstr "A partire da:"
@@ -8222,9 +8207,6 @@ msgstr "Abilita la registrazione di audit nelle impostazioni per iniziare a trac
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Abilita le quotazioni digitali per la tua azienda. Questo ti permetterà di inviare quotazioni digitali ai tuoi clienti e consentire loro di accettarle online."
 
-msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
-msgstr "Abilita la contabilità per competenza completa con registrazioni contabili, report finanziari e registrazione in contabilità generale."
-
 msgid "Enable in Settings"
 msgstr "Abilita nelle Impostazioni"
 
@@ -8248,9 +8230,6 @@ msgstr "Abilita per consentire caratteri minuscoli negli ID degli articoli."
 
 msgid "Enable to allow shared workstation mode."
 msgstr "Abilita per consentire la modalità workstation condivisa."
-
-msgid "Enable to automatically post transactions to the general ledger."
-msgstr "Abilita per registrare automaticamente le transazioni nella contabilità generale."
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "Attiva per bloccare l'emissione o la registrazione per un cliente senza contatto o senza ubicazione."
@@ -8426,9 +8405,6 @@ msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Inserisci la quantità che questo movimento avrebbe dovuto essere. Un movimento opposto per la differenza è registrato accanto all'originale, nel periodo temporale dell'originale."
-
-msgid "Enter what it cost to make."
-msgstr "Inserisci il costo di produzione."
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Inserisci il costo di produzione. Il valore è registrato nell'asset dal conto da cui è stato speso: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
@@ -14483,18 +14459,8 @@ msgstr "Apertura"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "L'apertura di un'operazione avvia il suo timer, quindi il tempo viene tracciato dal momento in cui inizia il lavoro."
 
-msgid "Opening Balance"
-msgstr "Saldo iniziale"
-
-#. placeholder {0}: account.name
-msgid "Opening balance for {0}"
-msgstr "Saldo iniziale per {0}"
-
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Saldo di apertura dell'ammortamento già contabilizzato prima dell'aggiunta di questo asset a Carbon (utilizzare 0 per le nuove acquisizioni)."
-
-msgid "Opening Balances"
-msgstr "Saldi iniziali"
 
 msgid "Opening balances as of"
 msgstr ""
@@ -15511,9 +15477,6 @@ msgstr "Registra Fattura"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Registra inserimenti della prima nota con codici di conto e descrizione appropriati"
-
-msgid "Post opening balances"
-msgstr "Registra saldi iniziali"
 
 #. placeholder {0}: check.count
 msgid "Post or delete the {0} document(s) dated before the cutover."
@@ -17241,9 +17204,6 @@ msgstr "Ristampa"
 msgid "Request a new invite"
 msgstr "Richiedi un nuovo invito"
 
-msgid "Request access"
-msgstr "Richiedi accesso"
-
 msgid "Request Approval"
 msgstr "Richiedi Approvazione"
 
@@ -18909,7 +18869,13 @@ msgstr "Imposta l'ora in cui hai smesso di lavorare, o conferma che stai ancora 
 msgid "Set these account defaults to an active account."
 msgstr ""
 
+msgid "Set up accounting"
+msgstr ""
+
 msgid "Set Up Accounting"
+msgstr ""
+
+msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
 msgstr ""
 
 msgid "Set up authenticator app"
@@ -18936,9 +18902,6 @@ msgstr "Imposta la versione {0} come versione attiva?"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Imposta la tua ubicazione predefinita nelle impostazioni del profilo per scegliere un'unità di stoccaggio."
-
-msgid "Sets what this unit is carried at in inventory."
-msgstr "Definisce il valore con cui questa unità è riportata nel magazzino."
 
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Definisce il valore con cui questa unità è riportata nel magazzino. La differenza è registrata tra il magazzino e il conto da cui è stato speso il costo: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
@@ -22355,6 +22318,9 @@ msgstr "Data Transazione"
 
 msgid "Transaction ID"
 msgstr "ID Transazione"
+
+msgid "Transactions post provisional journal entries until you set up accounting."
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Le transazioni creeranno voci di prima nota e aggiorneranno la contabilità generale."

@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
-  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -27,7 +27,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -36,11 +36,10 @@ import {
   Number as NumberInput,
   Submit
 } from "~/components/Form";
-import { useFlags } from "~/hooks";
-import { getDefaultAccounts } from "~/modules/accounting";
+import { useDateFormatter } from "~/hooks";
+import { getDefaultAccounts, hasAccountingCutover } from "~/modules/accounting";
 import {
   getCompanySettings,
-  updateAccountingEnabledSetting,
   updateAssetTaxDepreciationSettings,
   updateLeasePolicySettings,
   updateShowCurrencyTrailingZerosSetting
@@ -115,17 +114,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
-
-  if (intent === "accountingEnabled") {
-    const enabled = formData.get("enabled") === "true";
-    const update = await updateAccountingEnabledSetting(
-      client,
-      companyId,
-      enabled
-    );
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Accounting settings updated" };
-  }
 
   if (intent === "showCurrencyTrailingZeros") {
     const enabled = formData.get("enabled") === "true";
@@ -243,20 +231,13 @@ export default function AccountingSettingsRoute() {
       }
     }
   });
-  const { isInternal } = useFlags();
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
 
   const taxEnabled = companySettings.assetTaxDepreciationEnabled ?? false;
 
-  const handleAccountingToggle = useCallback(
-    (checked: boolean) => {
-      fetcher.submit(
-        { intent: "accountingEnabled", enabled: String(checked) },
-        { method: "POST" }
-      );
-    },
-    [fetcher]
-  );
+  const accountingSetUp = hasAccountingCutover(companySettings);
+  const cutoverDate = formatDate(companySettings.accountingCutoverDate);
 
   const handleTrailingZerosToggle = useCallback(
     (showTrailingZeros: boolean) => {
@@ -298,45 +279,42 @@ export default function AccountingSettingsRoute() {
             </CardTitle>
             <CardDescription>
               <Trans>
-                Enable full accrual accounting with journal entries, financial
-                reports, and general ledger posting.
+                Accrual accounting with journal entries, financial reports, and
+                general ledger posting.
               </Trans>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2">
-                  <span className="font-medium">
-                    {companySettings.accountingEnabled ? (
-                      <Trans>Accounting is enabled</Trans>
-                    ) : (
-                      <Trans>Accounting is disabled</Trans>
-                    )}
-                  </span>
-                  <Badge variant="red">
-                    <Trans>Alpha</Trans>
-                  </Badge>
-                </HStack>
+                <span className="font-medium">
+                  {accountingSetUp ? (
+                    <Trans>Accounting since {cutoverDate}</Trans>
+                  ) : (
+                    <Trans>Accounting is not set up</Trans>
+                  )}
+                </span>
                 <span className="text-sm text-muted-foreground">
-                  {companySettings.accountingEnabled ? (
+                  {accountingSetUp ? (
                     <Trans>
                       Transactions will create journal entries and update the
                       general ledger.
                     </Trans>
                   ) : (
                     <Trans>
-                      Enable to automatically post transactions to the general
-                      ledger.
+                      Transactions post provisional journal entries until you
+                      set up accounting.
                     </Trans>
                   )}
                 </span>
               </VStack>
-              <Switch
-                checked={companySettings.accountingEnabled ?? false}
-                onCheckedChange={handleAccountingToggle}
-                disabled={!isInternal}
-              />
+              {!accountingSetUp && (
+                <Button asChild>
+                  <Link to={path.to.accountingActivation}>
+                    <Trans>Set up accounting</Trans>
+                  </Link>
+                </Button>
+              )}
             </HStack>
           </CardContent>
         </Card>

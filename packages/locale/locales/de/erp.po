@@ -377,9 +377,6 @@ msgstr "{componentCount, plural, one {# Komponente} other {# Komponenten}}"
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} Konflikte"
 
-msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr "{count, plural, one {# Konto mit einem Saldo} other {# Konten mit Salden}}"
-
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
 
@@ -1279,9 +1276,6 @@ msgstr "Der Status einer Lieferung ändert sich"
 msgid "A shipment's tracking number changes"
 msgstr "Die Verfolgungsnummer einer Lieferung ändert sich"
 
-msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr "Ein einzelner ausgeglichener Buchungssatz wird zum unten angegebenen Datum gebucht, wobei die Differenz auf den Gewinnvortrag verrechnet wird."
-
 msgid "A step needs a name."
 msgstr "Ein Schritt benötigt einen Namen."
 
@@ -1460,17 +1454,11 @@ msgstr "Buchhaltung"
 msgid "Accounting"
 msgstr "Buchhaltung"
 
-msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
-msgstr "Buchhaltung befindet sich derzeit in der Beta-Phase. Fordern Sie Zugriff an, um Berichte, Buchungssätze, Buchungsperioden, Anlagegüter und mehr zu aktivieren."
+msgid "Accounting is not set up"
+msgstr ""
 
-msgid "Accounting is disabled"
-msgstr "Buchhaltung ist deaktiviert"
-
-msgid "Accounting is disabled for this company."
-msgstr "Die Buchhaltung ist für dieses Unternehmen deaktiviert."
-
-msgid "Accounting is enabled"
-msgstr "Buchhaltung ist aktiviert"
+msgid "Accounting is not set up for this company."
+msgstr ""
 
 msgid "Accounting period"
 msgstr "buchungsperiode"
@@ -1482,6 +1470,9 @@ msgid "Accounting Periods"
 msgstr "Buchungsperioden"
 
 msgid "Accounting setup"
+msgstr ""
+
+msgid "Accounting since {cutoverDate}"
 msgstr ""
 
 msgid "Accounting Treatment"
@@ -1513,6 +1504,9 @@ msgstr "Forderungen aus Lieferungen und Leistungen für Beträge, die Kunden sch
 
 msgid "Accrual"
 msgstr "Abgrenzung"
+
+msgid "Accrual accounting with journal entries, financial reports, and general ledger posting."
+msgstr ""
 
 msgid "Accruals"
 msgstr "Abgrenzungen"
@@ -2006,9 +2000,6 @@ msgstr "Adresszeile 1"
 msgid "Address line2"
 msgstr "Adresszeile 2"
 
-msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
-msgstr "Addiert Kosten hinzu, mit denen die Anlage nie belastet wurde, wie das Personal und das Material eines Fertigungsauftrags, das nichts verzeichnet hat."
-
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Addiert Kosten hinzu, mit denen die Anlage nie belastet wurde, wie das Personal und das Material eines Fertigungsauftrags, das nichts verzeichnet hat. Der Wert wird der Anlage vom Konto verbucht, auf dem es ausgegeben wurde: Gewinnvortrag für ein früheres Jahr oder der Personal- oder Materialaufwand dieses Jahres."
 
@@ -2181,9 +2172,6 @@ msgstr "Zugewiesen"
 
 msgid "Allows acknowledge & continue"
 msgstr "Ermöglicht Bestätigung & Fortfahren"
-
-msgid "Alpha"
-msgstr "Alpha"
 
 msgid "also at {otherStationNames}"
 msgstr "auch bei {otherStationNames}"
@@ -3135,9 +3123,6 @@ msgstr "Zum Stand von"
 #. placeholder {0}: formatDate(endDate)
 msgid "As of {0}"
 msgstr "Zum Stand von {0}"
-
-msgid "As of date"
-msgstr "Zum Datum"
 
 msgid "As of:"
 msgstr "Zum Stand von:"
@@ -8222,9 +8207,6 @@ msgstr "Aktivieren Sie die Audit-Protokollierung in den Einstellungen, um Änder
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "Aktivieren Sie digitale Angebote für Ihr Unternehmen. Dies ermöglicht es Ihnen, digitale Angebote an Ihre Kunden zu senden und ihnen, diese online anzunehmen."
 
-msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
-msgstr "Aktivieren Sie vollständige periodengerechte Buchhaltung mit Buchungssätzen, Finanzberichten und Buchungen im Hauptbuch."
-
 msgid "Enable in Settings"
 msgstr "In Einstellungen aktivieren"
 
@@ -8248,9 +8230,6 @@ msgstr "Aktivieren Sie, um Kleinbuchstaben in Artikel-IDs zuzulassen."
 
 msgid "Enable to allow shared workstation mode."
 msgstr "Aktivieren Sie diese Option, um den Modus für gemeinsame Arbeitsstationen zu ermöglichen."
-
-msgid "Enable to automatically post transactions to the general ledger."
-msgstr "Aktivieren Sie diese Option, um Transaktionen automatisch ins Hauptbuch zu buchen."
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "Aktivieren, um die Ausstellung oder Buchung für einen Kunden ohne Kontakt oder ohne Standort zu blockieren."
@@ -8426,9 +8405,6 @@ msgstr ""
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Geben Sie die Menge ein, die diese Bewegung hätte sein sollen. Eine Gegenbewegung für die Differenz wird neben dem Original in dessen Zeitraum verbucht."
-
-msgid "Enter what it cost to make."
-msgstr "Geben Sie ein, was die Herstellung gekostet hat."
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Geben Sie ein, was die Herstellung gekostet hat. Der Wert wird der Anlage vom Konto verbucht, auf dem es ausgegeben wurde: Gewinnvortrag für ein früheres Jahr oder der Personal- oder Materialaufwand dieses Jahres."
@@ -14483,18 +14459,8 @@ msgstr "Eröffnung"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "Das Öffnen einer Operation startet seinen Timer, sodass die Zeit vom Moment des Arbeitsbeginn verfolgt wird."
 
-msgid "Opening Balance"
-msgstr "Eröffnungssaldo"
-
-#. placeholder {0}: account.name
-msgid "Opening balance for {0}"
-msgstr "Eröffnungssaldo für {0}"
-
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Eröffnungssaldo der bereits vor dem Hinzufügen dieses Vermögenswerts zu Carbon gebuchten Abschreibung (für neue Akquisitionen 0 verwenden)."
-
-msgid "Opening Balances"
-msgstr "Eröffnungssalden"
 
 msgid "Opening balances as of"
 msgstr ""
@@ -15511,9 +15477,6 @@ msgstr "Rechnung buchen"
 
 msgid "Post journal entries with proper account and description codes"
 msgstr "Buchen Sie Buchungssätze mit korrekten Konto- und Beschreibungscodes."
-
-msgid "Post opening balances"
-msgstr "Eröffnungssalden buchen"
 
 #. placeholder {0}: check.count
 msgid "Post or delete the {0} document(s) dated before the cutover."
@@ -17241,9 +17204,6 @@ msgstr "Erneut drucken"
 msgid "Request a new invite"
 msgstr "Neue Einladung anfordern"
 
-msgid "Request access"
-msgstr "Zugriff anfordern"
-
 msgid "Request Approval"
 msgstr "Genehmigung anfordern"
 
@@ -18909,7 +18869,13 @@ msgstr "Legen Sie die Zeit fest, zu der Sie aufgehört haben zu arbeiten, oder b
 msgid "Set these account defaults to an active account."
 msgstr ""
 
+msgid "Set up accounting"
+msgstr ""
+
 msgid "Set Up Accounting"
+msgstr ""
+
+msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
 msgstr ""
 
 msgid "Set up authenticator app"
@@ -18936,9 +18902,6 @@ msgstr "Version {0} als aktive Version festlegen?"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Legen Sie Ihren Standardort in den Profileinstellungen fest, um eine Lagereinheit auszuwählen."
-
-msgid "Sets what this unit is carried at in inventory."
-msgstr "Bestimmt den Buchwert dieser Einheit im Lager."
 
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Bestimmt den Buchwert dieser Einheit im Lager. Die Differenz wird zwischen dem Bestand und dem Konto verbucht, auf dem die Kosten ausgegeben wurden: Gewinnvortrag für ein früheres Jahr oder der Personal- oder Materialaufwand dieses Jahres."
@@ -22355,6 +22318,9 @@ msgstr "Transaktionsdatum"
 
 msgid "Transaction ID"
 msgstr "Transaktions-ID"
+
+msgid "Transactions post provisional journal entries until you set up accounting."
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transaktionen erstellen Buchungssätze und aktualisieren das Hauptbuch."

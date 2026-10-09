@@ -44,9 +44,9 @@
 - [x] Task 31: Build the 5-step enable wizard
 
 ### Phase D — Retire the flag
-- [ ] Task 32: Replace every ERP read of `accountingEnabled`
+- [x] Task 32: Replace every ERP read of `accountingEnabled`
 - [x] Task 33: Remove Mark Paid and Mark Unpaid
-- [ ] Task 34: Replace the settings switch
+- [x] Task 34: Replace the settings switch
 - [x] Task 35: Set the cutover for new companies and demo datasets
 - [ ] Task 36: Show the Provisional and Superseded statuses
 - [ ] Task 37: Update the docs, rules and AGENTS.md files
