@@ -39,7 +39,7 @@ Task 12 records these in the spec.
 - [x] Task 1: Add the service order link migration
 - [x] Task 2: Move service order creation into a shared helper
 - [x] Task 3: Allow `Repair` before receipt and lock it after
-- [ ] Task 4: Post a `Repair` receipt with no ledger
+- [x] Task 4: Post a `Repair` receipt with no ledger
 - [ ] Task 5: Void a `Repair` receipt
 - [ ] Task 6: Let the return shipment take `Repair` serials
 - [ ] Task 7: Post a `Repair` return shipment with no ledger
@@ -430,3 +430,9 @@ ls .ai/playbooks/field-service-phase-b.md
 - Task 3: the non-Use-As-Is path of `setSalesReturnOrderLineDisposition` had no row lock (only Use As Is opens a transaction). So a change to or from `Repair` now writes in its own transaction under the return order's row lock (the lock `post-receipt` takes) and re-reads `quantityReceived` there. Task 4 closes the other side: `post-receipt` re-reads the dispositions under that lock. The refusal text is `REPAIR_DISPOSITION_LOCKED_MESSAGE` (`sales.models.ts`); `salesReturnPreReceiptDispositions` lists Pending and Repair.
 - Task 3: the line's Issue route (`$id.$lineId.issue.tsx`) writes Scrap or Rework directly, not through the setter, so it refuses a `Repair` line too. The line form offers **Repair** before receipt only for a serial-tracked item.
 - Task 3: the disposition route needed no change: `Repair` posts like the other plain values.
+- Task 4: the RMA line read already returns every column, so `disposition` and the header's `customerLocationId` needed no new select. The Repair branch sits right after the item resolves: it refuses an item that is not serial-tracked ("Only a serialized item can be received for repair") and a line with fewer assigned serials than its received quantity, adds the line's received quantity, and skips every ledger push. The order writes live in `post-receipt/repair.ts` (`createDepotRepairOrders`).
+- Task 4 (deviation): `ensureCustomerAsset` became `ensureCustomerAssets` (many serials, 3 statements), so a receipt of several serials does not read once per serial. `insertServiceOrder` and the activity still write once per serial.
+- Task 4: under the return order's lock, the posting re-reads the received lines' dispositions and refuses ("A line's disposition changed while the receipt was posting. Post the receipt again.") when a line's Repair state differs from the one it was posted by (the other half of the Task 3 race).
+- Task 4: a serial that already has an open service order is refused before any write ("Serial … has an open service order (SVC…). Close or cancel it before you receive the unit for repair."), instead of failing on `serviceOrder_open_subject_key`.
+- Task 4 (deviation): the spec says the order takes its coverage contract "from the RMA", and the RMA has no contract column. The order takes the customer's only Active contract, the rule the ERP's New Service Order proposes; with none or several, it has none. The contact is the RMA's contact; the location is the receipt line's location, else the RMA's, else the receipt's.
+- Task 4: Task 10's receipt test came early (`post-receipt/sales-return-repair.test.ts`, on the new `lib/sales-return-test-fixture.ts`): one receipt with a Repair line for SN-0001 and a Return to Customer line for 2 widgets. Only the widget line writes `itemLedger`, `costLedger` and its 2 journal lines (20.00 each); the machine's on-hand does not move; the serial stays Consumed; the asset is At Depot; one Draft Depot Repair order links to the line with its Released Service project; the activity carries `At Depot` and the order id. A Repair line without its serial is refused, and a serial with no asset gets a Manual one. With the Repair branch disabled, all 3 cases fail.

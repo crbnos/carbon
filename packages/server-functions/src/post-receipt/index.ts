@@ -60,6 +60,7 @@ import {
   reverseProjectLedgerRows
 } from "../lib/project-posting";
 import { loadReceiptProjectRoutes } from "./project-routes";
+import { createDepotRepairOrders } from "./repair";
 
 const logger = getLogger("server-functions", "post-receipt");
 
@@ -2975,6 +2976,16 @@ const postReceipt = defineServerFn({
               quantity: number;
             }
           > = {};
+          // Repair lines: the serials received for repair, and the lines,
+          // whose disposition is re-checked under the return order's lock.
+          const repairSerials: {
+            trackedEntityId: string;
+            serial: string;
+            itemId: string;
+            salesReturnOrderLineId: string;
+            locationId: string | null;
+          }[] = [];
+          const repairLineIds = new Set<string>();
 
           for (const receiptLine of receiptLines.data ?? []) {
             if (!receiptLine.itemId || !receiptLine.lineId) continue;
@@ -2995,6 +3006,52 @@ const postReceipt = defineServerFn({
 
             const item = items.data.find((i) => i.id === receiptLine.itemId);
             const itemTrackingType = item?.itemTrackingType ?? "Inventory";
+
+            // Repair: the unit comes in to be repaired and shipped back. It
+            // never enters company stock or stock value, so the line writes
+            // no stock ledger, no cost layer and no journal, and its serials
+            // stay Consumed (the customer's). One Depot Repair order per
+            // serial is created in the transaction below.
+            if (returnLine.disposition === "Repair") {
+              if (itemTrackingType !== "Serial") {
+                throw new Error(
+                  "Only a serialized item can be received for repair"
+                );
+              }
+              const serials = (receiptLineTracking.data ?? []).filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line"] === receiptLine.id
+              );
+              if (serials.length < receivedQuantity) {
+                throw new Error(
+                  "Assign the serial before posting a repair receipt"
+                );
+              }
+              for (const serial of serials) {
+                repairSerials.push({
+                  trackedEntityId: serial.id,
+                  serial: serial.readableId ?? serial.id,
+                  itemId: receiptLine.itemId,
+                  salesReturnOrderLineId: returnLine.id,
+                  locationId:
+                    receiptLine.locationId ??
+                    salesReturnOrder.data.locationId ??
+                    receiptHeader.locationId
+                });
+              }
+              repairLineIds.add(returnLine.id);
+              const existingRepairUpdate = returnLineUpdates[returnLine.id];
+              returnLineUpdates[returnLine.id] = {
+                quantityReceived:
+                  (existingRepairUpdate?.quantityReceived ??
+                    Number(returnLine.quantityReceived ?? 0)) +
+                  receivedQuantity,
+                updatedBy: userId
+              };
+              continue;
+            }
 
             // Cost resolution: zero-value reason -> 0; linked -> original
             // outbound cost from the shipment's consumption rows; else current.
@@ -3244,6 +3301,40 @@ const postReceipt = defineServerFn({
               throw new Error(
                 `Cannot post a receipt against a return order in ${lockedOrder.status} status`
               );
+            }
+
+            // A disposition change to or from Repair takes this same lock. Re-read
+            // the dispositions under it, so a line is never posted by the rule
+            // of a disposition it no longer has.
+            const receivedLineIds = Object.keys(returnLineUpdates);
+            if (receivedLineIds.length > 0) {
+              const lockedLines = await trx
+                .selectFrom("salesReturnOrderLine")
+                .select(["id", "disposition"])
+                .where("id", "in", receivedLineIds)
+                .where("companyId", "=", companyId)
+                .execute();
+              const changed = lockedLines.some(
+                (line) =>
+                  (line.disposition === "Repair") !== repairLineIds.has(line.id)
+              );
+              if (changed) {
+                throw new Error(
+                  "A line's disposition changed while the receipt was posting. Post the receipt again."
+                );
+              }
+            }
+
+            if (repairSerials.length > 0) {
+              await createDepotRepairOrders(trx, {
+                companyId,
+                userId,
+                receiptId,
+                receiptReadableId: receiptHeader.receiptId,
+                today,
+                salesReturnOrder: salesReturnOrder.data,
+                serials: repairSerials
+              });
             }
 
             if (costLedgerInserts.length > 0) {

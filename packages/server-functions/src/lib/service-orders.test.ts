@@ -9,7 +9,7 @@ import {
   PROJECT_TEST_USER,
   projectPostingFixture
 } from "./project-posting-test-fixture";
-import { ensureCustomerAsset, insertServiceOrder } from "./service-orders";
+import { ensureCustomerAssets, insertServiceOrder } from "./service-orders";
 
 type Fixture = Awaited<ReturnType<typeof projectPostingFixture>>;
 type Service = Awaited<ReturnType<Fixture["addServiceOrder"]>>;
@@ -158,19 +158,8 @@ describe.skipIf(!hasLocalDatabase)("insertServiceOrder", () => {
   );
 
   databaseTest(
-    "ensureCustomerAsset returns the existing asset, else creates a Manual one",
+    "ensureCustomerAssets returns the existing asset, else creates a Manual one",
     async () => {
-      const existing = await f.db.transaction().execute((trx) =>
-        ensureCustomerAsset(trx, {
-          companyId: f.companyId,
-          userId: PROJECT_TEST_USER,
-          trackedEntityId: service.subjectSerialId,
-          customerId: service.customerId,
-          customerLocationId: null
-        })
-      );
-      expect(existing).toBe(service.customerAssetId);
-
       const serialId = `${f.prefix}-serial-unregistered`;
       await f.db
         .insertInto("trackedEntity")
@@ -186,15 +175,17 @@ describe.skipIf(!hasLocalDatabase)("insertServiceOrder", () => {
           createdBy: PROJECT_TEST_USER
         })
         .execute();
-      const created = await f.db.transaction().execute((trx) =>
-        ensureCustomerAsset(trx, {
+      const assets = await f.db.transaction().execute((trx) =>
+        ensureCustomerAssets(trx, {
           companyId: f.companyId,
           userId: PROJECT_TEST_USER,
-          trackedEntityId: serialId,
+          trackedEntityIds: [service.subjectSerialId, serialId],
           customerId: service.customerId,
           customerLocationId: null
         })
       );
+      expect(assets.get(service.subjectSerialId)).toBe(service.customerAssetId);
+      const created = assets.get(serialId)!;
       const asset = await f.db
         .selectFrom("customerAsset")
         .select(["itemId", "customerId", "source", "status"])

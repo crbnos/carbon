@@ -172,52 +172,68 @@ export async function insertServiceOrder(
 }
 
 /**
- * The customer asset of a serial. A unit shipped before Carbon, or before the
- * asset backfill, has none: it is created here with source `Manual`, so a
- * repair can still be worked (plan decision B3). An existing asset is
- * returned as it is.
+ * The customer assets of serials, keyed by serial. A unit shipped before
+ * Carbon, or before the asset backfill, has none: it is created here with
+ * source `Manual`, so a repair can still be worked (plan decision B3). An
+ * existing asset is returned as it is. Three statements for any number of
+ * serials.
  */
-export async function ensureCustomerAsset(
+export async function ensureCustomerAssets(
   trx: Transaction<DB>,
   args: {
     companyId: string;
     userId: string;
-    trackedEntityId: string;
+    trackedEntityIds: string[];
     customerId: string;
     customerLocationId: string | null;
   }
-): Promise<string> {
+): Promise<Map<string, string>> {
   const { companyId } = args;
+  const assetBySerial = new Map<string, string>();
+  if (args.trackedEntityIds.length === 0) return assetBySerial;
+
   const existing = await trx
     .selectFrom("customerAsset")
-    .select("id")
-    .where("trackedEntityId", "=", args.trackedEntityId)
+    .select(["id", "trackedEntityId"])
+    .where("trackedEntityId", "in", args.trackedEntityIds)
     .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (existing) return existing.id;
+    .execute();
+  for (const asset of existing) {
+    assetBySerial.set(asset.trackedEntityId, asset.id);
+  }
 
-  const entity = await trx
+  const missing = args.trackedEntityIds.filter((id) => !assetBySerial.has(id));
+  if (missing.length === 0) return assetBySerial;
+
+  const entities = await trx
     .selectFrom("trackedEntity")
-    .select("itemId")
-    .where("id", "=", args.trackedEntityId)
+    .select(["id", "itemId"])
+    .where("id", "in", missing)
     .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!entity?.itemId) {
+    .execute();
+  const itemBySerial = new Map(entities.map((e) => [e.id, e.itemId]));
+  const unitless = missing.filter((id) => !itemBySerial.get(id));
+  if (unitless.length > 0) {
     throw new Error("The serial has no item, so it cannot be a customer asset");
   }
 
   const inserted = await trx
     .insertInto("customerAsset")
-    .values({
-      trackedEntityId: args.trackedEntityId,
-      itemId: entity.itemId,
-      customerId: args.customerId,
-      customerLocationId: args.customerLocationId,
-      source: "Manual",
-      companyId,
-      createdBy: args.userId
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  return inserted.id;
+    .values(
+      missing.map((trackedEntityId) => ({
+        trackedEntityId,
+        itemId: itemBySerial.get(trackedEntityId)!,
+        customerId: args.customerId,
+        customerLocationId: args.customerLocationId,
+        source: "Manual",
+        companyId,
+        createdBy: args.userId
+      }))
+    )
+    .returning(["id", "trackedEntityId"])
+    .execute();
+  for (const asset of inserted) {
+    assetBySerial.set(asset.trackedEntityId, asset.id);
+  }
+  return assetBySerial;
 }
