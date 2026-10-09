@@ -55,11 +55,11 @@ msgid "(Inactive)"
 msgstr "(निष्क्रिय)"
 
 msgid "(not an Equity posting account)"
-msgstr ""
+msgstr "(इक्विटी पोस्टिंग खाता नहीं है)"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
-msgstr ""
+msgstr "{0, plural, one {# अवरोधक रिकॉर्ड} other {# अवरोधक रिकॉर्डें}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -91,11 +91,11 @@ msgstr "{0, plural, one {# सप्ताह} other {# सप्ताह}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
-msgstr ""
+msgstr "{0, plural, one {# जॉब को पूर्ण करें या रद्द करें जो Carbon ने लागत दर्ज करने से पहले बनाई गई थी।} other {# जॉबें को पूर्ण करें या रद्द करें जो Carbon ने लागत दर्ज करने से पहले बनाई गई थीं।}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
-msgstr ""
+msgstr "{0, plural, one {# दस्तावेज़ को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित है।} other {# दस्तावेज़ों को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित हैं।}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -1036,7 +1036,7 @@ msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expir
 msgstr "एक मूल्यवान बिक्री कोटेशन; ड्राफ्ट → भेजा गया → ऑर्डर किया गया, या खोया, समाप्त, या रद्द में समाप्त होता है।"
 
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
-msgstr ""
+msgstr "एक अनंतिम जर्नल जो संक्रमण तिथि से पहले दिनांकित है; लेखांकन सेटअप करते समय इसे प्रारंभिक जर्नल से बदल दिया जाता है, और इसे कभी भी बदला नहीं जा सकता।"
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "एक क्रय चालान एक दस्तावेज है जो किसी ग्राहक द्वारा खरीदे गए उत्पादों या सेवाओं और संबंधित लागत को निर्दिष्ट करता है।"
@@ -1415,7 +1415,7 @@ msgid "Account"
 msgstr "खाता"
 
 msgid "Account {accountNumber} is not an active posting account."
-msgstr ""
+msgstr "खाता {accountNumber} एक सक्रिय पोस्टिंग खाता नहीं है।"
 
 msgid "Account & Details"
 msgstr "खाता और विवरण"
@@ -1472,7 +1472,7 @@ msgid "Accounting"
 msgstr "लेखांकन"
 
 msgid "Accounting cutover"
-msgstr ""
+msgstr "लेखांकन संक्रमण"
 
 msgid "Accounting is not set up"
 msgstr "लेखांकन सेट अप नहीं है"
@@ -2265,7 +2265,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "किसी संपत्ति की अधिग्रहण लागत घटा संचित मूल्यह्रास — यह पुस्तकों पर अभी भी क्या मूल्य का है, और वह आंकड़ा जिस पर इसे निपटाया गया है।"
 
 msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
-msgstr ""
+msgstr "एक स्वचालित जर्नल जो कंपनी लेखांकन सेटअप करने से पहले लिखा गया था: यह दस्तावेज़ के लेखांकन को रिकॉर्ड करता है लेकिन कोई लेखा अवधि नहीं है और किसी शेष राशि या रिपोर्ट में नहीं आता है।"
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "एक स्वचालन जो आप कैनवास पर बनाते हैं: एक ट्रिगर, फिर चरण जो शर्तों की जांच करते हैं, रिकॉर्ड देखते हैं, और कार्य करते हैं — किसी को सूचित करना, एक रिकॉर्ड बनाना या अपडेट करना, या बाहरी URL को कॉल करना।"
@@ -2500,8 +2500,15 @@ msgstr "उपस्थिति"
 msgid "Applied"
 msgstr "लागू"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "{0} के लिए लागू राशि"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "लागू की गई राशि कंपनी की आधार मुद्रा ({baseCurrency}) में है।"
+
+msgid "Applied Date"
+msgstr "लागू तिथि"
 
 msgid "Applied To"
 msgstr "लागू किया गया"
@@ -2550,10 +2557,6 @@ msgstr "सुझाव लागू करें"
 
 msgid "Apply To"
 msgstr "लागू करें"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "चालान पर लागू करें"
@@ -3473,7 +3476,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "<0>{0}</0> से अवतार, {1} द्वारा, <1>{2}</1> के तहत लाइसेंस प्राप्त।"
 
 msgid "Average"
-msgstr ""
+msgstr "औसत"
 
 msgid "Avg Days to Close"
 msgstr "बंद करने के लिए औसत दिन"
@@ -3638,7 +3641,7 @@ msgid "Before cutover"
 msgstr "कटओवर से पहले"
 
 msgid "Before cutover (journal)"
-msgstr ""
+msgstr "संक्रमण से पहले (जर्नल)"
 
 msgid "Before You Activate"
 msgstr "सक्रिय करने से पहले"
@@ -4487,7 +4490,7 @@ msgid "Choose Return To for {unitName}"
 msgstr "{unitName} के लिए रिटर्न स्थान चुनें"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
-msgstr ""
+msgstr "वर्तमान अवधि के पहले दिन या उससे पहले की 3 अवधियों में से किसी एक के पहले दिन को चुनें।"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "उन फ्लीट इकाइयों को चुनें जो यह समझौता किराए पर देता है। प्रत्येक आवृत्ति के लिए फ़ाइल पर अपनी दर से शुरू होता है; इसे ग्रिड में बदलें।"
@@ -7311,6 +7314,10 @@ msgstr "{selectedCalculationMethod} के बाद छूट के दिन"
 msgid "Discount Ends On"
 msgstr "छूट समाप्त होती है"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "{0} के लिए छूट"
+
 msgid "Discount Percent"
 msgstr "छूट प्रतिशत"
 
@@ -7430,10 +7437,10 @@ msgid "Documents and activity"
 msgstr "दस्तावेज़ और गतिविधि"
 
 msgid "Documents Posted Before Carbon Kept Journals"
-msgstr ""
+msgstr "Carbon द्वारा जर्नल रखे जाने से पहले पोस्ट किए गए दस्तावेज़"
 
 msgid "Documents posted before Carbon kept journals have no journal."
-msgstr ""
+msgstr "Carbon द्वारा जर्नल रखे जाने से पहले पोस्ट किए गए दस्तावेज़ के पास कोई जर्नल नहीं है।"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "दस्तावेज़ चालान, बिल और भुगतान को नेटिव प्रदाता दस्तावेज़ के रूप में पुश करता है; उनकी जर्नल दस्तावेज़ द्वारा कवर किए गए के रूप में रिकॉर्ड की जाती है। यह प्रदाता में रिकॉर्ड किए गए भुगतान को Carbon में वापस पुल करता है, मिलान किए गए चालान या बिल को बंद करता है और एक Carbon सामान्य खाता बही जर्नल की पोस्टिंग करता है। बंद होने पर यह उन्हें जानबूझकर बाहर रखे जाने के रूप में रिकॉर्ड करता है।"
@@ -8500,7 +8507,7 @@ msgid "Equity account that offsets the opening balances when accounting is set u
 msgstr "इक्विटी खाता जो लेखांकन सेट अप होने पर खुली शेष राशि को ऑफसेट करता है। यह कुल शून्य होना चाहिए।"
 
 msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
-msgstr ""
+msgstr "इक्विटी खाता जिसमें लेखांकन सेटअप किए जाने पर प्रारंभिक जर्नल पोस्ट किए जाते हैं; यह पूर्ववर्ती परीक्षा शेष और Carbon के रिकॉर्ड के बीच किसी भी अंतर को रखता है, और आप सक्षम करने से पहले शून्य तक कुल होना चाहिए।"
 
 msgid "Error"
 msgstr "त्रुटि"
@@ -9376,7 +9383,7 @@ msgid "Fields"
 msgstr "फील्ड्स"
 
 msgid "FIFO"
-msgstr ""
+msgstr "FIFO"
 
 msgid "File deleted successfully"
 msgstr "फ़ाइल सफलतापूर्वक हटा दी गई"
@@ -9706,9 +9713,6 @@ msgstr "पूर्ण मूल्यह्रासित"
 
 msgid "FX G/L"
 msgstr "FX G/L"
-
-msgid "FX Gain/Loss"
-msgstr ""
 
 msgid "FY {year}"
 msgstr "वित्तीय वर्ष {year}"
@@ -10832,6 +10836,9 @@ msgstr "आंतरिक नोट्स"
 msgid "inv"
 msgstr "इन्व"
 
+msgid "Inv Rate"
+msgstr "चालान दर"
+
 msgid "Invalid applications"
 msgstr "अमान्य आवंटन"
 
@@ -10972,9 +10979,6 @@ msgstr "चालान स्थान"
 
 msgid "Invoice Number"
 msgstr "चालान संख्या"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "चालान शेड्यूल"
@@ -11666,7 +11670,7 @@ msgid "Lifetime Usage (Units)"
 msgstr "जीवनकाल उपयोग (इकाइयां)"
 
 msgid "LIFO"
-msgstr ""
+msgstr "LIFO"
 
 msgid "Light"
 msgstr "हल्का"
@@ -11688,22 +11692,22 @@ msgid "Line {0}"
 msgstr "लाइन {0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "पंक्ति {line} ({accountNumber}): जमा \"{value}\" में अल्पविराम है। दशमलव के लिए बिंदु के साथ और कोई हजार विभाजक नहीं, जैसे 1234.56 के साथ राशि लिखें।"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "पंक्ति {line} ({accountNumber}): जमा \"{value}\" एक सकारात्मक संख्या नहीं है।"
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "पंक्ति {line} ({accountNumber}): नामे \"{value}\" में अल्पविराम है। दशमलव के लिए बिंदु के साथ और कोई हजार विभाजक नहीं, जैसे 1234.56 के साथ राशि लिखें।"
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "पंक्ति {line} ({accountNumber}): नामे \"{value}\" एक सकारात्मक संख्या नहीं है।"
 
 msgid "Line {line} has no account number."
-msgstr ""
+msgstr "पंक्ति {line} के पास कोई खाता संख्या नहीं है।"
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
-msgstr ""
+msgstr "पंक्ति {line}: खाता {accountNumber} पहले से ही पंक्ति {firstLine} पर है। प्रत्येक खाता को एक पंक्ति पर रखें।"
 
 msgid "Line description (optional)"
 msgstr "पंक्ति विवरण (वैकल्पिक)"
@@ -12514,10 +12518,10 @@ msgid "Migration Clearing"
 msgstr "माइग्रेशन साफी"
 
 msgid "Migration Clearing (default)"
-msgstr ""
+msgstr "माइग्रेशन क्लीयरिंग (डिफ़ॉल्ट)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
-msgstr ""
+msgstr "माइग्रेशन क्लीयरिंग शून्य तक कुल होना चाहिए। <0>परीक्षा शेष पर जाएँ</0>"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "न्यूनतम {minimumBatchQuantity} — पूरा किया गया"
@@ -13019,6 +13023,9 @@ msgstr "नई पंक्ति"
 msgid "New Line"
 msgstr "नई लाइन"
 
+msgid "New Line Item"
+msgstr "नई पंक्ति आइटम"
+
 msgid "New Location"
 msgstr "नया स्थान"
 
@@ -13465,7 +13472,7 @@ msgid "No deposit has been received for this agreement."
 msgstr "इस समझौते के लिए कोई जमा राशि प्राप्त नहीं हुई है।"
 
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
-msgstr ""
+msgstr "संक्रमण से पहले कोई मूल्यह्रास चलाया नहीं जाता। संक्रमण से पहले के दिन तक प्रत्येक परिसंपत्ति का संचित मूल्यह्रास दर्ज करें।"
 
 msgid "No dimension slots configured"
 msgstr "कोई आयाम स्लॉट कॉन्फ़िगर नहीं किया गया"
@@ -14399,9 +14406,6 @@ msgstr "अरे! आप जिस लिंक को एक्सेस क�
 msgid "Open"
 msgstr "खोलें"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "एक परिवर्तन सूचना खोलें"
 
@@ -15077,6 +15081,9 @@ msgstr "भुगतान करें"
 msgid "Pay expense"
 msgstr "व्यय का भुगतान करें"
 
+msgid "Pay Rate"
+msgstr "भुगतान दर"
+
 msgid "Payables"
 msgstr "देय राशि"
 
@@ -15103,9 +15110,6 @@ msgstr "ग्राहक से भुगतान"
 
 msgid "Payment ID"
 msgstr "भुगतान ID"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "भुगतान शर्तें"
@@ -16024,7 +16028,7 @@ msgid "Provisional"
 msgstr "अनंतिम"
 
 msgid "Provisional journal"
-msgstr ""
+msgstr "अनंतिम जर्नल"
 
 msgid "Public"
 msgstr "सार्वजनिक"
@@ -18962,13 +18966,13 @@ msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "लेखांकन उपचार देखने के लिए समझौते की प्रारंभ तिथि निर्धारित करें।"
 
 msgid "Set the base currency."
-msgstr ""
+msgstr "मूल मुद्रा सेट करें।"
 
 msgid "Set the fiscal year settings."
-msgstr ""
+msgstr "वित्तीय वर्ष सेटिंग्स सेट करें।"
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
-msgstr ""
+msgstr "माइग्रेशन क्लीयरिंग खाता को एक सक्रिय इक्विटी खाता पर सेट करें जो एक समूह नहीं है।"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "आप काम बंद करने का समय निर्धारित करें, या स्वीकार करें कि आप अभी भी काम कर रहे हैं।"
@@ -20654,7 +20658,7 @@ msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Ramp में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
-msgstr ""
+msgstr "आइटम की औसत लागत। इसे बदलने के लिए पार्ट्स संपादित करने की अनुमति की आवश्यकता है।"
 
 msgid "The backup job reported this error."
 msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"
@@ -20747,7 +20751,7 @@ msgid "The company already has a posted opening balance journal."
 msgstr "कंपनी के पास पहले से एक पोस्ट किया गया ओपनिंग शेष राशि जर्नल है।"
 
 msgid "The company has no account defaults."
-msgstr ""
+msgstr "कंपनी के पास कोई खाता डिफ़ॉल्ट नहीं है।"
 
 msgid "The contract cannot be cancelled then"
 msgstr "अनुबंध को तब रद्द नहीं किया जा सकता"
@@ -20768,10 +20772,10 @@ msgid "The corrected expiration for this lot/serial; existing on-hand stock is r
 msgstr "इस लॉट/सीरीज़ के लिए सही की गई समाप्ति तिथि; परिवर्तन के बाद मौजूदा ऑन-हैंड स्टॉक को शेल्फ-लाइफ नीति के विरुद्ध पुनः मूल्यांकन किया जाता है।"
 
 msgid "The CSV file is empty."
-msgstr ""
+msgstr "CSV फ़ाइल खाली है।"
 
 msgid "The CSV has no {columns} column."
-msgstr ""
+msgstr "CSV के पास कोई {columns} कॉलम नहीं है।"
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "CSV को accountNumber, नामे और जमा कॉलम की आवश्यकता है। आयात पूरे trial balance को बदल देता है।"
@@ -20817,16 +20821,16 @@ msgid "The customers you sell and ship to"
 msgstr "जिन ग्राहकों को आप बेचते और भेजते हैं"
 
 msgid "The cutover date cannot be after today."
-msgstr ""
+msgstr "संक्रमण तिथि आज के बाद नहीं हो सकती।"
 
 msgid "The cutover date is not a valid date."
-msgstr ""
+msgstr "कटओवर तारीख एक वैध तारीख नहीं है।"
 
 msgid "The cutover date is valid"
 msgstr "कटओवर की तारीख मान्य है।"
 
 msgid "The cutover date must be the first day of a period."
-msgstr ""
+msgstr "कटओवर तारीख एक अवधि का पहला दिन होना चाहिए।"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "डैश्ड थ्रेसहोल्ड जिसके नीचे आप इन्वेंटरी नहीं गिरना चाहते।"
@@ -20925,7 +20929,7 @@ msgid "the first 3 to 4 weeks"
 msgstr "पहले 3 से 4 सप्ताह"
 
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
-msgstr ""
+msgstr "कोई कंपनी Carbon में अपनी किताबें रखना शुरू करने का पहला दिन, जो लेखांकन सेटअप करते समय एक बार सेट किया जाता है और कभी नहीं बदला जाता; उसके बाद प्रत्येक पोस्टिंग एक पोस्ट किया गया जर्नल लिखती है।"
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "लॉट के आगे से निरीक्षण करने के लिए इकाइयों की निश्चित संख्या, लॉट के आकार की परवाह किए बिना।"
@@ -22589,6 +22593,9 @@ msgstr "अप्रयुक्त"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "अप्रयुक्त नकद इस दस्तावेज़ के लिए ग्राहक अग्रिम भुगतान के रूप में रखा जाता है न कि खाते पर जमा क्रेडिट के रूप में।"
 
+msgid "Unapplied:"
+msgstr "लागू नहीं:"
+
 msgid "Unapproved Supplier"
 msgstr "अनुमोदित नहीं आपूर्तिकर्ता"
 
@@ -24212,6 +24219,10 @@ msgstr "बट्टे खाते"
 
 msgid "Write-Off Account"
 msgstr "बट्टे खाते"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "{0} के लिए बट्टे खाते"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "निरीक्षण अस्वीकृतियों और NCR निपटान के माध्यम से खराब या वापस किए गए स्टॉक का बट्टे खाते"

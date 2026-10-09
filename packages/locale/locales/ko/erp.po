@@ -55,11 +55,11 @@ msgid "(Inactive)"
 msgstr "(비활성)"
 
 msgid "(not an Equity posting account)"
-msgstr ""
+msgstr "(자본 전기 계정이 아님)"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
-msgstr ""
+msgstr "{0, plural, one {# 차단 레코드} other {# 차단 레코드}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -91,11 +91,11 @@ msgstr "{0, plural, other {#주}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
-msgstr ""
+msgstr "{0, plural, one {Carbon이 원가를 기록하기 전에 생성된 # 작업 지시를 완료 처리하거나 취소하세요.} other {Carbon이 원가를 기록하기 전에 생성된 # 작업 지시를 완료 처리하거나 취소하세요.}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
-msgstr ""
+msgstr "{0, plural, one {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.} other {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -1036,7 +1036,7 @@ msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expir
 msgstr "가격이 책정된 판매 견적으로 초안 → 전송됨 → 발주됨 또는 실주, 만료됨, 취소됨으로 끝납니다."
 
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
-msgstr ""
+msgstr "회계 전환 날짜 이전에 작성된 임시 전표입니다. 회계를 설정하면 개시 전표로 대체되며, 다시는 변경할 수 없습니다."
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "매입 송장은 고객이 구매한 제품 또는 서비스와 해당 원가를 명시한 문서입니다."
@@ -1415,7 +1415,7 @@ msgid "Account"
 msgstr "계정"
 
 msgid "Account {accountNumber} is not an active posting account."
-msgstr ""
+msgstr "계정 {accountNumber}은(는) 활성 전기 계정이 아닙니다."
 
 msgid "Account & Details"
 msgstr "계정 및 세부정보"
@@ -1472,7 +1472,7 @@ msgid "Accounting"
 msgstr "회계"
 
 msgid "Accounting cutover"
-msgstr ""
+msgstr "회계 전환"
 
 msgid "Accounting is not set up"
 msgstr "회계가 설정되지 않았습니다"
@@ -2265,7 +2265,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "자산의 취득원가에서 감가상각누계액을 뺀 값 — 장부상 남은 가치이며 처분 시 사용되는 금액입니다."
 
 msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
-msgstr ""
+msgstr "회사가 회계를 설정하기 전에 자동으로 작성된 전표입니다. 문서의 회계를 기록하지만 회계 기간이 없으며 잔액과 보고서에 포함되지 않습니다."
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "캔버스에서 빌드하는 자동화: 하나의 트리거와 조건을 확인하고 레코드를 조회한 후 누군가에게 알림을 보내거나 레코드를 생성 또는 업데이트하거나 외부 URL을 호출하는 단계들."
@@ -2500,8 +2500,15 @@ msgstr "모양"
 msgid "Applied"
 msgstr "적용됨"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "{0}에 적용된 금액"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "적용 금액은 회사 기본 통화({baseCurrency})입니다."
+
+msgid "Applied Date"
+msgstr "적용 날짜"
 
 msgid "Applied To"
 msgstr "적용 대상"
@@ -2550,10 +2557,6 @@ msgstr "제안 적용"
 
 msgid "Apply To"
 msgstr "적용 대상"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "송장에 적용"
@@ -3473,7 +3476,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "아바타 출처: {1}의 <0>{0}</0>, <1>{2}</1> 라이선스."
 
 msgid "Average"
-msgstr ""
+msgstr "평균"
 
 msgid "Avg Days to Close"
 msgstr "평균 마감 소요일"
@@ -3638,7 +3641,7 @@ msgid "Before cutover"
 msgstr "기준일 이전"
 
 msgid "Before cutover (journal)"
-msgstr ""
+msgstr "전환 이전(전표)"
 
 msgid "Before You Activate"
 msgstr "활성화 전에"
@@ -4487,7 +4490,7 @@ msgid "Choose Return To for {unitName}"
 msgstr "{unitName}을(를) 반환할 위치 선택"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
-msgstr ""
+msgstr "현재 기간 또는 그 이전 3개 기간 중 하나의 첫 날을 선택하세요."
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "이 계약이 렌트하는 플릿 단위를 선택하세요. 각 단위는 빈도에 따라 파일에 저장된 요율부터 시작됩니다. 그리드에서 변경할 수 있습니다."
@@ -7311,6 +7314,10 @@ msgstr "{selectedCalculationMethod} 이후 할인 일수"
 msgid "Discount Ends On"
 msgstr "할인 종료일"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "{0}의 할인"
+
 msgid "Discount Percent"
 msgstr "할인율"
 
@@ -7430,10 +7437,10 @@ msgid "Documents and activity"
 msgstr "문서 및 활동"
 
 msgid "Documents Posted Before Carbon Kept Journals"
-msgstr ""
+msgstr "Carbon이 전표를 보유하기 전에 전기된 문서"
 
 msgid "Documents posted before Carbon kept journals have no journal."
-msgstr ""
+msgstr "Carbon이 전표를 보유하기 전에 전기된 문서에는 전표가 없습니다."
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "문서는 송장, 청구서 및 지불을 기본 제공자 문서로 푸시합니다. 해당 전표는 문서로 커버되는 것으로 기록됩니다. 또한 제공자에 기록된 지불을 Carbon으로 다시 가져와 일치하는 송장 또는 청구서를 닫고 Carbon 총계정원장 전표를 전기합니다. 끄기는 이를 의도적으로 제외된 것으로 기록합니다."
@@ -8500,7 +8507,7 @@ msgid "Equity account that offsets the opening balances when accounting is set u
 msgstr "회계가 설정될 때 개시 잔액을 상쇄하는 자본 계정. 총계는 0이어야 합니다."
 
 msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
-msgstr ""
+msgstr "회계가 설정될 때 개시 전표가 전기되는 자본 계정입니다. 이전 시산표와 Carbon의 기록 간 차이를 보유하며, 활성화하기 전에 총계가 0이어야 합니다."
 
 msgid "Error"
 msgstr "오류"
@@ -9376,7 +9383,7 @@ msgid "Fields"
 msgstr "필드"
 
 msgid "FIFO"
-msgstr ""
+msgstr "선입선출"
 
 msgid "File deleted successfully"
 msgstr "파일이 삭제되었습니다"
@@ -9706,9 +9713,6 @@ msgstr "상각 완료"
 
 msgid "FX G/L"
 msgstr "외환 손익"
-
-msgid "FX Gain/Loss"
-msgstr ""
 
 msgid "FY {year}"
 msgstr "FY {year}"
@@ -10832,6 +10836,9 @@ msgstr "내부 메모"
 msgid "inv"
 msgstr "재고"
 
+msgid "Inv Rate"
+msgstr "원가 비율"
+
 msgid "Invalid applications"
 msgstr "잘못된 적용"
 
@@ -10972,9 +10979,6 @@ msgstr "송장 사업장"
 
 msgid "Invoice Number"
 msgstr "송장 번호"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "송장 일정"
@@ -11666,7 +11670,7 @@ msgid "Lifetime Usage (Units)"
 msgstr "누적 사용량(단위)"
 
 msgid "LIFO"
-msgstr ""
+msgstr "후입선출"
 
 msgid "Light"
 msgstr "라이트"
@@ -11688,22 +11692,22 @@ msgid "Line {0}"
 msgstr "라인 {0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "라인 {line} ({accountNumber}): 대변 \"{value}\"에 쉼표가 있습니다. 금액은 소수점을 마침표로 표기하고 천단위 구분기호 없이 입력하세요(예: 1234.56)."
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "라인 {line} ({accountNumber}): 대변 \"{value}\"이(가) 양수가 아닙니다."
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "라인 {line} ({accountNumber}): 차변 \"{value}\"에 쉼표가 있습니다. 금액은 소수점을 마침표로 표기하고 천단위 구분기호 없이 입력하세요(예: 1234.56)."
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "라인 {line} ({accountNumber}): 차변 \"{value}\"이(가) 양수가 아닙니다."
 
 msgid "Line {line} has no account number."
-msgstr ""
+msgstr "라인 {line}에 계정 번호가 없습니다."
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
-msgstr ""
+msgstr "라인 {line}: 계정 {accountNumber}은(는) 이미 라인 {firstLine}에 있습니다. 각 계정을 한 라인에만 넣으세요."
 
 msgid "Line description (optional)"
 msgstr "행 설명 (선택 사항)"
@@ -12514,10 +12518,10 @@ msgid "Migration Clearing"
 msgstr "마이그레이션 정산"
 
 msgid "Migration Clearing (default)"
-msgstr ""
+msgstr "이관 정산(기본값)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
-msgstr ""
+msgstr "이관 정산의 총계는 0이어야 합니다. <0>시산표로 이동</0>"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "최소 {minimumBatchQuantity} — 충족"
@@ -13019,6 +13023,9 @@ msgstr "새로운 라인"
 msgid "New Line"
 msgstr "새 라인"
 
+msgid "New Line Item"
+msgstr "새 라인"
+
 msgid "New Location"
 msgstr "새 위치"
 
@@ -13465,7 +13472,7 @@ msgid "No deposit has been received for this agreement."
 msgstr "이 계약에 대해 보증금이 수령되지 않았습니다."
 
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
-msgstr ""
+msgstr "전환 이전에는 감가상각이 실행되지 않습니다. 전환 이전 날 기준으로 각 자산의 감가상각누계액을 입력하세요."
 
 msgid "No dimension slots configured"
 msgstr "구성된 차원 슬롯이 없습니다"
@@ -14399,9 +14406,6 @@ msgstr "이런! 접근하려는 링크가 유효하지 않습니다."
 msgid "Open"
 msgstr "열림"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "변경 통지 열기"
 
@@ -15077,6 +15081,9 @@ msgstr "지불"
 msgid "Pay expense"
 msgstr "비용 지불"
 
+msgid "Pay Rate"
+msgstr "급여 비율"
+
 msgid "Payables"
 msgstr "매입채무"
 
@@ -15103,9 +15110,6 @@ msgstr "고객 지불"
 
 msgid "Payment ID"
 msgstr "지불 ID"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "지불 조건"
@@ -16024,7 +16028,7 @@ msgid "Provisional"
 msgstr "임시"
 
 msgid "Provisional journal"
-msgstr ""
+msgstr "임시 전표"
 
 msgid "Public"
 msgstr "공개"
@@ -18962,13 +18966,13 @@ msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "회계 처리를 확인하려면 계약의 시작일을 설정하세요."
 
 msgid "Set the base currency."
-msgstr ""
+msgstr "기본 통화를 설정하세요."
 
 msgid "Set the fiscal year settings."
-msgstr ""
+msgstr "회계연도를 설정하세요."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
-msgstr ""
+msgstr "이관 정산 계정을 그룹이 아닌 활성 자본 계정으로 설정하세요."
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "작업을 중단한 시간을 설정하거나 여전히 작업 중임을 확인하세요."
@@ -20654,7 +20658,7 @@ msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Ramp에서 인증이 거부되었습니다. 다시 연결해 보세요."
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
-msgstr ""
+msgstr "품목의 평균 원가입니다. 변경하려면 부품을 편집할 권한이 필요합니다."
 
 msgid "The backup job reported this error."
 msgstr "백업 작업이 이 오류를 보고했습니다."
@@ -20747,7 +20751,7 @@ msgid "The company already has a posted opening balance journal."
 msgstr "회사에 이미 전기된 개시잔액 전표가 있습니다."
 
 msgid "The company has no account defaults."
-msgstr ""
+msgstr "회사에 계정 기본값이 없습니다."
 
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."
@@ -20768,10 +20772,10 @@ msgid "The corrected expiration for this lot/serial; existing on-hand stock is r
 msgstr "이 로트/일련번호의 수정된 유효기한으로, 변경 후 기존 보유 재고가 유통기한 정책에 따라 재평가됩니다."
 
 msgid "The CSV file is empty."
-msgstr ""
+msgstr "CSV 파일이 비어있습니다."
 
 msgid "The CSV has no {columns} column."
-msgstr ""
+msgstr "CSV에 {columns} 열이 없습니다."
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "CSV에는 accountNumber, 차변, 대변 열이 필요합니다. 가져오기는 전체 시산표를 교체합니다."
@@ -20817,16 +20821,16 @@ msgid "The customers you sell and ship to"
 msgstr "판매 및 배송 대상 고객"
 
 msgid "The cutover date cannot be after today."
-msgstr ""
+msgstr "전환 날짜는 오늘 이후일 수 없습니다."
 
 msgid "The cutover date is not a valid date."
-msgstr ""
+msgstr "회계 개시일이 올바른 날짜가 아닙니다."
 
 msgid "The cutover date is valid"
 msgstr "전환 날짜가 유효합니다."
 
 msgid "The cutover date must be the first day of a period."
-msgstr ""
+msgstr "회계 개시일은 회계기간의 첫 날이어야 합니다."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "재고가 이 아래로 내려가지 않기를 원하는 점선 임계값입니다."
@@ -20925,7 +20929,7 @@ msgid "the first 3 to 4 weeks"
 msgstr "처음 3~4주"
 
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
-msgstr ""
+msgstr "회사가 Carbon에서 장부를 관리하기 시작하는 첫 날로, 회계 설정 시 한 번만 설정되고 이후 변경되지 않습니다. 그 이후로 모든 전기는 전기된 전표를 작성합니다."
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "로트 크기와 관계없이 각 로트의 앞부분에서 검사할 고정된 유닛 수입니다."
@@ -22589,6 +22593,9 @@ msgstr "미적용"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "미적용 현금은 계정 대변 대신 이 문서에 대한 고객 선급금으로 유지됩니다."
 
+msgid "Unapplied:"
+msgstr "미적용:"
+
 msgid "Unapproved Supplier"
 msgstr "미승인 공급업체"
 
@@ -24212,6 +24219,10 @@ msgstr "대손 처리"
 
 msgid "Write-Off Account"
 msgstr "대손 처리 계정"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "{0}에 대한 대손 처리"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "검사 거부 및 NCR 처분 결정을 통해 폐기되거나 반품된 재고의 대손 처리"

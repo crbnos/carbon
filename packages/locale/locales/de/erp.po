@@ -55,11 +55,11 @@ msgid "(Inactive)"
 msgstr "(Inaktiv)"
 
 msgid "(not an Equity posting account)"
-msgstr ""
+msgstr "(kein Eigenkapital-Buchungskonto)"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
-msgstr ""
+msgstr "{0, plural, one {# blockierter Datensatz} other {# blockierte Datensätze}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -91,11 +91,11 @@ msgstr "{0, plural, one {# Woche} other {# Wochen}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
-msgstr ""
+msgstr "{0, plural, one {Schließen Sie den # Fertigungsauftrag ab oder brechen Sie ihn ab, der erstellt wurde, bevor Carbon seine Kosten aufzeichnete.} other {Schließen Sie die # Fertigungsaufträge ab oder brechen Sie sie ab, die erstellt wurden, bevor Carbon ihre Kosten aufzeichneten.}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
-msgstr ""
+msgstr "{0, plural, one {Buchen Sie das # Dokument ab oder löschen Sie es, das vor dem Stichtag datiert ist.} other {Buchen Sie die # Dokumente ab oder löschen Sie sie, die vor dem Stichtag datiert sind.}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -1036,7 +1036,7 @@ msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expir
 msgstr "Ein Angebot; Entwurf → Versendet → Bestellt, oder endet mit Verloren, Abgelaufen oder Storniert."
 
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
-msgstr ""
+msgstr "Ein provisorischer Buchungssatz mit einem Datum vor dem Buchhaltungsstichtag; das Einrichten der Buchhaltung ersetzt ihn durch den Eröffnungsbuchungssatz und er kann sich nie wieder ändern."
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Eine Eingangsrechnung ist ein Dokument, das die von einem Kunden gekauften Produkte oder Dienstleistungen und die entsprechenden Kosten spezifiziert."
@@ -1415,7 +1415,7 @@ msgid "Account"
 msgstr "Konto"
 
 msgid "Account {accountNumber} is not an active posting account."
-msgstr ""
+msgstr "Konto {accountNumber} ist kein aktives Buchungskonto."
 
 msgid "Account & Details"
 msgstr "Konto & Details"
@@ -1472,7 +1472,7 @@ msgid "Accounting"
 msgstr "Buchhaltung"
 
 msgid "Accounting cutover"
-msgstr ""
+msgstr "Buchhaltungsstichtag"
 
 msgid "Accounting is not set up"
 msgstr "Buchhaltung ist nicht eingerichtet"
@@ -2265,7 +2265,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "Die Anschaffungskosten eines Vermögenswertes minus kumulierte Abschreibung — was es auf dem Bücher noch wert ist und der Betrag, zu dem es entsorgt wird."
 
 msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
-msgstr ""
+msgstr "Ein automatischer Buchungssatz, geschrieben bevor das Unternehmen die Buchhaltung einrichtet: er erfasst die Buchung des Dokuments, hat aber keine Buchungsperiode und wird in keinem Saldo oder Bericht erfasst."
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Eine Automatisierung, die Sie auf einer Leinwand erstellen: ein Auslöser, dann Schritte, die Bedingungen prüfen, Datensätze nachschlagen und reagieren — jemanden benachrichtigen, einen Datensatz erstellen oder aktualisieren oder eine externe URL aufrufen."
@@ -2500,8 +2500,15 @@ msgstr "Erscheinungsbild"
 msgid "Applied"
 msgstr "Angewendet"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "Ausgeglichener Betrag für {0}"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Angewendete Beträge sind in der Basiswährung des Unternehmens ({baseCurrency})."
+
+msgid "Applied Date"
+msgstr "Ausgeglichenes Datum"
 
 msgid "Applied To"
 msgstr "Angewendet auf"
@@ -2550,10 +2557,6 @@ msgstr "Vorschläge anwenden"
 
 msgid "Apply To"
 msgstr "Anwenden auf"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "Auf Rechnung anwenden"
@@ -3473,7 +3476,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Avatare aus <0>{0}</0> von {1}, lizenziert unter <1>{2}</1>."
 
 msgid "Average"
-msgstr ""
+msgstr "Durchschnitt"
 
 msgid "Avg Days to Close"
 msgstr "Durchschn. Tage bis Abschluss"
@@ -3638,7 +3641,7 @@ msgid "Before cutover"
 msgstr "Vor der Migration"
 
 msgid "Before cutover (journal)"
-msgstr ""
+msgstr "Vor dem Stichtag (Buchungssatz)"
 
 msgid "Before You Activate"
 msgstr "Bevor Sie aktivieren"
@@ -4487,7 +4490,7 @@ msgid "Choose Return To for {unitName}"
 msgstr "Wählen Sie Rückgabeziel für {unitName}"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
-msgstr ""
+msgstr "Wählen Sie den ersten Tag der aktuellen Periode oder einen der 3 Perioden davor."
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Wählen Sie die Flotteneinheiten, die diese Vereinbarung mietet. Jede beginnt mit ihrem Satz in der Datei für die Häufigkeit; ändern Sie ihn im Raster."
@@ -7311,6 +7314,10 @@ msgstr "Rabatttage nach {selectedCalculationMethod}"
 msgid "Discount Ends On"
 msgstr "Rabatt endet am"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "Rabatt für {0}"
+
 msgid "Discount Percent"
 msgstr "Rabatt Prozent"
 
@@ -7430,10 +7437,10 @@ msgid "Documents and activity"
 msgstr "Dokumente und Aktivität"
 
 msgid "Documents Posted Before Carbon Kept Journals"
-msgstr ""
+msgstr "Dokumente, die gebucht wurden, bevor Carbon Buchungssätze verwaltete"
 
 msgid "Documents posted before Carbon kept journals have no journal."
-msgstr ""
+msgstr "Dokumente, die gebucht wurden, bevor Carbon Buchungssätze verwaltete, haben keinen Buchungssatz."
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Dokumente sendet Rechnungen, Lieferscheine und Zahlungen als native Anbieter-Dokumente; ihre Buchungssätze werden als durch das Dokument abgedeckt erfasst. Es zieht auch im Anbieter erfasste Zahlungen in Carbon zurück, schließt die übereinstimmende Rechnung oder den Lieferschein und bucht einen Carbon-Hauptbuch-Buchungssatz. Off erfasst sie als absichtlich ausgeschlossen."
@@ -8500,7 +8507,7 @@ msgid "Equity account that offsets the opening balances when accounting is set u
 msgstr "Eigenkapitalskonto, das die Eröffnungssalden ausgleicht, wenn die Buchhaltung eingerichtet ist. Es muss insgesamt null sein."
 
 msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
-msgstr ""
+msgstr "Eigenkapitalkonto, das vom Eröffnungsbuchungssatz beim Einrichten der Buchhaltung gebucht wird; es enthält jede Differenz zwischen der vorherigen Probebilanz und den Carbon-Aufzeichnungen und muss vor der Aktivierung Null betragen."
 
 msgid "Error"
 msgstr "Fehler"
@@ -9376,7 +9383,7 @@ msgid "Fields"
 msgstr "Felder"
 
 msgid "FIFO"
-msgstr ""
+msgstr "FIFO"
 
 msgid "File deleted successfully"
 msgstr "Datei erfolgreich gelöscht"
@@ -9706,9 +9713,6 @@ msgstr "Vollständig abgeschrieben"
 
 msgid "FX G/L"
 msgstr "FX G/L"
-
-msgid "FX Gain/Loss"
-msgstr ""
 
 msgid "FY {year}"
 msgstr "GJ {year}"
@@ -10832,6 +10836,9 @@ msgstr "Interne Notizen"
 msgid "inv"
 msgstr "Inv"
 
+msgid "Inv Rate"
+msgstr "Inv.-Kurs"
+
 msgid "Invalid applications"
 msgstr "Ungültige Verrechnungen"
 
@@ -10972,9 +10979,6 @@ msgstr "Rechnungsort"
 
 msgid "Invoice Number"
 msgstr "Rechnungsnummer"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "Rechnungsplan"
@@ -11666,7 +11670,7 @@ msgid "Lifetime Usage (Units)"
 msgstr "Gesamtnutzung (Einheiten)"
 
 msgid "LIFO"
-msgstr ""
+msgstr "LIFO"
 
 msgid "Light"
 msgstr "Hell"
@@ -11688,22 +11692,22 @@ msgid "Line {0}"
 msgstr "Zeile {0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "Position {line} ({accountNumber}): das Haben „{value}” enthält ein Komma. Schreiben Sie Beträge mit einem Punkt für Dezimalstellen und keinem Tausendertrennzeichen, z. B. 1234,56."
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "Position {line} ({accountNumber}): das Haben „{value}” ist keine positive Zahl."
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "Position {line} ({accountNumber}): das Soll „{value}” enthält ein Komma. Schreiben Sie Beträge mit einem Punkt für Dezimalstellen und keinem Tausendertrennzeichen, z. B. 1234,56."
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "Position {line} ({accountNumber}): das Soll „{value}” ist keine positive Zahl."
 
 msgid "Line {line} has no account number."
-msgstr ""
+msgstr "Position {line} hat keine Kontonummer."
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
-msgstr ""
+msgstr "Position {line}: Konto {accountNumber} ist bereits auf Position {firstLine}. Platzieren Sie jedes Konto auf einer Position."
 
 msgid "Line description (optional)"
 msgstr "Zeilenbeschreibung (optional)"
@@ -12514,10 +12518,10 @@ msgid "Migration Clearing"
 msgstr "Migrations-Clearing"
 
 msgid "Migration Clearing (default)"
-msgstr ""
+msgstr "Migrationskonto (Standard)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
-msgstr ""
+msgstr "Migrationskonto muss Null ergeben. <0>Gehen Sie zur Probebilanz</0>"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "min {minimumBatchQuantity} — erfüllt"
@@ -13019,6 +13023,9 @@ msgstr "Neue Position"
 msgid "New Line"
 msgstr "Neue Zeile"
 
+msgid "New Line Item"
+msgstr "Neue Position"
+
 msgid "New Location"
 msgstr "Neuer Standort"
 
@@ -13465,7 +13472,7 @@ msgid "No deposit has been received for this agreement."
 msgstr "Für diese Vereinbarung wurde keine Anzahlung eingezogen."
 
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
-msgstr ""
+msgstr "Keine Abschreibungslaufzahl erfolgt vor dem Stichtag. Geben Sie die kumulierte Abschreibung jedes Vermögenswerts vom Tag vor dem Stichtag ein."
 
 msgid "No dimension slots configured"
 msgstr "Keine Dimensions-Slots konfiguriert"
@@ -14399,9 +14406,6 @@ msgstr "Oops! Der Link, auf den Sie zugreifen möchten, ist ungültig."
 msgid "Open"
 msgstr "Öffnen"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "Öffnen Sie eine Änderungsmitteilung"
 
@@ -15077,6 +15081,9 @@ msgstr "Zahlen"
 msgid "Pay expense"
 msgstr "Aufwand bezahlen"
 
+msgid "Pay Rate"
+msgstr "Lohnsatz"
+
 msgid "Payables"
 msgstr "Verbindlichkeiten"
 
@@ -15103,9 +15110,6 @@ msgstr "Zahlung vom Kunden"
 
 msgid "Payment ID"
 msgstr "Zahlungs-ID"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "Zahlungsbedingungen"
@@ -16024,7 +16028,7 @@ msgid "Provisional"
 msgstr "Vorläufig"
 
 msgid "Provisional journal"
-msgstr ""
+msgstr "Provisorischer Buchungssatz"
 
 msgid "Public"
 msgstr "Öffentlich"
@@ -18962,13 +18966,13 @@ msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Legen Sie das Startdatum der Vereinbarung fest, um die Buchhaltungsbehandlung anzuzeigen."
 
 msgid "Set the base currency."
-msgstr ""
+msgstr "Legen Sie die Basiswährung fest."
 
 msgid "Set the fiscal year settings."
-msgstr ""
+msgstr "Legen Sie die Geschäftsjahr-Einstellungen fest."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
-msgstr ""
+msgstr "Setzen Sie das Migrationskonto auf ein aktives Eigenkapitalkonto, das keine Gruppe ist."
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Legen Sie die Zeit fest, zu der Sie aufgehört haben zu arbeiten, oder bestätigen Sie, dass Sie noch arbeiten."
@@ -20654,7 +20658,7 @@ msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Die Autorisierung wurde in Ramp verweigert. Versuchen Sie erneut, die Verbindung herzustellen."
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
-msgstr ""
+msgstr "Die durchschnittlichen Kosten des Artikels. Um es zu ändern, benötigen Sie die Berechtigung zum Bearbeiten von Teilen."
 
 msgid "The backup job reported this error."
 msgstr "Der Sicherungsvorgang hat diesen Fehler gemeldet."
@@ -20747,7 +20751,7 @@ msgid "The company already has a posted opening balance journal."
 msgstr "Das Unternehmen hat bereits einen gebuchten Eröffnungsbuchungssatz."
 
 msgid "The company has no account defaults."
-msgstr ""
+msgstr "Das Unternehmen hat keine Kontostandardwerte."
 
 msgid "The contract cannot be cancelled then"
 msgstr "Der Vertrag kann dann nicht storniert werden"
@@ -20768,10 +20772,10 @@ msgid "The corrected expiration for this lot/serial; existing on-hand stock is r
 msgstr "Das korrigierte Ablaufdatum für dieses Los/diese Seriennummer; vorhandener Bestand wird nach der Änderung gegen die Haltbarkeitsrichtlinie neu bewertet."
 
 msgid "The CSV file is empty."
-msgstr ""
+msgstr "Die CSV-Datei ist leer."
 
 msgid "The CSV has no {columns} column."
-msgstr ""
+msgstr "Die CSV hat keine {columns} Spalte."
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "Die CSV benötigt die Spalten accountNumber, Soll und Haben. Ein Import ersetzt die gesamte Rohbilanz."
@@ -20817,16 +20821,16 @@ msgid "The customers you sell and ship to"
 msgstr "Die Kunden, an die Sie verkaufen und versenden"
 
 msgid "The cutover date cannot be after today."
-msgstr ""
+msgstr "Das Stichtag-Datum kann nicht nach heute liegen."
 
 msgid "The cutover date is not a valid date."
-msgstr ""
+msgstr "Das Umstellungsdatum ist kein gültiges Datum."
 
 msgid "The cutover date is valid"
 msgstr "Das Stichtagsdatum ist gültig."
 
 msgid "The cutover date must be the first day of a period."
-msgstr ""
+msgstr "Das Umstellungsdatum muss der erste Tag einer Periode sein."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Der gestrichelte Schwellenwert, unter den Sie den Bestand nicht fallen lassen möchten."
@@ -20925,7 +20929,7 @@ msgid "the first 3 to 4 weeks"
 msgstr "die ersten 3 bis 4 Wochen"
 
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
-msgstr ""
+msgstr "Der erste Tag, an dem ein Unternehmen seine Bücher in Carbon führt, wird einmal bei der Einrichtung der Buchhaltung festgelegt und kann danach nie geändert werden; von dann an erstellt jede Buchung einen gebuchten Buchungssatz."
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Die feste Anzahl von Einheiten zur Inspektionen von der Vorderseite jedes Loses, unabhängig von der Losgröße."
@@ -22589,6 +22593,9 @@ msgstr "Nicht angewendet"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Nicht angewendetes Bargeld wird als Kundenanzahlung für dieses Dokument statt als Kundenguthaben gehalten."
 
+msgid "Unapplied:"
+msgstr "Unvergeben:"
+
 msgid "Unapproved Supplier"
 msgstr "Nicht genehmigter Lieferant"
 
@@ -24212,6 +24219,10 @@ msgstr "Ausbuchung"
 
 msgid "Write-Off Account"
 msgstr "Ausbuchungskonto"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "Ausbuchung für {0}"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Ausbuchung von Bestand, der über Prüfungsablehnungen und NCR-Verwendungsentscheide verschrottet oder zurückgegeben wird"

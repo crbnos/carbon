@@ -2500,8 +2500,15 @@ msgstr "Appearance"
 msgid "Applied"
 msgstr "Applied"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "Applied amount for {0}"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Applied amounts are in company base currency ({baseCurrency})."
+
+msgid "Applied Date"
+msgstr "Applied Date"
 
 msgid "Applied To"
 msgstr "Applied To"
@@ -2550,10 +2557,6 @@ msgstr "Apply suggestions"
 
 msgid "Apply To"
 msgstr "Apply To"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr "Apply to {0}"
 
 msgid "Apply to invoice"
 msgstr "Apply to invoice"
@@ -7311,6 +7314,10 @@ msgstr "Discount Days after {selectedCalculationMethod}"
 msgid "Discount Ends On"
 msgstr "Discount Ends On"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "Discount for {0}"
+
 msgid "Discount Percent"
 msgstr "Discount Percent"
 
@@ -9707,9 +9714,6 @@ msgstr "Fully Depreciated"
 msgid "FX G/L"
 msgstr "FX G/L"
 
-msgid "FX Gain/Loss"
-msgstr "FX Gain/Loss"
-
 msgid "FY {year}"
 msgstr "FY {year}"
 
@@ -10832,6 +10836,9 @@ msgstr "Internal Notes"
 msgid "inv"
 msgstr "inv"
 
+msgid "Inv Rate"
+msgstr "Inv Rate"
+
 msgid "Invalid applications"
 msgstr "Invalid applications"
 
@@ -10972,9 +10979,6 @@ msgstr "Invoice Location"
 
 msgid "Invoice Number"
 msgstr "Invoice Number"
-
-msgid "Invoice Rate"
-msgstr "Invoice Rate"
 
 msgid "Invoice schedule"
 msgstr "Invoice schedule"
@@ -13019,6 +13023,9 @@ msgstr "New line"
 msgid "New Line"
 msgstr "New Line"
 
+msgid "New Line Item"
+msgstr "New Line Item"
+
 msgid "New Location"
 msgstr "New Location"
 
@@ -14399,9 +14406,6 @@ msgstr "Oops! The link you're trying to access is not valid."
 msgid "Open"
 msgstr "Open"
 
-msgid "Open ({paymentCurrency})"
-msgstr "Open ({paymentCurrency})"
-
 msgid "Open a change notice"
 msgstr "Open a change notice"
 
@@ -15077,6 +15081,9 @@ msgstr "Pay"
 msgid "Pay expense"
 msgstr "Pay expense"
 
+msgid "Pay Rate"
+msgstr "Pay Rate"
+
 msgid "Payables"
 msgstr "Payables"
 
@@ -15103,9 +15110,6 @@ msgstr "Payment from Customer"
 
 msgid "Payment ID"
 msgstr "Payment ID"
-
-msgid "Payment Rate"
-msgstr "Payment Rate"
 
 msgid "payment term"
 msgstr "payment term"
@@ -22589,6 +22593,9 @@ msgstr "Unapplied"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 
+msgid "Unapplied:"
+msgstr "Unapplied:"
+
 msgid "Unapproved Supplier"
 msgstr "Unapproved Supplier"
 
@@ -24212,6 +24219,10 @@ msgstr "Write-Off"
 
 msgid "Write-Off Account"
 msgstr "Write-Off Account"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "Write-off for {0}"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"

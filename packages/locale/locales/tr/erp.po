@@ -55,11 +55,11 @@ msgid "(Inactive)"
 msgstr "(Pasif)"
 
 msgid "(not an Equity posting account)"
-msgstr ""
+msgstr "(Özkaynak muhasebeleştirme hesabı değildir)"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
-msgstr ""
+msgstr "{0, plural, one {# engelleme kaydı} other {# engelleme kaydı}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -91,11 +91,11 @@ msgstr "{0, plural, one {# hafta} other {# hafta}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
-msgstr ""
+msgstr "{0, plural, one {Maliyet kaydedilmeden önce oluşturulan # iş emrini tamamla veya iptal et.} other {Maliyet kaydedilmeden önce oluşturulan # iş emirlerini tamamla veya iptal et.}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
-msgstr ""
+msgstr "{0, plural, one {Kesme tarihinden önce tarihlendirilmiş # belgeyi muhasebeleştir veya sil.} other {Kesme tarihinden önce tarihlendirilmiş # belgeleri muhasebeleştir veya sil.}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -1036,7 +1036,7 @@ msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expir
 msgstr "Fiyatlandırılmış satış teklifi; Taslak → Gönderilen → Sipariş edildi, ya da Kaybedildi, Süresi doldu veya İptal edildi ile sonlanır."
 
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
-msgstr ""
+msgstr "Kesme tarihinden önce tarihlendirilmiş bir Geçici muhasebe fişi; muhasebebi ayarladığında bunu açılış fişiyle değiştirir ve asla değişemez."
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Alış faturası, bir müşteri tarafından satın alınan ürün veya hizmetleri ve bunlara karşılık gelen maliyeti belirten belgedir."
@@ -1415,7 +1415,7 @@ msgid "Account"
 msgstr "Hesap"
 
 msgid "Account {accountNumber} is not an active posting account."
-msgstr ""
+msgstr "{accountNumber} hesabı aktif bir muhasebeleştirme hesabı değildir."
 
 msgid "Account & Details"
 msgstr "Hesap ve ayrıntılar"
@@ -1472,7 +1472,7 @@ msgid "Accounting"
 msgstr "Muhasebe"
 
 msgid "Accounting cutover"
-msgstr ""
+msgstr "Muhasebe kesme tarihi"
 
 msgid "Accounting is not set up"
 msgstr "Muhasebe kurulu değil"
@@ -2265,7 +2265,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "Bir varlığın edinme maliyeti eksi birikmiş amortisman — defterler üzerinde hala ne kadar değerli olduğu ve elden çıkarıldığı rakam."
 
 msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
-msgstr ""
+msgstr "Şirket muhasebebi kurmadan önce yazılan otomatik muhasebe fişi: belgenin muhasebesini kaydeder ancak muhasebe döneminin olmaz ve hiçbir bakiye veya rapora dahil olmaz."
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Bir kanvas üzerinde oluşturduğunuz bir otomasyon: bir tetikleyici, ardından koşulları kontrol eden, kayıtları arayan ve hareket eden adımlar — birini bilgilendiren, bir kaydı oluşturan veya güncelleyen veya dış bir URL çağırma."
@@ -2500,8 +2500,15 @@ msgstr "Görünüm"
 msgid "Applied"
 msgstr "Uygulandı"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "Uygulanan tutar ({0})"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Uygulanan tutarlar şirket temel para birimindedir ({baseCurrency})."
+
+msgid "Applied Date"
+msgstr "Uygulama Tarihi"
 
 msgid "Applied To"
 msgstr "Uygulandı"
@@ -2550,10 +2557,6 @@ msgstr "Önerileri Uygula"
 
 msgid "Apply To"
 msgstr "Uygulanacak Alan"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "Faturaya uygula"
@@ -3473,7 +3476,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Avatarlar {1} tarafından <0>{0}</0> kaynağından alınmıştır, <1>{2}</1> ile lisanslanmıştır."
 
 msgid "Average"
-msgstr ""
+msgstr "Ortalama"
 
 msgid "Avg Days to Close"
 msgstr "Kapatma Ortalama Günler"
@@ -3638,7 +3641,7 @@ msgid "Before cutover"
 msgstr "Devir öncesi"
 
 msgid "Before cutover (journal)"
-msgstr ""
+msgstr "Kesme tarihinden önce (muhasebe fişi)"
 
 msgid "Before You Activate"
 msgstr "Etkinleştirmeden Önce"
@@ -4487,7 +4490,7 @@ msgid "Choose Return To for {unitName}"
 msgstr "{unitName} için İade Yeri Seçin"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
-msgstr ""
+msgstr "Geçerli dönem veya bundan önceki 3 dönemden birinin ilk gününü seçin."
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Bu anlaşmanın kiraladığı filo adetlerini seçin. Her biri dosyadaki oranında başlar; ızgarada değiştirin."
@@ -7311,6 +7314,10 @@ msgstr "{selectedCalculationMethod} sonrası İskonto Günleri"
 msgid "Discount Ends On"
 msgstr "İskonto Biter"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "İskonto ({0})"
+
 msgid "Discount Percent"
 msgstr "İskonto Yüzdesi"
 
@@ -7430,10 +7437,10 @@ msgid "Documents and activity"
 msgstr "Belgeler ve aktivite"
 
 msgid "Documents Posted Before Carbon Kept Journals"
-msgstr ""
+msgstr "Carbon Muhasebe Fişi Tutmadan Önce Muhasebeleştirilmiş Belgeler"
 
 msgid "Documents posted before Carbon kept journals have no journal."
-msgstr ""
+msgstr "Carbon muhasebe fişi tutmadan önce muhasebeleştirilmiş belgelerin muhasebe fişi yoktur."
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Belgeler, faturaları, fatura bedelleri ve ödemeleri yerel sağlayıcı belgeleri olarak gönderir; muhasebe fişleri belge tarafından kapsandığı olarak kaydedilir. Ayrıca sağlayıcıda kaydedilen ödemeleri Carbon'a geri çeker, eşleşen faturayı kapatır ve bir Carbon Büyük defter muhasebe fişi muhasebeleştirir. Kapalı, bunları kasıtlı olarak dışarıda bırakılanlar olarak kaydeder."
@@ -8500,7 +8507,7 @@ msgid "Equity account that offsets the opening balances when accounting is set u
 msgstr "Muhasebe kurulduğunda açılış bakiyelerini dengelemek için özkaynak hesabı. Toplam sıfır olması gerekir."
 
 msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
-msgstr ""
+msgstr "Muhasebe kurulduğunda açılış fişinin muhasebeleştirildiği Özkaynak hesabı; eski deneme bakiyesi ile Carbon'ın kayıtları arasındaki farkı tutar ve etkinleştirebilmek için sıfıra eşit olmalıdır."
 
 msgid "Error"
 msgstr "Hata"
@@ -9376,7 +9383,7 @@ msgid "Fields"
 msgstr "Alanlar"
 
 msgid "FIFO"
-msgstr ""
+msgstr "FIFO"
 
 msgid "File deleted successfully"
 msgstr "Dosya başarıyla silindi"
@@ -9706,9 +9713,6 @@ msgstr "Amortismanı tamamlanmış"
 
 msgid "FX G/L"
 msgstr "FX K/Z"
-
-msgid "FX Gain/Loss"
-msgstr ""
 
 msgid "FY {year}"
 msgstr "Mali Yıl {year}"
@@ -10832,6 +10836,9 @@ msgstr "Dahili Notlar"
 msgid "inv"
 msgstr "stok"
 
+msgid "Inv Rate"
+msgstr "Fatura Oranı"
+
 msgid "Invalid applications"
 msgstr "Geçersiz uygulamalar"
 
@@ -10972,9 +10979,6 @@ msgstr "Fatura Konumu"
 
 msgid "Invoice Number"
 msgstr "Fatura Numarası"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "Fatura çizelgesi"
@@ -11666,7 +11670,7 @@ msgid "Lifetime Usage (Units)"
 msgstr "Yaşam Boyu Kullanım (Birimler)"
 
 msgid "LIFO"
-msgstr ""
+msgstr "LIFO"
 
 msgid "Light"
 msgstr "Aydınlık"
@@ -11688,22 +11692,22 @@ msgid "Line {0}"
 msgstr "Satır {0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "Satır {line} ({accountNumber}): alacak \"{value}\" virgül içeriyor. Tutarları ondalık için nokta kullanarak ve binlik ayırıcı olmadan yazın, örneğin 1234,56."
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "Satır {line} ({accountNumber}): alacak \"{value}\" pozitif bir sayı değildir."
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "Satır {line} ({accountNumber}): borç \"{value}\" virgül içeriyor. Tutarları ondalık için nokta kullanarak ve binlik ayırıcı olmadan yazın, örneğin 1234,56."
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "Satır {line} ({accountNumber}): borç \"{value}\" pozitif bir sayı değildir."
 
 msgid "Line {line} has no account number."
-msgstr ""
+msgstr "Satır {line} hesap numarası yoktur."
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
-msgstr ""
+msgstr "Satır {line}: hesap {accountNumber} zaten satır {firstLine}'de var. Her hesabı bir satıra koyun."
 
 msgid "Line description (optional)"
 msgstr "Satır açıklaması (isteğe bağlı)"
@@ -12514,10 +12518,10 @@ msgid "Migration Clearing"
 msgstr "Geçiş Temizliği"
 
 msgid "Migration Clearing (default)"
-msgstr ""
+msgstr "Geçiş Tasfiyesi (varsayılan)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
-msgstr ""
+msgstr "Geçiş Tasfiyesi sıfıra eşit olmalıdır. <0>Deneme Bakiyesine Git</0>"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "en az {minimumBatchQuantity} — karşılandı"
@@ -13019,6 +13023,9 @@ msgstr "Yeni Satır"
 msgid "New Line"
 msgstr "Yeni Satır"
 
+msgid "New Line Item"
+msgstr "Yeni Satır Öğesi"
+
 msgid "New Location"
 msgstr "Yeni Konum"
 
@@ -13465,7 +13472,7 @@ msgid "No deposit has been received for this agreement."
 msgstr "Bu anlaşma için depozito alınmamıştır."
 
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
-msgstr ""
+msgstr "Kesme tarihinden önce amortisman çalışması yapılmaz. Her varlığın kesme tarihinden bir gün önceki birikmiş amortismanını girin."
 
 msgid "No dimension slots configured"
 msgstr "Yapılandırılmış boyut yuvası yok"
@@ -14399,9 +14406,6 @@ msgstr "Üzgünüz! Erişim sağlamaya çalıştığınız bağlantı geçerli d
 msgid "Open"
 msgstr "Aç"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "Bir değişiklik bildirisi aç"
 
@@ -15077,6 +15081,9 @@ msgstr "Öde"
 msgid "Pay expense"
 msgstr "Gider Öde"
 
+msgid "Pay Rate"
+msgstr "Ödeme Oranı"
+
 msgid "Payables"
 msgstr "Borçlar"
 
@@ -15103,9 +15110,6 @@ msgstr "Müşteriden Ödeme"
 
 msgid "Payment ID"
 msgstr "Ödeme Kimliği"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "ödeme koşulu"
@@ -16024,7 +16028,7 @@ msgid "Provisional"
 msgstr "Geçici"
 
 msgid "Provisional journal"
-msgstr ""
+msgstr "Geçici muhasebe fişi"
 
 msgid "Public"
 msgstr "Herkese açık"
@@ -18962,13 +18966,13 @@ msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Muhasebe işlemini görmek için sözleşmenin başlangıç tarihini ayarlayın."
 
 msgid "Set the base currency."
-msgstr ""
+msgstr "Temel para birimini ayarlayın."
 
 msgid "Set the fiscal year settings."
-msgstr ""
+msgstr "Mali yıl ayarlarını ayarlayın."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
-msgstr ""
+msgstr "Geçiş Tasfiyesi hesabını grup olmayan aktif bir Özkaynak hesabına ayarlayın."
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Çalışmayı durdurduğunuz zamanı ayarlayın veya hala çalışıyor olduğunuzu onaylayın."
@@ -20654,7 +20658,7 @@ msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Yetkilendirme Ramp'te reddedildi. Yeniden bağlanmayı deneyin."
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
-msgstr ""
+msgstr "Stok kartının ortalama maliyeti. Bunu değiştirmek parçaları düzenleme izni gerektirir."
 
 msgid "The backup job reported this error."
 msgstr "Yedekleme işi bu hatayı bildirdi."
@@ -20747,7 +20751,7 @@ msgid "The company already has a posted opening balance journal."
 msgstr "Şirket zaten muhasebeleştirilmiş bir açılış bakiyesi muhasebe fişine sahip."
 
 msgid "The company has no account defaults."
-msgstr ""
+msgstr "Şirketin hesap varsayılanları yoktur."
 
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"
@@ -20768,10 +20772,10 @@ msgid "The corrected expiration for this lot/serial; existing on-hand stock is r
 msgstr "Bu lot/seri numarası için düzeltilmiş son kullanma tarihi; mevcut eldeki stok, değişiklikten sonra raf ömrü politikasına göre yeniden değerlendirilir."
 
 msgid "The CSV file is empty."
-msgstr ""
+msgstr "CSV dosyası boştur."
 
 msgid "The CSV has no {columns} column."
-msgstr ""
+msgstr "CSV dosyasında {columns} sütunu yoktur."
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "CSV, accountNumber, borç ve alacak sütunlarına ihtiyaç duyuyor. Bir içe aktarma tüm deneme bakiyesini değiştirir."
@@ -20817,16 +20821,16 @@ msgid "The customers you sell and ship to"
 msgstr "Sattığınız ve sevk ettiğiniz müşteriler"
 
 msgid "The cutover date cannot be after today."
-msgstr ""
+msgstr "Kesme tarihi bugünden sonra olamaz."
 
 msgid "The cutover date is not a valid date."
-msgstr ""
+msgstr "Kesme tarihi geçerli bir tarih değildir."
 
 msgid "The cutover date is valid"
 msgstr "Kesinti tarihi geçerli"
 
 msgid "The cutover date must be the first day of a period."
-msgstr ""
+msgstr "Kesme tarihi bir dönemin ilk günü olmalıdır."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Envanteri aşağısına düşmesini istemediğiniz kesikli eşik."
@@ -20925,7 +20929,7 @@ msgid "the first 3 to 4 weeks"
 msgstr "ilk 3 ila 4 hafta"
 
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
-msgstr ""
+msgstr "Şirketin Carbon'da muhasebe tutmaya başladığı ilk gün; muhasebe kurulduğunda bir kez ayarlanır ve değiştirilmez; bundan sonra her Muhasebeleştirme Muhasebeleştirildi bir Muhasebe fişi oluşturur."
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Parti büyüklüğüne bakılmaksızın her Lot'un başından muayene edilecek sabit Adet sayısı."
@@ -22589,6 +22593,9 @@ msgstr "Uygulanmamış"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Uygulanmamış nakit, bu belge için müşteri avansı olarak tutuluyor, hesapta alacak yerine."
 
+msgid "Unapplied:"
+msgstr "Uygulanmamış:"
+
 msgid "Unapproved Supplier"
 msgstr "Onaylanmamış Tedarikçi"
 
@@ -24212,6 +24219,10 @@ msgstr "Kayıttan Düşme"
 
 msgid "Write-Off Account"
 msgstr "Kayıttan Düşme Hesabı"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "{0} için kayıttan düşme"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Muayene reddiyesi ve NCR kararları yoluyla hurdaya çıkarılan veya iade edilen stokun kayıttan düşmesi"

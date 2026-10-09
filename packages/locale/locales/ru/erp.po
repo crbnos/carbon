@@ -55,11 +55,11 @@ msgid "(Inactive)"
 msgstr "(Неактивный)"
 
 msgid "(not an Equity posting account)"
-msgstr ""
+msgstr "(не счет проведения собственного капитала)"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
-msgstr ""
+msgstr "{0, plural, one {# блокирующая запись} other {# блокирующие записи}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -91,11 +91,11 @@ msgstr "{0, plural, one {# неделя} few {# недели} many {# недел
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
-msgstr ""
+msgstr "{0, plural, one {Завершить или отменить # производственный заказ, созданный до того, как Carbon записал его затраты.} other {Завершить или отменить # производственные заказы, созданные до того, как Carbon записал их затраты.}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
-msgstr ""
+msgstr "{0, plural, one {Провести или удалить # документ, датированный до даты перехода.} other {Провести или удалить # документы, датированные до даты перехода.}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -1036,7 +1036,7 @@ msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expir
 msgstr "Котировка продажи с ценой; Черновик → Отправлено → Заказано, либо завершается как Проиграно, Истек срок или Отменено."
 
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
-msgstr ""
+msgstr "Предварительная операция, датированная до даты перехода; при установке бухгалтерии она заменяется открывающей операцией и больше не может измениться."
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Счет-фактура полученная — это документ, который определяет товары или услуги, приобретенные покупателем, и соответствующую себестоимость."
@@ -1415,7 +1415,7 @@ msgid "Account"
 msgstr "Счет"
 
 msgid "Account {accountNumber} is not an active posting account."
-msgstr ""
+msgstr "Счет {accountNumber} не является активным счетом проведения."
 
 msgid "Account & Details"
 msgstr "Счет и детали"
@@ -1472,7 +1472,7 @@ msgid "Accounting"
 msgstr "Бухгалтерия"
 
 msgid "Accounting cutover"
-msgstr ""
+msgstr "Начало бухгалтерского учета"
 
 msgid "Accounting is not set up"
 msgstr "Бухгалтерия не настроена"
@@ -2265,7 +2265,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "Стоимость приобретения основного средства за вычетом накопленной амортизации — его остаточная стоимость в учете и сумма, по которой оно выбывает."
 
 msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
-msgstr ""
+msgstr "Автоматическая операция, написанная до того, как организация установит бухгалтерию: она записывает бухгалтерию документа, но не имеет учетного периода и не учитывается ни в каком балансе или отчете."
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Автоматизация, которую вы создаете на холсте: один триггер, затем шаги, которые проверяют условия, ищут записи и действуют — уведомляя кого-то, создавая или обновляя запись или вызывая внешний URL."
@@ -2500,8 +2500,15 @@ msgstr "Внешний вид"
 msgid "Applied"
 msgstr "Применено"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "Примененная сумма для {0}"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Применённые суммы указаны в базовой валюте организации ({baseCurrency})."
+
+msgid "Applied Date"
+msgstr "Дата применения"
 
 msgid "Applied To"
 msgstr "Применено к"
@@ -2550,10 +2557,6 @@ msgstr "Применить предложения"
 
 msgid "Apply To"
 msgstr "Применить к"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "Применить к счет-фактуре"
@@ -3473,7 +3476,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Аватары из <0>{0}</0> от {1}, лицензия <1>{2}</1>."
 
 msgid "Average"
-msgstr ""
+msgstr "Среднее"
 
 msgid "Avg Days to Close"
 msgstr "Среднее количество дней до закрытия"
@@ -3638,7 +3641,7 @@ msgid "Before cutover"
 msgstr "До переключения"
 
 msgid "Before cutover (journal)"
-msgstr ""
+msgstr "До даты перехода (операция)"
 
 msgid "Before You Activate"
 msgstr "Перед активацией"
@@ -4487,7 +4490,7 @@ msgid "Choose Return To for {unitName}"
 msgstr "Выберите место возврата для {unitName}"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
-msgstr ""
+msgstr "Выберите первый день текущего периода или одного из 3 периодов перед ним."
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Выберите единицы флота, которые арендует это соглашение. Каждая начинается со своей ставки по файлу для частоты; измените ее в сетке."
@@ -7311,6 +7314,10 @@ msgstr "Дни скидки после {selectedCalculationMethod}"
 msgid "Discount Ends On"
 msgstr "Скидка действует до"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "Скидка для {0}"
+
 msgid "Discount Percent"
 msgstr "Процент скидки"
 
@@ -7430,10 +7437,10 @@ msgid "Documents and activity"
 msgstr "Документы и деятельность"
 
 msgid "Documents Posted Before Carbon Kept Journals"
-msgstr ""
+msgstr "Документы, проведенные до того, как Carbon вел операции"
 
 msgid "Documents posted before Carbon kept journals have no journal."
-msgstr ""
+msgstr "Документы, проведенные до того, как Carbon вел операции, не имеют операции."
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "«Документы» отправляет счета-фактуры, счета и платежи как встроенные документы провайдера; их операции помечаются как соответствующие документу. Также он вытягивает платежи, записанные в провайдере, обратно в Carbon, закрывая соответствующие счет-фактуру или счет и проводя операцию главной книги Carbon. При отключении они записываются как намеренно исключенные."
@@ -8500,7 +8507,7 @@ msgid "Equity account that offsets the opening balances when accounting is set u
 msgstr "Счет собственного капитала, компенсирующий начальные остатки при установке бухгалтерии. Сумма должна быть равна нулю."
 
 msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
-msgstr ""
+msgstr "Счет собственного капитала, в котором проводится открывающая операция при установке бухгалтерии; он содержит любую разницу между предыдущим пробным балансом и записями Carbon и должен в сумме равняться нулю перед включением."
 
 msgid "Error"
 msgstr "Ошибка"
@@ -9376,7 +9383,7 @@ msgid "Fields"
 msgstr "Поля"
 
 msgid "FIFO"
-msgstr ""
+msgstr "ФИФО"
 
 msgid "File deleted successfully"
 msgstr "Файл успешно удален"
@@ -9706,9 +9713,6 @@ msgstr "Полностью амортизирован"
 
 msgid "FX G/L"
 msgstr "Прибыль/убыток по курсу"
-
-msgid "FX Gain/Loss"
-msgstr ""
 
 msgid "FY {year}"
 msgstr "Финансовый год {year}"
@@ -10832,6 +10836,9 @@ msgstr "Внутренние примечания"
 msgid "inv"
 msgstr "инв"
 
+msgid "Inv Rate"
+msgstr "Ставка приходования"
+
 msgid "Invalid applications"
 msgstr "Недействительные применения"
 
@@ -10972,9 +10979,6 @@ msgstr "Площадка счета-фактуры"
 
 msgid "Invoice Number"
 msgstr "Номер счета-фактуры"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "График выставления счетов"
@@ -11666,7 +11670,7 @@ msgid "Lifetime Usage (Units)"
 msgstr "Использование за весь период (Единицы)"
 
 msgid "LIFO"
-msgstr ""
+msgstr "ЛИФО"
 
 msgid "Light"
 msgstr "Светлая"
@@ -11688,22 +11692,22 @@ msgid "Line {0}"
 msgstr "Строка {0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "Строка {line} ({accountNumber}): кредит «{value}» содержит запятую. Введите суммы с точкой для десятичных знаков и без разделителя тысяч, например 1234.56."
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "Строка {line} ({accountNumber}): кредит «{value}» не является положительным числом."
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "Строка {line} ({accountNumber}): дебет «{value}» содержит запятую. Введите суммы с точкой для десятичных знаков и без разделителя тысяч, например 1234.56."
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "Строка {line} ({accountNumber}): дебет «{value}» не является положительным числом."
 
 msgid "Line {line} has no account number."
-msgstr ""
+msgstr "Строка {line} не имеет номера счета."
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
-msgstr ""
+msgstr "Строка {line}: счет {accountNumber} уже находится на строке {firstLine}. Поместите каждый счет на одну строку."
 
 msgid "Line description (optional)"
 msgstr "Описание строки (необязательно)"
@@ -12514,10 +12518,10 @@ msgid "Migration Clearing"
 msgstr "Переводная разница миграции"
 
 msgid "Migration Clearing (default)"
-msgstr ""
+msgstr "Очистка миграции (по умолчанию)"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
-msgstr ""
+msgstr "Очистка миграции должна в сумме равняться нулю. <0>Перейти к пробному балансу</0>"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "мин {minimumBatchQuantity} — достигнуто"
@@ -13019,6 +13023,9 @@ msgstr "Новая строка"
 msgid "New Line"
 msgstr "Новая строка"
 
+msgid "New Line Item"
+msgstr "Новая строка"
+
 msgid "New Location"
 msgstr "Новое местоположение"
 
@@ -13465,7 +13472,7 @@ msgid "No deposit has been received for this agreement."
 msgstr "Авансовый платеж не получен по этому соглашению."
 
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
-msgstr ""
+msgstr "До даты перехода не производится расчет амортизации. Введите накопленную амортизацию каждого актива на день перед датой перехода."
 
 msgid "No dimension slots configured"
 msgstr "Слоты измерений не настроены"
@@ -14399,9 +14406,6 @@ msgstr "Упс! Ссылка, которую вы пытаетесь откры�
 msgid "Open"
 msgstr "Открыть"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "Открыть Извещение об изменении"
 
@@ -15077,6 +15081,9 @@ msgstr "Оплатить"
 msgid "Pay expense"
 msgstr "Оплатить расход"
 
+msgid "Pay Rate"
+msgstr "Ставка оплаты"
+
 msgid "Payables"
 msgstr "Кредиторская задолженность (по умолчанию)"
 
@@ -15103,9 +15110,6 @@ msgstr "Платеж от Покупателя"
 
 msgid "Payment ID"
 msgstr "ID платежа"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "условия оплаты"
@@ -16024,7 +16028,7 @@ msgid "Provisional"
 msgstr "Предварительный"
 
 msgid "Provisional journal"
-msgstr ""
+msgstr "Предварительная операция"
 
 msgid "Public"
 msgstr "Публичный"
@@ -18962,13 +18966,13 @@ msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Установите дату начала соглашения для просмотра бухгалтерской обработки."
 
 msgid "Set the base currency."
-msgstr ""
+msgstr "Установить базовую валюту."
 
 msgid "Set the fiscal year settings."
-msgstr ""
+msgstr "Установить параметры финансового года."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
-msgstr ""
+msgstr "Установить счет Очистка миграции в активный счет собственного капитала, который не является группой."
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "Установите время, когда вы перестали работать, или подтвердите, что вы еще работаете."
@@ -20654,7 +20658,7 @@ msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Авторизация была отклонена в Ramp. Попробуйте подключиться снова."
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
-msgstr ""
+msgstr "Средняя себестоимость номенклатуры. Изменение требует права доступа на редактирование деталей."
 
 msgid "The backup job reported this error."
 msgstr "Задача резервного копирования сообщила об этой ошибке."
@@ -20747,7 +20751,7 @@ msgid "The company already has a posted opening balance journal."
 msgstr "У организации уже есть проведённая операция открывающего сальдо."
 
 msgid "The company has no account defaults."
-msgstr ""
+msgstr "У организации нет значений по умолчанию для счета."
 
 msgid "The contract cannot be cancelled then"
 msgstr "Контракт не может быть отменен тогда"
@@ -20768,10 +20772,10 @@ msgid "The corrected expiration for this lot/serial; existing on-hand stock is r
 msgstr "Исправленная дата истечения для этой партии/серийного номера; существующие запасы переоцениваются в соответствии с политикой полезной жизни после изменения."
 
 msgid "The CSV file is empty."
-msgstr ""
+msgstr "Файл CSV пуст."
 
 msgid "The CSV has no {columns} column."
-msgstr ""
+msgstr "В файле CSV нет столбца {columns}."
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "CSV должен содержать столбцы accountNumber, Дебет и Кредит. Импортирование заменяет весь пробный баланс."
@@ -20817,16 +20821,16 @@ msgid "The customers you sell and ship to"
 msgstr "Покупатели, которым вы продаете и отправляете товары"
 
 msgid "The cutover date cannot be after today."
-msgstr ""
+msgstr "Дата перехода не может быть после сегодняшнего дня."
 
 msgid "The cutover date is not a valid date."
-msgstr ""
+msgstr "Дата начала учета не является действительной датой."
 
 msgid "The cutover date is valid"
 msgstr "Дата переходит допустима"
 
 msgid "The cutover date must be the first day of a period."
-msgstr ""
+msgstr "Дата начала учета должна быть первым днём периода."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Пунктирный порог, ниже которого вы не хотите, чтобы опускался инвентарь."
@@ -20925,7 +20929,7 @@ msgid "the first 3 to 4 weeks"
 msgstr "первые 3–4 недели"
 
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
-msgstr ""
+msgstr "Первый день, когда организация начинает вести учёт в Carbon, устанавливается один раз при настройке бухгалтерии и никогда не меняется; с этого момента каждое проведение создаёт проведённую операцию."
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Фиксированное количество единиц для проверки с передней части каждой партии, независимо от размера партии."
@@ -22589,6 +22593,9 @@ msgstr "Неприменённые"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Неприменные денежные средства удерживаются в качестве предоплаты покупателя за этот документ вместо кредита в счет на счета."
 
+msgid "Unapplied:"
+msgstr "Не применено:"
+
 msgid "Unapproved Supplier"
 msgstr "Неодобренный поставщик"
 
@@ -24212,6 +24219,10 @@ msgstr "Списание"
 
 msgid "Write-Off Account"
 msgstr "Счет списания"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "Списание по {0}"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Списание запасов, забракованных или возвращенных по результатам контроля и решениям по NCR"

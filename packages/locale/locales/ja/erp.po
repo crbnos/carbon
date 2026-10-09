@@ -55,11 +55,11 @@ msgid "(Inactive)"
 msgstr "(無効)"
 
 msgid "(not an Equity posting account)"
-msgstr ""
+msgstr "(純資産転記勘定科目ではありません)"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
-msgstr ""
+msgstr "{0, plural, one {# ブロック中のレコード} other {# ブロック中のレコード}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -91,11 +91,11 @@ msgstr "{0, plural, other {#週}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
-msgstr ""
+msgstr "{0, plural, one {Carbon が原価を記録する前に作成された # 製造指図を完了またはキャンセルしてください。} other {Carbon が原価を記録する前に作成された # 製造指図を完了またはキャンセルしてください。}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
-msgstr ""
+msgstr "{0, plural, one {会計開始日前に日付した # ドキュメントを転記または削除してください。} other {会計開始日前に日付した # ドキュメントを転記または削除してください。}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -1036,7 +1036,7 @@ msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expir
 msgstr "価格付き販売見積。下書き→送信→発注済、または失注・期限切れ・キャンセル済で終了。"
 
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
-msgstr ""
+msgstr "会計開始日前に日付した仮仕訳。会計を設定すると開始仕訳に置き換わり、その後は変更できません。"
 
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "仕入先請求書は、得意先によって購入された製品またはサービス、および対応する原価を指定する文書です。"
@@ -1415,7 +1415,7 @@ msgid "Account"
 msgstr "アカウント"
 
 msgid "Account {accountNumber} is not an active posting account."
-msgstr ""
+msgstr "勘定科目 {accountNumber} は有効な転記勘定科目ではありません。"
 
 msgid "Account & Details"
 msgstr "アカウントと詳細"
@@ -1472,7 +1472,7 @@ msgid "Accounting"
 msgstr "会計"
 
 msgid "Accounting cutover"
-msgstr ""
+msgstr "会計開始日"
 
 msgid "Accounting is not set up"
 msgstr "会計がセットアップされていません"
@@ -2265,7 +2265,7 @@ msgid "An asset's acquisition cost minus accumulated depreciation — what it's 
 msgstr "資産の取得原価から減価償却累計額を差し引いた額。帳簿上の現在価値であり、除却時の計上額です"
 
 msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
-msgstr ""
+msgstr "会社が会計を設定する前に自動作成された仕訳。文書の会計を記録しますが、会計期間がなく、試算表やレポートに含まれません。"
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "キャンバス上に構築するオートメーション：1つのトリガーと、その後の条件チェック、レコード検索、アクションを実行するステップ — 誰かに通知、レコード作成または更新、または外部URLの呼び出し。"
@@ -2500,8 +2500,15 @@ msgstr "外観"
 msgid "Applied"
 msgstr "適用"
 
+#. placeholder {0}: r.invoiceId
+msgid "Applied amount for {0}"
+msgstr "{0} の適用金額"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "適用金額は会社基本通貨（{baseCurrency}）です。"
+
+msgid "Applied Date"
+msgstr "適用日"
 
 msgid "Applied To"
 msgstr "適用先"
@@ -2550,10 +2557,6 @@ msgstr "提案を適用"
 
 msgid "Apply To"
 msgstr "適用対象"
-
-#. placeholder {0}: row.original.invoiceId
-msgid "Apply to {0}"
-msgstr ""
 
 msgid "Apply to invoice"
 msgstr "請求書に適用"
@@ -3473,7 +3476,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "アバターは {1} による <0>{0}</0> のもので、<1>{2}</1> でライセンスされています。"
 
 msgid "Average"
-msgstr ""
+msgstr "平均"
 
 msgid "Avg Days to Close"
 msgstr "平均クローズ日数"
@@ -3638,7 +3641,7 @@ msgid "Before cutover"
 msgstr "カットオーバー前"
 
 msgid "Before cutover (journal)"
-msgstr ""
+msgstr "会計開始日前（仕訳）"
 
 msgid "Before You Activate"
 msgstr "活性化する前に"
@@ -4487,7 +4490,7 @@ msgid "Choose Return To for {unitName}"
 msgstr "{unitName}の返却先を選択"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
-msgstr ""
+msgstr "当期または前3会計期間のいずれかの初日を選択してください。"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "このアグリーメントでレンタルするフリート個を選択してください。各個の初期レートはファイルに設定されています。グリッドで変更してください。"
@@ -7311,6 +7314,10 @@ msgstr "{selectedCalculationMethod}後の値引日数"
 msgid "Discount Ends On"
 msgstr "値引終了日"
 
+#. placeholder {0}: r.invoiceId
+msgid "Discount for {0}"
+msgstr "{0} の値引"
+
 msgid "Discount Percent"
 msgstr "値引率"
 
@@ -7430,10 +7437,10 @@ msgid "Documents and activity"
 msgstr "ドキュメントと活動"
 
 msgid "Documents Posted Before Carbon Kept Journals"
-msgstr ""
+msgstr "Carbon が仕訳を保持する前に転記されたドキュメント"
 
 msgid "Documents posted before Carbon kept journals have no journal."
-msgstr ""
+msgstr "Carbon が仕訳を保持する前に転記されたドキュメントには仕訳がありません。"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "ドキュメントはネイティブプロバイダ文書として請求書および支払をプッシュします。それらの仕訳は文書でカバーされたものとして記録されます。また、プロバイダで記録された支払をCarbonに取り込み、対応する請求書をクローズし、Carbon総勘定元帳仕訳を転記します。オフはそれらを意図的に除外したものとして記録します。"
@@ -8500,7 +8507,7 @@ msgid "Equity account that offsets the opening balances when accounting is set u
 msgstr "会計がセットアップされるときに開始残高を相殺する純資産アカウント。合計がゼロである必要があります。"
 
 msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
-msgstr ""
+msgstr "会計が設定された際に開始仕訳が転記される純資産勘定科目。前期試算表と Carbon の記録との差額を保有し、有効にする前に合計がゼロである必要があります。"
 
 msgid "Error"
 msgstr "エラー"
@@ -9376,7 +9383,7 @@ msgid "Fields"
 msgstr "フィールド"
 
 msgid "FIFO"
-msgstr ""
+msgstr "先入先出"
 
 msgid "File deleted successfully"
 msgstr "ファイルが正常に削除されました"
@@ -9706,9 +9713,6 @@ msgstr "完全償却済み"
 
 msgid "FX G/L"
 msgstr "FX G/L"
-
-msgid "FX Gain/Loss"
-msgstr ""
 
 msgid "FY {year}"
 msgstr "FY {year}"
@@ -10832,6 +10836,9 @@ msgstr "社内メモ"
 msgid "inv"
 msgstr "在庫"
 
+msgid "Inv Rate"
+msgstr "原価"
+
 msgid "Invalid applications"
 msgstr "無効な適用"
 
@@ -10972,9 +10979,6 @@ msgstr "請求書の場所"
 
 msgid "Invoice Number"
 msgstr "請求書番号"
-
-msgid "Invoice Rate"
-msgstr ""
 
 msgid "Invoice schedule"
 msgstr "請求スケジュール"
@@ -11666,7 +11670,7 @@ msgid "Lifetime Usage (Units)"
 msgstr "ライフタイム使用（ユニット）"
 
 msgid "LIFO"
-msgstr ""
+msgstr "後入先出"
 
 msgid "Light"
 msgstr "ライト"
@@ -11688,22 +11692,22 @@ msgid "Line {0}"
 msgstr "行 {0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "Line {line} ({accountNumber}): 貸方「{value}」にはコンマが含まれています。小数点を使用し、千位区切りなしで金額を記入してください（例：1234.56）。"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "Line {line} ({accountNumber}): 貸方「{value}」は正の数ではありません。"
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
-msgstr ""
+msgstr "Line {line} ({accountNumber}): 借方「{value}」にはコンマが含まれています。小数点を使用し、千位区切りなしで金額を記入してください（例：1234.56）。"
 
 msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
-msgstr ""
+msgstr "Line {line} ({accountNumber}): 借方「{value}」は正の数ではありません。"
 
 msgid "Line {line} has no account number."
-msgstr ""
+msgstr "Line {line} には勘定科目番号がありません。"
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
-msgstr ""
+msgstr "Line {line}: 勘定科目 {accountNumber} は Line {firstLine} に既にあります。各勘定科目を1行に配置してください。"
 
 msgid "Line description (optional)"
 msgstr "行の説明 (オプション)"
@@ -12514,10 +12518,10 @@ msgid "Migration Clearing"
 msgstr "マイグレーションクリアリング"
 
 msgid "Migration Clearing (default)"
-msgstr ""
+msgstr "マイグレーション清算（デフォルト）"
 
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
-msgstr ""
+msgstr "マイグレーション清算は合計がゼロである必要があります。<0>試算表に移動</0>"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "最小 {minimumBatchQuantity} — 達成済み"
@@ -13019,6 +13023,9 @@ msgstr "新規明細"
 msgid "New Line"
 msgstr "新しい行"
 
+msgid "New Line Item"
+msgstr "新規明細項目"
+
 msgid "New Location"
 msgstr "新しい場所"
 
@@ -13465,7 +13472,7 @@ msgid "No deposit has been received for this agreement."
 msgstr "この契約の前受金が受け取られていません。"
 
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
-msgstr ""
+msgstr "会計開始日前には減価償却は実行されません。会計開始日の前日時点での各資産の減価償却累計額を入力してください。"
 
 msgid "No dimension slots configured"
 msgstr "ディメンションスロットが構成されていません"
@@ -14399,9 +14406,6 @@ msgstr "申し訳ございません。アクセスしようとしているリン
 msgid "Open"
 msgstr "開く"
 
-msgid "Open ({paymentCurrency})"
-msgstr ""
-
 msgid "Open a change notice"
 msgstr "変更通知を開く"
 
@@ -15077,6 +15081,9 @@ msgstr "支払う"
 msgid "Pay expense"
 msgstr "費用を支払う"
 
+msgid "Pay Rate"
+msgstr "給与レート"
+
 msgid "Payables"
 msgstr "買掛金（デフォルト）"
 
@@ -15103,9 +15110,6 @@ msgstr "得意先からの支払"
 
 msgid "Payment ID"
 msgstr "支払いID"
-
-msgid "Payment Rate"
-msgstr ""
 
 msgid "payment term"
 msgstr "支払条件"
@@ -16024,7 +16028,7 @@ msgid "Provisional"
 msgstr "暫定"
 
 msgid "Provisional journal"
-msgstr ""
+msgstr "仮仕訳"
 
 msgid "Public"
 msgstr "公開"
@@ -18962,13 +18966,13 @@ msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "契約の開始日を設定して会計処理を表示してください。"
 
 msgid "Set the base currency."
-msgstr ""
+msgstr "基本通貨を設定してください。"
 
 msgid "Set the fiscal year settings."
-msgstr ""
+msgstr "会計年度を設定してください。"
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
-msgstr ""
+msgstr "マイグレーション清算勘定科目をグループではない有効な純資産勘定科目に設定してください。"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "仕事を停止した時刻を設定するか、まだ仕事中であることを確認してください。"
@@ -20654,7 +20658,7 @@ msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "Ramp で認可が拒否されました。もう一度接続してください。"
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
-msgstr ""
+msgstr "品目の平均原価。変更するには部品を編集する権限が必要です。"
 
 msgid "The backup job reported this error."
 msgstr "バックアップジョブがこのエラーを報告しました。"
@@ -20747,7 +20751,7 @@ msgid "The company already has a posted opening balance journal."
 msgstr "会社には既に転記済の期首残高仕訳があります。"
 
 msgid "The company has no account defaults."
-msgstr ""
+msgstr "会社に勘定科目のデフォルト設定がありません。"
 
 msgid "The contract cannot be cancelled then"
 msgstr "その場合、契約をキャンセルすることはできません。"
@@ -20768,10 +20772,10 @@ msgid "The corrected expiration for this lot/serial; existing on-hand stock is r
 msgstr "このロット/シリアル番号の修正された有効期限。変更後、既存のオンハンド在庫は棚寿命ポリシーに対して再評価されます。"
 
 msgid "The CSV file is empty."
-msgstr ""
+msgstr "CSV ファイルが空です。"
 
 msgid "The CSV has no {columns} column."
-msgstr ""
+msgstr "CSV に {columns} 列がありません。"
 
 msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "CSVには、accountNumber、借方、貸方のカラムが必要です。インポートは試算表全体を置き換えます。"
@@ -20817,16 +20821,16 @@ msgid "The customers you sell and ship to"
 msgstr "販売し出荷する得意先"
 
 msgid "The cutover date cannot be after today."
-msgstr ""
+msgstr "会計開始日は今日より後の日付にできません。"
 
 msgid "The cutover date is not a valid date."
-msgstr ""
+msgstr "会計開始日が有効な日付ではありません。"
 
 msgid "The cutover date is valid"
 msgstr "切替日は有効です。"
 
 msgid "The cutover date must be the first day of a period."
-msgstr ""
+msgstr "会計開始日は会計期間の初日である必要があります。"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "在庫が下回らないようにしたいダッシュ付きの閾値。"
@@ -20925,7 +20929,7 @@ msgid "the first 3 to 4 weeks"
 msgstr "最初の3～4週間"
 
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
-msgstr ""
+msgstr "会社がCarbonで帳簿の記録を始める最初の日であり、会計設定時に一度だけ設定され、その後は変更されません。この日以降、転記するたびに転記済の仕訳が作成されます。"
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "ロットサイズに関係なく、各ロットの前面から検査する固定単位数。"
@@ -22589,6 +22593,9 @@ msgstr "未適用"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "適用されていない現金はこの文書の得意先前払金として保有され、掛上与信として保有されません。"
 
+msgid "Unapplied:"
+msgstr "未適用："
+
 msgid "Unapproved Supplier"
 msgstr "未承認の仕入先"
 
@@ -24212,6 +24219,10 @@ msgstr "償却"
 
 msgid "Write-Off Account"
 msgstr "償却勘定"
+
+#. placeholder {0}: r.invoiceId
+msgid "Write-off for {0}"
+msgstr "{0}の償却"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "検査却下およびNCR処置によってスクラップされたまたは返却された在庫の償却。"
