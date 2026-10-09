@@ -16800,6 +16800,9 @@ msgstr "{0} Etiket Yazdır"
 msgid "Print batch list"
 msgstr "Parti Listesini Yazdır"
 
+msgid "Print Estimate"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "İş emirlerini Yazdır"
 

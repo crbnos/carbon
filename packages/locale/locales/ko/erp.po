@@ -16800,6 +16800,9 @@ msgstr "{0} 라벨 인쇄"
 msgid "Print batch list"
 msgstr "배치 목록 인쇄"
 
+msgid "Print Estimate"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "인쇄 작업 지시"
 

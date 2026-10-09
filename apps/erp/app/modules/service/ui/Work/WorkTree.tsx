@@ -39,6 +39,7 @@ import {
   LuEllipsis,
   LuGitBranch,
   LuPlus,
+  LuPrinter,
   LuTrash,
   LuX
 } from "react-icons/lu";
@@ -70,12 +71,15 @@ export default function WorkTree({
   nodes,
   totals,
   isDisabled,
-  onBuildTree
+  onBuildTree,
+  estimateHref
 }: {
   nodes: ServiceWorkNode[];
   totals: Map<string, WorkTotals>;
   isDisabled: boolean;
   onBuildTree: () => void;
+  /** The estimate PDF of the tree, when it has one. */
+  estimateHref?: string;
 }) {
   const { t } = useLingui();
   const { id, elementId } = useParams();
@@ -127,7 +131,14 @@ export default function WorkTree({
             <Trans>Work</Trans>
           </CardTitle>
         </CardHeader>
-        <CardAction>
+        <CardAction className="flex-row flex-wrap gap-2">
+          {estimateHref && (
+            <Button variant="secondary" leftIcon={<LuPrinter />} asChild>
+              <a href={estimateHref} target="_blank" rel="noreferrer">
+                <Trans>Print Estimate</Trans>
+              </a>
+            </Button>
+          )}
           <Button
             variant="secondary"
             leftIcon={<LuGitBranch />}

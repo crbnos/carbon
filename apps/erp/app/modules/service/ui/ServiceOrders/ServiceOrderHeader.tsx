@@ -25,6 +25,7 @@ import {
   LuPanelRight,
   LuPause,
   LuPlay,
+  LuPrinter,
   LuRotateCcw,
   LuServer
 } from "react-icons/lu";
@@ -114,6 +115,16 @@ const ServiceOrderHeader = () => {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem asChild>
+                  <a
+                    href={path.to.serviceOrderEstimate(id)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuPrinter />} />
+                    <Trans>Print Estimate</Trans>
+                  </a>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={status !== "Completed" || !can("Draft")}
                   onClick={() => move("Draft")}

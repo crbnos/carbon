@@ -835,6 +835,112 @@ export async function updateServiceNodeFixedPrice(
     .single();
 }
 
+/**
+ * What an estimate prices: the tree's nodes, their plan lines (materials,
+ * labor, other costs) and the sale prices of the materials' items and the
+ * service labor item (`companySettings.serviceLaborItemId`). An item with
+ * several sale price rows takes the oldest. Two rounds of queries.
+ */
+export async function getServiceEstimateInputs(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  const [nodes, materials, labor, costs, settings] = await Promise.all([
+    client
+      .from("projectElement")
+      .select("id, parentId, sortOrder, readableId, name, fixedPrice")
+      .eq("projectId", projectId)
+      .eq("companyId", companyId),
+    client
+      .from("projectElementMaterial")
+      .select(
+        "projectElementId, itemId, quantity, unitOfMeasureCode, item:item!projectElementMaterial_itemId_fkey(readableIdWithRevision, name)"
+      )
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    client
+      .from("projectElementLabor")
+      .select(
+        "projectElementId, hours, laborCategory:laborCategory!projectElementLabor_category_fkey(name)"
+      )
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    client
+      .from("projectElementCost")
+      .select("projectElementId, description, amount")
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    client
+      .from("companySettings")
+      .select("serviceLaborItemId")
+      .eq("id", companyId)
+      .maybeSingle()
+  ]);
+  const error =
+    nodes.error ??
+    materials.error ??
+    labor.error ??
+    costs.error ??
+    settings.error;
+  if (error) return { data: null, error };
+
+  const laborItemId = settings.data?.serviceLaborItemId ?? null;
+  const itemIds = [
+    ...new Set([
+      ...(materials.data ?? []).map((row) => row.itemId),
+      ...(laborItemId ? [laborItemId] : [])
+    ])
+  ];
+  const prices =
+    itemIds.length > 0
+      ? await client
+          .from("itemUnitSalePrice")
+          .select("itemId, unitSalePrice")
+          .in("itemId", itemIds)
+          .eq("companyId", companyId)
+          .order("createdAt", { ascending: true })
+      : { data: [], error: null };
+  if (prices.error) return { data: null, error: prices.error };
+
+  const priceOf = new Map<string, number>();
+  for (const row of prices.data ?? []) {
+    if (!priceOf.has(row.itemId)) {
+      priceOf.set(row.itemId, Number(row.unitSalePrice));
+    }
+  }
+
+  return {
+    data: {
+      nodes: nodes.data ?? [],
+      materials: (materials.data ?? []).map((row) => ({
+        projectElementId: row.projectElementId,
+        description: [row.item?.readableIdWithRevision, row.item?.name]
+          .filter(Boolean)
+          .join(" "),
+        quantity: Number(row.quantity),
+        unitOfMeasure: row.unitOfMeasureCode,
+        unitPrice: priceOf.get(row.itemId) ?? null
+      })),
+      labor: (labor.data ?? []).map((row) => ({
+        projectElementId: row.projectElementId,
+        description: row.laborCategory?.name ?? "Labor",
+        hours: Number(row.hours)
+      })),
+      costs: (costs.data ?? []).map((row) => ({
+        projectElementId: row.projectElementId,
+        description: row.description,
+        amount: Number(row.amount)
+      })),
+      laborPrice: laborItemId ? (priceOf.get(laborItemId) ?? null) : null
+    },
+    error: null
+  };
+}
+
 // --- Billable items ----------------------------------------------------------
 
 /** An order's billable items, with the node they sit on. */

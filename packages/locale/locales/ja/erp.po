@@ -16800,6 +16800,9 @@ msgstr "{0}個のラベルを印刷"
 msgid "Print batch list"
 msgstr "バッチリストを印刷"
 
+msgid "Print Estimate"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "製造指図の印刷"
 

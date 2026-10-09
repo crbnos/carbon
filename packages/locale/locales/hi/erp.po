@@ -16800,6 +16800,9 @@ msgstr "{0} लेबल प्रिंट करें"
 msgid "Print batch list"
 msgstr "बैच सूची प्रिंट करें"
 
+msgid "Print Estimate"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "प्रिंट जॉब"
 

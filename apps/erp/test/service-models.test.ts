@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  buildServiceEstimate,
   canMoveServiceOrder,
   canMoveVisit,
   canOverrideCoverage,
@@ -231,3 +232,112 @@ describe("canMoveVisit", () => {
     expect(canMoveVisit("Cancelled", "Scheduled")).toBe(false);
   });
 });
+
+describe("buildServiceEstimate", () => {
+  const nodes = [
+    {
+      id: "engine",
+      parentId: null,
+      sortOrder: 1,
+      readableId: "SVC1-1",
+      name: "Engine",
+      fixedPrice: null
+    },
+    {
+      id: "cylinders",
+      parentId: "engine",
+      sortOrder: 1,
+      readableId: "SVC1-2",
+      name: "Cylinders",
+      fixedPrice: 500
+    },
+    {
+      id: "boring",
+      parentId: "cylinders",
+      sortOrder: 1,
+      readableId: "SVC1-3",
+      name: "Boring",
+      fixedPrice: null
+    },
+    {
+      id: "transmission",
+      parentId: null,
+      sortOrder: 2,
+      readableId: "SVC1-4",
+      name: "Transmission",
+      fixedPrice: null
+    }
+  ];
+
+  it("prices labor, materials and costs at sale prices, in tree order", () => {
+    const estimate = buildServiceEstimate({
+      nodes,
+      labor: [{ projectElementId: "engine", description: "Mechanic", hours: 2 }],
+      materials: [
+        {
+          projectElementId: "transmission",
+          description: "TR-200 Gear set",
+          quantity: 3,
+          unitOfMeasure: "EA",
+          unitPrice: 12.5
+        }
+      ],
+      costs: [
+        { projectElementId: "transmission", description: "Freight", amount: 40 }
+      ],
+      laborPrice: 95,
+      laborUnit: "HR"
+    });
+
+    expect(estimate.nodes.map((node) => node.name)).toEqual([
+      "Engine",
+      "Cylinders",
+      "Transmission"
+    ]);
+    expect(estimate.nodes[0]!.total).toBe(190);
+    expect(estimate.nodes[2]!.lines.map((line) => line.amount)).toEqual([
+      37.5, 40
+    ]);
+    expect(estimate.total).toBe(767.5);
+  });
+
+  it("gives a fixed-price node one line and leaves its subtree out", () => {
+    const estimate = buildServiceEstimate({
+      nodes,
+      labor: [{ projectElementId: "boring", description: "Mechanic", hours: 4 }],
+      materials: [],
+      costs: [],
+      laborPrice: 95,
+      laborUnit: "HR"
+    });
+    const cylinders = estimate.nodes.find((node) => node.id === "cylinders")!;
+    expect(cylinders.isFixedPrice).toBe(true);
+    expect(cylinders.lines).toEqual([
+      {
+        description: "Cylinders",
+        quantity: null,
+        unitOfMeasure: null,
+        unitPrice: null,
+        amount: 500
+      }
+    ]);
+    expect(estimate.nodes.some((node) => node.id === "boring")).toBe(false);
+    expect(estimate.total).toBe(500);
+  });
+
+  it("adds 0 for a line with no price", () => {
+    const estimate = buildServiceEstimate({
+      nodes: [nodes[3]!],
+      labor: [
+        { projectElementId: "transmission", description: "Mechanic", hours: 1 }
+      ],
+      materials: [],
+      costs: [],
+      laborPrice: null,
+      laborUnit: "HR"
+    });
+    expect(estimate.nodes[0]!.lines[0]!.unitPrice).toBeNull();
+    expect(estimate.total).toBe(0);
+  });
+});
+

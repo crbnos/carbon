@@ -16800,6 +16800,9 @@ msgstr "打印 {0} 个标签"
 msgid "Print batch list"
 msgstr "打印生产批次列表"
 
+msgid "Print Estimate"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "打印工单"
 

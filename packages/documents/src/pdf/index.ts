@@ -26,13 +26,26 @@ import QuotePDF from "./QuotePDF";
 import SalesInvoicePDF from "./SalesInvoicePDF";
 import SalesOrderPDF from "./SalesOrderPDF";
 import SalesReturnOrderPDF from "./SalesReturnOrderPDF";
+import type {
+  ServiceEstimate,
+  ServiceEstimateLine,
+  ServiceEstimateNode
+} from "./ServiceEstimatePDF";
+import ServiceEstimatePDF from "./ServiceEstimatePDF";
 import StockTransferPDF from "./StockTransferPDF";
 import StorageUnitLabelPDF from "./StorageUnitLabelPDF";
 import { SAMPLE_SALES_ORDER } from "./salesOrder.samples";
 import { SAMPLE_SALES_RETURN_ORDER } from "./salesReturnOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
-export type { BatchListMember, JobTravelerMaterial, ProjectReaderSection };
+export type {
+  BatchListMember,
+  JobTravelerMaterial,
+  ProjectReaderSection,
+  ServiceEstimate,
+  ServiceEstimateLine,
+  ServiceEstimateNode
+};
 export {
   BatchListPDF,
   DOCUMENT_PDFS,
@@ -62,6 +75,7 @@ export {
   SAMPLE_TRACKING_LABEL,
   SalesOrderPDF,
   SalesReturnOrderPDF,
+  ServiceEstimatePDF,
   StockTransferPDF,
   StorageUnitLabelPDF
 };

@@ -117,6 +117,30 @@ export function warrantyStatus(
   return "Expired";
 }
 
+type SiteAddress = {
+  addressLine1: string | null;
+  city: string | null;
+  stateProvince: string | null;
+  postalCode: string | null;
+} | null;
+
+/** One line of a site's address, or null when it has none. */
+export function formatSiteAddress(address: SiteAddress | undefined) {
+  if (!address) return null;
+  const region = [address.stateProvince, address.postalCode]
+    .filter(Boolean)
+    .join(" ");
+  const line = [address.addressLine1, address.city, region]
+    .filter(Boolean)
+    .join(", ");
+  return line || null;
+}
+
+/** A link that opens the address in the phone's maps app. */
+export function mapUrl(address: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
+
 /**
  * The status an order rolls up to from its visits (spec, *Lifecycle*). A
  * status the user set (On Hold, Completed, Closed, Cancelled) stays. Work
@@ -395,6 +419,125 @@ export function inTreeOrder<
   };
   walk(null, 0);
   return rows;
+}
+
+export type EstimateLine = {
+  description: string;
+  /** Null on a fixed-price line, which has no quantity. */
+  quantity: number | null;
+  unitOfMeasure: string | null;
+  unitPrice: number | null;
+  amount: number;
+};
+
+export type EstimateNode = {
+  id: string;
+  depth: number;
+  readableId: string;
+  name: string;
+  isFixedPrice: boolean;
+  lines: EstimateLine[];
+  /** The node's own lines, not its subtree. */
+  total: number;
+};
+
+/**
+ * The estimate of a work tree at sale prices, node by node in tree order.
+ * Labor plan lines are priced at the service labor item's price, materials
+ * at their item's sale price and other costs at their amount; a line with
+ * no price shows none and adds 0. A fixed-price node gives one line at its
+ * price, and its subtree is not listed: the invoice bills it the same way.
+ */
+export function buildServiceEstimate(input: {
+  nodes: {
+    id: string;
+    parentId: string | null;
+    sortOrder: number | null;
+    readableId: string;
+    name: string;
+    fixedPrice: number | null;
+  }[];
+  materials: {
+    projectElementId: string;
+    description: string;
+    quantity: number;
+    unitOfMeasure: string | null;
+    unitPrice: number | null;
+  }[];
+  labor: { projectElementId: string; description: string; hours: number }[];
+  costs: { projectElementId: string; description: string; amount: number }[];
+  laborPrice: number | null;
+  laborUnit: string;
+}): { nodes: EstimateNode[]; total: number } {
+  const linesOf = new Map<string, EstimateLine[]>();
+  const add = (nodeId: string, line: EstimateLine) =>
+    linesOf.set(nodeId, [...(linesOf.get(nodeId) ?? []), line]);
+
+  for (const row of input.labor) {
+    const hours = Number(row.hours);
+    add(row.projectElementId, {
+      description: row.description,
+      quantity: hours,
+      unitOfMeasure: input.laborUnit,
+      unitPrice: input.laborPrice,
+      amount: input.laborPrice === null ? 0 : round(hours * input.laborPrice)
+    });
+  }
+  for (const row of input.materials) {
+    const quantity = Number(row.quantity);
+    add(row.projectElementId, {
+      description: row.description,
+      quantity,
+      unitOfMeasure: row.unitOfMeasure,
+      unitPrice: row.unitPrice,
+      amount: row.unitPrice === null ? 0 : round(quantity * row.unitPrice)
+    });
+  }
+  for (const row of input.costs) {
+    const amount = Number(row.amount);
+    add(row.projectElementId, {
+      description: row.description,
+      quantity: null,
+      unitOfMeasure: null,
+      unitPrice: null,
+      amount
+    });
+  }
+
+  const result: EstimateNode[] = [];
+  let total = 0;
+  let skipBelow: number | null = null;
+  for (const { node, depth } of inTreeOrder(input.nodes)) {
+    if (skipBelow !== null) {
+      if (depth > skipBelow) continue;
+      skipBelow = null;
+    }
+    const isFixedPrice = node.fixedPrice !== null;
+    const lines: EstimateLine[] = isFixedPrice
+      ? [
+          {
+            description: node.name,
+            quantity: null,
+            unitOfMeasure: null,
+            unitPrice: null,
+            amount: Number(node.fixedPrice)
+          }
+        ]
+      : (linesOf.get(node.id) ?? []);
+    if (isFixedPrice) skipBelow = depth;
+    const nodeTotal = lines.reduce((sum, line) => sum + line.amount, 0);
+    total += nodeTotal;
+    result.push({
+      id: node.id,
+      depth,
+      readableId: node.readableId,
+      name: node.name,
+      isFixedPrice,
+      lines,
+      total: round(nodeTotal)
+    });
+  }
+  return { nodes: result, total: round(total) };
 }
 
 export type WorkTotals = {

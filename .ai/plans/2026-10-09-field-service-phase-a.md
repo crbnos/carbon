@@ -57,7 +57,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 23: Add the `SignaturePad` component
 - [x] Task 24: Add My Visits and the visit page
 - [x] Task 25: Add invoicing and the billable item review
-- [ ] Task 26: Add Print estimate
+- [x] Task 26: Add Print estimate
 - [ ] Task 27: Add service templates
 - [ ] Task 28: Add the settings fields
 - [ ] Task 29: Extend the demo datasets
@@ -1285,4 +1285,6 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 25: billing is a route tab of the order (`$id.billing.tsx`, **Billing**), as Work and Visits are. `BillableItemsTable` groups the items by node in tree order (`inTreeOrder`), lists a fixed-price node even with no item, and puts items on no node last under "Other charges". Its row menu offers **Edit Price** (a rate input), **Hold** or **Release**, and **Write Off** (reason required), all through `updateServiceBillableItem`; the route first checks the item is on the order's project. A reversal row takes no action. `@carbon/utils` gains `BILLABLE_ITEM_STATUS_COLOR_MAP` (registered as `billableItem`, tested) for the new `BillableItemStatus`.
 - Task 25: the fixed price is edited in the node peek and saved by a new action on `$id.work.$elementId.tsx` (`intent=fixedPrice`, `updateServiceNodeFixedPrice`, `serviceNodeFixedPriceValidator`); an empty value removes it. A Closed or Cancelled order refuses it.
 - Task 25: **Create Invoice** (header, primary, on a Completed order with an Unbilled item) confirms, then posts to `$id.invoice.tsx`, which invokes `create-service-order-invoice` as a system call behind `update: "service"` and `create: "invoicing"` and redirects to the Draft invoice. The order loader counts the Unbilled items; with none, a Completed order shows **Close**. **Invoice detail** was already a Properties field (Task 20).
+- Task 26 (deviation): `ServiceEstimatePDF` is hand-built (`Template` and `Header`, no block registry), like `ProjectReaderPDF`. The quote PDF the plan names is block-driven; a new block-driven document needs a new template type in the customizer (`documentTemplateTypeSchema`, `DEFAULT_TEMPLATES`, `DOCUMENT_PDFS`), which `packages/documents/AGENTS.md` lists under Ask First. It is therefore not in the template preview.
+- Task 26: the pricing is the pure `buildServiceEstimate` (`service.models.ts`, 3 tests in `apps/erp/test/service-models.test.ts`): labor plan lines at the service labor item's sale price (unit HR), materials at their item's `unitSalePrice` (the oldest row of an item), other costs at their amount; a line with no price adds 0. A fixed-price node is one line at its price and its subtree is left out, as the invoice does. `getServiceEstimateInputs` loads the inputs in two rounds of queries. The route formats money at the base currency's decimals, and `ServiceEstimatePDF.test.ts` renders the PDF. **Print Estimate** is on the Work card and in the order's ⋯ menu. `formatSiteAddress` and `mapUrl` moved to `service.models.ts`.
 

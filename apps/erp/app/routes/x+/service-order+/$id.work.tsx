@@ -177,6 +177,7 @@ export default function ServiceOrderWorkRoute() {
         totals={totals}
         isDisabled={isDisabled}
         onBuildTree={() => setIsBuilding(true)}
+        estimateHref={path.to.serviceOrderEstimate(id)}
       />
       {isBuilding && (
         <BuildFromPartDrawer

@@ -15,32 +15,9 @@ import { Link } from "react-router";
 import { DateTime } from "~/components";
 import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
+import { formatSiteAddress, mapUrl } from "../../service.models";
 import type { ServiceVisit } from "../../types";
 import { ServiceVisitStatus } from "../ServiceStatus";
-
-type Address = {
-  addressLine1: string | null;
-  city: string | null;
-  stateProvince: string | null;
-  postalCode: string | null;
-} | null;
-
-/** One line of a site's address, or null when it has none. */
-export function formatSiteAddress(address: Address | undefined) {
-  if (!address) return null;
-  const region = [address.stateProvince, address.postalCode]
-    .filter(Boolean)
-    .join(" ");
-  const line = [address.addressLine1, address.city, region]
-    .filter(Boolean)
-    .join(", ");
-  return line || null;
-}
-
-/** A link that opens the address in the phone's maps app. */
-export function mapUrl(address: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-}
 
 /**
  * The signed-in technician's visits for today and the next 7 days, by the

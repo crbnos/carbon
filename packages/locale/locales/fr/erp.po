@@ -16800,6 +16800,9 @@ msgstr "Imprimer {0} étiquettes"
 msgid "Print batch list"
 msgstr "Imprimer la liste des lots de production"
 
+msgid "Print Estimate"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "Imprimer les ordres de fabrication"
 

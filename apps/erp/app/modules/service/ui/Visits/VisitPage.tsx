@@ -32,6 +32,7 @@ import { useUser } from "~/hooks";
 import { IssueMaterialModal } from "~/modules/projects/ui/Element/IssueMaterialModal";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { ServiceOrderStatus as ServiceOrderStatusType } from "../../service.models";
+import { formatSiteAddress, mapUrl } from "../../service.models";
 import type { ServiceVisitDetail, ServiceWorkNode } from "../../types";
 import { ServiceRichText } from "../ServiceRichText";
 import {
@@ -40,7 +41,6 @@ import {
   WarrantyBadge
 } from "../ServiceStatus";
 import AddExpenseModal from "../Work/AddExpenseModal";
-import { formatSiteAddress, mapUrl } from "./MyVisits";
 import NodePicker from "./NodePicker";
 import { VisitStatusActions } from "./VisitStatusActions";
 import WorkTimer from "./WorkTimer";
