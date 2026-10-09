@@ -68821,6 +68821,9 @@ export default {
             $ref: "#/parameters/rowFilter.journalLines.createdBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journalLines.accountDefaultRole"
+          },
+          {
             $ref: "#/parameters/rowFilter.journalLines.postingDate"
           },
           {
@@ -147133,6 +147136,10 @@ export default {
           format: "text",
           type: "string"
         },
+        accountDefaultRole: {
+          format: "text",
+          type: "string"
+        },
         postingDate: {
           format: "date",
           type: "string"
@@ -199358,6 +199365,12 @@ export default {
     },
     "rowFilter.journalLines.createdBy": {
       name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.journalLines.accountDefaultRole": {
+      name: "accountDefaultRole",
       required: false,
       in: "query",
       type: "string"
