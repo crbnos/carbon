@@ -9112,6 +9112,9 @@ msgstr "CSV'yi dışa aktar"
 msgid "Export Lines to CSV"
 msgstr "Satırları CSV'ye Dışa Aktar"
 
+msgid "Export PDF"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "Genelletilmiş Fiyat"
 

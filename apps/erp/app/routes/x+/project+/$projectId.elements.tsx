@@ -16,7 +16,7 @@ import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
 import { useMemo, useRef, useState } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import { useLoaderData, useLocation, useParams } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -33,7 +33,7 @@ import {
   getProjectCostSummary,
   getProjectElementDescriptions,
   getProjectElements,
-  projectElementTypes,
+  parseElementFilters,
   projectStateGroups,
   rollUpCostSummary
 } from "~/modules/projects";
@@ -66,17 +66,6 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: XYFlowStyle }
 ];
 
-/** The values of a `filter=key:eq:a` or `filter=key:in:a,b` search param. */
-function filterValues(params: URLSearchParams, key: string): string[] | null {
-  for (const filter of params.getAll("filter")) {
-    const [column, operator, value] = filter.split(":");
-    if (column !== key || !value) continue;
-    if (operator === "in") return value.split(",").filter(Boolean);
-    if (operator === "eq") return [value];
-  }
-  return null;
-}
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "projects"
@@ -92,25 +81,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   )
     ? (layoutParam as ElementLayout)
     : "list";
-  const typeParam = searchParams.get("type");
-  const type = projectElementTypes.includes(typeParam as ProjectElementType)
-    ? (typeParam as ProjectElementType)
-    : null;
-  const stateGroup = filterValues(searchParams, "stateGroup")?.filter((g) =>
-    projectStateGroups.includes(g as ProjectStateGroup)
-  ) as ProjectStateGroup[] | undefined;
-
-  const elementFilters = {
-    type: type ? [type] : null,
-    stateGroup: stateGroup && stateGroup.length > 0 ? stateGroup : null,
-    ownerId: filterValues(searchParams, "ownerId"),
-    milestoneId: filterValues(searchParams, "milestoneId"),
-    labelId: filterValues(searchParams, "labelId"),
-    search: searchParams.get("search")
-  };
-  const isFiltered = Object.values(elementFilters).some(
-    (value) => value !== null && value !== ""
-  );
+  const {
+    filters: elementFilters,
+    type,
+    isFiltered
+  } = parseElementFilters(searchParams);
 
   const [elements, costSummary, descriptions] = await Promise.all([
     getProjectElements(client, projectId, companyId, elementFilters),
@@ -200,6 +175,7 @@ export default function ProjectElementsRoute() {
   }>(path.to.project(projectId));
 
   const permissions = usePermissions();
+  const { search } = useLocation();
   const [people] = usePeople();
   const [display, setDisplayProperty] = useElementDisplay(projectId);
   const [newType, setNewType] = useState<ProjectElementType>("Task");
@@ -342,6 +318,11 @@ export default function ProjectElementsRoute() {
           onDisplayChange={setDisplayProperty}
           onNew={focusQuickAdd}
           canCreate={layoutProps.canCreate}
+          exportHref={
+            layout === "reader"
+              ? `${path.to.file.projectReader(projectId)}${search}`
+              : undefined
+          }
           grouping={layout === "table" ? grouping : undefined}
           onGroupingChange={layout === "table" ? setGrouping : undefined}
         />

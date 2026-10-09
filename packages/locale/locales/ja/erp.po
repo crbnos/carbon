@@ -9112,6 +9112,9 @@ msgstr "CSVをエクスポート"
 msgid "Export Lines to CSV"
 msgstr "CSVにラインをエクスポート"
 
+msgid "Export PDF"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "拡張価格"
 

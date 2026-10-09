@@ -9112,6 +9112,9 @@ msgstr "Esporta CSV"
 msgid "Export Lines to CSV"
 msgstr "Esporta Righe in CSV"
 
+msgid "Export PDF"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "Prezzo Esteso"
 

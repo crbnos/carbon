@@ -9112,6 +9112,9 @@ msgstr "CSV 내보내기"
 msgid "Export Lines to CSV"
 msgstr "라인을 CSV로 내보내기"
 
+msgid "Export PDF"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "확장 가격"
 

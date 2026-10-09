@@ -47,6 +47,8 @@ export const tw: Tw = makeDocTw(DEFAULT_THEME);
 export interface DocStyle {
   tw: Tw;
   theme: DocumentTheme;
+  /** The resolved body font, so a component can tell which styles it has. */
+  fontFamily?: string;
 }
 
 const DocStyleContext = createContext<DocStyle>({
@@ -60,6 +62,11 @@ export const DocStyleProvider = DocStyleContext.Provider;
 /** Read the document-themed `tw` (falls back to the default palette). */
 export function useTw(): Tw {
   return useContext(DocStyleContext).tw;
+}
+
+/** Read the resolved body font family, when a `Template` provides one. */
+export function useDocFontFamily(): string | undefined {
+  return useContext(DocStyleContext).fontFamily;
 }
 
 /** Read the raw document theme (e.g. for inline `theme.accent` styling). */

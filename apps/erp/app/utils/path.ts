@@ -1157,6 +1157,7 @@ export const path = {
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
+      projectReader: (id: string) => generatePath(`${file}/project/${id}.pdf`),
       purchaseOrder: (id: string) =>
         generatePath(`${file}/purchase-order/${id}.pdf`),
 

@@ -2047,3 +2047,57 @@ export function formatRequirementTarget(
   }
   return `${element.targetOperator} ${value}${unit}`;
 }
+
+// --- Element filters ----------------------------------------------------------
+
+/** The values of a `filter=key:eq:a` or `filter=key:in:a,b` search param. */
+function filterValues(params: URLSearchParams, key: string): string[] | null {
+  for (const filter of params.getAll("filter")) {
+    const [column, operator, value] = filter.split(":");
+    if (column !== key || !value) continue;
+    if (operator === "in") return value.split(",").filter(Boolean);
+    if (operator === "eq") return [value];
+  }
+  return null;
+}
+
+export type ProjectElementFilters = {
+  type: ProjectElementType[] | null;
+  stateGroup: ProjectStateGroup[] | null;
+  ownerId: string[] | null;
+  milestoneId: string[] | null;
+  labelId: string[] | null;
+  search: string | null;
+};
+
+/**
+ * The Elements filters of a query string: `type`, `search` and the
+ * `filter=` params of the filter row. The Elements page and the Reader PDF
+ * read the same filters, so the PDF prints what the page shows.
+ */
+export function parseElementFilters(params: URLSearchParams): {
+  filters: ProjectElementFilters;
+  type: ProjectElementType | null;
+  isFiltered: boolean;
+} {
+  const typeParam = params.get("type");
+  const type = projectElementTypes.includes(typeParam as ProjectElementType)
+    ? (typeParam as ProjectElementType)
+    : null;
+  const stateGroup = (filterValues(params, "stateGroup") ?? []).filter((g) =>
+    projectStateGroups.includes(g as ProjectStateGroup)
+  ) as ProjectStateGroup[];
+  const filters: ProjectElementFilters = {
+    type: type ? [type] : null,
+    stateGroup: stateGroup.length > 0 ? stateGroup : null,
+    ownerId: filterValues(params, "ownerId"),
+    milestoneId: filterValues(params, "milestoneId"),
+    labelId: filterValues(params, "labelId"),
+    search: params.get("search") || null
+  };
+  return {
+    filters,
+    type,
+    isFiltered: Object.values(filters).some((value) => value !== null)
+  };
+}

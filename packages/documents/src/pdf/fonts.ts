@@ -40,3 +40,23 @@ export function getSafeFontFamily(family: string | undefined | null): string {
     ? family
     : "Helvetica";
 }
+
+/**
+ * Whether a family can render italic text. The PDF built-ins have oblique
+ * faces; a bundled family has italic only when an italic face is registered.
+ * react-pdf throws "Could not resolve font" for a style it cannot find.
+ */
+export function fontHasItalic(family: string | undefined | null): boolean {
+  if (!family) return false;
+  if (BUILT_IN_FONTS.includes(family)) return true;
+  registerDocumentFonts();
+  const registered = Font.getRegisteredFonts() as Record<
+    string,
+    { sources?: { fontStyle?: string }[] } | undefined
+  >;
+  return (
+    registered[family]?.sources?.some(
+      (source) => source.fontStyle === "italic"
+    ) ?? false
+  );
+}

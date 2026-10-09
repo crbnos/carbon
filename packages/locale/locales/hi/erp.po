@@ -9112,6 +9112,9 @@ msgstr "CSV निर्यात करें"
 msgid "Export Lines to CSV"
 msgstr "CSV में लाइनें निर्यात करें"
 
+msgid "Export PDF"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "विस्तारित मूल्य"
 

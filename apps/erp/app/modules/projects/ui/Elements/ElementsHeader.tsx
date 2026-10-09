@@ -30,6 +30,7 @@ import {
   LuBookOpenText,
   LuChartGantt,
   LuChevronDown,
+  LuFileText,
   LuKanban,
   LuListTree,
   LuNetwork,
@@ -89,6 +90,8 @@ type ElementsHeaderProps = {
   /** The Table layout's grouping; the Display popover offers it when set. */
   grouping?: ElementGrouping;
   onGroupingChange?: (grouping: ElementGrouping) => void;
+  /** The Reader's PDF, with the current filters; shown when set. */
+  exportHref?: string;
 };
 
 export function ElementsHeader({
@@ -101,7 +104,8 @@ export function ElementsHeader({
   onNew,
   canCreate,
   grouping,
-  onGroupingChange
+  onGroupingChange,
+  exportHref
 }: ElementsHeaderProps) {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -192,6 +196,13 @@ export function ElementsHeader({
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+          {exportHref && (
+            <Button variant="secondary" leftIcon={<LuFileText />} asChild>
+              <a href={exportHref} target="_blank" rel="noreferrer">
+                <Trans>Export PDF</Trans>
+              </a>
+            </Button>
+          )}
           {!hasFilters && <Filter filters={filters} />}
           <Popover>
             <PopoverTrigger asChild>

@@ -55,7 +55,7 @@
 - [x] Task 17: Build the Tree layout
 - [x] Task 18: Build the Timeline layout
 - [x] Task 19: Build the Reader layout
-- [ ] Task 20: Add the Reader PDF
+- [x] Task 20: Add the Reader PDF
 - [ ] Task 21: Add saved views and per-user preferences
 - [ ] Task 22: Add project templates
 - [ ] Task 23: Add Create Job from a plan-line material
@@ -1510,3 +1510,6 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 18: the two panes are one scroll area with a sticky left column and a sticky header, so they scroll together with no scroll syncing. Rows collapse in local state. A today line is drawn in the browser's zone (display only). Day and Week zoom label each week; Month zoom labels each month.
 - Task 18: `defaultWindow(elements, fallback)` takes a fallback day: with no date at all it shows the 4 weeks around it. A target before the start draws a 1-day bar at the start. `projects-timeline-geometry.test.ts` has a 5th case for the window padding.
 - Task 19: the Elements loader reads the descriptions only on the Reader (`getProjectElementDescriptions`), because the list query leaves them out. The outline numbers come from the pure `buildReaderOutline`, and a Requirement's target text from `formatRequirementTarget` (both `projects.models.ts`), so the Reader and its PDF (Task 20) share them. `projects-element-tree.test.ts` pins the outline numbers. The table of contents shows on a pane of 56rem or more (a container query). **Export PDF** is added with Task 20.
+- Task 20: `ProjectReaderPDF` takes sections the route already formatted (outline number, property line, facts, description), because `@carbon/documents` cannot import the ERP models. The route builds them with `buildReaderOutline`, `formatRequirementTarget` and `formatAllocation`, the same helpers as the Reader. It is hand-built on `Template` + `Header`, like `BatchListPDF`, and styles through the themed `useTw()`. A section's head (heading, property line, facts) never splits across pages; a long description may.
+- Task 20 (🛑 an *Ask First* file): `Note.tsx` renders `bold` and `link` marks always, and `italic` only when the body font has an italic face. The bundled families register no italic face, and react-pdf throws "Could not resolve font" for one it cannot find. To know the font, `Template.tsx` now puts the resolved `fontFamily` in the `DocStyle` context (`useDocFontFamily`), and `fonts.ts` has `fontHasItalic`. The page shell renders the same as before. A throwaway render with all three marks under Inter produced a PDF.
+- Task 20: the Elements filter parsing moved to `parseElementFilters` (`projects.models.ts`), so the PDF route reads the same filters as the page. **Export PDF** sits in the Elements header on the Reader and opens `path.to.file.projectReader(id)` with the current query string in a new tab.

@@ -16,6 +16,8 @@ import { SAMPLE_JOB_TRAVELER } from "./jobTraveler.samples";
 import KanbanLabelPDF from "./KanbanLabelPDF";
 import PackingSlipPDF from "./PackingSlipPDF";
 import ProductLabelPDF from "./ProductLabelPDF";
+import type { ProjectReaderSection } from "./ProjectReaderPDF";
+import ProjectReaderPDF from "./ProjectReaderPDF";
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import PurchaseReturnOrderPDF from "./PurchaseReturnOrderPDF";
 import { DOCUMENT_PDFS } from "./preview-documents";
@@ -30,7 +32,7 @@ import { SAMPLE_SALES_ORDER } from "./salesOrder.samples";
 import { SAMPLE_SALES_RETURN_ORDER } from "./salesReturnOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
-export type { BatchListMember, JobTravelerMaterial };
+export type { BatchListMember, JobTravelerMaterial, ProjectReaderSection };
 export {
   BatchListPDF,
   DOCUMENT_PDFS,
@@ -45,6 +47,7 @@ export {
   KanbanLabelPDF,
   PackingSlipPDF,
   ProductLabelPDF,
+  ProjectReaderPDF,
   PurchaseOrderPDF,
   PurchaseReturnOrderPDF,
   QuotePDF,
