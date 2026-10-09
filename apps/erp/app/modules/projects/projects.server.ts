@@ -151,6 +151,67 @@ export async function createProject(
   });
 }
 
+/**
+ * Creates the Service project of a service order, in the caller's
+ * transaction: Released (charges post from the first visit), By Coverage,
+ * named "<serial> — <customer>", with the order's readable id as its
+ * identifier, the order's customer and location, the coverage contract's
+ * project as its parent, and the six default states. Returns its id.
+ */
+export async function createServiceProject(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    userId: string;
+    serviceOrder: {
+      serviceOrderId: string;
+      serial: string;
+      customerName: string;
+      customerId: string;
+      locationId: string;
+      contractProjectId: string | null;
+    };
+  }
+): Promise<string> {
+  const { companyId, userId, serviceOrder } = args;
+  const project = await trx
+    .insertInto("project")
+    .values({
+      name: `${serviceOrder.serial} — ${serviceOrder.customerName}`,
+      identifier: serviceOrder.serviceOrderId,
+      projectType: "Service",
+      status: "Released",
+      costTreatment: "By Coverage",
+      customerId: serviceOrder.customerId,
+      locationId: serviceOrder.locationId,
+      parentProjectId: serviceOrder.contractProjectId,
+      priority: "None",
+      active: true,
+      companyId,
+      createdBy: userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+
+  await trx
+    .insertInto("projectState")
+    .values(
+      defaultProjectStates.map((state) => ({
+        projectId: project.id,
+        companyId,
+        name: state.name,
+        group: state.group,
+        color: state.color,
+        sortOrder: state.sortOrder,
+        isDefault: state.isDefault,
+        createdBy: userId
+      }))
+    )
+    .execute();
+
+  return project.id;
+}
+
 /** A new row id with the prefix the SQL `id()` default would give it. */
 const makeCopyId = (() => {
   const base58 = customAlphabet(
@@ -2883,45 +2944,58 @@ export async function buildElementsFromPart(
   db: Kysely<KyselyDatabase>,
   args: BuildFromPartArgs & { userId: string }
 ): Promise<{ count: number; skippedLines: number }> {
-  return db.transaction().execute(async (trx) => {
-    const target = await loadBuildTarget(trx, args, true);
-    const plan = await planBuildFromPart(client, trx, { ...args, ...target });
-    if (plan.rows.length === 0) {
-      return { count: 0, skippedLines: plan.skippedLines };
+  return db
+    .transaction()
+    .execute((trx) => insertElementsFromPart(client, trx, args));
+}
+
+/**
+ * The body of `buildElementsFromPart`, in the caller's transaction: a new
+ * service order builds its tree in the transaction that creates its project.
+ * `client` reads only an item's make method, never the project.
+ */
+export async function insertElementsFromPart(
+  client: SupabaseClient<Database>,
+  trx: KyselyTx,
+  args: BuildFromPartArgs & { userId: string }
+): Promise<{ count: number; skippedLines: number }> {
+  const target = await loadBuildTarget(trx, args, true);
+  const plan = await planBuildFromPart(client, trx, { ...args, ...target });
+  if (plan.rows.length === 0) {
+    return { count: 0, skippedLines: plan.skippedLines };
+  }
+
+  const audit = {
+    companyId: args.companyId,
+    projectId: args.projectId,
+    createdBy: args.userId
+  };
+  const insertRows = async (
+    table: "projectElement" | "projectElementLink",
+    rows: Record<string, unknown>[]
+  ) => {
+    for (let i = 0; i < rows.length; i += BUILD_INSERT_CHUNK) {
+      await trx
+        .insertInto(table as "projectElement")
+        .values(
+          rows
+            .slice(i, i + BUILD_INSERT_CHUNK)
+            .map((row) => ({ ...row, ...audit })) as never
+        )
+        .execute();
     }
+  };
+  await insertRows("projectElement", plan.rows);
+  await insertRows("projectElementLink", plan.links);
 
-    const audit = {
-      companyId: args.companyId,
-      projectId: args.projectId,
-      createdBy: args.userId
-    };
-    const insertRows = async (
-      table: "projectElement" | "projectElementLink",
-      rows: Record<string, unknown>[]
-    ) => {
-      for (let i = 0; i < rows.length; i += BUILD_INSERT_CHUNK) {
-        await trx
-          .insertInto(table as "projectElement")
-          .values(
-            rows
-              .slice(i, i + BUILD_INSERT_CHUNK)
-              .map((row) => ({ ...row, ...audit })) as never
-          )
-          .execute();
-      }
-    };
-    await insertRows("projectElement", plan.rows);
-    await insertRows("projectElementLink", plan.links);
+  await trx
+    .updateTable("project")
+    .set({ nextElementSequence: target.startSequence + plan.rows.length })
+    .where("id", "=", args.projectId)
+    .where("companyId", "=", args.companyId)
+    .execute();
 
-    await trx
-      .updateTable("project")
-      .set({ nextElementSequence: target.startSequence + plan.rows.length })
-      .where("id", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .execute();
-
-    return { count: plan.rows.length, skippedLines: plan.skippedLines };
-  });
+  return { count: plan.rows.length, skippedLines: plan.skippedLines };
 }
 
 export type ProjectVerification = {
