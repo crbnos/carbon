@@ -14,7 +14,12 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
-import type { Kysely, Transaction } from "kysely";
+import { type Kysely, sql, type Transaction } from "kysely";
+import {
+  collectItemExtras,
+  emptyItemExtras,
+  writeItemExtras
+} from "./item-extras";
 
 type Rec = Record<string, string>;
 type Summary = {
@@ -123,13 +128,15 @@ export async function importMethods(
   db: Kysely<KyselyDatabase>,
   args: {
     table: "bom" | "operations" | "partWithMethod";
-    mappedRecords: Rec[];
+    // The file's rows as [row number, record]: a row rejected earlier (a
+    // reference outside the company) is left out but keeps its number.
+    rows: Array<[number, Rec]>;
     companyId: string;
     userId: string;
     summary: Summary;
   }
 ): Promise<void> {
-  const { table, mappedRecords, companyId, userId, summary } = args;
+  const { table, rows, companyId, userId, summary } = args;
 
   // 1. classify + group by parent part ------------------------------------
   const groups = new Map<string, Group>();
@@ -156,14 +163,14 @@ export async function importMethods(
     return b;
   };
 
-  mappedRecords.forEach((record, index) => {
+  for (const [index, record] of rows) {
     const rowType = normalizeRowType(record.rowType, table);
     if (!rowType) {
       summary.errors.push({
         row: rowOf(index),
         reason: `Unknown or missing Row Type "${text(record.rowType)}"`
       });
-      return;
+      continue;
     }
 
     if (rowType === "PART") {
@@ -173,11 +180,11 @@ export async function importMethods(
           row: rowOf(index),
           reason: "PART row is missing Part Number"
         });
-        return;
+        continue;
       }
       const g = getGroup(readableId, text(record.revision), index);
       g.partRow = { record, index };
-      return;
+      continue;
     }
 
     // BOM / BOP / STEP / TOOL / PARAM — keyed to a parent part.
@@ -187,7 +194,7 @@ export async function importMethods(
         row: rowOf(index),
         reason: `${rowType} row is missing Parent ID`
       });
-      return;
+      continue;
     }
     const g = getGroup(parentId, text(record.parentRevision), index);
     const bucket = getBucket(g, text(record.makeMethodVersion));
@@ -197,7 +204,7 @@ export async function importMethods(
     else if (rowType === "STEP") bucket.step.push(entry);
     else if (rowType === "TOOL") bucket.tool.push(entry);
     else if (rowType === "PARAM") bucket.param.push(entry);
-  });
+  }
 
   if (groups.size === 0) return;
 
@@ -333,20 +340,19 @@ export async function importMethods(
         workCenterMap,
         supplierMap
       });
-      if (result.filledAny) {
-        // A new part counts as imported; an existing part as updated.
-        if (g.partRow) summary.inserted++;
-        else summary.updated++;
-      } else if (result.skippedExisting) {
-        // The targeted version already had content — create-only, never clobber.
-        // Benign: not something the user needs to fix, so it's a skip, not an error.
+      // Every row counts once: the PART row as inserted (a new item) or
+      // updated (an existing one), each method row written as inserted, and
+      // each row of a version that already had content as skipped.
+      if (result.partCreated === true) summary.inserted++;
+      else if (result.partCreated === false) summary.updated++;
+      summary.inserted += result.rowsInserted;
+      for (const { index, version } of result.skippedRows) {
+        // Create-only, never clobber. Benign: not something the user needs to
+        // fix, so it is a skip, not an error.
         summary.skipped.push({
-          row: rowOf(g.firstIndex),
-          reason: `Part ${partLabel} already has a method; skipped`
+          row: rowOf(index),
+          reason: `Part ${partLabel} already has a method${version ? ` (version ${version})` : ""}; skipped`
         });
-      } else if (g.partRow) {
-        // A PART row with no BOM/BOP rows — only the part itself was created.
-        summary.inserted++;
       }
     } catch (err) {
       summary.errors.push({
@@ -633,13 +639,20 @@ async function writeGroup(
     workCenterMap: Map<string, string>;
     supplierMap: Map<string, string>;
   }
-): Promise<{ filledAny: boolean; skippedExisting: boolean }> {
+): Promise<{
+  // Whether the PART row created the item (false: it already existed); null
+  // when the group has no PART row.
+  partCreated: boolean | null;
+  rowsInserted: number;
+  skippedRows: Array<{ index: number; version: string }>;
+}> {
   const { companyId, userId } = ctx;
   const now = () => datetime.timestamp();
 
   return await db.transaction().execute(async (trx) => {
-    let filledAny = false;
-    let skippedExisting = false;
+    let partCreated: boolean | null = null;
+    let rowsInserted = 0;
+    const skippedRows: Array<{ index: number; version: string }> = [];
 
     // Resolve (or create) the parent item.
     let parentItemId: string;
@@ -671,9 +684,11 @@ async function writeGroup(
             updatedBy: userId
           } as never)
         )
-        .returning(["id"])
+        // xmax = 0 only on a freshly inserted row, not on a conflict update.
+        .returning(["id", sql<boolean>`xmax = 0`.as("created")])
         .execute();
       parentItemId = inserted[0]!.id;
+      partCreated = Boolean(inserted[0]!.created);
 
       // The makeMethod Draft v1 is created by the AFTER INSERT trigger on item.
       // The part row links to the item by readableId (part.id = item.readableId).
@@ -690,6 +705,12 @@ async function writeGroup(
         ])
         .onConflict((oc) => oc.columns(["id", "companyId"]).doNothing())
         .execute();
+
+      // The supplier part, lead time, unit cost and order multiple the PART
+      // row carries, written as the part import writes them.
+      const extras = emptyItemExtras();
+      collectItemExtras(extras, parentItemId, r);
+      await writeItemExtras(trx, extras, companyId, userId);
     } else {
       const parent = ctx.itemMap.get(key(g.readableId, g.revision));
       parentItemId = parent!.id;
@@ -718,7 +739,15 @@ async function writeGroup(
         .limit(1)
         .executeTakeFirst();
       if (hasMaterial || hasOperation) {
-        skippedExisting = true;
+        for (const e of [
+          ...bucket.bom,
+          ...bucket.bop,
+          ...bucket.step,
+          ...bucket.tool,
+          ...bucket.param
+        ]) {
+          skippedRows.push({ index: e.index, version });
+        }
         continue;
       }
 
@@ -769,7 +798,7 @@ async function writeGroup(
           ])
           .execute();
         order++;
-        filledAny = true;
+        rowsInserted++;
       }
 
       // --- operations (BOP), keyed by Op No ---
@@ -826,7 +855,7 @@ async function writeGroup(
           .execute();
         opIdByNo.set(opNo, inserted[0]!.id);
         opIndex++;
-        filledAny = true;
+        rowsInserted++;
       }
 
       // --- steps / tools / parameters per operation ---
@@ -866,6 +895,7 @@ async function writeGroup(
             } as never
           ])
           .execute();
+        rowsInserted++;
       }
 
       for (const e of bucket.tool) {
@@ -891,6 +921,7 @@ async function writeGroup(
             } as never
           ])
           .execute();
+        rowsInserted++;
       }
 
       for (const e of bucket.param) {
@@ -909,10 +940,11 @@ async function writeGroup(
             } as never
           ])
           .execute();
+        rowsInserted++;
       }
     }
 
-    return { filledAny, skippedExisting };
+    return { partCreated, rowsInserted, skippedRows };
   });
 }
 

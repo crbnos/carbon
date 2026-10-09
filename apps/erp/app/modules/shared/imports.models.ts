@@ -1587,6 +1587,7 @@ export const fieldMappings = {
   // every row type's columns, so most cells are blank on any given row.
   partWithMethod: {
     ...partImportFields,
+    ...itemCostImportFields,
     ...methodParentKeyFields,
     rowType: { ...methodParentKeyFields.rowType, required: true },
     ...methodOpNoField,
@@ -1666,6 +1667,11 @@ export const fieldMappings = {
             .order("name");
         }
       }
+    },
+    processes: {
+      label: "Processes",
+      required: false,
+      type: "string"
     }
   },
   process: {
@@ -2175,7 +2181,8 @@ const methodPartSchema = {
   orderMultiple: z.string().optional(),
   conversionFactor: z.string().optional(),
   unitPrice: z.string().optional(),
-  leadTime: z.string().optional()
+  leadTime: z.string().optional(),
+  unitCost: z.string().optional()
 };
 
 // Zod fragments for the opening-stock imports. The mapping layer only checks a
@@ -2740,7 +2747,13 @@ export const importSchemas: Record<
     locationId: z
       .string()
       .min(1, { message: "Location is required" })
-      .describe("The location ID of the work center")
+      .describe("The location ID of the work center"),
+    processes: z
+      .string()
+      .optional()
+      .describe(
+        "Comma-separated names of the processes the work center runs. A filled cell replaces the work center's processes; a blank one leaves them as they are"
+      )
   }),
   process: z.object({
     id: z

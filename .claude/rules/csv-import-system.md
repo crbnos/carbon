@@ -106,6 +106,40 @@ legacy `serviceType: "External"` instead of `approved: true`. Both mirror
 `upsertService` in `items.service.ts`; the wizard's replenishment options are
 narrowed to `Buy | Make`, since "Buy and Make" is not a service.
 
+### Item extras (`import-csv/item-extras.ts`)
+
+An item row may also carry a supplier part (Supplier, Supplier Part ID,
+Supplier Unit of Measure, MOQ, Order Multiple, Conversion Factor, Unit Price),
+a purchasing Lead Time, a Unit Cost and an Order Multiple. `collectItemExtras`
+queues them once the item id is known and `writeItemExtras` writes them inside
+the caller's transaction: the supplier part is updated by (item, supplier) or
+inserted, `itemReplenishment.leadTime`, `itemCost.unitCost` and every
+location's `itemPlanning.orderMultiple` are updated (the item insert trigger
+created those rows). The item imports and the PART rows of `partWithMethod`
+share these functions, so a PART row writes exactly what a `part` row writes
+for the same columns. The PART row's item itself is still insert-or-touch:
+on a conflict only `updatedAt` / `updatedBy` change.
+
+### Method imports (`bom`, `operations`, `partWithMethod`)
+
+`method-import.ts`, atomic per parent part and create-only: a version that
+already has materials or operations is left alone. `partWithMethod` is in
+`REFERENCES` (its Supplier column), and `importMethods` receives only the rows
+that passed `rejectForeignReferences`, each with its file row number. Every row
+is counted once: a PART row as inserted (new item, `xmax = 0`) or updated, each
+BOM, BOP, STEP, TOOL and PARAM row written as inserted, and each row of a
+version that already had content as skipped.
+
+### Work center processes
+
+The `workCenter` import's Processes column holds comma-separated process names
+(`work-center-processes.ts`). Names resolve case- and whitespace-insensitively
+against the company's active processes, the list the form offers; an unknown
+or ambiguous name makes the row an error. A filled cell replaces the work
+center's `workCenterProcess` links, as `upsertWorkCenter` does on an edit; a
+blank cell leaves them alone. The import does not call
+`notifyScheduleInputsChanged`, which the work center routes call after a save.
+
 ### Storage-unit import (natural-key match + two-pass parent linking)
 
 `storageUnit` imports the fields `id` (Unique ID), `name`, `locationId` (Location,

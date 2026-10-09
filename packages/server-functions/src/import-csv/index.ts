@@ -15,9 +15,15 @@ import type { RequiredPermissions } from "../permissions";
 import { inChunks } from "./chunks";
 import { classifyImportRow } from "./classify-import-row";
 import { importConfigLookups } from "./config-lookup-import";
+import {
+  collectItemExtras,
+  emptyItemExtras,
+  writeItemExtras
+} from "./item-extras";
 import { importMaterialProperties } from "./material-property-import";
 import { importMethods } from "./method-import";
 import { importStockQuantities } from "./stock-quantity-import";
+import { processIdsByName, resolveProcessNames } from "./work-center-processes";
 
 const logger = getLogger("server-functions", "import-csv");
 
@@ -255,6 +261,7 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     }
   ],
   part: itemReferences,
+  partWithMethod: itemReferences,
   tool: itemReferences,
   fixture: itemReferences,
   consumable: itemReferences,
@@ -982,205 +989,6 @@ async function writeCustomerExtensions(
   }
 }
 
-/**
- * Idempotent supplierPart writes for the part/material/tool/fixture/consumable
- * import flow. One CSV row optionally creates one supplierPart link; re-imports
- * UPDATE the existing row (matched by (itemId, supplierId) per company).
- */
-type SupplierPartImportLink = {
-  itemId: string;
-  supplierId: string;
-  supplierPartId?: string;
-  supplierUnitOfMeasureCode?: string;
-  minimumOrderQuantity?: string;
-  orderMultiple?: string;
-  conversionFactor?: string;
-  unitPrice?: string;
-};
-
-type ItemPurchasingLeadTime = {
-  itemId: string;
-  leadTime: string;
-};
-
-type ItemUnitCost = {
-  itemId: string;
-  unitCost: string;
-};
-
-type ItemPlanningOrderMultiple = {
-  itemId: string;
-  orderMultiple: string;
-};
-
-async function writeSupplierPartLinks(
-  trx: Kysely<KyselyDatabase>,
-  links: SupplierPartImportLink[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (links.length === 0) return;
-  const itemIds = [...new Set(links.map((l) => l.itemId))];
-  const supplierIds = [...new Set(links.map((l) => l.supplierId))];
-  const existing = await trx
-    .selectFrom("supplierPart")
-    .select(["id", "itemId", "supplierId"])
-    .where("itemId", "in", itemIds)
-    .where("supplierId", "in", supplierIds)
-    .where("companyId", "=", companyId)
-    .execute();
-  const existingByPair = new Map(
-    existing.map((e) => [`${e.itemId}:${e.supplierId}`, e.id])
-  );
-
-  const now = datetime.timestamp();
-  for (const link of links) {
-    const key = `${link.itemId}:${link.supplierId}`;
-    const existingId = existingByPair.get(key);
-    const numericMOQ = link.minimumOrderQuantity
-      ? Number.parseInt(link.minimumOrderQuantity, 10)
-      : null;
-    const numericOrderMultiple = link.orderMultiple
-      ? Number.parseInt(link.orderMultiple, 10)
-      : null;
-    const numericConversion = link.conversionFactor
-      ? Number.parseFloat(link.conversionFactor)
-      : 1;
-    // The price is in the supplier part's currency: an existing part keeps
-    // its own, a new one is created in base (currencyCode NULL), which is
-    // what an imported price has always meant.
-    const numericPrice = link.unitPrice
-      ? Number.parseFloat(link.unitPrice)
-      : null;
-
-    if (existingId) {
-      await trx
-        .updateTable("supplierPart")
-        .set({
-          supplierPartId: link.supplierPartId || null,
-          supplierUnitOfMeasureCode: link.supplierUnitOfMeasureCode || null,
-          minimumOrderQuantity: numericMOQ,
-          orderMultiple: numericOrderMultiple,
-          conversionFactor: numericConversion,
-          supplierUnitPrice: numericPrice,
-          updatedAt: now,
-          updatedBy: userId
-        })
-        .where("id", "=", existingId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      await trx
-        .insertInto("supplierPart")
-        .values({
-          itemId: link.itemId,
-          supplierId: link.supplierId,
-          supplierPartId: link.supplierPartId || null,
-          supplierUnitOfMeasureCode: link.supplierUnitOfMeasureCode || null,
-          minimumOrderQuantity: numericMOQ,
-          orderMultiple: numericOrderMultiple,
-          conversionFactor: numericConversion,
-          supplierUnitPrice: numericPrice,
-          companyId,
-          createdBy: userId
-        })
-        .execute();
-    }
-  }
-}
-
-// Set the item-level purchasing lead time (the "Purchasing" tab field).
-// The itemReplenishment row is created by the create_item_related_records
-// AFTER INSERT trigger on item (default leadTime 7, per migration
-// 20250610000433_demand-planning.sql which renamed purchasingLeadTime →
-// leadTime), so within this transaction the row already exists for every
-// item we just upserted — we only need to UPDATE it.
-async function writeItemPurchasingLeadTimes(
-  trx: Kysely<KyselyDatabase>,
-  entries: ItemPurchasingLeadTime[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (entries.length === 0) return;
-  const now = datetime.timestamp();
-  for (const entry of entries) {
-    const numericLeadTime = Number.parseInt(entry.leadTime, 10);
-    if (Number.isNaN(numericLeadTime)) continue;
-    await trx
-      .updateTable("itemReplenishment")
-      .set({
-        leadTime: numericLeadTime,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .where("itemId", "=", entry.itemId)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-}
-
-// Set the item-level unit cost (the "Costing" tab field). The itemCost row is
-// created by the create_item_related_records AFTER INSERT trigger on item, so
-// within this transaction the row already exists for every item we upserted —
-// we only need to UPDATE it. Non-numeric/blank values are skipped.
-async function writeItemUnitCosts(
-  trx: Kysely<KyselyDatabase>,
-  entries: ItemUnitCost[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (entries.length === 0) return;
-  const now = datetime.timestamp();
-  for (const entry of entries) {
-    const numericUnitCost = Number.parseFloat(entry.unitCost);
-    if (Number.isNaN(numericUnitCost)) continue;
-    await trx
-      .updateTable("itemCost")
-      .set({
-        unitCost: numericUnitCost,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .where("itemId", "=", entry.itemId)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-}
-
-// Set the item-level planning order multiple. itemPlanning has one row per
-// (item, location) pair, all created by create_item_related_records at item
-// insert time (SELECT FROM location WHERE companyId = ...). A single UPDATE
-// scoped by itemId + companyId therefore covers every location row for that
-// item — matching the "order multiple is unique across every location"
-// expectation. Mirrors the same CSV value already written to
-// supplierPart.orderMultiple in writeSupplierPartLinks; both are intentionally
-// kept in sync at import time even though they're structurally distinct
-// fields (supplier case-pack vs MRP preferred multiple).
-async function writeItemPlanningOrderMultiples(
-  trx: Kysely<KyselyDatabase>,
-  entries: ItemPlanningOrderMultiple[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (entries.length === 0) return;
-  const now = datetime.timestamp();
-  for (const entry of entries) {
-    const numericOrderMultiple = Number.parseInt(entry.orderMultiple, 10);
-    if (Number.isNaN(numericOrderMultiple) || numericOrderMultiple < 1)
-      continue;
-    await trx
-      .updateTable("itemPlanning")
-      .set({
-        orderMultiple: numericOrderMultiple,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .where("itemId", "=", entry.itemId)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-}
-
 async function upsertTaxIdentifiers(
   trx: Kysely<KyselyDatabase>,
   table: "customerTax" | "supplierTax",
@@ -1831,34 +1639,15 @@ const importCsv = defineServerFn({
             data: Database["public"]["Tables"]["material"]["Update"];
           }[] = [];
 
-          // Optional supplier-part fields ride along on each row. Parallel to
-          // itemInserts; supplierPartLinks accumulates the full resolved
-          // links (with the item's actual DB id) as the inserts/updates land.
-          const supplierPartForInserts: Array<{
-            supplierId?: string;
-            supplierPartId?: string;
-            supplierUnitOfMeasureCode?: string;
-            minimumOrderQuantity?: string;
-            orderMultiple?: string;
-            conversionFactor?: string;
-            unitPrice?: string;
-          }> = [];
-          const supplierPartLinks: SupplierPartImportLink[] = [];
-          // Item-level purchasing lead times. leadTimeForInserts is parallel to
-          // itemInserts (filled in the insert branch); purchasingLeadTimes
-          // collects the final {itemId, leadTime} entries once item ids are
-          // known (immediately for updates, post-insert for new items).
-          const leadTimeForInserts: Array<string | undefined> = [];
-          const purchasingLeadTimes: ItemPurchasingLeadTime[] = [];
-          // Item-level unit cost — same parallel-array pattern as lead time.
-          const unitCostForInserts: Array<string | undefined> = [];
-          const itemUnitCosts: ItemUnitCost[] = [];
-          // Same shape for the item-level planning order multiple. CSV's
-          // "Order Multiple" column populates both supplierPart.orderMultiple
-          // (per-supplier case-pack) and itemPlanning.orderMultiple
-          // (per-(item, location) MRP setting) at import time.
-          const orderMultipleForInserts: Array<string | undefined> = [];
-          const itemPlanningOrderMultiples: ItemPlanningOrderMultiple[] = [];
+          // The supplier part, lead time, unit cost and order multiple each
+          // row carries (item-extras.ts). An existing item's extras are queued
+          // at once; a new item's row waits in extrasForInserts, parallel to
+          // itemInserts, until the insert returns its id. The CSV's "Order
+          // Multiple" populates both supplierPart.orderMultiple (per-supplier
+          // case-pack) and itemPlanning.orderMultiple (per-(item, location)
+          // MRP setting).
+          const extrasForInserts: CsvRecord[] = [];
+          const itemExtras = emptyItemExtras();
 
           const itemValidator = z.object({
             // Unique ID is the external-integration mapping key and the upsert
@@ -2105,41 +1894,9 @@ const importCsv = defineServerFn({
                 }
               });
 
-              // Existing item: we already know its id, so the supplierPart
-              // link can be queued directly.
-              if (record.supplierId) {
-                supplierPartLinks.push({
-                  itemId: existingEntityId,
-                  supplierId: record.supplierId,
-                  supplierPartId: record.supplierPartId,
-                  supplierUnitOfMeasureCode: record.supplierUnitOfMeasureCode,
-                  minimumOrderQuantity: record.minimumOrderQuantity,
-                  orderMultiple: record.orderMultiple,
-                  conversionFactor: record.conversionFactor,
-                  unitPrice: record.unitPrice
-                });
-              }
-
-              if (record.leadTime) {
-                purchasingLeadTimes.push({
-                  itemId: existingEntityId,
-                  leadTime: record.leadTime
-                });
-              }
-
-              if (record.unitCost) {
-                itemUnitCosts.push({
-                  itemId: existingEntityId,
-                  unitCost: record.unitCost
-                });
-              }
-
-              if (record.orderMultiple) {
-                itemPlanningOrderMultiples.push({
-                  itemId: existingEntityId,
-                  orderMultiple: record.orderMultiple
-                });
-              }
+              // Existing item: we already know its id, so its extras can be
+              // queued directly.
+              collectItemExtras(itemExtras, existingEntityId, record);
 
               if (table === "material") {
                 const material = materialValidator.safeParse(record);
@@ -2202,21 +1959,9 @@ const importCsv = defineServerFn({
               };
               itemInserts.push(newItem);
               csvIdsForInserts.push(getExternalId(id));
-              // New item: id will come back from the bulk insert. Capture
-              // supplier-part data and lead time in parallel arrays so we can
-              // build the link / lead-time entry once the id is known.
-              supplierPartForInserts.push({
-                supplierId: record.supplierId,
-                supplierPartId: record.supplierPartId,
-                supplierUnitOfMeasureCode: record.supplierUnitOfMeasureCode,
-                minimumOrderQuantity: record.minimumOrderQuantity,
-                orderMultiple: record.orderMultiple,
-                conversionFactor: record.conversionFactor,
-                unitPrice: record.unitPrice
-              });
-              leadTimeForInserts.push(record.leadTime);
-              orderMultipleForInserts.push(record.orderMultiple);
-              unitCostForInserts.push(record.unitCost);
+              // New item: its id comes back from the bulk insert, so the
+              // row's extras are queued once the id is known.
+              extrasForInserts.push(record);
 
               if (table === "material") {
                 const material = materialValidator.safeParse(record);
@@ -2358,44 +2103,13 @@ const importCsv = defineServerFn({
               );
             }
 
-            // Build supplier-part links and lead-time entries for the items we
-            // just inserted. supplierPartForInserts / leadTimeForInserts are
-            // parallel to itemInserts; only rows with a supplier produce a
-            // link, only rows with a lead time produce a lead-time entry.
+            // Queue the extras of the items just inserted. extrasForInserts is
+            // parallel to itemInserts.
             for (let i = 0; i < insertedItems.length; i++) {
-              const sp = supplierPartForInserts[i];
-              if (sp?.supplierId && insertedItems[i]!.id) {
-                supplierPartLinks.push({
-                  itemId: insertedItems[i]!.id!,
-                  supplierId: sp.supplierId,
-                  supplierPartId: sp.supplierPartId,
-                  supplierUnitOfMeasureCode: sp.supplierUnitOfMeasureCode,
-                  minimumOrderQuantity: sp.minimumOrderQuantity,
-                  orderMultiple: sp.orderMultiple,
-                  conversionFactor: sp.conversionFactor,
-                  unitPrice: sp.unitPrice
-                });
-              }
-              const leadTime = leadTimeForInserts[i];
-              if (leadTime && insertedItems[i]!.id) {
-                purchasingLeadTimes.push({
-                  itemId: insertedItems[i]!.id!,
-                  leadTime
-                });
-              }
-              const orderMultiple = orderMultipleForInserts[i];
-              if (orderMultiple && insertedItems[i]!.id) {
-                itemPlanningOrderMultiples.push({
-                  itemId: insertedItems[i]!.id!,
-                  orderMultiple
-                });
-              }
-              const unitCost = unitCostForInserts[i];
-              if (unitCost && insertedItems[i]!.id) {
-                itemUnitCosts.push({
-                  itemId: insertedItems[i]!.id!,
-                  unitCost
-                });
+              const itemId = insertedItems[i]?.id;
+              const record = extrasForInserts[i];
+              if (itemId && record) {
+                collectItemExtras(itemExtras, itemId, record);
               }
             }
           }
@@ -2460,28 +2174,7 @@ const importCsv = defineServerFn({
             }
           }
 
-          await writeSupplierPartLinks(
-            trx,
-            supplierPartLinks,
-            companyId,
-            userId
-          );
-
-          await writeItemPurchasingLeadTimes(
-            trx,
-            purchasingLeadTimes,
-            companyId,
-            userId
-          );
-
-          await writeItemPlanningOrderMultiples(
-            trx,
-            itemPlanningOrderMultiples,
-            companyId,
-            userId
-          );
-
-          await writeItemUnitCosts(trx, itemUnitCosts, companyId, userId);
+          await writeItemExtras(trx, itemExtras, companyId, userId);
 
           // Items were silently uncounted before — only customer/supplier
           // incremented the summary. Count inserts/updates here so the toast
@@ -2752,6 +2445,13 @@ const importCsv = defineServerFn({
           companyId
         );
         const workCenterIds = new Set();
+        const activeProcesses = await db
+          .selectFrom("process")
+          .select(["id", "name"])
+          .where("companyId", "=", companyId)
+          .where("active", "=", true)
+          .execute();
+        const processesByName = processIdsByName(activeProcesses);
 
         await db.transaction().execute(async (trx) => {
           const workCenterInserts: Database["public"]["Tables"]["workCenter"]["Insert"][] =
@@ -2761,6 +2461,14 @@ const importCsv = defineServerFn({
             id: string;
             data: Database["public"]["Tables"]["workCenter"]["Update"];
           }[] = [];
+          // The processes a filled Processes cell names: replaces the work
+          // center's links, as the form's Processes field does. Parallel to
+          // workCenterInserts for new work centers (null: leave them alone).
+          const processLinks: Array<{
+            workCenterId: string;
+            processIds: string[];
+          }> = [];
+          const processIdsForInserts: Array<string[] | null> = [];
 
           const isWorkCenterValid = (
             record: Record<string, string>
@@ -2776,12 +2484,26 @@ const importCsv = defineServerFn({
             );
           };
 
-          for (const [, record] of acceptedRows) {
+          for (const [rowIndex, record] of acceptedRows) {
             const { id, ...rest } = record;
+            const processes = resolveProcessNames(
+              rest.processes,
+              processesByName
+            );
+            if (processes && "error" in processes) {
+              summary.errors.push({ row: rowIndex, reason: processes.error });
+              continue;
+            }
             if (externalIdMap.has(id!)) {
               const existingEntityId = externalIdMap.get(id!)!;
               if (isWorkCenterValid(rest) && !workCenterIds.has(id)) {
                 workCenterIds.add(id);
+                if (processes) {
+                  processLinks.push({
+                    workCenterId: existingEntityId,
+                    processIds: processes.processIds
+                  });
+                }
                 workCenterUpdates.push({
                   id: existingEntityId,
                   data: {
@@ -2814,6 +2536,7 @@ const importCsv = defineServerFn({
                 createdBy: userId
               } as never);
               csvIdsForInserts.push(id!);
+              processIdsForInserts.push(processes?.processIds ?? null);
             }
           }
 
@@ -2843,6 +2566,12 @@ const importCsv = defineServerFn({
               companyId,
               userId
             );
+            inserted.forEach((row, i) => {
+              const processIds = processIdsForInserts[i];
+              if (row.id && processIds) {
+                processLinks.push({ workCenterId: row.id, processIds });
+              }
+            });
           }
           if (workCenterUpdates.length > 0) {
             for (const update of workCenterUpdates) {
@@ -2853,6 +2582,29 @@ const importCsv = defineServerFn({
                 .where("companyId", "=", companyId)
                 .execute();
             }
+          }
+          if (processLinks.length > 0) {
+            // Replace the links, as upsertWorkCenter does on an edit.
+            await trx
+              .deleteFrom("workCenterProcess")
+              .where(
+                "workCenterId",
+                "in",
+                processLinks.map((link) => link.workCenterId)
+              )
+              .where("companyId", "=", companyId)
+              .execute();
+            const links = processLinks.flatMap((link) =>
+              link.processIds.map((processId) => ({
+                workCenterId: link.workCenterId,
+                processId,
+                companyId,
+                createdBy: userId
+              }))
+            );
+            await inChunks(links, (rows) =>
+              trx.insertInto("workCenterProcess").values(rows).execute()
+            );
           }
         });
         break;
@@ -3343,9 +3095,11 @@ const importCsv = defineServerFn({
       case "bom":
       case "operations":
       case "partWithMethod": {
+        // Only the rows whose references passed the company check; each
+        // keeps its file row number.
         await importMethods(db, {
           table,
-          mappedRecords,
+          rows: acceptedRows,
           companyId,
           userId,
           summary
