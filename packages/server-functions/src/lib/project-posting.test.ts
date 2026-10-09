@@ -5,13 +5,15 @@
 import { describe, expect, it } from "vitest";
 import {
   assertChargeable,
+  buildBillableItem,
   buildProjectLedgerRow,
   ProjectChargeError,
   type ProjectPostingAsset,
   type ProjectPostingContext,
   type ProjectPostingElement,
   type ProjectPostingProject,
-  resolveProjectPostingAccount
+  resolveProjectPostingAccount,
+  reverseBillableItem
 } from "./project-posting";
 
 const defaults = {
@@ -352,5 +354,109 @@ describe("buildProjectLedgerRow", () => {
     expect(row.amount).toBe(510);
     expect(row.journalLineId).toBeNull();
     expect(row.reversalOfId).toBeNull();
+  });
+});
+
+describe("billable items", () => {
+  const ledgerRow = {
+    id: "pjl-1",
+    companyId: "co-1",
+    projectId: "prj-svc",
+    projectElementId: "el-1",
+    costType: "Labor" as const,
+    quantity: 2,
+    amount: 170,
+    itemId: null,
+    createdBy: "user-1"
+  };
+
+  it("prices 2 h of Labor at the service labor price", () => {
+    const item = buildBillableItem({
+      ledgerRow,
+      coverage: "Billable",
+      laborPrice: 95,
+      partPrice: null,
+      description: "Labor"
+    });
+    expect(item).toMatchObject({
+      projectLedgerId: "pjl-1",
+      quantity: 2,
+      unitPrice: 95,
+      amount: 190,
+      coverage: "Billable",
+      status: "Unbilled"
+    });
+  });
+
+  it("keeps a Warranty part on the invoice at price 0", () => {
+    const item = buildBillableItem({
+      ledgerRow: {
+        ...ledgerRow,
+        costType: "Material",
+        quantity: 3,
+        amount: 42,
+        itemId: "item-1"
+      },
+      coverage: "Warranty",
+      laborPrice: 95,
+      partPrice: 25,
+      description: "Gasket"
+    });
+    expect(item).toMatchObject({
+      itemId: "item-1",
+      quantity: 3,
+      unitPrice: 0,
+      amount: 0,
+      description: "Gasket (Covered by warranty)"
+    });
+    expect(
+      buildBillableItem({
+        ledgerRow,
+        coverage: "Capitalized",
+        laborPrice: 95,
+        partPrice: null,
+        description: "Labor"
+      })
+    ).toBeNull();
+  });
+
+  const billed = {
+    id: "pbi-1",
+    companyId: "co-1",
+    projectId: "prj-svc",
+    projectElementId: "el-1",
+    projectLedgerId: "pjl-1",
+    customerContractLineId: null,
+    itemId: null,
+    description: "Labor",
+    quantity: 2,
+    unitPrice: 95,
+    amount: 190,
+    coverage: "Billable" as const,
+    status: "Unbilled" as const,
+    createdBy: "user-1"
+  };
+
+  it("writes off an Unbilled item when its charge is reversed", () => {
+    expect(reverseBillableItem(billed)).toEqual({
+      update: { status: "Written Off", statusReason: "Reversed" }
+    });
+  });
+
+  it("credits a Billed item with a negative Unbilled copy", () => {
+    const { insert, update } = reverseBillableItem(
+      { ...billed, status: "Billed" },
+      { projectLedgerId: "pjl-2", createdBy: "user-2" }
+    );
+    expect(update).toBeUndefined();
+    expect(insert).toMatchObject({
+      projectLedgerId: "pjl-2",
+      quantity: -2,
+      unitPrice: 95,
+      amount: -190,
+      status: "Unbilled",
+      reversalOfId: "pbi-1",
+      createdBy: "user-2"
+    });
   });
 });

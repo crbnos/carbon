@@ -939,3 +939,257 @@ export async function reverseProjectLedgerRows(
     await trx.insertInto("projectLedger").values(reversals).execute();
   }
 }
+
+// ─── Service projects: coverage inputs and billable items ────────────────────
+
+/** What a charge on a Service project needs to decide its coverage and price. */
+export type ServicePostingContext = {
+  serviceOrderId: string;
+  orderType: Database["public"]["Enums"]["serviceOrderType"];
+  customerContractId: string | null;
+  customerAssetId: string | null;
+  laborWarrantyEndDate: string | null;
+  partsWarrantyEndDate: string | null;
+  /** The node's installed component: the open component holding its serial. */
+  componentId: string | null;
+  componentPartsWarrantyEndDate: string | null;
+  /** `companySettings.serviceLaborItemId` and its sale price; null when unset. */
+  laborItemId: string | null;
+  laborPrice: number | null;
+};
+
+/**
+ * The service order of a Service project, its asset's warranty, the node's
+ * installed component and the service labor price, in at most 3 queries.
+ * Null when no service order owns the project.
+ */
+export async function loadServicePostingContext(
+  trx: Kysely<DB>,
+  args: { companyId: string; projectId: string; elementId: string | null }
+): Promise<ServicePostingContext | null> {
+  const [order, labor] = await inOrder([
+    () =>
+      trx
+        .selectFrom("serviceOrder")
+        .leftJoin("customerAsset", (join) =>
+          join
+            .onRef("customerAsset.id", "=", "serviceOrder.customerAssetId")
+            .onRef("customerAsset.companyId", "=", "serviceOrder.companyId")
+        )
+        .select([
+          "serviceOrder.id",
+          "serviceOrder.type",
+          "serviceOrder.customerContractId",
+          "serviceOrder.customerAssetId",
+          "customerAsset.laborWarrantyEndDate",
+          "customerAsset.partsWarrantyEndDate"
+        ])
+        .where("serviceOrder.projectId", "=", args.projectId)
+        .where("serviceOrder.companyId", "=", args.companyId)
+        .executeTakeFirst(),
+    () =>
+      trx
+        .selectFrom("companySettings")
+        .leftJoin("itemUnitSalePrice", (join) =>
+          join
+            .onRef(
+              "itemUnitSalePrice.itemId",
+              "=",
+              "companySettings.serviceLaborItemId"
+            )
+            .onRef("itemUnitSalePrice.companyId", "=", "companySettings.id")
+        )
+        .select([
+          "companySettings.serviceLaborItemId",
+          "itemUnitSalePrice.unitSalePrice"
+        ])
+        .where("companySettings.id", "=", args.companyId)
+        .executeTakeFirst()
+  ]);
+  if (!order) return null;
+
+  // The node's serial, matched to the asset's open component in one query.
+  const component =
+    args.elementId && order.customerAssetId
+      ? await trx
+          .selectFrom("customerAssetComponent")
+          .innerJoin("projectElement", (join) =>
+            join
+              .onRef(
+                "projectElement.trackedEntityId",
+                "=",
+                "customerAssetComponent.trackedEntityId"
+              )
+              .onRef(
+                "projectElement.companyId",
+                "=",
+                "customerAssetComponent.companyId"
+              )
+          )
+          .select([
+            "customerAssetComponent.id",
+            "customerAssetComponent.partsWarrantyEndDate"
+          ])
+          .where("projectElement.id", "=", args.elementId)
+          .where(
+            "customerAssetComponent.customerAssetId",
+            "=",
+            order.customerAssetId
+          )
+          .where("customerAssetComponent.companyId", "=", args.companyId)
+          .where("customerAssetComponent.removedDate", "is", null)
+          .orderBy("customerAssetComponent.installedDate", "desc")
+          .executeTakeFirst()
+      : undefined;
+
+  const laborItemId = labor?.serviceLaborItemId ?? null;
+  return {
+    serviceOrderId: order.id,
+    orderType: order.type,
+    customerContractId: order.customerContractId,
+    customerAssetId: order.customerAssetId,
+    // DATE columns arrive as YYYY-MM-DD strings from node-postgres.
+    laborWarrantyEndDate: order.laborWarrantyEndDate ?? null,
+    partsWarrantyEndDate: order.partsWarrantyEndDate ?? null,
+    componentId: component?.id ?? null,
+    componentPartsWarrantyEndDate: component?.partsWarrantyEndDate ?? null,
+    laborItemId,
+    laborPrice:
+      laborItemId &&
+      labor?.unitSalePrice !== null &&
+      labor?.unitSalePrice !== undefined
+        ? Number(labor.unitSalePrice)
+        : null
+  };
+}
+
+type ProjectBillableItemInsert =
+  Database["public"]["Tables"]["projectBillableItem"]["Insert"];
+type ProjectBillableItemRow =
+  Database["public"]["Tables"]["projectBillableItem"]["Row"];
+
+const COVERED_NOTE: Partial<Record<ServiceCoverage, string>> = {
+  Warranty: "Covered by warranty",
+  Contract: "Covered by contract"
+};
+
+/**
+ * The billing row of one projectLedger row of a Service project, or null when
+ * the charge bills nothing (a Capitalized charge, or a cost type that is not
+ * time, a part or an expense).
+ * - Labor: hours at the service labor price.
+ * - Material: the quantity at the item's sale price.
+ * - Other Direct: one unit at the amount.
+ * - Warranty and Contract: price 0, with a "Covered by …" note.
+ */
+export function buildBillableItem(args: {
+  ledgerRow: Pick<
+    ProjectLedgerInsert,
+    | "companyId"
+    | "projectId"
+    | "projectElementId"
+    | "costType"
+    | "quantity"
+    | "amount"
+    | "itemId"
+    | "createdBy"
+  > & { id: string };
+  coverage: ServiceCoverage;
+  laborPrice: number | null;
+  partPrice: number | null;
+  description: string;
+}): ProjectBillableItemInsert | null {
+  const { ledgerRow, coverage } = args;
+  if (coverage === "Capitalized") return null;
+
+  let quantity: number;
+  let unitPrice: number;
+  switch (ledgerRow.costType) {
+    case "Labor":
+      quantity = Number(ledgerRow.quantity ?? 0);
+      unitPrice = args.laborPrice ?? 0;
+      break;
+    case "Material":
+      quantity = Number(ledgerRow.quantity ?? 0);
+      unitPrice = args.partPrice ?? 0;
+      break;
+    case "Other Direct":
+      quantity = 1;
+      unitPrice = Number(ledgerRow.amount);
+      break;
+    default:
+      return null;
+  }
+
+  const note = COVERED_NOTE[coverage];
+  if (note) unitPrice = 0;
+
+  return {
+    companyId: ledgerRow.companyId,
+    projectId: ledgerRow.projectId,
+    projectElementId: ledgerRow.projectElementId ?? null,
+    projectLedgerId: ledgerRow.id,
+    itemId: ledgerRow.itemId ?? null,
+    description: note ? `${args.description} (${note})` : args.description,
+    quantity: round(quantity),
+    unitPrice: round(unitPrice),
+    amount: round(quantity * unitPrice),
+    coverage,
+    status: "Unbilled",
+    createdBy: ledgerRow.createdBy
+  };
+}
+
+/**
+ * What reversing a charge does to its billable item:
+ * - not billed yet (Unbilled or On Hold): write it off with the reason "Reversed";
+ * - Billed: a negative Unbilled copy (`reversalOfId`), which the next invoice
+ *   credits. `projectLedgerId` is the reversing ledger row, when given.
+ * - Written Off: nothing.
+ */
+export function reverseBillableItem(
+  original: Pick<
+    ProjectBillableItemRow,
+    | "id"
+    | "companyId"
+    | "projectId"
+    | "projectElementId"
+    | "projectLedgerId"
+    | "customerContractLineId"
+    | "itemId"
+    | "description"
+    | "quantity"
+    | "unitPrice"
+    | "amount"
+    | "coverage"
+    | "status"
+    | "createdBy"
+  >,
+  reversal: { projectLedgerId?: string; createdBy?: string } = {}
+): {
+  update?: Pick<ProjectBillableItemInsert, "status" | "statusReason">;
+  insert?: ProjectBillableItemInsert;
+} {
+  if (original.status === "Unbilled" || original.status === "On Hold") {
+    return { update: { status: "Written Off", statusReason: "Reversed" } };
+  }
+  if (original.status !== "Billed") return {};
+  return {
+    insert: {
+      companyId: original.companyId,
+      projectId: original.projectId,
+      projectElementId: original.projectElementId,
+      projectLedgerId: reversal.projectLedgerId ?? original.projectLedgerId,
+      customerContractLineId: original.customerContractLineId,
+      itemId: original.itemId,
+      description: original.description,
+      quantity: round(-Number(original.quantity)),
+      unitPrice: round(Number(original.unitPrice)),
+      amount: round(-Number(original.amount)),
+      coverage: original.coverage,
+      status: "Unbilled",
+      reversalOfId: original.id,
+      createdBy: reversal.createdBy ?? original.createdBy
+    }
+  };
+}
