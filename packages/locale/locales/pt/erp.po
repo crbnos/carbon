@@ -1035,6 +1035,9 @@ msgstr "Um preço em um contrato de aluguel pelo qual o Cliente pode comprar a u
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Um orçamento de vendas com preço; Rascunho → Enviado → Pedido emitido, ou termina Perdido, Vencido ou Cancelado."
 
+msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+msgstr ""
+
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Uma fatura de compra é um documento que especifica os produtos ou serviços adquiridos por um cliente e o custo correspondente."
 
@@ -1467,6 +1470,9 @@ msgstr "contabilidade"
 
 msgid "Accounting"
 msgstr "Contabilidade"
+
+msgid "Accounting cutover"
+msgstr ""
 
 msgid "Accounting is not set up"
 msgstr "Contabilidade não está configurada"
@@ -2257,6 +2263,9 @@ msgstr "Um requisito de aprovação em uma não conformidade cujos revisores (En
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "O custo de aquisição de um ativo menos a depreciação acumulada — o que ainda vale nos livros e o valor em que é alienado."
+
+msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
+msgstr ""
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Uma automação que você constrói em uma tela: um gatilho, seguido por etapas que verificam condições, procuram registros e agem — notificando alguém, criando ou atualizando um registro, ou chamando uma URL externa."
@@ -3627,6 +3636,9 @@ msgstr "Lotes de Produção"
 
 msgid "Before cutover"
 msgstr "Antes da transição"
+
+msgid "Before cutover (journal)"
+msgstr ""
 
 msgid "Before You Activate"
 msgstr "Antes de Ativar"
@@ -7420,6 +7432,9 @@ msgstr "Documentos e atividade"
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr ""
 
+msgid "Documents posted before Carbon kept journals have no journal."
+msgstr ""
+
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "O recurso Documentos envia faturas, contas e pagamentos como documentos nativos do provedor; seus diários são registrados como cobertos pelo documento. Também puxa os pagamentos registrados no provedor de volta ao Carbon, fechando a fatura ou conta correspondente e contabilizando um diário de GL do Carbon. A opção Desativado registra-os como deliberadamente excluídos."
 
@@ -8483,6 +8498,9 @@ msgstr "Conta de patrimônio líquido para ajustes de conversão de moeda (CTA)"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Conta de patrimônio líquido que compensa os saldos iniciais quando a contabilidade é configurada. Deve totalizar zero."
+
+msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
+msgstr ""
 
 msgid "Error"
 msgstr "Erro"
@@ -12495,6 +12513,9 @@ msgstr "Migrando de outro sistema?"
 msgid "Migration Clearing"
 msgstr "Limpeza de Migração"
 
+msgid "Migration Clearing (default)"
+msgstr ""
+
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr ""
 
@@ -13443,8 +13464,8 @@ msgstr "Nenhum anexo padrão ainda."
 msgid "No deposit has been received for this agreement."
 msgstr "Nenhum depósito foi recebido para este acordo."
 
-msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
-msgstr "Nenhuma execução de depreciação ocorre antes da transição. Insira a depreciação acumulada de cada ativo fixo na data da transição."
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "Nenhum slot de dimensão configurado"
@@ -16001,6 +16022,9 @@ msgstr "Opção de provedor"
 
 msgid "Provisional"
 msgstr "Provisório"
+
+msgid "Provisional journal"
+msgstr ""
 
 msgid "Public"
 msgstr "Público"
@@ -18937,7 +18961,10 @@ msgstr "Definir Quantidade"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Defina a data de início do acordo para ver o tratamento contábil."
 
-msgid "Set the fiscal year settings and the base currency."
+msgid "Set the base currency."
+msgstr ""
+
+msgid "Set the fiscal year settings."
 msgstr ""
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
@@ -20789,8 +20816,17 @@ msgstr "Os clientes que entram em produção mais rapidamente dominam bem esses 
 msgid "The customers you sell and ship to"
 msgstr "Os clientes para os quais você vende e envia"
 
+msgid "The cutover date cannot be after today."
+msgstr ""
+
+msgid "The cutover date is not a valid date."
+msgstr ""
+
 msgid "The cutover date is valid"
 msgstr "A data de transição é válida"
+
+msgid "The cutover date must be the first day of a period."
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "O limite tracejado abaixo do qual você não deseja que o inventário caia."
@@ -20887,6 +20923,9 @@ msgstr "O arquivo enviado e os mapeamentos feitos serão perdidos."
 
 msgid "the first 3 to 4 weeks"
 msgstr "as primeiras 3 a 4 semanas"
+
+msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "O número fixo de unidades a inspecionar pela frente de cada lote, independentemente do tamanho do lote."

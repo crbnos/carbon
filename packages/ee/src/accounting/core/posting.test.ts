@@ -10,7 +10,9 @@ import {
   getDailyConsolidationNarration,
   getDimensionTupleKey,
   getPostingSyncSourceTypeSkipReason,
+  getZeroJournalSkipReason,
   isPaymentSyncbackEnabled,
+  isZeroJournal,
   JournalEntrySyncError,
   netJournalLinesPerAccount,
   resolvePostingSyncSettings,
@@ -753,5 +755,89 @@ describe("isPaymentSyncbackEnabled", () => {
     };
     expect(isPaymentSyncbackEnabled(meta, "ar")).toBe(true);
     expect(isPaymentSyncbackEnabled(meta, "ap")).toBe(false);
+  });
+});
+
+// ── Zero journals ────────────────────────────────────────────────────────────
+// Carbon writes a journal pair for an outbound inventory movement even at
+// zero cost. A journal whose every line is 0.00 books nothing, so a per-line
+// push skips it, and the daily summary never pushes an empty aggregate.
+
+describe("zero journals", () => {
+  it("skips a per-line journal whose every line is zero", () => {
+    const zeroPair = journal("j1", "2026-07-08", [
+      { accountId: "acct_a", amount: 0 },
+      { accountId: "acct_b", amount: -0 }
+    ]);
+
+    expect(isZeroJournal(zeroPair.lines)).toBe(true);
+    expect(getZeroJournalSkipReason(zeroPair)).toBe(
+      "Journal JE-j1 has no non-zero lines; there is nothing to post to the provider"
+    );
+  });
+
+  it("treats a sub-cent line as zero, at the 2dp balance precision", () => {
+    const subCent = journal("j1", "2026-07-08", [
+      { accountId: "acct_a", amount: 0.004 },
+      { accountId: "acct_b", amount: -0.004 }
+    ]);
+
+    expect(getZeroJournalSkipReason(subCent)).not.toBeNull();
+  });
+
+  it("still pushes a journal with one non-zero pair beside a zero pair", () => {
+    const mixed = journal("j1", "2026-07-08", [
+      { accountId: "acct_a", amount: 0 },
+      { accountId: "acct_b", amount: 0 },
+      { accountId: "acct_a", amount: 0.01 },
+      { accountId: "acct_b", amount: -0.01 }
+    ]);
+
+    expect(isZeroJournal(mixed.lines)).toBe(false);
+    expect(getZeroJournalSkipReason(mixed)).toBeNull();
+  });
+
+  it("does not push an empty daily aggregate (every account nets to zero)", () => {
+    const aggregate = aggregateJournalEntriesForDate({
+      batchId: "daily:xero:2026-07-08",
+      companyId: "co_1",
+      postingDate: "2026-07-08",
+      journals: [
+        journal("j1", "2026-07-08", [
+          { accountId: "acct_a", amount: 0 },
+          { accountId: "acct_b", amount: 0 }
+        ]),
+        journal("j2", "2026-07-08", [
+          { accountId: "acct_a", amount: 25 },
+          { accountId: "acct_b", amount: -25 }
+        ]),
+        journal("j3", "2026-07-08", [
+          { accountId: "acct_a", amount: -25 },
+          { accountId: "acct_b", amount: 25 }
+        ])
+      ]
+    });
+
+    expect(aggregate.journal.lines).toEqual([]);
+    expect(isZeroJournal(aggregate.journal.lines)).toBe(true);
+    expect(getZeroJournalSkipReason(aggregate.journal)).not.toBeNull();
+  });
+
+  it("keeps the zero rule out of the preflight, so a zero member nets into its daily batch", () => {
+    const result = runJournalEntryPreflight({
+      journal: journal("j1", "2026-07-08", [
+        { accountId: "acct_a", amount: 0 },
+        { accountId: "acct_b", amount: 0 }
+      ]),
+      accountCodesById: new Map([
+        ["acct_a", "1400"],
+        ["acct_b", "2100"]
+      ]),
+      controlAccountIds: new Set<string>(),
+      lockDate: null,
+      settings: resolvePostingSyncSettings(null)
+    });
+
+    expect(result.failure).toBeNull();
   });
 });

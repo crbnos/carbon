@@ -1035,6 +1035,9 @@ msgstr "A price on a rental agreement at which the customer can buy the unit, co
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 
+msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+msgstr "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 
@@ -1467,6 +1470,9 @@ msgstr "accounting"
 
 msgid "Accounting"
 msgstr "Accounting"
+
+msgid "Accounting cutover"
+msgstr "Accounting cutover"
 
 msgid "Accounting is not set up"
 msgstr "Accounting is not set up"
@@ -2257,6 +2263,9 @@ msgstr "An approval requirement on a non-conformance whose reviewers (seeded Eng
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
+
+msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
+msgstr "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
@@ -3627,6 +3636,9 @@ msgstr "Batching"
 
 msgid "Before cutover"
 msgstr "Before cutover"
+
+msgid "Before cutover (journal)"
+msgstr "Before cutover (journal)"
 
 msgid "Before You Activate"
 msgstr "Before You Activate"
@@ -7420,6 +7432,9 @@ msgstr "Documents and activity"
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr "Documents Posted Before Carbon Kept Journals"
 
+msgid "Documents posted before Carbon kept journals have no journal."
+msgstr "Documents posted before Carbon kept journals have no journal."
+
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 
@@ -8483,6 +8498,9 @@ msgstr "Equity account for currency translation adjustments (CTA)"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Equity account that offsets the opening balances when accounting is set up. It must total zero."
+
+msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
+msgstr "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
 
 msgid "Error"
 msgstr "Error"
@@ -12495,6 +12513,9 @@ msgstr "Migrating from another system?"
 msgid "Migration Clearing"
 msgstr "Migration Clearing"
 
+msgid "Migration Clearing (default)"
+msgstr "Migration Clearing (default)"
+
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 
@@ -13443,8 +13464,8 @@ msgstr "No default attachments yet."
 msgid "No deposit has been received for this agreement."
 msgstr "No deposit has been received for this agreement."
 
-msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
-msgstr "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
+msgstr "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 
 msgid "No dimension slots configured"
 msgstr "No dimension slots configured"
@@ -16001,6 +16022,9 @@ msgstr "Provider option"
 
 msgid "Provisional"
 msgstr "Provisional"
+
+msgid "Provisional journal"
+msgstr "Provisional journal"
 
 msgid "Public"
 msgstr "Public"
@@ -18937,8 +18961,11 @@ msgstr "Set Quantity"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Set the agreement's start date to see the accounting treatment."
 
-msgid "Set the fiscal year settings and the base currency."
-msgstr "Set the fiscal year settings and the base currency."
+msgid "Set the base currency."
+msgstr "Set the base currency."
+
+msgid "Set the fiscal year settings."
+msgstr "Set the fiscal year settings."
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
 msgstr "Set the Migration Clearing account to an active Equity account that is not a group."
@@ -20789,8 +20816,17 @@ msgstr "The customers who go live fastest own these well. The full ours/yours sp
 msgid "The customers you sell and ship to"
 msgstr "The customers you sell and ship to"
 
+msgid "The cutover date cannot be after today."
+msgstr "The cutover date cannot be after today."
+
+msgid "The cutover date is not a valid date."
+msgstr "The cutover date is not a valid date."
+
 msgid "The cutover date is valid"
 msgstr "The cutover date is valid"
+
+msgid "The cutover date must be the first day of a period."
+msgstr "The cutover date must be the first day of a period."
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "The dashed threshold you don't want inventory to fall below."
@@ -20887,6 +20923,9 @@ msgstr "The file you uploaded and the mappings you've made will be lost."
 
 msgid "the first 3 to 4 weeks"
 msgstr "the first 3 to 4 weeks"
+
+msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
+msgstr "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "The fixed number of units to inspect from the front of each lot, regardless of lot size."

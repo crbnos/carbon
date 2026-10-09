@@ -1035,6 +1035,9 @@ msgstr "एक किराये के समझौते पर एक मू
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "एक मूल्यवान बिक्री कोटेशन; ड्राफ्ट → भेजा गया → ऑर्डर किया गया, या खोया, समाप्त, या रद्द में समाप्त होता है।"
 
+msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+msgstr ""
+
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "एक क्रय चालान एक दस्तावेज है जो किसी ग्राहक द्वारा खरीदे गए उत्पादों या सेवाओं और संबंधित लागत को निर्दिष्ट करता है।"
 
@@ -1467,6 +1470,9 @@ msgstr "लेखांकन"
 
 msgid "Accounting"
 msgstr "लेखांकन"
+
+msgid "Accounting cutover"
+msgstr ""
 
 msgid "Accounting is not set up"
 msgstr "लेखांकन सेट अप नहीं है"
@@ -2257,6 +2263,9 @@ msgstr "एक गैर-अनुरूपता पर एक अनुमो�
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "किसी संपत्ति की अधिग्रहण लागत घटा संचित मूल्यह्रास — यह पुस्तकों पर अभी भी क्या मूल्य का है, और वह आंकड़ा जिस पर इसे निपटाया गया है।"
+
+msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
+msgstr ""
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "एक स्वचालन जो आप कैनवास पर बनाते हैं: एक ट्रिगर, फिर चरण जो शर्तों की जांच करते हैं, रिकॉर्ड देखते हैं, और कार्य करते हैं — किसी को सूचित करना, एक रिकॉर्ड बनाना या अपडेट करना, या बाहरी URL को कॉल करना।"
@@ -3627,6 +3636,9 @@ msgstr "बैचिंग"
 
 msgid "Before cutover"
 msgstr "कटओवर से पहले"
+
+msgid "Before cutover (journal)"
+msgstr ""
 
 msgid "Before You Activate"
 msgstr "सक्रिय करने से पहले"
@@ -7420,6 +7432,9 @@ msgstr "दस्तावेज़ और गतिविधि"
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr ""
 
+msgid "Documents posted before Carbon kept journals have no journal."
+msgstr ""
+
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "दस्तावेज़ चालान, बिल और भुगतान को नेटिव प्रदाता दस्तावेज़ के रूप में पुश करता है; उनकी जर्नल दस्तावेज़ द्वारा कवर किए गए के रूप में रिकॉर्ड की जाती है। यह प्रदाता में रिकॉर्ड किए गए भुगतान को Carbon में वापस पुल करता है, मिलान किए गए चालान या बिल को बंद करता है और एक Carbon सामान्य खाता बही जर्नल की पोस्टिंग करता है। बंद होने पर यह उन्हें जानबूझकर बाहर रखे जाने के रूप में रिकॉर्ड करता है।"
 
@@ -8483,6 +8498,9 @@ msgstr "मुद्रा रूपांतरण समायोजन के
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "इक्विटी खाता जो लेखांकन सेट अप होने पर खुली शेष राशि को ऑफसेट करता है। यह कुल शून्य होना चाहिए।"
+
+msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
+msgstr ""
 
 msgid "Error"
 msgstr "त्रुटि"
@@ -12495,6 +12513,9 @@ msgstr "दूसरे सिस्टम से माइग्रेट क�
 msgid "Migration Clearing"
 msgstr "माइग्रेशन साफी"
 
+msgid "Migration Clearing (default)"
+msgstr ""
+
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr ""
 
@@ -13443,8 +13464,8 @@ msgstr "अभी तक कोई डिफ़ॉल्ट अनुलग्�
 msgid "No deposit has been received for this agreement."
 msgstr "इस समझौते के लिए कोई जमा राशि प्राप्त नहीं हुई है।"
 
-msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
-msgstr "कटऑवर से पहले कोई मूल्यह्रास चलान नहीं होता। कटऑवर तारीख तक प्रत्येक संपत्ति का संचित मूल्यह्रास दर्ज करें।"
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "कोई आयाम स्लॉट कॉन्फ़िगर नहीं किया गया"
@@ -16001,6 +16022,9 @@ msgstr "प्रदाता विकल्प"
 
 msgid "Provisional"
 msgstr "अनंतिम"
+
+msgid "Provisional journal"
+msgstr ""
 
 msgid "Public"
 msgstr "सार्वजनिक"
@@ -18937,7 +18961,10 @@ msgstr "मात्रा निर्धारित करें"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "लेखांकन उपचार देखने के लिए समझौते की प्रारंभ तिथि निर्धारित करें।"
 
-msgid "Set the fiscal year settings and the base currency."
+msgid "Set the base currency."
+msgstr ""
+
+msgid "Set the fiscal year settings."
 msgstr ""
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
@@ -20789,8 +20816,17 @@ msgstr "जो ग्राहक सबसे तेजी से लाइव 
 msgid "The customers you sell and ship to"
 msgstr "जिन ग्राहकों को आप बेचते और भेजते हैं"
 
+msgid "The cutover date cannot be after today."
+msgstr ""
+
+msgid "The cutover date is not a valid date."
+msgstr ""
+
 msgid "The cutover date is valid"
 msgstr "कटओवर की तारीख मान्य है।"
+
+msgid "The cutover date must be the first day of a period."
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "डैश्ड थ्रेसहोल्ड जिसके नीचे आप इन्वेंटरी नहीं गिरना चाहते।"
@@ -20887,6 +20923,9 @@ msgstr "आपके द्वारा अपलोड की गई फ़ा�
 
 msgid "the first 3 to 4 weeks"
 msgstr "पहले 3 से 4 सप्ताह"
+
+msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "लॉट के आगे से निरीक्षण करने के लिए इकाइयों की निश्चित संख्या, लॉट के आकार की परवाह किए बिना।"

@@ -1035,6 +1035,9 @@ msgstr "得意先がその資産を購入できる賃貸借契約上の価格で
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "価格付き販売見積。下書き→送信→発注済、または失注・期限切れ・キャンセル済で終了。"
 
+msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+msgstr ""
+
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "仕入先請求書は、得意先によって購入された製品またはサービス、および対応する原価を指定する文書です。"
 
@@ -1467,6 +1470,9 @@ msgstr "会計"
 
 msgid "Accounting"
 msgstr "会計"
+
+msgid "Accounting cutover"
+msgstr ""
 
 msgid "Accounting is not set up"
 msgstr "会計がセットアップされていません"
@@ -2257,6 +2263,9 @@ msgstr "不適合への承認要件。レビュアー（事前設定されたエ
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "資産の取得原価から減価償却累計額を差し引いた額。帳簿上の現在価値であり、除却時の計上額です"
+
+msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
+msgstr ""
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "キャンバス上に構築するオートメーション：1つのトリガーと、その後の条件チェック、レコード検索、アクションを実行するステップ — 誰かに通知、レコード作成または更新、または外部URLの呼び出し。"
@@ -3627,6 +3636,9 @@ msgstr "バッチ処理"
 
 msgid "Before cutover"
 msgstr "カットオーバー前"
+
+msgid "Before cutover (journal)"
+msgstr ""
 
 msgid "Before You Activate"
 msgstr "活性化する前に"
@@ -7420,6 +7432,9 @@ msgstr "ドキュメントと活動"
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr ""
 
+msgid "Documents posted before Carbon kept journals have no journal."
+msgstr ""
+
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "ドキュメントはネイティブプロバイダ文書として請求書および支払をプッシュします。それらの仕訳は文書でカバーされたものとして記録されます。また、プロバイダで記録された支払をCarbonに取り込み、対応する請求書をクローズし、Carbon総勘定元帳仕訳を転記します。オフはそれらを意図的に除外したものとして記録します。"
 
@@ -8483,6 +8498,9 @@ msgstr "通貨換算調整（CTA）のための純資産勘定科目"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "会計がセットアップされるときに開始残高を相殺する純資産アカウント。合計がゼロである必要があります。"
+
+msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
+msgstr ""
 
 msgid "Error"
 msgstr "エラー"
@@ -12495,6 +12513,9 @@ msgstr "別のシステムから移行していますか？"
 msgid "Migration Clearing"
 msgstr "マイグレーションクリアリング"
 
+msgid "Migration Clearing (default)"
+msgstr ""
+
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr ""
 
@@ -13443,8 +13464,8 @@ msgstr "まだデフォルト添付ファイルがありません。"
 msgid "No deposit has been received for this agreement."
 msgstr "この契約の前受金が受け取られていません。"
 
-msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
-msgstr "カットオーバーの前に減価償却の実行が行われていません。カットオーバー日時点での各資産の減価償却累計額を入力してください。"
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "ディメンションスロットが構成されていません"
@@ -16001,6 +16022,9 @@ msgstr "プロバイダーオプション"
 
 msgid "Provisional"
 msgstr "暫定"
+
+msgid "Provisional journal"
+msgstr ""
 
 msgid "Public"
 msgstr "公開"
@@ -18937,7 +18961,10 @@ msgstr "数量を設定"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "契約の開始日を設定して会計処理を表示してください。"
 
-msgid "Set the fiscal year settings and the base currency."
+msgid "Set the base currency."
+msgstr ""
+
+msgid "Set the fiscal year settings."
 msgstr ""
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
@@ -20789,8 +20816,17 @@ msgstr "最速で本番運用を開始した得意先は、これらの設定を
 msgid "The customers you sell and ship to"
 msgstr "販売し出荷する得意先"
 
+msgid "The cutover date cannot be after today."
+msgstr ""
+
+msgid "The cutover date is not a valid date."
+msgstr ""
+
 msgid "The cutover date is valid"
 msgstr "切替日は有効です。"
+
+msgid "The cutover date must be the first day of a period."
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "在庫が下回らないようにしたいダッシュ付きの閾値。"
@@ -20887,6 +20923,9 @@ msgstr "アップロードしたファイルと設定したマッピングは失
 
 msgid "the first 3 to 4 weeks"
 msgstr "最初の3～4週間"
+
+msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "ロットサイズに関係なく、各ロットの前面から検査する固定単位数。"

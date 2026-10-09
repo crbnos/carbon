@@ -1035,6 +1035,9 @@ msgstr "Цена в договоре аренды, по которой Поку�
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Котировка продажи с ценой; Черновик → Отправлено → Заказано, либо завершается как Проиграно, Истек срок или Отменено."
 
+msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+msgstr ""
+
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Счет-фактура полученная — это документ, который определяет товары или услуги, приобретенные покупателем, и соответствующую себестоимость."
 
@@ -1467,6 +1470,9 @@ msgstr "бухгалтерия"
 
 msgid "Accounting"
 msgstr "Бухгалтерия"
+
+msgid "Accounting cutover"
+msgstr ""
 
 msgid "Accounting is not set up"
 msgstr "Бухгалтерия не настроена"
@@ -2257,6 +2263,9 @@ msgstr "Требование утверждения на несоответст�
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Стоимость приобретения основного средства за вычетом накопленной амортизации — его остаточная стоимость в учете и сумма, по которой оно выбывает."
+
+msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
+msgstr ""
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Автоматизация, которую вы создаете на холсте: один триггер, затем шаги, которые проверяют условия, ищут записи и действуют — уведомляя кого-то, создавая или обновляя запись или вызывая внешний URL."
@@ -3627,6 +3636,9 @@ msgstr "Объединение в серии"
 
 msgid "Before cutover"
 msgstr "До переключения"
+
+msgid "Before cutover (journal)"
+msgstr ""
 
 msgid "Before You Activate"
 msgstr "Перед активацией"
@@ -7420,6 +7432,9 @@ msgstr "Документы и деятельность"
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr ""
 
+msgid "Documents posted before Carbon kept journals have no journal."
+msgstr ""
+
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "«Документы» отправляет счета-фактуры, счета и платежи как встроенные документы провайдера; их операции помечаются как соответствующие документу. Также он вытягивает платежи, записанные в провайдере, обратно в Carbon, закрывая соответствующие счет-фактуру или счет и проводя операцию главной книги Carbon. При отключении они записываются как намеренно исключенные."
 
@@ -8483,6 +8498,9 @@ msgstr "Счет собственного капитала для коррект
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Счет собственного капитала, компенсирующий начальные остатки при установке бухгалтерии. Сумма должна быть равна нулю."
+
+msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
+msgstr ""
 
 msgid "Error"
 msgstr "Ошибка"
@@ -12495,6 +12513,9 @@ msgstr "Миграция из другой системы?"
 msgid "Migration Clearing"
 msgstr "Переводная разница миграции"
 
+msgid "Migration Clearing (default)"
+msgstr ""
+
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr ""
 
@@ -13443,8 +13464,8 @@ msgstr "Пока нет вложений по умолчанию."
 msgid "No deposit has been received for this agreement."
 msgstr "Авансовый платеж не получен по этому соглашению."
 
-msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
-msgstr "До даты переходу амортизация не начисляется. Введите накопленную амортизацию каждого основного средства на дату переходу."
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "Слоты измерений не настроены"
@@ -16001,6 +16022,9 @@ msgstr "Параметр провайдера"
 
 msgid "Provisional"
 msgstr "Предварительный"
+
+msgid "Provisional journal"
+msgstr ""
 
 msgid "Public"
 msgstr "Публичный"
@@ -18937,7 +18961,10 @@ msgstr "Установить количество"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Установите дату начала соглашения для просмотра бухгалтерской обработки."
 
-msgid "Set the fiscal year settings and the base currency."
+msgid "Set the base currency."
+msgstr ""
+
+msgid "Set the fiscal year settings."
 msgstr ""
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
@@ -20789,8 +20816,17 @@ msgstr "Покупатели, которые быстрее других вне�
 msgid "The customers you sell and ship to"
 msgstr "Покупатели, которым вы продаете и отправляете товары"
 
+msgid "The cutover date cannot be after today."
+msgstr ""
+
+msgid "The cutover date is not a valid date."
+msgstr ""
+
 msgid "The cutover date is valid"
 msgstr "Дата переходит допустима"
+
+msgid "The cutover date must be the first day of a period."
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Пунктирный порог, ниже которого вы не хотите, чтобы опускался инвентарь."
@@ -20887,6 +20923,9 @@ msgstr "Загруженный файл и созданные сопоставл
 
 msgid "the first 3 to 4 weeks"
 msgstr "первые 3–4 недели"
+
+msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Фиксированное количество единиц для проверки с передней части каждой партии, независимо от размера партии."

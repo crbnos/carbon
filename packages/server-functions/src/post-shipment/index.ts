@@ -2237,52 +2237,52 @@ const postShipment = defineServerFn({
                     })
                     .execute();
 
-                  if (cogsResult.totalCost > 0) {
-                    const journalLineReference = nanoid();
-                    const item = items.data.find((i) => i.id === itemId);
-                    const inventoryAccount = resolveInventoryAccount(
-                      item?.replenishmentSystem ?? null,
-                      accountDefaults.data
-                    );
-                    journalLineInserts.push({
-                      accountId: accountDefaults.data.costOfGoodsSoldAccount,
-                      description: "Cost of Goods Sold",
-                      amount: round(debit("expense", cogsResult.totalCost)),
-                      quantity: round(quantity),
-                      documentType: "Return Order",
-                      documentId: shipmentHeader.id ?? undefined,
-                      documentLineReference: journalReference.to.shipment(
-                        shipmentHeader.id ?? ""
-                      ),
-                      journalLineReference,
-                      companyId
-                    });
-                    journalLineInserts.push({
-                      accountId: inventoryAccount.account,
-                      description: inventoryAccount.description,
-                      amount: round(credit("asset", cogsResult.totalCost)),
-                      quantity: round(quantity),
-                      documentType: "Return Order",
-                      documentId: shipmentHeader.id ?? undefined,
-                      documentLineReference: journalReference.to.shipment(
-                        shipmentHeader.id ?? ""
-                      ),
-                      journalLineReference,
-                      companyId
-                    });
-                    // Two journal lines were pushed for this item — one
-                    // dimension meta entry each, index-aligned.
-                    const meta = {
-                      itemId,
-                      itemPostingGroupId:
-                        itemCosts.data.find((c) => c.itemId === itemId)
-                          ?.itemPostingGroupId ?? null,
-                      locationId: shipmentHeader.locationId,
-                      customerId: salesReturnOrder.data.customerId,
-                      customerTypeId
-                    };
-                    journalLineDimensionsMeta.push(meta, { ...meta });
-                  }
+                  // Written even at zero cost: the accounting cutover's re-cost revalues
+                  // this outbound row against its journal pair.
+                  const journalLineReference = nanoid();
+                  const item = items.data.find((i) => i.id === itemId);
+                  const inventoryAccount = resolveInventoryAccount(
+                    item?.replenishmentSystem ?? null,
+                    accountDefaults.data
+                  );
+                  journalLineInserts.push({
+                    accountId: accountDefaults.data.costOfGoodsSoldAccount,
+                    description: "Cost of Goods Sold",
+                    amount: round(debit("expense", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipmentHeader.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipmentHeader.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId
+                  });
+                  journalLineInserts.push({
+                    accountId: inventoryAccount.account,
+                    description: inventoryAccount.description,
+                    amount: round(credit("asset", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipmentHeader.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipmentHeader.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId
+                  });
+                  // Two journal lines were pushed for this item — one
+                  // dimension meta entry each, index-aligned.
+                  const meta = {
+                    itemId,
+                    itemPostingGroupId:
+                      itemCosts.data.find((c) => c.itemId === itemId)
+                        ?.itemPostingGroupId ?? null,
+                    locationId: shipmentHeader.locationId,
+                    customerId: salesReturnOrder.data.customerId,
+                    customerTypeId
+                  };
+                  journalLineDimensionsMeta.push(meta, { ...meta });
                 }
 
                 if (journalLineInserts.length > 0) {
@@ -2816,53 +2816,53 @@ const postShipment = defineServerFn({
                     })
                     .execute();
 
-                  if (cogsResult.totalCost > 0) {
-                    const journalLineReference = nanoid();
-                    const item = items.data.find((i) => i.id === itemId);
-                    const inventoryAccount = resolveInventoryAccount(
-                      item?.replenishmentSystem ?? null,
-                      accountDefaults.data
-                    );
-                    journalLineInserts.push({
-                      accountId:
-                        accountDefaults.data.goodsReceivedNotInvoicedAccount,
-                      description: "Goods Received Not Invoiced",
-                      amount: round(debit("liability", cogsResult.totalCost)),
-                      quantity: round(quantity),
-                      documentType: "Return Order",
-                      documentId: shipmentHeader.id ?? undefined,
-                      documentLineReference: journalReference.to.shipment(
-                        shipmentHeader.id ?? ""
-                      ),
-                      journalLineReference,
-                      companyId
-                    });
-                    journalLineInserts.push({
-                      accountId: inventoryAccount.account,
-                      description: inventoryAccount.description,
-                      amount: round(credit("asset", cogsResult.totalCost)),
-                      quantity: round(quantity),
-                      documentType: "Return Order",
-                      documentId: shipmentHeader.id ?? undefined,
-                      documentLineReference: journalReference.to.shipment(
-                        shipmentHeader.id ?? ""
-                      ),
-                      journalLineReference,
-                      companyId
-                    });
-                    // Two journal lines were pushed for this item — one
-                    // dimension meta entry each, index-aligned.
-                    const meta = {
-                      itemId,
-                      itemPostingGroupId:
-                        itemCosts.data.find((c) => c.itemId === itemId)
-                          ?.itemPostingGroupId ?? null,
-                      locationId: shipmentHeader.locationId,
-                      supplierId: purchaseReturnOrder.data.supplierId,
-                      supplierTypeId
-                    };
-                    journalLineDimensionsMeta.push(meta, { ...meta });
-                  }
+                  // Written even at zero cost: the accounting cutover's re-cost revalues
+                  // this outbound row against its journal pair.
+                  const journalLineReference = nanoid();
+                  const item = items.data.find((i) => i.id === itemId);
+                  const inventoryAccount = resolveInventoryAccount(
+                    item?.replenishmentSystem ?? null,
+                    accountDefaults.data
+                  );
+                  journalLineInserts.push({
+                    accountId:
+                      accountDefaults.data.goodsReceivedNotInvoicedAccount,
+                    description: "Goods Received Not Invoiced",
+                    amount: round(debit("liability", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipmentHeader.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipmentHeader.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId
+                  });
+                  journalLineInserts.push({
+                    accountId: inventoryAccount.account,
+                    description: inventoryAccount.description,
+                    amount: round(credit("asset", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipmentHeader.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipmentHeader.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId
+                  });
+                  // Two journal lines were pushed for this item — one
+                  // dimension meta entry each, index-aligned.
+                  const meta = {
+                    itemId,
+                    itemPostingGroupId:
+                      itemCosts.data.find((c) => c.itemId === itemId)
+                        ?.itemPostingGroupId ?? null,
+                    locationId: shipmentHeader.locationId,
+                    supplierId: purchaseReturnOrder.data.supplierId,
+                    supplierTypeId
+                  };
+                  journalLineDimensionsMeta.push(meta, { ...meta });
                 }
 
                 if (journalLineInserts.length > 0) {

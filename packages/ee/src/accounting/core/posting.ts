@@ -577,6 +577,26 @@ export function getPostingSyncSourceTypeSkipReason(
   return decision.message;
 }
 
+/**
+ * A provider journal syncer's zero-journal gate, for per-line pushes.
+ * Returns the skip reason when every line of the journal is 0.00, else
+ * null. The syncer returns the reason from `shouldSync`, so the drain
+ * closes the operation `Skipped` with the reason in `errorMessage` and no
+ * `errorCode` — the same outcome as every other "nothing to push" gate.
+ * Skipped is terminal for the period-close sync check, and the reconciler
+ * does not plan a journal that already has an operation.
+ *
+ * Keep this out of `runJournalEntryPreflight`: the daily consolidation runs
+ * that preflight on each member, and a zero member must net into the day,
+ * not be ejected as a failure.
+ */
+export function getZeroJournalSkipReason(
+  journal: Pick<Accounting.JournalEntry, "journalEntryId" | "lines">
+): string | null {
+  if (!isZeroJournal(journal.lines)) return null;
+  return `Journal ${journal.journalEntryId} has no non-zero lines; there is nothing to post to the provider`;
+}
+
 // /********************************************************\
 // *              Reversal entity-id contract               *
 // \********************************************************/
@@ -759,6 +779,20 @@ export function isBalancedJournal(
     0
   );
   return cents === 0;
+}
+
+/**
+ * A journal is zero when every line rounds to 0.00 — the same 2dp
+ * precision `isBalancedJournal` uses. A journal with no lines is zero too.
+ * Carbon writes a journal pair for an outbound inventory movement even at
+ * zero cost, and the cutover backfill writes zero pairs, so this case is
+ * routine. A zero journal books nothing, and some providers reject a
+ * manual journal whose lines are all zero.
+ */
+export function isZeroJournal(
+  lines: ReadonlyArray<Pick<Accounting.JournalEntryLine, "amount">>
+): boolean {
+  return lines.every((line) => roundCurrency(line.amount) === 0);
 }
 
 /**

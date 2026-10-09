@@ -1035,6 +1035,9 @@ msgstr "Müşterinin birimi satın alabileceği bir kiralama sözleşmesi üzeri
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Fiyatlandırılmış satış teklifi; Taslak → Gönderilen → Sipariş edildi, ya da Kaybedildi, Süresi doldu veya İptal edildi ile sonlanır."
 
+msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+msgstr ""
+
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "Alış faturası, bir müşteri tarafından satın alınan ürün veya hizmetleri ve bunlara karşılık gelen maliyeti belirten belgedir."
 
@@ -1467,6 +1470,9 @@ msgstr "muhasebe"
 
 msgid "Accounting"
 msgstr "Muhasebe"
+
+msgid "Accounting cutover"
+msgstr ""
 
 msgid "Accounting is not set up"
 msgstr "Muhasebe kurulu değil"
@@ -2257,6 +2263,9 @@ msgstr "Sorun kapanmadan önce gözden geçirenler (Mühendislik ve Kalite) onay
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Bir varlığın edinme maliyeti eksi birikmiş amortisman — defterler üzerinde hala ne kadar değerli olduğu ve elden çıkarıldığı rakam."
+
+msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
+msgstr ""
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Bir kanvas üzerinde oluşturduğunuz bir otomasyon: bir tetikleyici, ardından koşulları kontrol eden, kayıtları arayan ve hareket eden adımlar — birini bilgilendiren, bir kaydı oluşturan veya güncelleyen veya dış bir URL çağırma."
@@ -3627,6 +3636,9 @@ msgstr "Partileme"
 
 msgid "Before cutover"
 msgstr "Devir öncesi"
+
+msgid "Before cutover (journal)"
+msgstr ""
 
 msgid "Before You Activate"
 msgstr "Etkinleştirmeden Önce"
@@ -7420,6 +7432,9 @@ msgstr "Belgeler ve aktivite"
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr ""
 
+msgid "Documents posted before Carbon kept journals have no journal."
+msgstr ""
+
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Belgeler, faturaları, fatura bedelleri ve ödemeleri yerel sağlayıcı belgeleri olarak gönderir; muhasebe fişleri belge tarafından kapsandığı olarak kaydedilir. Ayrıca sağlayıcıda kaydedilen ödemeleri Carbon'a geri çeker, eşleşen faturayı kapatır ve bir Carbon Büyük defter muhasebe fişi muhasebeleştirir. Kapalı, bunları kasıtlı olarak dışarıda bırakılanlar olarak kaydeder."
 
@@ -8483,6 +8498,9 @@ msgstr "Kur çevrimi düzeltmeleri (CTA) için özkaynak hesabı"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Muhasebe kurulduğunda açılış bakiyelerini dengelemek için özkaynak hesabı. Toplam sıfır olması gerekir."
+
+msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
+msgstr ""
 
 msgid "Error"
 msgstr "Hata"
@@ -12495,6 +12513,9 @@ msgstr "Başka bir sistemden taşınıyor mu?"
 msgid "Migration Clearing"
 msgstr "Geçiş Temizliği"
 
+msgid "Migration Clearing (default)"
+msgstr ""
+
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr ""
 
@@ -13443,8 +13464,8 @@ msgstr "Henüz varsayılan ek dosya yok."
 msgid "No deposit has been received for this agreement."
 msgstr "Bu anlaşma için depozito alınmamıştır."
 
-msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
-msgstr "Cutover'dan ön amortisman çalışması yapılmaz. Her bir varlığın cutover tarihi itibariyle birikmiş amortismanını giriniz."
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "Yapılandırılmış boyut yuvası yok"
@@ -16001,6 +16022,9 @@ msgstr "Sağlayıcı seçeneği"
 
 msgid "Provisional"
 msgstr "Geçici"
+
+msgid "Provisional journal"
+msgstr ""
 
 msgid "Public"
 msgstr "Herkese açık"
@@ -18937,7 +18961,10 @@ msgstr "Miktarı Ayarla"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Muhasebe işlemini görmek için sözleşmenin başlangıç tarihini ayarlayın."
 
-msgid "Set the fiscal year settings and the base currency."
+msgid "Set the base currency."
+msgstr ""
+
+msgid "Set the fiscal year settings."
 msgstr ""
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
@@ -20789,8 +20816,17 @@ msgstr "En hızlı canlı yayına geçen müşteriler bunları iyi bilirler. Tam
 msgid "The customers you sell and ship to"
 msgstr "Sattığınız ve sevk ettiğiniz müşteriler"
 
+msgid "The cutover date cannot be after today."
+msgstr ""
+
+msgid "The cutover date is not a valid date."
+msgstr ""
+
 msgid "The cutover date is valid"
 msgstr "Kesinti tarihi geçerli"
+
+msgid "The cutover date must be the first day of a period."
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Envanteri aşağısına düşmesini istemediğiniz kesikli eşik."
@@ -20887,6 +20923,9 @@ msgstr "Yüklediğiniz dosya ve yaptığınız eşleştirmeler kaybolacak."
 
 msgid "the first 3 to 4 weeks"
 msgstr "ilk 3 ila 4 hafta"
+
+msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Parti büyüklüğüne bakılmaksızın her Lot'un başından muayene edilecek sabit Adet sayısı."

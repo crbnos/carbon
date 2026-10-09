@@ -1035,6 +1035,9 @@ msgstr "고객이 장비를 구매할 수 있는 임차료 계약상의 가격�
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "가격이 책정된 판매 견적으로 초안 → 전송됨 → 발주됨 또는 실주, 만료됨, 취소됨으로 끝납니다."
 
+msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+msgstr ""
+
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "매입 송장은 고객이 구매한 제품 또는 서비스와 해당 원가를 명시한 문서입니다."
 
@@ -1467,6 +1470,9 @@ msgstr "회계"
 
 msgid "Accounting"
 msgstr "회계"
+
+msgid "Accounting cutover"
+msgstr ""
 
 msgid "Accounting is not set up"
 msgstr "회계가 설정되지 않았습니다"
@@ -2257,6 +2263,9 @@ msgstr "부적합에 대한 승인 요구사항으로, 미리 설정된 설계 �
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "자산의 취득원가에서 감가상각누계액을 뺀 값 — 장부상 남은 가치이며 처분 시 사용되는 금액입니다."
+
+msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
+msgstr ""
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "캔버스에서 빌드하는 자동화: 하나의 트리거와 조건을 확인하고 레코드를 조회한 후 누군가에게 알림을 보내거나 레코드를 생성 또는 업데이트하거나 외부 URL을 호출하는 단계들."
@@ -3627,6 +3636,9 @@ msgstr "배치 처리"
 
 msgid "Before cutover"
 msgstr "기준일 이전"
+
+msgid "Before cutover (journal)"
+msgstr ""
 
 msgid "Before You Activate"
 msgstr "활성화 전에"
@@ -7420,6 +7432,9 @@ msgstr "문서 및 활동"
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr ""
 
+msgid "Documents posted before Carbon kept journals have no journal."
+msgstr ""
+
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "문서는 송장, 청구서 및 지불을 기본 제공자 문서로 푸시합니다. 해당 전표는 문서로 커버되는 것으로 기록됩니다. 또한 제공자에 기록된 지불을 Carbon으로 다시 가져와 일치하는 송장 또는 청구서를 닫고 Carbon 총계정원장 전표를 전기합니다. 끄기는 이를 의도적으로 제외된 것으로 기록합니다."
 
@@ -8483,6 +8498,9 @@ msgstr "통화 환산 조정용 자본 계정 (CTA)"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "회계가 설정될 때 개시 잔액을 상쇄하는 자본 계정. 총계는 0이어야 합니다."
+
+msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
+msgstr ""
 
 msgid "Error"
 msgstr "오류"
@@ -12495,6 +12513,9 @@ msgstr "다른 시스템에서 마이그레이션 중입니까?"
 msgid "Migration Clearing"
 msgstr "마이그레이션 정산"
 
+msgid "Migration Clearing (default)"
+msgstr ""
+
 msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
 msgstr ""
 
@@ -13443,8 +13464,8 @@ msgstr "기본 첨부 파일이 아직 없습니다."
 msgid "No deposit has been received for this agreement."
 msgstr "이 계약에 대해 보증금이 수령되지 않았습니다."
 
-msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the cutover date."
-msgstr "정산일 이전에 감가상각이 실행되지 않았습니다. 정산일 기준 각 자산의 감가상각누계액을 입력하십시오."
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
+msgstr ""
 
 msgid "No dimension slots configured"
 msgstr "구성된 차원 슬롯이 없습니다"
@@ -16001,6 +16022,9 @@ msgstr "제공자 옵션"
 
 msgid "Provisional"
 msgstr "임시"
+
+msgid "Provisional journal"
+msgstr ""
 
 msgid "Public"
 msgstr "공개"
@@ -18937,7 +18961,10 @@ msgstr "수량 설정"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "회계 처리를 확인하려면 계약의 시작일을 설정하세요."
 
-msgid "Set the fiscal year settings and the base currency."
+msgid "Set the base currency."
+msgstr ""
+
+msgid "Set the fiscal year settings."
 msgstr ""
 
 msgid "Set the Migration Clearing account to an active Equity account that is not a group."
@@ -20789,8 +20816,17 @@ msgstr "가장 빠르게 도입에 성공하는 고객은 이 항목들을 잘 �
 msgid "The customers you sell and ship to"
 msgstr "판매 및 배송 대상 고객"
 
+msgid "The cutover date cannot be after today."
+msgstr ""
+
+msgid "The cutover date is not a valid date."
+msgstr ""
+
 msgid "The cutover date is valid"
 msgstr "전환 날짜가 유효합니다."
+
+msgid "The cutover date must be the first day of a period."
+msgstr ""
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "재고가 이 아래로 내려가지 않기를 원하는 점선 임계값입니다."
@@ -20887,6 +20923,9 @@ msgstr "업로드한 파일과 설정한 매핑이 손실됩니다."
 
 msgid "the first 3 to 4 weeks"
 msgstr "처음 3~4주"
+
+msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "로트 크기와 관계없이 각 로트의 앞부분에서 검사할 고정된 유닛 수입니다."
