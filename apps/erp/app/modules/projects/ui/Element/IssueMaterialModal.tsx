@@ -227,6 +227,10 @@ export function IssueMaterialModal({
   projectId,
   element,
   defaultLocationId,
+  defaultStorageUnitId,
+  action = path.to.projectIssue,
+  hiddenFields,
+  variant = "project",
   onClose
 }: {
   /** Fixed charge number; leave both out to pick one (Inventory). */
@@ -239,6 +243,14 @@ export function IssueMaterialModal({
     itemId?: string | null;
   };
   defaultLocationId?: string | null;
+  /** The storage unit to issue from first, such as the technician's van. */
+  defaultStorageUnitId?: string | null;
+  /** The route that posts the issue (a service order's charge route). */
+  action?: string;
+  /** Extra values the action reads, such as `intent`. */
+  hiddenFields?: Record<string, string>;
+  /** A service order speaks of the order, never of a project. */
+  variant?: "project" | "service";
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -248,7 +260,9 @@ export function IssueMaterialModal({
   const [locationId, setLocationId] = useState<string | null>(
     defaultLocationId ?? user.defaults.locationId ?? null
   );
-  const [storageUnitId, setStorageUnitId] = useState<string | null>(null);
+  const [storageUnitId, setStorageUnitId] = useState<string | null>(
+    defaultStorageUnitId ?? null
+  );
   const [direction, setDirection] = useState<Direction>("Issue");
 
   const fetcher = useAction<{
@@ -293,14 +307,14 @@ export function IssueMaterialModal({
         <ValidatedForm
           validator={projectIssueValidator}
           method="post"
-          action={path.to.projectIssue}
+          action={action}
           fetcher={fetcher}
           defaultValues={{
             projectId: projectId ?? "",
             projectElementId: element?.id,
             itemId: "",
             locationId: locationId ?? "",
-            storageUnitId: undefined,
+            storageUnitId: defaultStorageUnitId ?? undefined,
             trackedEntityId: undefined,
             quantity: 1,
             direction: "Issue"
@@ -325,6 +339,9 @@ export function IssueMaterialModal({
                   <AlertDescription>{errorMessage}</AlertDescription>
                 </Alert>
               )}
+              {Object.entries(hiddenFields ?? {}).map(([name, value]) => (
+                <Hidden key={name} name={name} value={value} />
+              ))}
               {isFixed ? (
                 <>
                   <Hidden name="projectId" />
@@ -337,7 +354,13 @@ export function IssueMaterialModal({
                 name="direction"
                 label={t`Direction`}
                 options={[
-                  { value: "Issue", label: t`Issue to the project` },
+                  {
+                    value: "Issue",
+                    label:
+                      variant === "service"
+                        ? t`Issue to the service order`
+                        : t`Issue to the project`
+                  },
                   { value: "Return", label: t`Return to stock` }
                 ]}
                 onChange={(option) =>

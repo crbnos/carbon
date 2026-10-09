@@ -87,6 +87,10 @@ msgstr ""
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# node will be created} other {# nodes will be created}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operasyon için zaman standardı yok}}"
@@ -1826,6 +1830,9 @@ msgstr "Ücret Ekle"
 msgid "Add child"
 msgstr ""
 
+msgid "Add Child Node"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "Alt Depolama Birimi Ekle"
 
@@ -1858,6 +1865,9 @@ msgstr "Çalışan Ekle"
 
 msgid "Add Entry"
 msgstr "Giri Ekle"
+
+msgid "Add Expense"
+msgstr ""
 
 msgid "Add from library…"
 msgstr "Kütüphaneden ekle…"
@@ -1918,6 +1928,9 @@ msgstr "Model Ekle"
 
 msgid "Add Month"
 msgstr "Ay Ekle"
+
+msgid "Add Node"
+msgstr ""
 
 msgid "Add Note"
 msgstr "Not Ekle"
@@ -2834,6 +2847,10 @@ msgstr "Bu ölçüm aletini devre dışı bırakmak istediğinizden emin misiniz
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "Bu kullanıcıyı devre dışı bırakmak istediğinizden emin misiniz?"
+
+#. placeholder {0}: deleting.readableId
+msgid "Are you sure you want to delete {0} and the nodes under it? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -3795,6 +3812,12 @@ msgstr "Fatura Adresi"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Bir kısmi dönem ilk olarak olmak üzere, tam ayları, çeyrekleri veya yılları faturala."
 
+msgid "Billable"
+msgstr ""
+
+msgid "Billed"
+msgstr ""
+
 msgid "Billed Externally"
 msgstr "Harici Olarak Faturalandırıldı"
 
@@ -3997,6 +4020,9 @@ msgstr "Rol tabanlı eğitim materyalleri oluşturun"
 
 msgid "Build tailored, role-based training materials"
 msgstr "Özelleştirilmiş, rol tabanlı eğitim materyalleri oluşturun"
+
+msgid "Build Tree"
+msgstr ""
 
 msgid "Built after this step"
 msgstr "Bu adımdan sonra inşa edildi"
@@ -4280,6 +4306,9 @@ msgstr "Sabit Kıymet Olarak Aktifleştir"
 
 msgid "Capitalize Asset"
 msgstr "Varlığı Aktifleştir"
+
+msgid "Capitalized"
+msgstr ""
 
 msgid "Caption"
 msgstr "Başlık"
@@ -4647,6 +4676,9 @@ msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
 
 msgid "Choose a source to see the elements it creates."
+msgstr ""
+
+msgid "Choose a source to see the nodes it creates."
 msgstr ""
 
 #. placeholder {0}: op.description
@@ -6073,6 +6105,9 @@ msgstr "Yeni oluştur"
 msgid "Create new rule"
 msgstr "Yeni kural oluştur"
 
+msgid "Create nodes"
+msgstr ""
+
 msgid "Create Operator"
 msgstr "Operatör oluştur"
 
@@ -6112,6 +6147,9 @@ msgstr "Tedarikçi İadesi Oluştur"
 msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
 msgstr ""
 
+msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6131,6 +6169,9 @@ msgid "Created"
 msgstr "Oluşturulma"
 
 msgid "Created {count} elements from the part"
+msgstr ""
+
+msgid "Created {count} nodes from the part"
 msgstr ""
 
 msgid "Created <0/>"
@@ -7187,6 +7228,9 @@ msgstr "Notu Sil"
 
 msgid "Delete Month"
 msgstr "Ayı Sil"
+
+msgid "Delete Node"
+msgstr ""
 
 msgid "Delete Part"
 msgstr "Parçayı Sil"
@@ -9186,6 +9230,9 @@ msgstr "{target} iş emrini {date}'ye hızlandır"
 msgid "Expedite purchase order {target} to {date}"
 msgstr "{target} satın alma siparişini {date}'ye hızlandır"
 
+msgid "Expense"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Alacak hesapları uzlaşması sırasında tahsil edilemez olarak silinen müşteri bakiyeleri için gider hesabı"
 
@@ -9353,6 +9400,9 @@ msgid "Failed to add lines"
 msgstr "Satırlar ekleme başarısız oldu"
 
 msgid "Failed to add the link"
+msgstr ""
+
+msgid "Failed to add the node"
 msgstr ""
 
 msgid "Failed to apply pricing rules"
@@ -9972,6 +10022,9 @@ msgstr "Sabit maliyet amortisman sapması parti boyutu standarttan farklı oldu�
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Muhasebe dönemleri bir kez nakliye yapıldığında veya kapatıldığında sabitlenir. Değiştirmek için tüm açık dönemleri silin."
+
+msgid "Fixed Price"
+msgstr ""
 
 msgid "Fixed Reorder"
 msgstr "Sabit Yeniden Sipariş"
@@ -11613,6 +11666,9 @@ msgstr ""
 msgid "Issue not found"
 msgstr "Sorun bulunamadı"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "Sorun Durumu"
 
@@ -11629,6 +11685,9 @@ msgid "Issue to Project"
 msgstr ""
 
 msgid "Issue to the project"
+msgstr ""
+
+msgid "Issue to the service order"
 msgstr ""
 
 msgid "Issue Trend"
@@ -12049,6 +12108,9 @@ msgid "Last Run"
 msgstr "Son Çalıştırma"
 
 msgid "Last Service"
+msgstr ""
+
+msgid "Last service <0/>"
 msgstr ""
 
 msgid "Last synced: <0/>"
@@ -13385,6 +13447,9 @@ msgstr "Karar verme yetkisine sahip bir dahili proje sahibi belirleyin"
 msgid "Name the new element, then press Enter"
 msgstr ""
 
+msgid "Name the node"
+msgstr ""
+
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Adlar, bu rollerin hub genelinde referans verildiği her yerde doldurulur."
 
@@ -13471,6 +13536,9 @@ msgstr "Ağ hatası"
 
 msgid "Never"
 msgstr "Asla"
+
+msgid "Never serviced"
+msgstr ""
 
 msgid "New"
 msgstr "Yeni"
@@ -14692,6 +14760,15 @@ msgstr "Bu lokasyonda İş merkezi yok"
 msgid "No work centers exist"
 msgstr "İş merkezi bulunmamaktadır"
 
+msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "Node"
+msgstr ""
+
+msgid "Node type"
+msgstr ""
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -14824,6 +14901,9 @@ msgstr "MES'te henüz hiçbir şey tamamlanmadı"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
+
+msgid "Nothing has been charged to this node yet."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
@@ -15627,6 +15707,9 @@ msgstr "Geçersiz kılma"
 msgid "Override Classification"
 msgstr "Sınıflandırmayı Geçersiz Kıl"
 
+msgid "Override Coverage"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Geçersiz kılma işlemi inventory:update İzni ve bir neden gerektirir"
 
@@ -15738,6 +15821,9 @@ msgstr "Üst Öğe"
 
 msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
 msgstr "Ana ürünler. (Aşağıdaki ana parçalardan birine tıklarsanız, bu ürünü o parçanın malzeme listesinde bir bileşen olarak göreceksiniz.)"
+
+msgid "Parent node"
+msgstr ""
 
 msgid "Parent Storage Unit"
 msgstr "Üst Depolama Birimi"
@@ -18556,6 +18642,9 @@ msgstr "Hasılat Başlangıcı"
 
 msgid "Revenue Type"
 msgstr "Hasılat Türü"
+
+msgid "Reversal"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -21707,6 +21796,9 @@ msgstr "Bu müşterinin ait olduğu kategori (OEM, distribütör, son kullanıc�
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Bu tedarikçinin ait olduğu kategori (hammadde, hizmetler, sözleşmeli üretici); varsayılan GL hesaplarını ve rapor gruplandırmalarını belirler."
 
+msgid "The charge moves to the new coverage, and its cost to that coverage's account."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Seçilen Hizmet Satırları, bunları kendi çizelgesine göre faturalandıran yeni bir Taslak sözleşmeye taşınır. Sipariş bunları Faturalandı olarak sayar."
 
@@ -23619,6 +23711,11 @@ msgstr "Faturalanmamış:"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Sayılmayan satırlar gönderide değiştirilmeden bırakılır — sıfırlanmaz."
+
+#. placeholder {0}: parent.readableId
+#. placeholder {1}: parent.name
+msgid "Under {0} {1}"
+msgstr ""
 
 msgid "Under Construction"
 msgstr "İnşaat Aşamasında"

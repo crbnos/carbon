@@ -87,6 +87,10 @@ msgstr ""
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# node will be created} other {# nodes will be created}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
@@ -1826,6 +1830,9 @@ msgstr "添加 费用"
 msgid "Add child"
 msgstr ""
 
+msgid "Add Child Node"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "添加子存储单元"
 
@@ -1858,6 +1865,9 @@ msgstr "添加员工"
 
 msgid "Add Entry"
 msgstr "添加条目"
+
+msgid "Add Expense"
+msgstr ""
 
 msgid "Add from library…"
 msgstr "从库中添加…"
@@ -1918,6 +1928,9 @@ msgstr "添加模型"
 
 msgid "Add Month"
 msgstr "添加月份"
+
+msgid "Add Node"
+msgstr ""
 
 msgid "Add Note"
 msgstr "添加备注"
@@ -2834,6 +2847,10 @@ msgstr "确定要停用此量具吗？"
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "你确定要停用此用户吗？"
+
+#. placeholder {0}: deleting.readableId
+msgid "Are you sure you want to delete {0} and the nodes under it? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -3795,6 +3812,12 @@ msgstr "账单收款人"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "按整月、整季度或整年开票，可先按部分期间"
 
+msgid "Billable"
+msgstr ""
+
+msgid "Billed"
+msgstr ""
+
 msgid "Billed Externally"
 msgstr "已外部计费"
 
@@ -3997,6 +4020,9 @@ msgstr "构建基于角色的培训材料"
 
 msgid "Build tailored, role-based training materials"
 msgstr "构建定制的、基于角色的培训材料"
+
+msgid "Build Tree"
+msgstr ""
 
 msgid "Built after this step"
 msgstr "在此步骤之后构建"
@@ -4280,6 +4306,9 @@ msgstr "作为固定资产资本化"
 
 msgid "Capitalize Asset"
 msgstr "资本化资产"
+
+msgid "Capitalized"
+msgstr ""
 
 msgid "Caption"
 msgstr "标题"
@@ -4647,6 +4676,9 @@ msgid "Choose a serial number"
 msgstr "选择序列号"
 
 msgid "Choose a source to see the elements it creates."
+msgstr ""
+
+msgid "Choose a source to see the nodes it creates."
 msgstr ""
 
 #. placeholder {0}: op.description
@@ -6073,6 +6105,9 @@ msgstr "新建"
 msgid "Create new rule"
 msgstr "创建新规则"
 
+msgid "Create nodes"
+msgstr ""
+
 msgid "Create Operator"
 msgstr "创建操作员"
 
@@ -6112,6 +6147,9 @@ msgstr "创建供应商退货"
 msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
 msgstr ""
 
+msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6131,6 +6169,9 @@ msgid "Created"
 msgstr "已创建"
 
 msgid "Created {count} elements from the part"
+msgstr ""
+
+msgid "Created {count} nodes from the part"
 msgstr ""
 
 msgid "Created <0/>"
@@ -7187,6 +7228,9 @@ msgstr "删除备忘录"
 
 msgid "Delete Month"
 msgstr "删除月份"
+
+msgid "Delete Node"
+msgstr ""
 
 msgid "Delete Part"
 msgstr "删除零件"
@@ -9186,6 +9230,9 @@ msgstr "加快工单 {target} 至 {date}"
 msgid "Expedite purchase order {target} to {date}"
 msgstr "加快采购订单 {target} 至 {date}"
 
+msgid "Expense"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "应收账款结算时作为无法收回的客户余额的费用账户"
 
@@ -9353,6 +9400,9 @@ msgid "Failed to add lines"
 msgstr "添加行失败"
 
 msgid "Failed to add the link"
+msgstr ""
+
+msgid "Failed to add the node"
 msgstr ""
 
 msgid "Failed to apply pricing rules"
@@ -9972,6 +10022,9 @@ msgstr "当批量与标准不符时的固定成本摊销差异"
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "一旦会计期间已过账或已关闭即被固定。删除所有未结期间以更改它。"
+
+msgid "Fixed Price"
+msgstr ""
 
 msgid "Fixed Reorder"
 msgstr "固定重新订购"
@@ -11613,6 +11666,9 @@ msgstr ""
 msgid "Issue not found"
 msgstr "问题未找到"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "问题状态"
 
@@ -11629,6 +11685,9 @@ msgid "Issue to Project"
 msgstr ""
 
 msgid "Issue to the project"
+msgstr ""
+
+msgid "Issue to the service order"
 msgstr ""
 
 msgid "Issue Trend"
@@ -12049,6 +12108,9 @@ msgid "Last Run"
 msgstr "最后运行"
 
 msgid "Last Service"
+msgstr ""
+
+msgid "Last service <0/>"
 msgstr ""
 
 msgid "Last synced: <0/>"
@@ -13385,6 +13447,9 @@ msgstr "指定具有决策权的内部项目负责人"
 msgid "Name the new element, then press Enter"
 msgstr ""
 
+msgid "Name the node"
+msgstr ""
+
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "名称会在整个中心内引用这些角色的任何地方填入。"
 
@@ -13471,6 +13536,9 @@ msgstr "网络错误"
 
 msgid "Never"
 msgstr "永不"
+
+msgid "Never serviced"
+msgstr ""
 
 msgid "New"
 msgstr "新建"
@@ -14692,6 +14760,15 @@ msgstr "此地点没有工作中心"
 msgid "No work centers exist"
 msgstr "没有工作中心存在"
 
+msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "Node"
+msgstr ""
+
+msgid "Node type"
+msgstr ""
+
 msgid "Nom"
 msgstr "标称值"
 
@@ -14824,6 +14901,9 @@ msgstr "MES中尚未完成任何内容"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
+
+msgid "Nothing has been charged to this node yet."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "没有与您的搜索和过滤条件匹配的内容。"
@@ -15627,6 +15707,9 @@ msgstr "覆盖"
 msgid "Override Classification"
 msgstr "覆盖分类"
 
+msgid "Override Coverage"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "覆盖需要库存管理:更新权限和原因。"
 
@@ -15738,6 +15821,9 @@ msgstr "父项目"
 
 msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
 msgstr "父级物料。（如果您点击下面的一个父级零件，您将看到此物料作为组件包含在物料清单中。）"
+
+msgid "Parent node"
+msgstr ""
 
 msgid "Parent Storage Unit"
 msgstr "父存储单元"
@@ -18556,6 +18642,9 @@ msgstr "收入开始"
 
 msgid "Revenue Type"
 msgstr "收入类型"
+
+msgid "Reversal"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -21707,6 +21796,9 @@ msgstr "此客户所属的类别（OEM、分销商、最终用户、内部）；
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "此供应商所属的类别（原材料、服务、合同制造商）；确定默认GL账户和报告分组。"
 
+msgid "The charge moves to the new coverage, and its cost to that coverage's account."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "所选的服务行转移到新的草稿合同，该合同将按排程为其开票。订单将其记为已开票。"
 
@@ -23619,6 +23711,11 @@ msgstr "未开票："
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未计数的行在过账时保持不变——它们不会被清零。"
+
+#. placeholder {0}: parent.readableId
+#. placeholder {1}: parent.name
+msgid "Under {0} {1}"
+msgstr ""
 
 msgid "Under Construction"
 msgstr "建设中"

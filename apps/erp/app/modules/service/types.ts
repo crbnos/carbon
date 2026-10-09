@@ -7,9 +7,11 @@ import type {
   getCustomerAssetComponents,
   getCustomerAssets,
   getServiceBillableItems,
+  getServiceNode,
   getServiceOrder,
   getServiceOrders,
-  getServiceVisits
+  getServiceVisits,
+  getServiceWork
 } from "./service.service";
 
 export type CustomerAsset = NonNullable<
@@ -39,3 +41,13 @@ export type ServiceVisit = NonNullable<
 export type ServiceBillableItem = NonNullable<
   Awaited<ReturnType<typeof getServiceBillableItems>>["data"]
 >[number];
+
+export type ServiceWorkNode = Awaited<
+  ReturnType<typeof getServiceWork>
+>["elements"][number];
+
+export type ServiceNode = NonNullable<
+  Awaited<ReturnType<typeof getServiceNode>>["data"]
+>;
+
+export type ServiceCharge = ServiceNode["charges"][number];

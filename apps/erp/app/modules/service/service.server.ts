@@ -9,6 +9,8 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
@@ -19,8 +21,10 @@ import {
   insertElementsFromPart
 } from "../projects/projects.server";
 import type {
+  coverageOverrideValidator,
   customerAssetValidator,
   ServiceOrderStatus,
+  serviceExpenseValidator,
   serviceOrderValidator
 } from "./service.models";
 import { rollUpOrderStatus } from "./service.models";
@@ -404,4 +408,162 @@ export async function cancelServiceOrder(
       status: "Cancelled"
     });
   });
+}
+
+// --- Charges -------------------------------------------------------------------
+
+const logger = getLogger("erp", "service");
+
+/**
+ * The order's project, and that its work tree holds the node. A charge on a
+ * node of another order is refused.
+ */
+export async function requireServiceOrderNode(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    serviceOrderId: string;
+    projectElementId?: string | null;
+  }
+): Promise<{ projectId: string; status: ServiceOrderStatus }> {
+  const order = await db
+    .selectFrom("serviceOrder")
+    .select(["projectId", "status"])
+    .where("id", "=", args.serviceOrderId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (!order) throw new ServiceOrderError("The service order was not found");
+  if (order.status === "Closed" || order.status === "Cancelled") {
+    throw new ServiceOrderError(
+      `A ${order.status.toLowerCase()} service order takes no charges`
+    );
+  }
+  if (args.projectElementId) {
+    const node = await db
+      .selectFrom("projectElement")
+      .select("id")
+      .where("id", "=", args.projectElementId)
+      .where("projectId", "=", order.projectId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!node) {
+      throw new ServiceOrderError("The node is not part of this service order");
+    }
+  }
+  return order;
+}
+
+/**
+ * Logs time on a service order's node as a Draft timesheet entry, with the
+ * visit when there is one. Service time posts from Draft: the caller posts it
+ * with `postTimesheetEntries` right after. Returns the entry's id.
+ */
+export async function logServiceTime(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    projectElementId: string | null;
+    serviceVisitId: string | null;
+    laborCategoryId: string;
+    entryDate: string;
+    hours: number;
+    note: string | null;
+  }
+): Promise<string> {
+  const row = await db
+    .insertInto("timesheetEntry")
+    .values({
+      companyId: args.companyId,
+      employeeId: args.userId,
+      entryDate: args.entryDate,
+      projectId: args.projectId,
+      projectElementId: args.projectElementId,
+      serviceVisitId: args.serviceVisitId,
+      laborCategoryId: args.laborCategoryId,
+      hours: args.hours,
+      note: args.note,
+      status: "Draft",
+      createdBy: args.userId,
+      createdAt: datetime.timestamp()
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return row.id;
+}
+
+/**
+ * Adds an expense to a service order's node and posts it through
+ * `post-project-expense`. Returns an error message, or null. The entry stays
+ * when the posting fails, so the message says it did not post.
+ */
+export async function addServiceExpense(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof serviceExpenseValidator> & {
+    companyId: string;
+    userId: string;
+    projectId: string;
+  }
+): Promise<string | null> {
+  const entry = await db
+    .insertInto("projectExpenseEntry")
+    .values({
+      companyId: args.companyId,
+      projectId: args.projectId,
+      projectElementId: args.projectElementId ?? null,
+      serviceVisitId: args.serviceVisitId ?? null,
+      employeeId: args.userId,
+      entryDate: args.entryDate,
+      description: args.description,
+      amount: args.amount,
+      createdBy: args.userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+
+  const posting = await serverFns
+    .system({ db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-project-expense", { projectExpenseEntryId: entry.id });
+  if (posting.error) {
+    logger.error("Failed to post a service expense", {
+      companyId: args.companyId,
+      projectExpenseEntryId: entry.id,
+      error: posting.error
+    });
+    return `The expense is saved but did not post: ${
+      posting.error.message || "the posting failed"
+    }`;
+  }
+  return null;
+}
+
+/**
+ * Moves one charge to another coverage through `reclass-project-coverage`.
+ * Returns an error message, or null.
+ */
+export async function reclassServiceCharge(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof coverageOverrideValidator> & {
+    companyId: string;
+    userId: string;
+    projectLedgerId: string;
+  }
+): Promise<string | null> {
+  const posting = await serverFns
+    .system({ db, companyId: args.companyId, userId: args.userId })
+    .invoke("reclass-project-coverage", {
+      projectLedgerId: args.projectLedgerId,
+      coverage: args.coverage,
+      reason: args.reason
+    });
+  if (posting.error) {
+    logger.error("Failed to reclass a service charge", {
+      companyId: args.companyId,
+      projectLedgerId: args.projectLedgerId,
+      error: posting.error
+    });
+    return posting.error.message || "Failed to change the coverage";
+  }
+  return null;
 }

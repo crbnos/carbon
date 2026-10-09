@@ -64,6 +64,9 @@ export function BuildFromPartDrawer({
   projectId,
   elements,
   defaultParentId,
+  endpoint,
+  initial,
+  vocabulary = "element",
   onClose
 }: {
   projectId: string;
@@ -71,13 +74,29 @@ export function BuildFromPartDrawer({
   elements: ParentOption[];
   /** The element open in the peek, if any. */
   defaultParentId: string | null;
+  /** The route that previews (GET) and builds (POST); the project's by default. */
+  endpoint?: string;
+  /** The source to start from, such as a service order's unit. */
+  initial?: {
+    source: BuildFromPartSource;
+    itemId?: string | null;
+    trackedEntityId?: string | null;
+  };
+  /** A service order's tree has nodes, not elements. */
+  vocabulary?: "element" | "node";
   onClose: () => void;
 }) {
   const { t } = useLingui();
   const [items] = useItems();
-  const [source, setSource] = useState<BuildFromPartSource>("Item");
-  const [itemId, setItemId] = useState<string | null>(null);
-  const [trackedEntityId, setTrackedEntityId] = useState<string | null>(null);
+  const buildPath = endpoint ?? path.to.projectElementsBuild(projectId);
+  const isNode = vocabulary === "node";
+  const [source, setSource] = useState<BuildFromPartSource>(
+    initial?.source ?? "Item"
+  );
+  const [itemId, setItemId] = useState<string | null>(initial?.itemId ?? null);
+  const [trackedEntityId, setTrackedEntityId] = useState<string | null>(
+    initial?.trackedEntityId ?? null
+  );
   const [templateProjectId, setTemplateProjectId] = useState<string | null>(
     null
   );
@@ -125,13 +144,17 @@ export function BuildFromPartDrawer({
   const previewFetcher = useFetcher<BuildFromPartPreview>();
   // biome-ignore lint/correctness/useExhaustiveDependencies: reload on a new query only
   useEffect(() => {
-    previewFetcher.load(`${path.to.projectElementsBuild(projectId)}?${query}`);
-  }, [projectId, query]);
+    previewFetcher.load(`${buildPath}?${query}`);
+  }, [buildPath, query]);
 
   const submitFetcher = useAction<BuildFromPartResult>({
     onSuccess: (result) => {
       const count = result.count ?? 0;
-      toast.success(t`Created ${count} elements from the part`);
+      toast.success(
+        isNode
+          ? t`Created ${count} nodes from the part`
+          : t`Created ${count} elements from the part`
+      );
       onClose();
     }
   });
@@ -193,13 +216,24 @@ export function BuildFromPartDrawer({
       <DrawerContent size="lg">
         <DrawerHeader>
           <DrawerTitle>
-            <Trans>Build from part</Trans>
+            {isNode ? (
+              <Trans>Build Tree</Trans>
+            ) : (
+              <Trans>Build from part</Trans>
+            )}
           </DrawerTitle>
           <DrawerDescription>
-            <Trans>
-              Create System elements from a serial's build history, an item's
-              bill of materials or a template.
-            </Trans>
+            {isNode ? (
+              <Trans>
+                Create System nodes from the unit's build history, the item's
+                bill of materials or a service template.
+              </Trans>
+            ) : (
+              <Trans>
+                Create System elements from a serial's build history, an item's
+                bill of materials or a template.
+              </Trans>
+            )}
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody>
@@ -281,7 +315,7 @@ export function BuildFromPartDrawer({
                 onCheckedChange={setIncludeBought}
               />
             )}
-            <Field label={t`Parent element`}>
+            <Field label={isNode ? t`Parent node` : t`Parent element`}>
               <Combobox
                 asButton
                 value={parentId ?? ""}
@@ -306,16 +340,30 @@ export function BuildFromPartDrawer({
                 </div>
               ) : !data?.preview ? (
                 <p className="text-sm text-muted-foreground">
-                  <Trans>Choose a source to see the elements it creates.</Trans>
+                  {isNode ? (
+                    <Trans>Choose a source to see the nodes it creates.</Trans>
+                  ) : (
+                    <Trans>
+                      Choose a source to see the elements it creates.
+                    </Trans>
+                  )}
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
                   <p className="text-sm">
-                    <Plural
-                      value={rows.length}
-                      one="# element will be created"
-                      other="# elements will be created"
-                    />
+                    {isNode ? (
+                      <Plural
+                        value={rows.length}
+                        one="# node will be created"
+                        other="# nodes will be created"
+                      />
+                    ) : (
+                      <Plural
+                        value={rows.length}
+                        one="# element will be created"
+                        other="# elements will be created"
+                      />
+                    )}
                   </p>
                   {data.preview.skippedLines > 0 && (
                     <p className="text-xs text-amber-600 dark:text-amber-500">
@@ -367,11 +415,15 @@ export function BuildFromPartDrawer({
             onClick={() =>
               submitFetcher.submit(params, {
                 method: "post",
-                action: path.to.projectElementsBuild(projectId)
+                action: buildPath
               })
             }
           >
-            <Trans>Create elements</Trans>
+            {isNode ? (
+              <Trans>Create nodes</Trans>
+            ) : (
+              <Trans>Create elements</Trans>
+            )}
           </Button>
         </DrawerFooter>
       </DrawerContent>

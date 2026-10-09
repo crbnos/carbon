@@ -87,6 +87,10 @@ msgstr ""
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# node will be created} other {# nodes will be created}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공정에 표준시간이 없습니다}}"
@@ -1826,6 +1830,9 @@ msgstr "요금 추가"
 msgid "Add child"
 msgstr ""
 
+msgid "Add Child Node"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "하위 보관 단위 추가"
 
@@ -1858,6 +1865,9 @@ msgstr "직원 추가"
 
 msgid "Add Entry"
 msgstr "항목 추가"
+
+msgid "Add Expense"
+msgstr ""
 
 msgid "Add from library…"
 msgstr "라이브러리에서 추가…"
@@ -1918,6 +1928,9 @@ msgstr "모델 추가"
 
 msgid "Add Month"
 msgstr "월 추가"
+
+msgid "Add Node"
+msgstr ""
 
 msgid "Add Note"
 msgstr "메모 추가"
@@ -2834,6 +2847,10 @@ msgstr "이 계측기를 비활성화하시겠습니까?"
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "이 사용자를 비활성화하시겠습니까?"
+
+#. placeholder {0}: deleting.readableId
+msgid "Are you sure you want to delete {0} and the nodes under it? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -3795,6 +3812,12 @@ msgstr "청구 대상"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "월, 분기, 연도 단위로 청구합니다(처음에 부분 기간 포함 가능)."
 
+msgid "Billable"
+msgstr ""
+
+msgid "Billed"
+msgstr ""
+
 msgid "Billed Externally"
 msgstr "외부 송장 발행"
 
@@ -3997,6 +4020,9 @@ msgstr "역할 기반 교육 자료 제작"
 
 msgid "Build tailored, role-based training materials"
 msgstr "맞춤형 역할 기반 교육 자료 제작"
+
+msgid "Build Tree"
+msgstr ""
 
 msgid "Built after this step"
 msgstr "이 단계 후에 빌드됨"
@@ -4280,6 +4306,9 @@ msgstr "고정자산으로 자본화"
 
 msgid "Capitalize Asset"
 msgstr "자산 자본화"
+
+msgid "Capitalized"
+msgstr ""
 
 msgid "Caption"
 msgstr "캡션"
@@ -4647,6 +4676,9 @@ msgid "Choose a serial number"
 msgstr "시리얼 번호를 선택하십시오"
 
 msgid "Choose a source to see the elements it creates."
+msgstr ""
+
+msgid "Choose a source to see the nodes it creates."
 msgstr ""
 
 #. placeholder {0}: op.description
@@ -6073,6 +6105,9 @@ msgstr "새로 생성"
 msgid "Create new rule"
 msgstr "새 규칙 생성"
 
+msgid "Create nodes"
+msgstr ""
+
 msgid "Create Operator"
 msgstr "작업자 생성"
 
@@ -6112,6 +6147,9 @@ msgstr "공급업체 반품 생성"
 msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
 msgstr ""
 
+msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6131,6 +6169,9 @@ msgid "Created"
 msgstr "생성됨"
 
 msgid "Created {count} elements from the part"
+msgstr ""
+
+msgid "Created {count} nodes from the part"
 msgstr ""
 
 msgid "Created <0/>"
@@ -7187,6 +7228,9 @@ msgstr "메모 삭제"
 
 msgid "Delete Month"
 msgstr "월 삭제"
+
+msgid "Delete Node"
+msgstr ""
 
 msgid "Delete Part"
 msgstr "품목 삭제"
@@ -9186,6 +9230,9 @@ msgstr "작업 지시 {target}을(를) {date}로 앞당기기"
 msgid "Expedite purchase order {target} to {date}"
 msgstr "발주서 {target}을(를) {date}로 앞당기기"
 
+msgid "Expense"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "매출채권 정산 시 회수 불가로 상각된 고객 잔액에 대한 비용 계정"
 
@@ -9353,6 +9400,9 @@ msgid "Failed to add lines"
 msgstr "라인 추가 실패"
 
 msgid "Failed to add the link"
+msgstr ""
+
+msgid "Failed to add the node"
 msgstr ""
 
 msgid "Failed to apply pricing rules"
@@ -9972,6 +10022,9 @@ msgstr "배치 크기가 표준과 다를 때 고정 원가 상각 차이"
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "회계 기간이 게시되거나 종료되면 고정됩니다. 변경하려면 모든 공개 기간을 삭제하십시오."
+
+msgid "Fixed Price"
+msgstr ""
 
 msgid "Fixed Reorder"
 msgstr "고정 재주문"
@@ -11613,6 +11666,9 @@ msgstr ""
 msgid "Issue not found"
 msgstr "이슈를 찾을 수 없습니다"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "이슈 상태"
 
@@ -11629,6 +11685,9 @@ msgid "Issue to Project"
 msgstr ""
 
 msgid "Issue to the project"
+msgstr ""
+
+msgid "Issue to the service order"
 msgstr ""
 
 msgid "Issue Trend"
@@ -12049,6 +12108,9 @@ msgid "Last Run"
 msgstr "마지막 실행"
 
 msgid "Last Service"
+msgstr ""
+
+msgid "Last service <0/>"
 msgstr ""
 
 msgid "Last synced: <0/>"
@@ -13385,6 +13447,9 @@ msgstr "결정 권한이 있는 내부 프로젝트 책임자를 지정하십시
 msgid "Name the new element, then press Enter"
 msgstr ""
 
+msgid "Name the node"
+msgstr ""
+
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "허브 전체에서 해당 역할이 참조되는 곳마다 이름이 자동으로 채워집니다."
 
@@ -13471,6 +13536,9 @@ msgstr "네트워크 오류"
 
 msgid "Never"
 msgstr "안 함"
+
+msgid "Never serviced"
+msgstr ""
 
 msgid "New"
 msgstr "신규"
@@ -14692,6 +14760,15 @@ msgstr "이 사업장에 작업장이 없습니다"
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
+msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "Node"
+msgstr ""
+
+msgid "Node type"
+msgstr ""
+
 msgid "Nom"
 msgstr "명목"
 
@@ -14824,6 +14901,9 @@ msgstr "MES에서 아직 완료된 항목이 없습니다"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
+
+msgid "Nothing has been charged to this node yet."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "검색 및 필터와 일치하는 항목이 없습니다."
@@ -15627,6 +15707,9 @@ msgstr "재정의"
 msgid "Override Classification"
 msgstr "분류 재정의"
 
+msgid "Override Coverage"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "재정의는 inventory:update 권한과 사유가 필요합니다."
 
@@ -15738,6 +15821,9 @@ msgstr "상위 품목"
 
 msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
 msgstr "상위 품목. (아래의 상위 부품 중 하나를 클릭하면, 이 품목이 자재명세서에 구성품으로 포함되어 있는 것을 보실 수 있습니다.)"
+
+msgid "Parent node"
+msgstr ""
 
 msgid "Parent Storage Unit"
 msgstr "상위 보관 단위"
@@ -18556,6 +18642,9 @@ msgstr "매출 시작"
 
 msgid "Revenue Type"
 msgstr "매출 유형"
+
+msgid "Reversal"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -21707,6 +21796,9 @@ msgstr "이 고객이 속하는 카테고리(OEM, 유통업체, 최종 사용자
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "이 공급업체가 속하는 카테고리(원자재, 서비스, 위탁제조업체)로, 기본 총계정원장 계정과 보고 그룹을 결정합니다."
 
+msgid "The charge moves to the new coverage, and its cost to that coverage's account."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "선택한 서비스 라인이 새 초안 계약으로 이동하며, 이 계약은 일정에 따라 송장을 발행합니다. 주문은 이들을 송장 발행됨으로 계산합니다."
 
@@ -23619,6 +23711,11 @@ msgstr "미청구:"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "미실사 라인은 전기 시 변경되지 않고 그대로 유지되며 0으로 처리되지 않습니다."
+
+#. placeholder {0}: parent.readableId
+#. placeholder {1}: parent.name
+msgid "Under {0} {1}"
+msgstr ""
 
 msgid "Under Construction"
 msgstr "개발 중"

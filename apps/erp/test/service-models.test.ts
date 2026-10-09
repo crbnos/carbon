@@ -5,6 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   canMoveServiceOrder,
+  canOverrideCoverage,
+  summarizeWork,
   rollUpOrderStatus,
   warrantyStatus
 } from "~/modules/service/service.models";
@@ -107,5 +109,107 @@ describe("canMoveServiceOrder", () => {
       expect(canMoveServiceOrder("Closed", to)).toBe(false);
       expect(canMoveServiceOrder("Cancelled", to)).toBe(false);
     }
+  });
+});
+
+describe("summarizeWork", () => {
+  const elements = [
+    { id: "root", parentId: null },
+    { id: "pump", parentId: "root" },
+    { id: "seal", parentId: "pump" }
+  ];
+
+  it("rolls hours, part cost, cost and billable amounts up the tree", () => {
+    const totals = summarizeWork(
+      elements,
+      [
+        {
+          projectElementId: "seal",
+          costType: "Labor",
+          quantity: 2,
+          amount: 170,
+          coverage: "Warranty"
+        },
+        {
+          projectElementId: "pump",
+          costType: "Material",
+          quantity: 1,
+          amount: 40,
+          coverage: "Billable"
+        }
+      ],
+      [
+        { projectElementId: "seal", amount: 0, status: "Unbilled" },
+        { projectElementId: "pump", amount: 65, status: "Unbilled" },
+        { projectElementId: "pump", amount: 30, status: "Written Off" }
+      ]
+    );
+    expect(totals.get("seal")).toEqual({
+      hours: 2,
+      partCost: 0,
+      cost: 170,
+      billable: 0,
+      coverages: ["Warranty"]
+    });
+    expect(totals.get("root")).toEqual({
+      hours: 2,
+      partCost: 40,
+      cost: 210,
+      billable: 65,
+      coverages: ["Warranty", "Billable"]
+    });
+  });
+
+  it("drops a coverage whose charges a reclass netted to zero", () => {
+    const totals = summarizeWork(
+      elements,
+      [
+        {
+          projectElementId: "seal",
+          costType: "Labor",
+          quantity: 1,
+          amount: 120,
+          coverage: "Warranty"
+        },
+        {
+          projectElementId: "seal",
+          costType: "Labor",
+          quantity: -1,
+          amount: -120,
+          coverage: "Warranty"
+        },
+        {
+          projectElementId: "seal",
+          costType: "Labor",
+          quantity: 1,
+          amount: 120,
+          coverage: "Billable"
+        }
+      ],
+      []
+    );
+    expect(totals.get("seal")?.coverages).toEqual(["Billable"]);
+    expect(totals.get("seal")?.hours).toBe(1);
+  });
+});
+
+describe("canOverrideCoverage", () => {
+  it("allows an open, unbilled original charge only", () => {
+    const reversed = new Set(["old"]);
+    expect(
+      canOverrideCoverage({ id: "a", reversalOfId: null }, reversed, "Unbilled")
+    ).toBe(true);
+    expect(
+      canOverrideCoverage({ id: "a", reversalOfId: null }, reversed, null)
+    ).toBe(true);
+    expect(
+      canOverrideCoverage({ id: "a", reversalOfId: null }, reversed, "Billed")
+    ).toBe(false);
+    expect(
+      canOverrideCoverage({ id: "old", reversalOfId: null }, reversed, null)
+    ).toBe(false);
+    expect(
+      canOverrideCoverage({ id: "r", reversalOfId: "a" }, reversed, null)
+    ).toBe(false);
   });
 });

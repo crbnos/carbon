@@ -6,6 +6,7 @@
 // Spec: .ai/specs/2026-10-08-field-service.md
 
 import type { Database } from "@carbon/database";
+import { equals, round } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { projectElementPriorities } from "../projects/projects.models";
@@ -309,3 +310,138 @@ export const serviceBillableItemValidator = z
     message: "A reason is required to write off an item",
     path: ["statusReason"]
   });
+
+// --- Work --------------------------------------------------------------------
+
+/** The node types a service order's work tree offers (no engineering types). */
+export const serviceNodeTypes = ["System", "Task", "Folder"] as const;
+export type ServiceNodeType = (typeof serviceNodeTypes)[number];
+
+/** Adds a node to an order's work tree. */
+export const serviceNodeValidator = z.object({
+  type: z.enum(serviceNodeTypes, { error: "Type is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  parentId: zfd.text(z.string().optional())
+});
+
+/** An expense charged to a node: mileage, a meal, a part bought on a card. */
+export const serviceExpenseValidator = z.object({
+  projectElementId: zfd.text(z.string().optional()),
+  serviceVisitId: zfd.text(z.string().optional()),
+  entryDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date is required" }),
+  description: z.string().trim().min(1, { message: "Description is required" }),
+  amount: zfd.numeric(
+    z.number().gt(0, { message: "The amount must be greater than 0" })
+  )
+});
+
+export type WorkTotals = {
+  hours: number;
+  partCost: number;
+  cost: number;
+  /** What the node's billable items will bill (written-off items excluded). */
+  billable: number;
+  /** The coverages with a net amount on the node, in coverage order. */
+  coverages: ServiceCoverage[];
+};
+
+/**
+ * The totals of each node of a work tree, its subtree included. Hours are
+ * the Labor quantities, part cost the Material amounts, cost every amount.
+ * A coverage counts when its net amount is not zero, so a charge reclassed
+ * to another coverage leaves only the new one. A charge or billable item on
+ * no node, or on a node outside the tree, counts nowhere.
+ */
+export function summarizeWork(
+  elements: { id: string; parentId: string | null }[],
+  ledger: {
+    projectElementId: string | null;
+    costType: string;
+    quantity: number | null;
+    amount: number;
+    coverage: ServiceCoverage | null;
+  }[],
+  billable: {
+    projectElementId: string | null;
+    amount: number;
+    status: ProjectBillableItemStatus;
+  }[]
+): Map<string, WorkTotals> {
+  const parentOf = new Map(elements.map((e) => [e.id, e.parentId]));
+  const raw = new Map<
+    string,
+    Omit<WorkTotals, "coverages"> & { net: Map<ServiceCoverage, number> }
+  >(
+    elements.map((e) => [
+      e.id,
+      { hours: 0, partCost: 0, cost: 0, billable: 0, net: new Map() }
+    ])
+  );
+
+  /** The node and each ancestor, once each (a cycle stops the walk). */
+  const lineage = (id: string | null) => {
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    let current = id;
+    while (current && raw.has(current) && !seen.has(current)) {
+      seen.add(current);
+      ids.push(current);
+      current = parentOf.get(current) ?? null;
+    }
+    return ids;
+  };
+
+  for (const row of ledger) {
+    const amount = Number(row.amount);
+    for (const id of lineage(row.projectElementId)) {
+      const totals = raw.get(id)!;
+      if (row.costType === "Labor") totals.hours += Number(row.quantity ?? 0);
+      if (row.costType === "Material") totals.partCost += amount;
+      totals.cost += amount;
+      if (row.coverage) {
+        totals.net.set(
+          row.coverage,
+          (totals.net.get(row.coverage) ?? 0) + amount
+        );
+      }
+    }
+  }
+  for (const item of billable) {
+    if (item.status === "Written Off") continue;
+    for (const id of lineage(item.projectElementId)) {
+      raw.get(id)!.billable += Number(item.amount);
+    }
+  }
+
+  const result = new Map<string, WorkTotals>();
+  for (const [id, totals] of raw) {
+    result.set(id, {
+      hours: round(totals.hours),
+      partCost: round(totals.partCost),
+      cost: round(totals.cost),
+      billable: round(totals.billable),
+      coverages: serviceCoverages.filter((coverage) => {
+        const net = totals.net.get(coverage);
+        return net !== undefined && !equals(net, 0);
+      })
+    });
+  }
+  return result;
+}
+
+/**
+ * Whether a charge's coverage can still change: an original charge (not a
+ * reversal), not reversed or reclassed since, whose billable item is not
+ * billed.
+ */
+export function canOverrideCoverage(
+  charge: { id: string; reversalOfId: string | null },
+  reversedIds: Set<string>,
+  billableStatus: ProjectBillableItemStatus | null
+): boolean {
+  if (charge.reversalOfId) return false;
+  if (reversedIds.has(charge.id)) return false;
+  return billableStatus !== "Billed";
+}

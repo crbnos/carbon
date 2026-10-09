@@ -87,6 +87,10 @@ msgstr ""
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# node will be created} other {# nodes will be created}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# ऑपरेशन के लिए कोई समय मानक नहीं है} other {# ऑपरेशन के लिए कोई समय मानक नहीं हैं}}"
@@ -1826,6 +1830,9 @@ msgstr "शुल्क जोड़ें"
 msgid "Add child"
 msgstr ""
 
+msgid "Add Child Node"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "बाल भंडारण इकाई जोड़ें"
 
@@ -1858,6 +1865,9 @@ msgstr "कर्मचारी जोड़ें"
 
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
+
+msgid "Add Expense"
+msgstr ""
 
 msgid "Add from library…"
 msgstr "लाइब्रेरी से जोड़ें…"
@@ -1918,6 +1928,9 @@ msgstr "मॉडल जोड़ें"
 
 msgid "Add Month"
 msgstr "महीना जोड़ें"
+
+msgid "Add Node"
+msgstr ""
 
 msgid "Add Note"
 msgstr "नोट जोड़ें"
@@ -2834,6 +2847,10 @@ msgstr "क्या आप निश्चित हैं कि आप इस
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "क्या आप निश्चित हैं कि आप इस उपयोगकर्ता को निष्क्रिय करना चाहते हैं?"
+
+#. placeholder {0}: deleting.readableId
+msgid "Are you sure you want to delete {0} and the nodes under it? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -3795,6 +3812,12 @@ msgstr "बिल प्राप्तकर्ता"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "पूरे महीने, त्रैमासिक या वर्षों का बिल करें, पहले आंशिक अवधि के साथ।"
 
+msgid "Billable"
+msgstr ""
+
+msgid "Billed"
+msgstr ""
+
 msgid "Billed Externally"
 msgstr "बाहरी रूप से चालान किया गया"
 
@@ -3997,6 +4020,9 @@ msgstr "भूमिका-आधारित प्रशिक्षण सा
 
 msgid "Build tailored, role-based training materials"
 msgstr "अनुकूलित, भूमिका-आधारित प्रशिक्षण सामग्री बनाएं"
+
+msgid "Build Tree"
+msgstr ""
 
 msgid "Built after this step"
 msgstr "इस चरण के बाद निर्मित"
@@ -4280,6 +4306,9 @@ msgstr "अचल संपत्ति के रूप में पूंज�
 
 msgid "Capitalize Asset"
 msgstr "संपत्ति को पूंजीकृत करें"
+
+msgid "Capitalized"
+msgstr ""
 
 msgid "Caption"
 msgstr "कैप्शन"
@@ -4647,6 +4676,9 @@ msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
 
 msgid "Choose a source to see the elements it creates."
+msgstr ""
+
+msgid "Choose a source to see the nodes it creates."
 msgstr ""
 
 #. placeholder {0}: op.description
@@ -6073,6 +6105,9 @@ msgstr "नया बनाएँ"
 msgid "Create new rule"
 msgstr "नया नियम बनाएं"
 
+msgid "Create nodes"
+msgstr ""
+
 msgid "Create Operator"
 msgstr "ऑपरेटर बनाएँ"
 
@@ -6112,6 +6147,9 @@ msgstr "आपूर्तिकर्ता रिटर्न बनाएं"
 msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
 msgstr ""
 
+msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6131,6 +6169,9 @@ msgid "Created"
 msgstr "बनाया गया"
 
 msgid "Created {count} elements from the part"
+msgstr ""
+
+msgid "Created {count} nodes from the part"
 msgstr ""
 
 msgid "Created <0/>"
@@ -7187,6 +7228,9 @@ msgstr "मेमो हटाएं"
 
 msgid "Delete Month"
 msgstr "महीना हटाएँ"
+
+msgid "Delete Node"
+msgstr ""
 
 msgid "Delete Part"
 msgstr "भाग हटाएं"
@@ -9186,6 +9230,9 @@ msgstr "जॉब {target} को {date} तक तेज़ करें"
 msgid "Expedite purchase order {target} to {date}"
 msgstr "क्रय आदेश {target} को {date} तक तेज़ करें"
 
+msgid "Expense"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "ग्राहक शेष राशि के लिए व्यय खाता जो प्राप्य खाते समझौते पर अनिर्धारक के रूप में लिखा गया है"
 
@@ -9353,6 +9400,9 @@ msgid "Failed to add lines"
 msgstr "पंक्तियां जोड़ने में विफल"
 
 msgid "Failed to add the link"
+msgstr ""
+
+msgid "Failed to add the node"
 msgstr ""
 
 msgid "Failed to apply pricing rules"
@@ -9972,6 +10022,9 @@ msgstr "निर्धारित लागत परिशोधन विच
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "एक बार लेखा अवधियों को पोस्ट किया जाने या बंद किए जाने के बाद निर्धारित। इसे बदलने के लिए सभी खुली अवधियों को हटाएँ।"
+
+msgid "Fixed Price"
+msgstr ""
 
 msgid "Fixed Reorder"
 msgstr "निश्चित पुनः ऑर्डर"
@@ -11613,6 +11666,9 @@ msgstr ""
 msgid "Issue not found"
 msgstr "समस्या नहीं मिली"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "समस्या स्थिति"
 
@@ -11629,6 +11685,9 @@ msgid "Issue to Project"
 msgstr ""
 
 msgid "Issue to the project"
+msgstr ""
+
+msgid "Issue to the service order"
 msgstr ""
 
 msgid "Issue Trend"
@@ -12049,6 +12108,9 @@ msgid "Last Run"
 msgstr "अंतिम रन"
 
 msgid "Last Service"
+msgstr ""
+
+msgid "Last service <0/>"
 msgstr ""
 
 msgid "Last synced: <0/>"
@@ -13385,6 +13447,9 @@ msgstr "निर्णय लेने के अधिकार के सा�
 msgid "Name the new element, then press Enter"
 msgstr ""
 
+msgid "Name the node"
+msgstr ""
+
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "नाम हब भर में जहां भी उन भूमिकाओं का संदर्भ दिया जाता है वहां भरे जाते हैं।"
 
@@ -13471,6 +13536,9 @@ msgstr "नेटवर्क त्रुटि"
 
 msgid "Never"
 msgstr "कभी नहीं"
+
+msgid "Never serviced"
+msgstr ""
 
 msgid "New"
 msgstr "नया"
@@ -14692,6 +14760,15 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
 
+msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "Node"
+msgstr ""
+
+msgid "Node type"
+msgstr ""
+
 msgid "Nom"
 msgstr "नाम"
 
@@ -14824,6 +14901,9 @@ msgstr "MES में अभी तक कुछ भी पूर्ण नह�
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
+
+msgid "Nothing has been charged to this node yet."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "यहां कुछ भी आपकी खोज और फ़िल्टर से मेल नहीं खाता।"
@@ -15627,6 +15707,9 @@ msgstr "ओवरराइड"
 msgid "Override Classification"
 msgstr "वर्गीकरण को ओवरराइड करें"
 
+msgid "Override Coverage"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "ओवरराइड के लिए inventory:update अनुमति और कारण की आवश्यकता है।"
 
@@ -15738,6 +15821,9 @@ msgstr "मूल आइटम"
 
 msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
 msgstr "मूल आइटम। (यदि आप नीचे दिए गए मूल पार्ट्स में से किसी एक पर क्लिक करते हैं, तो आप इस आइटम को सामग्री की बिल पर एक घटक के रूप में देखेंगे।)"
+
+msgid "Parent node"
+msgstr ""
 
 msgid "Parent Storage Unit"
 msgstr "मूल भंडारण इकाई"
@@ -18556,6 +18642,9 @@ msgstr "राजस्व प्रारंभ"
 
 msgid "Revenue Type"
 msgstr "राजस्व प्रकार"
+
+msgid "Reversal"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -21707,6 +21796,9 @@ msgstr "वह श्रेणी जिससे यह ग्राहक स�
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "वह श्रेणी जिससे यह आपूर्तिकर्ता संबंधित है (कच्चा माल, सेवाएं, अनुबंध निर्माता); डिफ़ॉल्ट GL खातों और रिपोर्टिंग समूहीकरण को निर्धारित करता है।"
 
+msgid "The charge moves to the new coverage, and its cost to that coverage's account."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "चुनी गई सेवा पंक्तियां एक नए ड्राफ्ट अनुबंध में जाती हैं, जो उन्हें अपने शेड्यूल पर चालान करता है। आदेश उन्हें चालान किया गया के रूप में गिनता है।"
 
@@ -23619,6 +23711,11 @@ msgstr "अबिल्ड:"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "गिनती न किए गए लाइनें पोस्ट पर अपरिवर्तित रहती हैं — उन्हें शून्य नहीं किया जाता है।"
+
+#. placeholder {0}: parent.readableId
+#. placeholder {1}: parent.name
+msgid "Under {0} {1}"
+msgstr ""
 
 msgid "Under Construction"
 msgstr "निर्माणाधीन"

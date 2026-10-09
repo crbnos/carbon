@@ -43,12 +43,18 @@ export function LogTimeModal({
   element,
   laborCategories,
   defaultLaborCategoryId,
+  action = path.to.projectLogTime,
+  hiddenFields,
   onClose
 }: {
   projectId: string;
   element: { id: string; readableId: string; name: string };
   laborCategories: { id: string; name: string }[];
   defaultLaborCategoryId: string | null;
+  /** The route that logs and posts the time (a service order's charge route). */
+  action?: string;
+  /** Extra values the action reads, such as `intent`. */
+  hiddenFields?: Record<string, string>;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -67,7 +73,7 @@ export function LogTimeModal({
         <ValidatedForm
           validator={logTimeValidator}
           method="post"
-          action={path.to.projectLogTime}
+          action={action}
           fetcher={fetcher}
           defaultValues={{
             entryDate: today,
@@ -94,6 +100,9 @@ export function LogTimeModal({
           <ModalBody>
             <Hidden name="projectId" />
             <Hidden name="projectElementId" />
+            {Object.entries(hiddenFields ?? {}).map(([name, value]) => (
+              <Hidden key={name} name={name} value={value} />
+            ))}
             <VStack spacing={4}>
               {errorMessage && (
                 <Alert variant="destructive">

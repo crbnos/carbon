@@ -87,6 +87,10 @@ msgstr "{0, plural, one {# label} other {# labels}}"
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr "{0, plural, one {# link} other {# links}}"
 
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# node will be created} other {# nodes will be created}}"
+msgstr "{0, plural, one {# node will be created} other {# nodes will be created}}"
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -1826,6 +1830,9 @@ msgstr "Add Charge"
 msgid "Add child"
 msgstr "Add child"
 
+msgid "Add Child Node"
+msgstr "Add Child Node"
+
 msgid "Add Child Storage Unit"
 msgstr "Add Child Storage Unit"
 
@@ -1858,6 +1865,9 @@ msgstr "Add Employee"
 
 msgid "Add Entry"
 msgstr "Add Entry"
+
+msgid "Add Expense"
+msgstr "Add Expense"
 
 msgid "Add from library…"
 msgstr "Add from library…"
@@ -1918,6 +1928,9 @@ msgstr "Add Model"
 
 msgid "Add Month"
 msgstr "Add Month"
+
+msgid "Add Node"
+msgstr "Add Node"
 
 msgid "Add Note"
 msgstr "Add Note"
@@ -2834,6 +2847,10 @@ msgstr "Are you sure you want to deactivate this gauge?."
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "Are you sure you want to deactivate this user?"
+
+#. placeholder {0}: deleting.readableId
+msgid "Are you sure you want to delete {0} and the nodes under it? This cannot be undone."
+msgstr "Are you sure you want to delete {0} and the nodes under it? This cannot be undone."
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -3795,6 +3812,12 @@ msgstr "Bill To"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Bill whole months, quarters or years, with a part period first."
 
+msgid "Billable"
+msgstr "Billable"
+
+msgid "Billed"
+msgstr "Billed"
+
 msgid "Billed Externally"
 msgstr "Billed Externally"
 
@@ -3997,6 +4020,9 @@ msgstr "Build role-based training materials"
 
 msgid "Build tailored, role-based training materials"
 msgstr "Build tailored, role-based training materials"
+
+msgid "Build Tree"
+msgstr "Build Tree"
 
 msgid "Built after this step"
 msgstr "Built after this step"
@@ -4280,6 +4306,9 @@ msgstr "Capitalize as Fixed Asset"
 
 msgid "Capitalize Asset"
 msgstr "Capitalize Asset"
+
+msgid "Capitalized"
+msgstr "Capitalized"
 
 msgid "Caption"
 msgstr "Caption"
@@ -4648,6 +4677,9 @@ msgstr "Choose a serial number"
 
 msgid "Choose a source to see the elements it creates."
 msgstr "Choose a source to see the elements it creates."
+
+msgid "Choose a source to see the nodes it creates."
+msgstr "Choose a source to see the nodes it creates."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -6073,6 +6105,9 @@ msgstr "Create New"
 msgid "Create new rule"
 msgstr "Create new rule"
 
+msgid "Create nodes"
+msgstr "Create nodes"
+
 msgid "Create Operator"
 msgstr "Create Operator"
 
@@ -6112,6 +6147,9 @@ msgstr "Create Supplier Return"
 msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
 msgstr "Create System elements from a serial's build history, an item's bill of materials or a template."
 
+msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
+msgstr "Create System nodes from the unit's build history, the item's bill of materials or a service template."
+
 msgid "Create the first element"
 msgstr "Create the first element"
 
@@ -6132,6 +6170,9 @@ msgstr "Created"
 
 msgid "Created {count} elements from the part"
 msgstr "Created {count} elements from the part"
+
+msgid "Created {count} nodes from the part"
+msgstr "Created {count} nodes from the part"
 
 msgid "Created <0/>"
 msgstr "Created <0/>"
@@ -7187,6 +7228,9 @@ msgstr "Delete Memo"
 
 msgid "Delete Month"
 msgstr "Delete Month"
+
+msgid "Delete Node"
+msgstr "Delete Node"
 
 msgid "Delete Part"
 msgstr "Delete Part"
@@ -9186,6 +9230,9 @@ msgstr "Expedite job {target} to {date}"
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Expedite purchase order {target} to {date}"
 
+msgid "Expense"
+msgstr "Expense"
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Expense account for customer balances written off as uncollectable on AR settlement"
 
@@ -9354,6 +9401,9 @@ msgstr "Failed to add lines"
 
 msgid "Failed to add the link"
 msgstr "Failed to add the link"
+
+msgid "Failed to add the node"
+msgstr "Failed to add the node"
 
 msgid "Failed to apply pricing rules"
 msgstr "Failed to apply pricing rules"
@@ -9972,6 +10022,9 @@ msgstr "Fixed cost amortization variance when batch size differs from standard"
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
+
+msgid "Fixed Price"
+msgstr "Fixed Price"
 
 msgid "Fixed Reorder"
 msgstr "Fixed Reorder"
@@ -11613,6 +11666,9 @@ msgstr "Issue material (the open element)"
 msgid "Issue not found"
 msgstr "Issue not found"
 
+msgid "Issue Part"
+msgstr "Issue Part"
+
 msgid "Issue Status"
 msgstr "Issue Status"
 
@@ -11630,6 +11686,9 @@ msgstr "Issue to Project"
 
 msgid "Issue to the project"
 msgstr "Issue to the project"
+
+msgid "Issue to the service order"
+msgstr "Issue to the service order"
 
 msgid "Issue Trend"
 msgstr "Issue Trend"
@@ -12050,6 +12109,9 @@ msgstr "Last Run"
 
 msgid "Last Service"
 msgstr "Last Service"
+
+msgid "Last service <0/>"
+msgstr "Last service <0/>"
 
 msgid "Last synced: <0/>"
 msgstr "Last synced: <0/>"
@@ -13385,6 +13447,9 @@ msgstr "Name an internal project owner with decision authority"
 msgid "Name the new element, then press Enter"
 msgstr "Name the new element, then press Enter"
 
+msgid "Name the node"
+msgstr "Name the node"
+
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Names fill in wherever those roles are referenced across the hub."
 
@@ -13471,6 +13536,9 @@ msgstr "Network error"
 
 msgid "Never"
 msgstr "Never"
+
+msgid "Never serviced"
+msgstr "Never serviced"
 
 msgid "New"
 msgstr "New"
@@ -14692,6 +14760,15 @@ msgstr "No work centers at this location"
 msgid "No work centers exist"
 msgstr "No work centers exist"
 
+msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr "No work yet. Build the tree from the unit, or add the first node."
+
+msgid "Node"
+msgstr "Node"
+
+msgid "Node type"
+msgstr "Node type"
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -14824,6 +14901,9 @@ msgstr "Nothing completed in MES yet"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nothing else at this location has stock to pull from."
+
+msgid "Nothing has been charged to this node yet."
+msgstr "Nothing has been charged to this node yet."
 
 msgid "Nothing here matches your search and filters."
 msgstr "Nothing here matches your search and filters."
@@ -15627,6 +15707,9 @@ msgstr "Override"
 msgid "Override Classification"
 msgstr "Override Classification"
 
+msgid "Override Coverage"
+msgstr "Override Coverage"
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Override needs the inventory:update permission and a reason."
 
@@ -15738,6 +15821,9 @@ msgstr "Parent Item"
 
 msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
 msgstr "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
+
+msgid "Parent node"
+msgstr "Parent node"
 
 msgid "Parent Storage Unit"
 msgstr "Parent Storage Unit"
@@ -18556,6 +18642,9 @@ msgstr "Revenue Start"
 
 msgid "Revenue Type"
 msgstr "Revenue Type"
+
+msgid "Reversal"
+msgstr "Reversal"
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -21707,6 +21796,9 @@ msgstr "The category this customer belongs to (OEM, distributor, end-user, inter
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 
+msgid "The charge moves to the new coverage, and its cost to that coverage's account."
+msgstr "The charge moves to the new coverage, and its cost to that coverage's account."
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 
@@ -23619,6 +23711,11 @@ msgstr "Unbilled:"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Uncounted lines are left unchanged at post — they are not zeroed."
+
+#. placeholder {0}: parent.readableId
+#. placeholder {1}: parent.name
+msgid "Under {0} {1}"
+msgstr "Under {0} {1}"
 
 msgid "Under Construction"
 msgstr "Under Construction"

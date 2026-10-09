@@ -87,6 +87,10 @@ msgstr ""
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# node will be created} other {# nodes will be created}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# операция не имеет временных нормативов} few {# операции не имеют временных нормативов} many {# операций не имеют временных нормативов} other {# операций не имеют временных нормативов}}"
@@ -1826,6 +1830,9 @@ msgstr "Добавить плату"
 msgid "Add child"
 msgstr ""
 
+msgid "Add Child Node"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "Добавить дочернюю единицу хранения"
 
@@ -1858,6 +1865,9 @@ msgstr "Добавить сотрудника"
 
 msgid "Add Entry"
 msgstr "Добавить запись"
+
+msgid "Add Expense"
+msgstr ""
 
 msgid "Add from library…"
 msgstr "Добавить из библиотеки…"
@@ -1918,6 +1928,9 @@ msgstr "Добавить модель"
 
 msgid "Add Month"
 msgstr "Добавить месяц"
+
+msgid "Add Node"
+msgstr ""
 
 msgid "Add Note"
 msgstr "Добавить примечание"
@@ -2834,6 +2847,10 @@ msgstr "Вы уверены, что хотите деактивировать э
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "Вы уверены, что хотите деактивировать этого пользователя?"
+
+#. placeholder {0}: deleting.readableId
+msgid "Are you sure you want to delete {0} and the nodes under it? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -3795,6 +3812,12 @@ msgstr "Счет для"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Счета выставляются целыми месяцами, кварталами или годами, с частичным периодом в начале."
 
+msgid "Billable"
+msgstr ""
+
+msgid "Billed"
+msgstr ""
+
 msgid "Billed Externally"
 msgstr "Выставлено счет внешним образом"
 
@@ -3997,6 +4020,9 @@ msgstr "Создавайте материалы обучения на основ
 
 msgid "Build tailored, role-based training materials"
 msgstr "Создавайте адаптированные материалы обучения на основе ролей"
+
+msgid "Build Tree"
+msgstr ""
 
 msgid "Built after this step"
 msgstr "Построено после этого шага"
@@ -4280,6 +4306,9 @@ msgstr "Капитализировать как основное средств�
 
 msgid "Capitalize Asset"
 msgstr "Капитализировать активы"
+
+msgid "Capitalized"
+msgstr ""
 
 msgid "Caption"
 msgstr "Заголовок"
@@ -4647,6 +4676,9 @@ msgid "Choose a serial number"
 msgstr "Выберите серийный номер"
 
 msgid "Choose a source to see the elements it creates."
+msgstr ""
+
+msgid "Choose a source to see the nodes it creates."
 msgstr ""
 
 #. placeholder {0}: op.description
@@ -6073,6 +6105,9 @@ msgstr "Создать"
 msgid "Create new rule"
 msgstr "Создать новое правило"
 
+msgid "Create nodes"
+msgstr ""
+
 msgid "Create Operator"
 msgstr "Создать оператора"
 
@@ -6112,6 +6147,9 @@ msgstr "Создать возврат поставщику"
 msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
 msgstr ""
 
+msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6131,6 +6169,9 @@ msgid "Created"
 msgstr "Создано"
 
 msgid "Created {count} elements from the part"
+msgstr ""
+
+msgid "Created {count} nodes from the part"
 msgstr ""
 
 msgid "Created <0/>"
@@ -7187,6 +7228,9 @@ msgstr "Удалить Memo"
 
 msgid "Delete Month"
 msgstr "Удалить месяц"
+
+msgid "Delete Node"
+msgstr ""
 
 msgid "Delete Part"
 msgstr "Удалить деталь"
@@ -9186,6 +9230,9 @@ msgstr "Ускорить производственный заказ {target} к
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Ускорить заказ поставщику {target} к {date}"
 
+msgid "Expense"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Счет расходов для остатков покупателей, списанных как безнадежные при урегулировании дебиторской задолженности"
 
@@ -9353,6 +9400,9 @@ msgid "Failed to add lines"
 msgstr "Ошибка при добавлении строк"
 
 msgid "Failed to add the link"
+msgstr ""
+
+msgid "Failed to add the node"
 msgstr ""
 
 msgid "Failed to apply pricing rules"
@@ -9972,6 +10022,9 @@ msgstr "Отклонение амортизации постоянных зат�
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Зафиксирован после размещения или закрытия учетных периодов. Удалите все открытые периоды, чтобы его изменить."
+
+msgid "Fixed Price"
+msgstr ""
 
 msgid "Fixed Reorder"
 msgstr "Фиксированный заказ"
@@ -11613,6 +11666,9 @@ msgstr ""
 msgid "Issue not found"
 msgstr "Проблема не найдена"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "Статус проблемы"
 
@@ -11629,6 +11685,9 @@ msgid "Issue to Project"
 msgstr ""
 
 msgid "Issue to the project"
+msgstr ""
+
+msgid "Issue to the service order"
 msgstr ""
 
 msgid "Issue Trend"
@@ -12049,6 +12108,9 @@ msgid "Last Run"
 msgstr "Последний запуск"
 
 msgid "Last Service"
+msgstr ""
+
+msgid "Last service <0/>"
 msgstr ""
 
 msgid "Last synced: <0/>"
@@ -13385,6 +13447,9 @@ msgstr "Назначьте внутреннего ответственного �
 msgid "Name the new element, then press Enter"
 msgstr ""
 
+msgid "Name the node"
+msgstr ""
+
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Имена заполняются везде, где эти роли упоминаются в хабе."
 
@@ -13471,6 +13536,9 @@ msgstr "Ошибка сети"
 
 msgid "Never"
 msgstr "Никогда"
+
+msgid "Never serviced"
+msgstr ""
 
 msgid "New"
 msgstr "Новый"
@@ -14692,6 +14760,15 @@ msgstr "На этой площадке нет рабочих центров"
 msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
 
+msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "Node"
+msgstr ""
+
+msgid "Node type"
+msgstr ""
+
 msgid "Nom"
 msgstr "Номин"
 
@@ -14824,6 +14901,9 @@ msgstr "В MES пока ничего не завершено"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
+
+msgid "Nothing has been charged to this node yet."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "Здесь нет ничего, соответствующего вашему поиску и фильтрам."
@@ -15627,6 +15707,9 @@ msgstr "Переопределение"
 msgid "Override Classification"
 msgstr "Переопределение классификации"
 
+msgid "Override Coverage"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Для переопределения требуется право доступа inventory:update и причина."
 
@@ -15738,6 +15821,9 @@ msgstr "Родительский товар"
 
 msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
 msgstr "Номенклатура-родители. (Если вы откроете одну из деталей-родителей ниже, вы увидите эту номенклатуру как компонент в спецификации материалов.)"
+
+msgid "Parent node"
+msgstr ""
 
 msgid "Parent Storage Unit"
 msgstr "Родительская Единица хранения"
@@ -18556,6 +18642,9 @@ msgstr "Начало выручки"
 
 msgid "Revenue Type"
 msgstr "Тип выручки"
+
+msgid "Reversal"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -21707,6 +21796,9 @@ msgstr "Категория, к которой принадлежит этот п
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Категория, к которой принадлежит этот поставщик (сырье, услуги, контрактный производитель); определяет счета GL по умолчанию и группировки отчетов."
 
+msgid "The charge moves to the new coverage, and its cost to that coverage's account."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Выбранные строки услуг переходят в новый черновик контракта, который выставляет им счет-фактуры по своему графику. Заказ считает их как выставленные счет-фактуры."
 
@@ -23619,6 +23711,11 @@ msgstr "Невыставленные:"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Неучтённые строки остаются неизменными при отправке — они не обнуляются."
+
+#. placeholder {0}: parent.readableId
+#. placeholder {1}: parent.name
+msgid "Under {0} {1}"
+msgstr ""
 
 msgid "Under Construction"
 msgstr "В разработке"

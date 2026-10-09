@@ -551,6 +551,109 @@ export async function upsertServiceVisit(
     .single();
 }
 
+// --- Work --------------------------------------------------------------------
+
+const WORK_NODE_COLUMNS =
+  "id, parentId, readableId, name, type, sortOrder, itemId, trackedEntityId, fixedPrice, item:item!projectElement_item_fkey(id, readableIdWithRevision, name), trackedEntity:trackedEntity!projectElement_trackedEntityId_fkey(id, readableId)" as const;
+
+/**
+ * An order's work tree with what feeds its totals: the nodes, every ledger
+ * row of the order's project, and its billable items. Three queries;
+ * `summarizeWork` (`service.models.ts`) turns them into totals per node.
+ */
+export async function getServiceWork(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  const [elements, ledger, billable] = await Promise.all([
+    client
+      .from("projectElement")
+      .select(WORK_NODE_COLUMNS)
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+      .order("sortOrder", { ascending: true }),
+    client
+      .from("projectLedger")
+      .select("projectElementId, costType, quantity, amount, coverage")
+      .eq("projectId", projectId)
+      .eq("companyId", companyId),
+    client
+      .from("projectBillableItem")
+      .select("projectElementId, amount, status")
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+  ]);
+
+  return {
+    elements: elements.data ?? [],
+    ledger: ledger.data ?? [],
+    billable: billable.data ?? [],
+    error: elements.error ?? ledger.error ?? billable.error
+  };
+}
+
+/**
+ * One node of an order's work tree with its charges: each ledger row with
+ * its billable item, newest first. With a linked serial or item, the last
+ * day any order of the company charged a node naming it.
+ */
+export async function getServiceNode(
+  client: Client,
+  args: { projectId: string; elementId: string; companyId: string }
+) {
+  const element = await client
+    .from("projectElement")
+    .select(WORK_NODE_COLUMNS)
+    .eq("id", args.elementId)
+    .eq("projectId", args.projectId)
+    .eq("companyId", args.companyId)
+    .single();
+  if (element.error) return { data: null, error: element.error };
+
+  const charges = await client
+    .from("projectLedger")
+    .select(
+      "id, postingDate, costType, documentType, documentId, quantity, unitOfMeasureCode, amount, coverage, coverageReason, reversalOfId, employeeId, itemId, billableItems:projectBillableItem!projectBillableItem_ledger_fkey(id, status, amount)"
+    )
+    .eq("projectElementId", args.elementId)
+    .eq("companyId", args.companyId)
+    .order("postingDate", { ascending: false })
+    .order("createdAt", { ascending: false });
+  if (charges.error) return { data: null, error: charges.error };
+
+  // The last service of the linked component, on any order.
+  const linkColumn = element.data.trackedEntityId
+    ? "trackedEntityId"
+    : element.data.itemId
+      ? "itemId"
+      : null;
+  const linkValue = element.data.trackedEntityId ?? element.data.itemId;
+  const lastService =
+    linkColumn && linkValue
+      ? await client
+          .from("projectLedger")
+          .select(
+            "postingDate, element:projectElement!projectLedger_element_fkey!inner(id)"
+          )
+          .eq("companyId", args.companyId)
+          .eq(`element.${linkColumn}`, linkValue)
+          .order("postingDate", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : null;
+  if (lastService?.error) return { data: null, error: lastService.error };
+
+  return {
+    data: {
+      element: element.data,
+      charges: charges.data ?? [],
+      lastServiceDate: lastService?.data?.postingDate ?? null
+    },
+    error: null
+  };
+}
+
 // --- Billable items ----------------------------------------------------------
 
 /** An order's billable items, with the node they sit on. */

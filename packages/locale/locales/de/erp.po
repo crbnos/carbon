@@ -87,6 +87,10 @@ msgstr ""
 msgid "{0, plural, one {# link} other {# links}}"
 msgstr ""
 
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {# node will be created} other {# nodes will be created}}"
+msgstr ""
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# Arbeitsgang hat keine Zeitstandards} other {# Arbeitsgänge haben keine Zeitstandards}}"
@@ -1826,6 +1830,9 @@ msgstr "Gebühr hinzufügen"
 msgid "Add child"
 msgstr ""
 
+msgid "Add Child Node"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "Untergeordnete Lagereinheit hinzufügen"
 
@@ -1858,6 +1865,9 @@ msgstr "Mitarbeiter hinzufügen"
 
 msgid "Add Entry"
 msgstr "Eintrag hinzufügen"
+
+msgid "Add Expense"
+msgstr ""
 
 msgid "Add from library…"
 msgstr "Aus Bibliothek hinzufügen…"
@@ -1918,6 +1928,9 @@ msgstr "Modell hinzufügen"
 
 msgid "Add Month"
 msgstr "Monat hinzufügen"
+
+msgid "Add Node"
+msgstr ""
 
 msgid "Add Note"
 msgstr "Notiz hinzufügen"
@@ -2834,6 +2847,10 @@ msgstr "Möchten Sie dieses Prüfmittel wirklich deaktivieren?."
 
 msgid "Are you sure you want to deactivate this user?"
 msgstr "Sind Sie sicher, dass Sie diesen Benutzer deaktivieren möchten?"
+
+#. placeholder {0}: deleting.readableId
+msgid "Are you sure you want to delete {0} and the nodes under it? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: tool.readableIdWithRevision
 msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
@@ -3795,6 +3812,12 @@ msgstr "Rechnung an"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Fakturieren Sie ganze Monate, Quartale oder Jahre mit einer Teilperiode zuerst."
 
+msgid "Billable"
+msgstr ""
+
+msgid "Billed"
+msgstr ""
+
 msgid "Billed Externally"
 msgstr "Extern fakturiert"
 
@@ -3997,6 +4020,9 @@ msgstr "Erstellen Sie rollenbasierte Schulungsmaterialien"
 
 msgid "Build tailored, role-based training materials"
 msgstr "Erstellen Sie maßgeschneiderte, rollenbasierte Schulungsmaterialien"
+
+msgid "Build Tree"
+msgstr ""
 
 msgid "Built after this step"
 msgstr "Nach diesem Schritt erstellt"
@@ -4280,6 +4306,9 @@ msgstr "Als Anlagegut aktivieren"
 
 msgid "Capitalize Asset"
 msgstr "Anlagegut aktivieren"
+
+msgid "Capitalized"
+msgstr ""
 
 msgid "Caption"
 msgstr "Beschriftung"
@@ -4647,6 +4676,9 @@ msgid "Choose a serial number"
 msgstr "Wählen Sie eine Seriennummer"
 
 msgid "Choose a source to see the elements it creates."
+msgstr ""
+
+msgid "Choose a source to see the nodes it creates."
 msgstr ""
 
 #. placeholder {0}: op.description
@@ -6073,6 +6105,9 @@ msgstr "Neu erstellen"
 msgid "Create new rule"
 msgstr "Neue Regel erstellen"
 
+msgid "Create nodes"
+msgstr ""
+
 msgid "Create Operator"
 msgstr "Werker erstellen"
 
@@ -6112,6 +6147,9 @@ msgstr "Lieferantenrückgabe erstellen"
 msgid "Create System elements from a serial's build history, an item's bill of materials or a template."
 msgstr ""
 
+msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
+msgstr ""
+
 msgid "Create the first element"
 msgstr ""
 
@@ -6131,6 +6169,9 @@ msgid "Created"
 msgstr "Erstellt"
 
 msgid "Created {count} elements from the part"
+msgstr ""
+
+msgid "Created {count} nodes from the part"
 msgstr ""
 
 msgid "Created <0/>"
@@ -7187,6 +7228,9 @@ msgstr "Memo löschen"
 
 msgid "Delete Month"
 msgstr "Monat löschen"
+
+msgid "Delete Node"
+msgstr ""
 
 msgid "Delete Part"
 msgstr "Teil löschen"
@@ -9186,6 +9230,9 @@ msgstr "Fertigungsauftrag {target} auf {date} vorziehen"
 msgid "Expedite purchase order {target} to {date}"
 msgstr "Bestellung {target} auf {date} vorziehen"
 
+msgid "Expense"
+msgstr ""
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Aufwandskonto für Kundensalden, die beim Debitoren-Abgleich als uneinbringlich abgeschrieben werden"
 
@@ -9353,6 +9400,9 @@ msgid "Failed to add lines"
 msgstr "Fehler beim Hinzufügen von Zeilen"
 
 msgid "Failed to add the link"
+msgstr ""
+
+msgid "Failed to add the node"
 msgstr ""
 
 msgid "Failed to apply pricing rules"
@@ -9972,6 +10022,9 @@ msgstr "Abweichung der Rüstkostenumlage, wenn die Losgröße vom Sollwert abwei
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "Festgelegt, sobald Buchungsperioden gebucht oder abgeschlossen wurden. Löschen Sie alle offenen Perioden, um dies zu ändern."
+
+msgid "Fixed Price"
+msgstr ""
 
 msgid "Fixed Reorder"
 msgstr "Feste Nachbestellung"
@@ -11613,6 +11666,9 @@ msgstr ""
 msgid "Issue not found"
 msgstr "Problem nicht gefunden"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "Problemstatus"
 
@@ -11629,6 +11685,9 @@ msgid "Issue to Project"
 msgstr ""
 
 msgid "Issue to the project"
+msgstr ""
+
+msgid "Issue to the service order"
 msgstr ""
 
 msgid "Issue Trend"
@@ -12049,6 +12108,9 @@ msgid "Last Run"
 msgstr "Letzte Ausführung"
 
 msgid "Last Service"
+msgstr ""
+
+msgid "Last service <0/>"
 msgstr ""
 
 msgid "Last synced: <0/>"
@@ -13385,6 +13447,9 @@ msgstr "Benennen Sie einen internen Projektverantwortlichen mit Entscheidungsbef
 msgid "Name the new element, then press Enter"
 msgstr ""
 
+msgid "Name the node"
+msgstr ""
+
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Namen werden überall dort eingefügt, wo diese Rollen im Hub referenziert werden."
 
@@ -13471,6 +13536,9 @@ msgstr "Netzwerkfehler"
 
 msgid "Never"
 msgstr "Nie"
+
+msgid "Never serviced"
+msgstr ""
 
 msgid "New"
 msgstr "Neu"
@@ -14692,6 +14760,15 @@ msgstr "Keine Arbeitsplätze an diesem Standort"
 msgid "No work centers exist"
 msgstr "Keine Arbeitsplätze vorhanden"
 
+msgid "No work yet. Build the tree from the unit, or add the first node."
+msgstr ""
+
+msgid "Node"
+msgstr ""
+
+msgid "Node type"
+msgstr ""
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -14824,6 +14901,9 @@ msgstr "In MES noch nichts abgeschlossen"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Keine anderen Artikel an diesem Ort haben Bestand zum Entnehmen."
+
+msgid "Nothing has been charged to this node yet."
+msgstr ""
 
 msgid "Nothing here matches your search and filters."
 msgstr "Nichts hier entspricht Ihrer Suche und Ihren Filtern."
@@ -15627,6 +15707,9 @@ msgstr "Übersteuerung"
 msgid "Override Classification"
 msgstr "Übersteuerung der Klassifizierung"
 
+msgid "Override Coverage"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Die Übersteuerung benötigt die Berechtigung Inventar:Aktualisieren und einen Grund."
 
@@ -15738,6 +15821,9 @@ msgstr "Übergeordneter Artikel"
 
 msgid "Parent items. (If you click into one of the parent parts below, you'll see this item included as a component on the bill of material.)"
 msgstr "Übergeordnete Artikel. (Wenn Sie auf einen der übergeordneten Teile unten klicken, sehen Sie diesen Artikel als Komponente in der Stückliste.)"
+
+msgid "Parent node"
+msgstr ""
 
 msgid "Parent Storage Unit"
 msgstr "Übergeordnete Lagereinheit"
@@ -18556,6 +18642,9 @@ msgstr "Umsatzanfang"
 
 msgid "Revenue Type"
 msgstr "Umsatzerlöstyp"
+
+msgid "Reversal"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -21707,6 +21796,9 @@ msgstr "Die Kategorie, zu der dieser Kunde gehört (OEM, Distributor, Endbenutze
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Die Kategorie, zu der dieser Lieferant gehört (Rohstoff, Dienstleistungen, Vertragsfertigungsunternehmen); bestimmt Standard-GL-Konten und Berichtsgruppierungen."
 
+msgid "The charge moves to the new coverage, and its cost to that coverage's account."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Die ausgewählten Dienstleistungspositionen werden in einen neuen Entwurfsvertrag verschoben, der sie nach seinem Terminplan fakturiert. Die Bestellung zählt sie als fakturiert."
 
@@ -23619,6 +23711,11 @@ msgstr "Nicht fakturiert:"
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Nicht gezählte Zeilen bleiben beim Buchen unverändert — sie werden nicht auf Null gesetzt."
+
+#. placeholder {0}: parent.readableId
+#. placeholder {1}: parent.name
+msgid "Under {0} {1}"
+msgstr ""
 
 msgid "Under Construction"
 msgstr "Im Bau"

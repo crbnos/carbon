@@ -2416,6 +2416,8 @@ export const path = {
     serviceMake: (id: string, makeMethodId: string) =>
       generatePath(`${x}/service/${id}/make/${makeMethodId}`),
     serviceOrder: (id: string) => generatePath(`${x}/service-order/${id}`),
+    serviceOrderCharge: (id: string) =>
+      generatePath(`${x}/service-order/${id}/charge`),
     serviceOrderDetails: (id: string) =>
       generatePath(`${x}/service-order/${id}/details`),
     serviceOrderEstimate: (id: string) =>
@@ -2429,6 +2431,10 @@ export const path = {
       generatePath(`${x}/service-order/${id}/visits`),
     serviceOrderWork: (id: string) =>
       generatePath(`${x}/service-order/${id}/work`),
+    serviceOrderWorkBuild: (id: string) =>
+      generatePath(`${x}/service-order/${id}/work/build`),
+    serviceOrderWorkNode: (id: string, elementId: string) =>
+      generatePath(`${x}/service-order/${id}/work/${elementId}`),
     servicePurchasing: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing`),
     serviceQuality: (id: string) => generatePath(`${x}/service/${id}/quality`),
