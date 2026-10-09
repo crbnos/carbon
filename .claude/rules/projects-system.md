@@ -224,7 +224,9 @@ options. A URL without `layout` redirects to the named view, else the preference
   item from the serial.
 - `buildElementsFromPart` / `previewBuildFromPart` (`$projectId.elements.build.tsx`)
   create System elements from a serial's build history (the lineage RPCs, one call per
-  level, Consume less Unconsume), an item's active make method (`getMethodTree`; lines
+  level; `netBuildComponents` counts Consume and Service inputs, less Unconsume, less
+  a component a later service order removed from the asset's `customerAssetComponent`
+  rows), an item's active make method (`getMethodTree`; lines
   without an `itemCost` row are counted as skipped) or a template's elements, under one
   parent, in one transaction. `planElementsFromSource` is the pure planner.
 - `get_element_history_by_item` averages hours and material cost over the elements

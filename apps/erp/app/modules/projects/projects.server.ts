@@ -19,6 +19,7 @@ import { getMethodTree } from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type {
   BuildSourceNode,
+  BuildTraceRow,
   ChangeOperationMark,
   ChangeRequestChange,
   ChangeRequestConflict,
@@ -55,6 +56,7 @@ import {
   findConflicts,
   isProjectPlanLocked,
   mergeChangeRequestItem,
+  netBuildComponents,
   overlayPlanRows,
   PLAN_LAYER_FIELDS,
   PROJECT_BASELINE_FORMAT_VERSION,
@@ -2412,24 +2414,18 @@ export type BuildFromPartArgs = {
   includeBought: boolean;
 };
 
-type TraceRow = {
-  sourceEntityId: string;
-  trackedActivityId: string;
-  id: string;
-  status: Database["public"]["Enums"]["trackedEntityStatus"];
-};
-
 /**
  * The upstream build of a serial: what was consumed to make it, then what was
  * consumed to make each of those, one level at a time. Each level is two RPC
  * calls for all its entities, one read of the activity types and one read of
  * the entities' items, never one per entity.
  * `get_direct_descendants_of_tracked_entities_strict` returns the inputs of
- * the activities that output a seed (the upstream side, despite its name). A
- * component counts when a Consume activity took it and no later Unconsume
- * activity of the same assembly gave it back (the ancestors RPC returns those
- * as the Unconsume's outputs), as MES `getTrackedInputs` nets them. A
- * scrapped component is no longer in the build.
+ * the activities that output a seed (the upstream side, despite its name).
+ * `netBuildComponents` decides what is still in the build: a Consume or a
+ * Service input not given back by a later Unconsume (the ancestors RPC
+ * returns those as the Unconsume's outputs), not scrapped, and not removed
+ * from the customer asset by a later service order. One more query per level
+ * reads those removals.
  */
 async function loadSerialBuildNodes(
   db: Kysely<KyselyDatabase> | KyselyTx,
@@ -2451,11 +2447,11 @@ async function loadSerialBuildNodes(
   for (let depth = 1; depth <= args.depth && level.size > 0; depth++) {
     const ids = [...level.keys()];
     const [consumed, given] = await Promise.all([
-      sql<TraceRow>`
+      sql<BuildTraceRow>`
         SELECT "sourceEntityId", "trackedActivityId", "id", "status"
         FROM get_direct_descendants_of_tracked_entities_strict(${ids}::text[], ${args.companyId})
       `.execute(db),
-      sql<TraceRow>`
+      sql<BuildTraceRow>`
         SELECT "sourceEntityId", "trackedActivityId", "id", "status"
         FROM get_direct_ancestors_of_tracked_entities_strict(${ids}::text[], ${args.companyId})
       `.execute(db)
@@ -2466,37 +2462,36 @@ async function loadSerialBuildNodes(
       )
     ];
     if (activityIds.length === 0) break;
-    const activities = await db
-      .selectFrom("trackedActivity")
-      .select(["id", "type"])
-      .where("id", "in", activityIds)
-      .where("companyId", "=", args.companyId)
-      .execute();
+    // The removal read: components a later service order removed from the
+    // assembly's customer asset (every component row of the pair removed).
+    const [activities, removedRows] = await Promise.all([
+      db
+        .selectFrom("trackedActivity")
+        .select(["id", "type"])
+        .where("id", "in", activityIds)
+        .where("companyId", "=", args.companyId)
+        .execute(),
+      sql<{ assembly: string; component: string }>`
+        SELECT ca."trackedEntityId" AS "assembly", c."trackedEntityId" AS "component"
+        FROM "customerAssetComponent" c
+        JOIN "customerAsset" ca
+          ON ca."id" = c."customerAssetId" AND ca."companyId" = c."companyId"
+        WHERE c."companyId" = ${args.companyId}
+          AND ca."trackedEntityId" = ANY(${ids}::text[])
+          AND c."trackedEntityId" IS NOT NULL
+        GROUP BY ca."trackedEntityId", c."trackedEntityId"
+        HAVING bool_and(c."removedDate" IS NOT NULL)
+      `.execute(db)
+    ]);
     const typeOf = new Map(activities.map((a) => [a.id, a.type]));
-
-    // Net per (assembly, component): Consume less Unconsume.
-    const net = new Map<
-      string,
-      { assembly: string; component: string; count: number }
-    >();
-    for (const row of consumed.rows) {
-      if (typeOf.get(row.trackedActivityId) !== "Consume") continue;
-      if (row.status === "Scrapped") continue;
-      const key = `${row.sourceEntityId} ${row.id}`;
-      const entry = net.get(key) ?? {
-        assembly: row.sourceEntityId,
-        component: row.id,
-        count: 0
-      };
-      entry.count += 1;
-      net.set(key, entry);
-    }
-    for (const row of given.rows) {
-      if (typeOf.get(row.trackedActivityId) !== "Unconsume") continue;
-      const entry = net.get(`${row.sourceEntityId} ${row.id}`);
-      if (entry) entry.count -= 1;
-    }
-    const pairs = [...net.values()].filter((entry) => entry.count > 0);
+    const pairs = netBuildComponents({
+      consumed: consumed.rows,
+      given: given.rows,
+      typeOf,
+      removed: new Set(
+        removedRows.rows.map((row) => `${row.assembly} ${row.component}`)
+      )
+    });
     if (pairs.length === 0) break;
 
     const componentIds = [...new Set(pairs.map((pair) => pair.component))];

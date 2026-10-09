@@ -3,8 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { BuildSourceNode } from "~/modules/projects/projects.models";
-import { planElementsFromSource } from "~/modules/projects/projects.models";
+import type {
+  BuildSourceNode,
+  BuildTraceRow
+} from "~/modules/projects/projects.models";
+import {
+  netBuildComponents,
+  planElementsFromSource
+} from "~/modules/projects/projects.models";
 
 function node(
   key: string,
@@ -89,5 +95,70 @@ describe("planElementsFromSource", () => {
       expect(seen.has(row.parentId!)).toBe(true);
       seen.add(row.id);
     }
+  });
+});
+
+/**
+ * The engine serial SN-0001: the factory consumed transmission TR-100 into
+ * it. A service order then installed TR-200 on the Transmission node (a
+ * Service activity, input TR-200, output SN-0001) and removed TR-100.
+ */
+describe("netBuildComponents", () => {
+  const trace = (
+    activity: string,
+    component: string,
+    status = "Consumed"
+  ): BuildTraceRow => ({
+    sourceEntityId: "SN-0001",
+    trackedActivityId: activity,
+    id: component,
+    status
+  });
+  const typeOf = new Map([
+    ["make", "Consume"],
+    ["service", "Service"],
+    ["undo", "Unconsume"]
+  ]);
+  const components = (args: Partial<Parameters<typeof netBuildComponents>[0]>) =>
+    netBuildComponents({
+      consumed: [],
+      given: [],
+      typeOf,
+      removed: new Set(),
+      ...args
+    }).map((pair) => pair.component);
+
+  it("counts a part a service order installed, like a consumed one", () => {
+    expect(
+      components({
+        consumed: [trace("make", "TR-100"), trace("service", "TR-200")]
+      })
+    ).toEqual(["TR-100", "TR-200"]);
+  });
+
+  it("drops the component a later service order removed from the asset", () => {
+    expect(
+      components({
+        consumed: [trace("make", "TR-100"), trace("service", "TR-200")],
+        removed: new Set(["SN-0001 TR-100"])
+      })
+    ).toEqual(["TR-200"]);
+  });
+
+  it("still nets an Unconsume and drops a scrapped part", () => {
+    expect(
+      components({
+        consumed: [
+          trace("make", "TR-100"),
+          trace("make", "PUMP-1", "Scrapped")
+        ],
+        given: [trace("undo", "TR-100")]
+      })
+    ).toEqual([]);
+  });
+
+  it("ignores an activity of another type", () => {
+    typeOf.set("split", "Split");
+    expect(components({ consumed: [trace("split", "TR-100")] })).toEqual([]);
   });
 });

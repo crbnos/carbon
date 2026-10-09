@@ -110,7 +110,10 @@ returned components as its outputs, so a component given back shows up on the as
 "ancestors" side. To list what an assembly still contains, net each component's `Consume`
 rows (descendants RPC) against its `Unconsume` rows (ancestors RPC), as MES
 `getTrackedInputs` and projects `loadSerialBuildNodes` (`projects.server.ts`, Build from
-part) do. Neither RPC returns `itemId`; read it from `trackedEntity`.
+part) do. Projects also counts a `Service` activity (a part a service order installed,
+input = the part, output = the customer asset's serial) as a `Consume`, and drops a
+component whose `customerAssetComponent` rows on the asset are all removed
+(`netBuildComponents`). Neither RPC returns `itemId`; read it from `trackedEntity`.
 
 **Batch variants** (`20260430090114`, take a `TEXT[]`, add a `sourceEntityId` output column;
 `20260929152451` adds `p_company_id`):

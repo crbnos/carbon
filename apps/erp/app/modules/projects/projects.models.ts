@@ -2554,6 +2554,60 @@ export type BuildSourceNode = {
   replenishment: "Make" | "Buy";
 };
 
+/** One genealogy row of a serial's build walk (a traceability RPC row). */
+export type BuildTraceRow = {
+  /** The entity on the walk's current level. */
+  sourceEntityId: string;
+  trackedActivityId: string;
+  /** The entity on the other side of the activity. */
+  id: string;
+  status: string;
+};
+
+/**
+ * The components of the assemblies on one level of a serial's build walk.
+ * `consumed` holds the inputs of the activities that output an assembly;
+ * `given` the outputs of the activities that took an assembly as input. A
+ * component counts when a Consume activity (made in the factory) or a
+ * Service activity (installed by a service order) put it in, and no later
+ * Unconsume activity of the same assembly gave it back. A scrapped
+ * component is out. So is a component every `customerAssetComponent` row of
+ * the assembly's customer asset marks removed (`removed` holds those pairs as
+ * `${assembly} ${component}`): a later service order replaced it.
+ */
+export function netBuildComponents(args: {
+  consumed: BuildTraceRow[];
+  given: BuildTraceRow[];
+  typeOf: Map<string, string>;
+  removed: Set<string>;
+}): { assembly: string; component: string }[] {
+  const net = new Map<
+    string,
+    { assembly: string; component: string; count: number }
+  >();
+  for (const row of args.consumed) {
+    const type = args.typeOf.get(row.trackedActivityId);
+    if (type !== "Consume" && type !== "Service") continue;
+    if (row.status === "Scrapped") continue;
+    const key = `${row.sourceEntityId} ${row.id}`;
+    const entry = net.get(key) ?? {
+      assembly: row.sourceEntityId,
+      component: row.id,
+      count: 0
+    };
+    entry.count += 1;
+    net.set(key, entry);
+  }
+  for (const row of args.given) {
+    if (args.typeOf.get(row.trackedActivityId) !== "Unconsume") continue;
+    const entry = net.get(`${row.sourceEntityId} ${row.id}`);
+    if (entry) entry.count -= 1;
+  }
+  return [...net.entries()]
+    .filter(([key, entry]) => entry.count > 0 && !args.removed.has(key))
+    .map(([, { assembly, component }]) => ({ assembly, component }));
+}
+
 /** A `projectElement` row that Build from part inserts. */
 export type PlannedBuildElement = {
   id: string;
