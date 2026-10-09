@@ -56,7 +56,7 @@
 
 ### Phase F — Legacy documents on or after the cutover (spec section 5a)
 - [x] Task 39: Write the journals of legacy sales and purchase invoices at enable
-- [ ] Task 40: Write the journals of legacy memos, payments, charges and reimbursements
+- [x] Task 40: Write the journals of legacy memos, payments, charges and reimbursements
 - [ ] Task 41: Write the journals of legacy movements that stored a cost row
 - [ ] Task 42: Write the cost rows and journals of legacy movements that stored none
 - [ ] Task 43: Write the journals of legacy asset and revenue runs again
@@ -1416,6 +1416,7 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 2. PO receipt: inventory (or indirect cost for Non-Inventory, WIP for outside processing) against GR/IR, with `receipt:<poLineId>` and the quantity, as `post-receipt` writes them. Return receipt: inventory against COGS. Return shipments: as `post-shipment` writes them.
 3. Adjustments, scrap, counts, non-conformance scrap and maintenance parts: `buildAdjustmentJournalLines` with the offset each posting uses.
 4. Skip transfers (no cost row) and corrections (they share the original document's keys).
+4a. A sales shipment that has its "Sale" cost row (the company had accounting on before the reset) belongs here: COGS against inventory at the stored cost.
 5. Extend the test: a legacy receipt dated on or after D, then a purchase invoice after the enable clears GR/IR to 0.
 
 ## Task 42: Write the cost rows and journals of legacy movements that stored none
@@ -1435,6 +1436,8 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 1. Depreciation run lines and disposals dated on or after D with a null `journalId`: write their journals again from the stored lines, as `postDepreciationRun` and `postDisposal` build them. Set `journalId`.
 2. Revenue recognition schedule rows Posted on or after D with a null `journalId`: the same, as `postRevenueRecognitionRun` builds them.
 3. Write them Provisional. Promotion posts them.
+4. A recreated depreciation or disposal journal may already sit in the accounting provider: the reset deleted the journal and its mapping, not the provider's copy. Find how the enable's promotion triggers provider sync, and keep recreated run journals out of it.
+5. `getLeaseNetInvestmentItems` joins the commencement journal. A legacy sales-type lease has none. Read the opening Net Investment from the lease rows instead, so the lease opens without a journal before the cutover.
 
 ## Task 44: Show the legacy journals in the wizard and update the docs
 
@@ -1511,3 +1514,4 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
   1. The inventory step edits the unit cost of an Average item only. A FIFO or LIFO item shows the value its layers had at the cutover, and a Standard item shows its standard cost. An edit to `itemCost.unitCost` does not reach the reset for them.
   2. The trial balance CSV import is its own intent, `import-tb`. It saves nothing when a row has an error.
   3. `no-unscoped-kysely-write` exempts `companySettings`. Its `id` is the company id, as for `company`.
+- Task 40 added migration `20261009060609_legacy-journal-attach.sql`. The charge and reimbursement draft guards refused every Posted to Posted change, so the enable could not set `journalId`. The guards now allow one more change: a Posted row with no journal gets one, and nothing else changes.
