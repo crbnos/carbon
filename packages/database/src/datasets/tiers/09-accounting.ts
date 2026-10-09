@@ -34,6 +34,7 @@ import {
   need,
   nextSequence,
   one,
+  RICH,
   rows
 } from "../sql.ts";
 import type {
@@ -43,7 +44,8 @@ import type {
   JournalEntrySpec,
   JournalLineSpec,
   ProjectElementSpec,
-  ProjectStateName
+  ProjectStateName,
+  ServiceTemplateNodeSpec
 } from "../types.ts";
 
 // Mirrors get-accounting-period.ts so seeded periods get the same (fiscalYear,
@@ -125,6 +127,7 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   const posting = await loadPostingContext(ctx, periods);
 
   await seedProjects(ctx);
+  await seedServiceWork(ctx);
   for (const spec of data.projects) {
     const projectId = need(ctx.refs.misc, `project:${spec.key}`, "project");
     if (spec.purchaseInvoiceLine) {
@@ -804,6 +807,216 @@ const PROJECT_STATES: {
   { name: "Cancelled", group: "Cancelled", color: "#9AA4BC", isDefault: true }
 ];
 
+/**
+ * A Service project's work tree: the default states, the nodes in list order
+ * (`<identifier>-<n>`, Todo, by sibling order) and, with `planLines`, each
+ * node's labor, material and other-cost plan lines. Returns the node ids by
+ * key.
+ */
+async function insertServiceTree(
+  ctx: Ctx,
+  args: {
+    projectId: string;
+    identifier: string;
+    nodes: ServiceTemplateNodeSpec[];
+    planLines: boolean;
+  }
+): Promise<Record<string, string>> {
+  const { projectId, identifier, nodes } = args;
+  const stateIds: Record<string, string> = {};
+  for (const [index, state] of PROJECT_STATES.entries()) {
+    stateIds[state.name] = await insertId(ctx, "projectState", {
+      projectId,
+      name: state.name,
+      group: state.group,
+      color: state.color,
+      sortOrder: index + 1,
+      isDefault: state.isDefault
+    });
+  }
+
+  const nodeIds: Record<string, string> = {};
+  const siblingCount: Record<string, number> = {};
+  for (const [index, node] of nodes.entries()) {
+    const siblings = node.parentKey ?? "";
+    siblingCount[siblings] = (siblingCount[siblings] ?? 0) + 1;
+    const nodeId = await insertId(ctx, "projectElement", {
+      projectId,
+      readableId: `${identifier}-${index + 1}`,
+      sequence: index + 1,
+      type: node.type,
+      parentId: node.parentKey
+        ? need(nodeIds, node.parentKey, "parent node")
+        : null,
+      name: node.name,
+      stateId: need(stateIds, "Todo", "project state"),
+      isChargeable: true,
+      sortOrder: siblingCount[siblings]
+    });
+    nodeIds[node.key] = nodeId;
+    if (!args.planLines) continue;
+
+    for (const line of node.labor ?? []) {
+      await insertRow(ctx, "projectElementLabor", {
+        projectId,
+        projectElementId: nodeId,
+        laborCategoryId: need(
+          ctx.refs.misc,
+          `laborCategory:${line.laborCategory}`,
+          "labor category"
+        ),
+        hours: line.hours
+      });
+    }
+    for (const line of node.materials ?? []) {
+      const item = need(ctx.refs.items, line.item, "item");
+      await insertRow(ctx, "projectElementMaterial", {
+        projectId,
+        projectElementId: nodeId,
+        itemId: item.id,
+        methodType: "Pull from Inventory",
+        quantity: line.quantity,
+        unitOfMeasureCode: item.unitOfMeasureCode,
+        unitCost: item.unitCost
+      });
+    }
+    for (const line of node.costs ?? []) {
+      await insertRow(ctx, "projectElementCost", {
+        projectId,
+        projectElementId: nodeId,
+        description: line.description,
+        amount: line.amount
+      });
+    }
+  }
+  return nodeIds;
+}
+
+/**
+ * Field service work, after the labor categories: each service template
+ * (a Draft Service project marked as a template, identifier `TPL-` and the
+ * first 6 characters of its id, as `createServiceTemplate` names it), then
+ * each service order with its Service project (identifier = the order's
+ * readable id, as `createServiceOrder` makes it). A Scheduled order copies its
+ * template's nodes and plan lines and gets one visit for the applying user.
+ */
+async function seedServiceWork(ctx: Ctx): Promise<void> {
+  const { anchor, userId } = ctx;
+  const sales = ctx.dataset.sales;
+  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
+
+  const templateIds: Record<string, string> = {};
+  for (const spec of sales.serviceTemplates) {
+    ctx.log(`service template ${spec.name}`);
+    const projectId = await insertId(ctx, "project", {
+      name: spec.name,
+      projectType: "Service",
+      isTemplate: true,
+      status: "Draft",
+      costTreatment: "By Coverage",
+      priority: "None",
+      active: true,
+      locationId: plantId,
+      nextElementSequence: spec.nodes.length + 1
+    });
+    const body = projectId.slice(projectId.indexOf("_") + 1);
+    const identifier = `TPL-${body.slice(0, 6).toUpperCase()}`;
+    await ctx.client.query(
+      `UPDATE project SET identifier = $1 WHERE id = $2 AND "companyId" = $3`,
+      [identifier, projectId, ctx.companyId]
+    );
+    await insertServiceTree(ctx, {
+      projectId,
+      identifier,
+      nodes: spec.nodes,
+      planLines: true
+    });
+    templateIds[spec.key] = projectId;
+  }
+
+  for (const spec of sales.serviceOrders) {
+    const asset = sales.customerAssets.find((a) => a.key === spec.asset);
+    if (!asset) {
+      throw new Error(
+        `Seed: service order "${spec.key}" names unknown asset "${spec.asset}"`
+      );
+    }
+    const template = spec.template
+      ? sales.serviceTemplates.find((t) => t.key === spec.template)
+      : undefined;
+    if (spec.template && !template) {
+      throw new Error(
+        `Seed: service order "${spec.key}" names unknown template "${spec.template}"`
+      );
+    }
+    const serviceOrderId = await nextSequence(ctx, "serviceOrder");
+    ctx.log(`service order ${serviceOrderId}`);
+    const customerId = need(ctx.refs.customers, asset.customer, "customer");
+    const projectId = await insertId(ctx, "project", {
+      name: `${asset.serial} — ${asset.customer}`,
+      identifier: serviceOrderId,
+      projectType: "Service",
+      status: "Released",
+      costTreatment: "By Coverage",
+      customerId,
+      locationId: plantId,
+      priority: "None",
+      active: true,
+      nextElementSequence: (template?.nodes.length ?? 0) + 1
+    });
+    // Every Service project has the default states, nodes or not.
+    await insertServiceTree(ctx, {
+      projectId,
+      identifier: serviceOrderId,
+      nodes: template?.nodes ?? [],
+      planLines: true
+    });
+
+    const orderId = await insertId(ctx, "serviceOrder", {
+      serviceOrderId,
+      type: "Field Visit",
+      status: spec.status,
+      trackedEntityId: need(
+        ctx.refs.misc,
+        `asset-serial:${asset.key}`,
+        "asset serial"
+      ),
+      itemId: need(ctx.refs.items, asset.item, "item").id,
+      customerAssetId: need(ctx.refs.misc, `asset:${asset.key}`, "asset"),
+      customerId,
+      customerLocationId: need(
+        ctx.refs.misc,
+        `cloc:${asset.customer}`,
+        "customer location"
+      ),
+      locationId: plantId,
+      projectId,
+      serviceTemplateId: template ? need(templateIds, template.key) : null,
+      priority: spec.priority ?? "None",
+      problem: RICH(spec.problem)
+    });
+    ctx.refs.documents[`svc:${spec.key}`] = orderId;
+
+    if (spec.visit) {
+      await insertRow(ctx, "serviceVisit", {
+        serviceOrderId: orderId,
+        technicianId: userId,
+        status: "Scheduled",
+        plannedStart: resolveTimestamp(
+          anchor,
+          spec.visit.startOffset,
+          spec.visit.startTime
+        ),
+        plannedEnd: resolveTimestamp(
+          anchor,
+          spec.visit.startOffset,
+          spec.visit.endTime
+        )
+      });
+    }
+  }
+}
+
 /** A Requirement's target columns; `actualParameterId` resolves its key. */
 function requirementColumns(
   requirement: ProjectElementSpec["requirement"],
@@ -841,6 +1054,7 @@ async function seedProjects(ctx: Ctx): Promise<void> {
       active: true
     });
     laborCategoryIds[category.name] = id;
+    ctx.refs.misc[`laborCategory:${category.name}`] = id;
     await insertRow(ctx, "laborCategoryRate", {
       laborCategoryId: id,
       effectiveFrom: resolveDate(anchor, LABOR_RATE_EFFECTIVE_OFFSET),

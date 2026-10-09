@@ -8,11 +8,14 @@
 
 import type {
   ContractSpec,
+  CustomerAssetSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
   SalesStatusOrderSpec,
+  ServiceOrderSpec,
+  ServiceTemplateSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
 
@@ -1014,6 +1017,90 @@ export const CONTRACTS: ContractSpec[] = [
   }
 ];
 
+// Field service: three units at customers (one in warranty, one whose
+// labor warranty has ended, one expired), one service template, and two
+// service orders on two of the units.
+export const CUSTOMER_ASSETS: CustomerAssetSpec[] = [
+  {
+    key: "in-warranty",
+    item: "MTR-9000",
+    serial: "MTR-9000-S011",
+    customer: "Ridgeline Drive Systems",
+    shippedOffset: -120,
+    laborWarrantyEndOffset: 245,
+    partsWarrantyEndOffset: 610
+  },
+  {
+    key: "labor-ended",
+    item: "MTR-9000",
+    serial: "MTR-9000-S012",
+    customer: "Cardinal Motorworks",
+    shippedOffset: -500,
+    laborWarrantyEndOffset: -135,
+    partsWarrantyEndOffset: 230
+  },
+  {
+    key: "expired",
+    item: "MTR-9000",
+    serial: "MTR-9000-S013",
+    customer: "Wabash Industrial Supply",
+    shippedOffset: -900,
+    laborWarrantyEndOffset: -535,
+    partsWarrantyEndOffset: -170
+  }
+];
+
+export const SERVICE_TEMPLATES: ServiceTemplateSpec[] = [
+  {
+    key: "standard",
+    name: "Motor overhaul",
+    nodes: [
+      {
+        key: "bearings",
+        name: "Bearing replacement",
+        type: "System",
+        labor: [{ laborCategory: "Test Technician", hours: 2.5 }],
+        materials: [{ item: "BRG-6206-C3", quantity: 2 }]
+      },
+      {
+        key: "seal",
+        name: "Shaft seal",
+        type: "Task",
+        parentKey: "bearings",
+        labor: [{ laborCategory: "Test Technician", hours: 0.5 }],
+        materials: [{ item: "SEAL-VR-45", quantity: 1 }]
+      },
+      {
+        key: "test",
+        name: "Run-in and vibration test",
+        type: "Task",
+        labor: [{ laborCategory: "Electrical Engineer", hours: 1.5 }],
+        costs: [{ description: "Vibration analyzer rental", amount: 180 }]
+      }
+    ]
+  }
+];
+
+export const SERVICE_ORDERS: ServiceOrderSpec[] = [
+  {
+    key: "scheduled",
+    asset: "labor-ended",
+    status: "Scheduled",
+    template: "standard",
+    priority: "High",
+    problem:
+      "Bearing noise and rising vibration at the drive end; overhaul requested.",
+    visit: { startOffset: 1, startTime: "15:00:00", endTime: "19:00:00" }
+  },
+  {
+    key: "draft",
+    asset: "in-warranty",
+    status: "Draft",
+    priority: "Medium",
+    problem: "Motor trips on overtemperature after an hour at rated load."
+  }
+];
+
 export const motorSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1064,5 +1151,8 @@ export const motorSales: SalesData = {
       accountNumber: "DEMO-6179-8843",
       isPrimary: true
     }
-  ]
+  ],
+  customerAssets: CUSTOMER_ASSETS,
+  serviceTemplates: SERVICE_TEMPLATES,
+  serviceOrders: SERVICE_ORDERS
 };

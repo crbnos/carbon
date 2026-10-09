@@ -858,4 +858,48 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     salesOrderId: need(ctx.refs.documents, firstReleased.order.ref),
     userId
   });
+
+  await seedCustomerAssets(ctx);
+}
+
+/**
+ * Units at customers, registered as `registerCustomerAsset` (ERP
+ * `service.server.ts`) does it: a Consumed serial sourced from the item, and
+ * a `customerAsset` with source Manual at the customer's location. The
+ * datasets ship no serials to customers, so none comes from a shipment.
+ */
+async function seedCustomerAssets(ctx: Ctx): Promise<void> {
+  for (const spec of ctx.dataset.sales.customerAssets) {
+    ctx.log(`customer asset ${spec.serial}`);
+    const item = need(ctx.refs.items, spec.item, "item");
+    const trackedEntityId = await insertId(ctx, "trackedEntity", {
+      itemId: item.id,
+      readableId: spec.serial,
+      quantity: 1,
+      status: "Consumed",
+      sourceDocument: "Item",
+      sourceDocumentId: item.id
+    });
+    ctx.refs.misc[`asset-serial:${spec.key}`] = trackedEntityId;
+    ctx.refs.misc[`asset:${spec.key}`] = await insertId(ctx, "customerAsset", {
+      trackedEntityId,
+      itemId: item.id,
+      customerId: need(ctx.refs.customers, spec.customer, "customer"),
+      customerLocationId: need(
+        ctx.refs.misc,
+        `cloc:${spec.customer}`,
+        "customer location"
+      ),
+      shippedDate: resolveDate(ctx.anchor, spec.shippedOffset),
+      laborWarrantyEndDate:
+        spec.laborWarrantyEndOffset === null
+          ? null
+          : resolveDate(ctx.anchor, spec.laborWarrantyEndOffset),
+      partsWarrantyEndDate:
+        spec.partsWarrantyEndOffset === null
+          ? null
+          : resolveDate(ctx.anchor, spec.partsWarrantyEndOffset),
+      source: "Manual"
+    });
+  }
 }

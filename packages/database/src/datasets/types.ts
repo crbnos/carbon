@@ -904,6 +904,76 @@ export type ContractSpec = {
   }[];
 };
 
+/**
+ * A unit at a customer, registered the way `registerCustomerAsset` does it
+ * (the datasets ship no serials to customers): a Consumed `trackedEntity`
+ * for the serial and a `customerAsset` with source Manual. Registered in
+ * ctx.refs.misc as `asset:<key>`.
+ */
+export type CustomerAssetSpec = {
+  key: string;
+  /** A Serial-tracked item of this dataset. */
+  item: string;
+  serial: string;
+  /** A customer with a contact (its location is the asset's site). */
+  customer: string;
+  shippedOffset: DayOffset;
+  /** null = no labor warranty. */
+  laborWarrantyEndOffset: DayOffset | null;
+  /** null = no parts warranty. */
+  partsWarrantyEndOffset: DayOffset | null;
+};
+
+/** One node of a service template, with its plan lines. */
+export type ServiceTemplateNodeSpec = {
+  key: string;
+  name: string;
+  type: "System" | "Task" | "Folder";
+  parentKey?: string;
+  /** Labor plan lines; the category is one of `accounting.laborCategories`. */
+  labor?: { laborCategory: string; hours: number }[];
+  /** Material plan lines (Pull from Inventory). */
+  materials?: { item: string; quantity: number }[];
+  /** Other-cost plan lines. */
+  costs?: { description: string; amount: number }[];
+};
+
+/**
+ * A service template: a Service project marked as a template, its nodes in
+ * list order (a parent before its children) and their plan lines. Tier 09
+ * seeds it, after the labor categories.
+ */
+export type ServiceTemplateSpec = {
+  key: string;
+  name: string;
+  nodes: ServiceTemplateNodeSpec[];
+};
+
+/**
+ * A Field Visit service order on one customer asset, with its Service
+ * project. A Scheduled order copies its template's nodes and plan lines and
+ * has one visit for the applying user; a Draft order has neither. Posted
+ * charges are not seeded (they would need journals, ledger rows and
+ * billable items). Tier 09 seeds it, after the templates.
+ */
+export type ServiceOrderSpec = {
+  key: string;
+  /** A `CustomerAssetSpec` key; one open order per asset. */
+  asset: string;
+  status: "Draft" | "Scheduled";
+  /** A `ServiceTemplateSpec` key the work tree is copied from. */
+  template?: string;
+  priority?: "None" | "Low" | "Medium" | "High" | "Urgent";
+  problem: string;
+  /** The visit window; a Scheduled order needs one, a Draft order none. */
+  visit?: {
+    startOffset: DayOffset;
+    /** "HH:MM:SS", UTC. */
+    startTime: string;
+    endTime: string;
+  };
+};
+
 export type SalesData = {
   opportunities: SalesOpportunitySpec[];
   statusOrders: SalesStatusOrderSpec[];
@@ -914,6 +984,10 @@ export type SalesData = {
   /** Customers with a portal (externalLink documentType Customer), as the portal form writes it. */
   customerPortals: string[];
   customerBankAccounts: (BankAccountSpec & { customer: string })[];
+  /** Field service: units at customers, templates and service orders. */
+  customerAssets: CustomerAssetSpec[];
+  serviceTemplates: ServiceTemplateSpec[];
+  serviceOrders: ServiceOrderSpec[];
 };
 
 export type RfqLineSpec = {

@@ -211,6 +211,18 @@ export const COVERAGE = {
     values: enumValues("salesReturnOrderStatus", { Cancelled: OPTIONAL }),
     missing: matrix("sales status matrix", "salesReturn with status")
   },
+  serviceOrder: {
+    values: enumValues("serviceOrderStatus", {
+      "In Progress":
+        "a visit under way leaves charges, which need hand-authored journals, ledger rows and billable items",
+      "On Hold": OPTIONAL,
+      Completed:
+        "completed work has posted charges, which need hand-authored journals, ledger rows and billable items",
+      Closed: "an invoiced order needs posted charges and their billable items",
+      Cancelled: OPTIONAL
+    }),
+    missing: matrix("field service matrix", "service order with status")
+  },
   arAgingBucket: {
     // get_ar_aging's default buckets, by days past due as of today.
     values: ["Current", "1-30", "31-60", "61-90"],
@@ -2086,6 +2098,124 @@ export function netOnHand(ctx: ValidationCtx): void {
       );
     }
   }
+}
+
+/** Today's warranty states every dataset shows on the asset list. */
+const WARRANTY_STATES = ["In warranty", "Labor ended", "Expired"] as const;
+
+/**
+ * Field service: the assets are serials of serial-tracked items at customers
+ * with a contact, with a warranty that ends after the ship date and the three
+ * warranty states on the anchor day; the template nodes name earlier parents,
+ * known labor categories and items; each order names a known asset (one open
+ * order per asset) and template; a Scheduled order has a visit and a Draft
+ * order none.
+ */
+export function fieldService(ctx: ValidationCtx): void {
+  const { dataset, ix, fail, need, needCustomer } = ctx;
+  const sales = dataset.sales;
+
+  const assetKeys = new Set<string>();
+  const serials = new Set<string>();
+  const warrantyStates = new Set<string>();
+  for (const asset of sales.customerAssets) {
+    const where = `sales.customerAssets "${asset.key}"`;
+    if (assetKeys.has(asset.key)) fail(`${where}: duplicate key`);
+    assetKeys.add(asset.key);
+    const serialKey = `${asset.item}|${asset.serial}`;
+    if (serials.has(serialKey)) fail(`${where}: duplicate serial`);
+    serials.add(serialKey);
+    need("item", where, asset.item);
+    if (ix.trackingByItem.get(asset.item) !== "Serial") {
+      fail(`${where}: item "${asset.item}" is not serial-tracked`);
+    }
+    needCustomer(where, asset.customer);
+    for (const end of [
+      asset.laborWarrantyEndOffset,
+      asset.partsWarrantyEndOffset
+    ]) {
+      if (end !== null && end < asset.shippedOffset) {
+        fail(`${where}: a warranty ends before the ship date`);
+      }
+    }
+    warrantyStates.add(
+      asset.laborWarrantyEndOffset !== null && asset.laborWarrantyEndOffset >= 0
+        ? "In warranty"
+        : asset.partsWarrantyEndOffset !== null &&
+            asset.partsWarrantyEndOffset >= 0
+          ? "Labor ended"
+          : "Expired"
+    );
+  }
+  for (const state of WARRANTY_STATES) {
+    if (!warrantyStates.has(state)) {
+      fail(`sales.customerAssets: no asset whose warranty is "${state}" today`);
+    }
+  }
+
+  const laborCategories = new Set(
+    dataset.accounting.laborCategories.map((category) => category.name)
+  );
+  const templateKeys = new Set<string>();
+  if (sales.serviceTemplates.length === 0) {
+    fail("sales.serviceTemplates: no service template");
+  }
+  for (const template of sales.serviceTemplates) {
+    const where = `sales.serviceTemplates "${template.key}"`;
+    templateKeys.add(template.key);
+    if (template.nodes.length === 0) fail(`${where}: no nodes`);
+    const seen = new Set<string>();
+    for (const node of template.nodes) {
+      const at = `${where} node "${node.key}"`;
+      if (node.parentKey && !seen.has(node.parentKey)) {
+        fail(`${at}: parent "${node.parentKey}" is not an earlier node`);
+      }
+      seen.add(node.key);
+      for (const line of node.labor ?? []) {
+        if (!laborCategories.has(line.laborCategory)) {
+          fail(`${at}: unknown labor category "${line.laborCategory}"`);
+        }
+        if (line.hours <= 0) fail(`${at}: labor hours must be above 0`);
+      }
+      for (const line of node.materials ?? []) {
+        need("item", at, line.item);
+        if (line.quantity <= 0) fail(`${at}: quantity must be above 0`);
+      }
+    }
+    if (
+      !template.nodes.some(
+        (node) =>
+          (node.labor?.length ?? 0) +
+            (node.materials?.length ?? 0) +
+            (node.costs?.length ?? 0) >
+          0
+      )
+    ) {
+      fail(`${where}: no plan lines, so its estimate has no prices`);
+    }
+  }
+
+  const statuses = new Set<string>();
+  const openAssets = new Set<string>();
+  for (const order of sales.serviceOrders) {
+    const where = `sales.serviceOrders "${order.key}"`;
+    statuses.add(order.status);
+    if (!assetKeys.has(order.asset)) {
+      fail(`${where}: unknown asset "${order.asset}"`);
+    }
+    if (openAssets.has(order.asset)) {
+      fail(`${where}: asset "${order.asset}" already has an open order`);
+    }
+    openAssets.add(order.asset);
+    if (order.template && !templateKeys.has(order.template)) {
+      fail(`${where}: unknown template "${order.template}"`);
+    }
+    if ((order.status === "Scheduled") !== Boolean(order.visit)) {
+      fail(`${where}: a Scheduled order needs a visit and a Draft order none`);
+    }
+  }
+
+  checkCoverage(fail, { serviceOrder: statuses });
 }
 
 export function sales(ctx: ValidationCtx): void {
@@ -7079,6 +7209,7 @@ const RULES: Rule[] = [
   trackedStockAndMovements,
   uniqueDocumentRefs,
   sales,
+  fieldService,
   purchasing,
   jobs,
   floor,

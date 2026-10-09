@@ -8,11 +8,14 @@
 
 import type {
   ContractSpec,
+  CustomerAssetSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
   SalesStatusOrderSpec,
+  ServiceOrderSpec,
+  ServiceTemplateSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
 
@@ -1013,6 +1016,91 @@ export const CONTRACTS: ContractSpec[] = [
   }
 ];
 
+// Field service: three units at customers (one in warranty, one whose
+// labor warranty has ended, one expired), one service template, and two
+// service orders on two of the units.
+export const CUSTOMER_ASSETS: CustomerAssetSpec[] = [
+  {
+    key: "in-warranty",
+    item: "SAT-1000",
+    serial: "SAT-1000-S011",
+    customer: "NovaSat Networks",
+    shippedOffset: -120,
+    laborWarrantyEndOffset: 245,
+    partsWarrantyEndOffset: 610
+  },
+  {
+    key: "labor-ended",
+    item: "SAT-1000",
+    serial: "SAT-1000-S012",
+    customer: "PolarView Earth",
+    shippedOffset: -500,
+    laborWarrantyEndOffset: -135,
+    partsWarrantyEndOffset: 230
+  },
+  {
+    key: "expired",
+    item: "SAT-1000",
+    serial: "SAT-1000-S013",
+    customer: "Apex Space Research",
+    shippedOffset: -900,
+    laborWarrantyEndOffset: -535,
+    partsWarrantyEndOffset: -170
+  }
+];
+
+export const SERVICE_TEMPLATES: ServiceTemplateSpec[] = [
+  {
+    key: "standard",
+    name: "Bus health check",
+    nodes: [
+      {
+        key: "power",
+        name: "Power system",
+        type: "System",
+        labor: [{ laborCategory: "Test Technician", hours: 2 }],
+        materials: [{ item: "BAT-LIION-48V", quantity: 1 }]
+      },
+      {
+        key: "adcs",
+        name: "Attitude control",
+        type: "System",
+        labor: [{ laborCategory: "Systems Engineer", hours: 3 }],
+        materials: [{ item: "FST-M4-TI", quantity: 8 }]
+      },
+      {
+        key: "comms",
+        name: "Transponder checkout",
+        type: "Task",
+        parentKey: "adcs",
+        labor: [{ laborCategory: "Test Technician", hours: 1.5 }],
+        costs: [{ description: "Clean room bay, half day", amount: 350 }]
+      }
+    ]
+  }
+];
+
+export const SERVICE_ORDERS: ServiceOrderSpec[] = [
+  {
+    key: "scheduled",
+    asset: "labor-ended",
+    status: "Scheduled",
+    template: "standard",
+    priority: "High",
+    problem:
+      "Battery voltage sags during eclipse passes; customer asks for a bus health check before the next campaign.",
+    visit: { startOffset: 1, startTime: "15:00:00", endTime: "19:00:00" }
+  },
+  {
+    key: "draft",
+    asset: "in-warranty",
+    status: "Draft",
+    priority: "Medium",
+    problem:
+      "Customer reports intermittent telemetry dropouts on the S-band link."
+  }
+];
+
 export const satelliteSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1063,5 +1151,8 @@ export const satelliteSales: SalesData = {
       accountNumber: "DEMO-9051-3370",
       isPrimary: true
     }
-  ]
+  ],
+  customerAssets: CUSTOMER_ASSETS,
+  serviceTemplates: SERVICE_TEMPLATES,
+  serviceOrders: SERVICE_ORDERS
 };
