@@ -8,6 +8,7 @@ import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
+import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -82,7 +83,8 @@ export default function ChangeNoticeEditSupplierPartRoute() {
     supplierUnitOfMeasureCode: supplierPart.supplierUnitOfMeasureCode ?? "EA",
     minimumOrderQuantity: supplierPart.minimumOrderQuantity ?? 1,
     orderMultiple: supplierPart.orderMultiple ?? 1,
-    conversionFactor: supplierPart.conversionFactor ?? 1
+    conversionFactor: supplierPart.conversionFactor ?? 1,
+    ...getCustomFields(supplierPart.customFields)
   };
 
   return (

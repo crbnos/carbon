@@ -14,7 +14,7 @@ import type { ToolSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getDatabaseClient } from "~/services/database.server";
-import { setCustomFields } from "~/utils/form";
+import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -166,7 +166,8 @@ export default function EditToolSupplierRoute() {
     supplierUnitOfMeasureCode: supplierPart.supplierUnitOfMeasureCode ?? "EA",
     minimumOrderQuantity: supplierPart.minimumOrderQuantity ?? 1,
     orderMultiple: supplierPart.orderMultiple ?? 1,
-    conversionFactor: supplierPart.conversionFactor ?? 1
+    conversionFactor: supplierPart.conversionFactor ?? 1,
+    ...getCustomFields(supplierPart.customFields)
   };
 
   return (
