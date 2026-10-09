@@ -89,10 +89,14 @@ export async function chargeFixture(options: { chargeId?: string } = {}) {
       .insertInto("companySettings")
       .values({
         id: companyId,
-        accountingEnabled: true
+        accountingEnabled: true,
+        accountingCutoverDate: "2000-01-01"
       })
       .onConflict((oc) =>
-        oc.column("id").doUpdateSet({ accountingEnabled: true })
+        oc.column("id").doUpdateSet({
+          accountingEnabled: true,
+          accountingCutoverDate: "2000-01-01"
+        })
       )
       .execute();
     await trx

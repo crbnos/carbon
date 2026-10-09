@@ -14,22 +14,10 @@ import type { ChargeContext } from "./post-charge-post";
 export async function voidCharge(
   context: ChargeContext
 ): Promise<{ journalId: string | null }> {
-  const {
-    trx,
-    charge,
-    accountingEnabled,
-    companyId,
-    userId,
-    timestamp,
-    today
-  } = context;
+  const { trx, charge, postingStatus, companyId, userId, timestamp, today } =
+    context;
 
   if (charge.journalId) {
-    if (!accountingEnabled) {
-      throw new Error(
-        "Enable accounting before reversing a posted charge journal"
-      );
-    }
     const originalJournal = await trx
       .selectFrom("journal")
       .select(["id", "status", "sourceType"])
@@ -68,22 +56,22 @@ export async function voidCharge(
     ) {
       throw new Error("Original charge journal has invalid lines");
     }
-    const period = await resolveAccountingPeriod(
-      trx,
-      companyId,
-      today,
-      "current"
-    );
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
     const reversal = await trx
       .insertInto("journal")
       .values({
         journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-        accountingPeriodId: period.id,
+        accountingPeriodId: period?.id ?? null,
         description: `VOID Charge ${charge.chargeId}`,
-        postingDate: period.postingDate,
+        postingDate: period?.postingDate ?? today,
         companyId,
         sourceType: "Charge",
-        status: "Posted",
+        status: postingStatus,
         postedAt: timestamp,
         postedBy: userId,
         createdBy: userId
@@ -108,6 +96,7 @@ export async function voidCharge(
           documentId: charge.id,
           documentLineReference: line.documentLineReference,
           journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
           companyId
         }))
       )

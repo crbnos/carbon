@@ -17,7 +17,7 @@ export async function voidReimbursement(
   const {
     trx,
     reimbursement,
-    accountingEnabled,
+    postingStatus,
     companyId,
     userId,
     timestamp,
@@ -50,11 +50,6 @@ export async function voidReimbursement(
   }
 
   if (reimbursement.journalId) {
-    if (!accountingEnabled) {
-      throw new Error(
-        "Enable accounting before reversing a posted reimbursement journal"
-      );
-    }
     const originalJournal = await trx
       .selectFrom("journal")
       .select(["id", "status", "sourceType"])
@@ -94,22 +89,22 @@ export async function voidReimbursement(
     ) {
       throw new Error("Original reimbursement journal has invalid lines");
     }
-    const period = await resolveAccountingPeriod(
-      trx,
-      companyId,
-      today,
-      "current"
-    );
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
     const reversal = await trx
       .insertInto("journal")
       .values({
         journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-        accountingPeriodId: period.id,
+        accountingPeriodId: period?.id ?? null,
         description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
-        postingDate: period.postingDate,
+        postingDate: period?.postingDate ?? today,
         companyId,
         sourceType: "Reimbursement",
-        status: "Posted",
+        status: postingStatus,
         postedAt: timestamp,
         postedBy: userId,
         createdBy: userId
@@ -134,6 +129,7 @@ export async function voidReimbursement(
           documentId: reimbursement.id,
           documentLineReference: line.documentLineReference,
           journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
           companyId
         }))
       )

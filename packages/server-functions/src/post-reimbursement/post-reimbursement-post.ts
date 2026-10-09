@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import { getNextSequence } from "@carbon/database/sequence";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
@@ -34,7 +35,7 @@ export type ReimbursementContext = {
     Selectable<KyselyDatabase["company"]>,
     "companyGroupId" | "baseCurrencyCode" | "timezone"
   >;
-  accountingEnabled: boolean;
+  postingStatus: AutomaticJournalStatus;
   companyId: string;
   userId: string;
   timestamp: string;
@@ -48,7 +49,7 @@ export async function postReimbursementJournal(
     trx,
     reimbursement,
     company,
-    accountingEnabled,
+    postingStatus,
     companyId,
     userId,
     timestamp
@@ -161,7 +162,10 @@ export async function postReimbursementJournal(
   let postingDate =
     reimbursement.postingDate ?? reimbursement.reimbursementDate;
   let journalId: string | null = null;
-  if (accountingEnabled) {
+  // A Provisional journal has no accounting period, and no posting creates a
+  // period before the cutover.
+  let accountingPeriodId: string | null = null;
+  if (postingStatus === "Posted") {
     const period = await resolveAccountingPeriod(
       trx,
       companyId,
@@ -169,199 +173,200 @@ export async function postReimbursementJournal(
       "historical-with-shift"
     );
     postingDate = period.postingDate;
-    const built = buildReimbursementJournal({
-      reimbursement: {
-        amount: Number(reimbursement.amount),
-        payableAccountId,
-        currencyCode: reimbursement.currencyCode,
-        exchangeRate: Number(reimbursement.exchangeRate)
-      },
-      lines: lines.map((line) => ({
-        accountId: line.accountId,
-        amount: Number(line.amount),
-        costCenterId: line.costCenterId,
-        projectId: line.projectId,
-        description: line.description
-      })),
-      accounts,
-      documentId: reimbursement.id,
-      documentReadableId: reimbursement.reimbursementId
-    });
-    // The builder emits one debit per coding line IN ORDER, then the payable
-    // credit. The dimension pass below pairs `built.journalLines[i]` with
-    // `lines[i]` on that contract, so assert it rather than trusting it.
-    if (
-      built.journalLines.length !== lines.length + 1 ||
-      lines.some(
-        (line, index) => built.journalLines[index]?.accountId !== line.accountId
-      )
-    ) {
-      throw new Error("Reimbursement journal lines do not match coding lines");
-    }
+    accountingPeriodId = period.id;
+  }
+  const built = buildReimbursementJournal({
+    reimbursement: {
+      amount: Number(reimbursement.amount),
+      payableAccountId,
+      currencyCode: reimbursement.currencyCode,
+      exchangeRate: Number(reimbursement.exchangeRate)
+    },
+    lines: lines.map((line) => ({
+      accountId: line.accountId,
+      amount: Number(line.amount),
+      costCenterId: line.costCenterId,
+      projectId: line.projectId,
+      description: line.description
+    })),
+    accounts,
+    documentId: reimbursement.id,
+    documentReadableId: reimbursement.reimbursementId
+  });
+  // The builder emits one debit per coding line IN ORDER, then the payable
+  // credit. The dimension pass below pairs `built.journalLines[i]` with
+  // `lines[i]` on that contract, so assert it rather than trusting it.
+  if (
+    built.journalLines.length !== lines.length + 1 ||
+    lines.some(
+      (line, index) => built.journalLines[index]?.accountId !== line.accountId
+    )
+  ) {
+    throw new Error("Reimbursement journal lines do not match coding lines");
+  }
 
-    const dimensions = costCenterIds.length
-      ? await trx
-          .selectFrom("dimension")
-          .select("id")
-          .where("companyGroupId", "=", company.companyGroupId)
-          .where("active", "=", true)
-          .where("entityType", "=", "CostCenter")
-          .orderBy("createdAt")
-          .orderBy("id")
-          .limit(1)
-          .execute()
-      : [];
-    const costCenterDimensionId = dimensions[0]?.id ?? null;
-    if (costCenterIds.length && !costCenterDimensionId) {
-      throw new Error("Company group has no active Cost Center dimension");
-    }
-    const projectDimensions = projectIds.length
-      ? await trx
-          .selectFrom("dimension")
-          .select("id")
-          .where("companyGroupId", "=", company.companyGroupId)
-          .where("active", "=", true)
-          .where("entityType", "=", "Project")
-          .orderBy("createdAt")
-          .orderBy("id")
-          .limit(1)
-          .execute()
-      : [];
-    const projectDimensionId = projectDimensions[0]?.id ?? null;
-    if (projectIds.length && !projectDimensionId) {
-      throw new Error("Company group has no active Project dimension");
-    }
-
-    // The generic per-line dimension rows — where a human's edit in the line
-    // editor lands.
-    const lineIds = lines.map((line) => line.id);
-    const genericDimensions = lineIds.length
-      ? await trx
-          .selectFrom("reimbursementLineDimension")
-          .select(["reimbursementLineId", "dimensionId", "valueId"])
-          .where("companyId", "=", companyId)
-          .where("reimbursementLineId", "in", lineIds)
-          .orderBy("dimensionId")
-          .execute()
-      : [];
-    const genericDimensionIds = [
-      ...new Set(genericDimensions.map((row) => row.dimensionId))
-    ];
-    if (genericDimensionIds.length) {
-      const activeDimensions = await trx
+  const dimensions = costCenterIds.length
+    ? await trx
         .selectFrom("dimension")
         .select("id")
         .where("companyGroupId", "=", company.companyGroupId)
         .where("active", "=", true)
-        .where("id", "in", genericDimensionIds)
-        .execute();
-      if (activeDimensions.length !== genericDimensionIds.length) {
-        throw new Error(
-          "Reimbursement line dimension is not an active dimension in this company group"
-        );
-      }
-    }
-    const genericByLineId = new Map<
-      string,
-      { dimensionId: string; valueId: string }[]
-    >();
-    for (const row of genericDimensions) {
-      const existing = genericByLineId.get(row.reimbursementLineId);
-      if (existing) existing.push(row);
-      else genericByLineId.set(row.reimbursementLineId, [row]);
-    }
+        .where("entityType", "=", "CostCenter")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .execute()
+    : [];
+  const costCenterDimensionId = dimensions[0]?.id ?? null;
+  if (costCenterIds.length && !costCenterDimensionId) {
+    throw new Error("Company group has no active Cost Center dimension");
+  }
+  const projectDimensions = projectIds.length
+    ? await trx
+        .selectFrom("dimension")
+        .select("id")
+        .where("companyGroupId", "=", company.companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "=", "Project")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .execute()
+    : [];
+  const projectDimensionId = projectDimensions[0]?.id ?? null;
+  if (projectIds.length && !projectDimensionId) {
+    throw new Error("Company group has no active Project dimension");
+  }
 
-    const journal = await trx
-      .insertInto("journal")
-      .values({
-        journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-        accountingPeriodId: period.id,
-        description: `Reimbursement ${reimbursement.reimbursementId}`,
-        postingDate,
-        companyId,
-        sourceType: "Reimbursement",
-        status: "Posted",
-        postedAt: timestamp,
-        postedBy: userId,
-        createdBy: userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    const createdJournalId = journal.id;
-    journalId = createdJournalId;
-    const journalLineReference = nanoid();
-    const journalLineIds = await allocateJournalLineIds(
-      trx,
-      built.journalLines.length
-    );
-    await trx
-      .insertInto("journalLine")
-      .values(
-        built.journalLines.map((line, index) => ({
-          id: journalLineIds[index],
-          journalId: createdJournalId,
-          accountId: line.accountId,
-          amount: line.amount,
-          quantity: 1,
-          description: line.description,
-          documentType: "Reimbursement" as const,
-          documentId: line.documentId,
-          journalLineReference,
-          companyId
-        }))
-      )
+  // The generic per-line dimension rows — where a human's edit in the line
+  // editor lands.
+  const lineIds = lines.map((line) => line.id);
+  const genericDimensions = lineIds.length
+    ? await trx
+        .selectFrom("reimbursementLineDimension")
+        .select(["reimbursementLineId", "dimensionId", "valueId"])
+        .where("companyId", "=", companyId)
+        .where("reimbursementLineId", "in", lineIds)
+        .orderBy("dimensionId")
+        .execute()
+    : [];
+  const genericDimensionIds = [
+    ...new Set(genericDimensions.map((row) => row.dimensionId))
+  ];
+  if (genericDimensionIds.length) {
+    const activeDimensions = await trx
+      .selectFrom("dimension")
+      .select("id")
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("id", "in", genericDimensionIds)
       .execute();
-
-    // Two sources feed one destination. `journalLineDimension` is UNIQUE on
-    // (journalLineId, dimensionId) — one value per dimension per line — so the
-    // legacy `costCenterId`/`projectId` columns and the generic
-    // `reimbursementLineDimension` rows must be MERGED before the insert, not
-    // written as two passes.
-    //
-    // When both name the same dimension, the GENERIC TABLE WINS. The two legacy
-    // columns are what the Ramp SYNC wrote at import; the generic table is
-    // where a HUMAN's edit in the line editor lands — and human intent beats a
-    // machine default. A reader who finds that precedence surprising needs the
-    // sentence here, at the call site.
-    const dimensionRows: {
-      journalLineId: string;
-      dimensionId: string;
-      valueId: string;
-      companyId: string;
-    }[] = [];
-    built.journalLines.forEach((journalLine, index) => {
-      const sourceLine = lines[index];
-      // The trailing payable leg is a control account and carries no coding.
-      if (!sourceLine) return;
-      const journalLineId = journalLineIds[index];
-      if (!journalLineId) {
-        throw new Error("Failed to map reimbursement journal line");
-      }
-      const byDimension = new Map<string, string>();
-      if (costCenterDimensionId && journalLine.costCenterId) {
-        byDimension.set(costCenterDimensionId, journalLine.costCenterId);
-      }
-      if (projectDimensionId && journalLine.projectId) {
-        byDimension.set(projectDimensionId, journalLine.projectId);
-      }
-      for (const row of genericByLineId.get(sourceLine.id) ?? []) {
-        byDimension.set(row.dimensionId, row.valueId);
-      }
-      for (const [dimensionId, valueId] of byDimension) {
-        dimensionRows.push({
-          journalLineId,
-          dimensionId,
-          valueId,
-          companyId
-        });
-      }
-    });
-    if (dimensionRows.length) {
-      await trx
-        .insertInto("journalLineDimension")
-        .values(dimensionRows)
-        .execute();
+    if (activeDimensions.length !== genericDimensionIds.length) {
+      throw new Error(
+        "Reimbursement line dimension is not an active dimension in this company group"
+      );
     }
+  }
+  const genericByLineId = new Map<
+    string,
+    { dimensionId: string; valueId: string }[]
+  >();
+  for (const row of genericDimensions) {
+    const existing = genericByLineId.get(row.reimbursementLineId);
+    if (existing) existing.push(row);
+    else genericByLineId.set(row.reimbursementLineId, [row]);
+  }
+
+  const journal = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
+      accountingPeriodId,
+      description: `Reimbursement ${reimbursement.reimbursementId}`,
+      postingDate,
+      companyId,
+      sourceType: "Reimbursement",
+      status: postingStatus,
+      postedAt: timestamp,
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  const createdJournalId = journal.id;
+  journalId = createdJournalId;
+  const journalLineReference = nanoid();
+  const journalLineIds = await allocateJournalLineIds(
+    trx,
+    built.journalLines.length
+  );
+  await trx
+    .insertInto("journalLine")
+    .values(
+      built.journalLines.map((line, index) => ({
+        id: journalLineIds[index],
+        journalId: createdJournalId,
+        accountId: line.accountId,
+        amount: line.amount,
+        quantity: 1,
+        description: line.description,
+        documentType: "Reimbursement" as const,
+        documentId: line.documentId,
+        journalLineReference,
+        companyId
+      }))
+    )
+    .execute();
+
+  // Two sources feed one destination. `journalLineDimension` is UNIQUE on
+  // (journalLineId, dimensionId) — one value per dimension per line — so the
+  // legacy `costCenterId`/`projectId` columns and the generic
+  // `reimbursementLineDimension` rows must be MERGED before the insert, not
+  // written as two passes.
+  //
+  // When both name the same dimension, the GENERIC TABLE WINS. The two legacy
+  // columns are what the Ramp SYNC wrote at import; the generic table is
+  // where a HUMAN's edit in the line editor lands — and human intent beats a
+  // machine default. A reader who finds that precedence surprising needs the
+  // sentence here, at the call site.
+  const dimensionRows: {
+    journalLineId: string;
+    dimensionId: string;
+    valueId: string;
+    companyId: string;
+  }[] = [];
+  built.journalLines.forEach((journalLine, index) => {
+    const sourceLine = lines[index];
+    // The trailing payable leg is a control account and carries no coding.
+    if (!sourceLine) return;
+    const journalLineId = journalLineIds[index];
+    if (!journalLineId) {
+      throw new Error("Failed to map reimbursement journal line");
+    }
+    const byDimension = new Map<string, string>();
+    if (costCenterDimensionId && journalLine.costCenterId) {
+      byDimension.set(costCenterDimensionId, journalLine.costCenterId);
+    }
+    if (projectDimensionId && journalLine.projectId) {
+      byDimension.set(projectDimensionId, journalLine.projectId);
+    }
+    for (const row of genericByLineId.get(sourceLine.id) ?? []) {
+      byDimension.set(row.dimensionId, row.valueId);
+    }
+    for (const [dimensionId, valueId] of byDimension) {
+      dimensionRows.push({
+        journalLineId,
+        dimensionId,
+        valueId,
+        companyId
+      });
+    }
+  });
+  if (dimensionRows.length) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(dimensionRows)
+      .execute();
   }
 
   await trx
