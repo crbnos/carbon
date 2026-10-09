@@ -45508,6 +45508,8 @@ export type Database = {
       }
       projectElement: {
         Row: {
+          actualParameterId: string | null
+          allocationPercent: number | null
           budget: number | null
           companyId: string
           completedAt: string | null
@@ -45531,20 +45533,45 @@ export type Database = {
           milestoneId: string | null
           name: string
           ownerId: string | null
+          parameterContingencyPercent: number | null
+          parameterFormula: string | null
+          parameterItemField: string | null
+          parameterSource: Database["public"]["Enums"]["parameterSource"] | null
+          parameterUnit: string | null
+          parameterValue: number | null
           parentId: string | null
           priority: Database["public"]["Enums"]["projectElementPriority"]
           projectId: string
+          qualityDocumentId: string | null
           readableId: string
+          requirementCategory:
+            | Database["public"]["Enums"]["requirementCategory"]
+            | null
           sequence: number
           sortOrder: number
           startDate: string | null
           stateId: string
           targetDate: string | null
+          targetOperator:
+            | Database["public"]["Enums"]["requirementTargetOperator"]
+            | null
+          targetUnit: string | null
+          targetUpperValue: number | null
+          targetValue: number | null
+          trackedEntityId: string | null
           type: Database["public"]["Enums"]["projectElementType"]
           updatedAt: string | null
           updatedBy: string | null
+          verdict: Database["public"]["Enums"]["testCaseVerdict"] | null
+          verdictAt: string | null
+          verdictBy: string | null
+          verificationMethod:
+            | Database["public"]["Enums"]["requirementVerificationMethod"]
+            | null
         }
         Insert: {
+          actualParameterId?: string | null
+          allocationPercent?: number | null
           budget?: number | null
           companyId: string
           completedAt?: string | null
@@ -45568,20 +45595,47 @@ export type Database = {
           milestoneId?: string | null
           name: string
           ownerId?: string | null
+          parameterContingencyPercent?: number | null
+          parameterFormula?: string | null
+          parameterItemField?: string | null
+          parameterSource?:
+            | Database["public"]["Enums"]["parameterSource"]
+            | null
+          parameterUnit?: string | null
+          parameterValue?: number | null
           parentId?: string | null
           priority?: Database["public"]["Enums"]["projectElementPriority"]
           projectId: string
+          qualityDocumentId?: string | null
           readableId?: string
+          requirementCategory?:
+            | Database["public"]["Enums"]["requirementCategory"]
+            | null
           sequence?: number
           sortOrder?: number
           startDate?: string | null
           stateId: string
           targetDate?: string | null
+          targetOperator?:
+            | Database["public"]["Enums"]["requirementTargetOperator"]
+            | null
+          targetUnit?: string | null
+          targetUpperValue?: number | null
+          targetValue?: number | null
+          trackedEntityId?: string | null
           type: Database["public"]["Enums"]["projectElementType"]
           updatedAt?: string | null
           updatedBy?: string | null
+          verdict?: Database["public"]["Enums"]["testCaseVerdict"] | null
+          verdictAt?: string | null
+          verdictBy?: string | null
+          verificationMethod?:
+            | Database["public"]["Enums"]["requirementVerificationMethod"]
+            | null
         }
         Update: {
+          actualParameterId?: string | null
+          allocationPercent?: number | null
           budget?: number | null
           companyId?: string
           completedAt?: string | null
@@ -45605,20 +45659,52 @@ export type Database = {
           milestoneId?: string | null
           name?: string
           ownerId?: string | null
+          parameterContingencyPercent?: number | null
+          parameterFormula?: string | null
+          parameterItemField?: string | null
+          parameterSource?:
+            | Database["public"]["Enums"]["parameterSource"]
+            | null
+          parameterUnit?: string | null
+          parameterValue?: number | null
           parentId?: string | null
           priority?: Database["public"]["Enums"]["projectElementPriority"]
           projectId?: string
+          qualityDocumentId?: string | null
           readableId?: string
+          requirementCategory?:
+            | Database["public"]["Enums"]["requirementCategory"]
+            | null
           sequence?: number
           sortOrder?: number
           startDate?: string | null
           stateId?: string
           targetDate?: string | null
+          targetOperator?:
+            | Database["public"]["Enums"]["requirementTargetOperator"]
+            | null
+          targetUnit?: string | null
+          targetUpperValue?: number | null
+          targetValue?: number | null
+          trackedEntityId?: string | null
           type?: Database["public"]["Enums"]["projectElementType"]
           updatedAt?: string | null
           updatedBy?: string | null
+          verdict?: Database["public"]["Enums"]["testCaseVerdict"] | null
+          verdictAt?: string | null
+          verdictBy?: string | null
+          verificationMethod?:
+            | Database["public"]["Enums"]["requirementVerificationMethod"]
+            | null
         }
         Relationships: [
+          {
+            foreignKeyName: "projectElement_actualParameter_fkey"
+            columns: ["actualParameterId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
           {
             foreignKeyName: "projectElement_companyId_fkey"
             columns: ["companyId"]
@@ -45809,11 +45895,32 @@ export type Database = {
             referencedColumns: ["id", "companyId"]
           },
           {
+            foreignKeyName: "projectElement_qualityDocumentId_fkey"
+            columns: ["qualityDocumentId"]
+            isOneToOne: false
+            referencedRelation: "qualityDocument"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_qualityDocumentId_fkey"
+            columns: ["qualityDocumentId"]
+            isOneToOne: false
+            referencedRelation: "qualityDocuments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "projectElement_state_fkey"
             columns: ["stateId", "projectId", "companyId"]
             isOneToOne: false
             referencedRelation: "projectState"
             referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "projectElement_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "projectElement_updatedBy_fkey"
@@ -45846,6 +45953,41 @@ export type Database = {
           {
             foreignKeyName: "projectElement_updatedBy_fkey"
             columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectElement_verdictBy_fkey"
+            columns: ["verdictBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_verdictBy_fkey"
+            columns: ["verdictBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_verdictBy_fkey"
+            columns: ["verdictBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_verdictBy_fkey"
+            columns: ["verdictBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_verdictBy_fkey"
+            columns: ["verdictBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -46389,6 +46531,202 @@ export type Database = {
           },
           {
             foreignKeyName: "projectElementLabor_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectElementLink: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          fromElementId: string
+          id: string
+          linkType: Database["public"]["Enums"]["projectElementLinkType"]
+          projectId: string
+          reviewedAt: string | null
+          reviewedBy: string | null
+          suspectSince: string | null
+          toElementId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          fromElementId: string
+          id?: string
+          linkType: Database["public"]["Enums"]["projectElementLinkType"]
+          projectId: string
+          reviewedAt?: string | null
+          reviewedBy?: string | null
+          suspectSince?: string | null
+          toElementId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          fromElementId?: string
+          id?: string
+          linkType?: Database["public"]["Enums"]["projectElementLinkType"]
+          projectId?: string
+          reviewedAt?: string | null
+          reviewedBy?: string | null
+          suspectSince?: string | null
+          toElementId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectElementLink_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectElementLink_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectElementLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectElementLink_from_fkey"
+            columns: ["fromElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "projectElementLink_reviewedBy_fkey"
+            columns: ["reviewedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_reviewedBy_fkey"
+            columns: ["reviewedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_reviewedBy_fkey"
+            columns: ["reviewedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_reviewedBy_fkey"
+            columns: ["reviewedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_reviewedBy_fkey"
+            columns: ["reviewedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectElementLink_to_fkey"
+            columns: ["toElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "projectElementLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementLink_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"

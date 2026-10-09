@@ -38,7 +38,7 @@
 
 - [x] Task 1: Create the Phase 1b enum migration
 - [x] Task 2: Create the capital projects migration
-- [ ] Task 3: Create the trace links and element fields migration
+- [x] Task 3: Create the trace links and element fields migration
 - [ ] Task 4: Create the views and preferences migration
 - [ ] Task 5: Apply migrations, regenerate types, ship RLS
 - [ ] Task 6: Add Capitalize to the posting helpers and the SQL mirror
@@ -1446,3 +1446,6 @@ ls .ai/playbooks/projects-phase-1b.md
 - Tasks 1–4: `pnpm run check:workflow-catalog` fails before this plan. Phase 1a added `job.projectId`, `job.projectElementId` and `job.consumeToProject`, and the catalog has no labels for them. This plan leaves that failure alone.
 - Task 2: the CHECK name is `fixedAssetCipCost_sourceType_check`, as the plan says. `fixedAsset`, `fixedAssetClass` and `trackedEntity` have a single-column primary key and no `(id, companyId)` UNIQUE, so their new FKs stay single-column, as the plan writes them. The FK indexes are plain (not partial), as in Phase 1a.
 - Task 2: `turbo run typecheck --filter=@carbon/jobs` fails on 2 errors in `server-functions/src/post-timesheet/index.ts` (lines 158 and 161: the `inOrder` results infer as `any[][]`). The same 2 errors show with the types from before this migration, so this plan did not cause them. `@carbon/server-functions`, `erp` and `mes` typecheck green.
+- Task 3: `qualityDocumentId` references `qualityDocument("id")` `ON DELETE SET NULL`, with an index. The plan wrote it with no FK. A tenant row id with no FK must go into the backup `ID_REF_COLUMNS`, and `qualityDocument` has a single-column key, so an FK is the simpler fix.
+- Task 3: `projectElementLink` indexes `companyId`, `("projectId", "companyId")`, the two element FKs as their full column lists, and the three user columns. The Parameter rule is `projectElement_parameter_part_check`.
+- Task 3: `pnpm db:migrate` applied the migration, then its `authz sync` step failed, because `projectElementLink` has no manifest rule until Task 5 (as in Phase 1a Tasks 3–7). A rolled-back SQL session checked the migration. A serial fills an empty `itemId`, and a serial of another item is refused. Deleting a Parameter nulls `actualParameterId` and keeps `companyId`. Deleting an element removes its links. A Parameter with an item is refused.
