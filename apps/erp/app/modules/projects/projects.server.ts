@@ -1342,6 +1342,69 @@ export async function getElementTimeAndMaterials(
 const CHARGE_NUMBER_FIELD = "projectId__projectElementId";
 
 /**
+ * Checks the charge numbers of a document's lines in two queries: every
+ * project is the company's, and every element belongs to its line's project.
+ * Returns the first refusal, or null.
+ */
+export async function chargeNumbersError(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  refs: { projectId?: string | null; projectElementId?: string | null }[]
+): Promise<string | null> {
+  if (refs.some((ref) => ref.projectElementId && !ref.projectId)) {
+    return "An element needs its project";
+  }
+  const projectIds = [
+    ...new Set(refs.map((ref) => ref.projectId).filter(Boolean))
+  ] as string[];
+  const elementIds = [
+    ...new Set(refs.map((ref) => ref.projectElementId).filter(Boolean))
+  ] as string[];
+  if (projectIds.length === 0) return null;
+
+  const [projects, elements] = await Promise.all([
+    client
+      .from("project")
+      .select("id")
+      .eq("companyId", companyId)
+      .in("id", projectIds),
+    elementIds.length > 0
+      ? client
+          .from("projectElement")
+          .select("id, projectId")
+          .eq("companyId", companyId)
+          .in("id", elementIds)
+      : Promise.resolve({
+          data: [] as { id: string; projectId: string }[],
+          error: null
+        })
+  ]);
+  if (projects.error || elements.error) {
+    logger.error("Failed to check the charge numbers", {
+      companyId,
+      error: projects.error ?? elements.error
+    });
+    return "Failed to check the charge numbers";
+  }
+  const known = new Set((projects.data ?? []).map((row) => row.id));
+  if (projectIds.some((id) => !known.has(id))) {
+    return "The project does not exist";
+  }
+  const projectOf = new Map(
+    (elements.data ?? []).map((row) => [row.id, row.projectId])
+  );
+  for (const ref of refs) {
+    if (
+      ref.projectElementId &&
+      projectOf.get(ref.projectElementId) !== ref.projectId
+    ) {
+      return "The element is not part of the project";
+    }
+  }
+  return null;
+}
+
+/**
  * Checks a charge number a form sends with a document (a job, a purchase
  * order line, a purchase invoice line): the project is this company's, the
  * element is one of its elements, and a job that consumes to the project has

@@ -629,18 +629,24 @@ export const reimbursementLineDimensionValidator = z.object({
   valueId: z.string().min(1)
 });
 
-export const reimbursementLineValidator = z.object({
-  id: z.string().optional(),
-  accountId: z.string().min(1, { message: "Account is required" }),
-  costCenterId: z.string().nullish(),
-  projectId: z.string().nullish(),
-  description: z.string().nullish(),
-  amount: z
-    .number()
-    .finite()
-    .positive({ message: "Line amount must be positive" }),
-  dimensions: z.array(reimbursementLineDimensionValidator).default([])
-});
+export const reimbursementLineValidator = z
+  .object({
+    id: z.string().optional(),
+    accountId: z.string().min(1, { message: "Account is required" }),
+    costCenterId: z.string().nullish(),
+    projectId: z.string().nullish(),
+    projectElementId: z.string().nullish(),
+    description: z.string().nullish(),
+    amount: z
+      .number()
+      .finite()
+      .positive({ message: "Line amount must be positive" }),
+    dimensions: z.array(reimbursementLineDimensionValidator).default([])
+  })
+  .refine((line) => !line.projectElementId || !!line.projectId, {
+    message: "An element needs its project",
+    path: ["projectElementId"]
+  });
 
 // The editor submits the whole line set as ONE hidden JSON field, so the
 // route parses that string and runs it through this array.

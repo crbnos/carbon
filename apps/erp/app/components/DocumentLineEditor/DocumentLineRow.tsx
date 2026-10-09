@@ -6,7 +6,7 @@ import { cn, IconButton, Input, NumberField, NumberInput } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { LuChevronRight, LuTrash } from "react-icons/lu";
-import { AccountControlled } from "~/components/Form";
+import { AccountControlled, ChargeNumberControlled } from "~/components/Form";
 import { useCurrencyDecimals } from "~/hooks";
 import DimensionSelector from "~/modules/accounting/ui/JournalEntries/DimensionSelector";
 import type {
@@ -20,6 +20,10 @@ type DocumentLineRowProps = {
   index: number;
   currencyCode: string;
   availableDimensions: DimensionWithValues[];
+  /** Dimensions the charge number decides; the dimension picker leaves them out. */
+  hiddenDimensionIds: Set<string>;
+  /** The line takes a charge number (a project, or a project and an element). */
+  showChargeNumber: boolean;
   /** Collapsed rows show account + amount only; expanded adds the rest. */
   isExpanded: boolean;
   onToggleExpand: () => void;
@@ -34,6 +38,8 @@ const DocumentLineRow = ({
   index,
   currencyCode,
   availableDimensions,
+  hiddenDimensionIds,
+  showChargeNumber,
   isExpanded,
   onToggleExpand,
   onChange,
@@ -49,6 +55,12 @@ const DocumentLineRow = ({
   const handleDimensionsChange = (dimensions: JournalLineDimensionValue[]) => {
     onChange({ ...line, dimensions });
   };
+  const pickerDimensions = availableDimensions.filter(
+    (d) => !hiddenDimensionIds.has(d.dimensionId)
+  );
+  const currentDimensions = line.dimensions.filter(
+    (d) => !hiddenDimensionIds.has(d.dimensionId)
+  );
 
   return (
     <div className="group">
@@ -96,13 +108,24 @@ const DocumentLineRow = ({
                 size="sm"
               />
 
-              {availableDimensions.length > 0 && (
+              {pickerDimensions.length > 0 && (
                 <DimensionSelector
                   journalLineId={line.key}
-                  availableDimensions={availableDimensions}
-                  currentDimensions={line.dimensions}
+                  availableDimensions={pickerDimensions}
+                  currentDimensions={currentDimensions}
                   onChange={handleDimensionsChange}
                   autoSave={false}
+                />
+              )}
+
+              {showChargeNumber && (
+                <ChargeNumberControlled
+                  projectId={line.projectId}
+                  projectElementId={line.projectElementId}
+                  onChange={(projectId, projectElementId) =>
+                    onChange({ ...line, projectId, projectElementId })
+                  }
+                  isReadOnly={isDisabled}
                 />
               )}
             </>

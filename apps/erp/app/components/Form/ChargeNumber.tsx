@@ -5,7 +5,8 @@
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useLocalStorage } from "@carbon/react";
+import { Combobox as ComboboxBase, useLocalStorage } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import type { ChargeNumber as ChargeNumberRow } from "~/modules/projects";
@@ -50,34 +51,12 @@ type ChargeNumberProps = Omit<
 };
 
 /**
- * Picks a charge number: a Released project, or a chargeable element of
- * one. The form receives two fields, `projectId` and `projectElementId`.
- * The last 8 picks show first.
+ * The picker's options, the most recent 8 picks first, and `remember` to
+ * record a pick.
  */
-/** The inline preview: the picked option's label. */
-const ChargeNumberPreview = (
-  value: string,
-  options: { value: string; label: ReactNode }[]
-) => options.find((option) => option.value === value)?.label ?? null;
-
-const ChargeNumber = ({
-  projectName = "projectId",
-  projectElementName = "projectElementId",
-  label,
-  onChange,
-  inline = false,
-  ...props
-}: ChargeNumberProps) => {
+function useChargeNumberOptions() {
   const chargeNumbers = useChargeNumbers();
   const [recent, setRecent] = useLocalStorage<string[]>(RECENT_KEY, []);
-
-  const [projectId, setProjectId] = useControlField<string | undefined>(
-    projectName
-  );
-  const [projectElementId, setProjectElementId] = useControlField<
-    string | undefined
-  >(projectElementName);
-
   const options = useMemo(() => {
     const rank = new Map(recent.map((value, index) => [value, index]));
     return [...chargeNumbers]
@@ -100,6 +79,76 @@ const ChargeNumber = ({
         keywords: [row.readableId, row.name, row.projectName].join(" ")
       }));
   }, [chargeNumbers, recent]);
+  const remember = (value: string) => {
+    if (!value) return;
+    setRecent((previous) =>
+      [value, ...previous.filter((v) => v !== value)].slice(0, RECENT_LIMIT)
+    );
+  };
+  return { chargeNumbers, options, remember };
+}
+
+/**
+ * A charge number picker outside a form: the caller holds the value. Used by
+ * the coding lines of a document, which submit as one JSON field.
+ */
+export function ChargeNumberControlled({
+  projectId,
+  projectElementId,
+  onChange,
+  isReadOnly
+}: {
+  projectId: string | null;
+  projectElementId: string | null;
+  onChange: (projectId: string | null, projectElementId: string | null) => void;
+  isReadOnly?: boolean;
+}) {
+  const { t } = useLingui();
+  const { options, remember } = useChargeNumberOptions();
+  return (
+    <ComboboxBase
+      size="sm"
+      isClearable
+      isReadOnly={isReadOnly}
+      placeholder={t`Charge number (optional)`}
+      options={options}
+      value={chargeNumberValue(projectId, projectElementId)}
+      onChange={(value) => {
+        const split = splitChargeNumber(value);
+        remember(value);
+        onChange(split.projectId || null, split.projectElementId || null);
+      }}
+    />
+  );
+}
+
+/**
+ * Picks a charge number: a Released project, or a chargeable element of
+ * one. The form receives two fields, `projectId` and `projectElementId`.
+ * The last 8 picks show first.
+ */
+/** The inline preview: the picked option's label. */
+const ChargeNumberPreview = (
+  value: string,
+  options: { value: string; label: ReactNode }[]
+) => options.find((option) => option.value === value)?.label ?? null;
+
+const ChargeNumber = ({
+  projectName = "projectId",
+  projectElementName = "projectElementId",
+  label,
+  onChange,
+  inline = false,
+  ...props
+}: ChargeNumberProps) => {
+  const { chargeNumbers, options, remember } = useChargeNumberOptions();
+
+  const [projectId, setProjectId] = useControlField<string | undefined>(
+    projectName
+  );
+  const [projectElementId, setProjectElementId] = useControlField<
+    string | undefined
+  >(projectElementName);
 
   const fieldName = `${projectName}__${projectElementName}`;
 
@@ -123,14 +172,7 @@ const ChargeNumber = ({
           const split = splitChargeNumber(value);
           setProjectId(split.projectId || undefined);
           setProjectElementId(split.projectElementId || undefined);
-          if (value) {
-            setRecent((previous) =>
-              [value, ...previous.filter((v) => v !== value)].slice(
-                0,
-                RECENT_LIMIT
-              )
-            );
-          }
+          remember(value);
           onChange?.(chargeNumbers.find((row) => row.value === value) ?? null);
         }}
       />

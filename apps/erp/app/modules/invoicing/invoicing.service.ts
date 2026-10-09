@@ -1696,6 +1696,7 @@ export async function upsertReimbursementLines(
           accountId: line.accountId,
           costCenterId: line.costCenterId ?? null,
           projectId: line.projectId ?? null,
+          projectElementId: line.projectElementId ?? null,
           description: line.description ?? null,
           amount: line.amount,
           sequence: index,

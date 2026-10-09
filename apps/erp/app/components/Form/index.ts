@@ -33,7 +33,10 @@ import Account, { AccountControlled } from "./Account";
 import AddressAutocomplete from "./AddressAutocomplete";
 import AssemblyInstruction from "./AssemblyInstruction";
 import AssetClass, { useAssetClasses } from "./AssetClass";
-import ChargeNumber, { useChargeNumbers } from "./ChargeNumber";
+import ChargeNumber, {
+  ChargeNumberControlled,
+  useChargeNumbers
+} from "./ChargeNumber";
 import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
 import CostCenter from "./CostCenter";
@@ -111,6 +114,7 @@ export {
   AssemblyInstruction,
   Boolean,
   ChargeNumber,
+  ChargeNumberControlled,
   useChargeNumbers,
   Color,
   Combobox,

@@ -26,6 +26,7 @@ import {
   postReimbursement,
   REIMBURSEMENT_UNBALANCED_MESSAGE
 } from "~/modules/invoicing/reimbursement.server";
+import { chargeNumbersError } from "~/modules/projects/projects.server";
 import type { loader as reimbursementLoader } from "~/routes/x+/reimbursements+/$reimbursementId";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -138,6 +139,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Each line's charge number: the company's project, and an element of it.
+  const chargeError = await chargeNumbersError(client, companyId, lines.data);
+  if (chargeError) {
+    return data({}, await flash(request, error(null, chargeError)));
+  }
+
   // The totals guard, BEFORE any server-function call.
   const willPost = intent === "save-and-post";
   if (
@@ -230,6 +237,7 @@ function toClientLines(
     sequence: number;
     costCenterId: string | null;
     projectId: string | null;
+    projectElementId: string | null;
     reimbursementLineDimension?:
       | { dimensionId: string; valueId: string }[]
       | null;
@@ -246,6 +254,7 @@ function toClientLines(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectElementId: line.projectElementId,
       // Every stored pair is kept, INCLUDING one whose dimension is no longer
       // active. `upsertReimbursementLines` replaces the lines wholesale — it
       // deletes them and reinserts only what the editor submitted — so dropping

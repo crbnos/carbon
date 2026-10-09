@@ -71,47 +71,94 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   ];
 
-  const [accounts, costCenters, receipts, journal] = await Promise.all([
-    accountIds.length > 0
-      ? client
-          .from("account")
-          .select("id, number, name")
-          .eq("companyGroupId", companyGroupId)
-          .in("id", [...new Set(accountIds)])
-      : Promise.resolve({
-          data: [] as { id: string; number: string; name: string }[],
-          error: null
-        }),
-    costCenterIds.length > 0
-      ? client
-          .from("costCenter")
-          .select("id, name")
-          .eq("companyId", companyId)
-          .in("id", costCenterIds)
-      : Promise.resolve({
-          data: [] as { id: string; name: string }[],
-          error: null
-        }),
-    client
-      .from("document")
-      .select("id, name, path")
-      .eq("companyId", companyId)
-      .ilike("path", `${companyId}/charge/${id}/%`),
-    charge.data.journalId
-      ? client
-          .from("journal")
-          .select("id, journalEntryId")
-          .eq("id", charge.data.journalId)
-          .eq("companyId", companyId)
-          .maybeSingle()
-      : Promise.resolve({
-          data: null as { id: string; journalEntryId: string } | null,
-          error: null
-        })
-  ]);
+  const projectIds = [
+    ...new Set(
+      lines
+        .map((line) => line.projectId)
+        .filter((value): value is string => Boolean(value))
+    )
+  ];
+  const elementIds = [
+    ...new Set(
+      lines
+        .map((line) => line.projectElementId)
+        .filter((value): value is string => Boolean(value))
+    )
+  ];
+
+  const [accounts, costCenters, receipts, journal, projects, elements] =
+    await Promise.all([
+      accountIds.length > 0
+        ? client
+            .from("account")
+            .select("id, number, name")
+            .eq("companyGroupId", companyGroupId)
+            .in("id", [...new Set(accountIds)])
+        : Promise.resolve({
+            data: [] as { id: string; number: string; name: string }[],
+            error: null
+          }),
+      costCenterIds.length > 0
+        ? client
+            .from("costCenter")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .in("id", costCenterIds)
+        : Promise.resolve({
+            data: [] as { id: string; name: string }[],
+            error: null
+          }),
+      client
+        .from("document")
+        .select("id, name, path")
+        .eq("companyId", companyId)
+        .ilike("path", `${companyId}/charge/${id}/%`),
+      charge.data.journalId
+        ? client
+            .from("journal")
+            .select("id, journalEntryId")
+            .eq("id", charge.data.journalId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : Promise.resolve({
+            data: null as { id: string; journalEntryId: string } | null,
+            error: null
+          }),
+      // The charge number of each line, read-only: editing charge lines is
+      // .ai/specs/2026-09-23-editable-imported-spend-documents.md.
+      projectIds.length > 0
+        ? client
+            .from("project")
+            .select("id, identifier, name")
+            .eq("companyId", companyId)
+            .in("id", projectIds)
+        : Promise.resolve({
+            data: [] as {
+              id: string;
+              identifier: string | null;
+              name: string;
+            }[],
+            error: null
+          }),
+      elementIds.length > 0
+        ? client
+            .from("projectElement")
+            .select("id, readableId, name")
+            .eq("companyId", companyId)
+            .in("id", elementIds)
+        : Promise.resolve({
+            data: [] as { id: string; readableId: string; name: string }[],
+            error: null
+          })
+    ]);
 
   const auxiliaryError =
-    accounts.error ?? costCenters.error ?? receipts.error ?? journal.error;
+    accounts.error ??
+    costCenters.error ??
+    receipts.error ??
+    journal.error ??
+    projects.error ??
+    elements.error;
   if (auxiliaryError) {
     throw redirect(
       path.to.charges,
@@ -132,14 +179,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lines,
     accountsById,
     costCentersById,
+    projectsById: Object.fromEntries(
+      (projects.data ?? []).map((project) => [project.id, project])
+    ),
+    elementsById: Object.fromEntries(
+      (elements.data ?? []).map((element) => [element.id, element])
+    ),
     receipts: receipts.data ?? [],
     journal: journal.data
   };
 }
 
 export default function ChargeDetailRoute() {
-  const { charge, lines, accountsById, costCentersById, receipts, journal } =
-    useLoaderData<typeof loader>();
+  const {
+    charge,
+    lines,
+    accountsById,
+    costCentersById,
+    projectsById,
+    elementsById,
+    receipts,
+    journal
+  } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
@@ -166,6 +227,22 @@ export default function ChargeDetailRoute() {
     // An id we cannot resolve is still shown: a cost center deleted after the
     // charge posted is information, and "—" would read as "never coded".
     return costCentersById[costCenterId]?.name ?? costCenterId;
+  };
+
+  // The element's readable id, else the project's identifier.
+  const chargeNumberLabel = (line: {
+    projectId: string | null;
+    projectElementId: string | null;
+  }) => {
+    if (line.projectElementId) {
+      return (
+        elementsById[line.projectElementId]?.readableId ?? line.projectElementId
+      );
+    }
+    if (line.projectId) {
+      return projectsById[line.projectId]?.identifier ?? line.projectId;
+    }
+    return "—";
   };
 
   const canVoid =
@@ -241,6 +318,9 @@ export default function ChargeDetailRoute() {
                       <Trans>Cost Center</Trans>
                     </Th>
                     <Th>
+                      <Trans>Charge Number</Trans>
+                    </Th>
+                    <Th>
                       <Trans>Description</Trans>
                     </Th>
                     <Th className="text-right">
@@ -252,7 +332,7 @@ export default function ChargeDetailRoute() {
                   {lines.length === 0 ? (
                     <Tr>
                       <Td
-                        colSpan={4}
+                        colSpan={5}
                         className="text-center text-muted-foreground"
                       >
                         <Trans>No lines</Trans>
@@ -263,6 +343,24 @@ export default function ChargeDetailRoute() {
                       <Tr key={line.id}>
                         <Td>{accountLabel(line.accountId)}</Td>
                         <Td>{costCenterLabel(line.costCenterId)}</Td>
+                        <Td className="whitespace-nowrap">
+                          {line.projectId ? (
+                            <Hyperlink
+                              to={
+                                line.projectElementId
+                                  ? path.to.projectElementFull(
+                                      line.projectId,
+                                      line.projectElementId
+                                    )
+                                  : path.to.project(line.projectId)
+                              }
+                            >
+                              {chargeNumberLabel(line)}
+                            </Hyperlink>
+                          ) : (
+                            "—"
+                          )}
+                        </Td>
                         <Td>{line.description ?? "—"}</Td>
                         <Td className="text-right tabular-nums">
                           {currencyFormatter.format(Number(line.amount))}
