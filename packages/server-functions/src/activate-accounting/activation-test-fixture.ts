@@ -10,6 +10,7 @@ import type { Database } from "@carbon/database";
 import {
   getCutoverInventory,
   getLegacyDocumentCounts,
+  hasLegacyDocuments,
   saveOpeningTrialBalance
 } from "@carbon/database/accounting-cutover-reads";
 import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
@@ -316,12 +317,15 @@ export function unwrap<T>(result: { data: T | null; error: Error | null }): T {
 }
 
 /** What the enable's wizard shows before the enable: the legacy documents
- *  per family (`getLegacyDocumentCounts`). */
-export function legacyDocumentCounts(f: Fixture) {
-  return getLegacyDocumentCounts(f.db, {
-    companyId: f.companyId,
-    cutoverDate: f.cutoverDate
-  });
+ *  per family (`getLegacyDocumentCounts`). Every read also checks that the
+ *  wizard's cheap test (`hasLegacyDocuments`) agrees with the counts. */
+export async function legacyDocumentCounts(f: Fixture) {
+  const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+  const counts = await getLegacyDocumentCounts(f.db, args);
+  expect(await hasLegacyDocuments(f.db, args)).toBe(
+    Object.values(counts).some((count) => count > 0)
+  );
+  return counts;
 }
 
 /** The enable's counts without the cost rows: one per family the wizard

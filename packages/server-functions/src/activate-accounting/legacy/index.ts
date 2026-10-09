@@ -15,9 +15,8 @@
 // shipments, the movements of the adjustment core, then job issues and job
 // completions. The inventory reset and re-cost after this step find their
 // inventory lines. Then the asset and revenue runs (runs.ts): depreciation
-// runs, scrap disposals and revenue recognition runs. Run journals, and
-// movement journals built from a cost row the posting stored, are kept out
-// of provider sync (`keepOutOfProviderSync`).
+// runs, scrap disposals and revenue recognition runs. Every journal written
+// here is kept out of provider sync (`insertProvisionalJournals`).
 
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
@@ -46,7 +45,6 @@ import {
   attachJournalIds,
   insertProvisionalJournals,
   type JournalDocumentTable,
-  keepOutOfProviderSync,
   type LegacyDocumentJournal,
   readByIds
 } from "./write";
@@ -160,10 +158,10 @@ export async function journalLegacyDocuments(
     trx,
     movementArgs
   );
-  const salesShipments = await buildLegacySalesShipmentJournals(trx, {
-    ...movementArgs,
-    backfilledSaleDocumentIds: movementCosts.backfilledSaleDocumentIds
-  });
+  const salesShipments = await buildLegacySalesShipmentJournals(
+    trx,
+    movementArgs
+  );
   const returnShipments = await buildLegacyReturnShipmentJournals(
     trx,
     movementArgs
@@ -186,16 +184,6 @@ export async function journalLegacyDocuments(
     companyGroupId,
     userId,
     journals: movements
-  });
-  await keepOutOfProviderSync(trx, {
-    companyId,
-    userId,
-    journals: movements.flatMap((journal, index) => {
-      const id = movementJournalIds[index];
-      return id && journal.fromStoredCost
-        ? [{ id, sourceType: journal.sourceType }]
-        : [];
-    })
   });
 
   // No other journal reads them, and the re-cost never touches them.

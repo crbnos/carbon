@@ -5,7 +5,10 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLegacyDocumentCounts } from "@carbon/database/accounting-cutover-reads";
+import {
+  getLegacyDocumentCounts,
+  hasLegacyDocuments
+} from "@carbon/database/accounting-cutover-reads";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
@@ -48,6 +51,7 @@ import {
   Submit
 } from "~/components/Form";
 import { useDateFormatter, usePermissions } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { getDefaultAccounts } from "~/modules/accounting";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
@@ -119,23 +123,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
   // Documents posted on or after the cutover with no journal: a company
-  // enabled before the enable wrote them. Awaited, not streamed: the count
-  // decides whether the repair alert exists, and an alert that arrives after
-  // the first paint pushes the cards below it down.
+  // enabled before the enable wrote them. Whether there are any is awaited:
+  // it decides whether the repair alert exists, and an alert that arrives
+  // after the first paint pushes the cards below it down. The count only
+  // fills in the alert's text, so it is streamed.
   const cutoverDate = companySettings.data.accountingCutoverDate;
-  const legacyCounts = cutoverDate
-    ? await getLegacyDocumentCounts(getDatabaseClient(), {
-        companyId,
-        cutoverDate
-      })
-    : null;
+  const db = getDatabaseClient();
+  const hasLegacy = cutoverDate
+    ? await hasLegacyDocuments(db, { companyId, cutoverDate })
+    : false;
 
   return {
     companySettings: companySettings.data,
     accountDefaults: accountDefaults.data,
-    legacyDocumentCount: legacyCounts
-      ? Object.values(legacyCounts).reduce((sum, count) => sum + count, 0)
-      : 0
+    legacyDocumentsExist: hasLegacy,
+    legacyDocumentCount:
+      hasLegacy && cutoverDate
+        ? getLegacyDocumentCounts(db, { companyId, cutoverDate }).then(
+            (counts) =>
+              Object.values(counts).reduce((sum, count) => sum + count, 0)
+          )
+        : null
   };
 }
 
@@ -273,8 +281,13 @@ async function journalLegacyDocuments(request: Request) {
 }
 
 export default function AccountingSettingsRoute() {
-  const { companySettings, accountDefaults, legacyDocumentCount } =
-    useLoaderData<typeof loader>();
+  const {
+    companySettings,
+    accountDefaults,
+    legacyDocumentsExist,
+    legacyDocumentCount: legacyDocumentCountPromise
+  } = useLoaderData<typeof loader>();
+  const legacyDocumentCount = useResolved(legacyDocumentCountPromise, null);
   const permissions = usePermissions();
   const legacyFetcher = useFetcher<typeof action>();
   const fetcher = useAction<typeof action>({
@@ -398,18 +411,25 @@ export default function AccountingSettingsRoute() {
                 </Button>
               )}
             </HStack>
-            {accountingSetUp && legacyDocumentCount > 0 && (
+            {accountingSetUp && legacyDocumentsExist && (
               // The icon keeps the Alert's icon column; the text and the
               // button share the description, one row centred on the icon.
               <Alert variant="warning" className="mt-4 items-center">
                 <LuTriangleAlert />
                 <AlertDescription className="flex items-center justify-between gap-4 text-sm">
                   <span>
-                    <Plural
-                      value={legacyDocumentCount}
-                      one="# document posted before Carbon kept journals has no journal."
-                      other="# documents posted before Carbon kept journals have no journal."
-                    />
+                    {legacyDocumentCount === null ? (
+                      <Trans>
+                        Documents posted before Carbon kept journals have no
+                        journal.
+                      </Trans>
+                    ) : (
+                      <Plural
+                        value={legacyDocumentCount}
+                        one="# document posted before Carbon kept journals has no journal."
+                        other="# documents posted before Carbon kept journals have no journal."
+                      />
+                    )}
                   </span>
                   <legacyFetcher.Form method="post" className="shrink-0">
                     <input

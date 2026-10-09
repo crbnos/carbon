@@ -94,8 +94,8 @@ export interface BookAdjustmentArgs {
     // When set, lines append to this shared journal instead of the core
     // creating one journal per movement — inventory counts post ONE journal
     // per count with a line pair per variance. Lazy (called only when a
-    // movement actually carries value) so an all-zero-cost run never creates
-    // an empty journal.
+    // movement writes a pair: one with value, or any outbound one) so a run
+    // of zero-cost increases never creates an empty journal.
     getJournalId?: () => Promise<string>;
   } | null;
   // storage-unit-transfer legs move stock between bins without changing its
@@ -313,8 +313,8 @@ export interface ValueMovementArgs {
 // Value a stock movement whose item ledger row the caller has already written:
 // cost-layer maintenance (consume via calculateCOGS on decreases, open a layer
 // at current cost — or `fixedUnitCost` — on increases) and, when the caller
-// passes `accounting` and the movement carries value, a balanced journal of
-// the inventory account against the offset account. `bookAdjustment` is this plus the ledger
+// passes `accounting`, a balanced journal of the inventory account against
+// the offset account: for every decrease, and for an increase with value. `bookAdjustment` is this plus the ledger
 // row; maintenance consumption calls it directly because its ledger rows are
 // written alongside tracked-entity splits.
 export async function valueMovement(
@@ -417,9 +417,13 @@ export async function valueMovement(
       .execute();
   }
 
-  // A zero-value movement posts no journal (nothing to tie out; a $0-net
-  // entry is noise).
-  if (!accounting || cost === 0) {
+  // An inbound movement at no value posts no journal (nothing to tie out).
+  // An outbound one always writes its pair, at zero too: every outbound cost
+  // row carries a pair, because the accounting enable's re-cost may give it
+  // a cost and adjusts the pair it finds. With no pair, and another journal
+  // of the document that day, neither the legacy backfill (which skips a
+  // document-day that has a journal) nor the re-cost could book the cost.
+  if (!accounting || (cost === 0 && movement.quantity > 0)) {
     return { journalId: null, cost };
   }
 

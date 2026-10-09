@@ -5,7 +5,11 @@
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fromDate } from "@internationalized/date";
 import type { CostingLine } from "./document-costing";
-import { type ChargeType, JournalEntrySyncError } from "./posting";
+import {
+  type ChargeType,
+  JournalEntrySyncError,
+  noPostedJournalMessage
+} from "./posting";
 
 export type CardChargeSource = {
   id: string;
@@ -114,8 +118,11 @@ export function validateChargeAccountMapping(args: {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
-      message:
-        "Cannot sync card charge: no posted Charge journal lines found. Set up accounting and post the charge, then retry.",
+      message: noPostedJournalMessage({
+        subject: "card charge",
+        journal: "Charge",
+        document: "charge"
+      }),
       metadata: { chargeId: charge.id }
     });
   }

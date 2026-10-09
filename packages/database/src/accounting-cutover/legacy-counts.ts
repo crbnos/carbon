@@ -120,3 +120,48 @@ export async function getLegacyDocumentCounts(
     ])
   ) as LegacyDocumentCounts;
 }
+
+/**
+ * Whether the enable would journal any legacy document: true exactly when
+ * some family of `getLegacyDocumentCounts` is above zero. One statement of
+ * EXISTS tests over the same detection queries, joined by OR: Postgres
+ * evaluates them left to right and stops at the first one found, so the
+ * cheap document families go first and the movement and run families last.
+ */
+export async function hasLegacyDocuments(
+  db: CutoverDb,
+  args: CutoverArgs
+): Promise<boolean> {
+  const exists = (query: { clearOrderBy(): Expression<unknown> }) =>
+    sql<boolean>`EXISTS ${query.clearOrderBy()}`;
+
+  const result = await sql<{ found: boolean }>`
+    SELECT (
+      ${exists(legacySalesInvoices(db, args))}
+      OR ${exists(legacyPurchaseInvoices(db, args))}
+      OR ${exists(legacyMemos(db, args))}
+      OR ${exists(legacyCharges(db, args))}
+      OR ${exists(legacyReimbursements(db, args))}
+      OR ${exists(legacyPayments(db, args))}
+      OR ${exists(legacyReceipts(db, args, "Purchase Order"))}
+      OR ${exists(legacyReceipts(db, args, "Sales Return Order"))}
+      OR ${exists(
+        legacyShipments(db, args, LEGACY_SALES_SHIPMENT, {
+          withUncostedSales: true
+        })
+      )}
+      OR ${exists(legacyShipments(db, args, LEGACY_SALES_RETURN_SHIPMENT))}
+      OR ${exists(legacyShipments(db, args, LEGACY_PURCHASE_RETURN_SHIPMENT))}
+      OR ${exists(legacyDisposals(db, args))}
+      OR ${exists(legacyAdjustmentCostRows(db, args))}
+      OR EXISTS (
+        SELECT 1
+        FROM ${legacyJobMovements(db, args).clearOrderBy()} AS "jobMovement"
+        WHERE NOT "journaled"
+      )
+      OR ${exists(legacyDepreciationRunLines(db, args))}
+      OR ${exists(legacyRecognitionSchedule(db, args))}
+    ) AS "found"
+  `.execute(db);
+  return result.rows[0]?.found === true;
+}

@@ -8,7 +8,7 @@
 
 import { journalReference } from "@carbon/database";
 import {
-  cutoverDateError,
+  cutoverDateReason,
   getActivationReadiness,
   getCutoverInventory,
   getCutoverOpenItems,
@@ -573,18 +573,18 @@ async function dropPaymentJournal(f: Fixture, paymentId: string) {
   });
 }
 
-describe("cutoverDateError", () => {
+describe("cutoverDateReason", () => {
   const timeZone = "UTC";
   const today = datetime.today(timeZone);
   const firstOfMonth = today.set({ day: 1 });
 
   it("accepts the first day of the current period", () => {
-    expect(cutoverDateError(firstOfMonth.toString(), timeZone)).toBeNull();
+    expect(cutoverDateReason(firstOfMonth.toString(), timeZone)).toBeNull();
   });
 
   it("accepts the first day of a period three periods back", () => {
     expect(
-      cutoverDateError(
+      cutoverDateReason(
         firstOfMonth.subtract({ months: 3 }).toString(),
         timeZone
       )
@@ -593,26 +593,32 @@ describe("cutoverDateError", () => {
 
   it("refuses a date four periods back", () => {
     expect(
-      cutoverDateError(
+      cutoverDateReason(
         firstOfMonth.subtract({ months: 4 }).toString(),
         timeZone
       )
-    ).toMatch(/at most 3 periods/);
+    ).toBe("cutover-date-too-far-back");
   });
 
   it("refuses a date that is not the first day of a period", () => {
     expect(
-      cutoverDateError(
+      cutoverDateReason(
         firstOfMonth.subtract({ months: 1 }).add({ days: 1 }).toString(),
         timeZone
       )
-    ).toMatch(/first day of a period/);
+    ).toBe("cutover-date-not-period-start");
+  });
+
+  it("refuses a date that is not a date", () => {
+    expect(cutoverDateReason("2026-02-30", timeZone)).toBe(
+      "cutover-date-invalid"
+    );
   });
 
   it("refuses a date after today", () => {
     expect(
-      cutoverDateError(firstOfMonth.add({ months: 1 }).toString(), timeZone)
-    ).toMatch(/after today/);
+      cutoverDateReason(firstOfMonth.add({ months: 1 }).toString(), timeZone)
+    ).toBe("cutover-date-after-today");
   });
 });
 
@@ -653,9 +659,16 @@ databaseTest(
       expect(check("legacy-jobs").passed).toBe(true);
       expect(check("opening-balance").passed).toBe(true);
       // The fixture has no fiscal year settings.
-      expect(check("fiscal-settings").passed).toBe(false);
-      // Tomorrow is after today.
+      expect(check("fiscal-settings")).toMatchObject({
+        passed: false,
+        reasons: ["no-fiscal-year-settings"]
+      });
+      // Tomorrow is after today, and not the first of a month unless today
+      // is the last.
       expect(check("cutover-date").passed).toBe(false);
+      expect(check("cutover-date").reasons).toEqual([
+        cutoverDateReason(f.cutoverDate, TIME_ZONE)
+      ]);
     } finally {
       await f.cleanup();
     }
@@ -670,6 +683,24 @@ databaseTest(
       const purchaseOrderLineId = await receiveTenParts(f);
       const purchaseInvoiceId = await invoiceFourParts(f, purchaseOrderLineId);
       await shipFourParts(f);
+      // A job return of 2 at 50: a positive "Job Consumption" cost row, which
+      // `calculateCOGS` never relieves (`isCostLayer`). Read as a layer, it
+      // would value the newest 2 of the 6 on hand at 50.
+      await f.db
+        .insertInto("costLedger")
+        .values({
+          companyId: f.companyId,
+          itemId: f.partId,
+          itemLedgerType: "Consumption",
+          costLedgerType: "Direct Cost",
+          documentType: "Job Consumption",
+          documentId: `${f.prefix}-job`,
+          quantity: 2,
+          cost: 100,
+          remainingQuantity: 0,
+          postingDate: f.today
+        })
+        .execute();
       const invoiceId = await serviceInvoice(f, { id: "inv-1", post: true });
       await payForty(f, invoiceId);
 
@@ -725,7 +756,8 @@ databaseTest(
         description: "Accounts Payable"
       });
 
-      // 10 received, 4 shipped: 6 on hand at the receipt's layer cost.
+      // 10 received, 4 shipped: 6 on hand at the receipt's layer cost; the
+      // job return is not a layer.
       const inventory = await getCutoverInventory(f.db, args);
       expect(inventory).toEqual([
         {
@@ -868,6 +900,7 @@ databaseTest(
         const check = checks.find((c) => c.key === "account-defaults")!;
         return {
           detail: check.detail,
+          reasons: check.reasons,
           item: check.items.find((i) => i.id === "migrationClearingAccount")
         };
       };
@@ -875,7 +908,8 @@ databaseTest(
       // An asset account.
       await setClearing(f.account("filler"));
       const asset = await clearingItem();
-      expect(asset.item?.status).toBe("Not an Equity posting account");
+      expect(asset.item?.status).toBe("migration-clearing-wrong-kind");
+      expect(asset.reasons).toEqual(["migration-clearing-wrong-kind"]);
       expect(asset.detail).toContain(
         "Set migrationClearingAccount to an active Equity account that is not a group."
       );

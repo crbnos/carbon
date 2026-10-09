@@ -39,8 +39,8 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import {
+  type LegacyJournal,
   type LegacyJournalLine,
-  type LegacyMovementJournal,
   postedQuantity,
   readByIds,
   readItems,
@@ -141,7 +141,7 @@ function storedCosts(
 export async function buildLegacyPurchaseReceiptJournals(
   trx: KyselyTx,
   { companyId, cutoverDate, defaults }: Args
-): Promise<LegacyMovementJournal[]> {
+): Promise<LegacyJournal[]> {
   const receipts = await legacyReceipts(
     trx,
     { companyId, cutoverDate },
@@ -379,8 +379,7 @@ export async function buildLegacyPurchaseReceiptJournals(
       description: `Purchase Receipt ${receipt.receiptId}`,
       postingDate: String(receipt.postingDate),
       sourceType: "Purchase Receipt" as const,
-      lines: journalLines,
-      fromStoredCost: true
+      lines: journalLines
     };
   });
 }
@@ -388,7 +387,7 @@ export async function buildLegacyPurchaseReceiptJournals(
 export async function buildLegacySalesReturnReceiptJournals(
   trx: KyselyTx,
   { companyId, cutoverDate, defaults }: Args
-): Promise<LegacyMovementJournal[]> {
+): Promise<LegacyJournal[]> {
   const receipts = await legacyReceipts(
     trx,
     { companyId, cutoverDate },
@@ -515,8 +514,7 @@ export async function buildLegacySalesReturnReceiptJournals(
       description: `Sales Return Receipt ${receipt.receiptId}`,
       postingDate: String(receipt.postingDate),
       sourceType: "Sales Return Receipt" as const,
-      lines: journalLines,
-      fromStoredCost: true
+      lines: journalLines
     };
   });
 }

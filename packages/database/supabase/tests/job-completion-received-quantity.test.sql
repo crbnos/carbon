@@ -113,6 +113,25 @@ BEGIN
     VALUES ('Plant', '1 Test Way', 'Testville', '00000', v_company_id, 'system', 'UTC') RETURNING id INTO v_location_id;
   INSERT INTO "unitOfMeasure" (code, name, "companyId", "createdBy")
     VALUES ('EA', 'Each', v_company_id, 'system') ON CONFLICT DO NOTHING;
+  -- Every completion journals (Provisional before a cutover): the settings row
+  -- the posting reads, the journal sequence, the accounts and the defaults.
+  INSERT INTO "companySettings" (id) VALUES (v_company_id) ON CONFLICT (id) DO NOTHING;
+  INSERT INTO "sequence" ("table", name, prefix, "companyId", "updatedBy")
+    VALUES ('journalEntry', 'Journal entries', 'JE-', v_company_id, 'system') ON CONFLICT DO NOTHING;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('WIP', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_wip_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Finished goods', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_finished_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Labor absorption', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_labor_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Other', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_other_account;
+  SELECT jsonb_object_agg(attname, to_jsonb(v_other_account)) INTO v_defaults
+    FROM pg_attribute WHERE attrelid = '"accountDefault"'::regclass AND attnum > 0 AND NOT attisdropped AND attnotnull AND attname <> 'companyId';
+  INSERT INTO "accountDefault" SELECT (jsonb_populate_record(NULL::"accountDefault", v_defaults || jsonb_build_object(
+    'companyId', v_company_id, 'workInProgressAccount', v_wip_account, 'finishedGoodsAccount', v_finished_account,
+    'laborAbsorptionAccount', v_labor_account))).*;
+
   INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
     VALUES ('T-SERIAL', 'Serial machine', 'Part', 'Make', 'Serial', 'EA', v_company_id, 'system') RETURNING id INTO v_serial_item;
   INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
@@ -237,29 +256,9 @@ BEGIN
   ASSERT v_error IS NULL, 'Non-Inventory job at 0 must be allowed, got: ' || COALESCE(v_error, '');
   ASSERT (SELECT status FROM job WHERE id = v_job) = 'Completed', 'Non-Inventory job must complete';
 
-  -- Accounting enabled: labor logged after a completion stays in WIP when the job
-  -- is re-completed at the received quantity, and is discharged with the next
-  -- receipt. Before, the zero-quantity re-completion divided that WIP by zero.
-  UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = v_company_id;
-  IF NOT FOUND THEN
-    INSERT INTO "companySettings" (id, "accountingEnabled") VALUES (v_company_id, true);
-  END IF;
-  INSERT INTO "sequence" ("table", name, prefix, "companyId", "updatedBy")
-    VALUES ('journalEntry', 'Journal entries', 'JE-', v_company_id, 'system') ON CONFLICT DO NOTHING;
-  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
-    VALUES ('WIP', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_wip_account;
-  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
-    VALUES ('Finished goods', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_finished_account;
-  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
-    VALUES ('Labor absorption', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_labor_account;
-  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
-    VALUES ('Other', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_other_account;
-  SELECT jsonb_object_agg(attname, to_jsonb(v_other_account)) INTO v_defaults
-    FROM pg_attribute WHERE attrelid = '"accountDefault"'::regclass AND attnum > 0 AND NOT attisdropped AND attnotnull AND attname <> 'companyId';
-  INSERT INTO "accountDefault" SELECT (jsonb_populate_record(NULL::"accountDefault", v_defaults || jsonb_build_object(
-    'companyId', v_company_id, 'workInProgressAccount', v_wip_account, 'finishedGoodsAccount', v_finished_account,
-    'laborAbsorptionAccount', v_labor_account))).*;
-
+  -- Labor logged after a completion stays in WIP when the job is re-completed
+  -- at the received quantity, and is discharged with the next receipt. Before,
+  -- the zero-quantity re-completion divided that WIP by zero.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'AJ', 2);
   INSERT INTO "jobOperation" ("jobId", "jobMakeMethodId", "processId", "workCenterId", "operationQuantity", status, "companyId", "createdBy")
     SELECT v_job, m.id, v_process, v_work_center, 2, 'In Progress', v_company_id, 'system'

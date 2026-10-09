@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type { Database } from "@carbon/database";
+import { Constants, type Database } from "@carbon/database";
 import z from "zod";
 import type {
   AccountingEntity,
@@ -1520,7 +1520,7 @@ export const JournalEntrySchema = z.object({
   journalEntryId: z.string(),
   description: withNullable(z.string()),
   postingDate: z.string(), // YYYY-MM-DD
-  status: z.enum(["Draft", "Posted", "Reversed", "Provisional", "Superseded"]),
+  status: z.enum(Constants.public.Enums.journalEntryStatus),
   sourceType: withNullable(z.string()), // journalEntrySourceType enum value
   reversalOfId: withNullable(z.string()),
   reversedById: withNullable(z.string()),

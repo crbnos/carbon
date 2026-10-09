@@ -88,7 +88,7 @@ databaseTest(
 );
 
 databaseTest(
-  "a rebuilt movement journal stays out of provider sync only when its document stored its cost",
+  "every journal the enable writes again stays out of provider sync, whether or not its document stored its cost",
   async () => {
     const f = await activationFixture();
     try {
@@ -152,17 +152,22 @@ databaseTest(
         .select(["entityId", "status", "errorCode"])
         .where("companyId", "=", f.companyId)
         .execute();
-      // The shipment's original may sit in the provider; the issue's never
-      // had a journal, so it syncs like any posting.
-      expect(operations).toEqual([
-        {
-          entityId: await rebuilt("Sales Shipment"),
+      // The shipment's original may sit in the provider. The issue stored no
+      // cost, but the rows cannot prove it never had a journal, so it is kept
+      // out too: a user sends it from Sync Activity.
+      const expected = [
+        await rebuilt("Sales Shipment"),
+        await rebuilt("Job Consumption")
+      ];
+      // Sorted here: the database collation orders ids by another rule.
+      expect(
+        operations.sort((a, b) => (a.entityId < b.entityId ? -1 : 1))
+      ).toEqual(
+        expected.sort().map((entityId) => ({
+          entityId,
           status: "Excluded",
           errorCode: "CUTOVER_REBUILT"
-        }
-      ]);
-      expect(operations.map((operation) => operation.entityId)).not.toContain(
-        await rebuilt("Job Consumption")
+        }))
       );
     } finally {
       await f.cleanup();

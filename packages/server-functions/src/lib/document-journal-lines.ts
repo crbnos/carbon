@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The journal lines one document's chain owns: a void builder, the GR/IR
 // lookup and the accrual reader follow them. Only lines whose journal has one
 // of DOCUMENT_JOURNAL_STATUSES count (Provisional, Posted, Reversed), so a

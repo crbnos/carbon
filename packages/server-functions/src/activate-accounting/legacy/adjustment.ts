@@ -54,8 +54,8 @@ import { nanoid } from "nanoid";
 import { buildAdjustmentJournalLines } from "../../lib/plan-adjustment";
 import {
   type DimensionEntityType,
+  type LegacyJournal,
   type LegacyJournalLine,
-  type LegacyMovementJournal,
   readByIds,
   readItems,
   readPostingGroups
@@ -64,10 +64,10 @@ import {
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 
 export type LegacyAdjustmentJournals = {
-  inventoryAdjustments: LegacyMovementJournal[];
-  inventoryCounts: LegacyMovementJournal[];
-  nonConformances: LegacyMovementJournal[];
-  maintenanceConsumptions: LegacyMovementJournal[];
+  inventoryAdjustments: LegacyJournal[];
+  inventoryCounts: LegacyJournal[];
+  nonConformances: LegacyJournal[];
+  maintenanceConsumptions: LegacyJournal[];
 };
 
 type Offset = {
@@ -266,7 +266,7 @@ export async function buildLegacyAdjustmentJournals(
 
   const groups = new Map<
     string,
-    { family: keyof LegacyAdjustmentJournals; journal: LegacyMovementJournal }
+    { family: keyof LegacyAdjustmentJournals; journal: LegacyJournal }
   >();
   for (const row of rows) {
     const { itemId, documentId } = row;
@@ -278,8 +278,7 @@ export async function buildLegacyAdjustmentJournals(
     // counts and these journals agree.
     const family: keyof LegacyAdjustmentJournals = row.family;
     let description: string;
-    let sourceType: LegacyMovementJournal["sourceType"] =
-      "Inventory Adjustment";
+    let sourceType: LegacyJournal["sourceType"] = "Inventory Adjustment";
     let offset = variance;
     let locationId = ledger?.locationId ?? null;
     let extra: Partial<Record<DimensionEntityType, string | null>> = {};
@@ -389,9 +388,7 @@ export async function buildLegacyAdjustmentJournals(
           description,
           postingDate: String(row.postingDate),
           sourceType,
-          lines,
-          // Every posting through the core stores its cost row.
-          fromStoredCost: true
+          lines
         }
       });
     }

@@ -61,8 +61,8 @@ import { nanoid } from "nanoid";
 import { InvalidInputError } from "../../errors";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import {
+  type LegacyJournal,
   type LegacyJournalLine,
-  type LegacyMovementJournal,
   ROWS_PER_STATEMENT,
   readByIds,
   readItems,
@@ -75,14 +75,8 @@ type CostLedgerInsert = Database["public"]["Tables"]["costLedger"]["Insert"];
 export type LegacyMovementCosts = {
   /** Cost rows written: sales, job issues and returns, job output layers. */
   costRows: number;
-  /**
-   * The shipments and invoices whose "Sale" row this step wrote: posted with
-   * accounting off, which stored none. A posting stores every line's row or
-   * none, so a document is in here whole or not at all.
-   */
-  backfilledSaleDocumentIds: Set<string>;
-  jobConsumptions: LegacyMovementJournal[];
-  jobOutputs: LegacyMovementJournal[];
+  jobConsumptions: LegacyJournal[];
+  jobOutputs: LegacyJournal[];
 };
 
 /** A job movement: one issue or return ledger row, or one completion. */
@@ -279,7 +273,6 @@ export async function writeLegacyMovementCosts(
   if (sales.length === 0 && ledgerRows.length === 0) {
     return {
       costRows: 0,
-      backfilledSaleDocumentIds: new Set(),
       jobConsumptions: [],
       jobOutputs: []
     };
@@ -564,7 +557,7 @@ export async function writeLegacyMovementCosts(
       withPair.filter((plan) => plan.movement.kind === "Consumption"),
       (plan) => `${plan.movement.jobId}:${plan.movement.postingDate}`
     ).values()
-  ].map((group): LegacyMovementJournal => {
+  ].map((group): LegacyJournal => {
     const { jobId, postingDate } = group[0]!.movement;
     const lines = group.flatMap(
       ({ movement, journal }): LegacyJournalLine[] => {
@@ -604,14 +597,13 @@ export async function writeLegacyMovementCosts(
       description: `Material Issue to Job ${jobNumber(jobId)}`,
       postingDate,
       sourceType: "Job Consumption",
-      lines,
-      fromStoredCost: group.some((plan) => plan.coveredQuantity > 0)
+      lines
     };
   });
 
   const jobOutputs = withPair
     .filter((plan) => plan.movement.kind === "Output")
-    .map(({ movement, journal, coveredQuantity }): LegacyMovementJournal => {
+    .map(({ movement, journal, coveredQuantity }): LegacyJournal => {
       const inventory = inventoryOf(movement.itemId);
       const keys = {
         quantity: journal.quantity,
@@ -638,14 +630,12 @@ export async function writeLegacyMovementCosts(
             description: "WIP Account",
             amount: round(credit("asset", journal.cost))
           }
-        ],
-        fromStoredCost: coveredQuantity > 0
+        ]
       };
     });
 
   return {
     costRows: inserts.length,
-    backfilledSaleDocumentIds: new Set(sales.map((row) => row.documentId)),
     jobConsumptions,
     jobOutputs
   };

@@ -30,14 +30,19 @@ export {
   getCutoverInventory,
   getCutoverInventoryValuation
 } from "./accounting-cutover/inventory";
-export { getLegacyDocumentCounts } from "./accounting-cutover/legacy-counts";
+export {
+  getLegacyDocumentCounts,
+  hasLegacyDocuments
+} from "./accounting-cutover/legacy-counts";
 export { getCutoverOpenItems } from "./accounting-cutover/open-items";
 export {
   type ActivationCheck,
   type ActivationCheckItem,
   type ActivationCheckKey,
+  type ActivationCheckReason,
   CUTOVER_MAX_PERIODS_BACK,
-  cutoverDateError,
+  type CutoverDateReason,
+  cutoverDateReason,
   getActivationReadiness
 } from "./accounting-cutover/readiness";
 export {

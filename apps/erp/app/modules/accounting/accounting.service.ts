@@ -205,15 +205,11 @@ export async function getAccountLedger(
     offset: number;
   }
 ) {
-  // Draft journals are excluded so the lines shown always sum to the balances
-  // from accountTreeBalancesByCompany, which excludes them too — unposted
-  // entries belong in the Journal Entries list, not the account ledger.
   // TODO: remove the cast once cloud-generated DB types include the view.
   let query = client
     .from("journalLines" as any)
     .select("*", { count: "exact" })
     .eq("accountId", args.accountId)
-    .neq("status", "Draft")
     .gte(
       "postingDate",
       args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0]

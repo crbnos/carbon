@@ -48,11 +48,6 @@ export type LegacyDocumentJournal = LegacyJournal & {
   payableAccountId?: string;
 };
 
-/** A rebuilt movement journal. `fromStoredCost` is true when it is built
- *  from a cost row the posting stored, not one the enable wrote: see
- *  `keepOutOfProviderSync`. */
-export type LegacyMovementJournal = LegacyJournal & { fromStoredCost: boolean };
-
 /** Rows per statement, well inside Postgres's 65,535 bind parameters. */
 export const ROWS_PER_STATEMENT = 1000;
 
@@ -172,7 +167,7 @@ async function assertPeriodsOpen(
 
 /**
  * Inserts the journals, their lines and the lines' dimensions in a few
- * statements. A journal with no lines is skipped, as a posting skips a
+ * statements, each kept out of provider sync (`keepOutOfProviderSync`). A journal with no lines is skipped, as a posting skips a
  * zero-value document. Refuses a journal dated in a Closed or Locked period. The journal entry numbers are allocated in order.
  * Returns the id of each journal, in the order given (null when skipped).
  */
@@ -294,6 +289,14 @@ export async function insertProvisionalJournals(
       journalIdByEntry.get(entryIds[index]!)!
     ])
   );
+  await keepOutOfProviderSync(trx, {
+    companyId,
+    userId,
+    journals: writable.map((journal) => ({
+      id: idByJournal.get(journal)!,
+      sourceType: journal.sourceType
+    }))
+  });
   return journals.map((journal) => idByJournal.get(journal) ?? null);
 }
 
@@ -355,19 +358,17 @@ export const CUTOVER_REBUILT_SYNC_CODE = "CUTOVER_REBUILT";
  * that has any operation, so none of them pushes it; the period close counts
  * Excluded as settled. Re-send in Sync Activity still pushes one on purpose.
  *
- * For a journal written again of a document that had one before the reset:
- * the reset deleted the journal and its sync records, not the provider's copy,
- * so pushing it again would post it twice there. That is every run journal
- * (a run always wrote one), and every movement journal built from a cost row
- * the posting stored (`LegacyMovementJournal.fromStoredCost`): a sales
- * shipment or a job movement stored it only with accounting on, and the
- * other movements store it in every company state, so the row cannot tell
- * and the journal is kept out rather than risk a second post. A movement
- * journal built on a row the enable wrote (`writeLegacyMovementCosts`) is of
- * a document posted with accounting off: it never had a journal, the
- * provider holds nothing for it, and it syncs like any posting.
+ * Every journal the legacy backfill or its repair writes gets one. The reset
+ * deleted a company's journals and their sync records, not the provider's
+ * copies, so a journal written again of a document that had one before may
+ * already be in the provider, and pushing it would post it twice there.
+ * Which documents had one cannot be told reliably from the rows: a company
+ * that had accounting on wrote a journal for every family, and the stored
+ * cost rows say only that a posting ran, not that it journaled. So every
+ * rebuilt journal is kept out, and a user sends the ones the provider lacks
+ * from Sync Activity.
  */
-export async function keepOutOfProviderSync(
+async function keepOutOfProviderSync(
   trx: KyselyTx,
   {
     companyId,

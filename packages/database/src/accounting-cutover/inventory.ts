@@ -10,6 +10,7 @@ import {
   type LayerBeforeCutover,
   unitCostAtCutover
 } from "../accounting-cutover";
+import { isCostLayer } from "../cost-relief";
 import { EPSILON, round } from "../precision";
 import type { Database } from "../types";
 import {
@@ -179,44 +180,26 @@ async function inventoryRowsFor(
       .having(sql`sum("itemLedger"."quantity")`, "<>", 0)
       .orderBy("item.readableId")
       .execute(),
-    // Every layer `calculateCOGS` relieves, dated before the cutover, oldest
-    // first, with the cost adjustments posted against it before the cutover.
+    // Every layer `calculateCOGS` relieves (`isCostLayer`), dated before the
+    // cutover, oldest first, with the cost adjustments posted against it
+    // before the cutover.
     db
-      .selectFrom("costLedger as layer")
-      .leftJoin("costLedger as child", (join) =>
-        join
-          .onRef("child.appliesToCostLedgerId", "=", "layer.id")
-          .onRef("child.companyId", "=", "layer.companyId")
-          .on("child.postingDate", "<", cutoverDate)
-      )
-      .select([
-        "layer.itemId",
-        "layer.quantity",
-        sql<number>`"layer"."cost" + coalesce(sum("child"."cost"), 0)`.as(
-          "cost"
-        )
+      .selectFrom("costLedger")
+      .select((eb) => [
+        "costLedger.itemId",
+        "costLedger.quantity",
+        sql<number>`${eb.ref("costLedger.cost")} + coalesce(${eb
+          .selectFrom("costLedger as child")
+          .select((child) => child.fn.sum<number>("child.cost").as("cost"))
+          .whereRef("child.appliesToCostLedgerId", "=", "costLedger.id")
+          .whereRef("child.companyId", "=", "costLedger.companyId")
+          .where("child.postingDate", "<", cutoverDate)}, 0)`.as("cost")
       ])
-      .where("layer.companyId", "=", companyId)
-      .where("layer.postingDate", "<", cutoverDate)
-      .where("layer.quantity", ">", 0)
-      .where("layer.adjustment", "=", false)
-      .where("layer.appliesToCostLedgerId", "is", null)
-      .where((eb) =>
-        eb.or([
-          eb("layer.documentType", "is", null),
-          eb("layer.documentType", "!=", "Purchase Order")
-        ])
-      )
-      .groupBy([
-        "layer.id",
-        "layer.itemId",
-        "layer.quantity",
-        "layer.cost",
-        "layer.postingDate",
-        "layer.createdAt"
-      ])
-      .orderBy("layer.postingDate")
-      .orderBy("layer.createdAt")
+      .where("costLedger.companyId", "=", companyId)
+      .where("costLedger.postingDate", "<", cutoverDate)
+      .where(isCostLayer)
+      .orderBy("costLedger.postingDate")
+      .orderBy("costLedger.createdAt")
       .execute()
   ]);
 

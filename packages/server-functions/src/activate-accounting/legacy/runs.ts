@@ -33,10 +33,9 @@
 // it out too.
 //
 // A rebuilt journal may already sit in the accounting provider: the reset
-// deleted the journal and its sync records, not the provider's copy. Each one
-// gets an Excluded sync operation per accounting integration, so the
-// reconciler, the outbound sweep and the journal backfill find it covered and
-// never push it (`keepOutOfProviderSync`).
+// deleted the journal and its sync records, not the provider's copy. Like
+// every journal the backfill writes, each one gets an Excluded sync operation
+// per accounting integration (`insertProvisionalJournals`).
 
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
@@ -62,7 +61,6 @@ import { InvalidInputError } from "../../errors";
 import {
   type DimensionEntityType,
   insertProvisionalJournals,
-  keepOutOfProviderSync,
   type LegacyJournal,
   type LegacyJournalLine,
   ROWS_PER_STATEMENT,
@@ -816,18 +814,6 @@ export async function journalLegacyRuns(
     )
   });
 
-  const journals = [
-    ...depreciationIds,
-    ...deferredTaxIds,
-    ...disposalIds,
-    ...recognitionIds
-  ].map(({ item, journalId }) => ({
-    id: journalId,
-    sourceType: item.journal.sourceType
-  }));
-  // A run always wrote its journal, so the provider may hold the original.
-  await keepOutOfProviderSync(trx, { companyId, userId, journals });
-
   return {
     counts: {
       depreciationRuns: new Set(
@@ -840,6 +826,6 @@ export async function journalLegacyRuns(
         recognitionIds.map(({ item }) => item.attach.runId)
       ).size
     },
-    journalIds: journals.map((journal) => journal.id)
+    journalIds: ids.filter((id): id is string => id !== null)
   };
 }

@@ -260,7 +260,15 @@ describe("loadBillCostingLines", () => {
         { companyId: "company-1", billId: "pi_1" }
       )
     ).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      failure: {
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        // Both causes: a bill dated before the cutover never gets a Posted
+        // journal, so "post it" alone would stay wrong after setup.
+        message: expect.stringMatching(
+          /not posted yet.*dated before your accounting cutover/
+        )
+      }
     });
   });
 });

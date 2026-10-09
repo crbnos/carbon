@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The stand-in lines of a sales invoice journal
 // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1).
 //

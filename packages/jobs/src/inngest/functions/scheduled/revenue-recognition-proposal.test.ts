@@ -2,6 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { KyselyDatabase } from "@carbon/database/client";
+import {
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler
+} from "kysely";
 import { describe, expect, it, vi } from "vitest";
 import {
   companiesToPropose,
@@ -35,20 +43,23 @@ describe("priorMonthEnd", () => {
 });
 
 describe("companiesToPropose", () => {
-  it("leaves out companies with no accounting cutover", () => {
-    const companies = [
-      { id: "on", name: "Books On" },
-      { id: "off", name: "Books Off" }
-    ];
-
-    expect(companiesToPropose(companies, ["on"])).toEqual([
-      { id: "on", name: "Books On" }
-    ]);
+  // Compiles only: the dummy driver never connects.
+  const db = new Kysely<KyselyDatabase>({
+    dialect: {
+      createAdapter: () => new PostgresAdapter(),
+      createDriver: () => new DummyDriver(),
+      createIntrospector: (kysely) => new PostgresIntrospector(kysely),
+      createQueryCompiler: () => new PostgresQueryCompiler()
+    }
   });
 
-  it("proposes for nobody when no company has a cutover", () => {
-    expect(companiesToPropose([{ id: "off", name: "Books Off" }], [])).toEqual(
-      []
+  it("reads only companies with an accounting cutover, in one query", () => {
+    const { sql } = companiesToPropose(db).compile();
+    expect(sql).toContain(
+      'inner join "companySettings" on "companySettings"."id" = "company"."id"'
+    );
+    expect(sql).toContain(
+      'where "companySettings"."accountingCutoverDate" is not null'
     );
   });
 });

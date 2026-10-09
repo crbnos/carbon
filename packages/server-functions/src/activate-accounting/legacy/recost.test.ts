@@ -11,6 +11,7 @@ import { sql } from "kysely";
 import { expect } from "vitest";
 import issue from "../../issue";
 import journalLegacyDocuments from "../../journal-legacy-documents";
+import { bookAdjustment } from "../../lib/post-adjustment";
 import { databaseTest } from "../../local-database-test-fixture";
 import activateAccounting from "..";
 import {
@@ -248,6 +249,115 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a zero-cost outbound adjustment posted before the enable keeps its pair, so the re-cost adjusts it",
+  async () => {
+    const f = await activationFixture();
+    try {
+      await stockBeforeCutover(f);
+      const defaults = await f.db
+        .selectFrom("accountDefault")
+        .select([
+          "rawMaterialsAccount",
+          "finishedGoodsAccount",
+          "inventoryAdjustmentVarianceAccount"
+        ])
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      // After the cutover, one document posts on one day: 1 part out at no
+      // cost (no open layer, no unit cost), then 1 part in at 10.
+      const documentId = `${f.prefix}-adjustment`;
+      await setLayersAndUnitCost(f, { open: false, unitCost: 0 });
+      await f.db.transaction().execute(async (trx) => {
+        for (const quantity of [-1, 1]) {
+          await bookAdjustment(trx, {
+            ledger: {
+              postingDate: f.today,
+              itemId: f.partId,
+              quantity,
+              locationId: f.locationId,
+              storageUnitId: null,
+              trackedEntityId: null,
+              entryType: quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
+              documentId,
+              companyId: f.companyId,
+              createdBy: USER
+            },
+            item: {
+              itemTrackingType: "Inventory",
+              replenishmentSystem: "Buy"
+            },
+            itemCost: { costingMethod: "FIFO", unitCost: 0, standardCost: 0 },
+            accounting: {
+              postingStatus: "Provisional",
+              accountingPeriodId: null,
+              accountDefaults: {
+                rawMaterialsAccount: defaults.rawMaterialsAccount!,
+                finishedGoodsAccount: defaults.finishedGoodsAccount!,
+                inventoryAdjustmentVarianceAccount:
+                  defaults.inventoryAdjustmentVarianceAccount!
+              },
+              description: "Adjustment",
+              userId: USER
+            },
+            ...(quantity > 0 ? { fixedUnitCost: 10 } : {})
+          });
+        }
+      });
+      await setLayersAndUnitCost(f, { open: true, unitCost: 10 });
+      // The decrease wrote its pair at zero: the document has a journal that
+      // day, so the legacy backfill writes none, and the re-cost needs it.
+      expect(await adjustmentJournalAmounts(f, documentId)).toEqual([
+        0, 0, 10, 10
+      ]);
+
+      await enableWithStockAtTen(f);
+
+      // The re-cost relieved the opening layer at 10 and moved the pair.
+      expect(await costRows(f, documentId)).toEqual([
+        { quantity: -1, cost: -10, remainingQuantity: 0 },
+        { quantity: 1, cost: 10, remainingQuantity: 1 }
+      ]);
+      expect(await recostJournals(f)).toEqual(["Inventory Adjustment"]);
+      expect(await openingRemaining(f)).toBe(9);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** Closes or reopens the layers received before the cutover, and sets the
+ *  part's unit cost: with both at nothing, a decrease costs 0. */
+async function setLayersAndUnitCost(
+  f: Fixture,
+  { open, unitCost }: { open: boolean; unitCost: number }
+) {
+  await f.db
+    .updateTable("costLedger")
+    .set({ remainingQuantity: open ? sql`"quantity"` : 0 })
+    .where("companyId", "=", f.companyId)
+    .where("itemLedgerType", "=", "Purchase")
+    .where("quantity", ">", 0)
+    .execute();
+  await f.db
+    .updateTable("itemCost")
+    .set({ unitCost })
+    .where("itemId", "=", f.partId)
+    .where("companyId", "=", f.companyId)
+    .execute();
+}
+
+/** The absolute amounts of a document's journal lines, smallest first. */
+async function adjustmentJournalAmounts(f: Fixture, documentId: string) {
+  const rows = await f.db
+    .selectFrom("journalLine")
+    .select("amount")
+    .where("companyId", "=", f.companyId)
+    .where("documentId", "=", documentId)
+    .execute();
+  return rows.map((row) => Math.abs(Number(row.amount))).sort((a, b) => a - b);
+}
 
 /** 5 parts at 8 and 5 at 12, received the day before the cutover. */
 async function stockBeforeCutover(f: Fixture) {

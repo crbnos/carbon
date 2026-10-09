@@ -84,7 +84,7 @@ function ItemTypeLabel({ type }: { type: string }) {
 
 /** An account default that is empty or names an inactive account. The other
  *  kind is a Migration Clearing account that is not an Equity posting
- *  account. */
+ *  account (status `migration-clearing-wrong-kind`). */
 function isUnsetDefault(item: ActivationCheckItem) {
   return item.status === null || item.status === "Inactive";
 }
@@ -272,7 +272,7 @@ function useCheckDetail(check: ActivationCheck): string | null {
         return t`The company has no account defaults.`;
       }
       const unset = check.items.some(isUnsetDefault);
-      const wrongKind = check.items.some((item) => !isUnsetDefault(item));
+      const wrongKind = check.reasons.includes("migration-clearing-wrong-kind");
       return [
         unset ? t`Set these account defaults to an active account.` : "",
         wrongKind
@@ -283,9 +283,32 @@ function useCheckDetail(check: ActivationCheck): string | null {
         .join(" ");
     }
     case "fiscal-settings":
-      return t`Set the fiscal year settings and the base currency.`;
+      return check.reasons
+        .map((reason) => {
+          switch (reason) {
+            case "no-fiscal-year-settings":
+              return t`Set the fiscal year settings.`;
+            case "no-base-currency":
+              return t`Set the base currency.`;
+            default:
+              return "";
+          }
+        })
+        .filter(Boolean)
+        .join(" ");
     case "cutover-date":
-      return t`Choose the first day of the current period or of one of the 3 periods before it.`;
+      switch (check.reasons[0]) {
+        case "cutover-date-invalid":
+          return t`The cutover date is not a valid date.`;
+        case "cutover-date-not-period-start":
+          return t`The cutover date must be the first day of a period.`;
+        case "cutover-date-after-today":
+          return t`The cutover date cannot be after today.`;
+        case "cutover-date-too-far-back":
+          return t`Choose the first day of the current period or of one of the 3 periods before it.`;
+        default:
+          return null;
+      }
     case "pending-documents":
       return t`${plural(check.count, {
         one: "Post or delete the # document dated before the cutover.",

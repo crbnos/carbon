@@ -701,6 +701,23 @@ export class JournalEntrySyncError extends Error {
 }
 
 /**
+ * The warning for a bill or card charge with no Posted journal to replay.
+ * There are two causes, and the message names both: the document is not
+ * posted yet, or it is dated before the company's accounting cutover — its
+ * journal is Superseded and never becomes Posted, so "post it, then retry"
+ * would stay wrong after accounting is set up.
+ */
+export function noPostedJournalMessage(args: {
+  /** What cannot sync: `bill INV-001`, `card charge`. */
+  subject: string;
+  journal: "Purchase Invoice" | "Charge";
+  /** The document the user posts: `invoice`, `charge`. */
+  document: string;
+}): string {
+  return `Cannot sync ${args.subject}: it has no posted ${args.journal} journal. Either the ${args.document} is not posted yet (post it, then retry) or it is dated before your accounting cutover, so it never gets one.`;
+}
+
+/**
  * Type guard for `SyncResult.error` payloads: true when the value is the
  * structured pre-flight failure the drain should record via
  * `failOperation({ errorCode, errorMessage, warning })`.

@@ -15,6 +15,7 @@ import { loadJournalLineDimensions } from "./dimension-mapping";
 import {
   JournalEntrySyncError,
   type JournalLineDimensionRef,
+  noPostedJournalMessage,
   toDebitSignedAmount,
   toPostingDateString
 } from "./posting";
@@ -208,7 +209,11 @@ export async function loadBillCostingLines(
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message: !rows.length
-        ? "Cannot sync bill: no posted Purchase Invoice journal found. Set up accounting and post the invoice, then retry."
+        ? noPostedJournalMessage({
+            subject: "bill",
+            journal: "Purchase Invoice",
+            document: "invoice"
+          })
         : "Cannot sync bill: its original posted payables control account is missing. Correct the posting, then retry.",
       metadata: {
         billId: args.billId,
@@ -413,8 +418,11 @@ export async function loadChargeCostingLines(
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
-      message:
-        "Cannot sync card charge: no posted Charge journal found. Set up accounting and post the charge, then retry.",
+      message: noPostedJournalMessage({
+        subject: "card charge",
+        journal: "Charge",
+        document: "charge"
+      }),
       metadata: { chargeId: args.chargeId }
     });
   }

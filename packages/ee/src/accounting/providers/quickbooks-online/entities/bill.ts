@@ -12,7 +12,10 @@ import {
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
-import { JournalEntrySyncError } from "../../../core/posting";
+import {
+  JournalEntrySyncError,
+  noPostedJournalMessage
+} from "../../../core/posting";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -138,7 +141,11 @@ export function buildQboBillLines(args: {
   if (args.costingLines.length === 0) {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Set up accounting and post the invoice, then retry.`,
+      message: noPostedJournalMessage({
+        subject: `bill ${bill.invoiceId}`,
+        journal: "Purchase Invoice",
+        document: "invoice"
+      }),
       warning: true,
       metadata: { billId: bill.id }
     });

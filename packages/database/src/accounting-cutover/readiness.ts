@@ -33,6 +33,28 @@ export type ActivationCheckKey =
   | "legacy-jobs"
   | "opening-balance";
 
+/** Why the cutover date is not allowed. */
+export type CutoverDateReason =
+  | "cutover-date-invalid"
+  | "cutover-date-not-period-start"
+  | "cutover-date-after-today"
+  | "cutover-date-too-far-back";
+
+/**
+ * Why a check fails, as a code the wizard translates, on the checks whose key
+ * alone does not say what to fix. `detail` says the same in English, for the
+ * enable's refusal.
+ */
+export type ActivationCheckReason =
+  | "no-fiscal-year-settings"
+  | "no-base-currency"
+  | "migration-clearing-wrong-kind"
+  | CutoverDateReason;
+
+/** The status of a Migration Clearing default item of the wrong kind: not an
+ *  Equity account, or a group. A code, like the reason it goes with. */
+const MIGRATION_CLEARING_WRONG_KIND = "migration-clearing-wrong-kind";
+
 /** Something a check lists as a blocker: an empty default, a document, a job. */
 export type ActivationCheckItem = {
   type: string;
@@ -47,14 +69,13 @@ export type ActivationCheck = {
   passed: boolean;
   /** Why the check fails, in one sentence; null when it passes. */
   detail: string | null;
+  /** Why the check fails, as codes; empty when it passes or the key says it. */
+  reasons: ActivationCheckReason[];
   /** What blocks the check, up to 25 per source. */
   items: ActivationCheckItem[];
   /** The number of blockers, which can exceed `items`. */
   count: number;
 };
-
-/** The status a readiness item gives a Migration Clearing account of the wrong kind. */
-const NOT_AN_EQUITY_POSTING_ACCOUNT = `Not an ${MIGRATION_CLEARING_ACCOUNT_CLASS} posting account`;
 
 /** The six readiness checks of the enable wizard's first step. */
 export async function getActivationReadiness(
@@ -126,13 +147,13 @@ export async function getActivationReadiness(
           type: "accountDefault",
           id: column,
           readableId: column,
-          status: NOT_AN_EQUITY_POSTING_ACCOUNT
+          status: MIGRATION_CLEARING_WRONG_KIND
         });
       }
     }
   }
   const unsetDefaults = emptyDefaults.filter(
-    (item) => item.status !== NOT_AN_EQUITY_POSTING_ACCOUNT
+    (item) => item.status !== MIGRATION_CLEARING_WRONG_KIND
   );
   const accountDefaultsCheck: ActivationCheck = {
     key: "account-defaults",
@@ -154,20 +175,31 @@ export async function getActivationReadiness(
             .filter(Boolean)
             .join(" ")
         : null,
+    reasons: clearingIsWrongKind ? ["migration-clearing-wrong-kind"] : [],
     items: emptyDefaults,
     count: emptyDefaults.length
   };
 
   // fiscal-settings: the fiscal year settings and the base currency exist.
+  const fiscalReasons: ActivationCheckReason[] = [
+    ...(fiscalYearSettings ? [] : ["no-fiscal-year-settings" as const]),
+    ...(company.baseCurrencyCode ? [] : ["no-base-currency" as const])
+  ];
   const fiscalSettingsCheck: ActivationCheck = {
     key: "fiscal-settings",
     label: "Fiscal year and base currency are set",
-    passed: Boolean(fiscalYearSettings) && Boolean(company.baseCurrencyCode),
-    detail: !fiscalYearSettings
-      ? "Set the fiscal year settings."
-      : !company.baseCurrencyCode
-        ? "Set the base currency."
+    passed: fiscalReasons.length === 0,
+    detail:
+      fiscalReasons.length > 0
+        ? fiscalReasons
+            .map((reason) =>
+              reason === "no-fiscal-year-settings"
+                ? "Set the fiscal year settings."
+                : "Set the base currency."
+            )
+            .join(" ")
         : null,
+    reasons: fiscalReasons,
     items: [],
     count: 0
   };
@@ -175,19 +207,16 @@ export async function getActivationReadiness(
   // cutover-date: the first day of a period (periods are calendar months),
   // not after today in the company time zone, and at most three periods
   // before the current one.
+  const cutoverReason = cutoverDateReason(cutoverDate, timeZone);
   const cutoverDateCheck: ActivationCheck = {
     key: "cutover-date",
     label: "The cutover date is valid",
-    passed: true,
-    detail: null,
+    passed: cutoverReason === null,
+    detail: cutoverReason ? CUTOVER_DATE_ERRORS[cutoverReason] : null,
+    reasons: cutoverReason ? [cutoverReason] : [],
     items: [],
     count: 0
   };
-  const cutoverError = cutoverDateError(cutoverDate, timeZone);
-  if (cutoverError) {
-    cutoverDateCheck.passed = false;
-    cutoverDateCheck.detail = cutoverError;
-  }
 
   const pendingDocumentsCheck: ActivationCheck = {
     key: "pending-documents",
@@ -197,6 +226,7 @@ export async function getActivationReadiness(
       pending.count > 0
         ? `Post or delete ${pending.count} document(s) dated before the cutover.`
         : null,
+    reasons: [],
     items: pending.items,
     count: pending.count
   };
@@ -209,6 +239,7 @@ export async function getActivationReadiness(
       legacyJobs.count > 0
         ? `Complete or cancel ${legacyJobs.count} job(s) created before Carbon recorded their costs.`
         : null,
+    reasons: [],
     items: legacyJobs.items,
     count: legacyJobs.count
   };
@@ -221,6 +252,7 @@ export async function getActivationReadiness(
       openingBalances.length > 0
         ? "The company already has a posted opening balance journal."
         : null,
+    reasons: [],
     items: openingBalances.map((journal) => ({
       type: "Journal",
       id: journal.id,
@@ -241,29 +273,34 @@ export async function getActivationReadiness(
   return { checks, passed: checks.every((check) => check.passed) };
 }
 
+/** What `detail` says for each reason the cutover date is not allowed. */
+const CUTOVER_DATE_ERRORS: Record<CutoverDateReason, string> = {
+  "cutover-date-invalid": "The cutover date is not a valid date.",
+  "cutover-date-not-period-start":
+    "The cutover date must be the first day of a period.",
+  "cutover-date-after-today": "The cutover date cannot be after today.",
+  "cutover-date-too-far-back": `The cutover date can be at most ${CUTOVER_MAX_PERIODS_BACK} periods before the current period.`
+};
+
 /** Why a cutover date is not allowed, or null. */
-export function cutoverDateError(
+export function cutoverDateReason(
   cutoverDate: string,
   timeZone: string
-): string | null {
+): CutoverDateReason | null {
   let date: ReturnType<typeof parseDate>;
   try {
     date = parseDate(cutoverDate);
   } catch {
-    return "The cutover date is not a valid date.";
+    return "cutover-date-invalid";
   }
-  if (date.day !== 1) {
-    return "The cutover date must be the first day of a period.";
-  }
+  if (date.day !== 1) return "cutover-date-not-period-start";
   const now = today(timeZone);
-  if (date.compare(now) > 0) {
-    return "The cutover date cannot be after today.";
-  }
+  if (date.compare(now) > 0) return "cutover-date-after-today";
   const current = startOfMonth(now);
   const periodsBack =
     current.year * 12 + current.month - (date.year * 12 + date.month);
   if (periodsBack > CUTOVER_MAX_PERIODS_BACK) {
-    return `The cutover date can be at most ${CUTOVER_MAX_PERIODS_BACK} periods before the current period.`;
+    return "cutover-date-too-far-back";
   }
   return null;
 }

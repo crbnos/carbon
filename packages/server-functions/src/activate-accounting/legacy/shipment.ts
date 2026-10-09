@@ -35,8 +35,8 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import {
+  type LegacyJournal,
   type LegacyJournalLine,
-  type LegacyMovementJournal,
   postedQuantity,
   readByIds,
   readItems,
@@ -50,17 +50,10 @@ type Args = {
   defaults: AccountDefaults;
 };
 
-/** `backfilledSaleDocumentIds`: the shipments whose "Sale" row the enable
- *  wrote (`writeLegacyMovementCosts`), posted with accounting off. */
 export async function buildLegacySalesShipmentJournals(
   trx: KyselyTx,
-  {
-    companyId,
-    cutoverDate,
-    defaults,
-    backfilledSaleDocumentIds
-  }: Args & { backfilledSaleDocumentIds: ReadonlySet<string> }
-): Promise<LegacyMovementJournal[]> {
+  { companyId, cutoverDate, defaults }: Args
+): Promise<LegacyJournal[]> {
   const shipments = await legacyShipments(
     trx,
     { companyId, cutoverDate },
@@ -206,8 +199,7 @@ export async function buildLegacySalesShipmentJournals(
       description: `Sales Shipment ${shipment.shipmentId}`,
       postingDate: String(shipment.postingDate),
       sourceType: "Sales Shipment" as const,
-      lines: journalLines,
-      fromStoredCost: !backfilledSaleDocumentIds.has(shipment.id)
+      lines: journalLines
     };
   });
 }
@@ -216,7 +208,7 @@ export async function buildLegacySalesShipmentJournals(
 export async function buildLegacyReturnShipmentJournals(
   trx: KyselyTx,
   { companyId, cutoverDate, defaults }: Args
-): Promise<LegacyMovementJournal[]> {
+): Promise<LegacyJournal[]> {
   const salesReturns = await legacyShipments(
     trx,
     { companyId, cutoverDate },
@@ -309,7 +301,7 @@ export async function buildLegacyReturnShipmentJournals(
   const build = (
     shipment: (typeof salesReturns)[number],
     isSalesReturn: boolean
-  ): LegacyMovementJournal => {
+  ): LegacyJournal => {
     const party = isSalesReturn
       ? (() => {
           const customerId = shipment.sourceDocumentId
@@ -381,15 +373,13 @@ export async function buildLegacyReturnShipmentJournals(
           description: `Return Shipment ${shipment.shipmentId}`,
           postingDate: String(shipment.postingDate),
           sourceType: "Sales Return Shipment",
-          lines: journalLines,
-          fromStoredCost: true
+          lines: journalLines
         }
       : {
           description: `Purchase Return Shipment ${shipment.shipmentId}`,
           postingDate: String(shipment.postingDate),
           sourceType: "Purchase Return Shipment",
-          lines: journalLines,
-          fromStoredCost: true
+          lines: journalLines
         };
   };
 

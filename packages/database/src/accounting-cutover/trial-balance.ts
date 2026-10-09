@@ -18,10 +18,10 @@ import {
   type TrialBalanceLine
 } from "../accounting-cutover";
 import { debitSigned, isAccountClass } from "../ledger";
-import { EPSILON, round } from "../precision";
+import { round } from "../precision";
 import { getNextSequence } from "../sequence";
 import { getCutoverFixedAssets } from "./fixed-assets";
-import { inventoryFor } from "./inventory";
+import { inventoryFor, inventoryValueByAccount } from "./inventory";
 import { type DraftItem, finishItems, openItemsFor } from "./open-items";
 import {
   addTo,
@@ -140,16 +140,6 @@ export async function getCutoverOpeningInputs(
       openingTrialBalanceFor(db, company)
     ]);
 
-  // Inventory per account, valued as the reset values each opening layer.
-  const inventoryByAccount = new Map<string, number>();
-  for (const item of inventory) {
-    if (item.quantity <= EPSILON) continue;
-    addTo(
-      inventoryByAccount,
-      item.inventoryAccountId,
-      round(item.quantity * item.unitCost)
-    );
-  }
   const costByAccount = new Map<string, number>();
   const depreciationByAccount = new Map<string, number>();
   for (const asset of fixedAssets) {
@@ -161,8 +151,9 @@ export async function getCutoverOpeningInputs(
     );
   }
   const drafts: DraftItem[] = [
-    ...[...inventoryByAccount].map(
-      ([accountId, value]): DraftItem => ({
+    // Inventory per account, valued as the opening journal values it.
+    ...inventoryValueByAccount(inventory).map(
+      ({ accountId, value }): DraftItem => ({
         openItemType: "Inventory",
         accountId,
         basis: "debit",

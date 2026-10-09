@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
   createMappingService,
   ensureProviderSubscriptions,
@@ -272,7 +273,7 @@ async function sweepCompanyProvider(args: {
     const journalIds = await pageIds({
       ctx,
       table: "journal",
-      statuses: ["Posted", "Reversed"],
+      statuses: GL_JOURNAL_STATUSES,
       dateColumn: "postingDate",
       floor,
       extraFilter: (query) => query.is("reversalOfId", null)

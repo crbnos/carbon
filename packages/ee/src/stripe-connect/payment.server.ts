@@ -6,6 +6,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getPostgresClient, getProcessPool } from "@carbon/database/client";
+import {
+  countedProcessorFee,
+  processorFeeAccount
+} from "@carbon/database/payment-processor-fee";
 import { getLogger } from "@carbon/logger";
 /**
  * Stripe Connect payment recording — shared between the webhook handler in the
@@ -247,23 +251,25 @@ export async function recordStripeConnectPayment({
     const meta = (resume.mapping.metadata ?? {}) as Record<string, unknown>;
     realizedExchangeRate = (meta.exchangeRate as number | null) ?? null;
 
-    const feeAmount = Number(meta.feeAmount ?? 0);
-    const feeCurrency = (meta.feeCurrency as string | null) ?? null;
-    if (feeAmount > 0 && feeCurrency === currencyCode) {
-      // Every company books the fee: Provisional before the accounting
-      // cutover, Posted after it.
-      const feeAccount =
-        (integrationMetadata.paymentFeeAccount as string | undefined) ||
-        accountDefaults.data?.serviceChargeAccount;
-      if (!feeAccount) {
-        throw new Error(
-          "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
-        );
-      }
+    // The rules a journal rebuilt from the stored payment reads the fee by,
+    // so the resumed posting and a later rebuild book the same fee. Every
+    // company books it: Provisional before the accounting cutover, Posted
+    // after it.
+    const fee = countedProcessorFee(
+      {
+        id: paymentId,
+        currencyCode,
+        reference: stripeInvoice.number ?? null
+      },
+      { externalId: stripeInvoiceId, metadata: resume.mapping.metadata }
+    );
+    if (fee) {
       journalFee = {
-        amount: feeAmount,
-        accountId: feeAccount,
-        description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
+        ...fee,
+        accountId: processorFeeAccount(
+          integrationMetadata,
+          accountDefaults.data?.serviceChargeAccount
+        )
       };
     }
   } else {
@@ -341,18 +347,14 @@ export async function recordStripeConnectPayment({
         );
       } else {
         // Every company books the fee: Provisional before the accounting
-        // cutover, Posted after it.
-        const feeAccount =
-          (integrationMetadata.paymentFeeAccount as string | undefined) ||
-          accountDefaults.data?.serviceChargeAccount;
-        if (!feeAccount) {
-          throw new Error(
-            "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
-          );
-        }
+        // cutover, Posted after it. A fee with no currency is booked here;
+        // `countedProcessorFee` (the resume path and a rebuild) skips it.
         journalFee = {
           amount: feeAmount,
-          accountId: feeAccount,
+          accountId: processorFeeAccount(
+            integrationMetadata,
+            accountDefaults.data?.serviceChargeAccount
+          ),
           description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
         };
       }
