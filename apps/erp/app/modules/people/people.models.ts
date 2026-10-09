@@ -48,7 +48,9 @@ export const employeeJobValidator = z.object({
   shiftId: zfd.text(z.string().optional()),
   departmentId: zfd.text(z.string().optional()),
   managerId: zfd.text(z.string().optional()),
-  laborCategoryId: zfd.text(z.string().optional())
+  laborCategoryId: zfd.text(z.string().optional()),
+  /** The technician's van: where a service part is issued from first. */
+  defaultStorageUnitId: zfd.text(z.string().optional())
 });
 
 export const holidayValidator = z.object({

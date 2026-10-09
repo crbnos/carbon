@@ -254,6 +254,11 @@ export const invoiceAutomationValidator = z.object({
   invoiceAutomation: z.enum(invoiceAutomations)
 });
 
+/** The service item whose sale price prices service time. */
+export const serviceLaborItemValidator = z.object({
+  serviceLaborItemId: zfd.text(z.string().optional())
+});
+
 export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
 
 // "Every 3 Hours" is the default cadence and ignores the time; "Daily" runs

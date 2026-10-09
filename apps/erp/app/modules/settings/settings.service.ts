@@ -1431,6 +1431,22 @@ export async function updateInvoiceAutomationSetting(
     .eq("id", companyId);
 }
 
+/**
+ * Sets the service item whose sale price prices service time on a service
+ * order (and its estimate). Empty clears it.
+ * @mcp update
+ */
+export async function updateServiceLaborItemSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  serviceLaborItemId: string | null
+) {
+  return client
+    .from("companySettings")
+    .update({ serviceLaborItemId })
+    .eq("id", companyId);
+}
+
 /** @mcp update */
 export async function updateInvoiceNotificationSetting(
   client: SupabaseClient<Database>,

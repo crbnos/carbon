@@ -5901,6 +5901,9 @@ msgstr "Koszt własny sprzedaży (domyślny)"
 msgid "Cost of Sales"
 msgstr "Koszt sprzedaży"
 
+msgid "Cost of service work covered by a warranty"
+msgstr ""
+
 msgid "Cost Rate"
 msgstr ""
 
@@ -12142,6 +12145,9 @@ msgstr "Jednostka robocizny"
 msgid "Labor Unit"
 msgstr "Jednostka robocizny"
 
+msgid "Labor Warranty (months)"
+msgstr ""
+
 msgid "Labor Warranty Ends"
 msgstr ""
 
@@ -16042,6 +16048,9 @@ msgstr "Części uruchamiane jedna po drugiej — np. piła lub stół laserowy.
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "Części uruchamiane razem w jednym ładunku — np. piec, piekarnik lub kąpiel galwaniczna."
+
+msgid "Parts Warranty (months)"
+msgstr ""
 
 msgid "Parts Warranty Ends"
 msgstr ""
@@ -20030,6 +20039,12 @@ msgstr "Koniec usługi"
 msgid "Service ID"
 msgstr "Identyfikator Serwisu"
 
+msgid "Service Labor"
+msgstr ""
+
+msgid "Service Labor Item"
+msgstr ""
+
 msgid "Service lines"
 msgstr "Pozycje usług"
 
@@ -20138,6 +20153,12 @@ msgstr "Ustawić wersję {0} jako aktywną wersję?"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Ustaw swoją domyślną lokalizację w ustawieniach profilu, aby wybrać jednostkę magazynową."
+
+msgid "Sets the labor warranty of a serial when it ships"
+msgstr ""
+
+msgid "Sets the parts warranty of a serial when it ships"
+msgstr ""
 
 msgid "Settings"
 msgstr "Ustawienia"
@@ -22618,6 +22639,9 @@ msgstr "Klasa środków trwałych dla jednostek, które budujesz lub kapitalizuj
 msgid "the selected class"
 msgstr "wybranej klasy"
 
+msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
+msgstr ""
+
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Usługi rozliczane w ramach tej umowy: opłaty jednorazowe i opłaty cykliczne. Kliknij komórkę, aby ją zmienić."
 
@@ -24501,6 +24525,9 @@ msgstr "Wartości stosują dzisiejsze koszty jednostkowe do historycznych ilośc
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Wartości w tym przebiegu zostały podsumowane. Pełne szczegóły są przechowywane przez 7 dni."
 
+msgid "Van (default storage unit)"
+msgstr ""
+
 msgid "Variables"
 msgstr "Zmienne"
 
@@ -24907,6 +24934,9 @@ msgid "Warranty"
 msgstr ""
 
 msgid "Warranty and Site"
+msgstr ""
+
+msgid "Warranty Expense"
 msgstr ""
 
 msgid "Watch"
@@ -25318,6 +25348,9 @@ msgstr "Gdzie towary tej linii lądują w zapasach przy odbiorze; jeśli puste, 
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Gdzie pochodzi to żądanie utrzymania ruchu — zgłoszone przez operatora, zaplanowane, wyzwalacz monitorowania stanu, kontrola po zleceniu produkcyjnym; napędza podział źródeł w raportach utrzymania ruchu."
+
+msgid "Where this person's service parts are issued from first"
+msgstr ""
 
 msgid "Where you are today"
 msgstr "Gdzie jesteś dzisiaj"

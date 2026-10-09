@@ -5901,6 +5901,9 @@ msgstr "Cost of Goods Sold (default)"
 msgid "Cost of Sales"
 msgstr "Cost of Sales"
 
+msgid "Cost of service work covered by a warranty"
+msgstr "Cost of service work covered by a warranty"
+
 msgid "Cost Rate"
 msgstr "Cost Rate"
 
@@ -12142,6 +12145,9 @@ msgstr "Labor unit"
 msgid "Labor Unit"
 msgstr "Labor Unit"
 
+msgid "Labor Warranty (months)"
+msgstr "Labor Warranty (months)"
+
 msgid "Labor Warranty Ends"
 msgstr "Labor Warranty Ends"
 
@@ -16042,6 +16048,9 @@ msgstr "Parts run one after another — e.g. a saw or laser table."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "Parts run together in one load — e.g. a furnace, oven, or plating bath."
+
+msgid "Parts Warranty (months)"
+msgstr "Parts Warranty (months)"
 
 msgid "Parts Warranty Ends"
 msgstr "Parts Warranty Ends"
@@ -20030,6 +20039,12 @@ msgstr "Service end"
 msgid "Service ID"
 msgstr "Service ID"
 
+msgid "Service Labor"
+msgstr "Service Labor"
+
+msgid "Service Labor Item"
+msgstr "Service Labor Item"
+
 msgid "Service lines"
 msgstr "Service lines"
 
@@ -20138,6 +20153,12 @@ msgstr "Set Version {0} as Active Version?"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Set your default location in profile settings to pick a storage unit."
+
+msgid "Sets the labor warranty of a serial when it ships"
+msgstr "Sets the labor warranty of a serial when it ships"
+
+msgid "Sets the parts warranty of a serial when it ships"
+msgstr "Sets the parts warranty of a serial when it ships"
 
 msgid "Settings"
 msgstr "Settings"
@@ -22618,6 +22639,9 @@ msgstr "The seeded asset class for units you build or capitalize to rent out rat
 msgid "the selected class"
 msgstr "the selected class"
 
+msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
+msgstr "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
+
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 
@@ -24501,6 +24525,9 @@ msgstr "Values apply today's unit costs to historical quantities."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Values in this run have been summarised. Full detail is kept for 7 days."
 
+msgid "Van (default storage unit)"
+msgstr "Van (default storage unit)"
+
 msgid "Variables"
 msgstr "Variables"
 
@@ -24908,6 +24935,9 @@ msgstr "Warranty"
 
 msgid "Warranty and Site"
 msgstr "Warranty and Site"
+
+msgid "Warranty Expense"
+msgstr "Warranty Expense"
 
 msgid "Watch"
 msgstr "Watch"
@@ -25318,6 +25348,9 @@ msgstr "Where this line's goods land in stock on receipt; if blank, receipts use
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
+
+msgid "Where this person's service parts are issued from first"
+msgstr "Where this person's service parts are issued from first"
 
 msgid "Where you are today"
 msgstr "Where you are today"

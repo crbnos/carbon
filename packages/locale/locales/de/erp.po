@@ -5901,6 +5901,9 @@ msgstr "Umsatzkosten (Standard)"
 msgid "Cost of Sales"
 msgstr "Umsatzkosten"
 
+msgid "Cost of service work covered by a warranty"
+msgstr ""
+
 msgid "Cost Rate"
 msgstr ""
 
@@ -12142,6 +12145,9 @@ msgstr "Personaleinheit"
 msgid "Labor Unit"
 msgstr "Personaleinheit"
 
+msgid "Labor Warranty (months)"
+msgstr ""
+
 msgid "Labor Warranty Ends"
 msgstr ""
 
@@ -16042,6 +16048,9 @@ msgstr "Teile laufen nacheinander — z. B. Säge oder Lasertisch."
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "Teile laufen zusammen in einer Charge — z. B. Ofen, Backofen oder Galvanisierbad."
+
+msgid "Parts Warranty (months)"
+msgstr ""
 
 msgid "Parts Warranty Ends"
 msgstr ""
@@ -20030,6 +20039,12 @@ msgstr "Diensteende"
 msgid "Service ID"
 msgstr "Service-ID"
 
+msgid "Service Labor"
+msgstr ""
+
+msgid "Service Labor Item"
+msgstr ""
+
 msgid "Service lines"
 msgstr "Dienstleistungspositionen"
 
@@ -20138,6 +20153,12 @@ msgstr "Version {0} als aktive Version festlegen?"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Legen Sie Ihren Standardort in den Profileinstellungen fest, um eine Lagereinheit auszuwählen."
+
+msgid "Sets the labor warranty of a serial when it ships"
+msgstr ""
+
+msgid "Sets the parts warranty of a serial when it ships"
+msgstr ""
 
 msgid "Settings"
 msgstr "Einstellungen"
@@ -22618,6 +22639,9 @@ msgstr "Die vordefinierte Anlagenklasse für Einheiten, die Sie bauen oder kapit
 msgid "the selected class"
 msgstr "die ausgewählte Klasse"
 
+msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
+msgstr ""
+
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Die Dienstleistungen, die dieser Vertrag abrechnet: Einmalige Gebühren und wiederkehrende Gebühren. Klicken Sie auf eine Zelle, um sie zu ändern."
 
@@ -24501,6 +24525,9 @@ msgstr "Die Werte wenden die heutigen Stückkosten auf historische Mengen an."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Werte in dieser Ausführung wurden zusammengefasst. Vollständige Details werden 7 Tage lang beibehalten."
 
+msgid "Van (default storage unit)"
+msgstr ""
+
 msgid "Variables"
 msgstr "Variablen"
 
@@ -24907,6 +24934,9 @@ msgid "Warranty"
 msgstr ""
 
 msgid "Warranty and Site"
+msgstr ""
+
+msgid "Warranty Expense"
 msgstr ""
 
 msgid "Watch"
@@ -25318,6 +25348,9 @@ msgstr "Wohin die Waren dieser Position beim Wareneingang ins Lager landen; wenn
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Woher diese Instandhaltungsanforderung stammt – Werkerraktion, geplant, Zustandsüberwachungs-Trigger, Nach-Fertigungsauftrag-Prüfung; bestimmt die Quellenverteilung in Instandhaltungsberichten."
+
+msgid "Where this person's service parts are issued from first"
+msgstr ""
 
 msgid "Where you are today"
 msgstr "Wo du heute stehst"

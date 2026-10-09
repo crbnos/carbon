@@ -512,6 +512,12 @@ const AccountDefaultsForm = ({
             badgeType: "Expense"
           },
           {
+            name: "warrantyExpenseAccount",
+            label: t`Warranty Expense`,
+            description: t`Cost of service work covered by a warranty`,
+            badgeType: "Expense"
+          },
+          {
             name: "assetDepreciationExpenseAccount",
             label: t`Depreciation Expense`,
             description: t`Periodic depreciation expense for fixed assets`,

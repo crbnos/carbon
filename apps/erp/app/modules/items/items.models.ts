@@ -810,9 +810,21 @@ export const itemPurchasingValidator = z.object({
   // purchasingBlocked: zfd.checkbox(),
 });
 
+const warrantyMonths = zfd.numeric(
+  z
+    .number()
+    .int({ message: "Enter whole months" })
+    .min(0, { message: "Enter 0 or more months" })
+    .optional()
+);
+
 export const itemUnitSalePriceValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  unitSalePrice: zfd.numeric(z.number().min(0))
+  unitSalePrice: zfd.numeric(z.number().min(0)),
+  /** Months of labor warranty a shipped serial gets; sets its asset's end date. */
+  laborWarrantyMonths: warrantyMonths,
+  /** Months of parts warranty a shipped serial gets. */
+  partsWarrantyMonths: warrantyMonths
   // currencyCode: z.string().min(1, { message: "Currency is required" }),
   // salesUnitOfMeasureCode: z
   //   .string()

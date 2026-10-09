@@ -5901,6 +5901,9 @@ msgstr "매출원가(기본값)"
 msgid "Cost of Sales"
 msgstr "매출 원가"
 
+msgid "Cost of service work covered by a warranty"
+msgstr ""
+
 msgid "Cost Rate"
 msgstr ""
 
@@ -12142,6 +12145,9 @@ msgstr "노무 단위"
 msgid "Labor Unit"
 msgstr "노무 단위"
 
+msgid "Labor Warranty (months)"
+msgstr ""
+
 msgid "Labor Warranty Ends"
 msgstr ""
 
@@ -16042,6 +16048,9 @@ msgstr "부품은 차례대로 실행됩니다 — 예: 톱 또는 레이저 테
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "부품은 한 로드에서 함께 실행됩니다 — 예: 용광로, 오븐 또는 도금 욕조."
+
+msgid "Parts Warranty (months)"
+msgstr ""
 
 msgid "Parts Warranty Ends"
 msgstr ""
@@ -20030,6 +20039,12 @@ msgstr "서비스 종료일"
 msgid "Service ID"
 msgstr "서비스 ID"
 
+msgid "Service Labor"
+msgstr ""
+
+msgid "Service Labor Item"
+msgstr ""
+
 msgid "Service lines"
 msgstr "서비스 라인"
 
@@ -20138,6 +20153,12 @@ msgstr "버전 {0}을(를) 활성 버전으로 설정하시겠습니까?"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "프로필 설정에서 기본 사업장을 설정하여 보관 단위를 선택하세요."
+
+msgid "Sets the labor warranty of a serial when it ships"
+msgstr ""
+
+msgid "Sets the parts warranty of a serial when it ships"
+msgstr ""
 
 msgid "Settings"
 msgstr "설정"
@@ -22618,6 +22639,9 @@ msgstr "판매 대신 임대 목적으로 구축하거나 자본화할 개 단�
 msgid "the selected class"
 msgstr "선택한 클래스"
 
+msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
+msgstr ""
+
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "이 계약이 청구하는 서비스: 일회성 수수료 및 반복 요금입니다. 셀을 클릭하여 변경하세요."
 
@@ -24501,6 +24525,9 @@ msgstr "값은 과거 수량에 오늘의 단위 원가를 적용합니다."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "이 실행의 값이 요약되었습니다. 전체 세부정보는 7일간 유지됩니다."
 
+msgid "Van (default storage unit)"
+msgstr ""
+
 msgid "Variables"
 msgstr "변수"
 
@@ -24907,6 +24934,9 @@ msgid "Warranty"
 msgstr ""
 
 msgid "Warranty and Site"
+msgstr ""
+
+msgid "Warranty Expense"
 msgstr ""
 
 msgid "Watch"
@@ -25318,6 +25348,9 @@ msgstr "입고 시 라인의 물품이 입고되는 재고 위치; 공란인 경
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "이 유지보수 요청의 출처 — 작업자 보고, 예약, 상태 모니터링 트리거, 작업 후 검사 — 로, 유지보수 보고서의 출처별 분류에 사용됩니다."
+
+msgid "Where this person's service parts are issued from first"
+msgstr ""
 
 msgid "Where you are today"
 msgstr "현재 상황"

@@ -5901,6 +5901,9 @@ msgstr "Satılan malın maliyeti (varsayılan)"
 msgid "Cost of Sales"
 msgstr "Satışların Maliyeti"
 
+msgid "Cost of service work covered by a warranty"
+msgstr ""
+
 msgid "Cost Rate"
 msgstr ""
 
@@ -12142,6 +12145,9 @@ msgstr "İşçilik birimi"
 msgid "Labor Unit"
 msgstr "İşçilik Birimi"
 
+msgid "Labor Warranty (months)"
+msgstr ""
+
 msgid "Labor Warranty Ends"
 msgstr ""
 
@@ -16042,6 +16048,9 @@ msgstr "Parçalar birbir ardına çalışır — örneğin testere veya lazer ma
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "Parçalar tek bir yükte birlikte çalışır — örneğin fırın, fırın veya elektroliz banyosu."
+
+msgid "Parts Warranty (months)"
+msgstr ""
 
 msgid "Parts Warranty Ends"
 msgstr ""
@@ -20030,6 +20039,12 @@ msgstr "Hizmet Bitiş Tarihi"
 msgid "Service ID"
 msgstr "Hizmet Kimliği"
 
+msgid "Service Labor"
+msgstr ""
+
+msgid "Service Labor Item"
+msgstr ""
+
 msgid "Service lines"
 msgstr "Hizmet Satırları"
 
@@ -20138,6 +20153,12 @@ msgstr "Sürüm {0}\"ü Aktif Sürüm Olarak Ayarla?"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Bir depolama birimi seçmek için varsayılan konumunuzu profil ayarlarınızda belirleyin."
+
+msgid "Sets the labor warranty of a serial when it ships"
+msgstr ""
+
+msgid "Sets the parts warranty of a serial when it ships"
+msgstr ""
 
 msgid "Settings"
 msgstr "Ayarlar"
@@ -22618,6 +22639,9 @@ msgstr "Kiralamak için satış yerine inşa ettiğiniz veya aktifleştirdiğini
 msgid "the selected class"
 msgstr "seçilen sınıf"
 
+msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
+msgstr ""
+
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Bu sözleşmenin faturalandırdığı hizmetler: bir kerelik ücretler ve tekrarlayan ücretler. Değiştirmek için bir hücreyi tıklayın."
 
@@ -24501,6 +24525,9 @@ msgstr "Değerler, tarihsel miktarlara bugünün birim maliyetlerini uygular."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Bu çalışmadaki değerler özetlenmiştir. Tam ayrıntılar 7 gün boyunca tutulur."
 
+msgid "Van (default storage unit)"
+msgstr ""
+
 msgid "Variables"
 msgstr "Değişkenler"
 
@@ -24907,6 +24934,9 @@ msgid "Warranty"
 msgstr ""
 
 msgid "Warranty and Site"
+msgstr ""
+
+msgid "Warranty Expense"
 msgstr ""
 
 msgid "Watch"
@@ -25318,6 +25348,9 @@ msgstr "Bu satırın mallarının alındığında envanterde nereye indiği; bo�
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Bu bakım talebinin nereden kaynaklandığı — operatör tarafından bildirilen, planlanan, durum izlemesi tetiklemesi, işten sonraki muayene; bakım raporlarında kaynak dağılımını belirler."
+
+msgid "Where this person's service parts are issued from first"
+msgstr ""
 
 msgid "Where you are today"
 msgstr "Bugün nerede olduğunuz"

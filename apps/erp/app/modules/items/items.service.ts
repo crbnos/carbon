@@ -4547,18 +4547,35 @@ export async function upsertItemCustomerPart(
     .single();
 }
 
-/** @mcp upsert */
+/**
+ * Saves an item's sales settings: its unit sale price and the labor and parts
+ * warranty months a shipped serial gets. A warranty field sent empty is
+ * cleared; one not sent is left alone.
+ * @mcp upsert
+ */
 export async function upsertItemUnitSalePrice(
   client: SupabaseClient<Database>,
   itemUnitSalePrice: z.infer<typeof itemUnitSalePriceValidator> & {
+    companyId: string;
     updatedBy: string;
     customFields?: Json;
   }
 ) {
+  const { companyId, laborWarrantyMonths, partsWarrantyMonths, ...rest } =
+    itemUnitSalePrice;
   return client
     .from("itemUnitSalePrice")
-    .update(sanitize(itemUnitSalePrice))
-    .eq("itemId", itemUnitSalePrice.itemId);
+    .update({
+      ...sanitize(rest),
+      ...("laborWarrantyMonths" in itemUnitSalePrice
+        ? { laborWarrantyMonths: laborWarrantyMonths ?? null }
+        : {}),
+      ...("partsWarrantyMonths" in itemUnitSalePrice
+        ? { partsWarrantyMonths: partsWarrantyMonths ?? null }
+        : {})
+    })
+    .eq("itemId", itemUnitSalePrice.itemId)
+    .eq("companyId", companyId);
 }
 
 /** @mcp upsert */

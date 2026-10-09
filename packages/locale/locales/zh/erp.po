@@ -5901,6 +5901,9 @@ msgstr "销售成本（默认）"
 msgid "Cost of Sales"
 msgstr "销售成本"
 
+msgid "Cost of service work covered by a warranty"
+msgstr ""
+
 msgid "Cost Rate"
 msgstr ""
 
@@ -12142,6 +12145,9 @@ msgstr "人工单位"
 msgid "Labor Unit"
 msgstr "人工单位"
 
+msgid "Labor Warranty (months)"
+msgstr ""
+
 msgid "Labor Warranty Ends"
 msgstr ""
 
@@ -16042,6 +16048,9 @@ msgstr "零件逐一运行 — 例如锯床或激光台。"
 
 msgid "Parts run together in one load — e.g. a furnace, oven, or plating bath."
 msgstr "零件在一个负荷中一起运行 — 例如炉、烤箱或电镀槽。"
+
+msgid "Parts Warranty (months)"
+msgstr ""
 
 msgid "Parts Warranty Ends"
 msgstr ""
@@ -20030,6 +20039,12 @@ msgstr "服务结束"
 msgid "Service ID"
 msgstr "服务ID"
 
+msgid "Service Labor"
+msgstr ""
+
+msgid "Service Labor Item"
+msgstr ""
+
 msgid "Service lines"
 msgstr "服务行"
 
@@ -20138,6 +20153,12 @@ msgstr "将版本 {0} 设置为启用版本？"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "在个人资料设置中设置默认地点以选择存储单元。"
+
+msgid "Sets the labor warranty of a serial when it ships"
+msgstr ""
+
+msgid "Sets the parts warranty of a serial when it ships"
+msgstr ""
 
 msgid "Settings"
 msgstr "设置"
@@ -22618,6 +22639,9 @@ msgstr "用于您制造或资本化以出租而非销售的单位的预置资产
 msgid "the selected class"
 msgstr "选定的类别"
 
+msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
+msgstr ""
+
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "此合同计费的服务：一次性费用和循环费用。单击单元格进行更改。"
 
@@ -24501,6 +24525,9 @@ msgstr "价值采用今日的单位成本应用于历史数量。"
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "该运行中的值已汇总。完整详情保留 7 天。"
 
+msgid "Van (default storage unit)"
+msgstr ""
+
 msgid "Variables"
 msgstr "变量"
 
@@ -24907,6 +24934,9 @@ msgid "Warranty"
 msgstr ""
 
 msgid "Warranty and Site"
+msgstr ""
+
+msgid "Warranty Expense"
 msgstr ""
 
 msgid "Watch"
@@ -25318,6 +25348,9 @@ msgstr "此行的货物在收货时在库存中的位置；如果为空，收货
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "此维护请求的来源——操作员报告、计划、条件监控触发、工单后检验；驱动维护报告中的来源分布。"
+
+msgid "Where this person's service parts are issued from first"
+msgstr ""
 
 msgid "Where you are today"
 msgstr "你今天的位置"

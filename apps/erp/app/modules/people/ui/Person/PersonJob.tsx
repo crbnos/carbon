@@ -17,6 +17,7 @@ import {
   LaborCategory,
   Location,
   Shift,
+  StorageUnit,
   Submit
 } from "~/components/Form";
 import { employeeJobValidator } from "../../people.models";
@@ -62,6 +63,13 @@ const PersonJob = ({ initialValues }: PersonJobProps) => {
               name="laborCategoryId"
               label={t`Labor Category`}
               helperText={t`The default for time this person logs on projects`}
+            />
+            <StorageUnit
+              name="defaultStorageUnitId"
+              label={t`Van (default storage unit)`}
+              helperText={t`Where this person's service parts are issued from first`}
+              locationId={location}
+              isOptional
             />
             <Hidden name="intent" value="job" />
             <CustomFormFields table="employeeJob" />
