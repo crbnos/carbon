@@ -13743,6 +13743,9 @@ msgstr "没有存储单元或追踪号与之匹配。"
 msgid "No Supplier"
 msgstr "无供应商"
 
+msgid "No supplier parts have been added yet."
+msgstr "尚未添加供应商零件。"
+
 msgid "No suppliers yet"
 msgstr "还没有供应商"
 

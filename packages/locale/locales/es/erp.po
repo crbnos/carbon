@@ -13743,6 +13743,9 @@ msgstr "No coinciden unidades de almacenamiento ni números de seguimiento."
 msgid "No Supplier"
 msgstr "Sin proveedor"
 
+msgid "No supplier parts have been added yet."
+msgstr "Aún no se han agregado piezas del proveedor."
+
 msgid "No suppliers yet"
 msgstr "Sin proveedores aún"
 

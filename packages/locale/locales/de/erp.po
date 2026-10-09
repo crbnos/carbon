@@ -13743,6 +13743,9 @@ msgstr "Keine Lagereinheiten oder Verfolgungsnummern stimmen überein."
 msgid "No Supplier"
 msgstr "Kein Lieferant"
 
+msgid "No supplier parts have been added yet."
+msgstr "Bisher wurden keine Lieferantenteile hinzugefügt."
+
 msgid "No suppliers yet"
 msgstr "Noch keine Lieferanten"
 

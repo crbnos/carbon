@@ -10,27 +10,26 @@ import {
   CardTitle,
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  MENU_ITEM_SHORTCUTS,
-  VStack
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo } from "react";
 import { LuEllipsisVertical, LuExternalLink, LuPencil } from "react-icons/lu";
-import { Outlet, useNavigate, useParams } from "react-router";
+import { Link, Outlet, useNavigate, useParams } from "react-router";
 import { ItemThumbnail, New } from "~/components";
-import Grid from "~/components/Grid";
-import Hyperlink from "~/components/Hyperlink";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
-import { useCustomColumns } from "~/hooks/useCustomColumns";
+import {
+  useCurrencyFormatter,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import type { SupplierPartWithItem } from "~/modules/items";
 import { getLinkToItemPurchasing } from "~/modules/items/ui/Item/ItemForm";
+import type { SupplierDetail } from "~/modules/purchasing";
 import { type ItemType, itemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
@@ -47,117 +46,19 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
   const canCreate = permissions.can("create", "parts");
-  const formatter = useCurrencyFormatter();
-  const customColumns = useCustomColumns<SupplierPartWithItem>("supplierPart");
-
-  const columns = useMemo<ColumnDef<SupplierPartWithItem>[]>(() => {
-    const defaultColumns: ColumnDef<SupplierPartWithItem>[] = [
-      {
-        id: "item",
-        header: t`Item`,
-        cell: ({ row }) => {
-          const item = row.original.item;
-          const type = (itemType as readonly string[]).includes(
-            item?.type ?? ""
-          )
-            ? (item?.type as ItemType)
-            : null;
-          return (
-            <HStack className="justify-between min-w-[200px]" spacing={2}>
-              <HStack className="truncate" spacing={2}>
-                <ItemThumbnail
-                  size="sm"
-                  thumbnailPath={item?.thumbnailPath}
-                  type={type ?? "Part"}
-                />
-                <Hyperlink
-                  to={path.to.supplierPart(supplierId, row.original.id!)}
-                >
-                  <VStack spacing={0}>
-                    {item?.readableIdWithRevision}
-                    {distinctItemText(
-                      item?.readableIdWithRevision,
-                      item?.name
-                    ) && (
-                      <div className="w-full truncate text-muted-foreground text-xs">
-                        {item?.name}
-                      </div>
-                    )}
-                  </VStack>
-                </Hyperlink>
-              </HStack>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    aria-label={t`Supplier part actions`}
-                    icon={<LuEllipsisVertical />}
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.edit}
-                    onClick={() =>
-                      navigate(
-                        path.to.supplierPart(supplierId, row.original.id!)
-                      )
-                    }
-                  >
-                    <DropdownMenuIcon icon={<LuPencil />} />
-                    <Trans>Edit Supplier Part</Trans>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.view}
-                    disabled={!type || !item?.id}
-                    onClick={() => {
-                      if (type && item?.id)
-                        navigate(getLinkToItemPurchasing(type, item.id));
-                    }}
-                  >
-                    <DropdownMenuIcon icon={<LuExternalLink />} />
-                    <Trans>View Item</Trans>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </HStack>
-          );
-        }
-      },
-      {
-        accessorKey: "supplierPartId",
-        header: t`Supplier Part ID`,
-        cell: (item) => item.getValue()
-      },
-      {
-        accessorKey: "unitPrice",
-        header: t`Unit Price`,
-        cell: (item) => formatter.format(item.getValue<number>())
-      },
-      {
-        accessorKey: "supplierUnitOfMeasureCode",
-        header: t`Unit of Measure`,
-        cell: (item) => item.getValue()
-      },
-      {
-        accessorKey: "minimumOrderQuantity",
-        header: t`Minimum Order Quantity`,
-        cell: (item) => item.getValue()
-      },
-      {
-        accessorKey: "conversionFactor",
-        header: t`Conversion Factor`,
-        cell: (item) => item.getValue()
-      }
-    ];
-
-    return [...defaultColumns, ...customColumns];
-  }, [customColumns, formatter, navigate, supplierId, t]);
+  // A supplier part's price is in its supplier's currency, the company's base
+  // currency when the supplier has none.
+  const { company } = useUser();
+  const routeData = useRouteData<{ supplier: SupplierDetail }>(
+    path.to.supplier(supplierId)
+  );
+  const currency =
+    routeData?.supplier?.currencyCode ?? company.baseCurrencyCode;
+  const formatter = useCurrencyFormatter({ rate: true, currency });
 
   return (
     <>
-      <Card className="w-full h-full min-h-[50vh]">
+      <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
             <CardTitle>
@@ -169,16 +70,97 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
           </CardAction>
         </HStack>
         <CardContent>
-          <Grid<SupplierPartWithItem>
-            data={supplierParts}
-            columns={columns}
-            canEdit={false}
-            onNewRow={
-              canCreate
-                ? () => navigate(path.to.newSupplierPart(supplierId))
-                : undefined
-            }
-          />
+          {supplierParts.length === 0 ? (
+            <div className="my-8 text-center w-full">
+              <p className="text-muted-foreground text-sm">
+                <Trans>No supplier parts have been added yet.</Trans>
+              </p>
+            </div>
+          ) : (
+            <ul className="w-full divide-y divide-border">
+              {supplierParts.map((supplierPart) => {
+                const item = supplierPart.item;
+                const type = (itemType as readonly string[]).includes(
+                  item?.type ?? ""
+                )
+                  ? (item?.type as ItemType)
+                  : null;
+                const editPath = path.to.supplierPart(
+                  supplierId,
+                  supplierPart.id!
+                );
+
+                return (
+                  <li
+                    key={supplierPart.id}
+                    className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <ItemThumbnail
+                        size="md"
+                        thumbnailPath={item?.thumbnailPath}
+                        type={type ?? "Part"}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          to={editPath}
+                          className="block truncate text-sm font-medium hover:underline"
+                        >
+                          {item?.readableIdWithRevision}
+                        </Link>
+                        {distinctItemText(
+                          item?.readableIdWithRevision,
+                          item?.name
+                        ) && (
+                          <p className="truncate text-sm text-muted-foreground">
+                            {item?.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="shrink-0 text-sm tabular-nums">
+                      {formatter.format(supplierPart.unitPrice ?? 0)}
+                      <span className="ml-2 font-mono text-muted-foreground">
+                        {currency}
+                      </span>
+                    </p>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <IconButton
+                          aria-label={t`Supplier part actions`}
+                          icon={<LuEllipsisVertical />}
+                          variant="secondary"
+                          className="shrink-0"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.edit}
+                          onClick={() => navigate(editPath)}
+                        >
+                          <LuPencil className="mr-2" />
+                          <Trans>Edit Supplier Part</Trans>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.view}
+                          disabled={!type || !item?.id}
+                          onClick={() => {
+                            if (type && item?.id)
+                              navigate(getLinkToItemPurchasing(type, item.id));
+                          }}
+                        >
+                          <LuExternalLink className="mr-2" />
+                          <Trans>View Item</Trans>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </CardContent>
       </Card>
       <Outlet />

@@ -13743,6 +13743,9 @@ msgstr "Depolama birimleri veya takip numaraları eşleşmiyor."
 msgid "No Supplier"
 msgstr "Tedarikçi yok"
 
+msgid "No supplier parts have been added yet."
+msgstr "Henüz hiçbir tedarikçi parçası eklenmemiştir."
+
 msgid "No suppliers yet"
 msgstr "Henüz tedarikçi yok"
 

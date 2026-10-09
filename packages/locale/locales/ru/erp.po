@@ -13743,6 +13743,9 @@ msgstr "Единицы хранения или номера отслеживан
 msgid "No Supplier"
 msgstr "Нет поставщика"
 
+msgid "No supplier parts have been added yet."
+msgstr "Детали поставщика ещё не добавлены."
+
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
 

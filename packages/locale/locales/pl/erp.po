@@ -13743,6 +13743,9 @@ msgstr "Brak zgodnych jednostek magazynowych ani numerów śledzenia."
 msgid "No Supplier"
 msgstr "Brak dostawcy"
 
+msgid "No supplier parts have been added yet."
+msgstr "Brak dodanych części dostawcy."
+
 msgid "No suppliers yet"
 msgstr "Brak dostawców"
 

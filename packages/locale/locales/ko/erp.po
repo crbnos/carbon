@@ -13743,6 +13743,9 @@ msgstr "일치하는 보관 단위 또는 추적 번호가 없습니다."
 msgid "No Supplier"
 msgstr "공급업체 없음"
 
+msgid "No supplier parts have been added yet."
+msgstr "아직 추가된 공급업체 부품이 없습니다."
+
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
 

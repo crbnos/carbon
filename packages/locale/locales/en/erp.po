@@ -13743,6 +13743,9 @@ msgstr "No storage units or tracking numbers match."
 msgid "No Supplier"
 msgstr "No Supplier"
 
+msgid "No supplier parts have been added yet."
+msgstr "No supplier parts have been added yet."
+
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
 

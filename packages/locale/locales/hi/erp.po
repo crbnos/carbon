@@ -13743,6 +13743,9 @@ msgstr "कोई भंडारण इकाई या ट्रैकिं�
 msgid "No Supplier"
 msgstr "कोई आपूर्तिकर्ता नहीं"
 
+msgid "No supplier parts have been added yet."
+msgstr "अभी तक कोई आपूर्तिकर्ता पार्ट्स जोड़े नहीं गए हैं।"
+
 msgid "No suppliers yet"
 msgstr "अभी तक कोई आपूर्तिकर्ता नहीं"
 

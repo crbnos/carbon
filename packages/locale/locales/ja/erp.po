@@ -13743,6 +13743,9 @@ msgstr "保管ユニットまたはトラッキング番号に一致するもの
 msgid "No Supplier"
 msgstr "仕入先なし"
 
+msgid "No supplier parts have been added yet."
+msgstr "仕入先部品がまだ追加されていません。"
+
 msgid "No suppliers yet"
 msgstr "仕入先がまだありません"
 

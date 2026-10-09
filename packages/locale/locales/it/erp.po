@@ -13743,6 +13743,9 @@ msgstr "Nessuna unità di stoccaggio o numero di tracciamento corrisponde."
 msgid "No Supplier"
 msgstr "Nessun fornitore"
 
+msgid "No supplier parts have been added yet."
+msgstr "Nessun componente fornitore aggiunto ancora."
+
 msgid "No suppliers yet"
 msgstr "Nessun fornitore ancora"
 
