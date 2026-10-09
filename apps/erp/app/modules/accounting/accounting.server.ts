@@ -40,6 +40,26 @@ import {
   runPostingTargets
 } from "./accounting.utils";
 
+// The accounting cutover's reads and its two pre-enable writes. They live once,
+// in Kysely, so the enable wizard's loaders (passing `getDatabaseClient()`) and
+// the `activate-accounting` transaction run the same queries.
+export {
+  ACCOUNTING_ALREADY_SET_UP,
+  type ActivationCheck,
+  type ActivationCheckItem,
+  type ActivationCheckKey,
+  type CutoverFixedAsset,
+  type CutoverInventoryItem,
+  getActivationReadiness,
+  getCutoverFixedAssets,
+  getCutoverInventory,
+  getCutoverOpenItems,
+  getMigrationClearing,
+  getOpeningTrialBalance,
+  saveOpeningTrialBalance,
+  updateCutoverAccumulatedDepreciation
+} from "@carbon/database/accounting-cutover-reads";
+
 /** The company's business day, `YYYY-MM-DD`. */
 export async function getCompanyToday(
   client: SupabaseClient<Database>,

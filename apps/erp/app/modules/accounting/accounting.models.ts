@@ -1143,6 +1143,79 @@ export const fixedAssetOutOfServiceValidator = z.object({
   reason: z.string().trim().min(1, { message: "Reason is required" })
 });
 
+const cutoverDateField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Cutover date is required" });
+
+/** The accounting cutover date the enable wizard works against. */
+export const activationCutoverValidator = z.object({
+  cutoverDate: cutoverDateField
+});
+
+/** The prior system's trial balance as of the day before the cutover. `lines`
+ *  is a JSON array of `{ accountId, debit, credit }` from the form's hidden
+ *  input; rows with neither a debit nor a credit are dropped. */
+export const openingTrialBalanceValidator = z.object({
+  cutoverDate: cutoverDateField,
+  lines: z.string().transform((val, ctx) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(val);
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+      return z.NEVER;
+    }
+    if (!Array.isArray(parsed)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+      return z.NEVER;
+    }
+    const result: Array<{ accountId: string; debit: number; credit: number }> =
+      [];
+    for (const row of parsed) {
+      const { accountId, debit, credit } = (row ?? {}) as {
+        accountId?: unknown;
+        debit?: unknown;
+        credit?: unknown;
+      };
+      if (typeof accountId !== "string" || accountId.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A trial balance row is missing its account"
+        });
+        return z.NEVER;
+      }
+      const amounts = [debit ?? 0, credit ?? 0];
+      if (
+        amounts.some(
+          (amount) =>
+            typeof amount !== "number" || !Number.isFinite(amount) || amount < 0
+        )
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A trial balance row has an invalid debit or credit"
+        });
+        return z.NEVER;
+      }
+      const [rowDebit, rowCredit] = amounts as [number, number];
+      if (rowDebit !== 0 || rowCredit !== 0) {
+        result.push({ accountId, debit: rowDebit, credit: rowCredit });
+      }
+    }
+    return result;
+  })
+});
+
+/** An asset's accumulated depreciation at the cutover, set in the wizard. */
+export const cutoverAccumulatedDepreciationValidator = z.object({
+  fixedAssetId: z.string().min(1, { message: "Asset is required" }),
+  accumulatedDepreciation: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Accumulated depreciation must be zero or more" })
+  )
+});
+
 /** Journal source types that only their period run may reverse: a plain
  *  reversal would leave the revenue schedule or the assets behind. */
 /** Business refusal threshold for a journal's debits-vs-credits drift — looser
