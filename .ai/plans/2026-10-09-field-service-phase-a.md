@@ -45,7 +45,7 @@ Phases B (depot repair), C (refurbishment) and D (the contract project roll-up) 
 - [x] Task 11: Create customer assets in `post-shipment`
 - [x] Task 12: Stop the second stock relief and release billable item stamps
 - [x] Task 13: Add `create-service-order-invoice`
-- [ ] Task 14: Hide Service projects outside Service
+- [x] Task 14: Hide Service projects outside Service
 - [ ] Task 15: Make My Timesheet personal
 - [ ] Task 16: Add the service models and services
 - [ ] Task 17: Add `createServiceOrder` and the status roll-up
@@ -1247,3 +1247,7 @@ ls .ai/playbooks/field-service-phase-a.md
 - Task 13: a covered item on an order with a coverage contract reads "(Covered by contract CON000012)" on the invoice; the billable item keeps "(Covered by contract)".
 - Task 13: tests: the plan's 3 `plan.test.ts` cases, and a database test (`create-service-order-invoice.test.ts`) that posts 2 h of time and a 40.00 expense, refuses an order that is not Completed, then drafts the invoice (a heading and 2 Service lines, 230.00), stamps both items Billed and closes the order. The permissions snapshot gains the function, reviewed. The full server-functions suite passes (452); `@carbon/server-functions`, `@carbon/jobs`, `erp` and `mes` typecheck green.
 - Fix after Task 13 (`fix(service)`): Build from part on a serial now counts a `Service` activity's input as a `Consume` input, so a part a service order installed shows up in the asset's build. A component drops out when every `customerAssetComponent` row of the pair (the asset's serial, the component's serial) has a `removedDate`. The netting moved into the pure `netBuildComponents` (`projects.models.ts`), tested in `projects-build-from-part.test.ts` (4 cases); the walk reads the removals with one more query per level, in parallel with the activity types. Gap: a component the factory built in has no `customerAssetComponent` row, so Task 9 cannot remove it, and a replacement of it shows both the old and the new serial.
+- Task 14: the charge number picker is `getChargeNumbers` (`projects.service.ts`); there is no `getChargeableProjectElements`. It filters `projectType = 'Standard'` on the projects and on the elements' project, and so does its MES twin (`apps/mes/app/services/projects.service.ts`), which offers the same picker on the MES timesheet. The Copy from list is the loader of `x+/projects+/new.tsx`; the template list of Build from part (`$projectId.elements.build.tsx`) gets the same filter, so a Service template never shows in Projects.
+- Task 14: no search index source lists projects (the `sync_*_to_search_index` functions cover items, customers, suppliers, jobs, orders and invoices only), so step 2 had nothing to change.
+- Task 14: `dimension-mapping.ts` is unchanged. Its `DIMENSION_LABEL_SOURCES` resolves the labels of journal lines that already carry a Project value, and a Service order's journal lines must keep resolving (step 3). The picker is `getEntityValues` (`accounting.service.ts`): the Project case lists Standard projects only, and the ProjectElement case lists only elements of Standard projects.
+- Task 14: the Ramp hooks call only `pushProjects`, so the filter in `PROJECT_SPEC.loadDesiredOptions` covers both. It moved into the pure `desiredProjectOptions`, tested in `lib/__tests__/projects.test.ts`. `ramp-integration.md` says so.

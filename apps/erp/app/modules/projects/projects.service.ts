@@ -108,7 +108,8 @@ export async function getProject(
 }
 
 /**
- * Lists the active projects of the company.
+ * Lists the active Standard projects of the company. A Service project
+ * belongs to its service order and is listed in Service.
  * @mcp read
  */
 export async function getProjects(
@@ -128,6 +129,7 @@ export async function getProjects(
       { count: LIST_COUNT }
     )
     .eq("companyId", companyId)
+    .eq("projectType", "Standard")
     .eq("active", true);
 
   if (args.search) {
@@ -372,6 +374,7 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         .from("project")
         .select("id, identifier, name, costTreatment, fixedAssetId")
         .eq("companyId", companyId)
+        .eq("projectType", "Standard")
         .eq("status", "Released")
         .eq("active", true)
         .order("identifier", { ascending: true })
@@ -390,6 +393,7 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         )
         .eq("companyId", companyId)
         .eq("isChargeable", true)
+        .eq("project.projectType", "Standard")
         .eq("project.status", "Released")
         .eq("project.active", true)
         .in("state.group", ["Unstarted", "Started"])

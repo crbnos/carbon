@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildProjectFieldBody,
   buildProjectOptionsBody,
+  desiredProjectOptions,
   diffProjectOptions,
   projectFingerprint,
   type RampProjectMapping,
@@ -118,5 +119,16 @@ describe("diffProjectOptions", () => {
       [mapping("prj_a", "Apollo", false)]
     );
     expect(toHide).toEqual([]);
+  });
+});
+
+describe("desiredProjectOptions", () => {
+  it("pushes Standard projects and never a Service project", () => {
+    expect(
+      desiredProjectOptions([
+        { id: "prj_a", name: "Apollo", projectType: "Standard" },
+        { id: "prj_s", name: "SN-0001 — Acme", projectType: "Service" }
+      ])
+    ).toEqual([{ id: "prj_a", value: "Apollo" }]);
   });
 });

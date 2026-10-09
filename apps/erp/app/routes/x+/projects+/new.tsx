@@ -36,6 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .from("project")
     .select("id, name, identifier, isTemplate")
     .eq("companyId", companyId)
+    .eq("projectType", "Standard")
     .eq("active", true)
     .order("isTemplate", { ascending: false })
     .order("name", { ascending: true });

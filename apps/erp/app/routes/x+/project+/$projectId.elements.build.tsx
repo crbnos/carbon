@@ -72,6 +72,7 @@ export async function loader({
     .from("project")
     .select("id, name, identifier")
     .eq("companyId", companyId)
+    .eq("projectType", "Standard")
     .eq("isTemplate", true)
     .neq("id", projectId)
     .order("name");
