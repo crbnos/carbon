@@ -8329,6 +8329,9 @@ msgstr "1과 {0} 사이의 수량을 입력하세요."
 msgid "Enter a reason to take the unit out of service"
 msgstr "장비를 운영 중단하는 이유를 입력하세요"
 
+msgid "Enter a web address, such as https://example.com"
+msgstr "웹 주소를 입력하세요(예: https://example.com)"
+
 msgid "Enter an item and quantity yourself."
 msgstr "품목과 수량을 직접 입력하세요."
 

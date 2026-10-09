@@ -22,6 +22,7 @@ import {
   LuContainer,
   LuFile,
   LuHash,
+  LuLink,
   LuList,
   LuSquareUser,
   LuToggleLeft,
@@ -191,6 +192,8 @@ function CustomFieldDataTypeIcon({
       );
     case DataType.File:
       return <LuFile className={cn("w-4 h-4 text-indigo-600", className)} />;
+    case DataType.Link:
+      return <LuLink className={cn("w-4 h-4 text-sky-600", className)} />;
     default:
       return null;
   }

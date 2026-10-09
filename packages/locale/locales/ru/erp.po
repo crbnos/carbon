@@ -8329,6 +8329,9 @@ msgstr "Введите количество от 1 до {0}."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Введите причину вывода единицы из эксплуатации"
 
+msgid "Enter a web address, such as https://example.com"
+msgstr "Введите веб-адрес, например https://example.com"
+
 msgid "Enter an item and quantity yourself."
 msgstr "Введите номенклатуру и количество самостоятельно."
 

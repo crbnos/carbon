@@ -4858,6 +4858,7 @@ export type Database = {
           isCustomer: boolean
           isDate: boolean
           isFile: boolean
+          isLink: boolean
           isList: boolean
           isNumeric: boolean
           isSupplier: boolean
@@ -4871,6 +4872,7 @@ export type Database = {
           isCustomer?: boolean
           isDate?: boolean
           isFile?: boolean
+          isLink?: boolean
           isList?: boolean
           isNumeric?: boolean
           isSupplier?: boolean
@@ -4884,6 +4886,7 @@ export type Database = {
           isCustomer?: boolean
           isDate?: boolean
           isFile?: boolean
+          isLink?: boolean
           isList?: boolean
           isNumeric?: boolean
           isSupplier?: boolean

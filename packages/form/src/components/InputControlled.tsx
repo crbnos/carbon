@@ -38,6 +38,8 @@ type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   prefix?: string;
   suffix?: string;
   inline?: boolean;
+  /** Inline mode only: how the saved value is shown. Defaults to the plain text. */
+  renderInlineValue?: (value: string) => ReactNode;
   value: string;
   onChange?: (newValue: string) => void;
   onConfigure?: () => void;
@@ -61,6 +63,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
       onChange,
       isUppercase,
       inline = false,
+      renderInlineValue,
       isReadOnly: isReadOnlyProp,
       isDisabled: isDisabledProp,
       onBlur,
@@ -116,7 +119,9 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
         )}
         <HStack spacing={0} className="w-full justify-between">
           {value && (
-            <span className="flex-grow text-sm line-clamp-1">{value}</span>
+            <span className="flex-grow text-sm line-clamp-1">
+              {renderInlineValue ? renderInlineValue(value) : value}
+            </span>
           )}
           <IconButton
             icon={value ? <LuSettings2 /> : <LuPlus />}

@@ -8329,6 +8329,9 @@ msgstr "1 ile {0} arasında bir miktar girin."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Üniteyi hizmet dışı bırakmak için bir neden girin"
 
+msgid "Enter a web address, such as https://example.com"
+msgstr "Bir web adresi girin, örneğin https://example.com"
+
 msgid "Enter an item and quantity yourself."
 msgstr "Bir stok kartı ve miktar kendiniz girin."
 

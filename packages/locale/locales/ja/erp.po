@@ -8329,6 +8329,9 @@ msgstr "1～{0}の数量を入力してください。"
 msgid "Enter a reason to take the unit out of service"
 msgstr "ユニットを使用停止にする理由を入力"
 
+msgid "Enter a web address, such as https://example.com"
+msgstr "Webアドレスを入力してください（例: https://example.com）"
+
 msgid "Enter an item and quantity yourself."
 msgstr "品目と数量を手動で入力してください。"
 
