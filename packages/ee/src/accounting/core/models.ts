@@ -1520,7 +1520,7 @@ export const JournalEntrySchema = z.object({
   journalEntryId: z.string(),
   description: withNullable(z.string()),
   postingDate: z.string(), // YYYY-MM-DD
-  status: z.enum(["Draft", "Posted", "Reversed"]),
+  status: z.enum(["Draft", "Posted", "Reversed", "Provisional", "Superseded"]),
   sourceType: withNullable(z.string()), // journalEntrySourceType enum value
   reversalOfId: withNullable(z.string()),
   reversedById: withNullable(z.string()),

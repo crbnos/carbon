@@ -18,6 +18,7 @@ import {
   daysBetweenInclusive,
   earnsInterest,
   fiscalYearAndPeriodFor,
+  GL_JOURNAL_STATUSES,
   getDateNYearsAgo,
   isBalanced,
   isUniqueViolation,
@@ -2619,9 +2620,12 @@ export async function getFiscalCalendarCommitted(
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
       .neq("closeStatus", "Open"),
+    // A Provisional journal (before the accounting cutover) has no period
+    // and must not commit the calendar the cutover will be set up on.
     (client.from("journal") as any)
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
+      .in("status", [...GL_JOURNAL_STATUSES])
   ]);
   if (nonOpen.error) return { data: null, error: nonOpen.error };
   if (journals.error) return { data: null, error: journals.error };
@@ -5674,7 +5678,10 @@ export async function getJournalEntries(
   }
 
   if (args.status) {
-    query = query.eq("status", args.status as "Draft" | "Posted" | "Reversed");
+    query = query.eq(
+      "status",
+      args.status as Database["public"]["Enums"]["journalEntryStatus"]
+    );
   }
 
   query = setGenericQueryFilters(query, args, [

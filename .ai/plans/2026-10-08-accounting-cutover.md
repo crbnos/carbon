@@ -14,9 +14,9 @@
 - [x] Task 5: Add the journal status lists and `journalPostingStatus`
 - [x] Task 6: Change the SQL readers that filter on `<> 'Draft'`
 - [x] Task 7: Exclude the new statuses from the dataset coverage check
-- [ ] Task 8: Add the `journal-status-filter` conformance check
-- [ ] Task 9: Change the journal readers in the server functions
-- [ ] Task 10: Change the journal counts in the ERP period services
+- [x] Task 8: Add the `journal-status-filter` conformance check
+- [x] Task 9: Change the journal readers in the server functions
+- [x] Task 10: Change the journal counts in the ERP period services
 
 ### Phase B — Post journals for every company
 - [ ] Task 11: Always post in the shared adjustment journal and its callers
@@ -451,12 +451,13 @@ pnpm --filter @carbon/server-functions test
 
 **Depends on:** Task 5
 **Files:**
-- Modify: `apps/erp/app/modules/accounting/accounting.service.ts:2548-2551` (`getAccountingPeriodDeletability`) and `:2622-2624` (`getFiscalCalendarCommitted`)
+- Modify: `apps/erp/app/modules/accounting/accounting.service.ts:2622-2624` (`getFiscalCalendarCommitted`)
 - Modify: `apps/erp/app/modules/accounting/accounting.periods.test.ts`
 
 **Steps:**
-1. Add `.in("status", [...GL_JOURNAL_STATUSES])` to both journal counts.
-2. Add one test per function: a Provisional journal does not count.
+1. Add `.in("status", [...GL_JOURNAL_STATUSES])` to the journal count in `getFiscalCalendarCommitted`.
+2. Leave `getAccountingPeriodDeletability` as it is. A Provisional journal has no period, so it never blocks a delete.
+3. Add a test: a Provisional journal does not commit the fiscal calendar.
 
 **Verify:**
 ```bash
@@ -476,7 +477,7 @@ Each of Tasks 11–20 applies these steps to the files it lists. Read them once.
 2. If the read happens before the transaction opens, move it into the transaction. If the code cannot move it without restructuring the function, STOP and report.
 3. Delete each branch on the flag that the task lists. Keep the branch body and make it unconditional.
 4. At each journal insert the task lists, replace `status: "Posted"` with `status: postingStatus`. Keep `postedAt` and `postedBy`.
-5. A branch marked J* also resolved the accounting period. After the change the period resolves for every company. Keep the resolve call as it is.
+5. A branch marked J* also resolved the accounting period. Resolve it only when `postingStatus` is `"Posted"`. A Provisional journal gets `accountingPeriodId: null`, and no posting creates a period before the cutover (spec section 1 item 3).
 6. Where a builder reads one of the `OPTIONAL_DEFAULT_ROLES` from `accountDefault`, call `resolveDefaultAccount(defaults, role, postingStatus)`. Write its `accountId` on the line and its `accountDefaultRole` in the line's `accountDefaultRole` column. Remove any existing runtime fallback for that role only when `resolveDefaultAccount` covers the same case; keep `employeeReimbursementsPayableAccount ?? payablesAccount` (`post-reimbursement-post.ts:80`, `post-payment-transaction.ts:1020`) as it is.
 7. Run the task's Verify block. A test that set `accountingEnabled: false` and expected no journal now expects a Provisional journal. Update it.
 
@@ -783,8 +784,9 @@ grep -rn "accountingEnabled" packages/server-functions/src/post-asset-transfer p
 2. Copy `complete_job_to_inventory`. Make 3 changes:
    - Delete the flag read and early return at :600-610. Delete the variable at :38.
    - Replace `'Posted'` in the journal inserts at :734 and :952 with `journal_posting_status(p_company_id)`.
+   - Where the function resolves an accounting period for those journals, insert `NULL` instead when `journal_posting_status(p_company_id)` is `'Provisional'`. Create no period in that case.
    - Add `AND j."status" IN ('Provisional', 'Posted', 'Reversed')` to the WIP sum at :873-880.
-3. Copy `backflush_job_materials`. Delete the flag read and early return at :193-203. Replace `'Posted'` at :274 with `journal_posting_status(p_company_id)`.
+3. Copy `backflush_job_materials`. Delete the flag read and early return at :193-203. Replace `'Posted'` at :274 with `journal_posting_status(p_company_id)`. Insert a `NULL` period for a Provisional journal, as in step 2.
 4. End `backflush_job_materials` with `SECURITY INVOKER` (set by `20260925121735:2761`). Check `complete_job_to_inventory`'s current `prosecdef` and keep it.
 5. Run `pnpm db:migrate`, then `pnpm run generate:types`.
 
@@ -873,7 +875,8 @@ pnpm --filter erp exec vitest run app/modules/accounting
 **Steps:**
 1. Create a company with `create` and the seed path the precedent uses. Leave `accountingCutoverDate` null.
 2. Post one of each, in this order: receipt, shipment, sales invoice, purchase invoice, payment, memo, inventory adjustment, job material issue, job completion.
-3. After each post, assert that every journal of the document has status `Provisional`.
+3. After each post, assert that every journal of the document has status `Provisional` and a null `accountingPeriodId`.
+   Assert that the company has no `accountingPeriod` row.
 4. Assert that `accountTreeBalances` for the company returns 0 on every account.
 5. Assert that the shipment wrote a Sale `costLedger` row.
 6. Set the company's `scrapAccount` to null. Post an inventory adjustment that scraps stock. Assert the scrap line's `accountId` is the company's `retainedEarningsAccount` and its `accountDefaultRole` is `scrapAccount`.
@@ -1040,10 +1043,11 @@ pnpm --filter erp exec vitest run app/modules/accounting
    8. Set every `Provisional` journal dated before the cutover to `Superseded`.
    9. Set `revenueRecognitionSchedule` rows dated before the cutover with status Planned to Posted, `journalId` null. Do the same for lease Interest rows.
    10. Insert the opening journal with `sourceType 'Opening Balance'` and status Posted. Date it the day before the cutover. Take its lines from `buildOpeningJournalLines`. Resolve its period with `resolveAccountingPeriod`, mode historical. Delete the Draft trial balance journal of Task 27.
-   11. Re-point the stand-in lines. Select the lines with `accountDefaultRole` set, in `Provisional` journals dated on or after the cutover. Set each line's `accountId` to the company's `accountDefault` value for its role. Set `accountDefaultRole` to null. Use one UPDATE per role.
-   12. Set every `Provisional` journal dated on or after the cutover to `Posted`, with `postedAt` and `postedBy`.
-   13. Close the periods that end before the cutover, oldest first: set `closeStatus 'Closed'`, `closedAt`, `closedBy`, then call `snapshotAccountingPeriodBalances` for each.
-   14. Update `companySettings`: `accountingCutoverDate`, `accountingActivatedAt = now`, `accountingActivatedBy = userId`.
+   11. Assign periods. For each `Provisional` journal dated on or after the cutover, set `accountingPeriodId` with `resolveAccountingPeriod` (`packages/server-functions/src/lib/get-accounting-period.ts:49`, mode historical). Resolve once per distinct month. Superseded journals keep a null period.
+   12. Re-point the stand-in lines. Select the lines with `accountDefaultRole` set, in `Provisional` journals dated on or after the cutover. Set each line's `accountId` to the company's `accountDefault` value for its role. Set `accountDefaultRole` to null. Use one UPDATE per role.
+   13. Set every `Provisional` journal dated on or after the cutover to `Posted`, with `postedAt` and `postedBy`.
+   14. Close the periods that end before the cutover, oldest first: set `closeStatus 'Closed'`, `closedAt`, `closedBy`, then call `snapshotAccountingPeriodBalances` for each.
+   15. Update `companySettings`: `accountingCutoverDate`, `accountingActivatedAt = now`, `accountingActivatedBy = userId`.
 3. Write a database test (`databaseTest`) with 1 open invoice, 1 receipt not invoiced and stock of 1 item. Assert after the enable:
    - No journal has status `Provisional`.
    - The opening journal balances and Migration Clearing sums to 0.
@@ -1392,6 +1396,9 @@ grep -rn "accountingEnabled" apps/erp/app/modules/accounting/AGENTS.md packages/
 
 ## Execution notes
 
+- Task 10 changed while executing: a Provisional journal has no accounting period (spec section 1 item 3). Phase B shared step 5, Task 21, Task 24 and Task 28 follow from it.
+- Task 1 widened `journalEntryStatus`; the ERP typecheck then failed in the status badge and the provider journal schema. That fix (labels, colors, `journalEntryStatuses`, `core/models.ts`) is committed with Task 10, ahead of Task 36. Task 36 keeps the journal list filter and the document panels.
+- New UI strings are translated in one `/translate` batch at the end of Phase D, not per commit.
 - Task 7 is committed with Task 1. The pre-commit dataset check refuses the new enum values until the exclusions exist.
 - `pnpm db:migrate:new` waits on stdin when stdin is not a terminal. Run it as `pnpm db:migrate:new <name> < /dev/null`.
 - A commit that touches a migration or `packages/database/src` needs `pnpm generate:mcp` first, then stage `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.

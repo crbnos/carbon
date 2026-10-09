@@ -932,6 +932,23 @@ describe("getFiscalCalendarCommitted", () => {
     const result = await getFiscalCalendarCommitted(client, "C1");
     expect(result.data?.committed).toBe(true);
   });
+
+  it("counts only Posted and Reversed journals, never a Provisional one", async () => {
+    const statusFilters: unknown[] = [];
+    const builder: any = {
+      select: () => builder,
+      eq: () => builder,
+      neq: () => builder,
+      in: (column: string, values: unknown[]) => {
+        if (column === "status") statusFilters.push(values);
+        return builder;
+      },
+      then: (resolve: (v: Scripted) => unknown) => resolve({ count: 0 })
+    };
+    const client = { from: () => builder } as any;
+    await getFiscalCalendarCommitted(client, "C1");
+    expect(statusFilters).toEqual([["Posted", "Reversed"]]);
+  });
 });
 
 describe("createFiscalYearPeriods", () => {

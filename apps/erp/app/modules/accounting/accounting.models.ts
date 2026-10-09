@@ -778,7 +778,15 @@ export const journalEntrySourceTypes = [
   "Lease"
 ] as const;
 
-export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
+// Provisional: written before the accounting cutover, counts nowhere.
+// Superseded: a Provisional journal dated before the cutover.
+export const journalEntryStatuses = [
+  "Draft",
+  "Posted",
+  "Reversed",
+  "Provisional",
+  "Superseded"
+] as const;
 
 export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
 
