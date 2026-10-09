@@ -10,6 +10,8 @@ import {
   Select,
   useAdditionalValidatorsContext
 } from "@carbon/form";
+import { toSafeHref } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 import { DataType } from "~/modules/shared";
@@ -23,26 +25,44 @@ type CustomFormFieldsProps = {
 };
 
 const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
+  const { t } = useLingui();
   const customFormSchema = useCustomFieldsSchema();
   const tableFields = customFormSchema?.[table];
   const additionalValidatorCtx = useAdditionalValidatorsContext();
   const tagsKey = tags.join(",");
 
-  const requiredFieldNames = useMemo(() => {
+  const visibleFields = useMemo(() => {
     if (!tableFields) return [];
-    return tableFields
-      .filter((field) => {
-        if (!field.required || field.dataTypeId === DataType.Boolean)
-          return false;
-        if (!field.tags || field.tags.length === 0) return true;
-        return field.tags.some((tag) => tagsKey.split(",").includes(tag));
-      })
-      .map((field) => getCustomFieldName(field.id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return tableFields.filter((field) => {
+      if (!field.tags || field.tags.length === 0) return true;
+      return field.tags.some((tag) => tagsKey.split(",").includes(tag));
+    });
   }, [tableFields, tagsKey]);
 
+  const requiredFieldNames = useMemo(
+    () =>
+      visibleFields
+        .filter(
+          (field) => field.required && field.dataTypeId !== DataType.Boolean
+        )
+        .map((field) => getCustomFieldName(field.id)),
+    [visibleFields]
+  );
+
+  const linkFieldNames = useMemo(
+    () =>
+      visibleFields
+        .filter((field) => field.dataTypeId === DataType.Link)
+        .map((field) => getCustomFieldName(field.id)),
+    [visibleFields]
+  );
+
   useEffect(() => {
-    if (!additionalValidatorCtx || requiredFieldNames.length === 0) return;
+    if (
+      !additionalValidatorCtx ||
+      (requiredFieldNames.length === 0 && linkFieldNames.length === 0)
+    )
+      return;
 
     const id = `custom-${table}`;
     additionalValidatorCtx.register(id, (formData) => {
@@ -53,11 +73,21 @@ const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
           errors[name] = "Required";
         }
       }
+      for (const name of linkFieldNames) {
+        const value = formData.get(name);
+        if (
+          typeof value === "string" &&
+          value.trim() !== "" &&
+          toSafeHref(value) === null
+        ) {
+          errors[name] = t`Enter a web address, such as https://example.com`;
+        }
+      }
       return errors;
     });
 
     return () => additionalValidatorCtx.unregister(id);
-  }, [requiredFieldNames, table, additionalValidatorCtx]);
+  }, [requiredFieldNames, linkFieldNames, table, additionalValidatorCtx, t]);
 
   if (!tableFields) return null;
 
@@ -126,6 +156,17 @@ const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
                   name={getCustomFieldName(field.id)}
                   label={field.name}
                   isRequired={isRequired}
+                />
+              );
+            case DataType.Link:
+              return (
+                <Input
+                  key={field.id}
+                  name={getCustomFieldName(field.id)}
+                  label={field.name}
+                  isRequired={isRequired}
+                  inputMode="url"
+                  placeholder="https://"
                 />
               );
             case DataType.User:

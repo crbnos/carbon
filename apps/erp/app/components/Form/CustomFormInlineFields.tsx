@@ -16,6 +16,7 @@ import { zfd } from "zod-form-data";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 import { DataType } from "~/modules/shared";
 import { Enumerable } from "../Enumerable";
+import LinkValue from "../LinkValue";
 import Customer from "./Customer";
 import Employee from "./Employee";
 import Supplier from "./Supplier";
@@ -202,6 +203,39 @@ const CustomFormInlineFields = ({
                     value={fields[field.id] as string}
                     size="sm"
                     inline
+                    isReadOnly={isDisabled}
+                    onBlur={(e) => {
+                      onUpdate(
+                        JSON.stringify({
+                          ...fields,
+                          [field.id]: e.target.value
+                        })
+                      );
+                    }}
+                  />
+                </ValidatedForm>
+              );
+            case DataType.Link:
+              return (
+                // biome-ignore lint/correctness/useJsxKeyInIterable: suppressed due to migration
+                <ValidatedForm
+                  defaultValues={{
+                    [field.id]: fields[field.id] as string
+                  }}
+                  validator={z.object({
+                    [field.id]: zfd.text(z.string().optional())
+                  })}
+                  className="w-full"
+                >
+                  <InputControlled
+                    name={field.id}
+                    label={field.name}
+                    value={fields[field.id] as string}
+                    size="sm"
+                    inline
+                    inputMode="url"
+                    placeholder="https://"
+                    renderInlineValue={(value) => <LinkValue value={value} />}
                     isReadOnly={isDisabled}
                     onBlur={(e) => {
                       onUpdate(

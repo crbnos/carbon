@@ -26,6 +26,11 @@ export const attributeValidator = z
       return false;
 
     return true;
+  })
+  // Link is a custom field type only; person attributes cannot store one.
+  .refine((input) => input.attributeDataTypeId !== DataType.Link, {
+    message: "Link is not available for attributes",
+    path: ["attributeDataTypeId"]
   });
 
 export const attributeCategoryValidator = z.object({

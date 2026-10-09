@@ -12,12 +12,18 @@ import {
   LuCaseSensitive,
   LuContainer,
   LuHash,
+  LuLink,
   LuList,
   LuSquareUser,
   LuToggleLeft,
   LuUser
 } from "react-icons/lu";
-import { CustomerAvatar, EmployeeAvatar, SupplierAvatar } from "~/components";
+import {
+  CustomerAvatar,
+  EmployeeAvatar,
+  LinkValue,
+  SupplierAvatar
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { DataType } from "~/modules/shared";
 import { useCustomers, usePeople, useSuppliers } from "~/stores";
@@ -74,7 +80,8 @@ export function useCustomColumns<T extends { customFields: Json }>(
                         label: person.name
                       }))
                     }
-                  : field.dataTypeId === DataType.Text
+                  : field.dataTypeId === DataType.Text ||
+                      field.dataTypeId === DataType.Link
                     ? {
                         type: "fetcher",
                         endpoint: path.to.api.customFieldOptions(
@@ -133,6 +140,14 @@ export function useCustomColumns<T extends { customFields: Json }>(
                 field.id in item.row.original.customFields
                 ? item.row.original?.customFields[field.id]
                 : null;
+            case DataType.Link: {
+              const value = isObject(item.row.original.customFields)
+                ? item.row.original.customFields[field.id]
+                : null;
+              return typeof value === "string" && value ? (
+                <LinkValue value={value} />
+              ) : null;
+            }
             case DataType.User:
               if (
                 isObject(item.row.original.customFields) &&
@@ -199,6 +214,8 @@ function ColumnIcon({ dataTypeId }: { dataTypeId: DataType }) {
       return <LuHash />;
     case DataType.Text:
       return <LuCaseSensitive />;
+    case DataType.Link:
+      return <LuLink />;
     case DataType.User:
       return <LuUser />;
     case DataType.Customer:
