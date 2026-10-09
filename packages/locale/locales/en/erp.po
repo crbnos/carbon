@@ -3961,6 +3961,9 @@ msgstr "Bulk Jobs"
 msgid "Burden"
 msgstr "Burden"
 
+msgid "Burn chart"
+msgstr "Burn chart"
+
 msgid "Business moment"
 msgstr "Business moment"
 
@@ -10108,6 +10111,9 @@ msgstr "Getting set up"
 msgid "Give it an owner and a date"
 msgstr "Give it an owner and a date"
 
+msgid "Give the milestone a start and an end date to see its burn."
+msgstr "Give the milestone a start and an end date to see its burn."
+
 msgid "GL"
 msgstr "GL"
 
@@ -10478,6 +10484,10 @@ msgstr "Hours assumed from location shifts"
 msgid "Hours at this station"
 msgstr "Hours at this station"
 
+#. placeholder {0}: formatQuantity(plannedHours)
+msgid "Hours burn · {0} planned"
+msgstr "Hours burn · {0} planned"
+
 msgid "Hours estimate"
 msgstr "Hours estimate"
 
@@ -10695,6 +10705,9 @@ msgstr "Id"
 
 msgid "ID"
 msgstr "ID"
+
+msgid "Ideal"
+msgstr "Ideal"
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideas, suggestions or problems?"
@@ -16082,6 +16095,9 @@ msgstr "Posted by"
 
 msgid "Posted By"
 msgstr "Posted By"
+
+msgid "Posted hours"
+msgstr "Posted hours"
 
 msgid "Posted hours, open the correction menu"
 msgstr "Posted hours, open the correction menu"

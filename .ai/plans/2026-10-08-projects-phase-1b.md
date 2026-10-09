@@ -61,7 +61,7 @@
 - [x] Task 23: Add Create Job from a plan-line material
 - [x] Task 24: Add Create PO line from a plan-line material
 - [x] Task 25: Add charge numbers to reimbursement lines and show them on charges
-- [ ] Task 26: Add the milestone burn chart
+- [x] Task 26: Add the milestone burn chart
 - [ ] Task 27: Add part links and item values
 - [ ] Task 28: Add Build from part
 - [ ] Task 29: Add the element history by part
@@ -1536,3 +1536,6 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 25: `reimbursementLineValidator` takes `projectElementId` and refuses an element without a project. The edit route checks every line's charge number with the new `chargeNumbersError` (`projects.server.ts`, two `.in()` queries for all lines). `upsertReimbursementLines` writes `projectElementId`.
 - Task 25: the charge page loads the lines' projects and elements with two `.in()` queries in its existing `Promise.all` and shows a read-only **Charge Number** column: the element's readable id, else the project identifier, linked to the element or the project.
 - Task 25: `pnpm --filter @carbon/server-functions test -- post-reimbursement` ran the whole suite (the filter reached vitest after `--`): 429 passed. The erp charge, reimbursement and line editor tests pass (13).
+- Task 26: day k is the start date plus k days, and `ideal` is `plannedHours × k ÷ (end − start)`, so the plan's "10-day milestone" runs from day 0 to day 10 (11 points). An entry before the start counts from day 0, one after the end does not count. `buildBurnSeries` takes an optional `today`: later days have a null `actual`, so the line stops at today instead of running flat into the future. `projects-burn.test.ts` has the plan's 2 cases.
+- Task 26: the planned hours are the milestone's `estimatedHours` from `summarizeMilestones` (the estimates of its elements, Cancelled ones left out). The posted hours are `timesheetEntry` rows with status Posted (reversals included, so a correction nets out), read in one query with `.in("projectElementId", elementIds)` for the selected milestone only.
+- Task 26: a milestone row stays a link to its elements, so the chart opens from a **Burn chart** icon button next to the row menu. The selection is `?milestone=<id>`; the loader builds the series for it, and the list shows the chart in a sticky side column (`lg:grid-cols-[minmax(0,1fr)_26rem]`). A milestone without a start or an end date shows a note in place of the chart.

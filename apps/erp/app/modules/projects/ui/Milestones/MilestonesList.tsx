@@ -5,6 +5,7 @@
 import {
   BarProgress,
   Button,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -15,8 +16,10 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import {
+  LuChartLine,
   LuCircleCheck,
   LuEllipsis,
   LuFlag,
@@ -45,6 +48,11 @@ type MilestonesListProps = {
   milestones: Milestone[];
   action: string;
   isDisabled: boolean;
+  /** The milestone whose burn chart shows in the side panel. */
+  selectedId: string | null;
+  onSelect: (milestoneId: string | null) => void;
+  /** The side panel: the selected milestone's burn chart. */
+  aside: ReactNode;
 };
 
 type EditingMilestone = {
@@ -60,7 +68,10 @@ const MilestonesList = ({
   projectId,
   milestones,
   action,
-  isDisabled
+  isDisabled,
+  selectedId,
+  onSelect,
+  aside
 }: MilestonesListProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -76,103 +87,118 @@ const MilestonesList = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-[80rem] mx-auto w-full">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-base font-medium">
-          <Trans>Milestones</Trans>
-        </h2>
-        <Button
-          variant="secondary"
-          leftIcon={<LuPlus />}
-          isDisabled={!canUpdate}
-          onClick={() => setEditing({ name: "" })}
-        >
-          <Trans>New Milestone</Trans>
-        </Button>
-      </div>
-
-      {milestones.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
-          <LuFlag className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            <Trans>
-              No milestones yet. Add one, then set it on the elements it covers.
-            </Trans>
-          </p>
+    <div
+      className={cn(
+        "mx-auto grid w-full max-w-[80rem] items-start gap-4 p-4",
+        aside && "lg:grid-cols-[minmax(0,1fr)_26rem]"
+      )}
+    >
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-base font-medium">
+            <Trans>Milestones</Trans>
+          </h2>
           <Button
+            variant="secondary"
             leftIcon={<LuPlus />}
             isDisabled={!canUpdate}
             onClick={() => setEditing({ name: "" })}
           >
-            <Trans>Add the first milestone</Trans>
+            <Trans>New Milestone</Trans>
           </Button>
         </div>
-      ) : (
-        GROUP_ORDER.map((group) => {
-          const rows = milestones.filter((m) => m.group === group);
-          if (rows.length === 0) return null;
-          return (
-            <section key={group} className="flex flex-col gap-1">
-              <h3 className="px-1 text-xs font-medium text-muted-foreground">
-                {groupLabels[group]}
-                <span className="ml-1.5 tabular-nums">{rows.length}</span>
-              </h3>
-              <div className="flex flex-col rounded-lg border border-border bg-card">
-                {rows.map((milestone) => (
-                  <MilestoneRow
-                    key={milestone.id}
-                    projectId={projectId}
-                    milestone={milestone}
-                    action={action}
-                    canUpdate={canUpdate}
-                    onEdit={() =>
-                      setEditing({
-                        id: milestone.id,
-                        name: milestone.name,
-                        startDate: milestone.startDate ?? undefined,
-                        endDate: milestone.endDate ?? undefined
-                      })
-                    }
-                    onDelete={() => {
-                      setDeleting(milestone);
-                      deleteDisclosure.onOpen();
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          );
-        })
-      )}
 
-      {editing && (
-        <MilestoneForm
-          action={action}
-          initialValues={editing}
-          onClose={() => setEditing(null)}
-        />
-      )}
+        {milestones.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
+            <LuFlag className="size-6 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                No milestones yet. Add one, then set it on the elements it
+                covers.
+              </Trans>
+            </p>
+            <Button
+              leftIcon={<LuPlus />}
+              isDisabled={!canUpdate}
+              onClick={() => setEditing({ name: "" })}
+            >
+              <Trans>Add the first milestone</Trans>
+            </Button>
+          </div>
+        ) : (
+          GROUP_ORDER.map((group) => {
+            const rows = milestones.filter((m) => m.group === group);
+            if (rows.length === 0) return null;
+            return (
+              <section key={group} className="flex flex-col gap-1">
+                <h3 className="px-1 text-xs font-medium text-muted-foreground">
+                  {groupLabels[group]}
+                  <span className="ml-1.5 tabular-nums">{rows.length}</span>
+                </h3>
+                <div className="flex flex-col rounded-lg border border-border bg-card">
+                  {rows.map((milestone) => (
+                    <MilestoneRow
+                      key={milestone.id}
+                      projectId={projectId}
+                      milestone={milestone}
+                      action={action}
+                      canUpdate={canUpdate}
+                      isSelected={milestone.id === selectedId}
+                      onSelect={() =>
+                        onSelect(
+                          milestone.id === selectedId ? null : milestone.id
+                        )
+                      }
+                      onEdit={() =>
+                        setEditing({
+                          id: milestone.id,
+                          name: milestone.name,
+                          startDate: milestone.startDate ?? undefined,
+                          endDate: milestone.endDate ?? undefined
+                        })
+                      }
+                      onDelete={() => {
+                        setDeleting(milestone);
+                        deleteDisclosure.onOpen();
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })
+        )}
 
-      {deleteDisclosure.isOpen && deleting && (
-        <Confirm
-          action={action}
-          title={t`Delete ${deleting.name}`}
-          text={t`Delete the milestone ${deleting.name}? Its elements stay, without a milestone.`}
-          confirmText={t`Delete`}
-          confirmVariant="destructive"
-          onCancel={() => {
-            deleteDisclosure.onClose();
-            setDeleting(null);
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-            setDeleting(null);
-          }}
-        >
-          <input type="hidden" name="intent" value="delete" />
-          <input type="hidden" name="id" value={deleting.id} />
-        </Confirm>
-      )}
+        {editing && (
+          <MilestoneForm
+            action={action}
+            initialValues={editing}
+            onClose={() => setEditing(null)}
+          />
+        )}
+
+        {deleteDisclosure.isOpen && deleting && (
+          <Confirm
+            action={action}
+            title={t`Delete ${deleting.name}`}
+            text={t`Delete the milestone ${deleting.name}? Its elements stay, without a milestone.`}
+            confirmText={t`Delete`}
+            confirmVariant="destructive"
+            onCancel={() => {
+              deleteDisclosure.onClose();
+              setDeleting(null);
+            }}
+            onSubmit={() => {
+              deleteDisclosure.onClose();
+              setDeleting(null);
+            }}
+          >
+            <input type="hidden" name="intent" value="delete" />
+            <input type="hidden" name="id" value={deleting.id} />
+          </Confirm>
+        )}
+      </div>
+      {aside && <aside className="lg:sticky lg:top-4">{aside}</aside>}
     </div>
   );
 };
@@ -182,6 +208,8 @@ function MilestoneRow({
   milestone,
   action,
   canUpdate,
+  isSelected,
+  onSelect,
   onEdit,
   onDelete
 }: {
@@ -189,6 +217,8 @@ function MilestoneRow({
   milestone: Milestone;
   action: string;
   canUpdate: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -218,10 +248,15 @@ function MilestoneRow({
     );
 
   return (
-    <div className="@container relative border-b border-border last:border-b-0 hover:bg-accent/50">
+    <div
+      className={cn(
+        "@container relative border-b border-border last:border-b-0 hover:bg-accent/50",
+        isSelected && "bg-accent/50"
+      )}
+    >
       <Link
         to={to}
-        className="flex flex-col gap-2 px-3 py-2.5 pr-12 @min-[42rem]:flex-row @min-[42rem]:items-center @min-[42rem]:gap-4"
+        className="flex flex-col gap-2 px-3 py-2.5 pr-20 @min-[42rem]:flex-row @min-[42rem]:items-center @min-[42rem]:gap-4"
       >
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm font-medium">{milestone.name}</span>
@@ -272,7 +307,15 @@ function MilestoneRow({
           </div>
         </div>
       </Link>
-      <div className="absolute right-2 top-2.5">
+      <div className="absolute right-2 top-2.5 flex items-center gap-1">
+        <IconButton
+          aria-label={t`Burn chart`}
+          aria-pressed={isSelected}
+          icon={<LuChartLine />}
+          variant={isSelected ? "active" : "ghost"}
+          size="sm"
+          onClick={onSelect}
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton

@@ -3961,6 +3961,9 @@ msgstr "Массовые производственные заказы"
 msgid "Burden"
 msgstr ""
 
+msgid "Burn chart"
+msgstr ""
+
 msgid "Business moment"
 msgstr "Бизнес-момент"
 
@@ -10108,6 +10111,9 @@ msgstr "Начало работы"
 msgid "Give it an owner and a date"
 msgstr "Назначьте ответственного и дату"
 
+msgid "Give the milestone a start and an end date to see its burn."
+msgstr ""
+
 msgid "GL"
 msgstr "Главная книга"
 
@@ -10478,6 +10484,10 @@ msgstr "Часы предполагаются на основе смен в ме
 msgid "Hours at this station"
 msgstr "Часы на этом рабочем месте"
 
+#. placeholder {0}: formatQuantity(plannedHours)
+msgid "Hours burn · {0} planned"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr ""
 
@@ -10695,6 +10705,9 @@ msgstr "ID"
 
 msgid "ID"
 msgstr "ID"
+
+msgid "Ideal"
+msgstr ""
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
@@ -16082,6 +16095,9 @@ msgstr "Опубликовано"
 
 msgid "Posted By"
 msgstr "Опубликовано"
+
+msgid "Posted hours"
+msgstr ""
 
 msgid "Posted hours, open the correction menu"
 msgstr ""

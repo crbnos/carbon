@@ -10,10 +10,11 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useParams } from "react-router";
+import { data, useLoaderData, useParams, useSearchParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Project } from "~/modules/projects";
 import {
+  buildBurnSeries,
   completeProjectMilestone,
   deleteProjectMilestone,
   getProjectCostSummary,
@@ -23,6 +24,7 @@ import {
   summarizeMilestones,
   upsertProjectMilestone
 } from "~/modules/projects";
+import { MilestoneBurnChart } from "~/modules/projects/ui/Milestones/MilestoneBurnChart";
 import MilestonesList from "~/modules/projects/ui/Milestones/MilestonesList";
 import { path } from "~/utils/path";
 
@@ -65,14 +67,68 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  return {
-    milestones: summarizeMilestones({
-      milestones: milestones.data ?? [],
-      elements: elements.data ?? [],
-      costSummary: costSummary.data ?? [],
-      today: datetime.today(timeZone).toString()
-    })
-  };
+  const today = datetime.today(timeZone).toString();
+  const summaries = summarizeMilestones({
+    milestones: milestones.data ?? [],
+    elements: elements.data ?? [],
+    costSummary: costSummary.data ?? [],
+    today
+  });
+
+  // The burn of the selected milestone: its elements' posted hours, in one
+  // query.
+  const selectedId = new URL(request.url).searchParams.get("milestone");
+  const selected = summaries.find((m) => m.id === selectedId) ?? null;
+  let burn: {
+    milestoneId: string;
+    name: string;
+    plannedHours: number;
+    series: ReturnType<typeof buildBurnSeries>;
+  } | null = null;
+  if (selected) {
+    const elementIds = (elements.data ?? [])
+      .filter((element) => element.milestoneId === selected.id)
+      .map((element) => element.id);
+    const entries =
+      elementIds.length > 0 && selected.startDate && selected.endDate
+        ? await client
+            .from("timesheetEntry")
+            .select("entryDate, hours")
+            .eq("companyId", companyId)
+            .eq("projectId", projectId)
+            .eq("status", "Posted")
+            .in("projectElementId", elementIds)
+            .lte("entryDate", selected.endDate)
+        : { data: [], error: null };
+    if (entries.error) {
+      logger.error("Failed to load the milestone's posted hours", {
+        companyId,
+        projectId,
+        milestoneId: selected.id,
+        error: entries.error
+      });
+    }
+    burn = {
+      milestoneId: selected.id,
+      name: selected.name,
+      plannedHours: selected.estimatedHours,
+      series:
+        selected.startDate && selected.endDate
+          ? buildBurnSeries({
+              startDate: selected.startDate,
+              endDate: selected.endDate,
+              plannedHours: selected.estimatedHours,
+              entries: (entries.data ?? []).map((entry) => ({
+                entryDate: entry.entryDate,
+                hours: Number(entry.hours)
+              })),
+              today
+            })
+          : []
+    };
+  }
+
+  return { milestones: summaries, burn, today };
 }
 
 const intents = ["upsert", "complete", "reopen", "delete"] as const;
@@ -154,11 +210,19 @@ export default function ProjectMilestonesRoute() {
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
 
-  const { milestones } = useLoaderData<typeof loader>();
+  const { milestones, burn, today } = useLoaderData<typeof loader>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const routeData = useRouteData<{ project: Project }>(
     path.to.project(projectId)
   );
   if (!routeData?.project) return null;
+
+  const selectMilestone = (milestoneId: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (milestoneId) next.set("milestone", milestoneId);
+    else next.delete("milestone");
+    setSearchParams(next, { replace: true, preventScrollReset: true });
+  };
 
   return (
     <MilestonesList
@@ -166,6 +230,19 @@ export default function ProjectMilestonesRoute() {
       milestones={milestones}
       action={path.to.projectMilestones(projectId)}
       isDisabled={routeData.project.status === "Closed"}
+      selectedId={burn?.milestoneId ?? null}
+      onSelect={selectMilestone}
+      aside={
+        burn ? (
+          <MilestoneBurnChart
+            name={burn.name}
+            series={burn.series}
+            plannedHours={burn.plannedHours}
+            today={today}
+            onClose={() => selectMilestone(null)}
+          />
+        ) : null
+      }
     />
   );
 }

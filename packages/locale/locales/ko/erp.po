@@ -3961,6 +3961,9 @@ msgstr "대량 작업 지시"
 msgid "Burden"
 msgstr ""
 
+msgid "Burn chart"
+msgstr ""
+
 msgid "Business moment"
 msgstr "비즈니스 순간"
 
@@ -10108,6 +10111,9 @@ msgstr "설정하기"
 msgid "Give it an owner and a date"
 msgstr "책임자와 날짜를 지정하세요"
 
+msgid "Give the milestone a start and an end date to see its burn."
+msgstr ""
+
 msgid "GL"
 msgstr "총계정원장"
 
@@ -10478,6 +10484,10 @@ msgstr "사업장 교대조에서 가정한 시간"
 msgid "Hours at this station"
 msgstr "이 스테이션의 시간"
 
+#. placeholder {0}: formatQuantity(plannedHours)
+msgid "Hours burn · {0} planned"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr ""
 
@@ -10695,6 +10705,9 @@ msgstr "Id"
 
 msgid "ID"
 msgstr "ID"
+
+msgid "Ideal"
+msgstr ""
 
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
@@ -16082,6 +16095,9 @@ msgstr "게시자"
 
 msgid "Posted By"
 msgstr "전기자"
+
+msgid "Posted hours"
+msgstr ""
 
 msgid "Posted hours, open the correction menu"
 msgstr ""

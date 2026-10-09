@@ -3961,6 +3961,9 @@ msgstr "批量工单"
 msgid "Burden"
 msgstr ""
 
+msgid "Burn chart"
+msgstr ""
+
 msgid "Business moment"
 msgstr "业务时刻"
 
@@ -10108,6 +10111,9 @@ msgstr "正在设置"
 msgid "Give it an owner and a date"
 msgstr "给它分配一个负责人和截止日期"
 
+msgid "Give the milestone a start and an end date to see its burn."
+msgstr ""
+
 msgid "GL"
 msgstr "总账"
 
@@ -10478,6 +10484,10 @@ msgstr "从位置班次假设的小时数"
 msgid "Hours at this station"
 msgstr "此工位的小时数"
 
+#. placeholder {0}: formatQuantity(plannedHours)
+msgid "Hours burn · {0} planned"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr ""
 
@@ -10695,6 +10705,9 @@ msgstr "ID"
 
 msgid "ID"
 msgstr "ID"
+
+msgid "Ideal"
+msgstr ""
 
 msgid "Ideas, suggestions or problems?"
 msgstr "想法、建议或问题？"
@@ -16082,6 +16095,9 @@ msgstr "过账人"
 
 msgid "Posted By"
 msgstr "过账人"
+
+msgid "Posted hours"
+msgstr ""
 
 msgid "Posted hours, open the correction menu"
 msgstr ""

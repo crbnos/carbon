@@ -3961,6 +3961,9 @@ msgstr "बल्क जॉब्स"
 msgid "Burden"
 msgstr ""
 
+msgid "Burn chart"
+msgstr ""
+
 msgid "Business moment"
 msgstr "व्यावसायिक क्षण"
 
@@ -10108,6 +10111,9 @@ msgstr "सेटअप हो रहा है"
 msgid "Give it an owner and a date"
 msgstr "इसे एक स्वामी और एक तारीख दें"
 
+msgid "Give the milestone a start and an end date to see its burn."
+msgstr ""
+
 msgid "GL"
 msgstr "सामान्य खाता बही"
 
@@ -10478,6 +10484,10 @@ msgstr "स्थान शिफ्ट से मानी गई घंटे�
 msgid "Hours at this station"
 msgstr "इस स्टेशन पर घंटे"
 
+#. placeholder {0}: formatQuantity(plannedHours)
+msgid "Hours burn · {0} planned"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr ""
 
@@ -10695,6 +10705,9 @@ msgstr "आईडी"
 
 msgid "ID"
 msgstr "आईडी"
+
+msgid "Ideal"
+msgstr ""
 
 msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
@@ -16082,6 +16095,9 @@ msgstr "द्वारा पोस्ट किया गया"
 
 msgid "Posted By"
 msgstr "द्वारा पोस्ट किया गया"
+
+msgid "Posted hours"
+msgstr ""
 
 msgid "Posted hours, open the correction menu"
 msgstr ""

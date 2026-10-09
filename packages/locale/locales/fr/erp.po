@@ -3961,6 +3961,9 @@ msgstr "Ordres de fabrication en masse"
 msgid "Burden"
 msgstr ""
 
+msgid "Burn chart"
+msgstr ""
+
 msgid "Business moment"
 msgstr "Moment métier"
 
@@ -10108,6 +10111,9 @@ msgstr "Mise en place"
 msgid "Give it an owner and a date"
 msgstr "Désignez un propriétaire et une date"
 
+msgid "Give the milestone a start and an end date to see its burn."
+msgstr ""
+
 msgid "GL"
 msgstr "Grand livre"
 
@@ -10478,6 +10484,10 @@ msgstr "Heures supposées selon les équipes du site"
 msgid "Hours at this station"
 msgstr "Heures à cette station"
 
+#. placeholder {0}: formatQuantity(plannedHours)
+msgid "Hours burn · {0} planned"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr ""
 
@@ -10695,6 +10705,9 @@ msgstr "Id"
 
 msgid "ID"
 msgstr "ID"
+
+msgid "Ideal"
+msgstr ""
 
 msgid "Ideas, suggestions or problems?"
 msgstr "Des idées, des suggestions ou des problèmes ?"
@@ -16082,6 +16095,9 @@ msgstr "Publié par"
 
 msgid "Posted By"
 msgstr "Publié par"
+
+msgid "Posted hours"
+msgstr ""
 
 msgid "Posted hours, open the correction menu"
 msgstr ""

@@ -3961,6 +3961,9 @@ msgstr "一括製造指図"
 msgid "Burden"
 msgstr ""
 
+msgid "Burn chart"
+msgstr ""
+
 msgid "Business moment"
 msgstr "ビジネスモーメント"
 
@@ -10108,6 +10111,9 @@ msgstr "セットアップ中"
 msgid "Give it an owner and a date"
 msgstr "責任者と日付を指定してください"
 
+msgid "Give the milestone a start and an end date to see its burn."
+msgstr ""
+
 msgid "GL"
 msgstr "総勘定元帳"
 
@@ -10478,6 +10484,10 @@ msgstr "場所のシフトから想定される時間"
 msgid "Hours at this station"
 msgstr "このステーションの時間"
 
+#. placeholder {0}: formatQuantity(plannedHours)
+msgid "Hours burn · {0} planned"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr ""
 
@@ -10695,6 +10705,9 @@ msgstr "ID"
 
 msgid "ID"
 msgstr "ID"
+
+msgid "Ideal"
+msgstr ""
 
 msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"
@@ -16082,6 +16095,9 @@ msgstr "投稿者"
 
 msgid "Posted By"
 msgstr "投稿者"
+
+msgid "Posted hours"
+msgstr ""
 
 msgid "Posted hours, open the correction menu"
 msgstr ""

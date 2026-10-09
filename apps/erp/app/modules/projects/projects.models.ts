@@ -2531,3 +2531,58 @@ export const createPurchaseOrderLineFromMaterialValidator = z.object({
   requiredDate: zfd.text(z.string().optional()),
   purchaseOrderId: z.string().min(1, { message: "Choose a purchase order" })
 });
+
+// --- Milestone burn chart -------------------------------------------------------
+
+export type BurnPoint = {
+  /** `YYYY-MM-DD`. */
+  date: string;
+  /** Days since the start: 0 on the start date. */
+  day: number;
+  /** The straight line from 0 on the start date to the planned hours on the end date. */
+  ideal: number;
+  /** Posted hours up to and including the date; null after `today`. */
+  actual: number | null;
+};
+
+/**
+ * One point per day from `startDate` to `endDate` (both `YYYY-MM-DD`): the
+ * ideal hours, `plannedHours × day ÷ days`, and the cumulative posted hours of
+ * `entries` up to that day (an entry before the start counts from day 0; one
+ * after the end does not count). Days after `today`, when given, have no
+ * actual. An end before the start gives no points.
+ */
+export function buildBurnSeries(args: {
+  startDate: string;
+  endDate: string;
+  plannedHours: number;
+  entries: { entryDate: string; hours: number }[];
+  today?: string;
+}): BurnPoint[] {
+  const start = parseDate(args.startDate);
+  const end = parseDate(args.endDate);
+  const days = end.compare(start);
+  if (days < 0) return [];
+
+  const hoursByDay = new Array<number>(days + 1).fill(0);
+  for (const entry of args.entries) {
+    const day = Math.max(0, parseDate(entry.entryDate).compare(start));
+    if (day > days) continue;
+    hoursByDay[day] = (hoursByDay[day] ?? 0) + Number(entry.hours);
+  }
+
+  const today = args.today ? parseDate(args.today) : null;
+  const points: BurnPoint[] = [];
+  let cumulative = 0;
+  for (let day = 0; day <= days; day++) {
+    const date = start.add({ days: day });
+    cumulative += hoursByDay[day] ?? 0;
+    points.push({
+      date: date.toString(),
+      day,
+      ideal: days === 0 ? args.plannedHours : (args.plannedHours * day) / days,
+      actual: today && date.compare(today) > 0 ? null : cumulative
+    });
+  }
+  return points;
+}
