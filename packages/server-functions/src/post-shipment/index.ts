@@ -49,6 +49,12 @@ import {
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
 import { upsertShippedCustomerAssets } from "./customer-assets";
+import {
+  loadRepairLineIds,
+  type RepairUnit,
+  shipRepairedUnits,
+  unshipRepairedUnits
+} from "./repair";
 
 const logger = getLogger("server-functions", "post-shipment");
 
@@ -2096,6 +2102,16 @@ const postShipment = defineServerFn({
                 }
               > = {};
               const itemShipmentQuantities: Record<string, number> = {};
+              // Repair lines ship the customer's own unit back: no stock, no
+              // cost, no journal. `shipmentLine.lineId` holds the RMA line.
+              const repairLineIds = await loadRepairLineIds(
+                db,
+                companyId,
+                shipmentLines.data
+                  .map((line) => line.lineId)
+                  .filter((id): id is string => Boolean(id))
+              );
+              const repairUnits: RepairUnit[] = [];
 
               for (const shipmentLine of shipmentLines.data) {
                 if (!shipmentLine.itemId) continue;
@@ -2109,6 +2125,38 @@ const postShipment = defineServerFn({
                 const itemTrackingType =
                   items.data.find((i) => i.id === shipmentLine.itemId)
                     ?.itemTrackingType ?? "Inventory";
+
+                if (
+                  shipmentLine.lineId &&
+                  repairLineIds.has(shipmentLine.lineId)
+                ) {
+                  const repairEntities = (
+                    shipmentLineTracking.data ?? []
+                  ).filter(
+                    (tracking) =>
+                      (
+                        tracking.attributes as
+                          | TrackedEntityAttributes
+                          | undefined
+                      )?.["Shipment Line"] === shipmentLine.id
+                  );
+                  if (
+                    itemTrackingType !== "Serial" ||
+                    repairEntities.length !== shippedQuantity
+                  ) {
+                    throw new Error(
+                      `Shipment line ${shipmentLine.id}: assign the repaired unit's serial before posting`
+                    );
+                  }
+                  for (const entity of repairEntities) {
+                    repairUnits.push({
+                      trackedEntityId: entity.id,
+                      salesReturnOrderLineId: shipmentLine.lineId,
+                      quantity: Number(entity.quantity ?? 1)
+                    });
+                  }
+                  continue;
+                }
 
                 // Non-Inventory lines have no stock and no carried cost —
                 // posting them would book COGS/costLedger with zero inventory
@@ -2406,6 +2454,17 @@ const postShipment = defineServerFn({
                     }
                   }
                 }
+
+                await shipRepairedUnits(trx, {
+                  companyId,
+                  userId,
+                  today,
+                  shipmentId,
+                  shipmentReadableId: shipmentHeader.shipmentId,
+                  salesReturnOrderId,
+                  customerLocationId: salesReturnOrder.data.customerLocationId,
+                  units: repairUnits
+                });
 
                 // The customer's units go back into service at the site the
                 // RMA names. Their warranty dates stay.
@@ -4362,13 +4421,48 @@ const postShipment = defineServerFn({
                   .execute();
                 const voidActivityId = voidActivity[0]?.id;
 
+                // A Repair line's unit never left stock, so it stays Consumed
+                // and its asset goes back At Depot.
+                const repairLineIds = await loadRepairLineIds(
+                  trx,
+                  companyId,
+                  shipmentLines.data
+                    .map((line) => line.lineId)
+                    .filter((id): id is string => Boolean(id))
+                );
+                const repairShipmentLineIds = new Set(
+                  shipmentLines.data
+                    .filter(
+                      (line) => line.lineId && repairLineIds.has(line.lineId)
+                    )
+                    .map((line) => line.id)
+                );
+                const isRepairEntity = (entity: { attributes: unknown }) => {
+                  const shipmentLineId = (
+                    entity.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"];
+                  return (
+                    typeof shipmentLineId === "string" &&
+                    repairShipmentLineIds.has(shipmentLineId)
+                  );
+                };
+                await unshipRepairedUnits(trx, {
+                  companyId,
+                  userId,
+                  trackedEntityIds: (shipmentLineTracking.data ?? [])
+                    .filter(isRepairEntity)
+                    .map((entity) => entity.id)
+                });
+
                 for await (const entity of shipmentLineTracking.data ?? []) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set({ status: "On Hold" })
-                    .where("id", "=", entity.id)
-                    .where("companyId", "=", companyId)
-                    .execute();
+                  if (!isRepairEntity(entity)) {
+                    await trx
+                      .updateTable("trackedEntity")
+                      .set({ status: "On Hold" })
+                      .where("id", "=", entity.id)
+                      .where("companyId", "=", companyId)
+                      .execute();
+                  }
                   if (voidActivityId) {
                     await trx
                       .insertInto("trackedActivityOutput")

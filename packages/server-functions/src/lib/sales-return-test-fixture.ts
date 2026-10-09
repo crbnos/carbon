@@ -127,15 +127,26 @@ export async function salesReturnRepairFixture(f: Fixture) {
       .execute();
     await trx
       .insertInto("sequence")
-      .values({
-        table: "serviceOrder",
-        name: "Service Order",
-        prefix: "SVC",
-        size: 6,
-        next: 0,
-        step: 1,
-        companyId: f.companyId
-      })
+      .values([
+        {
+          table: "serviceOrder",
+          name: "Service Order",
+          prefix: "SVC",
+          size: 6,
+          next: 0,
+          step: 1,
+          companyId: f.companyId
+        },
+        {
+          table: "shipment",
+          name: "Shipment",
+          prefix: "SHP",
+          size: 6,
+          next: 0,
+          step: 1,
+          companyId: f.companyId
+        }
+      ])
       .onConflict((oc) => oc.doNothing())
       .execute();
     await trx
