@@ -3599,6 +3599,9 @@ msgstr "Lotes de producción a retornar"
 msgid "Batching"
 msgstr "Lote de producción"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "Antes de activar"
 
@@ -15831,6 +15834,9 @@ msgstr "Cuenta del proveedor"
 
 msgid "Provider option"
 msgstr "Opción de proveedor"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "Público"

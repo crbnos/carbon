@@ -3599,6 +3599,9 @@ msgstr "İade edilecek partiler"
 msgid "Batching"
 msgstr "Partileme"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "Etkinleştirmeden Önce"
 
@@ -15831,6 +15834,9 @@ msgstr "Sağlayıcı hesabı"
 
 msgid "Provider option"
 msgstr "Sağlayıcı seçeneği"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "Herkese açık"

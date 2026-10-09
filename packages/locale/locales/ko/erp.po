@@ -3599,6 +3599,9 @@ msgstr "반품할 배치"
 msgid "Batching"
 msgstr "배치 처리"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "활성화 전에"
 
@@ -15831,6 +15834,9 @@ msgstr "공급자 계정"
 
 msgid "Provider option"
 msgstr "제공자 옵션"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "공개"

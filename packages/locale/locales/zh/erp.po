@@ -3599,6 +3599,9 @@ msgstr "待退货的生产批次"
 msgid "Batching"
 msgstr "分批"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "激活前"
 
@@ -15831,6 +15834,9 @@ msgstr "提供商账户"
 
 msgid "Provider option"
 msgstr "提供商选项"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "公开"

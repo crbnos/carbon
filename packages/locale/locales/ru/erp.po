@@ -3599,6 +3599,9 @@ msgstr "Серии для возврата"
 msgid "Batching"
 msgstr "Объединение в серии"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "Перед активацией"
 
@@ -15831,6 +15834,9 @@ msgstr "Счет провайдера"
 
 msgid "Provider option"
 msgstr "Параметр провайдера"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "Публичный"

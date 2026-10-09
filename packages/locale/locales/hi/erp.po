@@ -3599,6 +3599,9 @@ msgstr "वापस करने के लिए बैच"
 msgid "Batching"
 msgstr "बैचिंग"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "सक्रिय करने से पहले"
 
@@ -15831,6 +15834,9 @@ msgstr "प्रदाता खाता"
 
 msgid "Provider option"
 msgstr "प्रदाता विकल्प"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "सार्वजनिक"

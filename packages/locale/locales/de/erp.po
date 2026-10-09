@@ -3599,6 +3599,9 @@ msgstr "Rückzugebende Lose"
 msgid "Batching"
 msgstr "Losbildung"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "Bevor Sie aktivieren"
 
@@ -15831,6 +15834,9 @@ msgstr "Anbieterkonto"
 
 msgid "Provider option"
 msgstr "Provider-Option"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "Öffentlich"

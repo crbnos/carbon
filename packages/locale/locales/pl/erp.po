@@ -3599,6 +3599,9 @@ msgstr "Partie do zwrotu"
 msgid "Batching"
 msgstr "Tworzenie Partii Produkcyjnych"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "Przed aktywowaniem"
 
@@ -15831,6 +15834,9 @@ msgstr "Konto dostawcy"
 
 msgid "Provider option"
 msgstr "Opcja dostawcy"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "Publiczny"

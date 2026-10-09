@@ -3599,6 +3599,9 @@ msgstr "返品するバッチ"
 msgid "Batching"
 msgstr "バッチ処理"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "活性化する前に"
 
@@ -15831,6 +15834,9 @@ msgstr "プロバイダアカウント"
 
 msgid "Provider option"
 msgstr "プロバイダーオプション"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "公開"

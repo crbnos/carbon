@@ -686,5 +686,6 @@
   "no-view-without-invoker::20260810100100_workflows-foundation.sql::CREATE VIEW \"modules\" AS",
   "no-view-without-invoker::20260811123619_widen-sales-production-scale.sql::CREATE OR REPLACE VIEW \"openJobMaterialLines\" AS",
   "no-view-without-invoker::20260812002453_event-system-statement-handlers.sql::CREATE VIEW \"eventSystemTrigger\" AS",
-  "no-view-without-invoker::20260908211552_picking-supersession-consume-first.sql::CREATE OR REPLACE VIEW \"openJobMaterialLines\" AS"
+  "no-view-without-invoker::20260908211552_picking-supersession-consume-first.sql::CREATE OR REPLACE VIEW \"openJobMaterialLines\" AS",
+  "journal-status-filter::apps/erp/app/modules/accounting/accounting.service.ts::.neq(\"status\", \"Draft\")"
 ]

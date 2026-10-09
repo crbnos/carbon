@@ -3599,6 +3599,9 @@ msgstr "Lotti di produzione da restituire"
 msgid "Batching"
 msgstr "Raggruppamento in Lotti"
 
+msgid "Before cutover"
+msgstr ""
+
 msgid "Before You Activate"
 msgstr "Prima dell'attivazione"
 
@@ -15831,6 +15834,9 @@ msgstr "Account provider"
 
 msgid "Provider option"
 msgstr "Opzione provider"
+
+msgid "Provisional"
+msgstr ""
 
 msgid "Public"
 msgstr "Pubblico"

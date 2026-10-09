@@ -3599,6 +3599,9 @@ msgstr "Batches to return"
 msgid "Batching"
 msgstr "Batching"
 
+msgid "Before cutover"
+msgstr "Before cutover"
+
 msgid "Before You Activate"
 msgstr "Before You Activate"
 
@@ -15831,6 +15834,9 @@ msgstr "Provider account"
 
 msgid "Provider option"
 msgstr "Provider option"
+
+msgid "Provisional"
+msgstr "Provisional"
 
 msgid "Public"
 msgstr "Public"
