@@ -49,10 +49,8 @@ export const navRailItemClasses = [
  * open (a `SidebarTrigger`, or ⌘B where the provider binds it), and a left drawer below `md`. Open state
  * comes from `SidebarProvider`, so it must be rendered inside one.
  *
- * Hovering expands the rail OVER the page; only a pinned rail takes layout
- * space. A hover is transient and usually ends in a navigation, so resizing
- * the page for it re-laid-out every table twice, the second time while the
- * destination was rendering.
+ * Expanding the rail, by hover or by pin, pushes the page right rather than
+ * covering it.
  */
 // A pointer only passing over the rail (on its way to the page) shouldn't open it.
 const HOVER_OPEN_DELAY_MS = 150;
@@ -190,28 +188,25 @@ export function NavRail({
   const state = pinned || hovered ? "expanded" : "collapsed";
 
   return (
-    // The wrapper is the rail's footprint in the layout: it grows only when
-    // pinned, pushing the page right. The nav inside is out of flow, so a
-    // hover widens it without moving anything else. Sticky so it stays in
-    // view in shells whose page scrolls as a whole.
+    // The wrapper is the rail's footprint in the layout: it grows with the
+    // rail, pushing the page right. Sticky so it stays in view in shells
+    // whose page scrolls as a whole.
     <div
-      data-pinned={pinned}
+      data-state={state}
       className={cn(
         "sticky top-0 h-svh z-50 hidden md:block shrink-0",
-        "w-14 data-[pinned=true]:w-[13rem]",
+        "w-14 data-[state=expanded]:w-[13rem]",
         "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
       )}
     >
       <nav
         ref={navRef}
         data-state={state}
-        data-floating={!pinned && hovered}
         data-sliding-hover=""
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
           "w-14 data-[state=expanded]:w-[13rem]",
-          "transition-[width,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-          "data-[floating=true]:shadow-xl data-[floating=true]:ring-1 data-[floating=true]:ring-border",
+          "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
           "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
