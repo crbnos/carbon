@@ -5233,6 +5233,9 @@ msgstr "Działanie zabezpieczające"
 msgid "Content"
 msgstr "Zawartość"
 
+msgid "Contents"
+msgstr ""
+
 msgid "Context"
 msgstr "Kontekst"
 
@@ -17022,6 +17025,9 @@ msgstr "Czytelny identyfikator"
 
 msgid "Readable id with revision"
 msgstr "Czytelny identyfikator z rewizją"
+
+msgid "Reader"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Czytanie dokumentu..."

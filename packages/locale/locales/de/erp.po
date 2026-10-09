@@ -5233,6 +5233,9 @@ msgstr "Containment-Maßnahme"
 msgid "Content"
 msgstr "Inhalt"
 
+msgid "Contents"
+msgstr ""
+
 msgid "Context"
 msgstr "Kontext"
 
@@ -17022,6 +17025,9 @@ msgstr "Lesbare ID"
 
 msgid "Readable id with revision"
 msgstr "Lesbare ID mit Revision"
+
+msgid "Reader"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Das Dokument wird gelesen..."

@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { buildElementTree } from "~/modules/projects/projects.models";
+import {
+  buildElementTree,
+  buildReaderOutline
+} from "~/modules/projects/projects.models";
 
 const element = (id: string, parentId: string | null, sortOrder: number) => ({
   id,
@@ -41,6 +44,25 @@ describe("buildElementTree", () => {
     const tree = buildElementTree([element("orphan", "filtered-out", 1)]);
     expect(tree).toEqual([
       expect.objectContaining({ id: "orphan", level: 0, parentId: undefined })
+    ]);
+  });
+});
+
+describe("buildReaderOutline", () => {
+  it("numbers the outline in tree order", () => {
+    const outline = buildReaderOutline([
+      element("a", null, 1),
+      element("b", "a", 1),
+      element("c", "a", 2),
+      element("d", "c", 1),
+      element("e", null, 2)
+    ]);
+    expect(outline.map((entry) => [entry.element.id, entry.number])).toEqual([
+      ["a", "1"],
+      ["b", "1.1"],
+      ["c", "1.2"],
+      ["d", "1.2.1"],
+      ["e", "2"]
     ]);
   });
 });

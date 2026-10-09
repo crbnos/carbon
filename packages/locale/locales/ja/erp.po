@@ -5233,6 +5233,9 @@ msgstr "封じ込め対策"
 msgid "Content"
 msgstr "コンテンツ"
 
+msgid "Contents"
+msgstr ""
+
 msgid "Context"
 msgstr "コンテキスト"
 
@@ -17022,6 +17025,9 @@ msgstr "表示ID"
 
 msgid "Readable id with revision"
 msgstr "リビジョン付き表示ID"
+
+msgid "Reader"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "文書を読み込み中です..."

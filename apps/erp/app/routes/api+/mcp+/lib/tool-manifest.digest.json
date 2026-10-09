@@ -1,5 +1,5 @@
 {
-  "totalTools": 1594,
+  "totalTools": 1595,
   "modules": 16,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -864,6 +864,7 @@
     {"name":"projects_getProjectElement","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"7de0dae25eb5","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElementComments","classification":"READ","paramCount":1,"schema":"cd1b36ad7fc2","response":"ae5568f33137","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElementCosts","classification":"READ","paramCount":1,"schema":"8e1d73142851","response":"ca6121c971dd","injectAuth":"companyId","permission":"projects:view","paginates":false},
+    {"name":"projects_getProjectElementDescriptions","classification":"READ","paramCount":1,"schema":"8e1d73142851","response":"db0b8785978e","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElementLinks","classification":"READ","paramCount":1,"schema":"8e1d73142851","response":"4dfca6fcdf4e","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElementPlanLines","classification":"READ","paramCount":1,"schema":"cd1b36ad7fc2","response":"aff80fd38c7b","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElements","classification":"READ","paramCount":2,"schema":"ce846191fd75","response":"5146e9060e2c","injectAuth":"companyId","permission":"projects:view","paginates":false},

@@ -1994,3 +1994,56 @@ export function formatAllocation(
       : formatQuantity(value, locale);
   return `≤ ${withUnit(budgetValue)} (${formatPercent(allocationPercent, locale)} of ${withUnit(parentValue)})`;
 }
+
+// --- Reader -------------------------------------------------------------------
+
+export type ReaderEntry<T> = {
+  element: T;
+  /** The tree level, the root is 0. */
+  level: number;
+  /** The outline number: `1`, `1.2`, `1.2.3`. */
+  number: string;
+};
+
+/**
+ * The elements in tree order with their outline numbers, for the Reader and
+ * its PDF. An element whose parent is not in the input starts a new top-level
+ * number, as `buildElementTree` puts it at level 0.
+ */
+export function buildReaderOutline<
+  T extends { id: string; parentId: string | null; sortOrder: number }
+>(elements: T[]): ReaderEntry<T>[] {
+  const counters: number[] = [];
+  return buildElementTree(elements).map((node) => {
+    counters.length = node.level + 1;
+    counters[node.level] = (counters[node.level] ?? 0) + 1;
+    return {
+      element: node.data,
+      level: node.level,
+      number: counters.join(".")
+    };
+  });
+}
+
+/** A Requirement's target as text: `≤ 120 g`, `100 – 120 g`. */
+export function formatRequirementTarget(
+  element: {
+    targetOperator: RequirementTargetOperator | null;
+    targetValue: number | null;
+    targetUpperValue: number | null;
+    targetUnit: string | null;
+  },
+  locale = "en"
+): string | null {
+  if (!element.targetOperator || element.targetValue === null) return null;
+  const unit = element.targetUnit ? ` ${element.targetUnit}` : "";
+  const value = formatQuantity(Number(element.targetValue), locale);
+  if (element.targetOperator === "Range") {
+    const upper =
+      element.targetUpperValue === null
+        ? "?"
+        : formatQuantity(Number(element.targetUpperValue), locale);
+    return `${value} – ${upper}${unit}`;
+  }
+  return `${element.targetOperator} ${value}${unit}`;
+}

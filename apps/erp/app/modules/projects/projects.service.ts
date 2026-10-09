@@ -989,6 +989,27 @@ export async function getProjectElements(
 }
 
 /**
+ * The descriptions of every element of a project, for the Reader. The list
+ * query leaves them out, because a description can be large.
+ * @mcp read
+ */
+export async function getProjectElementDescriptions(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return fetchAll<{ id: string; description: Json | null }>(() =>
+    client
+      .from("projectElement")
+      .select("id, description")
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+      .not("description", "is", null)
+      .order("id", { ascending: true })
+  );
+}
+
+/**
  * Gets one element with its state, owner, milestone, labels and parent.
  * @mcp read
  */

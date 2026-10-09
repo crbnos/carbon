@@ -5233,6 +5233,9 @@ msgstr "Action de confinement"
 msgid "Content"
 msgstr "Contenu"
 
+msgid "Contents"
+msgstr ""
+
 msgid "Context"
 msgstr "Contexte"
 
@@ -17022,6 +17025,9 @@ msgstr "Identifiant lisible"
 
 msgid "Readable id with revision"
 msgstr "Identifiant lisible avec révision"
+
+msgid "Reader"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Lecture du document..."

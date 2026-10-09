@@ -54,7 +54,7 @@
 - [x] Task 16: Add the trace link, verification and parameter sections to the element page
 - [x] Task 17: Build the Tree layout
 - [x] Task 18: Build the Timeline layout
-- [ ] Task 19: Build the Reader layout
+- [x] Task 19: Build the Reader layout
 - [ ] Task 20: Add the Reader PDF
 - [ ] Task 21: Add saved views and per-user preferences
 - [ ] Task 22: Add project templates
@@ -1509,3 +1509,4 @@ ls .ai/playbooks/projects-phase-1b.md
 - Task 17: the store is one zustand `persist` store per project (`getProjectGraphStore`), so the storage key is `project-graph:<projectId>`.
 - Task 18: the two panes are one scroll area with a sticky left column and a sticky header, so they scroll together with no scroll syncing. Rows collapse in local state. A today line is drawn in the browser's zone (display only). Day and Week zoom label each week; Month zoom labels each month.
 - Task 18: `defaultWindow(elements, fallback)` takes a fallback day: with no date at all it shows the 4 weeks around it. A target before the start draws a 1-day bar at the start. `projects-timeline-geometry.test.ts` has a 5th case for the window padding.
+- Task 19: the Elements loader reads the descriptions only on the Reader (`getProjectElementDescriptions`), because the list query leaves them out. The outline numbers come from the pure `buildReaderOutline`, and a Requirement's target text from `formatRequirementTarget` (both `projects.models.ts`), so the Reader and its PDF (Task 20) share them. `projects-element-tree.test.ts` pins the outline numbers. The table of contents shows on a pane of 56rem or more (a container query). **Export PDF** is added with Task 20.

@@ -31,6 +31,7 @@ import type {
 } from "~/modules/projects";
 import {
   getProjectCostSummary,
+  getProjectElementDescriptions,
   getProjectElements,
   projectElementTypes,
   projectStateGroups,
@@ -47,6 +48,7 @@ import {
   useElementDisplay,
   useElementGrouping
 } from "~/modules/projects/ui/Elements/ElementProperties";
+import { ElementReader } from "~/modules/projects/ui/Elements/ElementReader";
 import type { ElementLayout } from "~/modules/projects/ui/Elements/ElementsHeader";
 import {
   ElementsHeader,
@@ -110,10 +112,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (value) => value !== null && value !== ""
   );
 
-  const [elements, costSummary] = await Promise.all([
+  const [elements, costSummary, descriptions] = await Promise.all([
     getProjectElements(client, projectId, companyId, elementFilters),
-    getProjectCostSummary(client, projectId, companyId)
+    getProjectCostSummary(client, projectId, companyId),
+    // Only the Reader shows descriptions; the list query leaves them out.
+    layout === "reader"
+      ? getProjectElementDescriptions(client, projectId, companyId)
+      : Promise.resolve({ data: [], error: null })
   ]);
+  if (descriptions.error) {
+    logger.error("Failed to load element descriptions", {
+      companyId,
+      projectId,
+      error: descriptions.error
+    });
+  }
 
   if (elements.error) {
     logger.error("Failed to load project elements", {
@@ -155,6 +168,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     costSummary: costSummary.data ?? [],
     links: verification.data?.links ?? [],
     requirementStatus: verification.data?.requirementStatus ?? {},
+    verification: verification.data?.verification ?? {},
+    descriptions: Object.fromEntries(
+      (descriptions.data ?? []).map((row) => [row.id, row.description])
+    ),
     layout,
     type
   };
@@ -165,8 +182,16 @@ export default function ProjectElementsRoute() {
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
 
-  const { elements, costSummary, links, requirementStatus, layout, type } =
-    useLoaderData<typeof loader>();
+  const {
+    elements,
+    costSummary,
+    links,
+    requirementStatus,
+    verification,
+    descriptions,
+    layout,
+    type
+  } = useLoaderData<typeof loader>();
   const routeData = useRouteData<{
     project: Project;
     states: ProjectState[];
@@ -347,6 +372,14 @@ export default function ProjectElementsRoute() {
               links={links}
               requirementStatus={requirementStatus}
               canUpdate={layoutProps.canUpdate}
+            />
+          ) : layout === "reader" ? (
+            <ElementReader
+              projectId={projectId}
+              elements={elements}
+              descriptions={descriptions}
+              verification={verification}
+              requirementStatus={requirementStatus}
             />
           ) : layout === "timeline" ? (
             <ElementTimeline

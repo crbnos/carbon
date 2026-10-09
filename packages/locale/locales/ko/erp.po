@@ -5233,6 +5233,9 @@ msgstr "격리 조치"
 msgid "Content"
 msgstr "콘텐츠"
 
+msgid "Contents"
+msgstr ""
+
 msgid "Context"
 msgstr "컨텍스트"
 
@@ -17022,6 +17025,9 @@ msgstr "표시 ID"
 
 msgid "Readable id with revision"
 msgstr "리비전이 있는 표시 ID"
+
+msgid "Reader"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "문서를 읽는 중..."

@@ -27,6 +27,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { IconType } from "react-icons";
 import {
+  LuBookOpenText,
   LuChartGantt,
   LuChevronDown,
   LuKanban,
@@ -61,7 +62,8 @@ export const elementLayouts = [
   "board",
   "table",
   "tree",
-  "timeline"
+  "timeline",
+  "reader"
 ] as const;
 export type ElementLayout = (typeof elementLayouts)[number];
 
@@ -70,7 +72,8 @@ const layoutIcons: Record<ElementLayout, IconType> = {
   board: LuKanban,
   table: LuSheet,
   tree: LuNetwork,
-  timeline: LuChartGantt
+  timeline: LuChartGantt,
+  reader: LuBookOpenText
 };
 
 type ElementsHeaderProps = {
@@ -122,7 +125,8 @@ export function ElementsHeader({
     board: t`Board`,
     table: t`Table`,
     tree: t`Tree`,
-    timeline: t`Timeline`
+    timeline: t`Timeline`,
+    reader: t`Reader`
   };
   const LayoutIcon = layoutIcons[layout];
   const hasFilters = params.getAll("filter").filter(Boolean).length > 0;

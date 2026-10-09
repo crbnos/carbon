@@ -5233,6 +5233,9 @@ msgstr "Действие по локализации"
 msgid "Content"
 msgstr "Содержание"
 
+msgid "Contents"
+msgstr ""
+
 msgid "Context"
 msgstr "Контекст"
 
@@ -17022,6 +17025,9 @@ msgstr "Читаемый идентификатор"
 
 msgid "Readable id with revision"
 msgstr "читаемый идентификатор с ревизией"
+
+msgid "Reader"
+msgstr ""
 
 msgid "Reading the document..."
 msgstr "Чтение документа..."
