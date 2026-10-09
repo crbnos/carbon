@@ -217,13 +217,20 @@ CREATE TRIGGER "fiscalYearSettings_accounting_config_locked"
 
 -- ── 7. Companies already keeping a ledger in Carbon ─────────────────────────
 
--- After 20261008211304_reset-accounting only the demo-template companies
--- still have accountingEnabled. Their history is in Carbon already, so their
--- cutover is the start of the earliest period with a Posted journal.
+-- 20261008211304_reset-accounting spared exactly the demo-template companies:
+-- those holding a 'JE-SEED-%' journal, which only tier 09 of the dataset seed
+-- writes. Their history is in Carbon already, so their cutover is the start of
+-- the earliest period with a Posted journal. They are selected by the same
+-- test as the reset, not by accountingEnabled: only the dev CLI set that flag,
+-- so a template applied through onboarding or Settings → Demo Data has it
+-- false, and without a cutover its seeded Posted Opening Balance would block
+-- the enable wizard forever. The 'system' user is the activator when it
+-- exists; a database without it records no activator rather than failing the
+-- foreign key.
 UPDATE "companySettings" cs SET
   "accountingCutoverDate" = sub."cutover",
   "accountingActivatedAt" = NOW(),
-  "accountingActivatedBy" = 'system'
+  "accountingActivatedBy" = (SELECT u."id" FROM "user" u WHERE u."id" = 'system')
 FROM (
   SELECT j."companyId", MIN(ap."startDate") AS "cutover"
   FROM "journal" j
@@ -232,5 +239,9 @@ FROM (
   GROUP BY j."companyId"
 ) sub
 WHERE sub."companyId" = cs."id"
-  AND cs."accountingEnabled" = true
-  AND cs."accountingCutoverDate" IS NULL;
+  AND cs."accountingCutoverDate" IS NULL
+  AND EXISTS (
+    SELECT 1 FROM "journal" seed
+    WHERE seed."companyId" = cs."id"
+      AND seed."journalEntryId" LIKE 'JE-SEED-%'
+  );

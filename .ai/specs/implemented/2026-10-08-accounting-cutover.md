@@ -285,7 +285,7 @@ Migration 2 also does these things:
 3. Changes `check_posted_record_immutable` so that it also refuses any UPDATE or DELETE of a Superseded journal or its lines.
 4. Changes `check_accounting_period_open` so that it also checks a change from Provisional to Posted.
 5. Adds the July spec's config-lock trigger on `company."baseCurrencyCode"` and `fiscalYearSettings."startMonth"`, keyed on `accountingActivatedAt`.
-6. Sets the cutover of each company that still has `accountingEnabled = true`. These are the demo-template companies. The cutover is the start of the earliest period with a Posted journal.
+6. Sets the cutover of each demo-template company: a company with a `JE-SEED-%` journal, the test the reset uses to spare it. The cutover is the start of the earliest period with a Posted journal. (Only the dev CLI set `accountingEnabled`, so a template applied through onboarding or Settings → Demo Data had it false.)
 7. Replaces every SQL reader in the section 2 table with a filter on the 2 status lists.
 
 Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (section 7), and dataset tier 01. Run `pnpm db:check:datasets`.
@@ -401,3 +401,4 @@ Update `seed-data.ts` (Migration Clearing account and default), `seed-company` (
 - 2026-10-09: Implemented. Gates and two browser runs passed (`.ai/playbooks/accounting-setup-wizard.md`). Status set to implemented.
 
 - 2026-10-09: The one-off legacy repair skips a company whose data refuses it, instead of failing the deploy.
+- 2026-10-09: Review fixes. Demo-template companies get their cutover by the `JE-SEED-%` test, not the flag. A dataset apply may re-date a set cutover (`app.dataset_apply`). `journal_posting_status` reads `companySettings` FOR SHARE. Migration Clearing must be an Equity posting account. A legacy payment's unapplied cash opens from the payment and its settlements. Users cannot write a Provisional or Superseded journal or its lines (RLS). Draft fixed assets get no opening line.

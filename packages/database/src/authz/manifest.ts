@@ -834,19 +834,50 @@ export const manifest = {
       "production_delete"
     )
   }),
-  journal: company("accounting", {
-    read: "accounting_view",
-    where: {
-      // Posted stays updatable only for the Posted -> Reversed transition, which the
-      // journal_posted_immutable trigger enforces. The new row is always checked
-      // against the company scope alone, so a journal can never move company.
-      update: (eb) => eb("status", "in", ["Draft", "Posted"]),
-      delete: (eb) => eb("status", "=", "Draft")
-    }
+  // Provisional and Superseded are the accounting cutover's automatic statuses
+  // (.ai/specs/implemented/2026-10-08-accounting-cutover.md): only the posting
+  // server functions and the enable write them, as the service connection. A
+  // user never creates a journal in either status nor moves one into it.
+  journal: policies({
+    select: inCompany("companyId", "accounting_view"),
+    insert: and(
+      where<"journal">((eb) => eb("status", "in", ["Draft", "Posted"])),
+      inCompany("companyId", "accounting_create")
+    ),
+    // Posted stays updatable only for the Posted -> Reversed transition, which the
+    // journal_posted_immutable trigger enforces. The new row keeps the company scope,
+    // so a journal can never move company, and a status a user may set: Draft,
+    // Posted (a manual posting) or Reversed (a reversal).
+    update: {
+      using: and(
+        where<"journal">((eb) => eb("status", "in", ["Draft", "Posted"])),
+        inCompany("companyId", "accounting_update")
+      ),
+      check: and(
+        where<"journal">((eb) =>
+          eb("status", "in", ["Draft", "Posted", "Reversed"])
+        ),
+        inCompany("companyId", "accounting_update")
+      )
+    },
+    delete: and(
+      where<"journal">((eb) => eb("status", "=", "Draft")),
+      inCompany("companyId", "accounting_delete")
+    )
   }),
   journalLine: policies({
     select: inCompany("companyId", "accounting_view"),
-    insert: inCompany("companyId", "accounting_create"),
+    // Lines go into a Draft journal, or into the Posted reversal the ERP's
+    // reverseJournalEntry writes through the user's client. Never into a
+    // Provisional, Superseded or Reversed journal.
+    insert: and(
+      inCompany("companyId", "accounting_create"),
+      exists(
+        "journal",
+        "journalId",
+        where<"journal">((eb) => eb("status", "in", ["Draft", "Posted"]))
+      )
+    ),
     update: and(
       inCompany("companyId", "accounting_update"),
       exists(

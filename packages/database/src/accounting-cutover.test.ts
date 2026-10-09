@@ -5,7 +5,10 @@
 import { describe, expect, it } from "vitest";
 import {
   buildOpeningJournalLines,
+  dayBeforeCutover,
+  isMigrationClearingZero,
   MIGRATION_CLEARING_DESCRIPTION,
+  type MigrationClearingAccount,
   migrationClearingByAccount,
   type OpenItem,
   type OpeningJournalLine,
@@ -16,9 +19,15 @@ import {
 } from "./accounting-cutover.ts";
 
 const AR = "acct-ar";
+const AP = "acct-ap";
 const CASH = "acct-cash";
 const EQUITY = "acct-equity";
+const ACCUMULATED_DEPRECIATION = "acct-accumulated-depreciation";
 const CLEARING = "acct-clearing";
+const CLEARING_ACCOUNT: MigrationClearingAccount = {
+  accountId: CLEARING,
+  accountClass: "Equity"
+};
 
 function receivable(
   documentId: string,
@@ -41,9 +50,12 @@ function receivable(
 
 const classOf: Record<string, OpenItem["accountClass"]> = {
   [AR]: "Asset",
+  [AP]: "Liability",
   [CASH]: "Asset",
   [EQUITY]: "Equity",
-  [CLEARING]: "Equity"
+  [ACCUMULATED_DEPRECIATION]: "Asset",
+  [CLEARING]: "Equity",
+  "acct-grni": "Liability"
 };
 
 /** Debits minus credits of a natural-balance-signed journal. */
@@ -73,7 +85,7 @@ describe("buildOpeningJournalLines", () => {
       items,
       trialBalance,
       controls,
-      CLEARING
+      CLEARING_ACCOUNT
     );
 
     expect(imbalance(lines)).toBeCloseTo(0, 6);
@@ -88,7 +100,7 @@ describe("buildOpeningJournalLines", () => {
       [receivable("inv-1", 100, 40)],
       [],
       controls,
-      CLEARING
+      CLEARING_ACCOUNT
     );
 
     const arLines = lines.filter((line) => line.accountId === AR);
@@ -132,7 +144,7 @@ describe("buildOpeningJournalLines", () => {
       ],
       [],
       new Set([GRNI]),
-      CLEARING
+      CLEARING_ACCOUNT
     );
 
     expect(lines).toEqual([
@@ -189,7 +201,7 @@ describe("buildOpeningJournalLines", () => {
         { accountId: AR, accountClass: "Asset", debit: 99, credit: 0 }
       ],
       controls,
-      CLEARING
+      CLEARING_ACCOUNT
     );
 
     expect(lines).toEqual([
@@ -202,9 +214,87 @@ describe("buildOpeningJournalLines", () => {
     ]);
     expect(imbalance(lines)).toBeCloseTo(0, 6);
   });
+
+  it("signs a payable, accumulated depreciation and their clearing lines by each account's class", () => {
+    const items: OpenItem[] = [
+      receivable("inv-1", 100),
+      {
+        openItemType: "Payable",
+        accountId: AP,
+        accountClass: "Liability",
+        amount: 70,
+        originalAmount: 70,
+        settledBeforeCutover: 0,
+        documentType: "Invoice",
+        documentId: "pinv-1",
+        documentLineReference: null,
+        description: "Accounts Payable"
+      },
+      {
+        // A credit balance on an asset-class contra account.
+        openItemType: "Accumulated Depreciation",
+        accountId: ACCUMULATED_DEPRECIATION,
+        accountClass: "Asset",
+        amount: -30,
+        originalAmount: -30,
+        settledBeforeCutover: 0,
+        documentType: null,
+        documentId: null,
+        documentLineReference: null,
+        description: "Accumulated Depreciation"
+      }
+    ];
+    const lines = buildOpeningJournalLines(
+      items,
+      [],
+      new Set([AR, AP, ACCUMULATED_DEPRECIATION]),
+      CLEARING_ACCOUNT
+    );
+
+    const clearing = (accountId: string) =>
+      lines.find(
+        (line) =>
+          line.accountId === CLEARING &&
+          line.documentLineReference === accountId
+      )?.amount;
+    // Receivables debit 100: Migration Clearing credit 100 (+100 on equity).
+    expect(clearing(AR)).toBe(100);
+    // Payables credit 70: Migration Clearing debit 70 (−70 on equity).
+    expect(clearing(AP)).toBe(-70);
+    // Accumulated depreciation credit 30: Migration Clearing debit 30.
+    expect(clearing(ACCUMULATED_DEPRECIATION)).toBe(-30);
+    expect(imbalance(lines)).toBeCloseTo(0, 6);
+    expect(migrationClearingByAccount(items, [], new Set([AR, AP])).total).toBe(
+      0
+    );
+  });
+
+  it("refuses a Migration Clearing account that is not Equity", () => {
+    expect(() =>
+      buildOpeningJournalLines([receivable("inv-1", 100)], [], controls, {
+        accountId: CLEARING,
+        accountClass: "Liability"
+      })
+    ).toThrow(/Migration Clearing must be an Equity account/);
+  });
+
+  it("refuses an opening journal that does not balance", () => {
+    // The amount open disagrees with the original less the settled part, so
+    // the clearing line offsets 90 against a receivable line of 100.
+    const item = { ...receivable("inv-1", 100), amount: 90 };
+    expect(() =>
+      buildOpeningJournalLines([item], [], controls, CLEARING_ACCOUNT)
+    ).toThrow(/Opening journal does not balance/);
+  });
 });
 
 describe("planInventoryReset", () => {
+  it("refuses stock with no unit cost", () => {
+    expect(() =>
+      planInventoryReset([{ itemId: "item-a", quantity: 1 }], new Map(), [])
+    ).toThrow(/no unit cost/);
+  });
+
   it("closes every layer before the cutover and opens one layer per item with stock", () => {
     const plan = planInventoryReset(
       [
@@ -356,5 +446,17 @@ describe("unitCostAtCutover", () => {
   it("values the quantity no layer covers at the fallback cost", () => {
     // 10 on hand: 80 + 40 + 2 × 15.
     expect(unitCostAtCutover(layers, 10, "FIFO", 15)).toBe(15);
+  });
+});
+
+describe("cutover constants", () => {
+  it("treats Migration Clearing within 0.01 of zero as zero", () => {
+    expect(isMigrationClearingZero(0.01)).toBe(true);
+    expect(isMigrationClearingZero(-0.01)).toBe(true);
+    expect(isMigrationClearingZero(0.02)).toBe(false);
+  });
+
+  it("dates the opening journal the day before the cutover", () => {
+    expect(dayBeforeCutover("2026-03-01")).toBe("2026-02-28");
   });
 });

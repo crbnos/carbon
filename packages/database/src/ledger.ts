@@ -66,3 +66,12 @@ export const accountTypeFromClass = (glClass: string): AccountType => {
   }
   return glClass.toLowerCase() as AccountType;
 };
+
+/**
+ * The debit-signed value (positive = debit) of a natural-balance-signed
+ * amount on an account of this class. The mapping is its own inverse, so it
+ * also turns a debit-signed value into the natural-signed amount a journal
+ * line stores.
+ */
+export const debitSigned = (accountClass: AccountClass, amount: number) =>
+  debit(accountTypeFromClass(accountClass), amount);

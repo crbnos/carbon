@@ -2480,15 +2480,8 @@ msgstr "उपस्थिति"
 msgid "Applied"
 msgstr "लागू"
 
-#. placeholder {0}: r.invoiceId
-msgid "Applied amount for {0}"
-msgstr "{0} के लिए लागू राशि"
-
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "लागू की गई राशि कंपनी की आधार मुद्रा ({baseCurrency}) में है।"
-
-msgid "Applied Date"
-msgstr "लागू तारीख"
 
 msgid "Applied To"
 msgstr "लागू किया गया"
@@ -2537,6 +2530,10 @@ msgstr "सुझाव लागू करें"
 
 msgid "Apply To"
 msgstr "लागू करें"
+
+#. placeholder {0}: row.original.invoiceId
+msgid "Apply to {0}"
+msgstr ""
 
 msgid "Apply to invoice"
 msgstr "चालान पर लागू करें"
@@ -7289,10 +7286,6 @@ msgstr "{selectedCalculationMethod} के बाद छूट के दिन"
 msgid "Discount Ends On"
 msgstr "छूट समाप्त होती है"
 
-#. placeholder {0}: r.invoiceId
-msgid "Discount for {0}"
-msgstr "{0} के लिए छूट"
-
 msgid "Discount Percent"
 msgstr "छूट प्रतिशत"
 
@@ -9683,6 +9676,9 @@ msgstr "पूर्ण मूल्यह्रासित"
 msgid "FX G/L"
 msgstr "FX G/L"
 
+msgid "FX Gain/Loss"
+msgstr ""
+
 msgid "FY {year}"
 msgstr "वित्तीय वर्ष {year}"
 
@@ -10805,9 +10801,6 @@ msgstr "आंतरिक नोट्स"
 msgid "inv"
 msgstr "इन्व"
 
-msgid "Inv Rate"
-msgstr "चालान दर"
-
 msgid "Invalid applications"
 msgstr "अमान्य आवंटन"
 
@@ -10948,6 +10941,9 @@ msgstr "चालान स्थान"
 
 msgid "Invoice Number"
 msgstr "चालान संख्या"
+
+msgid "Invoice Rate"
+msgstr ""
 
 msgid "Invoice schedule"
 msgstr "चालान शेड्यूल"
@@ -12968,9 +12964,6 @@ msgstr "नई पंक्ति"
 msgid "New Line"
 msgstr "नई लाइन"
 
-msgid "New Line Item"
-msgstr "नई पंक्ति आइटम"
-
 msgid "New Location"
 msgstr "नया स्थान"
 
@@ -14351,6 +14344,9 @@ msgstr "अरे! आप जिस लिंक को एक्सेस क�
 msgid "Open"
 msgstr "खोलें"
 
+msgid "Open ({paymentCurrency})"
+msgstr ""
+
 msgid "Open a change notice"
 msgstr "एक परिवर्तन सूचना खोलें"
 
@@ -15026,9 +15022,6 @@ msgstr "भुगतान करें"
 msgid "Pay expense"
 msgstr "व्यय का भुगतान करें"
 
-msgid "Pay Rate"
-msgstr "भुगतान दर"
-
 msgid "Payables"
 msgstr "देय राशि"
 
@@ -15055,6 +15048,9 @@ msgstr "ग्राहक से भुगतान"
 
 msgid "Payment ID"
 msgstr "भुगतान ID"
+
+msgid "Payment Rate"
+msgstr ""
 
 msgid "payment term"
 msgstr "भुगतान शर्तें"
@@ -22509,9 +22505,6 @@ msgstr "अप्रयुक्त"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "अप्रयुक्त नकद इस दस्तावेज़ के लिए ग्राहक अग्रिम भुगतान के रूप में रखा जाता है न कि खाते पर जमा क्रेडिट के रूप में।"
 
-msgid "Unapplied:"
-msgstr "लागू नहीं:"
-
 msgid "Unapproved Supplier"
 msgstr "अनुमोदित नहीं आपूर्तिकर्ता"
 
@@ -24135,10 +24128,6 @@ msgstr "बट्टे खाते"
 
 msgid "Write-Off Account"
 msgstr "बट्टे खाते"
-
-#. placeholder {0}: r.invoiceId
-msgid "Write-off for {0}"
-msgstr "{0} के लिए बट्टे खाते"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "निरीक्षण अस्वीकृतियों और NCR निपटान के माध्यम से खराब या वापस किए गए स्टॉक का बट्टे खाते"

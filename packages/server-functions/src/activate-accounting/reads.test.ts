@@ -481,6 +481,15 @@ async function serviceInvoice(
 
 /** The customer pays 40 of the invoice. */
 async function payForty(f: Fixture, invoiceId: string) {
+  await pay(f, invoiceId, { total: 40, applied: 40 });
+}
+
+/** The customer pays `total`, `applied` of it against the invoice; returns the payment id. */
+async function pay(
+  f: Fixture,
+  invoiceId: string,
+  { total, applied }: { total: number; applied: number }
+): Promise<string> {
   const paymentId = `${f.prefix}-payment`;
   await f.db.transaction().execute(async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
@@ -494,7 +503,7 @@ async function payForty(f: Fixture, invoiceId: string) {
         paymentDate: f.today,
         postingDate: f.today,
         currencyCode: "USD",
-        totalAmount: 40,
+        totalAmount: total,
         exchangeRate: 1,
         bankAccount: f.account("bank"),
         status: "Draft",
@@ -507,8 +516,8 @@ async function payForty(f: Fixture, invoiceId: string) {
       .values({
         paymentId,
         targetSalesInvoiceId: invoiceId,
-        sourceAmount: 40,
-        appliedAmount: 40,
+        sourceAmount: applied,
+        appliedAmount: applied,
         sourceExchangeRate: 1,
         targetExchangeRate: 1,
         appliedDate: f.today,
@@ -518,6 +527,50 @@ async function payForty(f: Fixture, invoiceId: string) {
       .execute();
   });
   unwrap(await postPayment(f.ctx, { type: "post", paymentId }));
+  return paymentId;
+}
+
+/**
+ * Turns a posted payment into a legacy one, as the accounting reset left
+ * every payment posted before it: the payment stays Posted with no journal.
+ */
+async function dropPaymentJournal(f: Fixture, paymentId: string) {
+  await f.db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    const payment = await trx
+      .selectFrom("payment")
+      .select("journalId")
+      .where("id", "=", paymentId)
+      .where("companyId", "=", f.companyId)
+      .executeTakeFirstOrThrow();
+    if (!payment.journalId) throw new Error("The payment has no journal");
+    await trx
+      .updateTable("payment")
+      .set({ journalId: null })
+      .where("id", "=", paymentId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+    await trx
+      .deleteFrom("journalLineDimension")
+      .where("companyId", "=", f.companyId)
+      .where("journalLineId", "in", (eb) =>
+        eb
+          .selectFrom("journalLine")
+          .select("id")
+          .where("journalId", "=", payment.journalId)
+      )
+      .execute();
+    await trx
+      .deleteFrom("journalLine")
+      .where("journalId", "=", payment.journalId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+    await trx
+      .deleteFrom("journal")
+      .where("id", "=", payment.journalId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+  });
 }
 
 describe("cutoverDateError", () => {
@@ -751,6 +804,85 @@ databaseTest(
       ).toBe(5);
       // The difference stays on Migration Clearing.
       expect(changed.total).toBe(5);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a legacy payment's unapplied cash opens on account, as its journal would have booked it",
+  async () => {
+    const f = await cutoverReadsFixture();
+    try {
+      const invoiceId = await serviceInvoice(f, { id: "inv-1", post: true });
+      // 50 received, 40 applied to the invoice of 100: 10 on account.
+      const paymentId = await pay(f, invoiceId, { total: 50, applied: 40 });
+      const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+      const onAccount = {
+        openItemType: "Unapplied Credit",
+        accountId: f.account("receivables"),
+        accountClass: "Asset",
+        // A credit on receivables.
+        amount: -10,
+        originalAmount: -10,
+        settledBeforeCutover: 0,
+        documentType: "Payment",
+        documentId: paymentId,
+        documentLineReference: null,
+        description: "Accounts Receivable (on-account credit)"
+      };
+
+      // With its journal: the on-account line the journal wrote.
+      const journaled = await getCutoverOpenItems(f.db, args);
+      expect(journaled).toContainEqual(onAccount);
+
+      // Without it: the same number, from the payment and its settlement.
+      await dropPaymentJournal(f, paymentId);
+      const legacy = await getCutoverOpenItems(f.db, args);
+      expect(legacy).toContainEqual(onAccount);
+      expect(legacy).toHaveLength(journaled.length);
+      expect(
+        legacy.find((item) => item.documentId === invoiceId)
+      ).toMatchObject({ amount: 60, settledBeforeCutover: 40 });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "readiness refuses a Migration Clearing default that is not an Equity posting account",
+  async () => {
+    const f = await cutoverReadsFixture();
+    try {
+      const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+      const setClearing = (accountId: string) =>
+        f.db
+          .updateTable("accountDefault")
+          .set({ migrationClearingAccount: accountId })
+          .where("companyId", "=", f.companyId)
+          .execute();
+      const clearingItem = async () => {
+        const { checks } = await getActivationReadiness(f.db, args);
+        const check = checks.find((c) => c.key === "account-defaults")!;
+        return {
+          detail: check.detail,
+          item: check.items.find((i) => i.id === "migrationClearingAccount")
+        };
+      };
+
+      // An asset account.
+      await setClearing(f.account("filler"));
+      const asset = await clearingItem();
+      expect(asset.item?.status).toBe("Not an Equity posting account");
+      expect(asset.detail).toContain(
+        "Set migrationClearingAccount to an active Equity account that is not a group."
+      );
+
+      // An Equity account passes.
+      await setClearing(f.account("retained-earnings"));
+      expect((await clearingItem()).item).toBeUndefined();
     } finally {
       await f.cleanup();
     }

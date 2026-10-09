@@ -101912,28 +101912,6 @@ export default {
       }
     },
     "/rpc/journal_posting_status": {
-      get: {
-        parameters: [
-          {
-            format: "text",
-            in: "query",
-            name: "p_company_id",
-            required: true,
-            type: "string"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) journal_posting_status"]
-      },
       post: {
         parameters: [
           {

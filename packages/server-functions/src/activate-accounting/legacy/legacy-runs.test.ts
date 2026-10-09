@@ -97,14 +97,16 @@ databaseTest(
       await updateCutoverAccumulatedDepreciation(f.db, {
         ...args,
         fixedAssetId: assets.active,
-        accumulatedDepreciation: 200
+        accumulatedDepreciation: 200,
+        userId: USER
       });
       expect(await assetAccumulated(f, assets.active)).toBe(300);
       await expect(
         updateCutoverAccumulatedDepreciation(f.db, {
           ...args,
           fixedAssetId: assets.scrapped,
-          accumulatedDepreciation: 100
+          accumulatedDepreciation: 100,
+          userId: USER
         })
       ).rejects.toThrow("disposal cleared");
 

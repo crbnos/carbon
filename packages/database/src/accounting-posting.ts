@@ -19,6 +19,14 @@ export const DOCUMENT_JOURNAL_STATUSES = [
 // Statuses an open-item lookup reads: payment control lines and the memo,
 // charge and reimbursement void checks.
 export const OPEN_ITEM_JOURNAL_STATUSES = ["Provisional", "Posted"] as const;
+// Statuses only an automatic posting from before the accounting cutover
+// carries: Provisional until the enable, Superseded after it when dated before
+// the cutover date. The enable wizard dates the start of Carbon's cost record
+// from the first such journal; no balance or chain reader uses this list.
+export const PRE_CUTOVER_JOURNAL_STATUSES = [
+  "Provisional",
+  "Superseded"
+] as const;
 
 export const RECEIVABLE_POSTING_DESCRIPTIONS = [
   "Accounts Receivable",

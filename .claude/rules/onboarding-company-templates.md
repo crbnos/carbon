@@ -45,7 +45,7 @@ await applyDataset(pgClient, { companyId, userId, dataset, timeZone, tiers?, log
 ```
 
 It resolves today in the company's timezone, builds the context, opens ONE transaction,
-sets `app.sync_in_progress`, ensures sequences, runs the selected tiers in order, and
+sets `app.sync_in_progress` and `app.dataset_apply`, ensures sequences, runs the selected tiers in order, and
 commits — or rolls the whole thing back. A half-seeded company is not a possible outcome.
 
 `wipeFirst` clears the company's existing business data inside that same transaction,
@@ -332,12 +332,25 @@ Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the ear
 period (`monthBack(anchor, SEEDED_PERIOD_MONTHS - 1)`), with `accountingActivatedAt` and
 `accountingActivatedBy` = the applying user. So every seeded journal is on or after the
 cutover and is `Posted`, and every document the user posts afterwards writes a `Posted`
-journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover). It writes
-the three columns only when the company has no cutover yet (`ON CONFLICT … WHERE
-"accountingCutoverDate" IS NULL`): the cutover is one-way, and the
-`check_accounting_config_locked` trigger refuses any change once it is set, so a re-apply
-keeps the cutover the company already has. The `accountingEnabled` column is not seeded; no
-code reads it.
+journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover).
+
+It writes the three columns on every apply, even when the company already has a cutover.
+A company always has one by then: `seed-company` stamps the first day of the current month
+(onboarding runs it before the template job), and an app-created company applied through
+Settings → Demo Data has its own. Kept, that later date would put up to eleven months of
+seeded Posted journals before the cutover, where a void is refused and the readers above
+assume none exist. The cutover is otherwise one-way: `check_accounting_config_locked`
+(`20261009145057_accounting-cutover-guards.sql`) refuses any change once
+`accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
+role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with
+`SET LOCAL`, next to `app.sync_in_progress`, so the bypass ends with the apply's
+transaction and covers the cutover columns only — the base currency and fiscal year locks
+still hold. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
+
+Demo-template companies that predate the cutover got theirs from section 7 of
+`20261009004448_accounting-cutover.sql`, which selects them by their `JE-SEED-%` journal (the
+same test the accounting reset used to spare them), not by `accountingEnabled`. The
+`accountingEnabled` column is not seeded; no code reads it.
 
 ## Make methods stay Draft
 
