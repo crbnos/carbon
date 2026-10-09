@@ -3333,3 +3333,23 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 **Rule:** A writer that turns triggers off does both halves itself: a null-`rowId` row per `CHANGE_LOGGED_TABLES` entry, and a null-`ids` broadcast on every `REALTIME_TABLES` topic of the company, inside the same transaction. When a stale client list is suspected, compare the ids in `window.clientCache.getQueryData(["live", companyId, name])` with the database before reading code.
 
 **Applies to:** `packages/jobs/src/inngest/functions/tasks/company-restore.ts` (`wipeAndLoad`); any new job that sets `session_replication_role`.
+
+## The three.js rotate gizmo grabs whatever sits under its center
+
+**Context:** The assembly path editor shows drei `TransformControls` (`mode="rotate"`) on a selected waypoint, whose draggable sphere sits at the gizmo's center.
+
+**Problem:** In rotate mode the gizmo adds an invisible free-rotation picker — a sphere of radius 0.7 × gizmo size (`XYZE` in three-stdlib `controls/TransformControls.js`) — centred on its object. Dragging the waypoint sphere started that free rotation as well as the drag, so one gesture moved the part and spun it at once (2026-10-08).
+
+**Rule:** Never let a rotate gizmo and another drag handle share a position. Make it a mode: either the handles drag or the rings show, never both. The path editor's Move / Rotate tool is the precedent (`MotionPathEditor.tsx`, `tool`).
+
+**Applies to:** any `TransformControls` / `PivotControls` placed on top of an existing pointer handle in `packages/viewer`.
+
+## Browser-testing the 3D assembly page: one session, restart often
+
+**Context:** Driving `/x/assembly/:id` with `agent-browser` for screenshots and drags (2026-10-08).
+
+**Problem:** After roughly 40 screenshots of the WebGL page the renderer reached 3 GB+, snapshots hung for over a minute, and a later revalidation failed with "Failed to fetch" plus "WebGL Context Lost". On a fresh dev server the login's Continue button also stays disabled until hydration finishes, which looks like a broken bot check.
+
+**Rule:** Set `AGENT_BROWSER_SESSION` to the worktree's own name, `agent-browser close` and reopen after ~40 shots, and reload the login page once if Continue stays disabled. Drive the canvas with `mouse move/down/up`, not `click`. Radix menus ignore synthetic clicks there — move the mouse off the menu and use the arrow keys plus Enter.
+
+**Applies to:** browser verification of `packages/viewer` features in the ERP editor; `.ai/playbooks/assembly-sub-assembly-motion-path.md`.
