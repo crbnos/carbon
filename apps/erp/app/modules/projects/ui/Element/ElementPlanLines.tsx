@@ -18,6 +18,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  Spinner,
   Table as TableBase,
   Tbody,
   Td,
@@ -29,15 +30,16 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LuFactory,
   LuPencil,
   LuPlus,
+  LuShoppingCart,
   LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Link } from "react-router";
+import { Link, useFetcher } from "react-router";
 import {
   DatePicker,
   Hidden,
@@ -46,7 +48,8 @@ import {
   Location,
   Number as NumberField,
   Select,
-  Submit
+  Submit,
+  Supplier
 } from "~/components/Form";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
@@ -58,9 +61,12 @@ import {
   useUser
 } from "~/hooks";
 import { methodType } from "~/modules/shared/shared.models";
+import type { loader as createPurchaseOrderLineLoader } from "~/routes/x+/project+/$projectId.elements.$elementId.create-po-line";
 import { path } from "~/utils/path";
 import {
   createJobFromMaterialValidator,
+  createPurchaseOrderLineFromMaterialValidator,
+  NEW_PURCHASE_ORDER,
   projectElementCostValidator,
   projectElementLaborValidator,
   projectElementMaterialValidator,
@@ -117,8 +123,10 @@ export function ElementPlanLines({
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<Deleting | null>(null);
   const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
+  const [creatingLine, setCreatingLine] = useState<MaterialLine | null>(null);
   const permissions = usePermissions();
   const canCreateJob = permissions.can("create", "production");
+  const canCreatePurchaseOrderLine = permissions.can("create", "purchasing");
   const action = path.to.projectElementPlan(projectId, elementId);
 
   const rowActions = (
@@ -201,6 +209,16 @@ export function ElementPlanLines({
                     {line.job.jobId}
                   </Link>
                 )}
+                {line.purchaseOrderLine?.purchaseOrder && (
+                  <Link
+                    to={path.to.purchaseOrderDetails(
+                      line.purchaseOrderLine.purchaseOrder.id
+                    )}
+                    className="text-xs text-muted-foreground hover:underline"
+                  >
+                    {line.purchaseOrderLine.purchaseOrder.purchaseOrderId}
+                  </Link>
+                )}
               </div>
             </Td>
             <Td className="whitespace-nowrap tabular-nums">
@@ -231,6 +249,16 @@ export function ElementPlanLines({
                   size="sm"
                   isDisabled={!canCreateJob}
                   onClick={() => setCreatingJob(line)}
+                />
+              ) : line.methodType === "Purchase to Order" &&
+                !line.purchaseOrderLineId ? (
+                <IconButton
+                  aria-label={t`Create PO Line`}
+                  icon={<LuShoppingCart />}
+                  variant="ghost"
+                  size="sm"
+                  isDisabled={!canCreatePurchaseOrderLine}
+                  onClick={() => setCreatingLine(line)}
                 />
               ) : null
             )}
@@ -340,6 +368,14 @@ export function ElementPlanLines({
           line={creatingJob}
           defaultLocationId={defaultLocationId}
           onClose={() => setCreatingJob(null)}
+        />
+      )}
+      {creatingLine && (
+        <CreatePurchaseOrderLineModal
+          projectId={projectId}
+          elementId={elementId}
+          line={creatingLine}
+          onClose={() => setCreatingLine(null)}
         />
       )}
       {deleting && (
@@ -681,6 +717,142 @@ function CreateJobModal({
             </Submit>
           </ModalFooter>
         </ValidatedForm>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+/**
+ * Create PO line for a Purchase to Order material: the supplier (the item's
+ * preferred one first), the quantity still needed in the plan line's unit,
+ * the required date, and the supplier's Draft purchase order at the
+ * project's location to add to, or a new one. The action redirects to the
+ * purchase order; a refusal shows in the modal.
+ */
+function CreatePurchaseOrderLineModal({
+  projectId,
+  elementId,
+  line,
+  onClose
+}: {
+  projectId: string;
+  elementId: string;
+  line: MaterialLine;
+  onClose: () => void;
+}) {
+  const { t } = useLingui();
+  const resource = path.to.projectElementCreatePurchaseOrderLine(
+    projectId,
+    elementId
+  );
+  const optionsFetcher = useFetcher<typeof createPurchaseOrderLineLoader>();
+  const fetcher = useAction<{ error?: { message: string } }>();
+  const errorMessage =
+    fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
+  // Undefined until the user picks a supplier: the loader's preferred one.
+  const [pickedSupplierId, setPickedSupplierId] = useState<string>();
+
+  const load = optionsFetcher.load;
+  useEffect(() => {
+    const params = new URLSearchParams({ materialId: line.id });
+    if (pickedSupplierId) params.set("supplierId", pickedSupplierId);
+    load(`${resource}?${params}`);
+  }, [load, resource, line.id, pickedSupplierId]);
+
+  const options = optionsFetcher.data;
+  const purchaseOrderOptions = [
+    { value: NEW_PURCHASE_ORDER, label: t`New purchase order` },
+    ...(options?.purchaseOrders ?? []).map((po) => ({
+      value: po.id,
+      label: po.purchaseOrderId
+    }))
+  ];
+
+  return (
+    <Modal open onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        {options === undefined ? (
+          <ModalBody>
+            <div className="flex h-40 items-center justify-center">
+              <Spinner />
+            </div>
+          </ModalBody>
+        ) : (
+          <ValidatedForm
+            // The options of a newly picked supplier restart the form with
+            // its purchase orders.
+            key={options.supplierId ?? ""}
+            validator={createPurchaseOrderLineFromMaterialValidator}
+            method="post"
+            action={resource}
+            fetcher={fetcher}
+            defaultValues={{
+              materialId: line.id,
+              supplierId: options.supplierId ?? "",
+              quantity:
+                remainingMaterialQuantity(line) || Number(line.quantity),
+              requiredDate: line.requiredDate ?? undefined,
+              purchaseOrderId:
+                options.purchaseOrders[0]?.id ?? NEW_PURCHASE_ORDER
+            }}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Create PO Line</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                {line.item?.readableIdWithRevision} {line.item?.name}
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="materialId" />
+              <VStack spacing={4}>
+                {errorMessage && (
+                  <Alert variant="destructive">
+                    <LuTriangleAlert />
+                    <AlertDescription>{errorMessage}</AlertDescription>
+                  </Alert>
+                )}
+                <Supplier
+                  name="supplierId"
+                  label={t`Supplier`}
+                  onChange={(option) => {
+                    if (option?.value && option.value !== options.supplierId) {
+                      setPickedSupplierId(option.value);
+                    }
+                  }}
+                />
+                <NumberField
+                  name="quantity"
+                  label={t`Quantity`}
+                  helperText={
+                    line.unitOfMeasureCode
+                      ? t`In ${line.unitOfMeasureCode}; the supplier part's conversion factor gives the purchase quantity`
+                      : t`The supplier part's conversion factor gives the purchase quantity`
+                  }
+                  minValue={0}
+                  formatOptions={INPUT_FORMAT.quantity}
+                  step={INPUT_STEP.quantity}
+                />
+                <DatePicker name="requiredDate" label={t`Required Date`} />
+                <Select
+                  name="purchaseOrderId"
+                  label={t`Add to`}
+                  options={purchaseOrderOptions}
+                />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit withBlocker={false}>
+                <Trans>Create PO Line</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        )}
       </ModalContent>
     </Modal>
   );

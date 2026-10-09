@@ -2021,6 +2021,9 @@ msgstr "Add this TXT record at your DNS host, then click Verify. DNS changes can
 msgid "Add Timecard"
 msgstr "Add Timecard"
 
+msgid "Add to"
+msgstr "Add to"
+
 msgid "Add to batch"
 msgstr "Add to batch"
 
@@ -5950,6 +5953,9 @@ msgstr "Create new rule"
 
 msgid "Create Operator"
 msgstr "Create Operator"
+
+msgid "Create PO Line"
+msgstr "Create PO Line"
 
 msgid "Create PO Revision"
 msgstr "Create PO Revision"
@@ -10787,6 +10793,10 @@ msgstr "Import your BOM"
 msgid "in {0}"
 msgstr "in {0}"
 
+#. placeholder {0}: line.unitOfMeasureCode
+msgid "In {0}; the supplier part's conversion factor gives the purchase quantity"
+msgstr "In {0}; the supplier part's conversion factor gives the purchase quantity"
+
 msgid "In an open menu"
 msgstr "In an open menu"
 
@@ -13452,6 +13462,9 @@ msgstr "New Process"
 
 msgid "New Project"
 msgstr "New Project"
+
+msgid "New purchase order"
+msgstr "New purchase order"
 
 msgid "New Quality Document"
 msgstr "New Quality Document"
@@ -21987,6 +22000,9 @@ msgstr "The storage service didn't respond in time. Please try again."
 
 msgid "The substances your materials are made of"
 msgstr "The substances your materials are made of"
+
+msgid "The supplier part's conversion factor gives the purchase quantity"
+msgstr "The supplier part's conversion factor gives the purchase quantity"
 
 msgid "The supplier planning suggests first when this item needs to be bought; other suppliers stay available in the dropdown on each PO line."
 msgstr "The supplier planning suggests first when this item needs to be bought; other suppliers stay available in the dropdown on each PO line."

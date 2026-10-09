@@ -2517,3 +2517,17 @@ export function remainingMaterialQuantity(line: {
 }) {
   return Math.max(0, Number(line.quantity) - Number(line.quantityIssued ?? 0));
 }
+
+/** The **Add to** value that makes a new purchase order. */
+export const NEW_PURCHASE_ORDER = "new";
+
+/** Create PO line from a Purchase to Order plan-line material. */
+export const createPurchaseOrderLineFromMaterialValidator = z.object({
+  materialId: z.string().min(1, { message: "Material is required" }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be greater than 0" })
+  ),
+  requiredDate: zfd.text(z.string().optional()),
+  purchaseOrderId: z.string().min(1, { message: "Choose a purchase order" })
+});

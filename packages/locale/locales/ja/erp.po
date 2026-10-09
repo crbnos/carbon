@@ -2021,6 +2021,9 @@ msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリッ�
 msgid "Add Timecard"
 msgstr "タイムカードを追加"
 
+msgid "Add to"
+msgstr ""
+
 msgid "Add to batch"
 msgstr "バッチに追加"
 
@@ -5950,6 +5953,9 @@ msgstr "新しいルールを作成"
 
 msgid "Create Operator"
 msgstr "作業者を作成"
+
+msgid "Create PO Line"
+msgstr ""
 
 msgid "Create PO Revision"
 msgstr "発注書リビジョンを作成"
@@ -10787,6 +10793,10 @@ msgstr "BOMをインポート"
 msgid "in {0}"
 msgstr "{0}以内に"
 
+#. placeholder {0}: line.unitOfMeasureCode
+msgid "In {0}; the supplier part's conversion factor gives the purchase quantity"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "開いているメニュー内"
 
@@ -13452,6 +13462,9 @@ msgstr "新しいプロセス"
 
 msgid "New Project"
 msgstr "新規プロジェクト"
+
+msgid "New purchase order"
+msgstr ""
 
 msgid "New Quality Document"
 msgstr "新規品質文書"
@@ -21987,6 +22000,9 @@ msgstr "ストレージサービスが時間内に応答しませんでした。
 
 msgid "The substances your materials are made of"
 msgstr "あなたの材料が作られている物質"
+
+msgid "The supplier part's conversion factor gives the purchase quantity"
+msgstr ""
 
 msgid "The supplier planning suggests first when this item needs to be bought; other suppliers stay available in the dropdown on each PO line."
 msgstr "このアイテムが購買される必要があるときに計画が最初に提案する仕入先。他の仕入先は各PO明細のドロップダウンで利用可能なままです。"

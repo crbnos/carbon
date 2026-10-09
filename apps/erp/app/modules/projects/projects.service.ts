@@ -1794,7 +1794,7 @@ export async function getProjectElementPlanLines(
     client
       .from("projectElementMaterial")
       .select(
-        "*, item:item!projectElementMaterial_itemId_fkey(id, readableIdWithRevision, name), job:job!projectElementMaterial_jobId_fkey(id, jobId)"
+        "*, item:item!projectElementMaterial_itemId_fkey(id, readableIdWithRevision, name), job:job!projectElementMaterial_jobId_fkey(id, jobId), purchaseOrderLine:purchaseOrderLine!projectElementMaterial_purchaseOrderLineId_fkey(id, purchaseOrder:purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId))"
       )
       .eq("projectElementId", projectElementId)
       .eq("companyId", companyId)

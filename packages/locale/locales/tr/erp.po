@@ -2021,6 +2021,9 @@ msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya t�
 msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
 
+msgid "Add to"
+msgstr ""
+
 msgid "Add to batch"
 msgstr "Partiye Ekle"
 
@@ -5950,6 +5953,9 @@ msgstr "Yeni kural oluştur"
 
 msgid "Create Operator"
 msgstr "Operatör oluştur"
+
+msgid "Create PO Line"
+msgstr ""
 
 msgid "Create PO Revision"
 msgstr "PO Revizyonu Oluştur"
@@ -10787,6 +10793,10 @@ msgstr "BOM'unuzu İçe Aktarın"
 msgid "in {0}"
 msgstr "{0} içinde"
 
+#. placeholder {0}: line.unitOfMeasureCode
+msgid "In {0}; the supplier part's conversion factor gives the purchase quantity"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "Açık bir menüde"
 
@@ -13452,6 +13462,9 @@ msgstr "Yeni Süreç"
 
 msgid "New Project"
 msgstr "Yeni Proje"
+
+msgid "New purchase order"
+msgstr ""
 
 msgid "New Quality Document"
 msgstr "Yeni Kalite Belgesi"
@@ -21987,6 +22000,9 @@ msgstr "Depolama hizmeti zamanında yanıt vermedi. Lütfen tekrar deneyin."
 
 msgid "The substances your materials are made of"
 msgstr "Malzemelerinizin yapıldığı maddeler"
+
+msgid "The supplier part's conversion factor gives the purchase quantity"
+msgstr ""
 
 msgid "The supplier planning suggests first when this item needs to be bought; other suppliers stay available in the dropdown on each PO line."
 msgstr "Bu öğenin satın alınması gerektiğinde planlamanın ilk olarak önerdiği tedarikçi; diğer tedarikçiler her PO satırında açılır listede kullanılabilir kalır."

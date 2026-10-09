@@ -2021,6 +2021,9 @@ msgstr "DNS 호스트에서 이 TXT 레코드를 추가한 다음 확인을 클�
 msgid "Add Timecard"
 msgstr "근무기록 추가"
 
+msgid "Add to"
+msgstr ""
+
 msgid "Add to batch"
 msgstr "배치에 추가"
 
@@ -5950,6 +5953,9 @@ msgstr "새 규칙 생성"
 
 msgid "Create Operator"
 msgstr "작업자 생성"
+
+msgid "Create PO Line"
+msgstr ""
 
 msgid "Create PO Revision"
 msgstr "구매주문 리비전 생성"
@@ -10787,6 +10793,10 @@ msgstr "BOM 가져오기"
 msgid "in {0}"
 msgstr "{0} 안에"
 
+#. placeholder {0}: line.unitOfMeasureCode
+msgid "In {0}; the supplier part's conversion factor gives the purchase quantity"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "열린 메뉴에서"
 
@@ -13452,6 +13462,9 @@ msgstr "새 공정"
 
 msgid "New Project"
 msgstr "새 프로젝트"
+
+msgid "New purchase order"
+msgstr ""
 
 msgid "New Quality Document"
 msgstr "새 품질 문서"
@@ -21987,6 +22000,9 @@ msgstr "저장소 서비스가 제시간에 응답하지 않았습니다. 다시
 
 msgid "The substances your materials are made of"
 msgstr "자재를 구성하는 재질"
+
+msgid "The supplier part's conversion factor gives the purchase quantity"
+msgstr ""
 
 msgid "The supplier planning suggests first when this item needs to be bought; other suppliers stay available in the dropdown on each PO line."
 msgstr "이 품목을 구매해야 할 때 계획에서 먼저 제안하는 공급업체; 다른 공급업체는 각 구매발주 라인의 드롭다운에서 사용 가능하게 유지됩니다."

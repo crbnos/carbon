@@ -2021,6 +2021,9 @@ msgstr "Fügen Sie diesen TXT-Eintrag bei Ihrem DNS-Host hinzu und klicken Sie d
 msgid "Add Timecard"
 msgstr "Zeitkarte hinzufügen"
 
+msgid "Add to"
+msgstr ""
+
 msgid "Add to batch"
 msgstr "Zum Los hinzufügen"
 
@@ -5950,6 +5953,9 @@ msgstr "Neue Regel erstellen"
 
 msgid "Create Operator"
 msgstr "Werker erstellen"
+
+msgid "Create PO Line"
+msgstr ""
 
 msgid "Create PO Revision"
 msgstr "Bestellungsrevision erstellen"
@@ -10787,6 +10793,10 @@ msgstr "Importieren Sie Ihre BOM"
 msgid "in {0}"
 msgstr "in {0}"
 
+#. placeholder {0}: line.unitOfMeasureCode
+msgid "In {0}; the supplier part's conversion factor gives the purchase quantity"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "In einem offenen Menü"
 
@@ -13452,6 +13462,9 @@ msgstr "Neuer Prozess"
 
 msgid "New Project"
 msgstr "Neues Projekt"
+
+msgid "New purchase order"
+msgstr ""
 
 msgid "New Quality Document"
 msgstr "Neues Qualitätsdokument"
@@ -21987,6 +22000,9 @@ msgstr "Der Speicherdienst hat nicht rechtzeitig geantwortet. Bitte versuchen Si
 
 msgid "The substances your materials are made of"
 msgstr "Die Stoffe, aus denen deine Materialien bestehen"
+
+msgid "The supplier part's conversion factor gives the purchase quantity"
+msgstr ""
 
 msgid "The supplier planning suggests first when this item needs to be bought; other suppliers stay available in the dropdown on each PO line."
 msgstr "Der Lieferant, den die Planung zuerst vorschlägt, wenn dieser Artikel gekauft werden muss; andere Lieferanten bleiben in der Dropdown-Liste auf jeder PO-Zeile verfügbar."

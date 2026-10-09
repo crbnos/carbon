@@ -2021,6 +2021,9 @@ msgstr "अपने DNS होस्ट में यह TXT रिकॉर्
 msgid "Add Timecard"
 msgstr "टाइमकार्ड जोड़ें"
 
+msgid "Add to"
+msgstr ""
+
 msgid "Add to batch"
 msgstr "बैच में जोड़ें"
 
@@ -5950,6 +5953,9 @@ msgstr "नया नियम बनाएं"
 
 msgid "Create Operator"
 msgstr "ऑपरेटर बनाएँ"
+
+msgid "Create PO Line"
+msgstr ""
 
 msgid "Create PO Revision"
 msgstr "क्रय आदेश रिवीजन बनाएँ"
@@ -10787,6 +10793,10 @@ msgstr "अपना BOM आयात करें"
 msgid "in {0}"
 msgstr "{0} में"
 
+#. placeholder {0}: line.unitOfMeasureCode
+msgid "In {0}; the supplier part's conversion factor gives the purchase quantity"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "एक खुले मेनू में"
 
@@ -13452,6 +13462,9 @@ msgstr "नई प्रक्रिया"
 
 msgid "New Project"
 msgstr "नई परियोजना"
+
+msgid "New purchase order"
+msgstr ""
 
 msgid "New Quality Document"
 msgstr "नया गुणवत्ता दस्तावेज़"
@@ -21987,6 +22000,9 @@ msgstr "स्टोरेज सेवा समय पर प्रतिक�
 
 msgid "The substances your materials are made of"
 msgstr "आपकी सामग्री किन पदार्थों से बनी है"
+
+msgid "The supplier part's conversion factor gives the purchase quantity"
+msgstr ""
 
 msgid "The supplier planning suggests first when this item needs to be bought; other suppliers stay available in the dropdown on each PO line."
 msgstr "आपूर्तिकर्ता जो योजना पहले सुझाता है जब इस आइटम को खरीद की आवश्यकता है; अन्य आपूर्तिकर्ता प्रत्येक PO लाइन पर ड्रॉपडाउन में उपलब्ध रहते हैं।"

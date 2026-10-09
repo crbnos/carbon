@@ -2021,6 +2021,9 @@ msgstr "Ajoutez cet enregistrement TXT chez votre fournisseur DNS, puis cliquez 
 msgid "Add Timecard"
 msgstr "Ajouter une feuille de temps"
 
+msgid "Add to"
+msgstr ""
+
 msgid "Add to batch"
 msgstr "Ajouter au lot de production"
 
@@ -5950,6 +5953,9 @@ msgstr "Créer une nouvelle règle"
 
 msgid "Create Operator"
 msgstr "Créer un opérateur"
+
+msgid "Create PO Line"
+msgstr ""
 
 msgid "Create PO Revision"
 msgstr "Créer une révision de bon de commande"
@@ -10787,6 +10793,10 @@ msgstr "Importer votre BOM"
 msgid "in {0}"
 msgstr "en {0}"
 
+#. placeholder {0}: line.unitOfMeasureCode
+msgid "In {0}; the supplier part's conversion factor gives the purchase quantity"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "Dans un menu ouvert"
 
@@ -13452,6 +13462,9 @@ msgstr "Nouveau Processus"
 
 msgid "New Project"
 msgstr "Nouveau projet"
+
+msgid "New purchase order"
+msgstr ""
 
 msgid "New Quality Document"
 msgstr "Nouveau Document de Qualité"
@@ -21987,6 +22000,9 @@ msgstr "Le service de stockage n'a pas répondu à temps. Veuillez réessayer."
 
 msgid "The substances your materials are made of"
 msgstr "Les substances dont vos matériaux sont composés"
+
+msgid "The supplier part's conversion factor gives the purchase quantity"
+msgstr ""
 
 msgid "The supplier planning suggests first when this item needs to be bought; other suppliers stay available in the dropdown on each PO line."
 msgstr "Le fournisseur que la planification suggère en premier lorsque cet article doit être acheté; les autres fournisseurs restent disponibles dans la liste déroulante de chaque ligne de PO."
