@@ -47,13 +47,16 @@ import type {
 import {
   displayStateToParams,
   elementFilterStateFromParams,
+  getProjectChangeRequests,
   getProjectCostSummary,
+  getProjectElementCommentCounts,
   getProjectElementDescriptions,
   getProjectElements,
   getProjectUserPreference,
   getProjectViews,
   isBareElementsUrl,
   isProjectPlanLocked,
+  openChangeRequestStatuses,
   parseElementFilters,
   parseProjectDisplayState,
   projectPlanLockedMessage,
@@ -173,25 +176,48 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const { layout } = elementFilterStateFromParams(searchParams);
-  const {
-    filters: elementFilters,
-    type,
-    isFiltered
-  } = parseElementFilters(searchParams);
+  const { filters: elementFilters, type } = parseElementFilters(searchParams);
+  // The Tree layout applies the type filter on the canvas, so it loads every
+  // type: a box must still show the parent of a matching card.
+  const queryFilters =
+    layout === "tree" ? { ...elementFilters, type: null } : elementFilters;
+  const isQueryFiltered = Object.values(queryFilters).some(
+    (value) => value !== null
+  );
 
-  const [elements, costSummary, descriptions] = await Promise.all([
-    getProjectElements(client, projectId, companyId, elementFilters),
-    getProjectCostSummary(client, projectId, companyId),
-    // Only the Reader shows descriptions; the list query leaves them out.
-    layout === "reader"
-      ? getProjectElementDescriptions(client, projectId, companyId)
-      : Promise.resolve({ data: [], error: null })
-  ]);
+  const [elements, costSummary, descriptions, commentCounts, changeRequests] =
+    await Promise.all([
+      getProjectElements(client, projectId, companyId, queryFilters),
+      getProjectCostSummary(client, projectId, companyId),
+      // Only the Reader shows descriptions; the list query leaves them out.
+      layout === "reader"
+        ? getProjectElementDescriptions(client, projectId, companyId)
+        : Promise.resolve({ data: [], error: null }),
+      // Only the Tree's cards show comment counts.
+      layout === "tree"
+        ? getProjectElementCommentCounts(client, projectId, companyId)
+        : Promise.resolve({ data: [], error: null }),
+      getProjectChangeRequests(client, projectId, companyId)
+    ]);
   if (descriptions.error) {
     logger.error("Failed to load element descriptions", {
       companyId,
       projectId,
       error: descriptions.error
+    });
+  }
+  if (commentCounts.error) {
+    logger.error("Failed to load element comment counts", {
+      companyId,
+      projectId,
+      error: commentCounts.error
+    });
+  }
+  if (changeRequests.error) {
+    logger.error("Failed to load the project's change requests", {
+      companyId,
+      projectId,
+      error: changeRequests.error
     });
   }
 
@@ -210,7 +236,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const verification = await getProjectVerification(client, {
     companyId,
     projectId,
-    elements: isFiltered
+    elements: isQueryFiltered
       ? undefined
       : ((elements.data ?? []) as VerificationElement[])
   });
@@ -270,6 +296,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     descriptions: Object.fromEntries(
       (descriptions.data ?? []).map((row) => [row.id, row.description])
     ),
+    commentCounts: Object.fromEntries(
+      (commentCounts.data ?? []).map((row) => [row.id, row.count])
+    ) as Record<string, number>,
+    openChangeRequests: (changeRequests.data ?? [])
+      .filter((cr) =>
+        (openChangeRequestStatuses as readonly string[]).includes(cr.status)
+      )
+      .map((cr) => ({
+        id: cr.id,
+        readableId: cr.readableId,
+        title: cr.title,
+        status: cr.status
+      })),
     layout,
     type,
     views: viewOptions,
@@ -528,7 +567,11 @@ export default function ProjectElementsRoute() {
           />
         )}
         <ElementsHeader
-          count={elements.length}
+          count={
+            layout === "tree" && type
+              ? elements.filter((element) => element.type === type).length
+              : elements.length
+          }
           layout={layout}
           type={type}
           filters={filters}
@@ -582,7 +625,11 @@ export default function ProjectElementsRoute() {
           ) : layout === "tree" ? (
             <ElementGraph
               projectId={projectId}
-              elements={elements}
+              elements={
+                type
+                  ? elements.filter((element) => element.type === type)
+                  : elements
+              }
               links={links}
               requirementStatus={requirementStatus}
               canUpdate={layoutProps.canUpdate}

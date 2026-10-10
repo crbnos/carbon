@@ -60,7 +60,7 @@ Make the Tree layout of the project Elements page look and work like Flow's tree
 
 - [x] Task 1: Add the pure tree layout and trace-link helpers with tests
 - [x] Task 2: Define the type colours once
-- [ ] Task 3: Load the full list, the comment counts and the open change requests
+- [x] Task 3: Load the full list, the comment counts and the open change requests
 - [ ] Task 4: Add the card node and the box node
 - [ ] Task 5: Draw the Tree layout as boxes
 - [ ] Task 6: Add the breadcrumb root

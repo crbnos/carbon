@@ -1150,6 +1150,35 @@ export async function getProjectElementDescriptions(
 }
 
 /**
+ * The comment count of each element of a project that has comments. One
+ * paged read: each element row embeds the count of its comments.
+ */
+export async function getProjectElementCommentCounts(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  const rows = await fetchAll<{ id: string; comments: { count: number }[] }>(
+    () =>
+      client
+        .from("projectElement")
+        .select(
+          "id, comments:projectElementComment!projectElementComment_element_fkey(count)"
+        )
+        .eq("projectId", projectId)
+        .eq("companyId", companyId)
+        .order("id", { ascending: true })
+  );
+  if (rows.error) return { data: null, error: rows.error };
+  return {
+    data: (rows.data ?? [])
+      .map((row) => ({ id: row.id, count: row.comments[0]?.count ?? 0 }))
+      .filter((row) => row.count > 0),
+    error: null
+  };
+}
+
+/**
  * Gets one element with its state, owner, milestone, labels and parent.
  * @mcp read
  */

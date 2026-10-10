@@ -3724,6 +3724,13 @@ export const projectChangeRequestIntentFrom: Record<
   reopen: ["Rejected", "Approved"]
 };
 
+/** The change requests the Elements page can open: they still take edits or a decision. */
+export const openChangeRequestStatuses = [
+  "Draft",
+  "In Review",
+  "Approved"
+] as const satisfies readonly ProjectChangeRequestStatus[];
+
 export const projectChangeRequestStatusValidator = z.object({
   intent: z.enum(projectChangeRequestIntents, { error: "Unknown action" }),
   notes: zfd.text(z.string().trim().optional())
