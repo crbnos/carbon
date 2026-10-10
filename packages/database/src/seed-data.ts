@@ -605,6 +605,15 @@ export const sequences = [
     next: 0,
     size: 6,
     step: 1
+  },
+  {
+    table: "projectStockTransfer",
+    name: "Project Stock Transfer",
+    prefix: "PST",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
   }
 ] as const;
 

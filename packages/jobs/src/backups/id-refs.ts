@@ -72,7 +72,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
     "trackedEntityId"
   ],
   itemLedger: ["correctionOfItemLedgerId", "documentId", "documentLineId"],
-  itemStockQuantities: ["itemId", "locationId"],
+  itemStockQuantities: ["itemId", "locationId", "projectId"],
   job: ["modelUploadId", "quoteLineId"],
   jobMaterial: ["substitutedFromItemId"],
   jobOperation: ["operationSupplierProcessId"],
@@ -103,6 +103,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
     "laborCategoryId",
     "supplierId"
   ],
+  projectStockTransfer: ["planningActionId"],
   purchaseInvoiceLine: ["assetId", "serviceId"],
   purchaseOrderLine: ["locationId"],
   receipt: ["sourceDocumentId"],

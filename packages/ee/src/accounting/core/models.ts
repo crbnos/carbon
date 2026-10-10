@@ -545,6 +545,14 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // A project stock transfer, borrow or payback moves inventory value between
+  // project stock stripes. Off by default for the same reason as
+  // 'Revenue Recognition'.
+  "Project Transfer": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Asset Depreciation": {
     representation: "journal",
     defaultEnabled: true,

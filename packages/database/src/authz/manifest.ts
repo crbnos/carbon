@@ -1133,6 +1133,11 @@ export const manifest = {
     delete: owner("userId")
   }),
   projectBillableItem: projectTable(),
+  projectBorrow: company("projects", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   projectElement: projectTable(),
   projectElementComment: company("projects", {
     read: projectModule("projectElementId", "view", {
@@ -1164,6 +1169,8 @@ export const manifest = {
   }),
   projectMilestone: projectTable(),
   projectState: projectTable(),
+  projectStockTransfer: company("projects"),
+  projectStockTransferLine: company("projects"),
   projectUserPreference: policies({
     select: owner("userId"),
     insert: and(owner("userId"), inCompany("companyId", "employee")),
