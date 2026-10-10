@@ -33127,6 +33127,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -33198,6 +33201,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -33221,6 +33227,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
           },
           {
             $ref: "#/parameters/body.itemStockQuantities"
@@ -138025,7 +138034,13 @@ export default {
       type: "object"
     },
     itemStockQuantities: {
-      required: ["itemId", "companyId", "locationId", "quantityOnHand"],
+      required: [
+        "itemId",
+        "companyId",
+        "locationId",
+        "quantityOnHand",
+        "projectId"
+      ],
       properties: {
         itemId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -138047,6 +138062,12 @@ export default {
           default: 0,
           format: "numeric",
           type: "number"
+        },
+        projectId: {
+          default: "",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -191544,6 +191565,12 @@ export default {
     },
     "rowFilter.itemStockQuantities.quantityOnHand": {
       name: "quantityOnHand",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemStockQuantities.projectId": {
+      name: "projectId",
       required: false,
       in: "query",
       type: "string"

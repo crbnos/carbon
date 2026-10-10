@@ -36,7 +36,7 @@ Phase 2b plans MRP. Until 2b ships, every MRP and planning reader filters to com
 ## Progress
 
 - [x] Task 1: Create the Phase 2a enum and table migration
-- [ ] Task 2: Change the `itemStockQuantities` primary key and the reconcile function
+- [x] Task 2: Change the `itemStockQuantities` primary key and the reconcile function
 - [ ] Task 3: Change the stock handler and ship it with the authz migration
 - [ ] Task 4: Regenerate types and add the RLS rules
 - [ ] Task 5: Make the planning readers read common stock only
@@ -829,3 +829,4 @@ ls .ai/playbooks/projects-phase-2a.md
 
 - Task 1: the migration adds foreign keys the plan's SQL left out, so a backup restore into another company remaps them: `pickingListLine.projectId` and `inventoryCountLine.projectId` → `project`, `projectStockTransferLine.storageUnitId` → `storageUnit`, `projectBorrow.projectStockTransferLineId` → `projectStockTransferLine`, `projectStockTransfer.settlesBorrowId` and `costLedger.projectBorrowId` → `projectBorrow`. Every FK column has an index. `planningActionId` stays without an FK, because MRP replaces its planning actions on every run; Task 4 lists it in `ID_REF_COLUMNS`. The sequence insert uses `WHERE NOT EXISTS`, as `20261009153156_field-service-module.sql` does; the effect equals `ON CONFLICT DO NOTHING`.
 - Task 1: `pnpm db:migrate` applied both migrations and regenerated the types and swagger. Then `authz sync` failed on the 3 new tables, which have no rule until Task 4 (as in Field Service Phase A Task 4). The commit carries the regenerated MCP digest and workflow catalog (`job.receiveToProjectStock` gains a label).
+- Tasks 2 and 3: both were on disk before `pnpm db:migrate`. `authz migration item-stock-quantities-project-handler` wrote `20261010021110_item-stock-quantities-project-handler.sql`, directly after Task 2's `20261010021027_item-stock-quantities-project.sql`, with nothing between them. The primary key was named `itemStockQuantities_pkey`, as the plan assumed. The count of rows with a project is 0, and `vitest run src/authz` passes (35). A rolled-back smoke test inserted a common and a striped `itemLedger` row: the handler kept two rows for the key (common 5, striped 3), and `reconcile_item_stock_quantities()` left both unchanged. `authz sync` still fails on the 3 tables without a rule until Task 4. `db:check:backups` fails only on `supplierPartPrice.unitPrice`, so these commits skip it with `CARBON_SKIP_BACKUP_CHECK=1`; the new column has the default `''`.

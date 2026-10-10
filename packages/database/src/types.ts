@@ -27325,18 +27325,21 @@ export type Database = {
           companyId: string
           itemId: string
           locationId: string
+          projectId: string
           quantityOnHand: number
         }
         Insert: {
           companyId: string
           itemId: string
           locationId?: string
+          projectId?: string
           quantityOnHand?: number
         }
         Update: {
           companyId?: string
           itemId?: string
           locationId?: string
+          projectId?: string
           quantityOnHand?: number
         }
         Relationships: []
