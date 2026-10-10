@@ -46,7 +46,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 - [x] Task 3: Regenerate types and add the RLS rules
 - [x] Task 4: Add the planning group services and pages
 - [x] Task 5: Carry member attribution through the explosion
-- [ ] Task 6: Add `pegGroupSegment` as a pure function
+- [x] Task 6: Add `pegGroupSegment` as a pure function
 - [ ] Task 7: Diff-write the pegs in the planning-action transaction
 - [ ] Task 8: Apply grouped Order and Make actions and move their pegs
 - [ ] Task 9: Add `harden_pegs_for_supply`
@@ -770,3 +770,7 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 5 (deviation): `@carbon/planning` now depends on `@carbon/ee` (workspace). There is no cycle (see the note before Task 1). `packages/planning/AGENTS.md` said "never add a gate here"; it now names this one exception.
 - Task 5 (known gap): without the feature, the planning RPCs still group on-hand by `project_planning_segment`, which knows nothing of the plan. So a company whose plan lapsed while it has groups sees group rows on the planning pages. MRP and the planning actions plan the members on their own.
 - Task 5: the engine test (gross 30, members 20 and 10, on-hand 6, child contributors 16 and 8 with their elements and need dates) passes. 2 new `planCompany` tests pass: the members net in `plg_1` and draw the common surplus of 8, and without the feature they net in their own segments (20 and 10). The database MRP tests pass (36) and the planning suite passes (326) with the basic snapshot unchanged. `@carbon/planning`, `@carbon/database`, `@carbon/jobs` and `erp` typecheck.
+- Task 6 (gating): the pure functions are in `packages/ee/src/pegging/mrp-pegging.ts`, exported as `@carbon/ee/pegging` (`pegging/index.ts`). The test is `packages/ee/src/pegging/mrp-pegging.test.ts`, so the verify command is `pnpm --filter @carbon/ee test -- mrp-pegging`. The 8 cases pass. The performance case (1 000 members, 20 000 demands, 3 000 supplies) runs in about 50 ms.
+- Task 6 (deviation): a Hard peg is kept and never diffed, but it takes nothing from supply or demand. The open-supply views already leave out the received quantity, and the received stock is in the member's own stripe, which step 2 counts. Taking it again counted a receipt twice: after receiving 25 of 60, the open 35 would offer only 10. A Manual peg is on open supply, so it takes from its supply and its demand as the plan says.
+- Task 6 (beyond the plan's types): `ExistingPeg` has an optional `projectElementId`, so a split part takes the job peg's element. `PegDemand` has an optional `parentPegKey`, which `splitGroupedJobDemand` sets to the job peg's id. It becomes `projectPeg.parentPegId`. `splitGroupedJobDemand` takes an optional `priorityOf(projectId)`, because a part takes the peg's project and so that project's priority.
+- Task 6: `pegGroupSegment` merges demands with the same project, source type and source id (a job with 2 lines of the item is one demand). It does not peg a demand with no project: a grouped job's component demand stays unattributed until the job has pegs. `diffPegs` returns `{ keepIds, supersedeIds, inserts }`.
