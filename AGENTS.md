@@ -85,6 +85,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Server & Services** | |
 | Writing service functions | `.claude/rules/conventions-services.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
+| Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
 | Server functions (privileged/transactional writes shared by apps and jobs) | `packages/server-functions/AGENTS.md` |
 | Adding a Deno edge function (embedding only) | `.claude/rules/workflow-edge-function.md` |
@@ -211,7 +212,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
 - **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 29 under `packages/` — auth, database, lib, react, query, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, server-functions, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
+- **Packages**: 30 under `packages/` — account, auth, database, lib, react, query, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, server-functions, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages

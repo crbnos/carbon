@@ -7,6 +7,14 @@ import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+// Shared with the MES and the starter, which open the same settings modal.
+export {
+  type AccountSettingsTab,
+  accountProfileValidator,
+  accountSettingsTabs,
+  isAccountSettingsTab
+} from "@carbon/account";
+
 export const notificationPreferenceValidator = z.object({
   topic: z.nativeEnum(NotificationTopic),
   channel: z.enum(["email", "slack"]),
@@ -33,13 +41,6 @@ export const onboardingUserValidator = z.object({
   lastName: z.string().min(1, { message: "Last name is required" }),
   // about: zfd.text(z.string().optional()),
   next: z.string().min(1, { message: "Next is required" })
-});
-
-export const accountProfileValidator = z.object({
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
-  about: z.string(),
-  phone: zfd.text(z.string().optional())
 });
 
 export const accountLanguageValidator = z.object({

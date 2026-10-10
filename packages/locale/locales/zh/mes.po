@@ -67,6 +67,10 @@ msgstr "{0} / {1} 已完成"
 msgid "{0} queued"
 msgstr "{0} 排队中"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} 已登记"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "运行中 {0} 个"
@@ -89,6 +93,9 @@ msgstr "{completions} 个已通过的件将被完成。"
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
 
+msgid "{maxSizeMB}MB limit"
+msgstr "{maxSizeMB}MB 限制"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
@@ -110,6 +117,12 @@ msgstr "接受批次"
 
 msgid "Accept lot?"
 msgstr "接受批次？"
+
+msgid "Account"
+msgstr "账户"
+
+msgid "Account settings"
+msgstr "账户设置"
 
 msgid "Account Settings"
 msgstr "账户设置"
@@ -136,14 +149,23 @@ msgstr "添加并发放"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
+msgid "Add Authenticator App"
+msgstr "添加身份验证应用"
+
 msgid "Add Inventory"
 msgstr "添加库存管理"
+
+msgid "Add Passkey"
+msgstr "添加通行密钥"
 
 msgid "Add Sample"
 msgstr "添加样本"
 
 msgid "Add Spare Part"
 msgstr "添加备件"
+
+msgid "Added"
+msgstr "已添加"
 
 msgid "All"
 msgstr "全部"
@@ -179,6 +201,12 @@ msgstr "分配单位"
 msgid "Appearance"
 msgstr "外观"
 
+msgid "Approvals"
+msgstr "审批"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "您确定要删除此通行密钥吗?删除后您将无法使用它登录。"
+
 msgid "Are you sure you want to delete this step?"
 msgstr "确定要删除此步骤吗？"
 
@@ -209,17 +237,39 @@ msgstr "经办人"
 msgid "Authentication Error"
 msgstr "认证错误"
 
+msgid "Authenticator app"
+msgstr "身份验证应用"
+
+msgid "Authenticator QR code"
+msgstr "身份验证 QR 码"
+
 msgid "available"
 msgstr "可用"
 
 msgid "Available"
 msgstr "可用"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "头像选项 {0}"
+
+msgid "Avatar style"
+msgstr "头像样式"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "头像来自 <0>{0}</0>,由 {1} 创建,许可证为 <1>{2}</1>。"
+
 msgid "Back"
 msgstr "返回"
 
 msgid "Back to batch"
 msgstr "返回生产批次"
+
+msgid "Background"
+msgstr "背景"
 
 msgid "Batch"
 msgstr "批次"
@@ -283,6 +333,12 @@ msgstr "Carbon 标志"
 msgid "Cards"
 msgstr "卡片"
 
+msgid "Change"
+msgstr "更改"
+
+msgid "Changelog newsletter"
+msgstr "更新日志通讯"
+
 msgid "Characteristic"
 msgstr "特性"
 
@@ -300,6 +356,12 @@ msgstr "选择工单"
 
 msgid "Choose an option"
 msgstr "选择一个选项"
+
+msgid "Choose avatar"
+msgstr "选择头像"
+
+msgid "Choose how Carbon reaches you."
+msgstr "选择 Carbon 如何与您联系。"
 
 msgid "Clear"
 msgstr "清除"
@@ -453,6 +515,12 @@ msgstr "默认存储单元"
 msgid "Delete"
 msgstr "删除"
 
+msgid "Delete passkey"
+msgstr "删除通行密钥"
+
+msgid "Delete Passkey"
+msgstr "删除通行密钥"
+
 msgid "Delete Step"
 msgstr "删除步骤"
 
@@ -552,11 +620,23 @@ msgstr "每个工单的产出是其自己的批次 — 保持每个工单的零�
 msgid "Edit"
 msgstr "编辑"
 
+msgid "Edit Passkey"
+msgstr "编辑通行密钥"
+
 msgid "Elapsed"
 msgstr "已用时长"
 
+msgid "email"
+msgstr "电子邮件"
+
+msgid "Email"
+msgstr "电子邮件"
+
 msgid "Email Address"
 msgstr "电子邮件地址"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "电子邮件通知不包括在您公司的当前计划中;如果启用,电子邮件偏好设置将适用。"
 
 msgid "Empty work centers"
 msgstr "空的工作中心"
@@ -629,8 +709,14 @@ msgstr "获取活跃工序失败"
 msgid "Failed to fetch storageUnits"
 msgstr "获取存储单位失败"
 
+msgid "Failed to get options"
+msgstr "获取选项失败"
+
 msgid "Failed to record gauge"
 msgstr "无法记录量具"
+
+msgid "Failed to register passkey"
+msgstr "注册通行密钥失败"
 
 msgid "Failed to save measurement"
 msgstr "无法保存测量"
@@ -676,6 +762,9 @@ msgstr "物料未拣货的情况下要完成吗？"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "最早应交期 {0}"
+
+msgid "First Name"
+msgstr "名字"
 
 msgid "Fit"
 msgstr "自适应"
@@ -741,6 +830,12 @@ msgstr "在打开的菜单中"
 msgid "In Progress"
 msgstr "进行中"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "应用内通知始终会发送。选择哪些主题还会通过电子邮件或 Slack 发送给您。"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "应用内通知始终会发送。选择哪些主题还会通过电子邮件发送给您。"
+
 msgid "Inspect Item"
 msgstr "检验物品"
 
@@ -752,6 +847,9 @@ msgstr "作业指导"
 
 msgid "Insufficient quantity"
 msgstr "数量不足"
+
+msgid "Inventory"
+msgstr "库存管理"
 
 msgid "Inventory adjustment completed"
 msgstr "库存调整已完成"
@@ -789,6 +887,9 @@ msgstr "物料"
 msgid "Item Master"
 msgstr "物料主数据"
 
+msgid "Items"
+msgstr "物料"
+
 msgid "Job"
 msgstr "工单"
 
@@ -815,6 +916,12 @@ msgstr "人工"
 
 msgid "Last completed"
 msgstr "最后完成"
+
+msgid "Last Name"
+msgstr "姓氏"
+
+msgid "Last used"
+msgstr "最后使用"
 
 msgid "Learn more"
 msgstr "了解更多"
@@ -911,6 +1018,9 @@ msgstr "维护已逾期"
 
 msgid "Make a replacement"
 msgstr "制作替换件"
+
+msgid "Manage how you sign in to Carbon."
+msgstr "管理您如何登录 Carbon。"
 
 msgid "Manually add items to inventory"
 msgstr "手动添加物料至库存管理"
@@ -1070,6 +1180,9 @@ msgstr "未找到选项。"
 msgid "No options found."
 msgstr "未找到选项。"
 
+msgid "No passkeys registered yet."
+msgstr "还未注册任何通行密钥。"
+
 msgid "No picking lists assigned"
 msgstr "没有分配的拣货单"
 
@@ -1141,6 +1254,9 @@ msgstr "该工作中心没有计划任务"
 
 msgid "Nothing to scrap"
 msgstr "没有需要报废的"
+
+msgid "Notifications"
+msgstr "通知"
 
 msgid "OEE Impact"
 msgstr "OEE 影响"
@@ -1217,6 +1333,9 @@ msgstr "选项"
 msgid "or"
 msgstr "或"
 
+msgid "Or enter this secret manually:"
+msgstr "或手动输入此密钥:"
+
 msgid "Out of calibration"
 msgstr "需要校准"
 
@@ -1247,8 +1366,17 @@ msgstr "已通过检验"
 msgid "Passed Inspection"
 msgstr "已通过检验"
 
+msgid "Passkey name"
+msgstr "通行密钥名称"
+
 msgid "Passkey unlock failed"
 msgstr "通行密钥解锁失败"
+
+msgid "Passkeys"
+msgstr "通行密钥"
+
+msgid "Passkeys are disabled"
+msgstr "通行密钥已禁用"
 
 msgid "Pause"
 msgstr "暂停"
@@ -1256,12 +1384,21 @@ msgstr "暂停"
 msgid "Pause timer"
 msgstr "暂停计时器"
 
+msgid "Phone"
+msgstr "电话"
+
+msgid "Photo uploaded successfully"
+msgstr "照片上传成功"
+
 msgid "Pick"
 msgstr "拣货"
 
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "拣货 {0}"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "选择一个风格和头像，或者随机生成新的。"
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -1350,8 +1487,17 @@ msgstr "工艺参数"
 msgid "Processes"
 msgstr "工艺"
 
+msgid "Profile"
+msgstr "个人资料"
+
 msgid "Progress"
 msgstr "进度"
+
+msgid "Purchasing"
+msgstr "采购"
+
+msgid "Quality"
+msgstr "质量"
 
 msgid "Quality Issue"
 msgstr "质量问题"
@@ -1367,6 +1513,9 @@ msgstr "数量必须大于 0"
 
 msgid "Queue empty"
 msgstr "队列为空"
+
+msgid "Quotes"
+msgstr "报价单"
 
 msgid "Reason for rework"
 msgstr "返工原因"
@@ -1397,6 +1546,9 @@ msgstr "记录部分"
 msgid "Recorded"
 msgstr "已记录"
 
+msgid "Registration failed"
+msgstr "注册失败"
+
 msgid "Reject"
 msgstr "拒绝"
 
@@ -1409,6 +1561,9 @@ msgstr "已下达"
 msgid "Remove"
 msgstr "移除"
 
+msgid "Remove authenticator app"
+msgstr "移除身份验证应用"
+
 msgid "Remove filter"
 msgstr "移除筛选"
 
@@ -1418,14 +1573,23 @@ msgstr "移除库存管理"
 msgid "Remove part"
 msgstr "移除零件"
 
+msgid "Remove two-factor authentication"
+msgstr "移除双因素认证"
+
 msgid "Rename"
 msgstr "重命名"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "重新打开子装配件并创建替代件"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "登录时需要输入身份验证应用中的6位数代码。"
+
 msgid "Required"
 msgstr "必填"
+
+msgid "Reset"
+msgstr "重置"
 
 msgid "Result"
 msgstr "结果"
@@ -1444,6 +1608,9 @@ msgstr "返工数量"
 
 msgid "Running"
 msgstr "运行中"
+
+msgid "Sales"
+msgstr "销售"
 
 msgid "Sales Order"
 msgstr "销售订单"
@@ -1477,6 +1644,9 @@ msgstr "扫码或搜索序列号..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次中扫码或选择追踪实体并将其添加为样本列，然后在网格中记录其结果。"
+
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "使用身份验证应用（如 Google Authenticator 或 1Password）扫码此 QR 代码，然后输入它显示的6位数代码。"
 
 msgid "Schedule"
 msgstr "排程"
@@ -1525,6 +1695,12 @@ msgstr "搜索操作员..."
 
 msgid "Search..."
 msgstr "搜索..."
+
+msgid "Secret copied to clipboard"
+msgstr "密钥已复制到剪贴板"
+
+msgid "Security"
+msgstr "安全"
 
 msgid "Select"
 msgstr "选择"
@@ -1616,6 +1792,9 @@ msgstr "设置您停止工作的时间，或确认您仍在工作。"
 msgid "Set up in Carbon"
 msgstr "在 Carbon 中设置"
 
+msgid "Set up two-factor authentication"
+msgstr "设置双因素认证"
+
 msgid "Set when the batch was planned."
 msgstr "在规划生产批次时设置。"
 
@@ -1636,6 +1815,12 @@ msgstr "显示描述"
 
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
+
+msgid "Shuffle"
+msgstr "随机生成"
+
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "使用生物识别功能而非魔法链接登录。通行密钥由 Face ID、Touch ID 或设备 PIN 保护。"
 
 msgid "Sign in with Google"
 msgstr "使用 Google 登录"
@@ -1658,8 +1843,14 @@ msgstr "改为登出"
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
 
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "登录将不再需要代码。输入身份验证应用中的当前6位数代码以确认。"
+
 msgid "Size"
 msgstr "大小"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Source"
 msgstr "来源"
@@ -1711,6 +1902,9 @@ msgstr "缺少步骤"
 msgid "Storage Unit"
 msgstr "存储单元"
 
+msgid "Style default"
+msgstr "默认风格"
+
 msgid "Sub-Assembly"
 msgstr "子装配体"
 
@@ -1732,11 +1926,17 @@ msgstr "匿名提交"
 msgid "Suggestion"
 msgstr "建议"
 
+msgid "Suggestions"
+msgstr "建议"
+
 msgid "Support Required"
 msgstr "需要支持"
 
 msgid "Switch Operator"
 msgstr "切换操作员"
+
+msgid "Synced"
+msgstr "已同步"
 
 msgid "System"
 msgstr "系统"
@@ -1777,6 +1977,9 @@ msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为
 
 msgid "This batch has no work instructions."
 msgstr "此生产批次没有作业指导书。"
+
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "此信息将对所有用户可见，请谨慎分享。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
@@ -1836,6 +2039,12 @@ msgstr "工具"
 msgid "Top to Bottom"
 msgstr "从上到下"
 
+msgid "Topic"
+msgstr "话题"
+
+msgid "Topics"
+msgstr "话题"
+
 msgid "Total"
 msgstr "总计"
 
@@ -1859,8 +2068,20 @@ msgstr "已跟踪行"
 msgid "Tracking"
 msgstr "追踪"
 
+msgid "Training"
+msgstr "培训"
+
 msgid "Two-factor authentication"
 msgstr "双因素认证"
+
+msgid "Two-factor authentication disabled"
+msgstr "双因素认证已禁用"
+
+msgid "Two-factor authentication enabled"
+msgstr "双因素认证已启用"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "双因素认证未启用。"
 
 msgid "Two-factor authentication required"
 msgstr "需要双因素认证"
@@ -1919,10 +2140,17 @@ msgstr "更新于 {0}"
 msgid "Updated successfully"
 msgstr "更新成功"
 
+msgid "Upload"
+msgstr "上传"
+
+msgid "Upload completed but no file path returned"
+msgstr "上传完成但未返回文件路径"
+
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "已上传：{0}"
 
+#. placeholder {0}: avatarFile.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "正在上传 {0}"
@@ -1940,6 +2168,9 @@ msgstr "使用 {0} · {1}"
 
 msgid "Value"
 msgstr "值"
+
+msgid "Verification failed"
+msgstr "验证失败"
 
 msgid "Verify"
 msgstr "验证"
@@ -1985,6 +2216,9 @@ msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"
+
+msgid "Your profile could not be loaded."
+msgstr "无法加载您的资料。"
 
 msgid "Your session was locked after inactivity."
 msgstr "您的会话因不活动而被锁定。"

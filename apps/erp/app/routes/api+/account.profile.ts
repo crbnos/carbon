@@ -2,20 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { AccountProfileData } from "@carbon/account";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { VStack } from "@carbon/react";
-import {
-  isAllowedAvatarValue,
-  isOwnAvatarUpload,
-  redirect
-} from "@carbon/utils";
-import { msg } from "@lingui/core/macro";
+import { isAllowedAvatarValue, isOwnAvatarUpload } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { data } from "react-router";
 import {
   accountProfileValidator,
   getAccount,
@@ -23,29 +18,19 @@ import {
   updateAvatar,
   updatePublicAccount
 } from "~/modules/account";
-import { ProfileForm } from "~/modules/account/ui/Profile";
-import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "account-profile");
 
-export const handle: Handle = {
-  breadcrumb: msg`Profile`,
-  to: path.to.profile
-};
-
+// Data and writes for the Profile pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
   const user = await getAccount(client, userId);
 
-  if (user.error || !user.data) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(user.error, "Failed to get user"))
-    );
+  if (user.error) {
+    logger.error("Failed to get user", { userId, error: user.error });
   }
 
-  return { user: user.data };
+  return { user: user.data ?? null } satisfies AccountProfileData;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -89,10 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // A generated avatar, or the user's own upload. Anything else could point
     // at another user's file.
     if (!isAllowedAvatarValue(userId, photoPath)) {
-      throw redirect(
-        path.to.profile,
-        await flash(request, error(null, "Invalid avatar path"))
-      );
+      return data({}, await flash(request, error(null, "Invalid avatar path")));
     }
 
     // Only the replaced avatar is needed: the narrow reader, not `select("*")`.
@@ -105,8 +87,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const avatarUpdate = await updateAvatar(client, userId, photoPath);
     if (avatarUpdate.error) {
-      throw redirect(
-        path.to.profile,
+      return data(
+        {},
         await flash(
           request,
           error(avatarUpdate.error, "Failed to update avatar")
@@ -131,21 +113,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    throw redirect(
-      path.to.profile,
-      await flash(request, success("Updated avatar"))
-    );
+    return data({}, await flash(request, success("Updated avatar")));
   }
 
   return null;
-}
-
-export default function AccountProfile() {
-  const { user } = useLoaderData<typeof loader>();
-
-  return (
-    <VStack spacing={4} className="pb-6">
-      <ProfileForm user={user} />
-    </VStack>
-  );
 }

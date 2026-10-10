@@ -48,7 +48,6 @@ import { SearchEmptyState } from "~/components/Layout/Topbar/Search/SearchEmptyS
 import { SearchFilterChips } from "~/components/Layout/Topbar/Search/SearchFilterChips";
 import type { EntityTypeFilter } from "~/components/Layout/Topbar/Search/types";
 import { useModules, useSettingsModule, useUser } from "~/hooks";
-import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
 import useDocumentsSubmodules from "~/modules/documents/ui/useDocumentsSubmodules";
 import useInventorySubmodules from "~/modules/inventory/ui/useInventorySubmodules";
@@ -582,7 +581,6 @@ function useNavigationItems(): NavigationItem[] {
   const people = usePeopleSubmodules();
   const quality = useQualitySubmodules();
   const resources = useResourcesSubmodules();
-  const account = useAccountSubmodules();
   const workflows = useWorkflowsSubmodules();
   const groupedSubmodules: Record<
     string,
@@ -606,8 +604,7 @@ function useNavigationItems(): NavigationItem[] {
     resources,
     settings,
     users,
-    workflows,
-    "my account": account
+    workflows
   };
 
   const ungroupedSubmodules: Record<string, { links: Route[] }> = {

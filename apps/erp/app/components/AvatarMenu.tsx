@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAccountSettings } from "@carbon/account";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import {
   getSortedLanguageSelectOptions,
@@ -143,6 +144,7 @@ export function useAccountMenu() {
   const optimisticTheme = selectedTheme ?? serverTheme;
 
   const itarDisclosure = useDisclosure();
+  const openAccountSettings = useAccountSettings((s) => s.open);
 
   const modeOptions = [
     { value: "light", label: <Trans>Light</Trans>, icon: <LuSun /> },
@@ -191,10 +193,9 @@ export function useAccountMenu() {
     {
       id: "account",
       group: 4,
-      kind: "link",
+      kind: "action",
       label: <Trans>Account Settings</Trans>,
-      icon: <LuUser />,
-      to: path.to.profile
+      icon: <LuUser />
     },
     ...(edition === Edition.Cloud && isOwner()
       ? [
@@ -263,7 +264,8 @@ export function useAccountMenu() {
     languageOptions,
     resolvedLocale,
     localeFetcher,
-    itarDisclosure
+    itarDisclosure,
+    openAccountSettings
   };
 }
 
@@ -282,14 +284,21 @@ const AvatarMenu = () => {
     languageOptions,
     resolvedLocale,
     localeFetcher,
-    itarDisclosure
+    itarDisclosure,
+    openAccountSettings
   } = useAccountMenu();
   const [isOpen, setIsOpen] = useState(false);
 
   const renderItem = (item: AccountMenuItem) => {
     switch (item.id) {
-      case "dashboard":
       case "account":
+        return (
+          <DropdownMenuItem onClick={() => openAccountSettings()}>
+            <DropdownMenuIcon icon={item.icon} />
+            {item.label}
+          </DropdownMenuItem>
+        );
+      case "dashboard":
         return (
           <DropdownMenuItem asChild>
             <Link to={item.to!}>

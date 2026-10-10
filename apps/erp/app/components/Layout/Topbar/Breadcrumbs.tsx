@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ValidatedForm } from "@carbon/form";
 import {
   Avatar,
   Badge,
@@ -16,19 +15,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
   ScrollArea,
   useDisclosure,
-  useMode,
-  VStack
+  useMode
 } from "@carbon/react";
-import { getLocalTimeZone } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { BsFillHexagonFill } from "react-icons/bs";
@@ -41,18 +32,11 @@ import {
   BreadcrumbLink,
   Breadcrumbs as BreadcrumbsBase
 } from "~/components";
-import {
-  AddressAutocomplete,
-  Currency,
-  Input,
-  Submit,
-  Timezone
-} from "~/components/Form";
 import { useRouteData, useUser } from "~/hooks";
 import type { Company } from "~/modules/settings";
-import { companyValidator } from "~/modules/settings/settings.models";
 import type { BreadcrumbSegment } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { AddCompanyModal } from "./AddCompanyModal";
 import { useCompanySwitchRedirect } from "./CompanySwitcher";
 
 export const BreadcrumbHandle = z.object({
@@ -291,50 +275,10 @@ function CompanyBreadcrumb() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Modal
+          <AddCompanyModal
             open={companyForm.isOpen}
-            onOpenChange={(open) => {
-              if (!open) companyForm.onClose();
-            }}
-          >
-            <ModalContent>
-              <ValidatedForm
-                action={path.to.newCompany}
-                validator={companyValidator}
-                method="post"
-                onAfterSubmit={companyForm.onClose}
-                defaultValues={{
-                  countryCode: "US",
-                  baseCurrencyCode: "USD",
-                  timezone: getLocalTimeZone()
-                }}
-              >
-                <ModalHeader>
-                  <ModalTitle>
-                    <Trans>Let's set up your new company</Trans>
-                  </ModalTitle>
-                </ModalHeader>
-                <ModalBody>
-                  <VStack spacing={4}>
-                    <Input autoFocus name="name" label={t`Company Name`} />
-                    <AddressAutocomplete variant="grid" />
-                    <Timezone name="timezone" label={t`Timezone`} />
-                    <Currency
-                      name="baseCurrencyCode"
-                      label={t`Base Currency`}
-                    />
-                  </VStack>
-                </ModalBody>
-                <ModalFooter>
-                  <HStack>
-                    <Submit>
-                      <Trans>Save</Trans>
-                    </Submit>
-                  </HStack>
-                </ModalFooter>
-              </ValidatedForm>
-            </ModalContent>
-          </Modal>
+            onClose={companyForm.onClose}
+          />
         </>
       ) : (
         <BreadcrumbLink to="/">{routeData?.company.name}</BreadcrumbLink>

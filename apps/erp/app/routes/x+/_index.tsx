@@ -146,6 +146,9 @@ function ImplementationSummary({ data }: { data: ImplementationHubData }) {
   );
 }
 
+// Phones show the greeting, Search, the recent documents and the modules as
+// full-width cards; creating lives in the dock, and the setup cards wait for
+// a wider screen.
 export default function AppIndexRoute() {
   const { greeting, agentDismissed } = useLoaderData<typeof loader>();
   const modules = useModules();
@@ -161,16 +164,18 @@ export default function AppIndexRoute() {
         <div className="max-w-7xl mx-auto p-8 max-md:p-4">
           <div className="mb-8">
             {!CONTROLLED_ENVIRONMENT && (
-              <OnboardAgentWidget dismissed={agentDismissed} />
+              <div className="max-md:hidden">
+                <OnboardAgentWidget dismissed={agentDismissed} />
+              </div>
             )}
             <Greeting
               hour={greeting.hour}
               pick={greeting.pick}
-              className="mt-6 mx-auto max-w-[30ch] text-center font-medium max-md:mt-0"
+              className="mt-6 mx-auto max-w-[30ch] text-center font-medium max-md:mt-4"
             />
-            <div className="mt-8 flex items-center gap-3">
+            <div className="mt-8 flex items-center gap-3 max-md:mt-6">
               <SearchBar />
-              {/* Phones create from the Create tab. */}
+              {/* Phones create from the dock. */}
               <div className="contents max-md:hidden">
                 <CreateMenu
                   trigger={
@@ -188,11 +193,14 @@ export default function AppIndexRoute() {
               </div>
             </div>
           </div>
-          <ImplementationData>
-            {(data) => <ImplementationSummary data={data} />}
-          </ImplementationData>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="lg:col-span-1 order-last lg:order-first">
+          <div className="max-md:hidden">
+            <ImplementationData>
+              {(data) => <ImplementationSummary data={data} />}
+            </ImplementationData>
+          </div>
+          {/* Phones space the sections themselves: Recent may be hidden. */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 max-md:gap-0">
+            <div className="lg:col-span-1 order-last lg:order-first max-md:order-first">
               {canEnroll ? (
                 <ImplementationData>
                   {(data) =>
@@ -200,7 +208,7 @@ export default function AppIndexRoute() {
                       <enrollFetcher.Form
                         method="post"
                         action={path.to.getStartedEnroll}
-                        className="mb-6"
+                        className="mb-6 max-md:hidden"
                       >
                         <SectionLabel>
                           <Trans>Implementation Hub</Trans>
@@ -238,7 +246,7 @@ export default function AppIndexRoute() {
               <SectionLabel>
                 <Trans>Modules</Trans>
               </SectionLabel>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-md:grid-cols-3 max-md:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-md:grid-cols-1 max-md:gap-3">
                 {modules
                   .filter((mod) => mod.key !== "settings")
                   .map((module) => (
@@ -394,28 +402,31 @@ function RecentlyViewed() {
   const { documents, remove, loading } = useRecentlyViewed(company.id);
   const modules = useAllModules();
 
-  // Resolve a document's `handle.module` to its module icon straight from the
-  // `useModules` registry — the single source of truth for module icons. Match
-  // on the module key OR the second segment of its URL, since item detail pages
-  // declare `module: "items"` while the registry keys that module `parts`
-  // (its URL is `/x/items/parts`). Nothing to keep in sync.
-  const iconForModule = useCallback(
-    (moduleKey: string): IconType => {
+  // Resolve a document's `handle.module` to its module icon and name straight
+  // from the `useModules` registry — the single source of truth for module
+  // icons. Match on the module key OR the second segment of its URL, since item
+  // detail pages declare `module: "items"` while the registry keys that module
+  // `parts` (its URL is `/x/items/parts`). Nothing to keep in sync.
+  const moduleFor = useCallback(
+    (moduleKey: string): { icon: IconType; name?: string } => {
       const module = modules.find(
         (m) => m.key === moduleKey || m.to.split("/")[2] === moduleKey
       );
-      return module?.icon ?? LuFileText;
+      return { icon: module?.icon ?? LuFileText, name: module?.name };
     },
     [modules]
   );
 
+  // Phones drop the section altogether until something has been opened.
+  const isEmpty = !loading && documents.length === 0;
+
   return (
-    <>
+    <div className={cn("max-md:mb-6", isEmpty && "max-md:hidden")}>
       <SectionLabel>
         <Trans>Recent</Trans>
       </SectionLabel>
       {loading ? (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 max-md:gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <RecentDocumentSkeleton key={i} />
           ))}
@@ -431,62 +442,86 @@ function RecentlyViewed() {
           </CardContent>
         </Card>
       ) : (
-        <div className="flex flex-col gap-2">
-          {documents.map((doc) => (
-            <RecentDocumentRow
-              key={doc.url}
-              doc={doc}
-              icon={iconForModule(doc.module)}
-              onRemove={() => remove(doc.url)}
-            />
-          ))}
+        // Phones show the four most recent; the list is newest first.
+        <div className="flex flex-col gap-2 max-md:gap-3 max-md:[&>*:nth-child(n+5)]:hidden">
+          {documents.map((doc) => {
+            const module = moduleFor(doc.module);
+            return (
+              <RecentDocumentRow
+                key={doc.url}
+                doc={doc}
+                icon={module.icon}
+                moduleName={module.name}
+                onRemove={() => remove(doc.url)}
+              />
+            );
+          })}
         </div>
       )}
-    </>
+    </div>
   );
 }
 
-// Mirrors RecentDocumentRow's wrapper (p-3, gap-3, rounded-lg border) and its
-// w-9/h-9 rounded-lg icon so the skeleton has the exact same height and
-// roundness as a real row.
+// Mirrors RecentDocumentRow's wrapper (p-3, gap-3, rounded-lg border; the
+// phone card's p-4, rounded-xl and footer line) and its icon tile so the
+// skeleton has the exact same height and roundness as a real row.
 const RecentDocumentSkeleton = () => (
-  <div className="flex bg-muted/30 items-center gap-3 p-3 rounded-lg border border-border">
-    <Skeleton className="shrink-0 w-9 h-9 rounded-lg" />
-    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-      <Skeleton className="h-4 w-1/2" />
-      <Skeleton className="h-3 w-1/3" />
+  <div className="flex bg-muted/30 items-center gap-3 p-3 rounded-lg border border-border max-md:flex-col max-md:items-stretch max-md:gap-4 max-md:rounded-xl max-md:p-4">
+    <div className="flex min-w-0 items-center gap-3 md:contents">
+      <Skeleton className="shrink-0 w-9 h-9 rounded-lg max-md:size-10" />
+      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-3 w-1/3" />
+      </div>
     </div>
+    <Skeleton className="hidden h-4 w-2/5 max-md:block" />
   </div>
 );
 
+// A row on desktop; on phones a full-width card — the document over a footer
+// naming its module and when it was opened.
 const RecentDocumentRow = ({
   doc,
   icon: Icon,
+  moduleName,
   onRemove
 }: {
   doc: RecentDocument;
   icon: IconType;
+  moduleName?: string;
   onRemove: () => void;
 }) => {
   const { t } = useLingui();
   const { locale } = useLocale();
+  const viewed = formatRelativeTime(doc.viewedAt, locale);
   return (
     <div className="relative group">
       <PrefetchLink
         to={doc.url}
-        className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg border border-border hover:border-foreground/20 transition-colors"
+        className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg border border-border hover:border-foreground/20 transition-colors max-md:flex-col max-md:items-stretch max-md:gap-4 max-md:rounded-xl max-md:bg-card max-md:p-4 max-md:active:bg-accent/50"
       >
-        <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-muted">
-          <Icon className="w-4 h-4 text-muted-foreground" />
+        <div className="flex min-w-0 items-center gap-3 md:contents">
+          <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-muted max-md:size-10">
+            <Icon className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="flex-1 min-w-0 max-md:pr-8">
+            <div className="text-sm font-medium tracking-tight truncate max-md:text-[15px]">
+              {doc.title}
+            </div>
+            <div className="text-xs text-muted-foreground truncate max-md:hidden">
+              {doc.typeLabel ? `${doc.typeLabel} · ` : ""}
+              {viewed}
+            </div>
+            {doc.typeLabel ? (
+              <div className="text-sm text-muted-foreground truncate md:hidden">
+                {doc.typeLabel}
+              </div>
+            ) : null}
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium tracking-tight truncate">
-            {doc.title}
-          </div>
-          <div className="text-xs text-muted-foreground truncate">
-            {doc.typeLabel ? `${doc.typeLabel} · ` : ""}
-            {formatRelativeTime(doc.viewedAt, locale)}
-          </div>
+        <div className="hidden min-w-0 truncate text-sm text-muted-foreground max-md:block">
+          {moduleName ? `${moduleName} · ` : ""}
+          {viewed}
         </div>
       </PrefetchLink>
       <IconButton
@@ -495,7 +530,7 @@ const RecentDocumentRow = ({
         variant="ghost"
         size="sm"
         onClick={onRemove}
-        className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 group-hover:opacity-100 transition-opacity max-md:top-3 max-md:translate-y-0"
       />
     </div>
   );

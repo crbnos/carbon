@@ -13,19 +13,24 @@ import {
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
+import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
+import { createInvalidationMiddleware } from "@carbon/query/cache";
 import { Button, Heading, Toaster, useMode } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
+  getPreferenceHeaders,
   modeValidator,
   prefetchCacheMiddleware,
   themes
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
+import { I18nProvider } from "@react-aria/i18n";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import type {
   ActionFunctionArgs,
   LinksFunction,
@@ -43,6 +48,7 @@ import {
   UNSAFE_FrameworkContext,
   useLoaderData
 } from "react-router";
+import { preloadCatalog, useCatalog } from "~/services/lingui";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
@@ -56,7 +62,11 @@ export const middleware = [
   flashMiddleware,
   prefetchCacheMiddleware
 ];
-export const clientMiddleware = [flashClientMiddleware];
+export const clientMiddleware = [
+  flashClientMiddleware,
+  // After every action, cached API reads (the account settings panes) refetch.
+  createInvalidationMiddleware({ getCache: () => window.clientCache })
+];
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
@@ -84,6 +94,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     SUPABASE_ANON_KEY
   } = getBrowserEnv();
 
+  // The starter shares the ERP's catalog: the account settings modal and the
+  // @carbon/react components it renders are extracted into it.
+  const { locale } = getPreferenceHeaders(request);
+  const appLanguage = resolveLanguage(locale);
+  await preloadCatalog(appLanguage);
+
   return data(
     {
       env: {
@@ -95,6 +111,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         SUPABASE_URL,
         SUPABASE_ANON_KEY
       },
+      appLanguage,
+      // React Aria formats dates and numbers in the full locale (en-GB).
+      locale,
       ...getMode(request),
       theme: getTheme(request),
       result: context.get(flashResultContext)
@@ -136,12 +155,14 @@ function Document({
   children,
   title = "Carbon",
   mode = "light",
-  theme = "zinc"
+  theme = "zinc",
+  lang = "en"
 }: {
   children: React.ReactNode;
   title?: string;
   mode?: "light" | "dark";
   theme?: string;
+  lang?: string;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
   const selectedTheme = themes.find((t) => t.name === theme) as
@@ -174,7 +195,7 @@ function Document({
 
   return (
     <html
-      lang="en"
+      lang={lang}
       className={`${mode} h-full overflow-x-hidden`}
       style={themeStyle}
     >
@@ -208,22 +229,48 @@ export default function App() {
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
   const theme = loaderData?.theme ?? "zinc";
+  const appLanguage = loaderData?.appLanguage ?? "en";
+  const locale = loaderData?.locale ?? appLanguage;
+  const catalog = useCatalog(appLanguage);
 
   /* Dark/Light Mode */
   const mode = useMode();
 
+  // One client for useQuery and for the invalidation middleware, which
+  // reaches it as window.clientCache.
+  const [queryClient] = useState(() => {
+    if (typeof window !== "undefined" && window.clientCache) {
+      return window.clientCache;
+    }
+    const client = new QueryClient({
+      defaultOptions: { queries: { refetchOnWindowFocus: false } }
+    });
+    if (typeof window !== "undefined") {
+      window.clientCache = client;
+    }
+    return client;
+  });
+
   return (
-    <Document mode={mode} theme={theme}>
-      <Outlet />
-      <script
-        // Server render only: on the client the nonce is undefined (and browsers hide it).
-        nonce={nonce}
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{
-          __html: `window.env = ${JSON.stringify(env)}`
-        }}
-      />
-    </Document>
+    <QueryClientProvider client={queryClient}>
+      <LocaleProvider locale={appLanguage} catalog={catalog}>
+        {/* Inside the root, so a language change re-renders it with the
+            new locale, as in the ERP and MES. */}
+        <I18nProvider locale={locale}>
+          <Document mode={mode} theme={theme} lang={appLanguage}>
+            <Outlet />
+            <script
+              // Server render only: on the client the nonce is undefined (and browsers hide it).
+              nonce={nonce}
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{
+                __html: `window.env = ${JSON.stringify(env)}`
+              }}
+            />
+          </Document>
+        </I18nProvider>
+      </LocaleProvider>
+    </QueryClientProvider>
   );
 }
 

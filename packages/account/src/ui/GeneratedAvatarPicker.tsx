@@ -4,6 +4,7 @@
 
 import {
   Button,
+  ColorPicker,
   cn,
   HStack,
   Modal,
@@ -33,7 +34,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuShuffle } from "react-icons/lu";
-import { ColorPicker } from "~/components/ColorPicker";
 
 const OPTION_COUNT = 12;
 

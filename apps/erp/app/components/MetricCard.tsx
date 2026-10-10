@@ -47,16 +47,19 @@ const MetricCard = ({
         {icon && (
           <span className="flex-shrink-0 text-muted-foreground">{icon}</span>
         )}
-        <CardTitle
-          className={cn(
-            "flex-1 min-w-0 line-clamp-none",
-            // Phones: two lines, so similar labels stay distinguishable; always two
-            // lines tall, so values line up across a row of tiles.
-            isPhone ? "line-clamp-2 min-h-[2lh] text-[13px]" : "truncate"
-          )}
-        >
-          {title}
-        </CardTitle>
+        {isPhone ? (
+          // Phones: two lines, so similar labels stay distinguishable; always two
+          // lines tall, so values line up across a row of tiles. A one-line label
+          // is centred in that space, level with the icon and chevron. The box
+          // sets the title's own font size and leading so `2lh` is two of its lines.
+          <div className="flex flex-1 min-w-0 min-h-[2lh] items-center text-[13px] leading-none">
+            <CardTitle className="min-w-0 text-[13px]">{title}</CardTitle>
+          </div>
+        ) : (
+          <CardTitle className="flex-1 min-w-0 line-clamp-none truncate">
+            {title}
+          </CardTitle>
+        )}
         {to && !isLinkTile && (
           <Button
             aria-label={linkLabel}

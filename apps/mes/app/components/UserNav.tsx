@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAccountSettings } from "@carbon/account";
 import type { Company } from "@carbon/auth";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import {
@@ -43,7 +44,7 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { Form, Link, useFetcher } from "react-router";
+import { Form, useFetcher } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
@@ -158,6 +159,7 @@ export function UserNav({
   pinnedInUser
 }: UserNavProps) {
   const { isMobile } = useSidebar();
+  const openAccountSettings = useAccountSettings((s) => s.open);
   const {
     stationName,
     mode,
@@ -217,11 +219,9 @@ export function UserNav({
                 <Trans>Signed in as {stationName}</Trans>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to={path.to.accountSettings}>
-                  <DropdownMenuIcon icon={<LuUser />} />
-                  <Trans>Account Settings</Trans>
-                </Link>
+              <DropdownMenuItem onClick={() => openAccountSettings()}>
+                <DropdownMenuIcon icon={<LuUser />} />
+                <Trans>Account Settings</Trans>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
 

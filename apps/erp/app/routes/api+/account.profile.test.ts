@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getCurrentUser, updateAvatar } from "~/modules/account";
-import { action } from "./profile";
+import { action } from "./account.profile";
 
 // The photo intent saves the new avatar value, then deletes the photo it
 // replaced. The order is the point: deleting first and then failing the save
@@ -19,8 +19,6 @@ vi.mock("@carbon/auth/session.server", () => ({
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn() })
 }));
-vi.mock("@carbon/react", () => ({ VStack: () => null }));
-vi.mock("~/modules/account/ui/Profile", () => ({ ProfileForm: () => null }));
 vi.mock("~/modules/account", () => ({
   accountProfileValidator: {},
   getAccount: vi.fn(),
@@ -43,23 +41,13 @@ function postPhoto(path: string) {
   body.append("intent", "photo");
   body.append("path", path);
   return action({
-    request: new Request("https://erp.example.com/x/account/profile", {
+    request: new Request("https://erp.example.com/api/account/profile", {
       method: "POST",
       body
     }),
     params: {},
     context: {}
   } as never);
-}
-
-async function run(path: string) {
-  try {
-    await postPhoto(path);
-  } catch (thrown) {
-    // The action ends with a thrown redirect, success or not.
-    return thrown;
-  }
-  throw new Error("expected the action to throw a redirect");
 }
 
 describe("profile action, photo intent", () => {
@@ -85,7 +73,7 @@ describe("profile action, photo intent", () => {
   });
 
   it("saves the generated avatar, THEN deletes the photo it replaced", async () => {
-    await run(GENERATED);
+    await postPhoto(GENERATED);
     expect(calls).toEqual([`update:${GENERATED}`, `remove:${USER_ID}.webp`]);
   });
 
@@ -93,7 +81,7 @@ describe("profile action, photo intent", () => {
     vi.mocked(updateAvatar).mockResolvedValue({
       error: { message: "boom" }
     } as never);
-    await run(GENERATED);
+    await postPhoto(GENERATED);
     expect(remove).not.toHaveBeenCalled();
   });
 
@@ -102,22 +90,22 @@ describe("profile action, photo intent", () => {
       data: { avatarUrl: "dicebear:croodles-neutral:abc" },
       error: null
     } as never);
-    await run(GENERATED);
+    await postPhoto(GENERATED);
     expect(calls).toEqual([`update:${GENERATED}`]);
   });
 
   it("does not delete a photo the new upload overwrote in place", async () => {
-    await run(`${USER_ID}.webp`);
+    await postPhoto(`${USER_ID}.webp`);
     expect(calls).toEqual([`update:${USER_ID}.webp`]);
   });
 
   it("removes an old upload with a different extension", async () => {
-    await run(`${USER_ID}.png`);
+    await postPhoto(`${USER_ID}.png`);
     expect(calls).toEqual([`update:${USER_ID}.png`, `remove:${USER_ID}.webp`]);
   });
 
   it("refuses another user's file and changes nothing", async () => {
-    await run("someone-else.webp");
+    await postPhoto("someone-else.webp");
     expect(calls).toEqual([]);
   });
 });

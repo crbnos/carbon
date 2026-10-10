@@ -66,7 +66,7 @@ import {
 import {
   MobileAppBar,
   MobileBottomChrome,
-  MobileTabBar
+  MobileDock
 } from "~/components/Layout/Mobile";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
@@ -77,6 +77,7 @@ import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
+import AccountSettings from "~/modules/account/ui/AccountSettings";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import { employeeCompaniesOf, getEmployeeCompanies } from "~/modules/settings";
@@ -537,7 +538,7 @@ export default function AuthenticatedRoute() {
                 >
                   <PrimaryNavigation />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
-                    {/* Phones: app bar on top, tab bar or a page's bottom
+                    {/* Phones: app bar on top, the dock or a page's bottom
                         bar below <main>, in flow. Mounted only on phones so
                         their hooks (notifications, sheets) never run on
                         desktop. */}
@@ -553,7 +554,7 @@ export default function AuthenticatedRoute() {
                     </main>
                     {isPhone && (
                       <MobileBottomChrome>
-                        <MobileTabBar />
+                        <MobileDock />
                       </MobileBottomChrome>
                     )}
                   </div>
@@ -571,6 +572,7 @@ export default function AuthenticatedRoute() {
                 />
                 <AgentRoot />
                 <ShortcutHelp />
+                <AccountSettings />
                 {companySettings?.timeCardEnabled && (
                   <Suspense fallback={null}>
                     <Await resolve={openClockEntry}>

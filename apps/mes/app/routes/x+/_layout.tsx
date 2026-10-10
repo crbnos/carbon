@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { AccountSettings } from "@carbon/account/ui";
 import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getAppUrl,
   getCarbon,
   getCompanies,
   getUser,
@@ -196,8 +196,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     // A company-less authenticated user (e.g. an enterprise first-run user who
     // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
     // Send them to a terminal screen that links to ERP onboarding, not into
-    // accountSettings (an ERP /x route that would itself bounce a no-company
-    // user, i.e. a redirect loop).
+    // the ERP's /x routes (which would themselves bounce a no-company user,
+    // i.e. a redirect loop).
     throw redirect(path.to.setupRequired);
   }
 
@@ -454,7 +454,7 @@ export default function AuthenticatedRoute() {
             </Trans>
           </p>
           <Button size="lg" className="w-full" asChild>
-            <a href={`${getAppUrl()}/x/account/profile`}>
+            <a href={path.to.erpAccountSecurity}>
               <Trans>Set up in Carbon</Trans>
             </a>
           </Button>
@@ -555,6 +555,13 @@ export default function AuthenticatedRoute() {
                     onMoreOpenChange={setMoreOpen}
                   />
                   <ShortcutHelp />
+                  {user && company?.id && (
+                    <AccountSettings
+                      api={path.to.erpApi}
+                      user={user}
+                      companyId={company.id}
+                    />
+                  )}
                   {timeCardEnabled && (
                     <Suspense fallback={null}>
                       <Await resolve={openClockEntry}>

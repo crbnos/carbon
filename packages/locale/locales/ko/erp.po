@@ -604,6 +604,9 @@ msgstr "{unitCount}개"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {먼저 # 남은 필수 계정을 매핑하세요.} other {먼저 # 남은 필수 계정을 매핑하세요.}}"
 
+msgid "{unread} unread"
+msgstr "{unread} 미읽음"
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
 
@@ -1485,6 +1488,9 @@ msgstr "계정명"
 msgid "Account Number"
 msgstr "계좌번호"
 
+msgid "Account settings"
+msgstr "계정 설정"
+
 msgid "Account Settings"
 msgstr "계정 설정"
 
@@ -2204,6 +2210,9 @@ msgstr "모두 사내 생산 {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
+
+msgid "All modules"
+msgstr "모든 모듈"
 
 msgid "All open jobs"
 msgstr "모든 미결 작업 지시"
@@ -3547,6 +3556,9 @@ msgstr "승인 대기 중"
 msgid "Back"
 msgstr "뒤로"
 
+msgid "Back to menu"
+msgstr "메뉴로 돌아가기"
+
 msgid "Back to traceability"
 msgstr "추적성으로 돌아가기"
 
@@ -4558,6 +4570,9 @@ msgstr "다른 파일을 선택하세요"
 msgid "Choose avatar"
 msgstr "아바타 선택"
 
+msgid "Choose how Carbon reaches you."
+msgstr "Carbon이 어떻게 연락하는지 선택하세요."
+
 msgid "Choose how to add lines to this return."
 msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
 
@@ -4686,6 +4701,9 @@ msgstr "마감일"
 
 msgid "Close Date"
 msgstr "마감일"
+
+msgid "Close menu"
+msgstr "메뉴 닫기"
 
 msgid "Close Period"
 msgstr "기간 종료"
@@ -9581,6 +9599,12 @@ msgstr "재무제표"
 msgid "Financing"
 msgstr "금융"
 
+msgid "Find company…"
+msgstr "회사 찾기…"
+
+msgid "Find module…"
+msgstr "모듈 찾기…"
+
 msgid "finish"
 msgstr "마감"
 
@@ -12297,6 +12321,9 @@ msgstr "회사의 인증 및 로그인 요구사항을 관리합니다."
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "보존 기간이 재고 전체에서 어떻게 추적, 계산 및 적용되는지 관리합니다."
 
+msgid "Manage how you sign in to Carbon."
+msgstr "Carbon에 로그인하는 방식을 관리하세요."
+
 msgid "Manage Ownership"
 msgstr "소유권 관리"
 
@@ -12618,6 +12645,9 @@ msgstr "메모 날짜"
 
 msgid "Memo ID"
 msgstr "메모 ID"
+
+msgid "Menu"
+msgstr "메뉴"
 
 msgid "Merchant"
 msgstr "가맹점"
@@ -13598,6 +13628,9 @@ msgstr "충돌 없는 경로 없음"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 번째 댓글을 추가하세요."
 
+msgid "No companies found"
+msgstr "회사가 없습니다"
+
 msgid "No companies match \"{query}\""
 msgstr "일치하는 회사가 없습니다 「{query}」"
 
@@ -13840,6 +13873,9 @@ msgstr "자재 없음"
 
 msgid "No materials yet"
 msgstr "아직 자재가 없습니다."
+
+msgid "No modules found"
+msgstr "모듈이 없습니다"
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
@@ -20104,6 +20140,9 @@ msgstr "재고 이동 수정됨"
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "재고 크기 — 예: 시트 두께 또는 막대 지름"
 
+msgid "Stock Transfer"
+msgstr "재고 이송"
+
 msgid "Stock Transfer ID"
 msgstr "재고 이동 ID"
 
@@ -20613,6 +20652,9 @@ msgstr "모듈을 끄면 요구사항, 데이터, 교육, 범위 등 모든 곳�
 
 msgid "Switch company"
 msgstr "회사 전환"
+
+msgid "Switch module"
+msgstr "모듈 전환"
 
 msgid "Switch to pan mode"
 msgstr "팬 모드로 전환"
@@ -22044,6 +22086,9 @@ msgstr "이메일 도메인이 아래에서 확인될 때까지 이는 효과가
 msgid "This information will be used on document headers"
 msgstr "이 정보는 문서 헤더에 사용됩니다"
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "이 정보는 모든 사용자에게 표시되므로 공유할 내용을 신중하게 선택하세요."
+
 msgid "this inspection plan"
 msgstr "이 검사 계획"
 
@@ -22558,6 +22603,9 @@ msgid "Top-level classification (asset / liability / equity / revenue / expense)
 msgstr "최상위 분류 (자산 / 부채 / 자본 / 매출 / 비용); 루트 그룹에만 설정되며 자식이 상속합니다."
 
 msgid "Topic"
+msgstr "주제"
+
+msgid "Topics"
 msgstr "주제"
 
 msgid "Total"
@@ -24711,6 +24759,9 @@ msgstr "품번"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "품번과 그 기반이 되는 품목 마스터"
+
+msgid "Your profile could not be loaded."
+msgstr "프로필을 로드할 수 없습니다."
 
 msgid "Your project end to end: the plan, the gates, and go-live"
 msgstr "프로젝트 전체: 계획, 단계별 게이트, 도입"

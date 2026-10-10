@@ -9,7 +9,7 @@ import { useUser } from "~/hooks";
 import AvatarMenu from "../../AvatarMenu";
 import AskDocs from "./AskDocs";
 import Breadcrumbs from "./Breadcrumbs";
-import CreateMenu from "./CreateMenu";
+import CreateMenu, { useCreateShortcuts } from "./CreateMenu";
 import Notifications from "./Notifications";
 import Suggestion from "./Suggestion";
 
@@ -17,7 +17,8 @@ const Topbar = () => {
   const { t } = useLingui();
   const user = useUser();
   const notificationsKey = `${user.id}:${user.company.id}`;
-  // Phones get the MobileAppBar and MobileTabBar instead; returning early
+  useCreateShortcuts();
+  // Phones get the MobileAppBar and MobileDock instead; returning early
   // also keeps the notifications subscription and menus from mounting there.
   const { isPhone } = useViewport();
   if (isPhone) return null;

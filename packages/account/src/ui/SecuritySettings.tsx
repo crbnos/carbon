@@ -2,29 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  assertIsPost,
-  CONTROLLED_ENVIRONMENT,
-  error,
-  isAuthProviderEnabled,
-  success
-} from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { TotpFactor } from "@carbon/auth/mfa.server";
-import { getTotpFactors } from "@carbon/auth/mfa.server";
-import { flash } from "@carbon/auth/session.server";
-import { useRevalidator } from "@carbon/query";
+import { CONTROLLED_ENVIRONMENT, isAuthProviderEnabled } from "@carbon/auth";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  DateTime,
   HStack,
   IconButton,
   Input,
@@ -37,7 +22,6 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { startRegistration } from "@simplewebauthn/browser";
 import { useState } from "react";
@@ -47,116 +31,53 @@ import {
   LuShieldCheck,
   LuTrash2
 } from "react-icons/lu";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useFetcher, useLoaderData } from "react-router";
-import { DateTime } from "~/components";
+import { useFetcher } from "react-router";
+import type { AccountSecurityData, AccountTotpFactor, Passkey } from "../types";
+import {
+  AccountSettingsPane,
+  AccountSettingsSection
+} from "./AccountSettingsLayout";
+import AccountSettingsSkeleton from "./AccountSettingsSkeleton";
+import { useAccountEndpoints, useAccountSettingsConfig } from "./context";
 import {
   INVALID_CODE_MESSAGE,
   OtpInput,
   useTotpEnrollment
-} from "~/components/TotpEnrollment";
-import { usePlanGate } from "~/hooks/usePlanGate";
-import { TwoFactorUpgradeDialog } from "~/modules/settings";
-import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
+} from "./TotpEnrollment";
 
-export const handle: Handle = {
-  breadcrumb: msg`Security`,
-  to: path.to.accountSecurity
-};
+export default function SecuritySettings() {
+  const endpoints = useAccountEndpoints();
+  const { data, refetch } = useLoaderQuery<AccountSecurityData>(
+    endpoints.security
+  );
 
-type Passkey = {
-  id: string;
-  credentialName: string;
-  createdAt: string;
-  lastUsedAt: string | null;
-  backedUp: boolean;
-};
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId } = await requirePermissions(request, {});
-  const serviceRole = getCarbonServiceRole();
-  const [passkeysResult, totpFactors] = await Promise.all([
-    (serviceRole as any)
-      .from("passkeyCredential")
-      .select("id, credentialName, createdAt, lastUsedAt, backedUp")
-      .eq("userId", userId)
-      .order("createdAt", { ascending: false }),
-    getTotpFactors(userId)
-  ]);
-
-  return {
-    passkeys: (passkeysResult.data ?? []) as Passkey[],
-    totpFactors: totpFactors.filter((f) => f.status === "verified")
-  };
+  return (
+    <AccountSettingsPane
+      title={<Trans>Security</Trans>}
+      description={<Trans>Manage how you sign in to Carbon.</Trans>}
+    >
+      {data ? (
+        // Enrolling and removing a factor or a passkey go through plain
+        // fetch() to their own API routes, which the cache's action
+        // invalidation never sees.
+        <SecuritySettingsForm {...data} reload={() => refetch()} />
+      ) : (
+        <AccountSettingsSkeleton />
+      )}
+    </AccountSettingsPane>
+  );
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { userId } = await requirePermissions(request, {});
-  const formData = await request.formData();
-
-  if (formData.get("intent") === "deletePasskey") {
-    const credentialId = formData.get("credentialId") as string;
-    if (!credentialId) {
-      return data(error(null, "Missing credentialId"), { status: 400 });
-    }
-
-    const serviceRole = getCarbonServiceRole();
-    const { error: dbError } = await (serviceRole as any)
-      .from("passkeyCredential")
-      .delete()
-      .eq("id", credentialId)
-      .eq("userId", userId);
-
-    if (dbError) {
-      return data(
-        error(dbError, "Failed to delete passkey"),
-        await flash(request, error(dbError, "Failed to delete passkey"))
-      );
-    }
-
-    return data(success("Passkey removed"));
-  }
-
-  if (formData.get("intent") === "renamePasskey") {
-    const credentialId = formData.get("credentialId") as string;
-    const credentialName = (formData.get("credentialName") as string)?.trim();
-    if (!credentialId || !credentialName) {
-      return data(error(null, "Missing fields"), { status: 400 });
-    }
-    if (credentialName.length > 100) {
-      return data(error(null, "Passkey name must be 100 characters or fewer"), {
-        status: 400
-      });
-    }
-
-    const serviceRole = getCarbonServiceRole();
-    const { error: dbError } = await (serviceRole as any)
-      .from("passkeyCredential")
-      .update({ credentialName })
-      .eq("id", credentialId)
-      .eq("userId", userId);
-
-    if (dbError) {
-      return data(
-        error(dbError, "Failed to rename passkey"),
-        await flash(request, error(dbError, "Failed to rename passkey"))
-      );
-    }
-
-    return data(success("Passkey renamed"));
-  }
-
-  return null;
-}
-
-export default function AccountSecurity() {
+function SecuritySettingsForm({
+  passkeys,
+  totpFactors,
+  reload
+}: AccountSecurityData & { reload: () => void }) {
   const { t } = useLingui();
-  const { passkeys, totpFactors } = useLoaderData<typeof loader>();
+  const endpoints = useAccountEndpoints();
+  const { twoFactor } = useAccountSettingsConfig();
   const deleteFetcher = useFetcher();
   const renameFetcher = useFetcher();
-  const { revalidate } = useRevalidator();
   const passkeysEnabled = isAuthProviderEnabled("passkey");
   const [registering, setRegistering] = useState(false);
   const [selectedPasskey, setSelectedPasskey] = useState<Passkey | null>(null);
@@ -174,20 +95,21 @@ export default function AccountSecurity() {
     verify: onVerifyMfaEnrollment,
     reset: resetMfaEnrollment
   } = useTotpEnrollment({
-    enrollAction: path.to.mfaEnroll,
-    verifyAction: path.to.mfaVerify,
+    enrollAction: endpoints.mfaEnroll,
+    verifyAction: endpoints.mfaVerify,
     onVerified: () => {
       toast.success(t`Two-factor authentication enabled`);
       resetMfaEnrollment();
-      revalidate();
+      reload();
     }
   });
 
-  const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
-  const mfaGated = isGated && !CONTROLLED_ENVIRONMENT;
+  const mfaGated = (twoFactor?.isGated ?? false) && !CONTROLLED_ENVIRONMENT;
   const [showUpgrade, setShowUpgrade] = useState(false);
 
-  const [removeFactor, setRemoveFactor] = useState<TotpFactor | null>(null);
+  const [removeFactor, setRemoveFactor] = useState<AccountTotpFactor | null>(
+    null
+  );
   const [removeCode, setRemoveCode] = useState("");
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
@@ -197,7 +119,7 @@ export default function AccountSecurity() {
     setRemoving(true);
     setRemoveError(null);
     try {
-      const res = await fetch(path.to.mfaUnenroll, {
+      const res = await fetch(endpoints.mfaUnenroll, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ factorId: removeFactor.id, code: removeCode })
@@ -209,7 +131,7 @@ export default function AccountSecurity() {
       toast.success(t`Two-factor authentication disabled`);
       setRemoveFactor(null);
       setRemoveCode("");
-      revalidate();
+      reload();
     } catch (e: any) {
       setRemoveError((e as Error).message ?? INVALID_CODE_MESSAGE);
       setRemoveCode("");
@@ -225,7 +147,7 @@ export default function AccountSecurity() {
     }
     setRegistering(true);
     try {
-      const optRes = await fetch("/api/passkey/register/options", {
+      const optRes = await fetch(endpoints.passkeyRegisterOptions, {
         method: "POST"
       });
 
@@ -236,7 +158,7 @@ export default function AccountSecurity() {
         optionsJSON: options
       } as any);
 
-      const verifyRes = await fetch("/api/passkey/register/verify", {
+      const verifyRes = await fetch(endpoints.passkeyRegisterVerify, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credential)
@@ -249,7 +171,7 @@ export default function AccountSecurity() {
 
       const result = await verifyRes.json();
       toast.success(t`${result.credentialName ?? "Passkey"} registered`);
-      revalidate();
+      reload();
     } catch (e: any) {
       if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
         toast.error(e.message ?? t`Failed to register passkey`);
@@ -275,9 +197,11 @@ export default function AccountSecurity() {
     formData.append("intent", "renamePasskey");
     formData.append("credentialId", selectedPasskey.id);
     formData.append("credentialName", editedName);
-    renameFetcher.submit(formData, { method: "post" });
+    renameFetcher.submit(formData, {
+      method: "post",
+      action: endpoints.security
+    });
     closePasskeyDrawer();
-    revalidate();
   };
 
   const onConfirmDelete = () => {
@@ -285,167 +209,85 @@ export default function AccountSecurity() {
     const formData = new FormData();
     formData.append("intent", "deletePasskey");
     formData.append("credentialId", confirmDeleteId);
-    deleteFetcher.submit(formData, { method: "post" });
+    deleteFetcher.submit(formData, {
+      method: "post",
+      action: endpoints.security
+    });
     setConfirmDeleteId(null);
     closePasskeyDrawer();
   };
 
   return (
-    <VStack spacing={4} className="pb-6">
+    <>
       {passkeysEnabled && (
-        <Card>
-          <CardHeader>
-            <HStack className="justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
-              <div>
-                <CardTitle>
-                  <Trans>Passkeys</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Sign in with biometrics instead of a magic link. Passkeys
-                    are secured by Face ID, Touch ID, or your device PIN.
-                  </Trans>
-                </CardDescription>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={onAddPasskey}
-                isDisabled={registering}
-                isLoading={registering}
-                leftIcon={<LuFingerprint className="size-4" />}
-              >
-                <Trans>Add Passkey</Trans>
-              </Button>
-            </HStack>
-          </CardHeader>
-          <CardContent>
-            {passkeys.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                <Trans>No passkeys registered yet.</Trans>
-              </p>
-            ) : (
-              <VStack spacing={2}>
-                {passkeys.map((pk) => (
-                  <HStack
-                    key={pk.id}
-                    spacing={4}
-                    className="w-full justify-between p-3 rounded-lg border border-border cursor-pointer transition-colors hover:bg-muted/40 max-md:border-0 max-md:p-0 max-md:rounded-none"
-                    onClick={() => openPasskeyDrawer(pk)}
-                  >
-                    <HStack spacing={3} className="min-w-0">
-                      <span className="flex items-center justify-center size-9 rounded-lg bg-muted shrink-0">
-                        <LuFingerprint className="size-4 text-muted-foreground" />
-                      </span>
-                      <VStack spacing={0} className="min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {pk.credentialName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          <Trans>Added</Trans>{" "}
-                          <DateTime value={pk.createdAt} variant="date" />
-                          {pk.lastUsedAt && (
-                            <>
-                              {" · "}
-                              <Trans>Last used</Trans>{" "}
-                              <DateTime value={pk.lastUsedAt} variant="date" />
-                            </>
-                          )}
-                          {pk.backedUp && (
-                            <>
-                              {" · "}
-                              <Trans>Synced</Trans>
-                            </>
-                          )}
-                        </p>
-                      </VStack>
-                    </HStack>
-
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfirmDeleteId(pk.id);
-                      }}
-                      aria-label={t`Delete passkey`}
-                      type="button"
-                      variant="ghost"
-                      icon={<LuTrash2 />}
-                      className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
-                    />
-                  </HStack>
-                ))}
-              </VStack>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <HStack className="justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
-            <div>
-              <CardTitle>
-                <Trans>Two-factor authentication</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  Require a 6-digit code from an authenticator app when signing
-                  in.
-                </Trans>
-              </CardDescription>
-            </div>
+        <AccountSettingsSection
+          title={<Trans>Passkeys</Trans>}
+          description={
+            <Trans>
+              Sign in with biometrics instead of a magic link. Passkeys are
+              secured by Face ID, Touch ID, or your device PIN.
+            </Trans>
+          }
+          action={
             <Button
               type="button"
               variant="secondary"
-              onClick={() => {
-                if (mfaGated) {
-                  setShowUpgrade(true);
-                  return;
-                }
-                onStartMfaEnrollment();
-              }}
-              isDisabled={mfaStarting}
-              isLoading={mfaStarting}
-              leftIcon={<LuShieldCheck className="size-4" />}
+              onClick={onAddPasskey}
+              isDisabled={registering}
+              isLoading={registering}
+              leftIcon={<LuFingerprint className="size-4" />}
             >
-              <Trans>Add Authenticator App</Trans>
+              <Trans>Add Passkey</Trans>
             </Button>
-          </HStack>
-        </CardHeader>
-        <CardContent>
-          {totpFactors.length === 0 ? (
+          }
+        >
+          {passkeys.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              <Trans>Two-factor authentication is not enabled.</Trans>
+              <Trans>No passkeys registered yet.</Trans>
             </p>
           ) : (
             <VStack spacing={2}>
-              {totpFactors.map((factor) => (
+              {passkeys.map((pk) => (
                 <HStack
-                  key={factor.id}
+                  key={pk.id}
                   spacing={4}
-                  className="w-full justify-between p-3 rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none"
+                  className="w-full justify-between p-3 rounded-lg border border-border cursor-pointer transition-colors hover:bg-muted/40 max-md:border-0 max-md:p-0 max-md:rounded-none"
+                  onClick={() => openPasskeyDrawer(pk)}
                 >
                   <HStack spacing={3} className="min-w-0">
                     <span className="flex items-center justify-center size-9 rounded-lg bg-muted shrink-0">
-                      <LuShieldCheck className="size-4 text-muted-foreground" />
+                      <LuFingerprint className="size-4 text-muted-foreground" />
                     </span>
                     <VStack spacing={0} className="min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {factor.friendlyName ?? t`Authenticator app`}
+                        {pk.credentialName}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         <Trans>Added</Trans>{" "}
-                        <DateTime value={factor.createdAt} variant="date" />
+                        <DateTime value={pk.createdAt} variant="date" />
+                        {pk.lastUsedAt && (
+                          <>
+                            {" · "}
+                            <Trans>Last used</Trans>{" "}
+                            <DateTime value={pk.lastUsedAt} variant="date" />
+                          </>
+                        )}
+                        {pk.backedUp && (
+                          <>
+                            {" · "}
+                            <Trans>Synced</Trans>
+                          </>
+                        )}
                       </p>
                     </VStack>
                   </HStack>
 
                   <IconButton
-                    onClick={() => {
-                      setRemoveCode("");
-                      setRemoveFactor(factor);
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmDeleteId(pk.id);
                     }}
-                    aria-label={t`Remove authenticator app`}
+                    aria-label={t`Delete passkey`}
                     type="button"
                     variant="ghost"
                     icon={<LuTrash2 />}
@@ -455,13 +297,83 @@ export default function AccountSecurity() {
               ))}
             </VStack>
           )}
-        </CardContent>
-      </Card>
+        </AccountSettingsSection>
+      )}
 
-      <TwoFactorUpgradeDialog
-        open={showUpgrade}
-        onOpenChange={setShowUpgrade}
-      />
+      <AccountSettingsSection
+        title={<Trans>Two-factor authentication</Trans>}
+        description={
+          <Trans>
+            Require a 6-digit code from an authenticator app when signing in.
+          </Trans>
+        }
+        action={
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              if (mfaGated) {
+                setShowUpgrade(true);
+                return;
+              }
+              onStartMfaEnrollment();
+            }}
+            isDisabled={mfaStarting}
+            isLoading={mfaStarting}
+            leftIcon={<LuShieldCheck className="size-4" />}
+          >
+            <Trans>Add Authenticator App</Trans>
+          </Button>
+        }
+      >
+        {totpFactors.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            <Trans>Two-factor authentication is not enabled.</Trans>
+          </p>
+        ) : (
+          <VStack spacing={2}>
+            {totpFactors.map((factor) => (
+              <HStack
+                key={factor.id}
+                spacing={4}
+                className="w-full justify-between p-3 rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none"
+              >
+                <HStack spacing={3} className="min-w-0">
+                  <span className="flex items-center justify-center size-9 rounded-lg bg-muted shrink-0">
+                    <LuShieldCheck className="size-4 text-muted-foreground" />
+                  </span>
+                  <VStack spacing={0} className="min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {factor.friendlyName ?? t`Authenticator app`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      <Trans>Added</Trans>{" "}
+                      <DateTime value={factor.createdAt} variant="date" />
+                    </p>
+                  </VStack>
+                </HStack>
+
+                <IconButton
+                  onClick={() => {
+                    setRemoveCode("");
+                    setRemoveFactor(factor);
+                  }}
+                  aria-label={t`Remove authenticator app`}
+                  type="button"
+                  variant="ghost"
+                  icon={<LuTrash2 />}
+                  className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                />
+              </HStack>
+            ))}
+          </VStack>
+        )}
+      </AccountSettingsSection>
+
+      {twoFactor?.renderUpgrade({
+        open: showUpgrade,
+        onOpenChange: setShowUpgrade
+      })}
 
       <Modal
         open={!!mfaEnrollment}
@@ -714,6 +626,6 @@ export default function AccountSecurity() {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </VStack>
+    </>
   );
 }

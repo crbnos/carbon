@@ -1,0 +1,42 @@
+{
+  "name": "@carbon/account",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./ui": "./src/ui/index.ts"
+  },
+  "dependencies": {
+    "@carbon/auth": "workspace:*",
+    "@carbon/database": "workspace:*",
+    "@carbon/files": "workspace:*",
+    "@carbon/form": "workspace:*",
+    "@carbon/logger": "workspace:*",
+    "@carbon/notifications": "workspace:*",
+    "@carbon/query": "workspace:*",
+    "@carbon/react": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@lingui/core": "catalog:",
+    "@lingui/react": "catalog:",
+    "@simplewebauthn/browser": "^13.3.0",
+    "react": "catalog:",
+    "react-icons": "catalog:",
+    "react-router": "catalog:",
+    "zod": "catalog:",
+    "zod-form-data": "catalog:",
+    "zustand": "catalog:"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@types/react": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "lint": "biome lint --write ",
+    "typecheck": "tsgo --noEmit"
+  }
+}

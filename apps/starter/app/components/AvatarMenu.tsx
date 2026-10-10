@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAccountSettings } from "@carbon/account";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +44,7 @@ const AvatarMenu = () => {
 
   const fetcher = useFetcher<typeof action>();
   const [isOpen, setIsOpen] = useState(false);
+  const openAccountSettings = useAccountSettings((s) => s.open);
 
   const onModeChange = (value: string) => {
     const parsed = modeValidator.shape.mode.safeParse(value);
@@ -68,11 +70,9 @@ const AvatarMenu = () => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to={path.to.accountSettings}>
-            <DropdownMenuIcon icon={<LuUser />} />
-            Account Settings
-          </Link>
+        <DropdownMenuItem onClick={() => openAccountSettings()}>
+          <DropdownMenuIcon icon={<LuUser />} />
+          Account Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuSub>

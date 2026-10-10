@@ -17,26 +17,31 @@ import { isGeneratedAvatar, newGeneratedAvatar } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useState } from "react";
-import { useSubmit } from "react-router";
-import { Avatar } from "~/components";
-import { useUser } from "~/hooks";
-import { path } from "~/utils/path";
-import type { Account } from "../../types";
+import { useFetcher } from "react-router";
+import type { Account } from "../types";
+import AccountAvatar from "./AccountAvatar";
 import GeneratedAvatarPicker from "./GeneratedAvatarPicker";
 
 const logger = getLogger("erp", "profilephotoform");
 
 const maxSizeMB = 10;
 
-type ProfilePhotoFormProps = {
+export type ProfilePhotoFormProps = {
   user: Account;
+  /** The account profile action that saves `avatarUrl`. */
+  action: string;
+  /** The company whose private bucket stages the upload while it is resized. */
+  companyId: string;
 };
 
-const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
+const ProfilePhotoForm = ({
+  user,
+  action,
+  companyId
+}: ProfilePhotoFormProps) => {
   const { t } = useLingui();
   const { carbon } = useCarbon();
-  const { company } = useUser();
-  const submit = useSubmit();
+  const fetcher = useFetcher();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   // `avatarUrl` is either an uploaded photo's storage path or a generated avatar.
   const uploadedPhotoPath =
@@ -45,14 +50,15 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
       : null;
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && carbon) {
-      let avatarFile = e.target.files[0];
+    const selected = e.target.files?.[0];
+    if (selected && carbon) {
+      let avatarFile = selected;
       toast.info(t`Uploading ${avatarFile.name}`);
 
       try {
         const processed = await prepareImageUpload(carbon, {
-          bucket: getCompanyPrivateBucket(company.id),
-          directory: `${company.id}/tmp`,
+          bucket: getCompanyPrivateBucket(companyId),
+          directory: `${companyId}/tmp`,
           file: avatarFile
         });
         const outputExtension = processed.name.split(".").pop();
@@ -106,32 +112,38 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
     const formData = new FormData();
     formData.append("intent", "photo");
     formData.append("path", avatarPath);
-    submit(formData, {
+    fetcher.submit(formData, {
       method: "post",
-      action: path.to.profile,
-      replace: true
+      action
     });
   };
 
   return (
     <VStack className="px-8 items-center">
-      <Avatar
+      <AccountAvatar
         size="2xl"
         path={user?.avatarUrl}
         name={user?.fullName ?? undefined}
       />
-      <FileUpload accept="image/*" onChange={uploadImage}>
-        {uploadedPhotoPath ? t`Change` : t`Upload`}
-      </FileUpload>
-      <Button variant="secondary" onClick={() => setIsPickerOpen(true)}>
-        <Trans>Choose avatar</Trans>
-      </Button>
-
-      {uploadedPhotoPath && (
-        <Button variant="secondary" onClick={removePhoto}>
-          <Trans>Remove</Trans>
+      {/* One column as wide as the widest button, so the buttons match. The
+          upload controls come last, next to the size limit that applies to them. */}
+      <div className="grid gap-2">
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => setIsPickerOpen(true)}
+        >
+          <Trans>Choose avatar</Trans>
         </Button>
-      )}
+        <FileUpload accept="image/*" onChange={uploadImage} className="w-full">
+          {uploadedPhotoPath ? t`Change` : t`Upload`}
+        </FileUpload>
+        {uploadedPhotoPath && (
+          <Button variant="secondary" className="w-full" onClick={removePhoto}>
+            <Trans>Remove</Trans>
+          </Button>
+        )}
+      </div>
       <Badge variant="outline">{t`${maxSizeMB}MB limit`}</Badge>
       {isPickerOpen && (
         <GeneratedAvatarPicker
