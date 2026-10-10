@@ -121410,6 +121410,63 @@ export default {
         tags: ["(rpc) get_audit_log_count"]
       }
     },
+    "/rpc/harden_pegs_for_supply": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_quantity: {
+                  format: "numeric",
+                  type: "number"
+                },
+                p_supply_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_supply_type: {
+                  format: '"projectPegSupplyType"',
+                  type: "string"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_id",
+                "p_user_id",
+                "p_supply_type",
+                "p_supply_id",
+                "p_quantity"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) harden_pegs_for_supply"]
+      }
+    },
     "/rpc/get_next_prefixed_sequence": {
       post: {
         parameters: [

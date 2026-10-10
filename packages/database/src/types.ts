@@ -98758,6 +98758,20 @@ export type Database = {
           users: Json
         }[]
       }
+      harden_pegs_for_supply: {
+        Args: {
+          p_company_id: string
+          p_quantity: number
+          p_supply_id: string
+          p_supply_type: Database["public"]["Enums"]["projectPegSupplyType"]
+          p_user_id: string
+        }
+        Returns: {
+          pegId: string
+          projectId: string
+          quantity: number
+        }[]
+      }
       has_any_company_permission: { Args: { claim: string }; Returns: boolean }
       has_valid_api_key_for_company: {
         Args: { company: string }

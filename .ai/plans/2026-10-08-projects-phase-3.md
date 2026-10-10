@@ -49,7 +49,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 - [x] Task 6: Add `pegGroupSegment` as a pure function
 - [x] Task 7: Diff-write the pegs in the planning-action transaction
 - [x] Task 8: Apply grouped Order and Make actions and move their pegs
-- [ ] Task 9: Add `harden_pegs_for_supply`
+- [x] Task 9: Add `harden_pegs_for_supply`
 - [ ] Task 10: Distribute grouped PO receipts and their reversals
 - [ ] Task 11: Distribute grouped job output
 - [ ] Task 12: Charge price variance to member projects
@@ -785,3 +785,7 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 8 (beyond the plan's file list): `insertJob` (`production.service.ts`) takes `planningGroupId`, and the create branch of `upsertPurchaseOrderLine` (`purchasing.service.ts`) takes it too. `settleNewSupplyPlanningActions` returns `itemId`, `periodId` and `planningSegmentId` with each settled id, so the route can match a settled action to the supply it created. The commit carries the regenerated MCP digest.
 - Task 8 (deviation): the Order button's suggested orders carry no action id, so the routes find the action through the settle. Each settled action of a group segment takes the first PO line or job created for its (item, week, segment). `moveActionPegsToSupply(db, { companyId, userId, moves })` takes every move of the request in one list. It runs one transaction: one UPDATE supersedes the actions' current pegs, and one INSERT copies them onto the new supply. The plan's signature named one action, which would be a transaction per action. A failed move is logged; the order stands, and the next MRP run re-pegs.
 - Task 8: `move-action-pegs.test.ts` pins the 2 statements at the Kysely wire (2 cases). The same function also passed once against the local database with a temporary vitest config: 2 pegs moved, the 2 action pegs superseded, and the fixture rows deleted. The ERP vitest config sets `SUPABASE_DB_URL` to `postgresql://localhost`, so a committed database test cannot run in `erp`. `pnpm --filter erp test` passes (180 files, 2069 tests) and `erp` typechecks.
+- Task 9: `20261010155314_harden-pegs-for-supply.sql` defines `harden_pegs_for_supply` as the plan writes it: SECURITY INVOKER, `assert_company_access` first, the pegs locked `FOR UPDATE` in need date, project priority and demand source order. A peg it takes is superseded, and a Hard row with `hardenedAt` replaces it. The Hard row keeps the peg's `createdByRunId`. The function uses `#variable_conflict use_column`, because its output columns (`projectId`, `quantity`) share names with the peg columns.
+- Task 9 (deviation): the uncovered part of a peg keeps the peg's state, not always Soft. A Manual peg covered in part leaves a Manual row with its reason, so a receipt does not drop a planner's override.
+- Task 9: the excess row reads the group from the pegs, else from the PO line's or job's `planningGroupId`. Without a group the excess goes to common stock (`projectId` NULL).
+- Task 9: `harden-pegs-for-supply.test.sql` runs in an isolated company and rolls back. It passes 5 cases: the plan's 3 (60, 25, 65), excess to the exception project, and a second receipt that takes no Hard peg again. There is no `psql` binary here, so it ran as `/tmp/kpsql -X < packages/database/supabase/tests/harden-pegs-for-supply.test.sql` (exit 0, no ERROR line). `@carbon/database` typechecks.
