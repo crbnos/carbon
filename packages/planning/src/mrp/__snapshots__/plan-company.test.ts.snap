@@ -1,5 +1,46 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`planCompany > nets a project segment and draws the common true surplus 1`] = `
+{
+  "commonSurplusDraws": [
+    {
+      "itemId": "item_p",
+      "locationId": "loc_plant",
+      "periodId": "per_w2",
+      "planningSegmentId": "prj_p101",
+      "quantity": 8,
+    },
+  ],
+  "consumptionUpdates": [],
+  "cycleItemIds": [],
+  "demandActualUpserts": [
+    {
+      "actualQuantity": 20,
+      "companyId": "cmp_project",
+      "createdBy": "system",
+      "itemId": "item_p",
+      "locationId": "loc_plant",
+      "periodId": "per_w2",
+      "sourceType": "Project Material",
+      "updatedBy": "system",
+    },
+    {
+      "actualQuantity": 2,
+      "companyId": "cmp_project",
+      "createdBy": "system",
+      "itemId": "item_p",
+      "locationId": "loc_plant",
+      "periodId": "per_w3",
+      "sourceType": "Sales Order",
+      "updatedBy": "system",
+    },
+  ],
+  "demandForecastSourceInserts": [],
+  "demandForecastUpserts": [],
+  "supplyActualUpserts": [],
+}
+`;
+
 exports[`planCompany > plans the satellite dataset company as before (golden) 1`] = `
 {
   "consumptionUpdates": [

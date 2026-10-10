@@ -120,6 +120,12 @@ export type PlanCompanyInputs = {
   >[];
   /** The ids of the company's projects with project stock. */
   stockedProjectIds?: string[];
+  /**
+   * The items and locations whose `itemPlanning` turns
+   * `allowCommonSupplyForProjects` off: their project segments never draw
+   * common stock.
+   */
+  commonSupplyBlocked?: { itemId: string; locationId: string }[];
   demandProjections: Pick<
     Tables["demandProjection"]["Row"],
     "forecastQuantity" | "id" | "itemId" | "locationId" | "periodId"
@@ -194,6 +200,17 @@ export type PlanCompanyOutputs = {
   }>;
   /** Items on a BOM cycle, planned as leaf items. */
   cycleItemIds: string[];
+  /**
+   * What each project segment takes from the common segment's true surplus,
+   * per period. Planning actions turn each draw into a Transfer.
+   */
+  commonSurplusDraws: Array<{
+    itemId: string;
+    locationId: string;
+    periodId: string;
+    planningSegmentId: string;
+    quantity: number;
+  }>;
 };
 
 export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
@@ -834,6 +851,23 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     }
   }
 
+  // Project segments explode through the BOM as authored: supersession
+  // applies to the common segment only (spec decision 24). The copy is made
+  // only when a swap can happen and some demand is in a project segment, so
+  // a company with no project stock levels its BOM exactly as before.
+  const hasSegmentDemand = [...grossDemand.keys()].some(
+    (key) => splitKey(key)[3] !== COMMON_SEGMENT
+  );
+  const segmentBomByItem =
+    redirectByItem.size > 0 && hasSegmentDemand
+      ? new Map(
+          [...bomByItem].map(([itemId, children]) => [
+            itemId,
+            children.map((child) => ({ ...child }))
+          ])
+        )
+      : undefined;
+
   // Substitute superseded components in the BOMs so a parent's explosion
   // generates the successor's demand instead of the old part's. (Top-level
   // demand was handled above; component demand is created here, during
@@ -862,7 +896,12 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     onHandForExplosion.set(locationItemKey, remaining);
   }
 
-  const { bomDerivedDemand, demandContributors, cycleItemIds } = explodeBom({
+  const {
+    bomDerivedDemand,
+    demandContributors,
+    cycleItemIds,
+    commonSurplusDraws
+  } = explodeBom({
     grossDemand,
     bomByItem,
     replenishmentSystemByItem,
@@ -871,7 +910,15 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     onHandByLocationItem: onHandForExplosion,
     jobSupplyByLocationPeriodItem: jobAndPoSupplyByLocationPeriodItem,
     topLevelContributors,
-    consumeFirstRedirect
+    consumeFirstRedirect,
+    commonSurplusBlocked: new Set(
+      (input.commonSupplyBlocked ?? []).map((row) =>
+        makeLocationItemKey(row.locationId, row.itemId)
+      )
+    ),
+    // A surplus looks over the whole MRP window.
+    horizonPeriods: periods.length,
+    segmentBomByItem
   });
 
   // demandForecast output: Map<"itemId-locationId-periodId", record>
@@ -1085,7 +1132,11 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     demandActualUpserts: Array.from(demandActualsMap.values()),
     supplyActualUpserts: Array.from(supplyActualsMap.values()),
     consumptionUpdates,
-    cycleItemIds: [...cycleItemIds]
+    cycleItemIds: [...cycleItemIds],
+    commonSurplusDraws: [...commonSurplusDraws].map(([key, quantity]) => {
+      const [locationId, periodId, itemId, planningSegmentId] = splitKey(key);
+      return { itemId, locationId, periodId, planningSegmentId, quantity };
+    })
   };
 }
 

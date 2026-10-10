@@ -120,13 +120,15 @@ it("explodeBom explodes a parent's demand in segment prj_1 into prj_1 only", () 
     ]),
     leadTimeByItem: new Map([["child", 7]]),
     periods,
-    // Common on-hand of the parent does not net segment prj_1's demand.
+    // Common on-hand of the parent does not net segment prj_1's demand. The
+    // item draws no common surplus (allowCommonSupplyForProjects is off).
     onHandByLocationItem: new Map([
       [makeLocationItemKey("loc", "parent"), 100],
       [makeLocationItemKey("loc", "parent", "prj_1"), 4]
     ]),
     jobSupplyByLocationPeriodItem: new Map(),
-    topLevelContributors: new Map()
+    topLevelContributors: new Map(),
+    commonSurplusBlocked: new Set([makeLocationItemKey("loc", "parent")])
   });
 
   // 10 demanded − 4 in prj_1's stock = 6 to make; 2 per parent = 12.
@@ -786,4 +788,98 @@ it("netConsumeFirstContributors keeps the origin and converts the per-assembly q
       redirectedFromItemId: "old"
     }
   ]);
+});
+
+// Projects Phase 2b, the netting sequence: a project segment nets its own
+// on-hand first, then draws the common segment's true surplus, then plans new
+// supply for the remainder. A 1:1 child shows the parent's net requirement.
+function projectCase(args: {
+  commonOnHand: number;
+  commonDemand?: [string, number][];
+  childQuantity?: number;
+  blocked?: boolean;
+  horizonPeriods?: number;
+}) {
+  const periods = [{ id: "w1" }, { id: "w2" }, { id: "w3" }];
+  return explodeBom({
+    grossDemand: new Map([
+      [makeKey("loc", "w2", "part", "P-101"), 20],
+      ...(args.commonDemand ?? []).map(
+        ([period, qty]) => [makeKey("loc", period, "part"), qty] as const
+      )
+    ]),
+    bomByItem: new Map<string, BomChild[]>([
+      [
+        "part",
+        [
+          {
+            itemId: "child",
+            quantity: args.childQuantity ?? 1,
+            methodType: "Pull from Inventory"
+          }
+        ]
+      ]
+    ]),
+    replenishmentSystemByItem: new Map([
+      ["part", "Make"],
+      ["child", "Buy"]
+    ]),
+    leadTimeByItem: new Map([["child", 0]]),
+    periods,
+    onHandByLocationItem: new Map([
+      [makeLocationItemKey("loc", "part"), args.commonOnHand],
+      [makeLocationItemKey("loc", "part", "P-101"), 5]
+    ]),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map(),
+    commonSurplusBlocked: args.blocked
+      ? new Set([makeLocationItemKey("loc", "part")])
+      : undefined,
+    horizonPeriods: args.horizonPeriods
+  });
+}
+
+it("a project segment draws the common true surplus before new supply (spec case)", () => {
+  // P-101: demand 20, own stock 5. Common: stock 8, no demand.
+  const { commonSurplusDraws, bomDerivedDemand } = projectCase({
+    commonOnHand: 8
+  });
+  expect([...commonSurplusDraws]).toEqual([
+    [makeKey("loc", "w2", "part", "P-101"), 8]
+  ]);
+  // 20 − 5 own − 8 drawn = 7 net requirement.
+  expect(bomDerivedDemand.get(makeKey("loc", "w2", "child", "P-101"))).toBe(7);
+  expect(bomDerivedDemand.has(makeKey("loc", "w2", "child"))).toBe(false);
+});
+
+it("with allowCommonSupplyForProjects off there is no draw", () => {
+  const { commonSurplusDraws, bomDerivedDemand } = projectCase({
+    commonOnHand: 8,
+    blocked: true
+  });
+  expect(commonSurplusDraws.size).toBe(0);
+  expect(bomDerivedDemand.get(makeKey("loc", "w2", "child", "P-101"))).toBe(15);
+});
+
+it("a Make item in a project segment explodes only its remainder after the draw", () => {
+  // Common: stock 8, demand 3 in week 3, so 5 is surplus. P-101 needs 15
+  // after its own stock, draws 5 and makes 10, at 2 children each.
+  const { commonSurplusDraws, bomDerivedDemand } = projectCase({
+    commonOnHand: 8,
+    commonDemand: [["w3", 3]],
+    childQuantity: 2
+  });
+  expect(commonSurplusDraws.get(makeKey("loc", "w2", "part", "P-101"))).toBe(5);
+  expect(bomDerivedDemand.get(makeKey("loc", "w2", "child", "P-101"))).toBe(20);
+  // Common demand is covered by common stock and explodes nothing.
+  expect(bomDerivedDemand.has(makeKey("loc", "w3", "child"))).toBe(false);
+});
+
+it("common demand beyond the horizon does not hold common stock back", () => {
+  const { commonSurplusDraws } = projectCase({
+    commonOnHand: 8,
+    commonDemand: [["w3", 3]],
+    horizonPeriods: 1
+  });
+  expect(commonSurplusDraws.get(makeKey("loc", "w2", "part", "P-101"))).toBe(8);
 });

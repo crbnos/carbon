@@ -259,19 +259,27 @@ export async function runMrp(
     // (a project with project stock, else common), the rule of the SQL
     // project_planning_segment. The projects with project stock are read
     // once for that mapping.
-    const [inventoryRows, stockedProjects] = await Promise.all([
-      db
-        .selectFrom("itemStockQuantities")
-        .select(["itemId", "locationId", "projectId", "quantityOnHand"])
-        .where("companyId", "=", companyId)
-        .execute(),
-      db
-        .selectFrom("project")
-        .select(["id"])
-        .where("companyId", "=", companyId)
-        .where("projectStock", "=", true)
-        .execute()
-    ]);
+    const [inventoryRows, stockedProjects, commonSupplyBlocked] =
+      await Promise.all([
+        db
+          .selectFrom("itemStockQuantities")
+          .select(["itemId", "locationId", "projectId", "quantityOnHand"])
+          .where("companyId", "=", companyId)
+          .execute(),
+        db
+          .selectFrom("project")
+          .select(["id"])
+          .where("companyId", "=", companyId)
+          .where("projectStock", "=", true)
+          .execute(),
+        // Items whose project segments may not draw common stock.
+        db
+          .selectFrom("itemPlanning")
+          .select(["itemId", "locationId"])
+          .where("companyId", "=", companyId)
+          .where("allowCommonSupplyForProjects", "=", false)
+          .execute()
+      ]);
 
     // Bulk-load all BOMs: use activeMakeMethods view (returns one method per item,
     // prioritizing 'Active' status then highest version — same logic as get_method_tree)
@@ -385,6 +393,7 @@ export async function runMrp(
       projectMaterialLines: projectMaterialLines.data ?? [],
       projectBorrows: projectBorrows.data ?? [],
       stockedProjectIds: stockedProjects.map((project) => project.id),
+      commonSupplyBlocked,
       items: allItems,
       replenishments: allReplenishments,
       supersessions: supersessions.data ?? [],

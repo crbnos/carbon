@@ -55,4 +55,23 @@ describe("planCompany", () => {
     const outputs = planCompany(loadFixture("plan-company.basic.json"));
     expect(sorted(outputs)).toMatchSnapshot();
   });
+
+  // The spec case: project P-101 needs 20 and holds 5. Common holds 10 and
+  // needs 2, so 8 is true surplus. P-101 draws 8 and its remainder is 7.
+  it("nets a project segment and draws the common true surplus", () => {
+    const outputs = planCompany(loadFixture("plan-company.project.json"));
+    expect(outputs.commonSurplusDraws).toEqual([
+      {
+        itemId: "item_p",
+        locationId: "loc_plant",
+        periodId: "per_w2",
+        planningSegmentId: "prj_p101",
+        quantity: 8
+      }
+    ]);
+    expect({
+      ...sorted(outputs),
+      commonSurplusDraws: outputs.commonSurplusDraws
+    }).toMatchSnapshot();
+  });
 });
