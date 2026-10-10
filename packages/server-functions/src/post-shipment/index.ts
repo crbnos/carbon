@@ -48,6 +48,7 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { assertNoOpenRefurbishment } from "../lib/service-orders";
 import { upsertShippedCustomerAssets } from "./customer-assets";
 import {
   loadRepairLineIds,
@@ -185,6 +186,14 @@ const postShipment = defineServerFn({
             case "Sales Order": {
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
+
+              // A serial under refurbishment is not sold (decision C6).
+              await assertNoOpenRefurbishment(db, {
+                companyId,
+                trackedEntityIds: (shipmentLineTracking.data ?? []).map(
+                  (tracking) => tracking.id
+                )
+              });
 
               const [salesOrder, salesOrderLines, salesOrderDelivery] =
                 await inOrder([

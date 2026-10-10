@@ -25,6 +25,7 @@ import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { assertNoOpenRefurbishment } from "../lib/service-orders";
 import { attributesContain } from "../tracked-entity-attributes";
 
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
@@ -334,6 +335,12 @@ const postPicking = defineServerFn({
           userId,
           companyId
         } = validatedPayload;
+
+        // A serial under refurbishment is not picked (decision C6).
+        await assertNoOpenRefurbishment(db, {
+          companyId,
+          trackedEntityIds: [trackedEntityId]
+        });
 
         await db.transaction().execute(async (trx) => {
           // Lock the line: every case here read-modify-writes its picked or

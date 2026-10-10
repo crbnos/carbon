@@ -11,7 +11,8 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { defaultProjectStates } from "@carbon/utils";
-import { sql, type Transaction } from "kysely";
+import { type Kysely, sql, type Transaction } from "kysely";
+import { ServerFnError } from "../errors";
 
 type ServiceOrderType = Database["public"]["Enums"]["serviceOrderType"];
 type ServiceOrderPriority =
@@ -236,4 +237,49 @@ export async function ensureCustomerAssets(
     assetBySerial.set(asset.trackedEntityId, asset.id);
   }
   return assetBySerial;
+}
+
+/**
+ * Refuses to ship or pick a serial under refurbishment: one with an open
+ * Refurbishment order (any status but Completed, Closed or Cancelled). The
+ * selection RPCs and routes already skip an On Hold serial; this is the
+ * server's own guard (plan decision C6), keyed on the order so no other On
+ * Hold flow (returns, inspections) changes. One query for any number of ids.
+ */
+export async function assertNoOpenRefurbishment(
+  db: Kysely<DB> | Transaction<DB>,
+  args: { companyId: string; trackedEntityIds: readonly (string | null)[] }
+): Promise<void> {
+  const ids = [
+    ...new Set(args.trackedEntityIds.filter((id): id is string => !!id))
+  ];
+  if (ids.length === 0) return;
+  const open = await db
+    .selectFrom("serviceOrder")
+    .innerJoin("trackedEntity", (join) =>
+      join
+        .onRef("trackedEntity.id", "=", "serviceOrder.trackedEntityId")
+        .onRef("trackedEntity.companyId", "=", "serviceOrder.companyId")
+    )
+    .select([
+      "serviceOrder.serviceOrderId",
+      "trackedEntity.id as trackedEntityId",
+      "trackedEntity.readableId"
+    ])
+    .where("serviceOrder.companyId", "=", args.companyId)
+    .where("serviceOrder.trackedEntityId", "in", ids)
+    .where("serviceOrder.type", "=", "Refurbishment")
+    .where("serviceOrder.status", "not in", [
+      "Completed",
+      "Closed",
+      "Cancelled"
+    ])
+    .orderBy("trackedEntity.readableId")
+    .executeTakeFirst();
+  if (open) {
+    throw new ServerFnError(
+      `Serial ${open.readableId ?? open.trackedEntityId} is under refurbishment on ${open.serviceOrderId}. Complete the order first.`,
+      422
+    );
+  }
 }
