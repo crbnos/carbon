@@ -42,7 +42,7 @@ These correct or add to the spec. Task 10 records them there.
 - [x] Task 5: Record refurbishment parts in the serial's build history
 - [x] Task 6: Guard shipping and picking
 - [x] Task 7: Add refurbishment orders and the completion preview to the UI
-- [ ] Task 8: Add the database tests
+- [x] Task 8: Add the database tests
 - [ ] Task 9: Extend the demo datasets
 - [ ] Task 10: Update the rules, docs and spec
 - [ ] Task 11: Verify in the browser
@@ -413,4 +413,6 @@ ls .ai/playbooks/field-service-phase-c.md
 - Task 7 (deviation): `$id.complete.tsx` has a loader only. It calls `previewRefurbishmentCompletion` (`service.server.ts`), which runs `loadRefurbishmentCompletion` without locks and `planRefurbishmentCompletion`, and writes nothing. **Complete** in `CompleteRefurbishmentModal` posts `status=Completed` to the existing status route. That route already checks the move and invokes `complete-service-order`, so the completion keeps one path.
 - Task 7: the Properties panel shows the serial, **Expected Selling Price** (rate format, base currency) and **Abnormal Rework** for a Refurbishment, and hides customer, site, contact, contract and invoice detail. `updateServiceOrder` refuses both fields on another order type and on a completed refurbishment. The Details page shows the capitalized amount, the write-down and the costing method once a refurbishment completes. The header makes Complete the primary step and disables Reopen.
 - Task 7: the list's type filter now offers Refurbishment (`listedServiceOrderTypes`). The UI is not browser-verified (Task 11).
+- Task 8: Task 4 had written the completion cases early (capitalize, relief, cap, abnormal rework, Average), and the FIFO case already reads `get_inventory_valuation` (10 units, not 11). Task 6 had written the guard cases: a Sales Order shipment refused while a Refurbishment order is open (`post-shipment/customer-assets.test.ts`) and a serial pick refused (`post-picking/refurbishment-guard.test.ts`).
+- Task 8 (deviation): the C2 split case is in `complete-service-order.test.ts`, not `calculate-cogs.test.ts`, because the completion writes the split. The source layer has an open child of 10 units at 20.00. After the completion the child keeps 9 units at 18.00, and the serial's layer has a moved child of 1 unit at 2.00. The serial relieves 302.00 (100.00 + 2.00 + 200.00) and the other 9 units relieve 918.00, as before the split. `calculate-cogs.test.ts` keeps the stamped-layer case Task 4 added. The completion and `calculate-cogs` tests pass (15).
 

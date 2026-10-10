@@ -570,3 +570,97 @@ databaseTest("an Average refurbishment re-averages the unit cost", async () => {
     await f.cleanup();
   }
 });
+
+// C2: the source layer has an open purchase price variance child of 10 units
+// at 20.00. The split moves one unit of it (2.00) onto the serial's layer, so
+// the serial and the other units each relieve the cost calculateCOGS gave
+// them before the split.
+databaseTest(
+  "a split moves one unit of the source layer's open child with the serial",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const r = await addRefurbishment(f, "child");
+      const childId = `${f.prefix}-refurb-child`;
+      await f.db
+        .insertInto("costLedger")
+        .values({
+          id: childId,
+          itemLedgerType: "Purchase",
+          costLedgerType: "Direct Cost",
+          adjustment: true,
+          appliesToCostLedgerId: r.layerId,
+          itemId: r.itemId,
+          quantity: 10,
+          cost: 20,
+          nominalCost: 20,
+          remainingQuantity: 10,
+          postingDate: "2026-01-02",
+          companyId: f.companyId
+        })
+        .execute();
+
+      const result = await completeServiceOrder(f.ctx, {
+        serviceOrderId: r.serviceOrderId
+      });
+      expect(result.error).toBeNull();
+
+      const rows = await f.db
+        .selectFrom("costLedger")
+        .select([
+          "id",
+          "quantity",
+          "remainingQuantity",
+          "cost",
+          "trackedEntityId",
+          "appliesToCostLedgerId",
+          "costLedgerType"
+        ])
+        .where("itemId", "=", r.itemId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const child = rows.find((row) => row.id === childId)!;
+      expect(Number(child.quantity)).toEqual(9);
+      expect(Number(child.remainingQuantity)).toEqual(9);
+      expect(Number(child.cost)).toEqual(18);
+      const stamped = rows.find(
+        (row) =>
+          row.trackedEntityId === r.serialId && !row.appliesToCostLedgerId
+      )!;
+      const moved = rows.filter(
+        (row) =>
+          row.appliesToCostLedgerId === stamped.id &&
+          row.costLedgerType !== "Revaluation"
+      );
+      expect(moved).toHaveLength(1);
+      expect(Number(moved[0]!.quantity)).toEqual(1);
+      expect(Number(moved[0]!.cost)).toEqual(2);
+
+      // The serial leaves at 100.00 + 2.00 + 200.00; the other 9 units at
+      // 9 × (100.00 + 2.00), as before the split.
+      await f.db
+        .transaction()
+        .execute(async (trx) => {
+          const refurbished = await calculateCOGS(trx, {
+            itemId: r.itemId,
+            quantity: 1,
+            companyId: f.companyId,
+            trackedEntityIds: [r.serialId]
+          });
+          expect(refurbished.totalCost).toEqual(302);
+          const rest = await calculateCOGS(trx, {
+            itemId: r.itemId,
+            quantity: 9,
+            companyId: f.companyId
+          });
+          expect(rest.totalCost).toEqual(918);
+          throw new Rollback();
+        })
+        .catch((error) => {
+          if (!(error instanceof Rollback)) throw error;
+        });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
