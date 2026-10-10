@@ -1835,7 +1835,11 @@ export async function generatePlanningActions(
         todayDate
       });
 
-      const assignee = resolveAssignee(row.id, location.id);
+      const assignee = resolveAssignee(
+        row.id,
+        location.id,
+        row.planningSegmentId || COMMON_SEGMENT
+      );
       for (const action of actions) {
         if (!action.periodId || !periodById.has(action.periodId)) continue;
         candidates.push({

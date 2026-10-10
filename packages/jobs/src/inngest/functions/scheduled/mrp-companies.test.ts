@@ -169,6 +169,15 @@ describe("companiesWithPlanningWork", () => {
     expect(query.sql).toContain('from "itemStockQuantities"');
     expect(query.sql).toMatch(/"quantityOnHand" < \$\d+/);
   });
+
+  // A project's plan-line materials and its open borrows are MRP input that
+  // no other source lists.
+  it("includes a company with project material or an open borrow", async () => {
+    const { query } = await lookup();
+    expect(query.sql).toContain('from "openProjectMaterialLines"');
+    expect(query.sql).toContain('from "projectBorrow"');
+    expect(query.parameters).toContain("Open");
+  });
 });
 
 const utc = (instant: string) => parseAbsolute(instant, "UTC");

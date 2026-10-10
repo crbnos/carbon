@@ -43,7 +43,7 @@ The plan covers:
 - [x] Task 9: Segment the planning RPCs and grids
 - [x] Task 10: Generate segmented and Transfer planning actions
 - [x] Task 11: Apply segmented Order, Make and Transfer actions
-- [ ] Task 12: Add the project-manager rung and the company sweep
+- [x] Task 12: Add the project-manager rung and the company sweep
 - [ ] Task 13: Add the Segment column to the planning worklists
 - [ ] Task 14: Show borrow exceptions
 - [ ] Task 15: Update the rules, AGENTS.md, docs and spec
@@ -701,4 +701,6 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 11 (deviation): the Transfer apply is set-based and lives in `projects.server.ts`, not `projects.service.ts`, because a `*.service.ts` function becomes an MCP tool. `createProjectStockTransfersFromActions(db, …)` runs one transaction: the claim (`claimPlanningActions`), one statement for the readable ids (`get_next_sequence('projectStockTransfer', …)` over `generate_series`), one insert of the Draft headers (type `Transfer`, owners, location, reason, `planningActionId`), one insert of the lines, and one UPDATE that sets `projectStockTransferId` on the actions. `applyTransferPlanningActions` wraps it for both routes and requires `update: projects`, the permission of the transfer pages.
 - Task 11: both `apply` cases take the Transfer actions out of the batch before the change actions. The response carries `transfers`, and the flash message counts the Draft transfers it created. `planned-orders-from-actions.ts` needed no change: Task 13 keys each row's actions by item and segment upstream.
 - Task 11: a new test (`transfer-planning-actions.test.ts`) pins the transfer statements and the claim lock. A rolled-back call proved that one statement draws distinct readable ids (`PST000001`, `PST000002`, `PST000003`). `erp` typechecks, and the ERP suite passes (2,065).
+- Task 12 (deviation): the resolver loads the segment managers with one read of the company's projects with project stock and an owner, not with `.in("id", segmentIds)`. The resolver loads before the planning rows, so the segment ids are not known yet. The set is the same: a project with project stock is its own segment. The resolver takes the segment as an optional third argument, and `generatePlanningActions` passes the row's segment.
+- Task 12: `companiesWithPlanningWork` adds `openProjectMaterialLines` and the `Open` rows of `projectBorrow` to its UNION. The pure resolver test, a loader test that reads the manager by segment, and a sweep test pass. The planning suite passes (324), `@carbon/jobs` passes (934), and both packages typecheck.
 

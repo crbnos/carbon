@@ -179,6 +179,15 @@ export async function companiesWithPlanningWork(
         .select("companyId")
         .where("quantityOnHand", "<", 0)
     )
+    // Project segments: open plan-line materials are demand, and an open
+    // borrow is firm demand on the borrower and firm supply on the lender.
+    .union(db.selectFrom("openProjectMaterialLines").select("companyId"))
+    .union(
+      db
+        .selectFrom("projectBorrow")
+        .select("companyId")
+        .where("status", "=", "Open")
+    )
     .execute();
 
   return new Set(filterEmpty(rows.map((row) => row.companyId)));
