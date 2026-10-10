@@ -375,7 +375,8 @@ export async function runMrp(
       demandActualUpserts,
       supplyActualUpserts,
       consumptionUpdates,
-      cycleItemIds
+      cycleItemIds,
+      commonSurplusDraws
     } = planCompany({
       companyId,
       userId,
@@ -571,7 +572,12 @@ export async function runMrp(
       // RPCs it reads see only committed data. Errors PROPAGATE: the run must
       // not report success with stale actions (forecasts are committed and
       // correct; actions self-heal on the next successful run).
-      await generatePlanningActions(client, db, { companyId, userId });
+      // The common stock each project segment draws becomes a Transfer.
+      await generatePlanningActions(client, db, {
+        companyId,
+        userId,
+        commonSurplusDraws
+      });
 
       return { success: true };
     } catch (err) {

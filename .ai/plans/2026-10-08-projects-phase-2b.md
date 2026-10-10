@@ -41,7 +41,7 @@ The plan covers:
 - [x] Task 7: Net segments and draw common surplus in `explodeBom`
 - [x] Task 8: Segment the actuals and the Phase 7 writes
 - [x] Task 9: Segment the planning RPCs and grids
-- [ ] Task 10: Generate segmented and Transfer planning actions
+- [x] Task 10: Generate segmented and Transfer planning actions
 - [ ] Task 11: Apply segmented Order, Make and Transfer actions
 - [ ] Task 12: Add the project-manager rung and the company sweep
 - [ ] Task 13: Add the Segment column to the planning worklists
@@ -690,3 +690,11 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 9 (deviation): the services have no `.order("id")` on the grid RPCs. They sort with `setGenericQueryFilters`, so `.order("planningSegmentId")` follows it as the last tiebreaker. The grids have no `getRowId`, so TanStack keys rows by index, and 2 rows of one item are already distinct. Adding a `getRowId` would change when the selection clears. The item-keyed maps in the grids (`ordersMap`, actions by item) are left for Task 13. The row types gain `planningSegmentId` from the generated RPC types.
 - Task 9: `erp`, `@carbon/planning` and `@carbon/jobs` typecheck. The ERP planning tests pass (119), and the planning suite passes (316). The commit carries the regenerated MCP digest: the 2 planning reads' response schemas gain the column. The `tracked-entity-readable-id` invariant fails on 25 existing rows of this database before and after this task; the definer and view invariants pass.
 - Tasks 5–9: every commit ran with `CARBON_SKIP_BACKUP_CHECK=1`. The backup check fails only on `supplierPartPrice.unitPrice`, which `main` changed after this branch was cut (see the run log).
+- Task 10 (deviation): the per-row closure of `generatePlanningActions` is now the pure, exported `deriveRowActions`, so the spec case has a unit test. The orchestrator only loads the rows and keys the maps by item, location and segment (`itemLocationSegmentKey`).
+- Task 10: a project segment is lot-for-lot. `deriveRowActions` sizes it with `computePlanningOrders` as Demand-Based Reorder with a 1-week window and no safety stock, order limits or lot size. The action's policy name is "Lot-for-Lot". The policy floor is 0, and the Stock Only reserve applies to segment `''` only.
+- Task 10: a draw adds to the segment's projection from its period on. The coverage walk of the change actions adds the whole draw to the segment's on-hand. A draw for an item and segment that has no planning RPC row gets no Transfer.
+- Task 10 (deviation): the common segment's projection does not subtract the draws. A true surplus never makes the common segment short, and the plan keeps the common planning rows unchanged. Only a common reorder point can see the drawn stock; the next run after the transfer posts sees it.
+- Task 10: `loadSegmentOnHand` replaces `loadCommonOnHand`. It reads every stripe and the projects with project stock, and sums each stripe into its segment with `planningSegmentOf`.
+- Task 10 (beyond the plan's steps): `getPlanningActions` and `inPlanningWorklist` list Transfer and Borrow on both worklists. Each page reads the actions of its own items only, so an action shows on its item's page. `settleNewSupplyPlanningActions` matches the segment of each ordered pair (default `''`); Task 11 sends it.
+- Task 10: two `runMrp` runs on Carbon Development, before and after, wrote no insert, update or delete. The existing common actions keep matching with the new natural key. The planning suite passes (321) with the golden snapshot unchanged. `@carbon/planning`, `erp` and `@carbon/jobs` typecheck, and the ERP planning tests pass (31).
+

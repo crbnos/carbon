@@ -24,14 +24,16 @@ import {
   daysBetween,
   deriveChangeActions,
   deriveReleaseActions,
+  deriveRowActions,
   diffPlanningActions,
   earlierDate,
   earlierRelease,
   firstNeedPeriodByOrder,
   isCommittedJobStatus,
   isCommittedPurchaseOrderStatus,
+  itemLocationSegmentKey,
   keyPeriodFor,
-  loadCommonOnHand,
+  loadSegmentOnHand,
   naturalKey,
   projectionsWithExpedites,
   releaseByDate
@@ -1040,6 +1042,51 @@ describe("diffPlanningActions", () => {
     expect(expediteA).not.toBe(expediteB);
   });
 
+  // A project with project stock nets in its own segment, so one item and
+  // week can hold a common Order and the project's Order.
+  it("keys an action by its netting segment and its transfer owners", () => {
+    const order = {
+      itemId: "item-1",
+      locationId: "loc-1",
+      type: "Order",
+      periodId: "p1",
+      purchaseOrderLineId: null,
+      jobId: null
+    };
+    expect(naturalKey(order)).toBe(
+      naturalKey({ ...order, planningSegmentId: "" })
+    );
+    expect(naturalKey(order)).not.toBe(
+      naturalKey({ ...order, planningSegmentId: "prj_1" })
+    );
+
+    const transfer = {
+      ...order,
+      type: "Transfer",
+      planningSegmentId: "prj_1",
+      toProjectId: "prj_1"
+    };
+    expect(naturalKey({ ...transfer, fromProjectId: null })).not.toBe(
+      naturalKey({ ...transfer, fromProjectId: "prj_2" })
+    );
+  });
+
+  it("keeps matching an existing common action on the next run", () => {
+    const diff = diffPlanningActions({
+      existing: [
+        {
+          ...existing,
+          planningSegmentId: "",
+          fromProjectId: null,
+          toProjectId: null
+        }
+      ],
+      candidates: [{ ...candidate, planningSegmentId: "" }],
+      toleranceDays: TOLERANCE
+    });
+    expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });
+  });
+
   it("passes candidate fields (incl. assignee) through to inserts unchanged", () => {
     const diff = diffPlanningActions({
       existing: [],
@@ -1478,10 +1525,11 @@ describe("deriveReleaseActions", () => {
   });
 });
 
-describe("loadCommonOnHand", () => {
-  // One item and location with two project stock stripes: common ('') and a
-  // project's. The driver answers like Postgres for equality predicates, so a
-  // read that forgets the stripe gets both rows back.
+describe("loadSegmentOnHand", () => {
+  // One item and location with three project stock stripes: common (''), a
+  // project with project stock, and a project whose project stock was turned
+  // off (its stripe nets in common). The driver answers like Postgres for
+  // equality predicates.
   const STOCK: Record<string, unknown>[] = [
     {
       itemId: "itm_1",
@@ -1496,7 +1544,18 @@ describe("loadCommonOnHand", () => {
       projectId: "prj_1",
       companyId: "co_1",
       quantityOnHand: 3
+    },
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "prj_2",
+      companyId: "co_1",
+      quantityOnHand: 2
     }
+  ];
+  const PROJECTS: Record<string, unknown>[] = [
+    { id: "prj_1", companyId: "co_1", projectStock: true },
+    { id: "prj_2", companyId: "co_1", projectStock: false }
   ];
 
   class StockTableDriver extends DummyDriver {
@@ -1505,8 +1564,9 @@ describe("loadCommonOnHand", () => {
         executeQuery: async <R>(
           query: CompiledQuery
         ): Promise<QueryResult<R>> => {
+          const table = query.sql.includes('from "project"') ? PROJECTS : STOCK;
           const predicates = [...query.sql.matchAll(/"(\w+)" = \$(\d+)/g)];
-          const rows = STOCK.filter((row) =>
+          const rows = table.filter((row) =>
             predicates.every(
               ([, column, n]) =>
                 row[column!] === query.parameters[Number(n) - 1]
@@ -1522,7 +1582,7 @@ describe("loadCommonOnHand", () => {
     }
   }
 
-  it("reads common stock only, so a project's stripe never replaces it", async () => {
+  it("sums each stripe into its netting segment", async () => {
     const db = new Kysely<DB>({
       dialect: {
         createAdapter: () => new PostgresAdapter(),
@@ -1532,8 +1592,95 @@ describe("loadCommonOnHand", () => {
       }
     });
 
-    const onHand = await loadCommonOnHand(db, "co_1");
+    const onHand = await loadSegmentOnHand(db, "co_1");
 
-    expect([...onHand.values()]).toEqual([5]);
+    expect(onHand.get(itemLocationSegmentKey("itm_1", "loc_1"))).toBe(7);
+    expect(onHand.get(itemLocationSegmentKey("itm_1", "loc_1", "prj_1"))).toBe(
+      3
+    );
+    expect(onHand.size).toBe(2);
+  });
+});
+
+describe("deriveRowActions in a project segment", () => {
+  // The spec case: P-101 needs 20 in week 1 and holds 5. The common segment
+  // has 8 it does not need within the horizon, so MRP drew 8.
+  const projectRow = (weeks: number[]) =>
+    ({
+      id: "item-1",
+      planningSegmentId: "prj_1",
+      reorderingPolicy: "Fixed Reorder Quantity",
+      reorderPoint: 10,
+      reorderQuantity: 50,
+      minimumOrderQuantity: 0,
+      maximumOrderQuantity: 0,
+      orderMultiple: 0,
+      lotSize: 0,
+      maximumInventoryQuantity: 0,
+      demandAccumulationPeriod: 1,
+      demandAccumulationSafetyStock: 0,
+      leadTime: 0,
+      quantityOnHand: 5,
+      quantityToOrder: 15,
+      preferredSupplierId: "sup-1",
+      supersessionMode: null,
+      minimumReserveQuantity: 0,
+      ...Object.fromEntries(weeks.map((value, i) => [`week${i + 1}`, value]))
+    }) as unknown as Parameters<typeof deriveRowActions>[0]["row"];
+
+  const input = (draws: { periodId: string; quantity: number }[]) => ({
+    row: projectRow([-15, -15, -15, -15, -15]),
+    kind: "Order" as const,
+    periods: PERIODS,
+    demandByPeriod: new Map([["p1", 20]]),
+    openOrders: [],
+    onHand: 5,
+    draws,
+    toleranceDays: TOLERANCE,
+    todayDate: TODAY
+  });
+
+  it("emits Transfer 8 and Order 7, both in the project's segment", () => {
+    const actions = deriveRowActions(input([{ periodId: "p1", quantity: 8 }]));
+
+    expect(
+      actions.map((a) => ({
+        type: a.type,
+        periodId: a.periodId,
+        quantity: a.suggestedQuantity,
+        segment: a.planningSegmentId,
+        from: a.fromProjectId ?? null,
+        to: a.toProjectId ?? null
+      }))
+    ).toEqual([
+      {
+        type: "Order",
+        periodId: "p1",
+        quantity: 7,
+        segment: "prj_1",
+        from: null,
+        to: null
+      },
+      {
+        type: "Transfer",
+        periodId: "p1",
+        quantity: 8,
+        segment: "prj_1",
+        from: null,
+        to: "prj_1"
+      }
+    ]);
+    const transfer = actions.find((a) => a.type === "Transfer");
+    expect(transfer?.reason).toBe("Common stock not needed within the horizon");
+    expect(transfer?.suggestedDate).toBe("2026-10-05");
+  });
+
+  // Lot-for-lot: the row's reorder point of 10 and quantity of 50 do not apply.
+  it("orders the shortfall alone, with no reorder policy", () => {
+    const actions = deriveRowActions(input([]));
+    expect(actions.map((a) => [a.type, a.suggestedQuantity])).toEqual([
+      ["Order", 15]
+    ]);
+    expect(actions[0]?.policyName).toBe("Lot-for-Lot");
   });
 });

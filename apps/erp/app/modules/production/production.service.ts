@@ -10813,10 +10813,14 @@ export async function getPlanningActions(
 
         // Buy worklist = new purchase suggestions + change actions on PO lines;
         // Make worklist = new job suggestions + change actions on jobs.
+        // Transfer and Borrow move stock between owners; each page lists
+        // only its own kind's items, so they show on the item's own page.
         return (
           kind === "Buy"
-            ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
-            : query.or("type.eq.Make,jobId.not.is.null")
+            ? query.or(
+                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null"
+              )
+            : query.or("type.in.(Make,Transfer,Borrow),jobId.not.is.null")
         )
           .order("suggestedDate", { ascending: true })
           .order("id", { ascending: true });
@@ -10910,10 +10914,13 @@ function inPlanningWorklist(kind: PlanningActionKind) {
   return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
     kind === "Buy"
       ? eb.or([
-          eb("type", "=", "Order"),
+          eb("type", "in", ["Order", "Transfer", "Borrow"]),
           eb("purchaseOrderLineId", "is not", null)
         ])
-      : eb.or([eb("type", "=", "Make"), eb("jobId", "is not", null)]);
+      : eb.or([
+          eb("type", "in", ["Make", "Transfer", "Borrow"]),
+          eb("jobId", "is not", null)
+        ]);
 }
 
 export async function dismissPlanningActions(
@@ -10977,7 +10984,7 @@ export async function markPlanningActionsActioned(
  * Order button creates PO lines (Buy) or jobs (Make) from the suggested
  * orders, which carry no action id; each one is the week of an Order / Make
  * action (both come from `computePlanningOrders`, and the natural key holds
- * one such action per item, location and week). Without this, the action
+ * one such action per item, location, segment and week). Without this, the action
  * stayed Open beside the order that answered it until the next MRP run.
  * Dismissed is settled too: the need it suppressed has now been ordered.
  * Pairs are matched as pairs, so a bulk order never settles one item's week
@@ -10990,11 +10997,15 @@ export async function settleNewSupplyPlanningActions(
     locationId: string;
     userId: string;
     type: "Order" | "Make";
-    ordered: { itemId: string; periodId: string }[];
+    /** One per order placed; the segment defaults to common (''). */
+    ordered: { itemId: string; periodId: string; planningSegmentId?: string }[];
   }
 ) {
   const byKey = new Map(
-    args.ordered.map((pair) => [`${pair.itemId}\u0000${pair.periodId}`, pair])
+    args.ordered.map((pair) => [
+      `${pair.itemId}\u0000${pair.periodId}\u0000${pair.planningSegmentId ?? ""}`,
+      pair
+    ])
   );
   const ordered = [...byKey.values()];
   return planningActionIdList([...byKey.keys()], () =>
@@ -11014,7 +11025,8 @@ export async function settleNewSupplyPlanningActions(
           ordered.map((pair) =>
             eb.and([
               eb("itemId", "=", pair.itemId),
-              eb("periodId", "=", pair.periodId)
+              eb("periodId", "=", pair.periodId),
+              eb("planningSegmentId", "=", pair.planningSegmentId ?? "")
             ])
           )
         )
