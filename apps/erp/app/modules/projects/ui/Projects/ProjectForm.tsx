@@ -34,6 +34,7 @@ import {
   Hidden,
   InputControlled,
   Location,
+  Number as NumberField,
   Select,
   SelectControlled,
   Submit,
@@ -47,7 +48,10 @@ import {
   projectValidator,
   suggestProjectIdentifier
 } from "../../projects.models";
-import { getCipFixedAssetClasses } from "../../projects.service";
+import {
+  getCipFixedAssetClasses,
+  getPlanningGroupsList
+} from "../../projects.service";
 
 type ProjectFormValues = z.infer<typeof projectValidator>;
 
@@ -108,6 +112,8 @@ const ProjectForm = ({
   const [projectStock, setProjectStock] = useState(
     initialValues.projectStock ?? false
   );
+  // A project joins a planning group after it exists, on its Details tab.
+  const planningGroups = usePlanningGroups(isEditing && projectStock);
 
   const treatmentOptions = projectCostTreatments.map((treatment) => ({
     label: treatment,
@@ -215,6 +221,26 @@ const ProjectForm = ({
               />
             </>
           )}
+          {isEditing && projectStock && (
+            <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
+              <Select
+                name="planningGroupId"
+                label={t`Planning Group`}
+                isOptional
+                helperText={t`Members net their demand together in MRP. The group must be at the project's location`}
+                options={planningGroups.map((group) => ({
+                  label: group.name,
+                  value: group.id
+                }))}
+              />
+              <NumberField
+                name="planningPriority"
+                label={t`Planning Priority`}
+                helperText={t`Under the Project Priority rule, a lower number gets the group's supply first`}
+                minValue={0}
+              />
+            </div>
+          )}
         </div>
         {isEditing && (
           <Select
@@ -308,6 +334,24 @@ const ProjectForm = ({
 };
 
 export default ProjectForm;
+
+/** The company's active planning groups, read once when needed. */
+function usePlanningGroups(enabled: boolean) {
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!enabled || !carbon) return;
+    let cancelled = false;
+    getPlanningGroupsList(carbon, company.id).then((result) => {
+      if (!cancelled) setGroups(result.data ?? []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, carbon, company.id]);
+  return groups;
+}
 
 /** The company's Construction in Progress classes, read once when needed. */
 function useCipClasses(enabled: boolean) {

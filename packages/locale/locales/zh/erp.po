@@ -2430,6 +2430,9 @@ msgstr "一种企业登录方法,公司注册电子邮件域中的所有人通�
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "当工作流到达该步骤时，Carbon向您的系统发送的HTTPS请求，携带您配置的任何标头和请求体。"
 
+msgid "An inactive group's members are planned on their own"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "一个集成或自定义更改——实际上是自定义的小部分。"
 
@@ -3060,6 +3063,9 @@ msgstr "您确定要删除合作伙伴：{name}？此操作无法撤销。"
 #. placeholder {0}: paymentTerm.name
 msgid "Are you sure you want to delete the payment term: {0}? This cannot be undone."
 msgstr "确定要删除付款条件：{0}吗？此操作无法撤消。"
+
+msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: pricingRule.name
 msgid "Are you sure you want to delete the pricing rule: {0}? This cannot be undone."
@@ -7384,6 +7390,9 @@ msgstr "删除期间"
 msgid "Delete Picking List"
 msgstr "删除拣货单"
 
+msgid "Delete Planning Group"
+msgstr ""
+
 msgid "Delete Portal"
 msgstr "删除门户"
 
@@ -8574,6 +8583,9 @@ msgstr "编辑拣货单"
 msgid "Edit Plan"
 msgstr ""
 
+msgid "Edit Planning Group"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "编辑门户"
 
@@ -9261,6 +9273,12 @@ msgstr "这次运行生产的所有产品都进入一个批次。车间无法更
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 删除一些附件进行发送。"
+
+msgid "Exception Project"
+msgstr ""
+
+msgid "Excess Rule"
+msgstr ""
 
 msgid "Exchange rate"
 msgstr "汇率"
@@ -13293,6 +13311,9 @@ msgstr "成员"
 msgid "Members"
 msgstr "成员"
 
+msgid "Members net their demand together in MRP. The group must be at the project's location"
+msgstr ""
+
 msgid "Memo"
 msgstr "备忘录"
 
@@ -13972,6 +13993,9 @@ msgstr "新建付款条件"
 msgid "New Picking List"
 msgstr "新拣货单"
 
+msgid "New Planning Group"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "新价格覆盖"
 
@@ -14608,6 +14632,9 @@ msgstr "没有匹配的操作"
 
 msgid "No materials"
 msgstr "无物料"
+
+msgid "No members yet. A project with project stock joins the group on its Details tab."
+msgstr ""
 
 msgid "No method"
 msgstr ""
@@ -15432,6 +15459,9 @@ msgstr "仅当与供应商名称不同时"
 
 msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
 msgstr "一次只能激活一个支出集成。请先卸载当前的集成，然后连接 Ramp。"
+
+msgid "Only projects at this location can join"
+msgstr ""
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "只有合格的员工才能被安排和运行此流程"
@@ -16590,6 +16620,9 @@ msgstr "通过按物料和地点投影需求进行超前规划，然后将其直
 msgid "Plan locked"
 msgstr ""
 
+msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "规划工作"
 
@@ -16654,6 +16687,12 @@ msgstr "计划行动"
 msgid "Planning group"
 msgstr ""
 
+msgid "Planning Group"
+msgstr ""
+
+msgid "Planning Groups"
+msgstr ""
+
 msgid "Planning horizon"
 msgstr "计划周期"
 
@@ -16668,6 +16707,9 @@ msgstr "计划周期："
 
 msgid "Planning Ownership"
 msgstr "计划所有权"
+
+msgid "Planning Priority"
+msgstr ""
 
 msgid "Planning purchase orders need approval"
 msgstr "计划采购订单需要审批"
@@ -17026,6 +17068,9 @@ msgstr "优先级"
 
 msgid "Priority"
 msgstr "优先级"
+
+msgid "Priority Rule"
+msgstr ""
 
 msgid "Privacy Policy"
 msgstr "隐私政策"
@@ -22693,6 +22738,9 @@ msgstr "Onshape Government 连接已过期"
 msgid "The operations and steps your parts move through"
 msgstr "您的零件所经历的工序和步骤"
 
+msgid "The order in which members get the group's supply"
+msgstr ""
+
 msgid "The ordered list of tasks issues using this workflow must complete; the order here is the order they appear on the issue."
 msgstr "使用此工作流的问题必须完成的有序任务列表;此处的顺序是它们在问题上的出现顺序。"
 
@@ -24221,6 +24269,9 @@ msgstr "在固定再订货量下，每次达到再订货点时计划订购的确
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "在最大数量政策下，当达到再订货点时，计划订购至此现有量水平。"
 
+msgid "Under the Project Priority rule, a lower number gets the group's supply first"
+msgstr ""
+
 msgid "Undo"
 msgstr "撤销"
 
@@ -25595,6 +25646,9 @@ msgstr "它今天在哪里"
 
 msgid "Where new stock of this item lands by default on receipt; per-line storage selections on a receipt override it."
 msgstr "此项目的新库存在收据时默认登陆到哪里;收据上每行的存储选择会覆盖它。"
+
+msgid "Where received stock goes when no member needs it"
+msgstr ""
 
 msgid "Where stock lives and how it ships."
 msgstr "库存存放位置及其发货方式。"

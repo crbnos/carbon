@@ -161,7 +161,18 @@ export const projectValidator = z
     // Project stock: write the projectLedger row at receipt, not at issue.
     chargeAtReceipt: zfd.checkbox().optional(),
     // Project stock: government-furnished material stays with its customer.
-    governmentFurnished: zfd.checkbox().optional()
+    governmentFurnished: zfd.checkbox().optional(),
+    // Projects Phase 3: a project with project stock may join a planning
+    // group at its location. The details action checks the group.
+    planningGroupId: zfd.text(z.string().optional()),
+    // Orders the group's pegs under the Project Priority rule; lower first.
+    planningPriority: zfd.numeric(
+      z
+        .number()
+        .int()
+        .min(0, { message: "Priority cannot be negative" })
+        .optional()
+    )
   })
   .refine(
     (data) => data.costTreatment !== "Capitalize" || !!data.fixedAssetClassId,
@@ -507,6 +518,40 @@ export const laborCategoryRateValidator = z.object({
   ),
   effectiveFrom: z.string().min(1, { message: "Effective date is required" })
 });
+
+export const planningGroupExcessRules = [
+  "Common Stock",
+  "Exception Project"
+] as const satisfies readonly Database["public"]["Enums"]["planningGroupExcessRule"][];
+
+export const planningGroupPriorityRules = [
+  "Earliest Need",
+  "Project Priority"
+] as const satisfies readonly Database["public"]["Enums"]["planningGroupPriorityRule"][];
+
+/** A planning group (Projects Phase 3): projects that net in one segment. */
+export const planningGroupValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    excessRule: z.enum(planningGroupExcessRules, {
+      error: "Excess rule is required"
+    }),
+    exceptionProjectId: zfd.text(z.string().optional()),
+    priorityRule: z.enum(planningGroupPriorityRules, {
+      error: "Priority rule is required"
+    }),
+    active: zfd.checkbox()
+  })
+  .refine(
+    (data) =>
+      data.excessRule !== "Exception Project" || !!data.exceptionProjectId,
+    {
+      message: "Choose the project that takes the excess",
+      path: ["exceptionProjectId"]
+    }
+  );
 
 const timesheetCellFields = {
   entryDate: z.string().min(1, { message: "Date is required" }),

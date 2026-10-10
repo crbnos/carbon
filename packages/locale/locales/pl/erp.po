@@ -2430,6 +2430,9 @@ msgstr "Metoda logowania dla przedsiębiorstw, w której wszyscy użytkownicy z 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Żądanie https, które Carbon wysyła do Twojego systemu, gdy przepływ pracy osiągnie ten krok, zawierając nagłówki i treść, które skonfigurowałeś."
 
+msgid "An inactive group's members are planned on their own"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Integracja lub zmiana niestandardowa — mała część, która jest faktycznie niestandardowa."
 
@@ -3060,6 +3063,9 @@ msgstr "Czy na pewno chcesz usunąć partnera: {name}? Tej czynności nie można
 #. placeholder {0}: paymentTerm.name
 msgid "Are you sure you want to delete the payment term: {0}? This cannot be undone."
 msgstr "Czy chcesz usunąć warunki płatności: {0}? Tej czynności nie można cofnąć."
+
+msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: pricingRule.name
 msgid "Are you sure you want to delete the pricing rule: {0}? This cannot be undone."
@@ -7384,6 +7390,9 @@ msgstr "Usuń Okres"
 msgid "Delete Picking List"
 msgstr "Usuń listę kompletacyjną"
 
+msgid "Delete Planning Group"
+msgstr ""
+
 msgid "Delete Portal"
 msgstr "Usuń Portal"
 
@@ -8574,6 +8583,9 @@ msgstr "Edytuj listę kompletacyjną"
 msgid "Edit Plan"
 msgstr ""
 
+msgid "Edit Planning Group"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "Edytuj Portal"
 
@@ -9261,6 +9273,12 @@ msgstr "Całość produkcji z tego cyklu trafia do jednej partii. Hala produkcyj
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Przekracza {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB łącznie — usuń kilka załączników, aby wysłać."
+
+msgid "Exception Project"
+msgstr ""
+
+msgid "Excess Rule"
+msgstr ""
 
 msgid "Exchange rate"
 msgstr "Kurs wymiany"
@@ -13293,6 +13311,9 @@ msgstr "Członek"
 msgid "Members"
 msgstr "Członkowie"
 
+msgid "Members net their demand together in MRP. The group must be at the project's location"
+msgstr ""
+
 msgid "Memo"
 msgstr "Notatka"
 
@@ -13972,6 +13993,9 @@ msgstr "Nowe Warunki płatności"
 msgid "New Picking List"
 msgstr "Nowa Lista kompletacyjna"
 
+msgid "New Planning Group"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "Nowe Nadpisanie ceny"
 
@@ -14608,6 +14632,9 @@ msgstr "Brak zgodnych operacji"
 
 msgid "No materials"
 msgstr "Brak materiałów"
+
+msgid "No members yet. A project with project stock joins the group on its Details tab."
+msgstr ""
 
 msgid "No method"
 msgstr ""
@@ -15432,6 +15459,9 @@ msgstr "Tylko jeśli różni się od nazwy dostawcy"
 
 msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
 msgstr "Tylko jedna integracja wydatków może być aktywna jednocześnie. Najpierw odinstaluj bieżącą, a następnie połącz Ramp."
+
+msgid "Only projects at this location can join"
+msgstr ""
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Tylko wykwalifikowani pracownicy mogą być zaplanowani i uruchamiać ten proces"
@@ -16590,6 +16620,9 @@ msgstr "Planuj z wyprzedzeniem, projektując zapotrzebowanie dla każdego artyku
 msgid "Plan locked"
 msgstr ""
 
+msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "Zaplanuj pracę"
 
@@ -16654,6 +16687,12 @@ msgstr "Akcja planowania"
 msgid "Planning group"
 msgstr ""
 
+msgid "Planning Group"
+msgstr ""
+
+msgid "Planning Groups"
+msgstr ""
+
 msgid "Planning horizon"
 msgstr "Horyzont planowania"
 
@@ -16668,6 +16707,9 @@ msgstr "Horyzont Planowania:"
 
 msgid "Planning Ownership"
 msgstr "Właściciel planowania"
+
+msgid "Planning Priority"
+msgstr ""
 
 msgid "Planning purchase orders need approval"
 msgstr "Zamówienia zakupu z Planowania wymagają zatwierdzenia"
@@ -17026,6 +17068,9 @@ msgstr "Priorytety"
 
 msgid "Priority"
 msgstr "Priorytet"
+
+msgid "Priority Rule"
+msgstr ""
 
 msgid "Privacy Policy"
 msgstr "Polityka prywatnosci"
@@ -22693,6 +22738,9 @@ msgstr "Połączenie Onshape Government wygasło."
 msgid "The operations and steps your parts move through"
 msgstr "Operacje i kroki, przez które przechodzą Twoje części"
 
+msgid "The order in which members get the group's supply"
+msgstr ""
+
 msgid "The ordered list of tasks issues using this workflow must complete; the order here is the order they appear on the issue."
 msgstr "Uporządkowana lista zadań, które problemy korzystające z tego przepływu pracy muszą ukończyć; kolejność tutaj to kolejność, w jakiej pojawiają się na problemie."
 
@@ -24221,6 +24269,9 @@ msgstr "W ramach stałej ilości zamawiania planowanie zamawia dokładnie tę il
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "W ramach polityki maksymalnej ilości planowanie zamawia do tego poziomu dostępności zapasu, gdy punkt zamawiania jest osiągnięty."
 
+msgid "Under the Project Priority rule, a lower number gets the group's supply first"
+msgstr ""
+
 msgid "Undo"
 msgstr "Cofnij"
 
@@ -25595,6 +25646,9 @@ msgstr "Gdzie znajduje się dzisiaj"
 
 msgid "Where new stock of this item lands by default on receipt; per-line storage selections on a receipt override it."
 msgstr "Gdzie nowy zapas tego artykułu ląduje domyślnie przy przyjęciu; wybory magazynowania na poziomie pozycji przy przyjęciu nadpisują to."
+
+msgid "Where received stock goes when no member needs it"
+msgstr ""
 
 msgid "Where stock lives and how it ships."
 msgstr "Gdzie znajduje się zapas i jak się wysyła."

@@ -4,6 +4,8 @@
 
 import type { Database } from "@carbon/database";
 import type {
+  getPlanningGroupMembers,
+  getPlanningGroups,
   getProjectBaselines,
   getProjectBorrows,
   getProjectChangeRequests,
@@ -31,6 +33,12 @@ export type ProjectElementLabor = Tables["projectElementLabor"]["Row"];
 export type ProjectElementCost = Tables["projectElementCost"]["Row"];
 export type LaborCategory = Tables["laborCategory"]["Row"];
 export type LaborCategoryRate = Tables["laborCategoryRate"]["Row"];
+export type PlanningGroup = NonNullable<
+  Awaited<ReturnType<typeof getPlanningGroups>>["data"]
+>[number];
+export type PlanningGroupMember = NonNullable<
+  Awaited<ReturnType<typeof getPlanningGroupMembers>>["data"]
+>[number];
 export type TimesheetEntry = Tables["timesheetEntry"]["Row"];
 export type ProjectLedgerEntry = Tables["projectLedger"]["Row"];
 export type ProjectBaseline = Tables["projectBaseline"]["Row"];

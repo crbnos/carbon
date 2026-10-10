@@ -893,6 +893,8 @@ export const path = {
       generatePath(`${x}/part/${itemId}/purchasing/${id}/delete`),
     deletePaymentTerm: (id: string) =>
       generatePath(`${x}/accounting/payment-terms/delete/${id}`),
+    deletePlanningGroup: (id: string) =>
+      generatePath(`${x}/projects/planning-groups/delete/${id}`),
     deletePriceOverride: (id: string) =>
       generatePath(`${x}/sales/price-list/delete/${id}`),
     deletePricingRule: (id: string) =>
@@ -1754,6 +1756,7 @@ export const path = {
     newPersonAbility: (personId: string) =>
       generatePath(`${x}/resources/person/${personId}/ability/new`),
     newPickingList: `${x}/picking-list/new`,
+    newPlanningGroup: `${x}/projects/planning-groups/new`,
     newPriceOverride: `${x}/sales/price-list/new`,
     newPricingRule: `${x}/sales/pricing-rules/new`,
     newProcedure: `${x}/production/procedures/new`,
@@ -1950,6 +1953,9 @@ export const path = {
     pickingListTracked: (pickingListId: string, lineId: string) =>
       generatePath(`${x}/picking-list/${pickingListId}/tracked/${lineId}`),
     pickingSchedule: `${x}/picking-list/schedule`,
+    planningGroup: (id: string) =>
+      generatePath(`${x}/projects/planning-groups/${id}`),
+    planningGroups: `${x}/projects/planning-groups`,
     planningSettings: `${x}/settings/planning`,
     postJournalEntry: (id: string) =>
       generatePath(`${x}/journal-entry/${id}/post`),

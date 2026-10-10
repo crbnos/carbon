@@ -8,6 +8,7 @@ import {
   LuBriefcaseBusiness,
   LuClipboardCheck,
   LuFolderKanban,
+  LuGroup,
   LuTimer
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -21,7 +22,8 @@ import { path } from "~/utils/path";
 const otherProjectsRoutes = [
   path.to.projectTimesheetApprovals,
   path.to.projectStockTransfers,
-  path.to.laborCategories
+  path.to.laborCategories,
+  path.to.planningGroups
 ];
 
 function isProjectsRoute(pathname: string) {
@@ -81,6 +83,14 @@ export default function useProjectsSubmodules() {
           name: t`Labor Categories`,
           to: path.to.laborCategories,
           icon: <LuBriefcaseBusiness />,
+          role: "employee"
+        },
+        {
+          // Commercial (PLANNING_GROUPS): always listed; a gated company
+          // sees the upgrade overlay on the page.
+          name: t`Planning Groups`,
+          to: path.to.planningGroups,
+          icon: <LuGroup />,
           role: "employee"
         }
       ]

@@ -2430,6 +2430,9 @@ msgstr "An Enterprise sign-in method where everyone on a company's registered em
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 
+msgid "An inactive group's members are planned on their own"
+msgstr "An inactive group's members are planned on their own"
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
 
@@ -3060,6 +3063,9 @@ msgstr "Are you sure you want to delete the partner: {name}? This cannot be undo
 #. placeholder {0}: paymentTerm.name
 msgid "Are you sure you want to delete the payment term: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the payment term: {0}? This cannot be undone."
+
+msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr "Are you sure you want to delete the planning group: {name}? This cannot be undone."
 
 #. placeholder {0}: pricingRule.name
 msgid "Are you sure you want to delete the pricing rule: {0}? This cannot be undone."
@@ -7384,6 +7390,9 @@ msgstr "Delete Period"
 msgid "Delete Picking List"
 msgstr "Delete Picking List"
 
+msgid "Delete Planning Group"
+msgstr "Delete Planning Group"
+
 msgid "Delete Portal"
 msgstr "Delete Portal"
 
@@ -8574,6 +8583,9 @@ msgstr "Edit Picking List"
 msgid "Edit Plan"
 msgstr "Edit Plan"
 
+msgid "Edit Planning Group"
+msgstr "Edit Planning Group"
+
 msgid "Edit Portal"
 msgstr "Edit Portal"
 
@@ -9261,6 +9273,12 @@ msgstr "Everything this run makes lands in one lot. The shop floor can't change 
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
+
+msgid "Exception Project"
+msgstr "Exception Project"
+
+msgid "Excess Rule"
+msgstr "Excess Rule"
 
 msgid "Exchange rate"
 msgstr "Exchange rate"
@@ -13293,6 +13311,9 @@ msgstr "Member"
 msgid "Members"
 msgstr "Members"
 
+msgid "Members net their demand together in MRP. The group must be at the project's location"
+msgstr "Members net their demand together in MRP. The group must be at the project's location"
+
 msgid "Memo"
 msgstr "Memo"
 
@@ -13972,6 +13993,9 @@ msgstr "New Payment Term"
 msgid "New Picking List"
 msgstr "New Picking List"
 
+msgid "New Planning Group"
+msgstr "New Planning Group"
+
 msgid "New Price Override"
 msgstr "New Price Override"
 
@@ -14608,6 +14632,9 @@ msgstr "No matching operations"
 
 msgid "No materials"
 msgstr "No materials"
+
+msgid "No members yet. A project with project stock joins the group on its Details tab."
+msgstr "No members yet. A project with project stock joins the group on its Details tab."
 
 msgid "No method"
 msgstr "No method"
@@ -15432,6 +15459,9 @@ msgstr "Only if it differs from the supplier name"
 
 msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
 msgstr "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
+
+msgid "Only projects at this location can join"
+msgstr "Only projects at this location can join"
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Only qualified employees can be scheduled for and run this process"
@@ -16590,6 +16620,9 @@ msgstr "Plan ahead by projecting demand per item and location, then feed it stra
 msgid "Plan locked"
 msgstr "Plan locked"
 
+msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
+msgstr "Plan several projects as one, buy once for all of them, and see which project each order is for."
+
 msgid "Plan the work"
 msgstr "Plan the work"
 
@@ -16654,6 +16687,12 @@ msgstr "Planning action"
 msgid "Planning group"
 msgstr "Planning group"
 
+msgid "Planning Group"
+msgstr "Planning Group"
+
+msgid "Planning Groups"
+msgstr "Planning Groups"
+
 msgid "Planning horizon"
 msgstr "Planning horizon"
 
@@ -16668,6 +16707,9 @@ msgstr "Planning Horizon:"
 
 msgid "Planning Ownership"
 msgstr "Planning Ownership"
+
+msgid "Planning Priority"
+msgstr "Planning Priority"
 
 msgid "Planning purchase orders need approval"
 msgstr "Planning purchase orders need approval"
@@ -17026,6 +17068,9 @@ msgstr "Priorities"
 
 msgid "Priority"
 msgstr "Priority"
+
+msgid "Priority Rule"
+msgstr "Priority Rule"
 
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
@@ -22693,6 +22738,9 @@ msgstr "The Onshape Government connection expired"
 msgid "The operations and steps your parts move through"
 msgstr "The operations and steps your parts move through"
 
+msgid "The order in which members get the group's supply"
+msgstr "The order in which members get the group's supply"
+
 msgid "The ordered list of tasks issues using this workflow must complete; the order here is the order they appear on the issue."
 msgstr "The ordered list of tasks issues using this workflow must complete; the order here is the order they appear on the issue."
 
@@ -24221,6 +24269,9 @@ msgstr "Under Fixed Reorder Quantity, the exact quantity planning orders each ti
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 
+msgid "Under the Project Priority rule, a lower number gets the group's supply first"
+msgstr "Under the Project Priority rule, a lower number gets the group's supply first"
+
 msgid "Undo"
 msgstr "Undo"
 
@@ -25595,6 +25646,9 @@ msgstr "Where it lives today"
 
 msgid "Where new stock of this item lands by default on receipt; per-line storage selections on a receipt override it."
 msgstr "Where new stock of this item lands by default on receipt; per-line storage selections on a receipt override it."
+
+msgid "Where received stock goes when no member needs it"
+msgstr "Where received stock goes when no member needs it"
 
 msgid "Where stock lives and how it ships."
 msgstr "Where stock lives and how it ships."

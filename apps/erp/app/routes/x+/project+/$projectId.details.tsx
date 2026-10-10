@@ -72,13 +72,52 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(current.error, "Failed to load the project"))
     );
   }
-  const { projectStock, ...rest } = fields;
+  const { projectStock, planningGroupId, planningPriority, ...rest } = fields;
+
+  // Planning group (Projects Phase 3): only a project with project stock may
+  // join, and only a group at the project's location. Joining or leaving
+  // changes planning only; open stock stays in the project's stripe.
+  const hasProjectStock =
+    current.data.status === "Draft"
+      ? (projectStock ?? false)
+      : current.data.projectStock;
+  if (planningGroupId) {
+    if (!hasProjectStock) {
+      return validationError({
+        fieldErrors: {
+          planningGroupId: "Only a project with project stock can join a group"
+        }
+      });
+    }
+    const group = await client
+      .from("planningGroup")
+      .select("id, locationId")
+      .eq("id", planningGroupId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (group.error || !group.data) {
+      return validationError({
+        fieldErrors: { planningGroupId: "Choose a planning group" }
+      });
+    }
+    if (group.data.locationId !== fields.locationId) {
+      return validationError({
+        fieldErrors: {
+          planningGroupId: "The group must be at the project's location"
+        }
+      });
+    }
+  }
 
   const update = await updateProject(client, {
     ...rest,
     ...(current.data.status === "Draft"
       ? { projectStock: projectStock ?? false }
       : {}),
+    planningGroupId: hasProjectStock
+      ? (planningGroupId ?? undefined)
+      : undefined,
+    ...(planningPriority !== undefined ? { planningPriority } : {}),
     id: projectId,
     companyId,
     updatedBy: userId
@@ -162,7 +201,9 @@ export default function ProjectDetailsRoute() {
             project.lockPlanAfterMilestoneId ?? undefined,
           projectStock: project.projectStock,
           chargeAtReceipt: project.chargeAtReceipt,
-          governmentFurnished: project.governmentFurnished
+          governmentFurnished: project.governmentFurnished,
+          planningGroupId: project.planningGroupId ?? undefined,
+          planningPriority: project.planningPriority
         }}
         isProjectStockLocked={project.status !== "Draft"}
         milestones={(routeData?.milestones ?? []).map((milestone) => ({

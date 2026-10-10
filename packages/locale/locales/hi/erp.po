@@ -2430,6 +2430,9 @@ msgstr "एक एंटरप्राइज साइन-इन विधि �
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "एक HTTPS अनुरोध जो कार्बन आपके सिस्टम को भेजता है जब एक वर्कफ़्लो उस चरण तक पहुंचता है, आपके द्वारा कॉन्फ़िगर किए गए किसी भी हेडर और बॉडी को ले जाता है।"
 
+msgid "An inactive group's members are planned on their own"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
 
@@ -3060,6 +3063,9 @@ msgstr "क्या आप भागीदार {name} को हटाना 
 #. placeholder {0}: paymentTerm.name
 msgid "Are you sure you want to delete the payment term: {0}? This cannot be undone."
 msgstr "क्या आप भुगतान शर्तें {0} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
+
+msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: pricingRule.name
 msgid "Are you sure you want to delete the pricing rule: {0}? This cannot be undone."
@@ -7384,6 +7390,9 @@ msgstr "अवधि हटाएँ"
 msgid "Delete Picking List"
 msgstr "पिकिंग सूची हटाएं"
 
+msgid "Delete Planning Group"
+msgstr ""
+
 msgid "Delete Portal"
 msgstr "पोर्टल हटाएं"
 
@@ -8574,6 +8583,9 @@ msgstr "पिकिंग सूची संपादित करें"
 msgid "Edit Plan"
 msgstr ""
 
+msgid "Edit Planning Group"
+msgstr ""
+
 msgid "Edit Portal"
 msgstr "पोर्टल संपादित करें"
 
@@ -9261,6 +9273,12 @@ msgstr "इस रन में निर्माण होने वाली 
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB कुल से अधिक है — भेजने के लिए कुछ अनुलग्नक निकालें।"
+
+msgid "Exception Project"
+msgstr ""
+
+msgid "Excess Rule"
+msgstr ""
 
 msgid "Exchange rate"
 msgstr "विनिमय दर"
@@ -13293,6 +13311,9 @@ msgstr "सदस्य"
 msgid "Members"
 msgstr "सदस्य"
 
+msgid "Members net their demand together in MRP. The group must be at the project's location"
+msgstr ""
+
 msgid "Memo"
 msgstr "मेमो"
 
@@ -13972,6 +13993,9 @@ msgstr "नई भुगतान शर्तें"
 msgid "New Picking List"
 msgstr "नई पिकिंग सूची"
 
+msgid "New Planning Group"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "नया मूल्य ओवरराइड"
 
@@ -14608,6 +14632,9 @@ msgstr "कोई मेल खाने वाला ऑपरेशन नह�
 
 msgid "No materials"
 msgstr "कोई सामग्री नहीं"
+
+msgid "No members yet. A project with project stock joins the group on its Details tab."
+msgstr ""
 
 msgid "No method"
 msgstr ""
@@ -15432,6 +15459,9 @@ msgstr "केवल यदि यह आपूर्तिकर्ता क�
 
 msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
 msgstr "एक बार में केवल एक खर्च एकीकरण सक्रिय हो सकता है। पहले वर्तमान को अनइंस्टॉल करें, फिर Ramp को कनेक्ट करें।"
+
+msgid "Only projects at this location can join"
+msgstr ""
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "केवल योग्य कर्मचारी ही इस प्रक्रिया के लिए अनुसूचित और चलाए जा सकते हैं"
@@ -16590,6 +16620,9 @@ msgstr "आइटम और स्थान के अनुसार मां�
 msgid "Plan locked"
 msgstr ""
 
+msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "काम की योजना बनाएं"
 
@@ -16654,6 +16687,12 @@ msgstr "योजना कार्रवाई"
 msgid "Planning group"
 msgstr ""
 
+msgid "Planning Group"
+msgstr ""
+
+msgid "Planning Groups"
+msgstr ""
+
 msgid "Planning horizon"
 msgstr "योजना क्षितिज"
 
@@ -16668,6 +16707,9 @@ msgstr "योजना क्षितिज:"
 
 msgid "Planning Ownership"
 msgstr "योजना स्वामित्व"
+
+msgid "Planning Priority"
+msgstr ""
 
 msgid "Planning purchase orders need approval"
 msgstr "योजना क्रय आदेशों को अनुमोदन की आवश्यकता है"
@@ -17026,6 +17068,9 @@ msgstr "प्राथमिकताएं"
 
 msgid "Priority"
 msgstr "प्राथमिकता"
+
+msgid "Priority Rule"
+msgstr ""
 
 msgid "Privacy Policy"
 msgstr "गोपनीयता नीति"
@@ -22693,6 +22738,9 @@ msgstr "Onshape Government कनेक्शन समाप्त हो ग�
 msgid "The operations and steps your parts move through"
 msgstr "ऑपरेशन और चरण जिनके माध्यम से आपके पार्ट्स आगे बढ़ते हैं"
 
+msgid "The order in which members get the group's supply"
+msgstr ""
+
 msgid "The ordered list of tasks issues using this workflow must complete; the order here is the order they appear on the issue."
 msgstr "कार्यों की क्रमित सूची जो इस वर्कफ़्लो का उपयोग करने वाली समस्याओं को पूरा करना चाहिए; यहाँ का क्रम वह क्रम है जिसमें वे समस्या पर दिखाई देते हैं।"
 
@@ -24221,6 +24269,9 @@ msgstr "निश्चित पुनः आदेश मात्रा क�
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "अधिकतम मात्रा नीति के तहत, योजना जब पुनः ऑर्डर बिंदु सक्रिय होता है इस हाथ में स्तर तक का आदेश देता है।"
 
+msgid "Under the Project Priority rule, a lower number gets the group's supply first"
+msgstr ""
+
 msgid "Undo"
 msgstr "पूर्ववत करें"
 
@@ -25595,6 +25646,9 @@ msgstr "आज यह कहां रहता है"
 
 msgid "Where new stock of this item lands by default on receipt; per-line storage selections on a receipt override it."
 msgstr "जहां इस आइटम की नई स्टॉक डिफ़ॉल्ट रूप से प्राप्ति पर उतरती है; एक रसीद पर प्रति-पंक्ति संचयन चयन इसे ओवरराइड करते हैं।"
+
+msgid "Where received stock goes when no member needs it"
+msgstr ""
 
 msgid "Where stock lives and how it ships."
 msgstr "स्टॉक कहाँ रहता है और यह कैसे भेजा जाता है।"

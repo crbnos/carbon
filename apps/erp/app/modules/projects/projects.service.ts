@@ -2506,6 +2506,132 @@ export async function upsertLaborCategoryRate(
     .single();
 }
 
+// --- Planning groups (Projects Phase 3) ---------------------------------------
+// Authoring a group is commercial: `upsertPlanningGroup` lives in
+// `@carbon/ee/pegging.server`, with the entitlement check inside it.
+
+const PLANNING_GROUP_COLUMNS =
+  "*, location:location!planningGroup_locationId_fkey(id, name), exceptionProject:project!planningGroup_exception_fkey(id, identifier, name), members:project!project_planningGroup_fkey(count)" as const;
+
+/**
+ * Lists the planning groups of the company, with their location, the
+ * exception project and the count of member projects.
+ * @mcp read
+ */
+export async function getPlanningGroups(
+  client: Client,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("planningGroup")
+    .select(PLANNING_GROUP_COLUMNS, { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+/**
+ * Gets one planning group.
+ * @mcp read
+ */
+export async function getPlanningGroup(
+  client: Client,
+  planningGroupId: string,
+  companyId: string
+) {
+  return client
+    .from("planningGroup")
+    .select(PLANNING_GROUP_COLUMNS)
+    .eq("id", planningGroupId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/**
+ * Lists the active planning groups of the company, for a picker.
+ * @mcp read
+ */
+export async function getPlanningGroupsList(client: Client, companyId: string) {
+  return client
+    .from("planningGroup")
+    .select("id, name, locationId")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name", { ascending: true });
+}
+
+/**
+ * Lists the member projects of a planning group. Membership is shown on the
+ * group, so no project can hoard the group's stock out of sight.
+ * @mcp read
+ */
+export async function getPlanningGroupMembers(
+  client: Client,
+  planningGroupId: string,
+  companyId: string
+) {
+  return client
+    .from("project")
+    .select("id, identifier, name, planningPriority, status")
+    .eq("planningGroupId", planningGroupId)
+    .eq("companyId", companyId)
+    .order("planningPriority", { ascending: true })
+    .order("identifier", { ascending: true });
+}
+
+/**
+ * Deletes a planning group. It refuses while a project is a member, or a
+ * purchase order line or job is made for the group.
+ * @mcp delete
+ */
+export async function deletePlanningGroup(
+  client: Client,
+  planningGroupId: string,
+  companyId: string
+) {
+  const [members, lines, jobs] = await Promise.all([
+    client
+      .from("project")
+      .select("id", { count: "exact", head: true })
+      .eq("planningGroupId", planningGroupId)
+      .eq("companyId", companyId),
+    client
+      .from("purchaseOrderLine")
+      .select("id", { count: "exact", head: true })
+      .eq("planningGroupId", planningGroupId)
+      .eq("companyId", companyId),
+    client
+      .from("job")
+      .select("id", { count: "exact", head: true })
+      .eq("planningGroupId", planningGroupId)
+      .eq("companyId", companyId)
+  ]);
+  const readError = members.error ?? lines.error ?? jobs.error;
+  if (readError) return { data: null, error: readError };
+  if ((members.count ?? 0) > 0) {
+    return refusal("Remove the member projects from the group first");
+  }
+  if ((lines.count ?? 0) > 0 || (jobs.count ?? 0) > 0) {
+    return refusal(
+      "The group has purchase order lines or jobs, so it cannot be deleted"
+    );
+  }
+
+  return client
+    .from("planningGroup")
+    .delete()
+    .eq("id", planningGroupId)
+    .eq("companyId", companyId);
+}
+
 // --- Timesheets --------------------------------------------------------------
 
 const TIMESHEET_ENTRY_COLUMNS =
