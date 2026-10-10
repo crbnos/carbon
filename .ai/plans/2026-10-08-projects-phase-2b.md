@@ -37,7 +37,7 @@ The plan covers:
 - [x] Task 3: Add the segment to the engine keys
 - [x] Task 4: Add the netting sequence as a pure module
 - [x] Task 5: Segment the demand and supply views
-- [ ] Task 6: Segment the inputs of `runMrp`
+- [x] Task 6: Segment the inputs of `runMrp`
 - [ ] Task 7: Net segments and draw common surplus in `explodeBom`
 - [ ] Task 8: Segment the actuals and the Phase 7 writes
 - [ ] Task 9: Segment the planning RPCs and grids
@@ -670,3 +670,8 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 5: `openPurchaseOrderLines` leaves out a line that the receipt consumes to its project. The condition mirrors `consumedByProject` in `post-receipt/index.ts`: not outside processing, an inventory item, a project without project stock, and `project_cost_treatment(…, company_today(companyId))` not Statistical. `IS DISTINCT FROM` keeps a NULL treatment from hiding the line.
 - Task 5 (deviation): the `projectState` join also matches on `companyId`, because its primary key is `("id", "companyId")`. `openProjectBorrows` also carries `borrowerProjectId`, `lenderProjectId` and `id`.
 - Task 5: on Carbon Development the 4 views give the same row counts and sums before and after (sales 7, job materials 101, production 2, PO lines 7), and 0 rows have a segment. A rolled-back smoke test proved the 4 rules: a consumed PO line leaves the view, a stocked line and a receive-to-project-stock job carry the project segment, and a consume-to-project job leaves `openProductionOrders`.
+- Task 6: `runMrp` reads `openProjectMaterialLines` and `openProjectBorrows` with `fetchAll` (`.order("id")`), every stripe of `itemStockQuantities`, and the ids of the company's projects with project stock. `planCompany` maps each stripe to a segment with the new `planningSegmentOf` (the rule of `project_planning_segment`) and sums per key. The new inputs are optional, so the basic fixture loads unchanged.
+- Task 6: Project Material and Project Borrow demand write `demandActual` rows of those source types, and the lender's borrow supply writes a `Project Borrow` `supplyActual` row and enters the explosion's supply map. A material with no required date, or a borrow with no due date, falls in the current week.
+- Task 6 (deviation): a Project Material contributor writes no `demandForecastSource` row. The table has no plan-line material column, and its `demandForecastSource_source_check` refuses the new source type. A borrow has no lineage source type, so it gets no contributor. Follow-up: a lineage column for plan-line materials, with the item planning chart's source list.
+- Task 6: Phase 4.5 and forecast consumption already key on segment `''` only, and a project job material now consumes no forecast. The BOM-level supersession (the child swap and the Consume First redirect in `explodeBom`) applies in every segment, as Task 3 left it, because the BOM is shared. `planCompany` applies no reorder point or safety stock to any key, so lot-for-lot needs no change here; Task 10 applies it in the planning actions.
+- Task 6: until Task 8 writes `planningSegmentId` on the actual rows, a company with project stock can write two actual rows with one key. The 2 tasks ship together.

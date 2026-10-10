@@ -10,6 +10,7 @@
 import type { Database } from "@carbon/database";
 import {
   type BomChild,
+  COMMON_SEGMENT,
   type DemandContributor,
   explodeBom,
   type MethodType,
@@ -59,7 +60,7 @@ export type PlanCompanyInputs = {
   /** The company's locations, in the order `runMrp` read them. */
   locationIds: string[];
   consumptionWindow: { backwardPeriods: number; forwardPeriods: number };
-  salesOrderLines: Pick<
+  salesOrderLines: (Pick<
     Views["openSalesOrderLines"]["Row"],
     | "id"
     | "itemId"
@@ -67,8 +68,9 @@ export type PlanCompanyInputs = {
     | "promisedDate"
     | "quantityToConsume"
     | "quantityToSend"
-  >[];
-  jobMaterialLines: Pick<
+  > &
+    Segmented)[];
+  jobMaterialLines: (Pick<
     Views["openJobMaterialLines"]["Row"],
     | "dueDate"
     | "itemId"
@@ -77,12 +79,14 @@ export type PlanCompanyInputs = {
     | "locationId"
     | "quantityPerParent"
     | "quantityToIssue"
-  >[];
-  productionLines: Pick<
+  > &
+    Segmented)[];
+  productionLines: (Pick<
     Views["openProductionOrders"]["Row"],
     "deadlineType" | "dueDate" | "itemId" | "locationId" | "quantityToReceive"
-  >[];
-  purchaseOrderLines: Pick<
+  > &
+    Segmented)[];
+  purchaseOrderLines: (Pick<
     Views["openPurchaseOrderLines"]["Row"],
     | "dueDate"
     | "itemId"
@@ -91,7 +95,31 @@ export type PlanCompanyInputs = {
     | "orderDate"
     | "promisedDate"
     | "quantityToReceive"
+  > &
+    Segmented)[];
+  /** Open plan-line materials (`openProjectMaterialLines`). */
+  projectMaterialLines?: Pick<
+    Views["openProjectMaterialLines"]["Row"],
+    | "id"
+    | "itemId"
+    | "locationId"
+    | "planningSegmentId"
+    | "quantity"
+    | "requiredDate"
   >[];
+  /** Open borrows between projects (`openProjectBorrows`). */
+  projectBorrows?: Pick<
+    Views["openProjectBorrows"]["Row"],
+    | "borrowerSegmentId"
+    | "id"
+    | "itemId"
+    | "lenderSegmentId"
+    | "locationId"
+    | "paybackDueDate"
+    | "quantity"
+  >[];
+  /** The ids of the company's projects with project stock. */
+  stockedProjectIds?: string[];
   demandProjections: Pick<
     Tables["demandProjection"]["Row"],
     "forecastQuantity" | "id" | "itemId" | "locationId" | "periodId"
@@ -105,9 +133,11 @@ export type PlanCompanyInputs = {
     successorEffectivityDate: string | null;
     conversionFactor: number | null;
   }[];
+  /** On-hand per stripe; `projectId` '' (or absent) is common stock. */
   onHand: {
     itemId: string | null;
     locationId: string | null;
+    projectId?: string | null;
     quantityOnHand: number | string | null;
   }[];
   activeMethods: { id: string | null; itemId: string | null }[];
@@ -129,6 +159,23 @@ export type PlanCompanyInputs = {
     "itemId" | "locationId" | "periodId" | "sourceType"
   >[];
 };
+
+/** The netting segment of a demand or supply row; absent is common (''). */
+type Segmented = { planningSegmentId?: string | null };
+
+/**
+ * The netting segment of a project's stock or demand, the rule of the SQL
+ * `project_planning_segment`: a project with project stock is its own
+ * segment, any other project (or none) is common ('').
+ */
+export function planningSegmentOf(
+  projectId: string | null | undefined,
+  stockedProjectIds: ReadonlySet<string>
+): string {
+  return projectId && stockedProjectIds.has(projectId)
+    ? projectId
+    : COMMON_SEGMENT;
+}
 
 type DemandForecastSourceInsert =
   Database["public"]["Tables"]["demandForecastSource"]["Insert"];
@@ -205,12 +252,21 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     today.toString()
   );
 
+  // On-hand per segment: a stripe of a project with project stock is that
+  // project's segment; common stock (and any other stripe) is ''.
+  const stockedProjectIds = new Set(input.stockedProjectIds ?? []);
   const baseInventoryByLocationItem = new Map<string, number>();
   for (const row of input.onHand) {
     if (row.itemId && row.locationId) {
+      const key = makeLocationItemKey(
+        row.locationId,
+        row.itemId,
+        planningSegmentOf(row.projectId, stockedProjectIds)
+      );
       baseInventoryByLocationItem.set(
-        makeLocationItemKey(row.locationId, row.itemId),
-        Number(row.quantityOnHand) || 0
+        key,
+        (baseInventoryByLocationItem.get(key) ?? 0) +
+          (Number(row.quantityOnHand) || 0)
       );
     }
   }
@@ -265,7 +321,8 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     const periodKey = makeKey(
       line.locationId ?? "",
       period.id ?? "",
-      line.itemId
+      line.itemId,
+      line.planningSegmentId ?? COMMON_SEGMENT
     );
     jobSupplyByLocationPeriodItem.set(
       periodKey,
@@ -293,12 +350,33 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     const periodKey = makeKey(
       line.locationId ?? "",
       period.id ?? "",
-      line.itemId
+      line.itemId,
+      line.planningSegmentId ?? COMMON_SEGMENT
     );
     poSupplyByLocationPeriodItem.set(
       periodKey,
       (poSupplyByLocationPeriodItem.get(periodKey) ?? 0) +
         line.quantityToReceive
+    );
+  }
+
+  // An open borrow is firm supply to the lender: the borrower pays it back
+  // on the payback due date.
+  const borrowSupplyByLocationPeriodItem = new Map<string, number>();
+  for (const borrow of input.projectBorrows ?? []) {
+    if (!borrow.itemId || !borrow.locationId || !borrow.quantity) continue;
+    if (borrow.quantity <= 0) continue;
+    const period = borrowPeriod(borrow.paybackDueDate, today, periods);
+    if (!period) continue;
+    const periodKey = makeKey(
+      borrow.locationId,
+      period.id,
+      borrow.itemId,
+      borrow.lenderSegmentId ?? COMMON_SEGMENT
+    );
+    borrowSupplyByLocationPeriodItem.set(
+      periodKey,
+      (borrowSupplyByLocationPeriodItem.get(periodKey) ?? 0) + borrow.quantity
     );
   }
 
@@ -312,6 +390,8 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
   // Track actual demands separately for demandActual output
   const salesDemandByKey = new Map<string, number>();
   const jobMaterialDemandByKey = new Map<string, number>();
+  const projectMaterialDemandByKey = new Map<string, number>();
+  const borrowDemandByKey = new Map<string, number>();
 
   // Top-level contributors (from sales orders and job materials) — keyed by
   // grossDemand key. Used as the starting contributor set when BOM explosion
@@ -412,6 +492,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     // A null locationId would write demandForecast/demandActual with
     // locationId="" and violate their locationId FK — skip (see above).
     if (!line.itemId || !line.quantityToIssue || !line.locationId) continue;
+    const segmentId = line.planningSegmentId ?? COMMON_SEGMENT;
 
     const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
     const requiredDate = dueDate.add({ days: -(line.leadTime ?? 7) });
@@ -421,8 +502,12 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     // Real dependent demand consumes component-level forecast too. Backlog
     // is judged on the job's due date, not the lead-time-shifted required
     // date: a job due this week whose material should have been ordered
-    // last week is this week's demand.
-    if (actualConsumesForecast(dueDate, firstPeriodStart)) {
+    // last week is this week's demand. Forecasts are common, so only common
+    // demand consumes them.
+    if (
+      segmentId === COMMON_SEGMENT &&
+      actualConsumesForecast(dueDate, firstPeriodStart)
+    ) {
       addConsumption(
         line.locationId,
         line.itemId,
@@ -431,14 +516,20 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
       );
     }
 
-    const key = makeKey(line.locationId ?? "", period.id ?? "", line.itemId);
+    const key = makeKey(
+      line.locationId ?? "",
+      period.id ?? "",
+      line.itemId,
+      segmentId
+    );
     grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantityToIssue);
 
     const actualKey = makeActualKey(
       line.itemId,
       line.locationId ?? "",
       period.id ?? "",
-      "Job Material"
+      "Job Material",
+      segmentId
     );
     jobMaterialDemandByKey.set(
       actualKey,
@@ -452,10 +543,74 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
         jobId: line.jobId,
         parentItemId: line.itemId,
         quantity: line.quantityToIssue,
-        perAssemblyQuantity: Number(line.quantityPerParent) || undefined
+        perAssemblyQuantity: Number(line.quantityPerParent) || undefined,
+        ...(segmentId === COMMON_SEGMENT ? {} : { segmentId })
       });
       topLevelContributors.set(key, contributors);
     }
+  }
+
+  // Project materials: open plan-line materials, demand on their required
+  // date in their project's segment. They consume no forecast.
+  for (const line of input.projectMaterialLines ?? []) {
+    if (!line.id || !line.itemId || !line.locationId || !line.quantity)
+      continue;
+    if (line.quantity <= 0) continue;
+    const segmentId = line.planningSegmentId ?? COMMON_SEGMENT;
+    const requiredDate = line.requiredDate
+      ? parseDate(line.requiredDate)
+      : today;
+    const period = findPeriod(requiredDate, today, periods);
+    if (!period) continue;
+
+    const key = makeKey(line.locationId, period.id, line.itemId, segmentId);
+    grossDemand.set(key, (grossDemand.get(key) ?? 0) + line.quantity);
+
+    const actualKey = makeActualKey(
+      line.itemId,
+      line.locationId,
+      period.id,
+      "Project Material",
+      segmentId
+    );
+    projectMaterialDemandByKey.set(
+      actualKey,
+      (projectMaterialDemandByKey.get(actualKey) ?? 0) + line.quantity
+    );
+
+    const contributors = topLevelContributors.get(key) ?? [];
+    contributors.push({
+      sourceType: "Project Material",
+      projectElementMaterialId: line.id,
+      parentItemId: line.itemId,
+      quantity: line.quantity,
+      ...(segmentId === COMMON_SEGMENT ? {} : { segmentId })
+    });
+    topLevelContributors.set(key, contributors);
+  }
+
+  // An open borrow is firm demand on the borrower: it pays the lender back
+  // on the payback due date. It has no lineage source type, so no
+  // contributor.
+  for (const borrow of input.projectBorrows ?? []) {
+    if (!borrow.itemId || !borrow.locationId || !borrow.quantity) continue;
+    if (borrow.quantity <= 0) continue;
+    const period = borrowPeriod(borrow.paybackDueDate, today, periods);
+    if (!period) continue;
+    const segmentId = borrow.borrowerSegmentId ?? COMMON_SEGMENT;
+    const key = makeKey(borrow.locationId, period.id, borrow.itemId, segmentId);
+    grossDemand.set(key, (grossDemand.get(key) ?? 0) + borrow.quantity);
+    const actualKey = makeActualKey(
+      borrow.itemId,
+      borrow.locationId,
+      period.id,
+      "Project Borrow",
+      segmentId
+    );
+    borrowDemandByKey.set(
+      actualKey,
+      (borrowDemandByKey.get(actualKey) ?? 0) + borrow.quantity
+    );
   }
 
   // Demand projections, net of forecast consumption. Do NOT net firm job/PO
@@ -667,11 +822,16 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
   const jobAndPoSupplyByLocationPeriodItem = new Map(
     jobSupplyByLocationPeriodItem
   );
-  for (const [key, qty] of poSupplyByLocationPeriodItem) {
-    jobAndPoSupplyByLocationPeriodItem.set(
-      key,
-      (jobAndPoSupplyByLocationPeriodItem.get(key) ?? 0) + qty
-    );
+  for (const supply of [
+    poSupplyByLocationPeriodItem,
+    borrowSupplyByLocationPeriodItem
+  ]) {
+    for (const [key, qty] of supply) {
+      jobAndPoSupplyByLocationPeriodItem.set(
+        key,
+        (jobAndPoSupplyByLocationPeriodItem.get(key) ?? 0) + qty
+      );
+    }
   }
 
   // Substitute superseded components in the BOMs so a parent's explosion
@@ -776,8 +936,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
           redirectedFromItemId: c.redirectedFromItemId ?? null,
           companyId
         });
-      } else {
-        // sourceType === "Demand Projection"
+      } else if (c.sourceType === "Demand Projection") {
         demandForecastSourceInserts.push({
           itemId,
           locationId,
@@ -792,6 +951,8 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
           companyId
         });
       }
+      // A Project Material contributor writes no lineage row:
+      // demandForecastSource has no column for a plan-line material.
     }
   }
 
@@ -845,20 +1006,26 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     }
   }
 
-  // Job material demand actuals
-  for (const [key, quantity] of jobMaterialDemandByKey) {
-    if (quantity > 0) {
-      const [itemId, locationId, periodId] = splitActualKey(key);
-      demandActualsMap.set(key, {
-        itemId,
-        locationId,
-        periodId,
-        actualQuantity: quantity,
-        sourceType: "Job Material",
-        companyId,
-        createdBy: userId,
-        updatedBy: userId
-      });
+  // Job material, project material and borrow demand actuals
+  for (const [actuals, sourceType] of [
+    [jobMaterialDemandByKey, "Job Material"],
+    [projectMaterialDemandByKey, "Project Material"],
+    [borrowDemandByKey, "Project Borrow"]
+  ] as const) {
+    for (const [key, quantity] of actuals) {
+      if (quantity > 0) {
+        const [itemId, locationId, periodId] = splitActualKey(key);
+        demandActualsMap.set(key, {
+          itemId,
+          locationId,
+          periodId,
+          actualQuantity: quantity,
+          sourceType,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        });
+      }
     }
   }
 
@@ -882,49 +1049,33 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     });
   }
 
-  // Production order supply actuals
-  for (const [key, quantity] of jobSupplyByLocationPeriodItem) {
-    if (quantity > 0) {
-      const [locationId, periodId, itemId] = splitKey(key);
-      const actualKey = makeActualKey(
-        itemId,
-        locationId,
-        periodId,
-        "Production Order"
-      );
-      supplyActualsMap.set(actualKey, {
-        itemId,
-        locationId,
-        periodId,
-        actualQuantity: quantity,
-        sourceType: "Production Order",
-        companyId,
-        createdBy: userId,
-        updatedBy: userId
-      });
-    }
-  }
-
-  // Purchase order supply actuals
-  for (const [key, quantity] of poSupplyByLocationPeriodItem) {
-    if (quantity > 0) {
-      const [locationId, periodId, itemId] = splitKey(key);
-      const actualKey = makeActualKey(
-        itemId,
-        locationId,
-        periodId,
-        "Purchase Order"
-      );
-      supplyActualsMap.set(actualKey, {
-        itemId,
-        locationId,
-        periodId,
-        actualQuantity: quantity,
-        sourceType: "Purchase Order",
-        companyId,
-        createdBy: userId,
-        updatedBy: userId
-      });
+  // Production order, purchase order and borrow supply actuals
+  for (const [supply, sourceType] of [
+    [jobSupplyByLocationPeriodItem, "Production Order"],
+    [poSupplyByLocationPeriodItem, "Purchase Order"],
+    [borrowSupplyByLocationPeriodItem, "Project Borrow"]
+  ] as const) {
+    for (const [key, quantity] of supply) {
+      if (quantity > 0) {
+        const [locationId, periodId, itemId, segmentId] = splitKey(key);
+        const actualKey = makeActualKey(
+          itemId,
+          locationId,
+          periodId,
+          sourceType,
+          segmentId
+        );
+        supplyActualsMap.set(actualKey, {
+          itemId,
+          locationId,
+          periodId,
+          actualQuantity: quantity,
+          sourceType,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        });
+      }
     }
   }
 
@@ -949,6 +1100,19 @@ export function activeMethodIdByItem(
     }
   }
   return methodIdByItem;
+}
+
+/** The period of a borrow's payback due date; an overdue borrow is due now. */
+function borrowPeriod(
+  paybackDueDate: string | null,
+  today: CalendarDate,
+  periods: DemandPeriod[]
+): DemandPeriod | undefined {
+  return findPeriod(
+    paybackDueDate ? parseDate(paybackDueDate) : today,
+    today,
+    periods
+  );
 }
 
 export function findPeriod(

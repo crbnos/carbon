@@ -119,7 +119,9 @@ export async function runMrp(
       jobMaterialLines,
       productionLines,
       purchaseOrderLines,
-      demandProjections
+      demandProjections,
+      projectMaterialLines,
+      projectBorrows
     ] = await Promise.all([
       fetchAll<Database["public"]["Views"]["openSalesOrderLines"]["Row"]>(() =>
         client
@@ -160,6 +162,21 @@ export async function runMrp(
             periods.map((p: DemandPeriod) => p.id ?? "").filter(Boolean)
           )
           .order("id")
+      ),
+      fetchAll<Database["public"]["Views"]["openProjectMaterialLines"]["Row"]>(
+        () =>
+          client
+            .from("openProjectMaterialLines")
+            .select("*")
+            .eq("companyId", companyId)
+            .order("id")
+      ),
+      fetchAll<Database["public"]["Views"]["openProjectBorrows"]["Row"]>(() =>
+        client
+          .from("openProjectBorrows")
+          .select("*")
+          .eq("companyId", companyId)
+          .order("id")
       )
     ]);
 
@@ -173,6 +190,9 @@ export async function runMrp(
       throw new Error("Failed to load purchase order lines");
     if (demandProjections.error)
       throw new Error("Failed to load demand projections");
+    if (projectMaterialLines.error)
+      throw new Error("Failed to load project material lines");
+    if (projectBorrows.error) throw new Error("Failed to load project borrows");
 
     // Forecast-consumption window (weekly periods): how far an actual reaches
     // to consume forecast beyond its own week — backward first, then forward.
@@ -234,15 +254,24 @@ export async function runMrp(
     // (~6-8s of an 8M-row tenant's run). Semantics deliberately follow the
     // aggregate: Rejected tracked stock is NOT available to plan against,
     // matching get_inventory_quantities — the raw ledger sum counted it.
-    const inventoryRows = await db
-      .selectFrom("itemStockQuantities")
-      .select(["itemId", "locationId", "quantityOnHand"])
-      .where("companyId", "=", companyId)
-      // Common stock only: project stock is not planned until Phase 2b's
-      // segment keys. One row per key, so planCompany's on-hand map keeps a
-      // single value.
-      .where("projectId", "=", "")
-      .execute();
+    //
+    // Every stripe is read: planCompany sums each into its netting segment
+    // (a project with project stock, else common), the rule of the SQL
+    // project_planning_segment. The projects with project stock are read
+    // once for that mapping.
+    const [inventoryRows, stockedProjects] = await Promise.all([
+      db
+        .selectFrom("itemStockQuantities")
+        .select(["itemId", "locationId", "projectId", "quantityOnHand"])
+        .where("companyId", "=", companyId)
+        .execute(),
+      db
+        .selectFrom("project")
+        .select(["id"])
+        .where("companyId", "=", companyId)
+        .where("projectStock", "=", true)
+        .execute()
+    ]);
 
     // Bulk-load all BOMs: use activeMakeMethods view (returns one method per item,
     // prioritizing 'Active' status then highest version — same logic as get_method_tree)
@@ -353,6 +382,9 @@ export async function runMrp(
       productionLines: productionLines.data ?? [],
       purchaseOrderLines: purchaseOrderLines.data ?? [],
       demandProjections: demandProjections.data ?? [],
+      projectMaterialLines: projectMaterialLines.data ?? [],
+      projectBorrows: projectBorrows.data ?? [],
+      stockedProjectIds: stockedProjects.map((project) => project.id),
       items: allItems,
       replenishments: allReplenishments,
       supersessions: supersessions.data ?? [],

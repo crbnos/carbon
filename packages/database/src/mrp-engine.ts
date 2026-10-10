@@ -47,6 +47,10 @@ export type DemandContributor =
   | (DemandContributorBase & {
       sourceType: "Demand Projection";
       demandProjectionId: string;
+    })
+  | (DemandContributorBase & {
+      sourceType: "Project Material";
+      projectElementMaterialId: string;
     });
 
 export type BomExplosionInput = {
