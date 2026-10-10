@@ -52,7 +52,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 - [x] Task 9: Add `harden_pegs_for_supply`
 - [x] Task 10: Distribute grouped PO receipts and their reversals
 - [x] Task 11: Distribute grouped job output
-- [ ] Task 12: Charge price variance to member projects
+- [x] Task 12: Charge price variance to member projects
 - [ ] Task 13: Add soft-peg commitments to the cost summary
 - [ ] Task 14: Propose member Transfers and Borrows
 - [ ] Task 15: Add the Pegging tab and manual pegs
@@ -800,3 +800,8 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 11: the Output layer is written per stripe at the job's unit cost (`ROUND(…, 5)`), and the last stripe takes the rounding rest. So scrap spreads by quantity, with no extra posting.
 - Task 11: the backflush of a grouped job reads the job's current pegs (any state) in the order `harden_pegs_for_supply` walks and draws the members' stock in that order, then common stock. A grouped job with no peg draws common stock, as before. The migration changed no signature, so `generate:types` gave no diff.
 - Task 11: the new `project-issue.test.ts` case completes 3 of a grouped job with pegs 2 and 1. It checks 2 striped receipt rows, 2 Output layers (65.33333 and 32.66667), the backflush (member A's 4, then 5 common) and 2 Hard pegs linked to their rows. `project-issue` passes (13), and the full server-functions suite passes (514). The 5 job-completion and backflush pgTAP scripts and `harden-pegs-for-supply.test.sql` exit 0 with no ERROR line.
+- Task 12: the `allocateVarianceAcrossLayers` call sites are now at lines 1454 (receipt layers) and 1528 (the legacy self-heal, which has no stripes and is unchanged). `ReceiptLayerLike` and `perLayer` carry an optional `projectId`, and the allocation returns `consumed`: the matched units no on-hand unit covers, taken from each layer's consumed units (`quantity − remainingQuantity`) in order. `consumed` is optional and set only when there is a variance to split, so the existing exact-shape tests still pass.
+- Task 12 (deviation, scope): only a PO line with `planningGroupId` moves the consumed share to member projects. A Phase 2a project-stock layer of an ungrouped line keeps its posting (the whole consumed share to PPV, or the Charge-at-receipt row), so invoices without grouped supply post as before.
+- Task 12: per member, the consumed share posts to the member's project account on the project root (`stripeVarianceCharge`, `project-charges.ts`, resolved like `forLine`, with the `commitment` gate), with a `Material Variance` `projectLedger` row and the Project dimension. A Statistical member keeps its share in PPV. The rest of the consumed share stays on the PPV line.
+- Task 12 (beyond the plan's file list): `loadInvoiceProjectCharges` reads the distinct stripes of the grouped lines' receipt layers in 1 query and loads their posting contexts in the same `loadProjectPostingContexts` call. An invoice with no grouped line runs no extra query.
+- Task 12: the new `project-invoice.test.ts` case receives 60 into 3 stripes, empties P-101's layer (its 20 units issued), and posts an invoice at +1.00 per unit. It checks 20.00 to the project account with P-101's ledger row and tag, 40.00 to inventory, adjustment children of 30.00 (P-102) and 10.00 (P-103), and no PPV line. The utils case pins the same split. `post-purchase-invoice` passes (24), utils passes (621), the full server-functions suite passes (515), and the pgTAP scripts exit 0. `@carbon/server-functions` and `@carbon/utils` typecheck.

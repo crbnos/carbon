@@ -527,3 +527,163 @@ databaseTest(
     }
   }
 );
+
+// Projects Phase 3: the invoice of a grouped PO line. The receipt split the
+// line into member stripes, so the price variance spreads over the striped
+// layers: the on-hand stripes are revalued, and the consumed share of a
+// member's layer is that member's Material Variance.
+databaseTest(
+  "the price variance of a grouped line revalues on-hand stripes and charges a member's consumed share",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const part = await f.addItem("part", { itemTrackingType: "Inventory" });
+      const group = await f.addPlanningGroup({
+        locationId,
+        members: [
+          { key: "101", identifier: "PA" },
+          { key: "102", identifier: "PB" },
+          { key: "103", identifier: "PC" }
+        ]
+      });
+      const member = (key: string) => group.projectIds[key]!;
+      const po = await f.addPurchaseOrder("grouped", {
+        locationId,
+        lines: [
+          {
+            itemId: part.itemId,
+            quantity: 60,
+            unitPrice: 10,
+            planningGroupId: group.planningGroupId
+          }
+        ]
+      });
+      for (const [key, quantity, needDate] of [
+        ["101", 20, "2026-11-01"],
+        ["102", 30, "2026-11-02"],
+        ["103", 10, "2026-11-03"]
+      ] as const) {
+        await f.addPeg({
+          planningGroupId: group.planningGroupId,
+          itemId: part.itemId,
+          locationId,
+          supplyType: "Purchase Order Line",
+          supplyId: po.lineIds[0]!,
+          projectId: member(key),
+          quantity,
+          needDate
+        });
+      }
+      const receipt = await f.addReceipt("grouped", {
+        locationId,
+        purchaseOrderId: po.purchaseOrderId,
+        supplierId: po.supplierId,
+        lines: [
+          {
+            lineId: po.lineIds[0]!,
+            itemId: part.itemId,
+            quantity: 60,
+            unitPrice: 10
+          }
+        ]
+      });
+      const received = await postReceipt(f.ctx, {
+        receiptId: receipt.receiptId
+      });
+      expect(received.error).toBeNull();
+
+      // P-101's 20 units are already issued: its layer has nothing left.
+      await f.db
+        .updateTable("costLedger")
+        .set({ remainingQuantity: 0 })
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .where("projectId", "=", member("101"))
+        .execute();
+
+      const invoice = await f.addPurchaseInvoice("grouped", {
+        supplierId: po.supplierId,
+        lines: [
+          {
+            invoiceLineType: "Part",
+            itemId: part.itemId,
+            locationId,
+            quantity: 60,
+            unitPrice: 11,
+            purchaseOrderId: po.purchaseOrderId,
+            purchaseOrderLineId: po.lineIds[0]
+          }
+        ]
+      });
+      const posted = await postPurchaseInvoice(f.ctx, {
+        invoiceId: invoice.invoiceId
+      });
+      expect(posted.error).toBeNull();
+
+      // 20.00 to P-101's project account, 40.00 to inventory, no PPV.
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Invoice")
+        .where("documentId", "=", invoice.invoiceId)
+        .orderBy("accountId")
+        .execute();
+      expect(
+        Object.fromEntries(
+          lines.map((line) => [line.accountId, Number(line.amount)])
+        )
+      ).toEqual({
+        [f.account("grni")]: -600,
+        [f.account("inventory")]: 40,
+        [f.account("project-expense")]: 20,
+        [f.account("payables")]: 660
+      });
+
+      // P-102's and P-103's layers are revalued by 30.00 and 10.00.
+      const adjustments = await f.db
+        .selectFrom("costLedger")
+        .select(["cost", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .where("adjustment", "=", true)
+        .orderBy("cost", "desc")
+        .execute();
+      expect(
+        adjustments.map((row) => [Number(row.cost), row.projectId])
+      ).toEqual([
+        [30, member("102")],
+        [10, member("103")]
+      ]);
+
+      // P-101's ledger gets the consumed share, tagged with its project.
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["projectId", "costType", "amount", "journalLineId"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [row.projectId, row.costType, Number(row.amount)])
+      ).toEqual([[member("101"), "Material Variance", 20]]);
+      const projectLine = lines.find(
+        (line) => line.accountId === f.account("project-expense")
+      );
+      expect(ledger[0]!.journalLineId).toEqual(projectLine!.id);
+      const tags = await f.db
+        .selectFrom("journalLineDimension")
+        .select(["journalLineId", "valueId"])
+        .where("companyId", "=", f.companyId)
+        .where("dimensionId", "=", f.dimension("Project"))
+        .execute();
+      expect(tags).toEqual([
+        { journalLineId: projectLine!.id, valueId: member("101") }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

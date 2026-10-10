@@ -40,6 +40,7 @@ type ChargeablePurchaseOrderLine = {
   id: string;
   projectId: string | null;
   projectElementId: string | null;
+  planningGroupId?: string | null;
 };
 
 export type InvoiceProjectCharges = {
@@ -69,6 +70,13 @@ export type InvoiceProjectCharges = {
   stockChargedAtReceipt(
     purchaseOrderLineId: string
   ): { projectId: string; projectElementId: string | null } | null;
+  /**
+   * The project account the consumed price variance of a member stripe's
+   * layer goes to (Projects Phase 3: a PO line made for a planning group),
+   * on the project root. Null for a Statistical project, whose share stays in
+   * the variance account.
+   */
+  stripeVarianceCharge(projectId: string): InvoiceProjectCharge | null;
 };
 
 /**
@@ -155,11 +163,43 @@ export async function loadInvoiceProjectCharges(
       .map((row) => [row.lineId as string, row])
   );
 
+  // The stripes of the receipt layers of grouped PO lines (Projects Phase 3):
+  // a member's consumed share of a price variance goes to its project.
+  const groupedPurchaseOrderLineIds = purchaseOrderLineIds.filter(
+    (id) => purchaseOrderLineById.get(id)?.planningGroupId
+  );
+  const stripeProjectIds =
+    groupedPurchaseOrderLineIds.length === 0
+      ? []
+      : (
+          await db
+            .selectFrom("costLedger")
+            .innerJoin("receiptLine", (join) =>
+              join
+                .onRef("receiptLine.receiptId", "=", "costLedger.documentId")
+                .onRef("receiptLine.companyId", "=", "costLedger.companyId")
+                .onRef("receiptLine.itemId", "=", "costLedger.itemId")
+            )
+            .select("costLedger.projectId")
+            .distinct()
+            .where("costLedger.companyId", "=", companyId)
+            .where("costLedger.documentType", "=", "Purchase Receipt")
+            .where("costLedger.projectId", "is not", null)
+            .where("receiptLine.lineId", "in", groupedPurchaseOrderLineIds)
+            .execute()
+        )
+          .map((row) => row.projectId)
+          .filter((id): id is string => Boolean(id));
+
   const refs = [
     ...refByInvoiceLineId.values(),
     ...[...receiptRowByLineId.values()].map((row) => ({
       projectId: row.projectId,
       projectElementId: row.projectElementId
+    })),
+    ...stripeProjectIds.map((projectId) => ({
+      projectId,
+      projectElementId: null
     }))
   ];
   const contexts = await loadProjectPostingContexts(db, companyId, refs);
@@ -207,6 +247,15 @@ export async function loadInvoiceProjectCharges(
       }
       lineCharges.set(invoiceLineId, charge);
       return charge;
+    },
+    stripeVarianceCharge(projectId) {
+      const ref = { projectId, projectElementId: null };
+      const context = contextOf(ref);
+      const { treatment, accountId, fixedAssetId, postCapitalization } =
+        resolveProjectPostingAccount(context, args.postingDate);
+      if (treatment === "Statistical" || !accountId) return null;
+      assertChargeable(context, "commitment");
+      return { ...ref, accountId, fixedAssetId, postCapitalization };
     },
     stockStripe(invoiceLineId) {
       const ref = refByInvoiceLineId.get(invoiceLineId);

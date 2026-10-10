@@ -1457,12 +1457,14 @@ const postPurchaseInvoice = defineServerFn({
                             id: string;
                             quantity: number | null;
                             remainingQuantity: number | null;
+                            projectId: string | null;
                           }) => ({
                             id: layer.id,
                             quantity: Number(layer.quantity),
                             remainingQuantity: Number(
                               layer.remainingQuantity ?? 0
-                            )
+                            ),
+                            projectId: layer.projectId
                           })
                         ),
                         quantityToReverse,
@@ -1601,10 +1603,72 @@ const postPurchaseInvoice = defineServerFn({
                     });
                   }
 
+                  // A PO line made for a planning group (Projects Phase 3): the
+                  // consumed share of a member stripe's layer is that
+                  // member's cost. It posts to the member's project account
+                  // with a Material Variance row; the rest stays in PPV.
+                  const memberVarianceLineIndexes = new Map<number, string>();
+                  let remainingPpvShare = allocation.ppvShare;
+                  if (purchaseOrderLine?.planningGroupId) {
+                    const consumedByProject = new Map<
+                      string,
+                      { quantity: number; cost: number }
+                    >();
+                    for (const entry of allocation.consumed ?? []) {
+                      if (!entry.projectId) continue;
+                      const total = consumedByProject.get(entry.projectId) ?? {
+                        quantity: 0,
+                        cost: 0
+                      };
+                      consumedByProject.set(entry.projectId, {
+                        quantity: total.quantity + entry.quantity,
+                        cost: total.cost + entry.cost
+                      });
+                    }
+                    for (const [memberProjectId, share] of consumedByProject) {
+                      const amount = round(share.cost);
+                      if (Math.abs(amount) <= 0.005) continue;
+                      const memberCharge =
+                        projectCharges.stripeVarianceCharge(memberProjectId);
+                      if (!memberCharge) continue;
+                      const lineIndex = journalLineInserts.length;
+                      memberVarianceLineIndexes.set(lineIndex, memberProjectId);
+                      projectLedgerDrafts.push({
+                        invoiceLineId: invoiceLine.id,
+                        projectId: memberProjectId,
+                        projectElementId: null,
+                        fixedAssetId: memberCharge.fixedAssetId,
+                        postCapitalization: memberCharge.postCapitalization,
+                        costType: "Material Variance",
+                        itemId: invoiceLine.itemId ?? null,
+                        quantity: share.quantity,
+                        amount,
+                        journalLineIndex: lineIndex
+                      });
+                      journalLineInserts.push({
+                        accountId: memberCharge.accountId,
+                        description: "Project Account (Price Variance)",
+                        amount: round(debit("expense", amount)),
+                        quantity: round(share.quantity),
+                        documentType: "Invoice",
+                        documentId: purchaseInvoice.data?.id,
+                        externalDocumentId:
+                          purchaseInvoice.data?.supplierReference,
+                        documentLineReference:
+                          journalReference.to.purchaseInvoice(
+                            invoiceLine.purchaseOrderLineId!
+                          ),
+                        journalLineReference,
+                        companyId
+                      });
+                      remainingPpvShare -= amount;
+                    }
+                  }
+
                   // DR/CR Purchase Price Variance for the consumed share
                   let projectVarianceLineIndex: number | null = null;
                   let ppvLineIndex: number | null = null;
-                  if (Math.abs(allocation.ppvShare) > 0.005) {
+                  if (Math.abs(remainingPpvShare) > 0.005) {
                     ppvLineIndex = journalLineInserts.length;
                     if (receiptProjectCharge) {
                       projectVarianceLineIndex = journalLineInserts.length;
@@ -1618,7 +1682,7 @@ const postPurchaseInvoice = defineServerFn({
                         costType: "Material Variance",
                         itemId: invoiceLine.itemId ?? null,
                         quantity: quantityToReverse,
-                        amount: allocation.ppvShare,
+                        amount: remainingPpvShare,
                         journalLineIndex: projectVarianceLineIndex
                       });
                     }
@@ -1629,7 +1693,7 @@ const postPurchaseInvoice = defineServerFn({
                       description: receiptProjectCharge
                         ? "Project Account (Price Variance)"
                         : "Purchase Price Variance",
-                      amount: round(debit("expense", allocation.ppvShare)),
+                      amount: round(debit("expense", remainingPpvShare)),
                       quantity: round(quantityToReverse),
                       documentType: "Invoice",
                       documentId: purchaseInvoice.data?.id,
@@ -1715,6 +1779,9 @@ const postPurchaseInvoice = defineServerFn({
                   const reverseJlCount =
                     journalLineInserts.length - jlStartIdxReverse;
                   for (let i = 0; i < reverseJlCount; i++) {
+                    const memberProjectId = memberVarianceLineIndexes.get(
+                      jlStartIdxReverse + i
+                    );
                     journalLineDimensionsMeta.push(
                       receiptProjectCharge &&
                         projectVarianceLineIndex === jlStartIdxReverse + i
@@ -1724,7 +1791,13 @@ const postPurchaseInvoice = defineServerFn({
                             projectElementId:
                               receiptProjectCharge.projectElementId
                           }
-                        : reverseDimMeta
+                        : memberProjectId
+                          ? {
+                              ...reverseDimMeta,
+                              projectId: memberProjectId,
+                              projectElementId: null
+                            }
+                          : reverseDimMeta
                     );
                   }
                 }
