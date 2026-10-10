@@ -103,9 +103,14 @@ const SalesReturnOrderHeader = () => {
     isReadyToShipBack
   );
   // Credit is capped at received quantity — the button is useless before
-  // anything has been received.
+  // anything has been received. A Repair line is never credited.
   const hasReceivedQuantity = routeData.lines.some(
-    (line) => Number(line.quantityReceived) > 0
+    (line) => line.disposition !== "Repair" && Number(line.quantityReceived) > 0
+  );
+  // A replacement copies the lines that are not Repair; with none, there is
+  // nothing to replace.
+  const hasReplaceableLine = routeData.lines.some(
+    (line) => line.disposition !== "Repair"
   );
 
   const confirmDisclosure = useDisclosure();
@@ -269,7 +274,7 @@ const SalesReturnOrderHeader = () => {
                       <Trans>Replacement Order</Trans>
                     </Link>
                   </Button>
-                ) : (
+                ) : hasReplaceableLine ? (
                   <Button
                     leftIcon={<LuGitCompare />}
                     variant="secondary"
@@ -287,7 +292,7 @@ const SalesReturnOrderHeader = () => {
                   >
                     <Trans>Create Replacement</Trans>
                   </Button>
-                )}
+                ) : null}
               </>
             )}
 

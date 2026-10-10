@@ -43,7 +43,7 @@ Task 12 records these in the spec.
 - [x] Task 5: Void a `Repair` receipt
 - [x] Task 6: Let the return shipment take `Repair` serials
 - [x] Task 7: Post a `Repair` return shipment with no ledger
-- [ ] Task 8: Guard the credit memo and the replacement order
+- [x] Task 8: Guard the credit memo and the replacement order
 - [ ] Task 9: Add the depot repair UI
 - [ ] Task 10: Add the database tests
 - [ ] Task 11: Extend the demo datasets
@@ -446,3 +446,5 @@ ls .ai/playbooks/field-service-phase-b.md
 - Task 7: the void leaves a Repair line's serial Consumed (the other lines' entities still go back On Hold) and sets its asset At Depot. The asset's ship date and shipment stay as the void found them.
 - Task 7: Task 10's shipment test came early (`post-shipment/sales-return-repair.test.ts`, 2 cases): the shipment `create` drafts has no Repair line until the order is Completed, then has it with 1 unit; posting writes `itemLedger`, `costLedger` and 2 journal lines (20.00) for the widget line only; the machine's on-hand is the same before the RMA receipt and after the shipment; the serial stays Consumed and the asset is In Service with today's ship date, this shipment and the RMA's site; the activity carries `At Depot: false`; the order stays Completed; the void keeps the serial Consumed, sets the asset At Depot and restores the widget stock. A unit whose order was reopened after the shipment was drafted is refused at posting. With the Repair branch disabled, both cases fail.
 - Task 7 verification: the full `@carbon/server-functions` suite passes (460 of 462); the 2 failures are the known shared-database races (`get-accounting-period`, `post-charge-concurrency`), which pass alone.
+- Task 8: the refusal texts are constants in `sales.models.ts` (`REPAIR_LINE_CREDIT_MESSAGE`, `REPAIR_ONLY_REPLACEMENT_MESSAGE`). The credit refusal names the line: "Line 2: Change the disposition before you credit a repair line."
+- Task 8 (deviation): the RMA header changes too, outside the task's file list. **Issue Credit** shows only when a line that is not Repair has a received quantity. **Create Replacement** hides when every line is Repair. Without this, both buttons opened a dialog or a request that the service then refuses.

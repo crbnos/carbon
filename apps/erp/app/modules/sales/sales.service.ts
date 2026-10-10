@@ -99,7 +99,9 @@ import {
   costCategoryKeys,
   isQuoteLocked,
   OPEN_SALES_ORDER_STATUSES,
-  REPAIR_DISPOSITION_LOCKED_MESSAGE
+  REPAIR_DISPOSITION_LOCKED_MESSAGE,
+  REPAIR_LINE_CREDIT_MESSAGE,
+  REPAIR_ONLY_REPLACEMENT_MESSAGE
 } from "./sales.models";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
@@ -7976,7 +7978,8 @@ export async function getShippedTrackedEntitiesForCustomer(
 /**
  * Per-line creditable pool = received − already credited. Draft memos count
  * against the pool (two Drafts must not double-credit); the VIEW's displayed
- * quantityCredited still derives from Posted memos only.
+ * quantityCredited still derives from Posted memos only. A Repair line is
+ * left out: its unit goes back to the customer, so it is never credited.
  * @mcp read
  */
 export async function getCreditableQuantities(
@@ -7989,6 +7992,7 @@ export async function getCreditableQuantities(
     .select("id, lineNumber, quantityReceived, unitPrice, restockFeePercent")
     .eq("salesReturnOrderId", salesReturnOrderId)
     .eq("companyId", companyId)
+    .or("disposition.is.null,disposition.neq.Repair")
     .order("lineNumber");
   if (lines.error) return { data: null, error: lines.error };
   const lineIds = (lines.data ?? []).map((l) => l.id);
@@ -8035,7 +8039,8 @@ export async function getCreditableQuantities(
  * The creditable cap (received − already credited over NON-VOIDED memos —
  * Drafts count so two drafts can't double-credit) is validated inside the
  * transaction under a row lock on the RMA lines. Amount is rounded ONCE at
- * the currency's decimals (settlement boundary). Returns the memo id.
+ * the currency's decimals (settlement boundary). A Repair line is refused:
+ * its unit goes back to the customer. Returns the memo id.
  * @mcp create
  * @mcp audit companyGroupId, createdBy, updatedBy, userId
  */
@@ -8104,6 +8109,7 @@ export async function createSalesReturnOrderCredit(
       .select([
         "id",
         "lineNumber",
+        "disposition",
         "quantityReceived",
         "unitPrice",
         "restockFeePercent"
@@ -8155,6 +8161,11 @@ export async function createSalesReturnOrderCredit(
     }[] = [];
 
     for (const line of orderLines) {
+      if (line.disposition === "Repair") {
+        throw new Error(
+          `Line ${line.lineNumber}: ${REPAIR_LINE_CREDIT_MESSAGE}`
+        );
+      }
       const quantity = requested.get(line.id)!;
       const received = Number(line.quantityReceived ?? 0);
       const alreadyCredited = creditedByLine.get(line.id) ?? 0;
@@ -8220,6 +8231,8 @@ export async function createSalesReturnOrderCredit(
  * lines, priced via resolvePrice (user adjusts on the draft — e.g. to zero
  * for warranty). One replacement per RMA; re-invoking returns the existing
  * link. Rollback-by-delete on line failure (the insertSalesOrder pattern).
+ * Repair lines are skipped: their units go back repaired. An RMA of Repair
+ * lines only is refused.
  * @mcp create
  */
 export async function createReplacementSalesOrder(
@@ -8267,6 +8280,15 @@ export async function createReplacementSalesOrder(
       error: { message: "Return order has no lines" } as PostgrestError
     };
   }
+  const replaceableLines = (lines.data ?? []).filter(
+    (line) => line.disposition !== "Repair"
+  );
+  if (replaceableLines.length === 0) {
+    return {
+      data: null,
+      error: { message: REPAIR_ONLY_REPLACEMENT_MESSAGE } as PostgrestError
+    };
+  }
 
   const salesOrder = await insertSalesOrder(client, {
     customerId: order.data.customerId,
@@ -8299,7 +8321,7 @@ export async function createReplacementSalesOrder(
     }
   };
 
-  for (const line of lines.data ?? []) {
+  for (const line of replaceableLines) {
     const price = await resolvePrice(client, companyId, {
       customerId: order.data.customerId,
       itemId: line.itemId,
