@@ -228,15 +228,17 @@ function DockSwitcher({
   icon: ReactNode;
   label: ReactNode;
   onSwitch?: () => void;
-  /** Names the button, e.g. "Switch company". */
+  /**
+   * What a tap does, e.g. "Switch company". Read after the visible name
+   * ("Sales, Switch module"), so the name a screen reader announces starts
+   * with the words on screen and still says what is selected.
+   */
   switchLabel: string;
   className?: string;
 }) {
   return (
     <button
       type="button"
-      aria-label={switchLabel}
-      aria-haspopup="listbox"
       disabled={!onSwitch}
       onClick={onSwitch}
       className={cn(
@@ -251,6 +253,7 @@ function DockSwitcher({
       <span className="min-w-0 truncate">{label}</span>
       {onSwitch ? (
         <>
+          <span className="sr-only">, {switchLabel}</span>
           <span aria-hidden className="h-5 w-px shrink-0 bg-border" />
           <LuChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
         </>
