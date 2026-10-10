@@ -588,6 +588,8 @@ async function loadMaterialAvailability(
       .where("itemId", "in", itemIds)
       .where("locationId", "=", locationId)
       .where("companyId", "=", companyId)
+      // Common stock only, as runMrp reads it, until Phase 2b.
+      .where("projectId", "=", "")
       .execute()
   ]);
   for (const r of replenishmentRows) {

@@ -1081,6 +1081,34 @@ function policyFloorFor(row: {
   }
 }
 
+/**
+ * On-hand per item and location (keyed `itemId␟locationId`), common stock only.
+ * itemStockQuantities holds one row per project stock stripe ('' is common), and
+ * this map keeps one value per key, so without the filter the last stripe read
+ * would win. Phase 2b replaces it with segment keys.
+ */
+export async function loadCommonOnHand(
+  db: Kysely<DB>,
+  companyId: string
+): Promise<Map<string, number>> {
+  const rows = await db
+    .selectFrom("itemStockQuantities")
+    .select(["itemId", "locationId", "quantityOnHand"])
+    .where("companyId", "=", companyId)
+    .where("projectId", "=", "")
+    .execute();
+  const onHand = new Map<string, number>();
+  for (const row of rows) {
+    if (row.itemId && row.locationId) {
+      onHand.set(
+        `${row.itemId}${KEY_SEP}${row.locationId}`,
+        Number(row.quantityOnHand) || 0
+      );
+    }
+  }
+  return onHand;
+}
+
 export async function generatePlanningActions(
   client: SupabaseClient<Database>,
   db: Kysely<DB>,
@@ -1164,7 +1192,7 @@ export async function generatePlanningActions(
     demandActuals,
     demandForecasts,
     demandProjections,
-    inventoryRows,
+    onHandByItemLocation,
     openJobRows,
     poLineFactorRows
   ] = await Promise.all([
@@ -1189,11 +1217,7 @@ export async function generatePlanningActions(
       ])
       .where("companyId", "=", companyId)
       .execute(),
-    db
-      .selectFrom("itemStockQuantities")
-      .select(["itemId", "locationId", "quantityOnHand"])
-      .where("companyId", "=", companyId)
-      .execute(),
+    loadCommonOnHand(db, companyId),
     db
       .selectFrom("job")
       .select(["id", "status", "quantity", "quantityReceivedToInventory"])
@@ -1251,16 +1275,6 @@ export async function generatePlanningActions(
         0
       )
     );
-  }
-
-  const onHandByItemLocation = new Map<string, number>();
-  for (const row of inventoryRows) {
-    if (row.itemId && row.locationId) {
-      onHandByItemLocation.set(
-        `${row.itemId}${KEY_SEP}${row.locationId}`,
-        Number(row.quantityOnHand) || 0
-      );
-    }
   }
 
   const jobById = new Map<

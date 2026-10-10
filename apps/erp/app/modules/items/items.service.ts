@@ -1283,7 +1283,8 @@ export async function getItemStockQuantitiesByLocation(
       // Total order across the whole key: fetchAllFromTable pages, and without
       // one a concurrent write can shift a row across a page boundary.
       .order("itemId")
-      .order("locationId");
+      .order("locationId")
+      .order("projectId");
 
     return locationId === "all" ? scoped : scoped.eq("locationId", locationId);
   });

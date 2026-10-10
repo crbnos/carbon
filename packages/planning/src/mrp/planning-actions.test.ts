@@ -2,7 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { DB } from "@carbon/database/client";
 import { computePlanningOrders } from "@carbon/utils";
+import {
+  type CompiledQuery,
+  type DatabaseConnection,
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler,
+  type QueryResult
+} from "kysely";
 import { describe, expect, it } from "vitest";
 import type {
   ExistingPlanningAction,
@@ -20,6 +31,7 @@ import {
   isCommittedJobStatus,
   isCommittedPurchaseOrderStatus,
   keyPeriodFor,
+  loadCommonOnHand,
   naturalKey,
   projectionsWithExpedites,
   releaseByDate
@@ -1463,5 +1475,65 @@ describe("deriveReleaseActions", () => {
         todayDate: today
       })
     ).toHaveLength(1);
+  });
+});
+
+describe("loadCommonOnHand", () => {
+  // One item and location with two project stock stripes: common ('') and a
+  // project's. The driver answers like Postgres for equality predicates, so a
+  // read that forgets the stripe gets both rows back.
+  const STOCK: Record<string, unknown>[] = [
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "",
+      companyId: "co_1",
+      quantityOnHand: 5
+    },
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "prj_1",
+      companyId: "co_1",
+      quantityOnHand: 3
+    }
+  ];
+
+  class StockTableDriver extends DummyDriver {
+    override async acquireConnection(): Promise<DatabaseConnection> {
+      return {
+        executeQuery: async <R>(
+          query: CompiledQuery
+        ): Promise<QueryResult<R>> => {
+          const predicates = [...query.sql.matchAll(/"(\w+)" = \$(\d+)/g)];
+          const rows = STOCK.filter((row) =>
+            predicates.every(
+              ([, column, n]) =>
+                row[column!] === query.parameters[Number(n) - 1]
+            )
+          );
+          return { rows: rows as R[] };
+        },
+        // biome-ignore lint/correctness/useYield: never streamed
+        streamQuery: async function* () {
+          throw new Error("not streamed");
+        }
+      };
+    }
+  }
+
+  it("reads common stock only, so a project's stripe never replaces it", async () => {
+    const db = new Kysely<DB>({
+      dialect: {
+        createAdapter: () => new PostgresAdapter(),
+        createDriver: () => new StockTableDriver(),
+        createIntrospector: (k) => new PostgresIntrospector(k),
+        createQueryCompiler: () => new PostgresQueryCompiler()
+      }
+    });
+
+    const onHand = await loadCommonOnHand(db, "co_1");
+
+    expect([...onHand.values()]).toEqual([5]);
   });
 });

@@ -307,6 +307,9 @@ export async function runMrp(
       .selectFrom("itemStockQuantities")
       .select(["itemId", "locationId", "quantityOnHand"])
       .where("companyId", "=", companyId)
+      // Common stock only: project stock is not planned until Phase 2b's
+      // segment keys. One row per key, so the Map below keeps a single value.
+      .where("projectId", "=", "")
       .execute();
 
     const baseInventoryByLocationItem = new Map<string, number>();
