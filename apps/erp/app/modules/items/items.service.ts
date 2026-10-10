@@ -1242,18 +1242,20 @@ export async function getItemQuantities(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string,
-  locationId: string
+  locationId: string,
+  // The stock stripe (Projects Phase 2a): a project id, '' for common stock,
+  // or omitted for every stripe.
+  projectId?: string | null
 ) {
   // item_id restricts the RPC to one item so it doesn't aggregate the whole
-  // location's ledger/PO/SO/job history for a single detail page (added in
-  // migration 20260713231142; the committed DB types regenerate from the
-  // cloud DB after deploy, hence the cast).
+  // location's ledger/PO/SO/job history for a single detail page.
   return client
     .rpc("get_inventory_quantities", {
       location_id: locationId,
       company_id: companyId,
-      item_id: itemId
-    } as { location_id: string; company_id: string })
+      item_id: itemId,
+      project_id: projectId ?? undefined
+    })
     .eq("id", itemId)
     .maybeSingle();
 }

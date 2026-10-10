@@ -110122,6 +110122,10 @@ export default {
                 location_id: {
                   format: "text",
                   type: "string"
+                },
+                project_id: {
+                  format: "text",
+                  type: "string"
                 }
               },
               required: ["company_id", "location_id"],

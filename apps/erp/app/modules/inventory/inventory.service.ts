@@ -343,13 +343,17 @@ export async function getInventoryItems(
   companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
+    // The stock stripe (Projects Phase 2a): a project id, '' for common
+    // stock, or omitted for every stripe.
+    projectId?: string | null;
   }
 ) {
   let query = client.rpc(
     "get_inventory_quantities",
     {
       location_id: locationId,
-      company_id: companyId
+      company_id: companyId,
+      project_id: args?.projectId ?? undefined
     },
     {
       count: LIST_COUNT

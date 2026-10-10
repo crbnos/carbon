@@ -82230,6 +82230,7 @@ export type Database = {
           consumed90: number | null
           itemId: string | null
           locationId: string | null
+          projectId: string | null
           quantity: number | null
           snapshotCutoff: string | null
           storageUnitIds: string[] | null
@@ -96430,7 +96431,12 @@ export type Database = {
         Returns: Json
       }
       get_inventory_quantities: {
-        Args: { company_id: string; item_id?: string; location_id: string }
+        Args: {
+          company_id: string
+          item_id?: string
+          location_id: string
+          project_id?: string
+        }
         Returns: {
           active: boolean
           daysRemaining: number
@@ -96498,6 +96504,7 @@ export type Database = {
           locationId: string
           locationName: string
           name: string
+          projectId: string
           quantityOnHand: number
           quantityOnHold: number
           quantityRejected: number
