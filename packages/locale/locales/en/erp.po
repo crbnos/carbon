@@ -5059,6 +5059,9 @@ msgstr "Committed"
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 
+msgid "Common"
+msgstr "Common"
+
 msgid "common stock"
 msgstr "common stock"
 
@@ -6271,6 +6274,9 @@ msgstr "Create System nodes from the unit's build history, the item's bill of ma
 
 msgid "Create the first element"
 msgstr "Create the first element"
+
+msgid "Create transfer"
+msgstr "Create transfer"
 
 msgid "Create Transfer"
 msgstr "Create Transfer"
@@ -19812,6 +19818,9 @@ msgstr "Security"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 
+msgid "Segment"
+msgstr "Segment"
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segments that drive customer pricing and terms"
 
@@ -24000,8 +24009,11 @@ msgstr "Transactions will create journal entries and update the general ledger."
 msgid "Transfer"
 msgstr "Transfer"
 
-msgid "Transfer {amount} for {date}"
-msgstr "Transfer {amount} for {date}"
+msgid "Transfer {amount} from another project"
+msgstr "Transfer {amount} from another project"
+
+msgid "Transfer {amount} from common stock"
+msgstr "Transfer {amount} from common stock"
 
 msgid "Transfer Date"
 msgstr "Transfer Date"

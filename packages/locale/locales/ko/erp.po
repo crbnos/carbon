@@ -5059,6 +5059,9 @@ msgstr ""
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "입고, 출하 또는 송장을 커밋하면: 수량이 이동하고, 전표 항목이 원장에 반영되고, 상태가 전기됨이 됩니다."
 
+msgid "Common"
+msgstr ""
+
 msgid "common stock"
 msgstr ""
 
@@ -6270,6 +6273,9 @@ msgid "Create System nodes from the unit's build history, the item's bill of mat
 msgstr ""
 
 msgid "Create the first element"
+msgstr ""
+
+msgid "Create transfer"
 msgstr ""
 
 msgid "Create Transfer"
@@ -19812,6 +19818,9 @@ msgstr "보안"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "모든 작업장의 실시간 용량 예측을 확인하세요 — 각 작업 지시가 언제 실행되고 완료될 것으로 예상되는지 작업장 전체에서 확인하세요."
 
+msgid "Segment"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "고객 가격 책정과 계약 조건을 좌우하는 구분 항목"
 
@@ -24000,7 +24009,10 @@ msgstr "거래에 따라 전표 항목이 생성되고 총계정원장이 업데
 msgid "Transfer"
 msgstr "이동"
 
-msgid "Transfer {amount} for {date}"
+msgid "Transfer {amount} from another project"
+msgstr ""
+
+msgid "Transfer {amount} from common stock"
 msgstr ""
 
 msgid "Transfer Date"

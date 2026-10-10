@@ -5059,6 +5059,9 @@ msgstr ""
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "領収書、出荷、または請求書のコミット: 数量が移動し、仕訳帳エントリが元帳に記載され、ステータスが投稿されます。"
 
+msgid "Common"
+msgstr ""
+
 msgid "common stock"
 msgstr ""
 
@@ -6270,6 +6273,9 @@ msgid "Create System nodes from the unit's build history, the item's bill of mat
 msgstr ""
 
 msgid "Create the first element"
+msgstr ""
+
+msgid "Create transfer"
 msgstr ""
 
 msgid "Create Transfer"
@@ -19812,6 +19818,9 @@ msgstr "セキュリティ"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "ショップ全体の各作業区のリアルタイム キャパシティ予測を表示してください — 各製造指図がいつ実行および完了するかを確認します。"
 
+msgid "Segment"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "得意先の価格設定と条件を決定するセグメント"
 
@@ -24000,7 +24009,10 @@ msgstr "トランザクションは仕訳帳エントリを作成し、総勘定
 msgid "Transfer"
 msgstr "転送"
 
-msgid "Transfer {amount} for {date}"
+msgid "Transfer {amount} from another project"
+msgstr ""
+
+msgid "Transfer {amount} from common stock"
 msgstr ""
 
 msgid "Transfer Date"

@@ -89,10 +89,15 @@ export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
 // transform (see apps/erp/test/job-complete-logic.test.ts).
 export {
   actionsOfTypes,
+  COMMON_SEGMENT_OPTION,
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
+  PLANNING_SEGMENT_COLUMN,
+  planningRowKey,
+  planningSegmentFilter,
+  resolvePlanningActionScope,
+  resolvePlanningSegmentScope
 } from "./ui/Planning/planning-action-scope";
 
 /**

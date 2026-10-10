@@ -5059,6 +5059,9 @@ msgstr ""
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "提交收货、发货或发票：数量变动，凭证条目进入分类账，状态变为已过账。"
 
+msgid "Common"
+msgstr ""
+
 msgid "common stock"
 msgstr ""
 
@@ -6270,6 +6273,9 @@ msgid "Create System nodes from the unit's build history, the item's bill of mat
 msgstr ""
 
 msgid "Create the first element"
+msgstr ""
+
+msgid "Create transfer"
 msgstr ""
 
 msgid "Create Transfer"
@@ -19812,6 +19818,9 @@ msgstr "安全"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "查看每个工作中心的实时产能预测 — 每个工单预计在整个车间运行和完成的时间。"
 
+msgid "Segment"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "驱动客户定价和条款的细分市场"
 
@@ -24000,7 +24009,10 @@ msgstr "交易将创建凭证并更新总账。"
 msgid "Transfer"
 msgstr "转移"
 
-msgid "Transfer {amount} for {date}"
+msgid "Transfer {amount} from another project"
+msgstr ""
+
+msgid "Transfer {amount} from common stock"
 msgstr ""
 
 msgid "Transfer Date"

@@ -44,7 +44,7 @@ The plan covers:
 - [x] Task 10: Generate segmented and Transfer planning actions
 - [x] Task 11: Apply segmented Order, Make and Transfer actions
 - [x] Task 12: Add the project-manager rung and the company sweep
-- [ ] Task 13: Add the Segment column to the planning worklists
+- [x] Task 13: Add the Segment column to the planning worklists
 - [ ] Task 14: Show borrow exceptions
 - [ ] Task 15: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 16: Verify in the browser
@@ -703,4 +703,9 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 11: a new test (`transfer-planning-actions.test.ts`) pins the transfer statements and the claim lock. A rolled-back call proved that one statement draws distinct readable ids (`PST000001`, `PST000002`, `PST000003`). `erp` typechecks, and the ERP suite passes (2,065).
 - Task 12 (deviation): the resolver loads the segment managers with one read of the company's projects with project stock and an owner, not with `.in("id", segmentIds)`. The resolver loads before the planning rows, so the segment ids are not known yet. The set is the same: a project with project stock is its own segment. The resolver takes the segment as an optional third argument, and `generatePlanningActions` passes the row's segment.
 - Task 12: `companiesWithPlanningWork` adds `openProjectMaterialLines` and the `Open` rows of `projectBorrow` to its UNION. The pure resolver test, a loader test that reads the manager by segment, and a sweep test pass. The planning suite passes (324), `@carbon/jobs` passes (934), and both packages typecheck.
+- Task 13: both grids key a row's actions and its draft orders by item and segment (`planningRowKey`). `usePlanningActions` returns `actionsByRowKey`, `fencedActionsByRowKey` and `visibleActionsByRowKey`, and `ordersMap` and `ordersByRowKey` use the same key. The time fence stays per item, so a fence change drops the drafts of every segment row of the item. The drawer link (`?item=`) still names the item only; it opens the item's first row.
+- Task 13: the shared `segment` column (`planningColumns`) shows "Common" in muted text, or the project's identifier and name. It shows by default only when the company has a project with project stock. Its static filter writes `planningSegment` with `common` or a project id. `resolvePlanningSegmentScope` strips it in both loaders, and the services filter the grid RPC with `planningSegmentFilter`: `eq.""` for Common (an `in` list cannot hold the empty string) and `in.(…)` for projects. A live call proved that a repeated `or` parameter is ANDed with the search `or`.
+- Task 13 (deviation): the loaders read the names with one query of the company's Standard projects with project stock, not `.in("id", segmentIds)`. The same list fills the filter, which must also offer projects that are not on the page.
+- Task 13: a Transfer line reads "Transfer 8 from common stock" and its button is **Create transfer** (`onApply`). The applied action leaves the worklist, so the toast links each created transfer to `path.to.projectStockTransfer(id)`. The new strings wait for the run's final `/translate` pass.
+- Task 13: the helper tests pass (16), the ERP suite passes (2,069), and `erp` typechecks. The commit carries the regenerated MCP digest: both planning reads gain `segments`. Browser verification waits for Task 16.
 

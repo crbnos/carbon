@@ -123,6 +123,7 @@ import {
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier
 } from "./ui/Jobs/job-release-logic";
+import { planningSegmentFilter } from "./ui/Planning/planning-action-scope";
 
 const logger = getLogger("erp", "production");
 
@@ -2341,6 +2342,9 @@ export async function getProductionPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_production_planning: same rows and projection, plus the
@@ -2367,6 +2371,10 @@ export async function getProductionPlanning(
     query = query.or(
       `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
     );
+  }
+
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
   }
 
   // What the row's Order / Make button offers (the grid RPC's orderQuantity,

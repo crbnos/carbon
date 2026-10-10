@@ -400,6 +400,16 @@ export function PlanningActionRowActions({
             <Trans>Review</Trans>
           </Link>
         </Button>
+      ) : action.type === "Transfer" ? (
+        // applying a Transfer creates a Draft project stock transfer
+        <Button
+          size="sm"
+          variant="secondary"
+          isDisabled={!canUpdate || isBusy}
+          onClick={() => onApply([action.id])}
+        >
+          <Trans>Create transfer</Trans>
+        </Button>
       ) : isNewSupplyAction(action) ? (
         onOrder && (
           <Button
@@ -639,10 +649,10 @@ function PlanningActionSentence({
       );
       break;
     case "Transfer":
-      sentence = (
-        <Trans>
-          Transfer {amount} for {date}
-        </Trans>
+      sentence = action.fromProjectId ? (
+        <Trans>Transfer {amount} from another project</Trans>
+      ) : (
+        <Trans>Transfer {amount} from common stock</Trans>
       );
       break;
     case "Borrow":

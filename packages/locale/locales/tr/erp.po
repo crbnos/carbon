@@ -5059,6 +5059,9 @@ msgstr ""
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Mal kabul, Sevkiyat veya Fatura muhasebeleştirildiğinde: miktarlar hareket eder, Muhasebe fişi girişleri deftere kaydedilir ve durum Muhasebeleştirildi olur."
 
+msgid "Common"
+msgstr ""
+
 msgid "common stock"
 msgstr ""
 
@@ -6270,6 +6273,9 @@ msgid "Create System nodes from the unit's build history, the item's bill of mat
 msgstr ""
 
 msgid "Create the first element"
+msgstr ""
+
+msgid "Create transfer"
 msgstr ""
 
 msgid "Create Transfer"
@@ -19812,6 +19818,9 @@ msgstr "Güvenlik"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "Her iş merkezi'nin canlı kapasite tahminini görebilirsiniz — her iş emri'nin dükkanınızda ne zaman çalışması ve ne zaman bitmesi gerektiğini."
 
+msgid "Segment"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "Müşteri fiyatlandırması ve koşullarını belirleyen segmentler"
 
@@ -24000,7 +24009,10 @@ msgstr "İşlemler muhasebe fişileri oluşturacak ve Büyük defteri güncelley
 msgid "Transfer"
 msgstr "Transfer"
 
-msgid "Transfer {amount} for {date}"
+msgid "Transfer {amount} from another project"
+msgstr ""
+
+msgid "Transfer {amount} from common stock"
 msgstr ""
 
 msgid "Transfer Date"

@@ -5059,6 +5059,9 @@ msgstr ""
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "एक प्राप्ति, शिपमेंट या चालान की प्रतिबद्धता: मात्रा चलती है, जर्नल प्रविष्टियां बहीखाता को मारती हैं, और स्थिति पोस्ट की जाती है।"
 
+msgid "Common"
+msgstr ""
+
 msgid "common stock"
 msgstr ""
 
@@ -6270,6 +6273,9 @@ msgid "Create System nodes from the unit's build history, the item's bill of mat
 msgstr ""
 
 msgid "Create the first element"
+msgstr ""
+
+msgid "Create transfer"
 msgstr ""
 
 msgid "Create Transfer"
@@ -19812,6 +19818,9 @@ msgstr "सुरक्षा"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "हर वर्क सेंटर का लाइव क्षमता पूर्वानुमान देखें — जब प्रत्येक जॉब अपनी दुकान में चलने और समाप्त होने का अनुमान लगाया जाता है।"
 
+msgid "Segment"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "ऐसे सेगमेंट जो ग्राहक मूल्य निर्धारण और शर्तों को चलाते हैं"
 
@@ -24000,7 +24009,10 @@ msgstr "लेनदेन जर्नल प्रविष्टियां 
 msgid "Transfer"
 msgstr "स्थानांतरण"
 
-msgid "Transfer {amount} for {date}"
+msgid "Transfer {amount} from another project"
+msgstr ""
+
+msgid "Transfer {amount} from common stock"
 msgstr ""
 
 msgid "Transfer Date"

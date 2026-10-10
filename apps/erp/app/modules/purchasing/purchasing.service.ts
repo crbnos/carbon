@@ -39,6 +39,7 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
 import { upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
@@ -625,6 +626,9 @@ export async function getPurchasingPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
@@ -651,6 +655,10 @@ export async function getPurchasingPlanning(
     query = query.or(
       `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
     );
+  }
+
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
   }
 
   // What the row's Order / Make button offers (the grid RPC's orderQuantity,

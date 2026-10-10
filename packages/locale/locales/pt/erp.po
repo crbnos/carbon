@@ -5059,6 +5059,9 @@ msgstr ""
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Confirmar um recibo, remessa ou fatura: as quantidades se movem, os lançamentos do diário atingem o razão, e o status se torna Lançado."
 
+msgid "Common"
+msgstr ""
+
 msgid "common stock"
 msgstr ""
 
@@ -6270,6 +6273,9 @@ msgid "Create System nodes from the unit's build history, the item's bill of mat
 msgstr ""
 
 msgid "Create the first element"
+msgstr ""
+
+msgid "Create transfer"
 msgstr ""
 
 msgid "Create Transfer"
@@ -19812,6 +19818,9 @@ msgstr "Segurança"
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "Veja uma previsão de capacidade em tempo real de cada centro de trabalho — quando cada ordem de produção é projetada para ser executada e terminar em sua oficina."
 
+msgid "Segment"
+msgstr ""
+
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segmentos que determinam a precificação e os termos do cliente"
 
@@ -24000,7 +24009,10 @@ msgstr "Transações criarão entradas de diário e atualizarão o livro razão.
 msgid "Transfer"
 msgstr "Transferência"
 
-msgid "Transfer {amount} for {date}"
+msgid "Transfer {amount} from another project"
+msgstr ""
+
+msgid "Transfer {amount} from common stock"
 msgstr ""
 
 msgid "Transfer Date"
