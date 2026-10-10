@@ -14,6 +14,7 @@ import posthog from "posthog-js";
 import { startTransition, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+import { preloadCatalog } from "~/services/lingui";
 
 ensureLoggingConfigured();
 
@@ -30,18 +31,24 @@ function PosthogInit() {
   return null;
 }
 
-startTransition(() => {
-  hydrateRoot(
-    document,
-    <OperatingSystemContextProvider
-      platform={window.navigator.userAgent.includes("Mac") ? "mac" : "windows"}
-    >
-      <I18nProvider
-        locale={navigator.language ?? navigator.languages?.[0] ?? "en-US"}
+// Fetch the active language's catalog before hydrating, or a non-en page
+// hydrates against an empty catalog and mismatches the server markup.
+preloadCatalog(document.documentElement.lang).then(() => {
+  startTransition(() => {
+    hydrateRoot(
+      document,
+      <OperatingSystemContextProvider
+        platform={
+          window.navigator.userAgent.includes("Mac") ? "mac" : "windows"
+        }
       >
-        <HydratedRouter />
-      </I18nProvider>
-      <PosthogInit />
-    </OperatingSystemContextProvider>
-  );
+        <I18nProvider
+          locale={navigator.language ?? navigator.languages?.[0] ?? "en-US"}
+        >
+          <HydratedRouter />
+        </I18nProvider>
+        <PosthogInit />
+      </OperatingSystemContextProvider>
+    );
+  });
 });

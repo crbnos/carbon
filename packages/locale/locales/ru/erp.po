@@ -604,6 +604,9 @@ msgstr "{unitCount} единиц"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Сначала сопоставьте # оставшийся требуемый счет.} other {Сначала сопоставьте # оставшиеся требуемые счета.}}"
 
+msgid "{unread} unread"
+msgstr "{unread} непрочитанных"
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} не может быть спланировано"
 
@@ -1485,6 +1488,9 @@ msgstr "Название счета"
 msgid "Account Number"
 msgstr "Номер счета"
 
+msgid "Account settings"
+msgstr "Настройки учётной записи"
+
 msgid "Account Settings"
 msgstr "Настройки учёта"
 
@@ -2204,6 +2210,9 @@ msgstr "все производят {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут утвердить запросы"
+
+msgid "All modules"
+msgstr "Все модули"
 
 msgid "All open jobs"
 msgstr "Все открытые производственные заказы"
@@ -3547,6 +3556,9 @@ msgstr "Ожидает утверждения"
 msgid "Back"
 msgstr "Назад"
 
+msgid "Back to menu"
+msgstr "Вернуться в меню"
+
 msgid "Back to traceability"
 msgstr "Вернуться к прослеживаемости"
 
@@ -4558,6 +4570,9 @@ msgstr "Выбрать другой файл"
 msgid "Choose avatar"
 msgstr "Выбрать аватар"
 
+msgid "Choose how Carbon reaches you."
+msgstr "Выберите способ, как Carbon связывается с вами."
+
 msgid "Choose how to add lines to this return."
 msgstr "Выберите, как добавить строки в этот возврат."
 
@@ -4686,6 +4701,9 @@ msgstr "Дата закрытия"
 
 msgid "Close Date"
 msgstr "Дата закрытия"
+
+msgid "Close menu"
+msgstr "Закрыть меню"
 
 msgid "Close Period"
 msgstr "Закрыть период"
@@ -9581,6 +9599,12 @@ msgstr "Финансовые отчеты"
 msgid "Financing"
 msgstr "Финансирование"
 
+msgid "Find company…"
+msgstr "Найти организацию…"
+
+msgid "Find module…"
+msgstr "Найти модуль…"
+
 msgid "finish"
 msgstr "Готовая продукция"
 
@@ -12297,6 +12321,9 @@ msgstr "Управление требованиями аутентификаци
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Управление отслеживанием, вычислением и применением срока хранения в запасах."
 
+msgid "Manage how you sign in to Carbon."
+msgstr "Управляйте тем, как вы входите в Carbon."
+
 msgid "Manage Ownership"
 msgstr "Управление правами собственности"
 
@@ -12618,6 +12645,9 @@ msgstr "Дата меморандума"
 
 msgid "Memo ID"
 msgstr "ID Памятки"
+
+msgid "Menu"
+msgstr "Меню"
 
 msgid "Merchant"
 msgstr "Продавец"
@@ -13598,6 +13628,9 @@ msgstr "Нет пути без столкновений"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Нет комментариев. Будьте первым, кто добавит комментарий."
 
+msgid "No companies found"
+msgstr "Организации не найдены"
+
 msgid "No companies match \"{query}\""
 msgstr "Нет организаций, соответствующих запросу «{query}»"
 
@@ -13840,6 +13873,9 @@ msgstr "Нет материалов"
 
 msgid "No materials yet"
 msgstr "Нет материалов ещё"
+
+msgid "No modules found"
+msgstr "Модули не найдены"
 
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
@@ -20104,6 +20140,9 @@ msgstr "Движение запаса исправлено"
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "Размер запаса — например, толщина листа или диаметр прутка"
 
+msgid "Stock Transfer"
+msgstr "Перемещение запасов"
+
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"
 
@@ -20613,6 +20652,9 @@ msgstr "Отключите модуль, чтобы удалить его вез
 
 msgid "Switch company"
 msgstr "Переключить организацию"
+
+msgid "Switch module"
+msgstr "Переключить модуль"
 
 msgid "Switch to pan mode"
 msgstr "Переключиться в режим панорамы"
@@ -22044,6 +22086,9 @@ msgstr "Это не вступит в силу до проверки домен�
 msgid "This information will be used on document headers"
 msgstr "Эта информация будет использована в заголовках документов"
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны в её распространении."
+
 msgid "this inspection plan"
 msgstr "этот план контроля"
 
@@ -22559,6 +22604,9 @@ msgstr "Верхнеуровневая классификация (активы/
 
 msgid "Topic"
 msgstr "Тема"
+
+msgid "Topics"
+msgstr "Темы"
 
 msgid "Total"
 msgstr "Итого"
@@ -24711,6 +24759,9 @@ msgstr "Ваши номера деталей"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Ваши номера деталей и основной справочник товаров"
+
+msgid "Your profile could not be loaded."
+msgstr "Не удалось загрузить ваш профиль."
 
 msgid "Your project end to end: the plan, the gates, and go-live"
 msgstr "Ваш проект от начала до конца: план, этапы и запуск"

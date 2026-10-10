@@ -67,6 +67,10 @@ msgstr "{0} de {1} concluído(s)"
 msgid "{0} queued"
 msgstr "{0} na fila"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} registrado"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "{0} em execução"
@@ -89,6 +93,9 @@ msgstr "{completions} unidade(s) aprovada(s) será(ão) concluída(s)."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} falha(s) amostrada(s) registrada(s) e NÃO será(ão) concluída(s) — resolva-as no menu de ações."
 
+msgid "{maxSizeMB}MB limit"
+msgstr "limite de {maxSizeMB}MB"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} ordens de produção"
@@ -110,6 +117,12 @@ msgstr "Aceitar Lote"
 
 msgid "Accept lot?"
 msgstr "Aceitar lote?"
+
+msgid "Account"
+msgstr "Conta"
+
+msgid "Account settings"
+msgstr "Configurações da conta"
 
 msgid "Account Settings"
 msgstr "Configurações da Conta"
@@ -136,14 +149,23 @@ msgstr "Adicionar e Emitir"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Adicione uma impressora nas configurações de impressão para imprimir etiquetas diretamente."
 
+msgid "Add Authenticator App"
+msgstr "Adicionar aplicativo autenticador"
+
 msgid "Add Inventory"
 msgstr "Adicionar Estoque"
+
+msgid "Add Passkey"
+msgstr "Adicionar chave de acesso"
 
 msgid "Add Sample"
 msgstr "Adicionar Amostra"
 
 msgid "Add Spare Part"
 msgstr "Adicionar peça de reposição"
+
+msgid "Added"
+msgstr "Adicionado"
 
 msgid "All"
 msgstr "Todos"
@@ -179,6 +201,12 @@ msgstr "Alocar unidades"
 msgid "Appearance"
 msgstr "Aparência"
 
+msgid "Approvals"
+msgstr "Aprovações"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "Tem certeza que deseja excluir esta chave de acesso? Você não conseguirá usá-la para entrar mais."
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Tem certeza de que deseja excluir esta etapa?"
 
@@ -209,17 +237,39 @@ msgstr "Designado"
 msgid "Authentication Error"
 msgstr "Erro de Autenticação"
 
+msgid "Authenticator app"
+msgstr "Aplicativo autenticador"
+
+msgid "Authenticator QR code"
+msgstr "Código QR autenticador"
+
 msgid "available"
 msgstr "disponível"
 
 msgid "Available"
 msgstr "Disponível"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Opção de avatar {0}"
+
+msgid "Avatar style"
+msgstr "Estilo de avatar"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Avatares de <0>{0}</0> por {1}, licenciados sob <1>{2}</1>."
+
 msgid "Back"
 msgstr "Voltar"
 
 msgid "Back to batch"
 msgstr "Voltar ao lote de produção"
+
+msgid "Background"
+msgstr "Fundo"
 
 msgid "Batch"
 msgstr "Lote"
@@ -283,6 +333,12 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Cartões"
 
+msgid "Change"
+msgstr "Alterar"
+
+msgid "Changelog newsletter"
+msgstr "Newsletter de alterações"
+
 msgid "Characteristic"
 msgstr "Característica"
 
@@ -300,6 +356,12 @@ msgstr "Escolha uma ordem de produção"
 
 msgid "Choose an option"
 msgstr "Escolha uma opção"
+
+msgid "Choose avatar"
+msgstr "Escolher avatar"
+
+msgid "Choose how Carbon reaches you."
+msgstr "Escolha como o Carbon se comunica com você."
 
 msgid "Clear"
 msgstr "Limpar"
@@ -453,6 +515,12 @@ msgstr "Unidade de Armazenamento Padrão"
 msgid "Delete"
 msgstr "Excluir"
 
+msgid "Delete passkey"
+msgstr "Excluir chave de acesso"
+
+msgid "Delete Passkey"
+msgstr "Excluir Chave de Acesso"
+
 msgid "Delete Step"
 msgstr "Excluir Etapa"
 
@@ -552,11 +620,23 @@ msgstr "A saída de cada ordem de produção é seu próprio lote — mantenha a
 msgid "Edit"
 msgstr "Editar"
 
+msgid "Edit Passkey"
+msgstr "Editar Chave de Acesso"
+
 msgid "Elapsed"
 msgstr "Decorrido"
 
+msgid "email"
+msgstr "email"
+
+msgid "Email"
+msgstr "Email"
+
 msgid "Email Address"
 msgstr "Endereço de E-mail"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "As notificações por email não estão incluídas no plano atual da sua empresa; as preferências de email serão aplicadas se forem ativadas."
 
 msgid "Empty work centers"
 msgstr "Centros de trabalho vazios"
@@ -629,8 +709,14 @@ msgstr "Falha ao buscar operações ativas"
 msgid "Failed to fetch storageUnits"
 msgstr "Falha ao buscar unidades de armazenamento"
 
+msgid "Failed to get options"
+msgstr "Falha ao obter opções"
+
 msgid "Failed to record gauge"
 msgstr "Falha ao registar instrumento de medição"
+
+msgid "Failed to register passkey"
+msgstr "Falha ao registrar chave de acesso"
 
 msgid "Failed to save measurement"
 msgstr "Falha ao salvar medição"
@@ -676,6 +762,9 @@ msgstr "Finalizar com material não selecionado?"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "Primeiro prazo {0}"
+
+msgid "First Name"
+msgstr "Primeiro Nome"
 
 msgid "Fit"
 msgstr "Encaixar"
@@ -741,6 +830,12 @@ msgstr "Em um menu aberto"
 msgid "In Progress"
 msgstr "Em Andamento"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também o alcançam por email ou Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "As notificações no aplicativo são sempre entregues. Escolha quais tópicos também o alcançam por email."
+
 msgid "Inspect Item"
 msgstr "Inspecionar Item"
 
@@ -752,6 +847,9 @@ msgstr "Instruções"
 
 msgid "Insufficient quantity"
 msgstr "Quantidade insuficiente"
+
+msgid "Inventory"
+msgstr "Inventário"
 
 msgid "Inventory adjustment completed"
 msgstr "Ajuste de estoque concluído"
@@ -789,6 +887,9 @@ msgstr "Item"
 msgid "Item Master"
 msgstr "Cadastro de Item"
 
+msgid "Items"
+msgstr "Itens"
+
 msgid "Job"
 msgstr "Ordem"
 
@@ -815,6 +916,12 @@ msgstr "Mão de Obra"
 
 msgid "Last completed"
 msgstr "Última conclusão"
+
+msgid "Last Name"
+msgstr "Sobrenome"
+
+msgid "Last used"
+msgstr "Último uso"
 
 msgid "Learn more"
 msgstr "Saiba mais"
@@ -911,6 +1018,9 @@ msgstr "Manutenção atrasada"
 
 msgid "Make a replacement"
 msgstr "Fazer uma substituição"
+
+msgid "Manage how you sign in to Carbon."
+msgstr "Gerencie como você entra no Carbon."
 
 msgid "Manually add items to inventory"
 msgstr "Adicionar itens ao estoque manualmente"
@@ -1070,6 +1180,9 @@ msgstr "Nenhuma opção encontrada."
 msgid "No options found."
 msgstr "Nenhuma opção encontrada."
 
+msgid "No passkeys registered yet."
+msgstr "Nenhuma chave de acesso registrada ainda."
+
 msgid "No picking lists assigned"
 msgstr "Nenhuma lista de separação atribuída"
 
@@ -1141,6 +1254,9 @@ msgstr "Nada agendado neste centro de trabalho"
 
 msgid "Nothing to scrap"
 msgstr "Nada para refugar"
+
+msgid "Notifications"
+msgstr "Notificações"
 
 msgid "OEE Impact"
 msgstr "Impacto OEE"
@@ -1217,6 +1333,9 @@ msgstr "Opções"
 msgid "or"
 msgstr "ou"
 
+msgid "Or enter this secret manually:"
+msgstr "Ou digite este segredo manualmente:"
+
 msgid "Out of calibration"
 msgstr "Fora de calibração"
 
@@ -1247,8 +1366,17 @@ msgstr "Aprovado na inspeção"
 msgid "Passed Inspection"
 msgstr "Aprovado na Inspeção"
 
+msgid "Passkey name"
+msgstr "Nome da chave de acesso"
+
 msgid "Passkey unlock failed"
 msgstr "Falha ao desbloquear com chave de acesso"
+
+msgid "Passkeys"
+msgstr "Chaves de acesso"
+
+msgid "Passkeys are disabled"
+msgstr "Chaves de acesso desativadas"
 
 msgid "Pause"
 msgstr "Pausar"
@@ -1256,12 +1384,21 @@ msgstr "Pausar"
 msgid "Pause timer"
 msgstr "Pausar cronômetro"
 
+msgid "Phone"
+msgstr "Telefone"
+
+msgid "Photo uploaded successfully"
+msgstr "Foto enviada com sucesso"
+
 msgid "Pick"
 msgstr "Apanhar"
 
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Separar {0}"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Escolha um estilo e um avatar, ou embaralhe para novos."
 
 msgid "Pick tracked item"
 msgstr "Selecionar item rastreado"
@@ -1350,8 +1487,17 @@ msgstr "Parâmetros do Processo"
 msgid "Processes"
 msgstr "Processos"
 
+msgid "Profile"
+msgstr "Perfil"
+
 msgid "Progress"
 msgstr "Progresso"
+
+msgid "Purchasing"
+msgstr "Compras"
+
+msgid "Quality"
+msgstr "Qualidade"
 
 msgid "Quality Issue"
 msgstr "Problema de Qualidade"
@@ -1367,6 +1513,9 @@ msgstr "Quantidade deve ser maior que 0"
 
 msgid "Queue empty"
 msgstr "Fila vazia"
+
+msgid "Quotes"
+msgstr "Orçamentos"
 
 msgid "Reason for rework"
 msgstr "Motivo da retrabalhação"
@@ -1397,6 +1546,9 @@ msgstr "Registrar Parcial"
 msgid "Recorded"
 msgstr "Registrado"
 
+msgid "Registration failed"
+msgstr "Falha no registro"
+
 msgid "Reject"
 msgstr "Rejeitar"
 
@@ -1409,6 +1561,9 @@ msgstr "Liberado"
 msgid "Remove"
 msgstr "Remover"
 
+msgid "Remove authenticator app"
+msgstr "Remover aplicativo autenticador"
+
 msgid "Remove filter"
 msgstr "Remover filtro"
 
@@ -1418,14 +1573,23 @@ msgstr "Remover Estoque"
 msgid "Remove part"
 msgstr "Remover peça"
 
+msgid "Remove two-factor authentication"
+msgstr "Remover autenticação de dois fatores"
+
 msgid "Rename"
 msgstr "Renomear"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Reabrir o subconjunto e criar uma unidade de substituição"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "Exigir um código de 6 dígitos de um aplicativo autenticador ao fazer login."
+
 msgid "Required"
 msgstr "Obrigatório"
+
+msgid "Reset"
+msgstr "Redefinir"
 
 msgid "Result"
 msgstr "Resultado"
@@ -1444,6 +1608,9 @@ msgstr "Quantidade de retrabalho"
 
 msgid "Running"
 msgstr "Em execução"
+
+msgid "Sales"
+msgstr "Vendas"
 
 msgid "Sales Order"
 msgstr "Pedido de Venda"
@@ -1477,6 +1644,9 @@ msgstr "Escanear ou pesquisar número de série..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Escanear ou selecionar uma entidade rastreada deste lote para adicioná-la como coluna de amostra, depois registrar seu resultado na grade."
+
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "Escaneie este código QR com seu aplicativo autenticador (por exemplo, Google Authenticator ou 1Password) e digite o código de 6 dígitos que ele exibe."
 
 msgid "Schedule"
 msgstr "Cronograma"
@@ -1525,6 +1695,12 @@ msgstr "Pesquisar operadores..."
 
 msgid "Search..."
 msgstr "Pesquisar..."
+
+msgid "Secret copied to clipboard"
+msgstr "Segredo copiado para a área de transferência"
+
+msgid "Security"
+msgstr "Segurança"
 
 msgid "Select"
 msgstr "Selecionar"
@@ -1616,6 +1792,9 @@ msgstr "Defina a hora em que parou de trabalhar ou confirme que ainda está trab
 msgid "Set up in Carbon"
 msgstr "Configurar no Carbon"
 
+msgid "Set up two-factor authentication"
+msgstr "Configurar autenticação de dois fatores"
+
 msgid "Set when the batch was planned."
 msgstr "Definido quando o lote de produção é planejado."
 
@@ -1636,6 +1815,12 @@ msgstr "Mostrar descrição"
 
 msgid "Show keyboard shortcuts"
 msgstr "Mostrar atalhos de teclado"
+
+msgid "Shuffle"
+msgstr "Embaralhar"
+
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "Faça login com dados biométricos em vez de um link mágico. Chaves de acesso são protegidas por Face ID, Touch ID ou seu PIN do dispositivo."
 
 msgid "Sign in with Google"
 msgstr "Entrar com Google"
@@ -1658,8 +1843,14 @@ msgstr "Sair da sessão em vez disso"
 msgid "Signed in as {stationName}"
 msgstr "Conectado como {stationName}"
 
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "O login não exigirá mais um código. Digite o código de 6 dígitos atual do seu aplicativo autenticador para confirmar."
+
 msgid "Size"
 msgstr "Tamanho"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Source"
 msgstr "Origem"
@@ -1711,6 +1902,9 @@ msgstr "Etapas ausentes"
 msgid "Storage Unit"
 msgstr "Unidade de Armazenamento"
 
+msgid "Style default"
+msgstr "Estilo padrão"
+
 msgid "Sub-Assembly"
 msgstr "Sub-montagem"
 
@@ -1732,11 +1926,17 @@ msgstr "Enviar anonimamente"
 msgid "Suggestion"
 msgstr "Sugestão"
 
+msgid "Suggestions"
+msgstr "Sugestões"
+
 msgid "Support Required"
 msgstr "Suporte Necessário"
 
 msgid "Switch Operator"
 msgstr "Trocar Operador"
+
+msgid "Synced"
+msgstr "Sincronizado"
 
 msgid "System"
 msgstr "Sistema"
@@ -1777,6 +1977,9 @@ msgstr "Estes itens ainda têm material para selecionar. Finalizar agora marca a
 
 msgid "This batch has no work instructions."
 msgstr "Este lote de produção não possui instruções de trabalho."
+
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "Essas informações serão visíveis para todos os usuários, portanto, tenha cuidado com o que você compartilha."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote está vencido e não pode ser separado."
@@ -1836,6 +2039,12 @@ msgstr "Ferramentas"
 msgid "Top to Bottom"
 msgstr "De Cima para Baixo"
 
+msgid "Topic"
+msgstr "Tópico"
+
+msgid "Topics"
+msgstr "Tópicos"
+
 msgid "Total"
 msgstr "Total"
 
@@ -1859,8 +2068,20 @@ msgstr "linhas rastreadas"
 msgid "Tracking"
 msgstr "Rastreamento"
 
+msgid "Training"
+msgstr "Treinamento"
+
 msgid "Two-factor authentication"
 msgstr "Autenticação de dois fatores"
+
+msgid "Two-factor authentication disabled"
+msgstr "Autenticação de dois fatores desativada"
+
+msgid "Two-factor authentication enabled"
+msgstr "Autenticação de dois fatores ativada"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "A autenticação de dois fatores não está ativada."
 
 msgid "Two-factor authentication required"
 msgstr "Autenticação de dois fatores obrigatória"
@@ -1919,10 +2140,17 @@ msgstr "Atualizado {0}"
 msgid "Updated successfully"
 msgstr "Atualizado com sucesso"
 
+msgid "Upload"
+msgstr "Enviar arquivo"
+
+msgid "Upload completed but no file path returned"
+msgstr "Envio de arquivo concluído, mas nenhum caminho de arquivo foi retornado"
+
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "Enviado: {0}"
 
+#. placeholder {0}: avatarFile.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Enviando {0}"
@@ -1940,6 +2168,9 @@ msgstr "Usa {0} · {1}"
 
 msgid "Value"
 msgstr "Valor"
+
+msgid "Verification failed"
+msgstr "Falha na verificação"
 
 msgid "Verify"
 msgstr "Verificar"
@@ -1985,6 +2216,9 @@ msgstr "Sua conta ainda não faz parte de uma empresa. Conclua o onboarding no C
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Sua organização requer um aplicativo autenticador. Configure-o no Carbon e retorne aqui."
+
+msgid "Your profile could not be loaded."
+msgstr "Seu perfil não pôde ser carregado."
 
 msgid "Your session was locked after inactivity."
 msgstr "Sua sessão foi bloqueada após inatividade."

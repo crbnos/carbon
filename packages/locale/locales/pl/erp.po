@@ -604,6 +604,9 @@ msgstr "{unitCount} sztuk"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Najpierw zmapuj # pozostałe wymagane konto.} other {Najpierw zmapuj # pozostałych wymaganych kont.}}"
 
+msgid "{unread} unread"
+msgstr "{unread} nieprzeczytane"
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "Nie można zaplanować {unschedulableCount}"
 
@@ -1485,6 +1488,9 @@ msgstr "Nazwa konta"
 msgid "Account Number"
 msgstr "Numer konta"
 
+msgid "Account settings"
+msgstr "Ustawienia konta"
+
 msgid "Account Settings"
 msgstr "Ustawienia konta"
 
@@ -2204,6 +2210,9 @@ msgstr "całość produkcji {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Wszyscy członkowie wybranych grup i wybrane osoby będą mogły zatwierdzać żądania"
+
+msgid "All modules"
+msgstr "Wszystkie moduły"
 
 msgid "All open jobs"
 msgstr "Wszystkie otwarte zlecenia produkcyjne"
@@ -3547,6 +3556,9 @@ msgstr "Oczekuje na zatwierdzenie"
 msgid "Back"
 msgstr "Wstecz"
 
+msgid "Back to menu"
+msgstr "Wróć do menu"
+
 msgid "Back to traceability"
 msgstr "Powrót do identyfikowalności"
 
@@ -4558,6 +4570,9 @@ msgstr "Wybierz inny plik"
 msgid "Choose avatar"
 msgstr "Wybierz awatar"
 
+msgid "Choose how Carbon reaches you."
+msgstr "Wybierz, jak Carbon Cię osiąga."
+
 msgid "Choose how to add lines to this return."
 msgstr "Wybierz sposób dodania pozycji do tego zwrotu."
 
@@ -4686,6 +4701,9 @@ msgstr "Data zamknięcia"
 
 msgid "Close Date"
 msgstr "Data zamknięcia"
+
+msgid "Close menu"
+msgstr "Zamknij menu"
 
 msgid "Close Period"
 msgstr "Zamknij Okres"
@@ -9581,6 +9599,12 @@ msgstr "Sprawozdania finansowe"
 msgid "Financing"
 msgstr "Finansowanie"
 
+msgid "Find company…"
+msgstr "Znajdź firmę…"
+
+msgid "Find module…"
+msgstr "Znajdź moduł…"
+
 msgid "finish"
 msgstr "Wyroby gotowe"
 
@@ -12297,6 +12321,9 @@ msgstr "Zarządzaj wymaganiami uwierzytelniania i logowania dla twojej firmy."
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Zarządzaj sposobem śledzenia, obliczania i egzekwowania okresu przydatności w całym magazynie."
 
+msgid "Manage how you sign in to Carbon."
+msgstr "Zarządzaj sposobem logowania do Carbon."
+
 msgid "Manage Ownership"
 msgstr "Zarządzaj własnością"
 
@@ -12618,6 +12645,9 @@ msgstr "Data memorandum"
 
 msgid "Memo ID"
 msgstr "ID Notatki"
+
+msgid "Menu"
+msgstr "Menu"
 
 msgid "Merchant"
 msgstr "Handlowiec"
@@ -13598,6 +13628,9 @@ msgstr "Brak ścieżki wolnej od kolizji"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Brak komentarzy. Bądź pierwszy i dodaj komentarz."
 
+msgid "No companies found"
+msgstr "Nie znaleziono firm"
+
 msgid "No companies match \"{query}\""
 msgstr "Brak firm pasujących do \"{query}\""
 
@@ -13840,6 +13873,9 @@ msgstr "Brak materiałów"
 
 msgid "No materials yet"
 msgstr "Brak materiałów na razie"
+
+msgid "No modules found"
+msgstr "Nie znaleziono modułów"
 
 msgid "No new notifications"
 msgstr "Brak nowych powiadomień"
@@ -20104,6 +20140,9 @@ msgstr "Ruch zapasów poprawiony"
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "Wymiar zapasu — np. grubość arkusza lub średnica pręta"
 
+msgid "Stock Transfer"
+msgstr "Przesunięcie zapasu"
+
 msgid "Stock Transfer ID"
 msgstr "Identyfikator Transferu Zapasów"
 
@@ -20613,6 +20652,9 @@ msgstr "Wyłącz moduł, aby go usunąć wszędzie: Wymagania, Dane, Szkolenie, 
 
 msgid "Switch company"
 msgstr "Zmień firmę"
+
+msgid "Switch module"
+msgstr "Zmień moduł"
 
 msgid "Switch to pan mode"
 msgstr "Przełącz na tryb panoramy"
@@ -22044,6 +22086,9 @@ msgstr "To nie ma żadnego wpływu do momentu weryfikacji domeny e-mail poniżej
 msgid "This information will be used on document headers"
 msgstr "Te informacje będą używane w nagłówkach dokumentów"
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "Te informacje będą widoczne dla wszystkich użytkowników, więc uważaj co udostępniasz."
+
 msgid "this inspection plan"
 msgstr "ten plan kontroli"
 
@@ -22559,6 +22604,9 @@ msgstr "Klasyfikacja najwyższego poziomu (aktywa / pasywa / kapitał własny / 
 
 msgid "Topic"
 msgstr "Temat"
+
+msgid "Topics"
+msgstr "Tematy"
 
 msgid "Total"
 msgstr "Razem"
@@ -24711,6 +24759,9 @@ msgstr "Twoje numery części"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Twoje numery części i główny katalog pozycji za nimi"
+
+msgid "Your profile could not be loaded."
+msgstr "Nie udało się załadować profilu."
 
 msgid "Your project end to end: the plan, the gates, and go-live"
 msgstr "Twój projekt od początku do końca: plan, bramy i wdrożenie"

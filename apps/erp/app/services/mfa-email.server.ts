@@ -25,7 +25,7 @@ const EMAIL_BATCH_SIZE = 25;
 
 // No shared helper exists for "absolute URL from a path.to.* value" — inline
 // concatenation is the convention at every call site (~9 of this exact shape).
-const SECURITY_URL = `${ERP_URL}${path.to.accountSecurity}`;
+const SECURITY_URL = `${ERP_URL}${path.to.accountSettings("security")}`;
 
 /**
  * Announce a newly-turned-on two-factor requirement to every active employee of

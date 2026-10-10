@@ -604,6 +604,9 @@ msgstr "{unitCount} units"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 
+msgid "{unread} unread"
+msgstr "{unread} unread"
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} can't be scheduled"
 
@@ -1485,6 +1488,9 @@ msgstr "Account Name"
 msgid "Account Number"
 msgstr "Account Number"
 
+msgid "Account settings"
+msgstr "Account settings"
+
 msgid "Account Settings"
 msgstr "Account Settings"
 
@@ -2204,6 +2210,9 @@ msgstr "all make {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
+
+msgid "All modules"
+msgstr "All modules"
 
 msgid "All open jobs"
 msgstr "All open jobs"
@@ -3547,6 +3556,9 @@ msgstr "Awaiting approval"
 msgid "Back"
 msgstr "Back"
 
+msgid "Back to menu"
+msgstr "Back to menu"
+
 msgid "Back to traceability"
 msgstr "Back to traceability"
 
@@ -4558,6 +4570,9 @@ msgstr "Choose another file"
 msgid "Choose avatar"
 msgstr "Choose avatar"
 
+msgid "Choose how Carbon reaches you."
+msgstr "Choose how Carbon reaches you."
+
 msgid "Choose how to add lines to this return."
 msgstr "Choose how to add lines to this return."
 
@@ -4686,6 +4701,9 @@ msgstr "Close date"
 
 msgid "Close Date"
 msgstr "Close Date"
+
+msgid "Close menu"
+msgstr "Close menu"
 
 msgid "Close Period"
 msgstr "Close Period"
@@ -9581,6 +9599,12 @@ msgstr "Financial Statements"
 msgid "Financing"
 msgstr "Financing"
 
+msgid "Find company…"
+msgstr "Find company…"
+
+msgid "Find module…"
+msgstr "Find module…"
+
 msgid "finish"
 msgstr "finish"
 
@@ -12297,6 +12321,9 @@ msgstr "Manage authentication and sign-in requirements for your company."
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Manage how shelf life is tracked, computed, and enforced across inventory."
 
+msgid "Manage how you sign in to Carbon."
+msgstr "Manage how you sign in to Carbon."
+
 msgid "Manage Ownership"
 msgstr "Manage Ownership"
 
@@ -12618,6 +12645,9 @@ msgstr "Memo Date"
 
 msgid "Memo ID"
 msgstr "Memo ID"
+
+msgid "Menu"
+msgstr "Menu"
 
 msgid "Merchant"
 msgstr "Merchant"
@@ -13598,6 +13628,9 @@ msgstr "No collision-free path"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "No comments yet. Be the first to add a comment."
 
+msgid "No companies found"
+msgstr "No companies found"
+
 msgid "No companies match \"{query}\""
 msgstr "No companies match \"{query}\""
 
@@ -13840,6 +13873,9 @@ msgstr "No materials"
 
 msgid "No materials yet"
 msgstr "No materials yet"
+
+msgid "No modules found"
+msgstr "No modules found"
 
 msgid "No new notifications"
 msgstr "No new notifications"
@@ -20104,6 +20140,9 @@ msgstr "Stock movement corrected"
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "Stock size — e.g. sheet thickness or bar diameter"
 
+msgid "Stock Transfer"
+msgstr "Stock Transfer"
+
 msgid "Stock Transfer ID"
 msgstr "Stock Transfer ID"
 
@@ -20613,6 +20652,9 @@ msgstr "Switch a module off to remove it everywhere: Requirements, Data, Trainin
 
 msgid "Switch company"
 msgstr "Switch company"
+
+msgid "Switch module"
+msgstr "Switch module"
 
 msgid "Switch to pan mode"
 msgstr "Switch to pan mode"
@@ -22044,6 +22086,9 @@ msgstr "This has no effect until an email domain is verified below."
 msgid "This information will be used on document headers"
 msgstr "This information will be used on document headers"
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "This information will be visible to all users, so be careful what you share."
+
 msgid "this inspection plan"
 msgstr "this inspection plan"
 
@@ -22559,6 +22604,9 @@ msgstr "Top-level classification (asset / liability / equity / revenue / expense
 
 msgid "Topic"
 msgstr "Topic"
+
+msgid "Topics"
+msgstr "Topics"
 
 msgid "Total"
 msgstr "Total"
@@ -24714,6 +24762,9 @@ msgstr "Your part numbers"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Your part numbers and the item master behind them"
+
+msgid "Your profile could not be loaded."
+msgstr "Your profile could not be loaded."
 
 msgid "Your project end to end: the plan, the gates, and go-live"
 msgstr "Your project end to end: the plan, the gates, and go-live"

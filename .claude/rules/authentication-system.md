@@ -302,8 +302,9 @@ Supabase's `auth.mfa_factors` — no app table.
 - **auth-js gotcha**: `supabase.auth.mfa.*` reads the client's INTERNAL session, not the
   `Authorization` header override — `mfa.server.ts` seeds a fresh anon client via
   `auth.setSession` with the cookie's tokens.
-- **Enrollment**: Account → Security (`x+/account+/security.tsx`, which also owns
-  passkeys) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
+- **Enrollment**: Account settings → Security (the modal pane
+  `packages/account/src/ui/SecuritySettings.tsx`, data and passkey writes in
+  `api+/account.security.ts`) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
   current code as step-up). The enroll→scan→verify state machine, the 6-slot code
   input, and the invalid-code copy are shared with the enforcement gate via
   `~/components/TotpEnrollment` (`useTotpEnrollment`, `OtpInput`,

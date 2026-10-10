@@ -67,6 +67,10 @@ msgstr "{0} / {1} 完了済み"
 msgid "{0} queued"
 msgstr "{0}件がキュー待ちです"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} 登録済"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "{0} 実行中"
@@ -89,6 +93,9 @@ msgstr "{completions}個の合格ユニットが完了します。"
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
 
+msgid "{maxSizeMB}MB limit"
+msgstr "{maxSizeMB}MB の制限"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
@@ -110,6 +117,12 @@ msgstr "ロット承諾"
 
 msgid "Accept lot?"
 msgstr "ロットを承諾しますか？"
+
+msgid "Account"
+msgstr "アカウント"
+
+msgid "Account settings"
+msgstr "アカウント設定"
 
 msgid "Account Settings"
 msgstr "アカウント設定"
@@ -136,14 +149,23 @@ msgstr "追加して払出"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
+msgid "Add Authenticator App"
+msgstr "認証アプリを追加"
+
 msgid "Add Inventory"
 msgstr "在庫追加"
+
+msgid "Add Passkey"
+msgstr "パスキーを追加"
 
 msgid "Add Sample"
 msgstr "サンプルを追加"
 
 msgid "Add Spare Part"
 msgstr "予備品を追加"
+
+msgid "Added"
+msgstr "追加完了"
 
 msgid "All"
 msgstr "すべて"
@@ -179,6 +201,12 @@ msgstr "ユニットを割り当てる"
 msgid "Appearance"
 msgstr "外観"
 
+msgid "Approvals"
+msgstr "承認"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "このパスキーを削除してもよろしいですか？削除後、このパスキーを使ってサインインできなくなります。"
+
 msgid "Are you sure you want to delete this step?"
 msgstr "このステップを削除してもよろしいですか？"
 
@@ -209,17 +237,39 @@ msgstr "担当者"
 msgid "Authentication Error"
 msgstr "認証エラー"
 
+msgid "Authenticator app"
+msgstr "認証アプリ"
+
+msgid "Authenticator QR code"
+msgstr "認証アプリの QR コード"
+
 msgid "available"
 msgstr "利用可能"
 
 msgid "Available"
 msgstr "利用可能"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "アバターオプション {0}"
+
+msgid "Avatar style"
+msgstr "アバタースタイル"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "アバターは <0>{0}</0> から {1} による提供で、<1>{2}</1> ライセンスの下で使用されています。"
+
 msgid "Back"
 msgstr "戻る"
 
 msgid "Back to batch"
 msgstr "バッチへ戻る"
+
+msgid "Background"
+msgstr "背景"
 
 msgid "Batch"
 msgstr "バッチ"
@@ -283,6 +333,12 @@ msgstr "Carbonロゴ"
 msgid "Cards"
 msgstr "カード"
 
+msgid "Change"
+msgstr "変更"
+
+msgid "Changelog newsletter"
+msgstr "チェンジログニュースレター"
+
 msgid "Characteristic"
 msgstr "特性"
 
@@ -300,6 +356,12 @@ msgstr "製造指図を選択"
 
 msgid "Choose an option"
 msgstr "オプションを選択"
+
+msgid "Choose avatar"
+msgstr "アバターを選択"
+
+msgid "Choose how Carbon reaches you."
+msgstr "Carbon があなたに連絡する方法を選択します。"
 
 msgid "Clear"
 msgstr "クリア"
@@ -453,6 +515,12 @@ msgstr "デフォルト保管ユニット"
 msgid "Delete"
 msgstr "削除"
 
+msgid "Delete passkey"
+msgstr "パスキーを削除"
+
+msgid "Delete Passkey"
+msgstr "パスキーを削除"
+
 msgid "Delete Step"
 msgstr "ステップを削除"
 
@@ -552,11 +620,23 @@ msgstr "各製造指図の出力はそれぞれのロット — 各製造指図�
 msgid "Edit"
 msgstr "編集"
 
+msgid "Edit Passkey"
+msgstr "パスキーを編集"
+
 msgid "Elapsed"
 msgstr "経過時間"
 
+msgid "email"
+msgstr "メール"
+
+msgid "Email"
+msgstr "メール"
+
 msgid "Email Address"
 msgstr "メール住所"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "メール通知は会社の現在のプランに含まれていません。有効にすると、メール設定が適用されます。"
 
 msgid "Empty work centers"
 msgstr "作業区が空です"
@@ -629,8 +709,14 @@ msgstr "アクティブな工程の取得に失敗しました"
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnitsの取得に失敗しました"
 
+msgid "Failed to get options"
+msgstr "オプションの取得に失敗しました"
+
 msgid "Failed to record gauge"
 msgstr "測定器の記録に失敗しました"
+
+msgid "Failed to register passkey"
+msgstr "パスキーの登録に失敗しました"
 
 msgid "Failed to save measurement"
 msgstr "測定の保存に失敗しました"
@@ -676,6 +762,9 @@ msgstr "材料がピッキングされていない状態で終了しますか?"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "最初の期日 {0}"
+
+msgid "First Name"
+msgstr "名"
 
 msgid "Fit"
 msgstr "フィット"
@@ -741,6 +830,12 @@ msgstr "開いているメニュー内"
 msgid "In Progress"
 msgstr "進行中"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "アプリ内通知は常に配信されます。メールと Slack でも受け取るトピックを選択してください。"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "アプリ内通知は常に配信されます。メールでも受け取るトピックを選択してください。"
+
 msgid "Inspect Item"
 msgstr "アイテムを検査"
 
@@ -752,6 +847,9 @@ msgstr "作業手順"
 
 msgid "Insufficient quantity"
 msgstr "数量が不足しています"
+
+msgid "Inventory"
+msgstr "在庫管理"
 
 msgid "Inventory adjustment completed"
 msgstr "在庫調整が完了しました"
@@ -789,6 +887,9 @@ msgstr "品目"
 msgid "Item Master"
 msgstr "品目マスター"
 
+msgid "Items"
+msgstr "品目"
+
 msgid "Job"
 msgstr "ジョブ"
 
@@ -815,6 +916,12 @@ msgstr "労務"
 
 msgid "Last completed"
 msgstr "最後に完了"
+
+msgid "Last Name"
+msgstr "姓"
+
+msgid "Last used"
+msgstr "最後に使用"
 
 msgid "Learn more"
 msgstr "詳細情報"
@@ -911,6 +1018,9 @@ msgstr "保全が期限超過"
 
 msgid "Make a replacement"
 msgstr "代替品を作成"
+
+msgid "Manage how you sign in to Carbon."
+msgstr "Carbon へのサインイン方法を管理します。"
 
 msgid "Manually add items to inventory"
 msgstr "手動で在庫に品目を追加"
@@ -1070,6 +1180,9 @@ msgstr "オプションが見つかりません。"
 msgid "No options found."
 msgstr "オプションが見つかりません。"
 
+msgid "No passkeys registered yet."
+msgstr "登録済のパスキーはまだありません。"
+
 msgid "No picking lists assigned"
 msgstr "ピッキングリストが割り当てられていません"
 
@@ -1141,6 +1254,9 @@ msgstr "この作業区には予定がありません。"
 
 msgid "Nothing to scrap"
 msgstr "スクラップするものがない"
+
+msgid "Notifications"
+msgstr "通知"
 
 msgid "OEE Impact"
 msgstr "OEE影響度"
@@ -1217,6 +1333,9 @@ msgstr "オプション"
 msgid "or"
 msgstr "または"
 
+msgid "Or enter this secret manually:"
+msgstr "またはこのシークレットを手動で入力してください："
+
 msgid "Out of calibration"
 msgstr "校正対象外"
 
@@ -1247,8 +1366,17 @@ msgstr "検査合格"
 msgid "Passed Inspection"
 msgstr "検査合格"
 
+msgid "Passkey name"
+msgstr "パスキー名"
+
 msgid "Passkey unlock failed"
 msgstr "パスキーのロック解除に失敗しました"
+
+msgid "Passkeys"
+msgstr "パスキー"
+
+msgid "Passkeys are disabled"
+msgstr "パスキーが無効です"
 
 msgid "Pause"
 msgstr "一時停止"
@@ -1256,12 +1384,21 @@ msgstr "一時停止"
 msgid "Pause timer"
 msgstr "タイマーを一時停止"
 
+msgid "Phone"
+msgstr "電話"
+
+msgid "Photo uploaded successfully"
+msgstr "写真がアップロードされました"
+
 msgid "Pick"
 msgstr "ピック"
 
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "ピッキング {0}"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "スタイルとアバターを選択するか、新しいものにシャッフルしてください。"
 
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
@@ -1350,8 +1487,17 @@ msgstr "プロセスパラメーター"
 msgid "Processes"
 msgstr "プロセス一覧"
 
+msgid "Profile"
+msgstr "プロフィール"
+
 msgid "Progress"
 msgstr "進捗"
+
+msgid "Purchasing"
+msgstr "購買"
+
+msgid "Quality"
+msgstr "品質"
 
 msgid "Quality Issue"
 msgstr "品質問題"
@@ -1367,6 +1513,9 @@ msgstr "数量は0より大きい値を入力してください"
 
 msgid "Queue empty"
 msgstr "キューが空です"
+
+msgid "Quotes"
+msgstr "見積"
 
 msgid "Reason for rework"
 msgstr "手直しの理由"
@@ -1397,6 +1546,9 @@ msgstr "一部を記録"
 msgid "Recorded"
 msgstr "記録済"
 
+msgid "Registration failed"
+msgstr "登録に失敗しました"
+
 msgid "Reject"
 msgstr "却下"
 
@@ -1409,6 +1561,9 @@ msgstr "リリース済"
 msgid "Remove"
 msgstr "除去"
 
+msgid "Remove authenticator app"
+msgstr "認証器アプリを除去"
+
 msgid "Remove filter"
 msgstr "絞り込みを除去"
 
@@ -1418,14 +1573,23 @@ msgstr "在庫を除去"
 msgid "Remove part"
 msgstr "部品を除去"
 
+msgid "Remove two-factor authentication"
+msgstr "二要素認証を除去"
+
 msgid "Rename"
 msgstr "名前変更"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "サブアセンブリを再オープンし、代替品を作成"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "サインイン時に認証器アプリからの6桁コードが必要です。"
+
 msgid "Required"
 msgstr "必須"
+
+msgid "Reset"
+msgstr "リセット"
 
 msgid "Result"
 msgstr "結果"
@@ -1444,6 +1608,9 @@ msgstr "手直し数量"
 
 msgid "Running"
 msgstr "実行中"
+
+msgid "Sales"
+msgstr "販売"
 
 msgid "Sales Order"
 msgstr "受注"
@@ -1477,6 +1644,9 @@ msgstr "シリアル番号をスキャンまたは検索..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象をスキャンまたは選択してサンプル列として追加し、グリッドに結果を記録します。"
+
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "このQRコードをスキャンしてください（例：Google AuthenticatorまたはOnePassword）、その後に表示される6桁のコードを入力してください。"
 
 msgid "Schedule"
 msgstr "スケジュール"
@@ -1525,6 +1695,12 @@ msgstr "作業者を検索..."
 
 msgid "Search..."
 msgstr "検索..."
+
+msgid "Secret copied to clipboard"
+msgstr "シークレットがクリップボードにコピーされました"
+
+msgid "Security"
+msgstr "セキュリティ"
 
 msgid "Select"
 msgstr "選択"
@@ -1616,6 +1792,9 @@ msgstr "作業を停止した時刻を設定するか、まだ作業中である
 msgid "Set up in Carbon"
 msgstr "Carbonで設定"
 
+msgid "Set up two-factor authentication"
+msgstr "二要素認証を設定"
+
 msgid "Set when the batch was planned."
 msgstr "バッチが計画されたときに設定します。"
 
@@ -1636,6 +1815,12 @@ msgstr "説明を表示"
 
 msgid "Show keyboard shortcuts"
 msgstr "キーボードショートカットを表示"
+
+msgid "Shuffle"
+msgstr "シャッフル"
+
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "マジックリンクの代わりに生体認証でサインインしてください。パスキーはFace ID、Touch ID、またはデバイスPINで保護されています。"
 
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"
@@ -1658,8 +1843,14 @@ msgstr "代わりにサインアウト"
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
 
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "サインインにコードが不要になります。確認するために認証器アプリの現在の6桁コードを入力してください。"
+
 msgid "Size"
 msgstr "サイズ"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Source"
 msgstr "ソース"
@@ -1711,6 +1902,9 @@ msgstr "ステップが未記録です"
 msgid "Storage Unit"
 msgstr "保管ユニット"
 
+msgid "Style default"
+msgstr "スタイルデフォルト"
+
 msgid "Sub-Assembly"
 msgstr "サブアセンブリ"
 
@@ -1732,11 +1926,17 @@ msgstr "匿名で提出"
 msgid "Suggestion"
 msgstr "提案"
 
+msgid "Suggestions"
+msgstr "提案"
+
 msgid "Support Required"
 msgstr "サポート必要"
 
 msgid "Switch Operator"
 msgstr "作業者を切り替える"
+
+msgid "Synced"
+msgstr "同期済み"
 
 msgid "System"
 msgstr "システム"
@@ -1777,6 +1977,9 @@ msgstr "これらの品目にはまだピッキングする材料があります
 
 msgid "This batch has no work instructions."
 msgstr "このバッチには作業手順書がありません。"
+
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
@@ -1836,6 +2039,12 @@ msgstr "工具"
 msgid "Top to Bottom"
 msgstr "上から下へ"
 
+msgid "Topic"
+msgstr "トピック"
+
+msgid "Topics"
+msgstr "トピック"
+
 msgid "Total"
 msgstr "合計"
 
@@ -1859,8 +2068,20 @@ msgstr "追跡対象の明細"
 msgid "Tracking"
 msgstr "追跡"
 
+msgid "Training"
+msgstr "教育訓練"
+
 msgid "Two-factor authentication"
 msgstr "二要素認証"
+
+msgid "Two-factor authentication disabled"
+msgstr "二要素認証が無効です"
+
+msgid "Two-factor authentication enabled"
+msgstr "二要素認証が有効です"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "二要素認証は有効になっていません。"
 
 msgid "Two-factor authentication required"
 msgstr "二要素認証が必要です"
@@ -1919,10 +2140,17 @@ msgstr "{0} に更新"
 msgid "Updated successfully"
 msgstr "正常に更新されました"
 
+msgid "Upload"
+msgstr "アップロード"
+
+msgid "Upload completed but no file path returned"
+msgstr "アップロードが完了しましたがファイルパスが返されません"
+
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "アップロード完了: {0}"
 
+#. placeholder {0}: avatarFile.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "{0} をアップロード中"
@@ -1940,6 +2168,9 @@ msgstr "{0} · {1} を使用"
 
 msgid "Value"
 msgstr "値"
+
+msgid "Verification failed"
+msgstr "検証に失敗しました"
 
 msgid "Verify"
 msgstr "確認"
@@ -1985,6 +2216,9 @@ msgstr "あなたのアカウントはまだ会社に属していません。継
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"
+
+msgid "Your profile could not be loaded."
+msgstr "プロフィールを読み込めませんでした。"
 
 msgid "Your session was locked after inactivity."
 msgstr "非アクティビティ後、セッションはロック中になりました。"

@@ -604,6 +604,9 @@ msgstr "{unitCount}件"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {先映射剩余的 # 个必需账户。} other {先映射剩余的 # 个必需账户。}}"
 
+msgid "{unread} unread"
+msgstr "{unread} 条未读"
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}无法排程"
 
@@ -1485,6 +1488,9 @@ msgstr "账户名称"
 msgid "Account Number"
 msgstr "账户编号"
 
+msgid "Account settings"
+msgstr "账户设置"
+
 msgid "Account Settings"
 msgstr "账户设置"
 
@@ -2204,6 +2210,9 @@ msgstr "全部自制 {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
+
+msgid "All modules"
+msgstr "所有模块"
 
 msgid "All open jobs"
 msgstr "所有未结工单"
@@ -3547,6 +3556,9 @@ msgstr "等待审批"
 msgid "Back"
 msgstr "返回"
 
+msgid "Back to menu"
+msgstr "返回菜单"
+
 msgid "Back to traceability"
 msgstr "返回可追溯性"
 
@@ -4558,6 +4570,9 @@ msgstr "选择另一个文件"
 msgid "Choose avatar"
 msgstr "选择头像"
 
+msgid "Choose how Carbon reaches you."
+msgstr "选择 Carbon 联系您的方式。"
+
 msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
 
@@ -4686,6 +4701,9 @@ msgstr "关闭日期"
 
 msgid "Close Date"
 msgstr "关闭日期"
+
+msgid "Close menu"
+msgstr "关闭菜单"
 
 msgid "Close Period"
 msgstr "关闭期间"
@@ -9581,6 +9599,12 @@ msgstr "财务报表"
 msgid "Financing"
 msgstr "融资"
 
+msgid "Find company…"
+msgstr "查找公司…"
+
+msgid "Find module…"
+msgstr "查找模块…"
+
 msgid "finish"
 msgstr "成品"
 
@@ -12297,6 +12321,9 @@ msgstr "管理您公司的身份验证和登录要求。"
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "管理保质期在库存管理中的跟踪、计算和执行方式。"
 
+msgid "Manage how you sign in to Carbon."
+msgstr "管理您登录 Carbon 的方式。"
+
 msgid "Manage Ownership"
 msgstr "管理所有权"
 
@@ -12618,6 +12645,9 @@ msgstr "备忘录日期"
 
 msgid "Memo ID"
 msgstr "备忘录 ID"
+
+msgid "Menu"
+msgstr "菜单"
 
 msgid "Merchant"
 msgstr "商家"
@@ -13598,6 +13628,9 @@ msgstr "没有无碰撞路径"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
+msgid "No companies found"
+msgstr "未找到公司"
+
 msgid "No companies match \"{query}\""
 msgstr "没有公司与 \"{query}\" 匹配"
 
@@ -13840,6 +13873,9 @@ msgstr "无物料"
 
 msgid "No materials yet"
 msgstr "暂无原材料"
+
+msgid "No modules found"
+msgstr "未找到模块"
 
 msgid "No new notifications"
 msgstr "没有新通知"
@@ -20104,6 +20140,9 @@ msgstr "库存移动已修正"
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "库存尺寸 — 例如 板材厚度或棒材直径"
 
+msgid "Stock Transfer"
+msgstr "库存调拨"
+
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
 
@@ -20613,6 +20652,9 @@ msgstr "关闭一个模块以从所有位置移除它：要求、数据、培训
 
 msgid "Switch company"
 msgstr "切换公司"
+
+msgid "Switch module"
+msgstr "切换模块"
 
 msgid "Switch to pan mode"
 msgstr "切换到平移模式"
@@ -22044,6 +22086,9 @@ msgstr "在下面验证电子邮件域之前，这不会产生任何影响。"
 msgid "This information will be used on document headers"
 msgstr "此信息将用于文件标题"
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "此信息将对所有用户可见，请谨慎分享。"
+
 msgid "this inspection plan"
 msgstr "这个检验计划"
 
@@ -22558,6 +22603,9 @@ msgid "Top-level classification (asset / liability / equity / revenue / expense)
 msgstr "顶级分类（资产/负债/所有者权益/收入/费用）；仅在根组上设置，由子项继承。"
 
 msgid "Topic"
+msgstr "主题"
+
+msgid "Topics"
 msgstr "主题"
 
 msgid "Total"
@@ -24714,6 +24762,9 @@ msgstr "您的零件编号"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "您的零件编号和背后的物料主数据"
+
+msgid "Your profile could not be loaded."
+msgstr "无法加载您的个人资料。"
 
 msgid "Your project end to end: the plan, the gates, and go-live"
 msgstr "您的项目端到端：计划、关卡和上线"

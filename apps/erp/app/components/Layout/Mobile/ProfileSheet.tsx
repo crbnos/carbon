@@ -28,14 +28,13 @@ import { Avatar } from "~/components";
 import type { AccountMenuItem } from "~/components/AvatarMenu";
 import { useAccountMenu } from "~/components/AvatarMenu";
 import { useUser } from "~/hooks";
-import { useNotifications } from "~/hooks/useNotifications";
-import { useRestoreBrowserNotifications } from "~/hooks/usePushSubscription";
+import type { useNotifications } from "~/hooks/useNotifications";
 import { path } from "~/utils/path";
 import {
   useCompanyGroups,
   useCompanySwitchRedirect
 } from "../Topbar/CompanySwitcher";
-import { NotificationsPanel, usePushPublicKey } from "../Topbar/Notifications";
+import { NotificationsPanel } from "../Topbar/Notifications";
 import { SheetRowButton, SheetRowContent, SheetRowGroup } from "./SheetRow";
 
 /** Consecutive items with the same `group`, as the desktop separators split them. */
@@ -56,16 +55,22 @@ type Screen =
   | { id: "submenu"; item: AccountMenuItem };
 
 /**
- * The tab bar's Profile sheet: the desktop account menu's items in order,
+ * The dock menu's Profile sheet: the desktop account menu's items in order,
  * plus Notifications and the company switcher, which live in the desktop top
- * bar. Sub-menus drill in within the sheet.
+ * bar. Sub-menus drill in within the sheet. The dock owns the notifications
+ * subscription and shares it with its menu's bell.
  */
 export function ProfileSheet({
   open,
-  onOpenChange
+  onOpenChange,
+  notifications,
+  initialScreen = "root"
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  notifications: ReturnType<typeof useNotifications>;
+  /** The screen the sheet opens on; Back always returns to the root. */
+  initialScreen?: "root" | "notifications";
 }) {
   const { t } = useLingui();
   const menu = useAccountMenu();
@@ -73,28 +78,19 @@ export function ProfileSheet({
   const mode = useMode();
   const companyGroups = useCompanyGroups();
   const switchRedirect = useCompanySwitchRedirect();
-  const notifications = useNotifications({
-    companyId: user.company.id,
-    userId: user.id
-  });
-  // Always mounted on phones, like the desktop bell: restores a signed-back-in
-  // user's browser notifications.
-  useRestoreBrowserNotifications({
-    publicKey: usePushPublicKey(),
-    userId: user.id
-  });
   const unread = notifications.notifications.filter((n) => !n.read).length;
   const companyCount = companyGroups.reduce(
     (sum, group) => sum + group.companies.length,
     0
   );
 
-  const [screen, setScreen] = useState<Screen>({ id: "root" });
+  const [screen, setScreen] = useState<Screen>({ id: initialScreen });
   const [notificationsTab, setNotificationsTab] = useState("inbox");
 
+  // Each opening starts on the screen it was opened for.
   useEffect(() => {
-    if (!open) setScreen({ id: "root" });
-  }, [open]);
+    if (open) setScreen({ id: initialScreen });
+  }, [open, initialScreen]);
 
   const back = () => setScreen({ id: "root" });
 
@@ -172,6 +168,18 @@ export function ProfileSheet({
           </SheetRowButton>
         );
       case "action":
+        if (item.id === "account") {
+          return (
+            <SheetRowButton
+              onClick={() => {
+                onOpenChange(false);
+                menu.openAccountSettings();
+              }}
+            >
+              <SheetRowContent icon={item.icon} label={item.label} />
+            </SheetRowButton>
+          );
+        }
         if (item.id === "signOut") {
           return (
             <Form method="post" action={path.to.logout}>

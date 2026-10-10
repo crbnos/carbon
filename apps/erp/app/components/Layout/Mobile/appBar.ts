@@ -15,8 +15,8 @@ export type AppBarState = {
   subtitle?: ReactNode;
   backTo?: string;
   /**
-   * Root screens show the tab bar and the section switcher; pushed screens
-   * show Back; a selection (list select mode) hides the page actions.
+   * Root screens show the section switcher; pushed screens show Back; a
+   * selection (list select mode) hides the page actions.
    */
   kind: "root" | "pushed" | "selection";
 };

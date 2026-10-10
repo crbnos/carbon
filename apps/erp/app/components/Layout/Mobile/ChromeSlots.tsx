@@ -17,7 +17,7 @@ const bottomBarSlot = createPortalSlot();
 /** Where <AppBarActions> render: the right of the compact app bar. */
 export const AppBarActionsTarget = appBarActionsSlot.Target;
 
-/** True while any <BottomBar> is mounted; the tab bar hides then. */
+/** True while any <BottomBar> is mounted; the dock hides then. */
 export const useBottomBarActive = bottomBarSlot.useFilled;
 
 const MAX_APP_BAR_ACTIONS = 2;
@@ -34,10 +34,10 @@ export function AppBarActions({ children }: { children: ReactNode }) {
   return <appBarActionsSlot.Fill>{children}</appBarActionsSlot.Fill>;
 }
 
-/** A compact bottom bar (action bar or bulk bar) that replaces the tab bar. */
+/** A compact bottom bar (action bar or bulk bar) that replaces the dock. */
 export const BottomBar = bottomBarSlot.Fill;
 
-/** A page's phone action bar: its buttons in one row over the tab bar. */
+/** A page's phone action bar: its buttons in one row, in place of the dock. */
 export function PhoneActionBar({
   children,
   className
@@ -88,7 +88,7 @@ export function useCompactCssVar(
 }
 
 /**
- * The shell's bottom chrome: the target for <BottomBar> and the tab bar. Its
+ * The shell's bottom chrome: the target for <BottomBar> and the dock. Its
  * height becomes `--content-inset`, so full-height pages end above it.
  */
 export function MobileBottomChrome({ children }: { children: ReactNode }) {

@@ -604,6 +604,9 @@ msgstr "{unitCount} adet"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Önce kalan # gerekli hesabı eşleyin.} other {Önce kalan # gerekli hesabı eşleyin.}}"
 
+msgid "{unread} unread"
+msgstr "{unread} okunmamış"
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} planlanmıyor"
 
@@ -1485,6 +1488,9 @@ msgstr "Hesap Adı"
 msgid "Account Number"
 msgstr "Hesap Numarası"
 
+msgid "Account settings"
+msgstr "Hesap ayarları"
+
 msgid "Account Settings"
 msgstr "Hesap Ayarları"
 
@@ -2204,6 +2210,9 @@ msgstr "tümü {0} üretim"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
+
+msgid "All modules"
+msgstr "Tüm modüller"
 
 msgid "All open jobs"
 msgstr "Tüm açık iş emirleri"
@@ -3547,6 +3556,9 @@ msgstr "Onay bekliyor"
 msgid "Back"
 msgstr "Geri"
 
+msgid "Back to menu"
+msgstr "Menüye geri dön"
+
 msgid "Back to traceability"
 msgstr "İzlenebilirliğe geri dön"
 
@@ -4558,6 +4570,9 @@ msgstr "Başka bir dosya seç"
 msgid "Choose avatar"
 msgstr "Avatar seç"
 
+msgid "Choose how Carbon reaches you."
+msgstr "Carbon'un sizi nasıl bulacağını seçin."
+
 msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
@@ -4686,6 +4701,9 @@ msgstr "Kapanış tarihi"
 
 msgid "Close Date"
 msgstr "Kapatma Tarihi"
+
+msgid "Close menu"
+msgstr "Menüyü kapat"
 
 msgid "Close Period"
 msgstr "Dönemi Kapat"
@@ -9581,6 +9599,12 @@ msgstr "Mali Tablolar"
 msgid "Financing"
 msgstr "Finansman"
 
+msgid "Find company…"
+msgstr "Şirket ara…"
+
+msgid "Find module…"
+msgstr "Modül ara…"
+
 msgid "finish"
 msgstr "Bitmiş ürünler"
 
@@ -12297,6 +12321,9 @@ msgstr "Şirketiniz için kimlik doğrulama ve oturum açma gereksinimlerini yö
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Envanterdeki raf ömrünün nasıl izlendiğini, hesaplandığını ve uygulandığını yönetin."
 
+msgid "Manage how you sign in to Carbon."
+msgstr "Carbon'a nasıl giriş yapacağınızı yönetin."
+
 msgid "Manage Ownership"
 msgstr "Sahipliği Yönet"
 
@@ -12618,6 +12645,9 @@ msgstr "Muhasebe Tarihi"
 
 msgid "Memo ID"
 msgstr "Muhasebe Belgesi Kimliği"
+
+msgid "Menu"
+msgstr "Menü"
 
 msgid "Merchant"
 msgstr "Satıcı"
@@ -13598,6 +13628,9 @@ msgstr "Çarpışmasız bir yol yok"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Henüz yorum yok. İlk yorumu ekleyin."
 
+msgid "No companies found"
+msgstr "Şirket bulunamadı"
+
 msgid "No companies match \"{query}\""
 msgstr "Hiçbir şirket \"{query}\" ile eşleşmiyor"
 
@@ -13840,6 +13873,9 @@ msgstr "Malzeme yok"
 
 msgid "No materials yet"
 msgstr "Henüz malzeme yok"
+
+msgid "No modules found"
+msgstr "Modül bulunamadı"
 
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
@@ -20104,6 +20140,9 @@ msgstr "Stok hareketi düzeltildi"
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "Stok boyutu — örn. levha kalınlığı veya çubuk çapı"
 
+msgid "Stock Transfer"
+msgstr "Stok Transfer"
+
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"
 
@@ -20613,6 +20652,9 @@ msgstr "Bir modülü kapatarak her yerden kaldırın: Gereklilikler, Veriler, E�
 
 msgid "Switch company"
 msgstr "Şirketi değiştir"
+
+msgid "Switch module"
+msgstr "Modülü değiştir"
 
 msgid "Switch to pan mode"
 msgstr "Pan moduna geç"
@@ -22044,6 +22086,9 @@ msgstr "Bu, aşağıda bir e-posta etki alanı doğrulanana kadar hiçbir etkisi
 msgid "This information will be used on document headers"
 msgstr "Bu bilgiler belge başlıklarında kullanılacaktır"
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "Bu bilgi tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
+
 msgid "this inspection plan"
 msgstr "bu kontrol planı"
 
@@ -22559,6 +22604,9 @@ msgstr "Üst düzey sınıflandırma (varlık / yükümlülük / özkaynak / has
 
 msgid "Topic"
 msgstr "Konu"
+
+msgid "Topics"
+msgstr "Konular"
 
 msgid "Total"
 msgstr "Toplam"
@@ -24711,6 +24759,9 @@ msgstr "Parça numaralarınız"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Parça numaralarınız ve bunların arkasındaki madde ana kaydı"
+
+msgid "Your profile could not be loaded."
+msgstr "Profiliniz yüklenemedi."
 
 msgid "Your project end to end: the plan, the gates, and go-live"
 msgstr "Projeniz baştan sona: plan, kapılar ve canlı yayına geçiş"

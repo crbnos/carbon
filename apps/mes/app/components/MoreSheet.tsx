@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAccountSettings } from "@carbon/account";
 import type { Company } from "@carbon/auth";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import {
@@ -22,7 +23,6 @@ import {
   ModalHeader,
   ModalTitle,
   NavRailItem,
-  NavRailLink,
   Switch,
   useDisclosure
 } from "@carbon/react";
@@ -195,6 +195,7 @@ export function MoreSheet({
   pinnedInUser: PinnedInUser | null;
 }) {
   const { t } = useLingui();
+  const openAccountSettings = useAccountSettings((s) => s.open);
   const { pathname } = useLocation();
   const [screen, setScreen] = useState<Screen>({ id: "root" });
   const [slot, setSlot] = useState<HTMLElement | null>(null);
@@ -294,10 +295,13 @@ export function MoreSheet({
                     />
                   ) : (
                     <>
-                      <NavRailLink
-                        to={path.to.accountSettings}
+                      <NavRailItem
                         icon={<LuUser />}
                         label={t`Account Settings`}
+                        onClick={() => {
+                          onOpenChange(false);
+                          openAccountSettings();
+                        }}
                       />
                       {companies.length > 1 && (
                         <NavRailItem

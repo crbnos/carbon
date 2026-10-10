@@ -4,5 +4,5 @@
 
 export { AppBarActions, MobileBottomChrome } from "./ChromeSlots";
 export { MobileAppBar } from "./MobileAppBar";
-export { MobileTabBar } from "./MobileTabBar";
+export { MobileDock } from "./MobileDock";
 export { useSetAppBarOverride } from "./useAppBarOverride";

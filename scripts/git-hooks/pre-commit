@@ -67,7 +67,7 @@ fi
 # worse than none, since it reads as "nothing changed". The file set is the
 # //#generate:mcp inputs in turbo.json; keep the two in step.
 # Set CARBON_SKIP_MANIFEST_CHECK=1 to skip.
-if [ -z "$CARBON_SKIP_MANIFEST_CHECK" ] && git diff --cached --name-only | grep -qE '^(apps/erp/app/modules/.*\.ts|apps/erp/app/(types|utils)/.*|apps/erp/app/routes/api\+/mcp\+/lib/mcp-(blocked-tools|exposure)\.ts|packages/(api|database|documents|files|locale|logger|notifications|printing|utils)/src/.*|packages/database/supabase/functions/shared/.*|packages/database/supabase/migrations/.*|scripts/(generate-mcp|lib/.*)\.ts)$'; then
+if [ -z "$CARBON_SKIP_MANIFEST_CHECK" ] && git diff --cached --name-only | grep -qE '^(apps/erp/app/modules/.*\.ts|apps/erp/app/(types|utils)/.*|apps/erp/app/routes/api\+/mcp\+/lib/mcp-(blocked-tools|exposure)\.ts|packages/(account|api|database|documents|files|locale|logger|notifications|printing|utils)/src/.*|packages/database/supabase/functions/shared/.*|packages/database/supabase/migrations/.*|scripts/(generate-mcp|lib/.*)\.ts)$'; then
     echo "Checking the API operation manifest digest..."
     if ! pnpm --silent check:manifest; then
         echo ""

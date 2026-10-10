@@ -140,7 +140,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let redirectTo: string;
   if (page === "notification-settings") {
     // Email footer link — no document, but the company-switch below still applies.
-    redirectTo = path.to.notificationSettings;
+    redirectTo = path.to.accountSettings("notifications");
   } else if (event && documentId) {
     const link = resolve(event, documentId, documentType ?? undefined);
     redirectTo = link ?? path.to.authenticatedRoot;

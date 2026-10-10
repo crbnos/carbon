@@ -67,6 +67,10 @@ msgstr "{0} of {1} completed"
 msgid "{0} queued"
 msgstr "{0} queued"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} registered"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "{0} running"
@@ -89,6 +93,9 @@ msgstr "{completions} passed unit(s) will be completed."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 
+msgid "{maxSizeMB}MB limit"
+msgstr "{maxSizeMB}MB limit"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} jobs"
@@ -110,6 +117,12 @@ msgstr "Accept Lot"
 
 msgid "Accept lot?"
 msgstr "Accept lot?"
+
+msgid "Account"
+msgstr "Account"
+
+msgid "Account settings"
+msgstr "Account settings"
 
 msgid "Account Settings"
 msgstr "Account Settings"
@@ -136,14 +149,23 @@ msgstr "Add & Issue"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
 
+msgid "Add Authenticator App"
+msgstr "Add Authenticator App"
+
 msgid "Add Inventory"
 msgstr "Add Inventory"
+
+msgid "Add Passkey"
+msgstr "Add Passkey"
 
 msgid "Add Sample"
 msgstr "Add Sample"
 
 msgid "Add Spare Part"
 msgstr "Add Spare Part"
+
+msgid "Added"
+msgstr "Added"
 
 msgid "All"
 msgstr "All"
@@ -179,6 +201,12 @@ msgstr "Allocate units"
 msgid "Appearance"
 msgstr "Appearance"
 
+msgid "Approvals"
+msgstr "Approvals"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Are you sure you want to delete this step?"
 
@@ -209,17 +237,39 @@ msgstr "Assignee"
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
+msgid "Authenticator app"
+msgstr "Authenticator app"
+
+msgid "Authenticator QR code"
+msgstr "Authenticator QR code"
+
 msgid "available"
 msgstr "available"
 
 msgid "Available"
 msgstr "Available"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Avatar option {0}"
+
+msgid "Avatar style"
+msgstr "Avatar style"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+
 msgid "Back"
 msgstr "Back"
 
 msgid "Back to batch"
 msgstr "Back to batch"
+
+msgid "Background"
+msgstr "Background"
 
 msgid "Batch"
 msgstr "Batch"
@@ -283,6 +333,12 @@ msgstr "Carbon Logo"
 msgid "Cards"
 msgstr "Cards"
 
+msgid "Change"
+msgstr "Change"
+
+msgid "Changelog newsletter"
+msgstr "Changelog newsletter"
+
 msgid "Characteristic"
 msgstr "Characteristic"
 
@@ -300,6 +356,12 @@ msgstr "Choose a job"
 
 msgid "Choose an option"
 msgstr "Choose an option"
+
+msgid "Choose avatar"
+msgstr "Choose avatar"
+
+msgid "Choose how Carbon reaches you."
+msgstr "Choose how Carbon reaches you."
 
 msgid "Clear"
 msgstr "Clear"
@@ -453,6 +515,12 @@ msgstr "Default Storage Unit"
 msgid "Delete"
 msgstr "Delete"
 
+msgid "Delete passkey"
+msgstr "Delete passkey"
+
+msgid "Delete Passkey"
+msgstr "Delete Passkey"
+
 msgid "Delete Step"
 msgstr "Delete Step"
 
@@ -552,11 +620,23 @@ msgstr "Each job's output is its own lot — keep each job's parts apart."
 msgid "Edit"
 msgstr "Edit"
 
+msgid "Edit Passkey"
+msgstr "Edit Passkey"
+
 msgid "Elapsed"
 msgstr "Elapsed"
 
+msgid "email"
+msgstr "email"
+
+msgid "Email"
+msgstr "Email"
+
 msgid "Email Address"
 msgstr "Email Address"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 
 msgid "Empty work centers"
 msgstr "Empty work centers"
@@ -629,8 +709,14 @@ msgstr "Failed to fetch active operations"
 msgid "Failed to fetch storageUnits"
 msgstr "Failed to fetch storageUnits"
 
+msgid "Failed to get options"
+msgstr "Failed to get options"
+
 msgid "Failed to record gauge"
 msgstr "Failed to record gauge"
+
+msgid "Failed to register passkey"
+msgstr "Failed to register passkey"
 
 msgid "Failed to save measurement"
 msgstr "Failed to save measurement"
@@ -676,6 +762,9 @@ msgstr "Finish with material unpicked?"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "First due {0}"
+
+msgid "First Name"
+msgstr "First Name"
 
 msgid "Fit"
 msgstr "Fit"
@@ -741,6 +830,12 @@ msgstr "In an open menu"
 msgid "In Progress"
 msgstr "In Progress"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "In-app notifications are always delivered. Choose which topics also reach you by email."
+
 msgid "Inspect Item"
 msgstr "Inspect Item"
 
@@ -752,6 +847,9 @@ msgstr "Instructions"
 
 msgid "Insufficient quantity"
 msgstr "Insufficient quantity"
+
+msgid "Inventory"
+msgstr "Inventory"
 
 msgid "Inventory adjustment completed"
 msgstr "Inventory adjustment completed"
@@ -789,6 +887,9 @@ msgstr "Item"
 msgid "Item Master"
 msgstr "Item Master"
 
+msgid "Items"
+msgstr "Items"
+
 msgid "Job"
 msgstr "Job"
 
@@ -815,6 +916,12 @@ msgstr "Labor"
 
 msgid "Last completed"
 msgstr "Last completed"
+
+msgid "Last Name"
+msgstr "Last Name"
+
+msgid "Last used"
+msgstr "Last used"
 
 msgid "Learn more"
 msgstr "Learn more"
@@ -911,6 +1018,9 @@ msgstr "Maintenance overdue"
 
 msgid "Make a replacement"
 msgstr "Make a replacement"
+
+msgid "Manage how you sign in to Carbon."
+msgstr "Manage how you sign in to Carbon."
 
 msgid "Manually add items to inventory"
 msgstr "Manually add items to inventory"
@@ -1070,6 +1180,9 @@ msgstr "No option found."
 msgid "No options found."
 msgstr "No options found."
 
+msgid "No passkeys registered yet."
+msgstr "No passkeys registered yet."
+
 msgid "No picking lists assigned"
 msgstr "No picking lists assigned"
 
@@ -1141,6 +1254,9 @@ msgstr "Nothing scheduled at this work center"
 
 msgid "Nothing to scrap"
 msgstr "Nothing to scrap"
+
+msgid "Notifications"
+msgstr "Notifications"
 
 msgid "OEE Impact"
 msgstr "OEE Impact"
@@ -1217,6 +1333,9 @@ msgstr "Options"
 msgid "or"
 msgstr "or"
 
+msgid "Or enter this secret manually:"
+msgstr "Or enter this secret manually:"
+
 msgid "Out of calibration"
 msgstr "Out of calibration"
 
@@ -1247,8 +1366,17 @@ msgstr "Passed inspection"
 msgid "Passed Inspection"
 msgstr "Passed Inspection"
 
+msgid "Passkey name"
+msgstr "Passkey name"
+
 msgid "Passkey unlock failed"
 msgstr "Passkey unlock failed"
+
+msgid "Passkeys"
+msgstr "Passkeys"
+
+msgid "Passkeys are disabled"
+msgstr "Passkeys are disabled"
 
 msgid "Pause"
 msgstr "Pause"
@@ -1256,12 +1384,21 @@ msgstr "Pause"
 msgid "Pause timer"
 msgstr "Pause timer"
 
+msgid "Phone"
+msgstr "Phone"
+
+msgid "Photo uploaded successfully"
+msgstr "Photo uploaded successfully"
+
 msgid "Pick"
 msgstr "Pick"
 
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Pick {0}"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Pick a style and an avatar, or shuffle for new ones."
 
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
@@ -1350,8 +1487,17 @@ msgstr "Process Parameters"
 msgid "Processes"
 msgstr "Processes"
 
+msgid "Profile"
+msgstr "Profile"
+
 msgid "Progress"
 msgstr "Progress"
+
+msgid "Purchasing"
+msgstr "Purchasing"
+
+msgid "Quality"
+msgstr "Quality"
 
 msgid "Quality Issue"
 msgstr "Quality Issue"
@@ -1367,6 +1513,9 @@ msgstr "Quantity must be greater than 0"
 
 msgid "Queue empty"
 msgstr "Queue empty"
+
+msgid "Quotes"
+msgstr "Quotes"
 
 msgid "Reason for rework"
 msgstr "Reason for rework"
@@ -1397,6 +1546,9 @@ msgstr "Record Partial"
 msgid "Recorded"
 msgstr "Recorded"
 
+msgid "Registration failed"
+msgstr "Registration failed"
+
 msgid "Reject"
 msgstr "Reject"
 
@@ -1409,6 +1561,9 @@ msgstr "Released"
 msgid "Remove"
 msgstr "Remove"
 
+msgid "Remove authenticator app"
+msgstr "Remove authenticator app"
+
 msgid "Remove filter"
 msgstr "Remove filter"
 
@@ -1418,14 +1573,23 @@ msgstr "Remove Inventory"
 msgid "Remove part"
 msgstr "Remove part"
 
+msgid "Remove two-factor authentication"
+msgstr "Remove two-factor authentication"
+
 msgid "Rename"
 msgstr "Rename"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Reopen the subassembly and create a replacement unit"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "Require a 6-digit code from an authenticator app when signing in."
+
 msgid "Required"
 msgstr "Required"
+
+msgid "Reset"
+msgstr "Reset"
 
 msgid "Result"
 msgstr "Result"
@@ -1444,6 +1608,9 @@ msgstr "Rework quantity"
 
 msgid "Running"
 msgstr "Running"
+
+msgid "Sales"
+msgstr "Sales"
 
 msgid "Sales Order"
 msgstr "Sales Order"
@@ -1477,6 +1644,9 @@ msgstr "Scan or search serial number..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
+
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 
 msgid "Schedule"
 msgstr "Schedule"
@@ -1525,6 +1695,12 @@ msgstr "Search operators..."
 
 msgid "Search..."
 msgstr "Search..."
+
+msgid "Secret copied to clipboard"
+msgstr "Secret copied to clipboard"
+
+msgid "Security"
+msgstr "Security"
 
 msgid "Select"
 msgstr "Select"
@@ -1616,6 +1792,9 @@ msgstr "Set the time you stopped working, or acknowledge that you're still worki
 msgid "Set up in Carbon"
 msgstr "Set up in Carbon"
 
+msgid "Set up two-factor authentication"
+msgstr "Set up two-factor authentication"
+
 msgid "Set when the batch was planned."
 msgstr "Set when the batch was planned."
 
@@ -1636,6 +1815,12 @@ msgstr "Show description"
 
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"
+
+msgid "Shuffle"
+msgstr "Shuffle"
+
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 
 msgid "Sign in with Google"
 msgstr "Sign in with Google"
@@ -1658,8 +1843,14 @@ msgstr "Sign out instead"
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
 
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+
 msgid "Size"
 msgstr "Size"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Source"
 msgstr "Source"
@@ -1711,6 +1902,9 @@ msgstr "Steps are missing"
 msgid "Storage Unit"
 msgstr "Storage Unit"
 
+msgid "Style default"
+msgstr "Style default"
+
 msgid "Sub-Assembly"
 msgstr "Sub-Assembly"
 
@@ -1732,11 +1926,17 @@ msgstr "Submit anonymously"
 msgid "Suggestion"
 msgstr "Suggestion"
 
+msgid "Suggestions"
+msgstr "Suggestions"
+
 msgid "Support Required"
 msgstr "Support Required"
 
 msgid "Switch Operator"
 msgstr "Switch Operator"
+
+msgid "Synced"
+msgstr "Synced"
 
 msgid "System"
 msgstr "System"
@@ -1777,6 +1977,9 @@ msgstr "These items still have material to pick. Finishing now marks the list Pa
 
 msgid "This batch has no work instructions."
 msgstr "This batch has no work instructions."
+
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "This information will be visible to all users, so be careful what you share."
 
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."
@@ -1836,6 +2039,12 @@ msgstr "Tools"
 msgid "Top to Bottom"
 msgstr "Top to Bottom"
 
+msgid "Topic"
+msgstr "Topic"
+
+msgid "Topics"
+msgstr "Topics"
+
 msgid "Total"
 msgstr "Total"
 
@@ -1859,8 +2068,20 @@ msgstr "tracked lines"
 msgid "Tracking"
 msgstr "Tracking"
 
+msgid "Training"
+msgstr "Training"
+
 msgid "Two-factor authentication"
 msgstr "Two-factor authentication"
+
+msgid "Two-factor authentication disabled"
+msgstr "Two-factor authentication disabled"
+
+msgid "Two-factor authentication enabled"
+msgstr "Two-factor authentication enabled"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "Two-factor authentication is not enabled."
 
 msgid "Two-factor authentication required"
 msgstr "Two-factor authentication required"
@@ -1919,10 +2140,17 @@ msgstr "Updated {0}"
 msgid "Updated successfully"
 msgstr "Updated successfully"
 
+msgid "Upload"
+msgstr "Upload"
+
+msgid "Upload completed but no file path returned"
+msgstr "Upload completed but no file path returned"
+
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "Uploaded: {0}"
 
+#. placeholder {0}: avatarFile.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Uploading {0}"
@@ -1940,6 +2168,9 @@ msgstr "Uses {0} · {1}"
 
 msgid "Value"
 msgstr "Value"
+
+msgid "Verification failed"
+msgstr "Verification failed"
 
 msgid "Verify"
 msgstr "Verify"
@@ -1985,6 +2216,9 @@ msgstr "Your account isn't part of a company yet. Complete onboarding in the Car
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+
+msgid "Your profile could not be loaded."
+msgstr "Your profile could not be loaded."
 
 msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."

@@ -127,6 +127,22 @@ import type { DateTimeProps } from "./DateTime";
 import { DateTime } from "./DateTime";
 import { DisabledReason, getDisabledReason } from "./DisabledReason";
 import {
+  Dock,
+  DockBar,
+  DockFinder,
+  DockFinderGroup,
+  DockFinderItem,
+  DockFinderSeparator,
+  DockItem,
+  DockMenu,
+  DockMenuContent,
+  DockMenuPanel,
+  DockMenuSection,
+  DockSeparator,
+  DockSwitcher,
+  dockMenuRowClassName
+} from "./Dock";
+import {
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -387,6 +403,7 @@ import { useViewport, ViewportProvider } from "./Viewport";
 import { VStack } from "./VStack";
 
 export * from "./Acknowledge";
+export * from "./ColorPicker";
 export * from "./hooks";
 export * from "./RecordOutlet";
 export {
@@ -483,6 +500,20 @@ export {
   DateTime,
   DateTimePicker,
   DisabledReason,
+  Dock,
+  DockBar,
+  DockFinder,
+  DockFinderGroup,
+  DockFinderItem,
+  DockFinderSeparator,
+  DockItem,
+  DockMenu,
+  DockMenuContent,
+  DockMenuPanel,
+  DockMenuSection,
+  DockSeparator,
+  DockSwitcher,
+  dockMenuRowClassName,
   Drawer,
   DrawerBody,
   DrawerContent,

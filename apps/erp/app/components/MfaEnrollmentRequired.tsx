@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { OtpInput, useTotpEnrollment } from "@carbon/account/ui";
 import {
   Alert,
   AlertDescription,
@@ -23,7 +24,6 @@ import {
   LuSmartphone
 } from "react-icons/lu";
 import { Form } from "react-router";
-import { OtpInput, useTotpEnrollment } from "~/components/TotpEnrollment";
 
 type MfaEnrollmentRequiredProps = {
   enrollAction: string;

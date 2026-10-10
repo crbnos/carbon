@@ -4,6 +4,7 @@
 
 import {
   cn,
+  dockMenuRowClassName,
   PrefetchLink,
   SheetSectionLabel,
   sheetRowClassName
@@ -29,6 +30,16 @@ export function useSidebarPresentation() {
   return useContext(SidebarPresentationContext);
 }
 
+/**
+ * How a sheet presentation draws its rows: the title switcher's 48pt rows
+ * with a ✓, or the dock menu's rows, where the current section is lit.
+ */
+type SheetNavStyle = "switcher" | "menu";
+
+const SheetNavStyleContext = createContext<SheetNavStyle>("switcher");
+
+export const SheetNavStyleProvider = SheetNavStyleContext.Provider;
+
 /** A 48pt section-switcher row: icon, label, ✓ on the current section. */
 export function SheetNavRow({
   to,
@@ -43,6 +54,23 @@ export function SheetNavRow({
   isActive: boolean;
   inset?: boolean;
 }) {
+  const style = useContext(SheetNavStyleContext);
+  if (style === "menu") {
+    return (
+      <PrefetchLink
+        to={to}
+        aria-current={isActive ? "page" : undefined}
+        className={cn(dockMenuRowClassName, inset && "pl-12 text-sm")}
+      >
+        {icon ? (
+          <span className="flex size-5 items-center justify-center [&>svg]:size-[18px]">
+            {icon}
+          </span>
+        ) : null}
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+      </PrefetchLink>
+    );
+  }
   return (
     <PrefetchLink
       to={to}
@@ -70,6 +98,19 @@ export function SheetNavGroup({
   title?: ReactNode;
   children: ReactNode;
 }) {
+  const style = useContext(SheetNavStyleContext);
+  if (style === "menu") {
+    return (
+      <div className="flex flex-col border-t border-border p-1.5 first:border-t-0">
+        {title ? (
+          <div className="px-3 pt-1.5 pb-1 text-xs text-muted-foreground">
+            {title}
+          </div>
+        ) : null}
+        {children}
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col pb-2">
       {title ? <SheetSectionLabel>{title}</SheetSectionLabel> : null}

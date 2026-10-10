@@ -67,6 +67,10 @@ msgstr "{0} adet tamamlandı"
 msgid "{0} queued"
 msgstr "{0} kuyrukta"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} kaydedildi"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "{0} çalışıyor"
@@ -89,6 +93,9 @@ msgstr "{completions} geçti birim(ler) tamamlanacak."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
 
+msgid "{maxSizeMB}MB limit"
+msgstr "{maxSizeMB}MB sınırı"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} iş emirleri"
@@ -110,6 +117,12 @@ msgstr "Lotu Kabul Et"
 
 msgid "Accept lot?"
 msgstr "Lotu kabul et?"
+
+msgid "Account"
+msgstr "Hesap"
+
+msgid "Account settings"
+msgstr "Hesap ayarları"
 
 msgid "Account Settings"
 msgstr "Hesap Ayarları"
@@ -136,14 +149,23 @@ msgstr "Ekle ve Çıkış Yap"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
+msgid "Add Authenticator App"
+msgstr "Doğrulayıcı Uygulaması Ekle"
+
 msgid "Add Inventory"
 msgstr "Envantere Ekle"
+
+msgid "Add Passkey"
+msgstr "Geçiş Anahtarı Ekle"
 
 msgid "Add Sample"
 msgstr "Örnek Ekle"
 
 msgid "Add Spare Part"
 msgstr "Yedek Parça Ekle"
+
+msgid "Added"
+msgstr "Eklendi"
 
 msgid "All"
 msgstr "Tümü"
@@ -179,6 +201,12 @@ msgstr "Birimleri tahsis et"
 msgid "Appearance"
 msgstr "Görünüm"
 
+msgid "Approvals"
+msgstr "Onaylar"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "Bu geçiş anahtarını silmek istediğinizden emin misiniz? Artık bununla oturum açamayacaksınız."
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Bu adımı silmek istediğinizden emin misiniz?"
 
@@ -209,17 +237,39 @@ msgstr "Atanan"
 msgid "Authentication Error"
 msgstr "Kimlik Doğrulama Hatası"
 
+msgid "Authenticator app"
+msgstr "Doğrulayıcı uygulaması"
+
+msgid "Authenticator QR code"
+msgstr "Doğrulayıcı QR kodu"
+
 msgid "available"
 msgstr "kullanılabilir"
 
 msgid "Available"
 msgstr "Kullanılabilir"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Avatar seçeneği {0}"
+
+msgid "Avatar style"
+msgstr "Avatar stili"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Avatarlar <0>{0}</0> kaynağından {1} tarafından, <1>{2}</1> lisansı altında."
+
 msgid "Back"
 msgstr "Geri"
 
 msgid "Back to batch"
 msgstr "Partiye geri dön"
+
+msgid "Background"
+msgstr "Arka plan"
 
 msgid "Batch"
 msgstr "Parti"
@@ -283,6 +333,12 @@ msgstr "Carbon Logosu"
 msgid "Cards"
 msgstr "Kartlar"
 
+msgid "Change"
+msgstr "Değiştir"
+
+msgid "Changelog newsletter"
+msgstr "Değişiklik günlüğü bülteni"
+
 msgid "Characteristic"
 msgstr "Özellik"
 
@@ -300,6 +356,12 @@ msgstr "İş emri seç"
 
 msgid "Choose an option"
 msgstr "Bir seçenek seçin"
+
+msgid "Choose avatar"
+msgstr "Avatar seç"
+
+msgid "Choose how Carbon reaches you."
+msgstr "Carbon'un sizi nasıl ulaştığını seçin."
 
 msgid "Clear"
 msgstr "Temizle"
@@ -453,6 +515,12 @@ msgstr "Varsayılan Depolama Birimi"
 msgid "Delete"
 msgstr "Sil"
 
+msgid "Delete passkey"
+msgstr "Geçiş anahtarını sil"
+
+msgid "Delete Passkey"
+msgstr "Geçiş Anahtarını Sil"
+
 msgid "Delete Step"
 msgstr "Adımı Sil"
 
@@ -552,11 +620,23 @@ msgstr "Her iş emrinin çıktısı kendi Lotu — her iş emrinin parçaların�
 msgid "Edit"
 msgstr "Düzenle"
 
+msgid "Edit Passkey"
+msgstr "Geçiş Anahtarını Düzenle"
+
 msgid "Elapsed"
 msgstr "Geçen süre"
 
+msgid "email"
+msgstr "e-posta"
+
+msgid "Email"
+msgstr "E-posta"
+
 msgid "Email Address"
 msgstr "E-posta Adresi"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-posta tercihleri etkinleştirilirse uygulanacaktır."
 
 msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
@@ -629,8 +709,14 @@ msgstr "Aktif operasyonlar alınamadı"
 msgid "Failed to fetch storageUnits"
 msgstr "Depolama birimlerini almak başarısız oldu"
 
+msgid "Failed to get options"
+msgstr "Seçenekler alınamadı"
+
 msgid "Failed to record gauge"
 msgstr "Ölçüm aleti kaydedilemedi"
+
+msgid "Failed to register passkey"
+msgstr "Geçiş anahtarı kaydedilemedi"
 
 msgid "Failed to save measurement"
 msgstr "Ölçüm kaydedilemedi"
@@ -676,6 +762,9 @@ msgstr "Malzeme seçilmeden bitir?"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "İlk vade {0}"
+
+msgid "First Name"
+msgstr "Ad"
 
 msgid "Fit"
 msgstr "Uydu"
@@ -741,6 +830,12 @@ msgstr "Açık bir menüde"
 msgid "In Progress"
 msgstr "Devam Ediyor"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size e-posta veya Slack aracılığıyla ulaşacağını seçin."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size e-posta aracılığıyla ulaşacağını seçin."
+
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
 
@@ -752,6 +847,9 @@ msgstr "Talimatlar"
 
 msgid "Insufficient quantity"
 msgstr "Yetersiz miktar"
+
+msgid "Inventory"
+msgstr "Envanter"
 
 msgid "Inventory adjustment completed"
 msgstr "Stok düzeltme tamamlandı"
@@ -789,6 +887,9 @@ msgstr "Ürün"
 msgid "Item Master"
 msgstr "Ürün Ana Veri"
 
+msgid "Items"
+msgstr "Stok kartları"
+
 msgid "Job"
 msgstr "İş Emri"
 
@@ -815,6 +916,12 @@ msgstr "İşçilik"
 
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
+
+msgid "Last Name"
+msgstr "Soyadı"
+
+msgid "Last used"
+msgstr "Son kullanılmış"
 
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
@@ -911,6 +1018,9 @@ msgstr "Bakım gecikmiş"
 
 msgid "Make a replacement"
 msgstr "Bir yedek oluştur"
+
+msgid "Manage how you sign in to Carbon."
+msgstr "Carbon'a nasıl oturum açacağınızı yönetin."
 
 msgid "Manually add items to inventory"
 msgstr "Envantere öğeler eklemek için manuel olarak"
@@ -1070,6 +1180,9 @@ msgstr "Hiç seçenek bulunamadı."
 msgid "No options found."
 msgstr "Seçenek bulunamadı."
 
+msgid "No passkeys registered yet."
+msgstr "Henüz hiçbir geçiş anahtarı kaydedilmedi."
+
 msgid "No picking lists assigned"
 msgstr "Atanmış toplama listesi yok"
 
@@ -1141,6 +1254,9 @@ msgstr "Bu iş merkezinde hiçbir şey planlanmadı"
 
 msgid "Nothing to scrap"
 msgstr "Fire edilecek birşey yok"
+
+msgid "Notifications"
+msgstr "Bildirimler"
 
 msgid "OEE Impact"
 msgstr "OEE Etkisi"
@@ -1217,6 +1333,9 @@ msgstr "Seçenekler"
 msgid "or"
 msgstr "veya"
 
+msgid "Or enter this secret manually:"
+msgstr "Ya da bu sırrı manuel olarak girin:"
+
 msgid "Out of calibration"
 msgstr "Kalibrasyon dışı"
 
@@ -1247,8 +1366,17 @@ msgstr "Muayeneden geçti"
 msgid "Passed Inspection"
 msgstr "Muayenede Geçti"
 
+msgid "Passkey name"
+msgstr "Geçiş anahtarı adı"
+
 msgid "Passkey unlock failed"
 msgstr "Geçiş anahtarı ile açma başarısız"
+
+msgid "Passkeys"
+msgstr "Geçiş anahtarları"
+
+msgid "Passkeys are disabled"
+msgstr "Geçiş anahtarları devre dışı"
 
 msgid "Pause"
 msgstr "Duraklat"
@@ -1256,12 +1384,21 @@ msgstr "Duraklat"
 msgid "Pause timer"
 msgstr "Zamanlayıcıyı Duraklat"
 
+msgid "Phone"
+msgstr "Telefon"
+
+msgid "Photo uploaded successfully"
+msgstr "Fotoğraf başarıyla yüklendi"
+
 msgid "Pick"
 msgstr "Topla"
 
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Toplama {0}"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Bir stil ve avatar seçin, veya yenileri için karıştırın."
 
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
@@ -1350,8 +1487,17 @@ msgstr "İşlem Parametreleri"
 msgid "Processes"
 msgstr "Süreçler"
 
+msgid "Profile"
+msgstr "Profil"
+
 msgid "Progress"
 msgstr "İlerleme"
+
+msgid "Purchasing"
+msgstr "Satın alma"
+
+msgid "Quality"
+msgstr "Kalite"
 
 msgid "Quality Issue"
 msgstr "Kalite Sorunu"
@@ -1367,6 +1513,9 @@ msgstr "Miktar 0'dan büyük olmalıdır"
 
 msgid "Queue empty"
 msgstr "Kuyruk boş"
+
+msgid "Quotes"
+msgstr "Teklifler"
 
 msgid "Reason for rework"
 msgstr "Yeniden işleme nedeni"
@@ -1397,6 +1546,9 @@ msgstr "Kısmi Kaydı"
 msgid "Recorded"
 msgstr "Kaydedildi"
 
+msgid "Registration failed"
+msgstr "Kayıt başarısız"
+
 msgid "Reject"
 msgstr "Reddet"
 
@@ -1409,6 +1561,9 @@ msgstr "Serbest bırakıldı"
 msgid "Remove"
 msgstr "Kaldır"
 
+msgid "Remove authenticator app"
+msgstr "Kimlik doğrulayıcı uygulamayı kaldır"
+
 msgid "Remove filter"
 msgstr "Filtreyi kaldır"
 
@@ -1418,14 +1573,23 @@ msgstr "Envanter Kaldır"
 msgid "Remove part"
 msgstr "Parçayı kaldır"
 
+msgid "Remove two-factor authentication"
+msgstr "İki faktörlü kimlik doğrulamayı kaldır"
+
 msgid "Rename"
 msgstr "Yeniden adlandır"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan 6 haneli bir kod iste."
+
 msgid "Required"
 msgstr "Gerekli"
+
+msgid "Reset"
+msgstr "Sıfırla"
 
 msgid "Result"
 msgstr "Sonuç"
@@ -1444,6 +1608,9 @@ msgstr "Yeniden işleme miktarı"
 
 msgid "Running"
 msgstr "Çalışıyor"
+
+msgid "Sales"
+msgstr "Satış"
 
 msgid "Sales Order"
 msgstr "Satış Siparişi"
@@ -1477,6 +1644,9 @@ msgstr "Seri numaras tarayın veya arayın..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı tarayın veya seçin, onu bir örnek sütunu olarak ekleyin ve sonucunu ızgarada kaydedin."
+
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanızla tarayın (örn. Google Authenticator veya 1Password), ardından gösterdiği 6 haneli kodu girin."
 
 msgid "Schedule"
 msgstr "Planlama"
@@ -1525,6 +1695,12 @@ msgstr "Operatörleri ara..."
 
 msgid "Search..."
 msgstr "Ara..."
+
+msgid "Secret copied to clipboard"
+msgstr "Gizli dizi panoya kopyalandı"
+
+msgid "Security"
+msgstr "Güvenlik"
 
 msgid "Select"
 msgstr "Seç"
@@ -1616,6 +1792,9 @@ msgstr "Çalışmayı bitirdiğiniz zamanı ayarlayın veya hala çalışmakta o
 msgid "Set up in Carbon"
 msgstr "Carbon'da ayarla"
 
+msgid "Set up two-factor authentication"
+msgstr "İki faktörlü kimlik doğrulamayı ayarla"
+
 msgid "Set when the batch was planned."
 msgstr "Parti planlandığında ayarlandı."
 
@@ -1636,6 +1815,12 @@ msgstr "Açıklamayı göster"
 
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
+
+msgid "Shuffle"
+msgstr "Karıştır"
+
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "Sihirli bir bağlantı yerine biyometrik veriler ile oturum açın. Geçiş anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
 
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
@@ -1658,8 +1843,14 @@ msgstr "Bunun yerine oturumu kapat"
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
 
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "Oturum açma artık bir kod gerektirmeyecek. Onaylamak için kimlik doğrulayıcı uygulamanızdan geçerli 6 haneli kodu girin."
+
 msgid "Size"
 msgstr "Boyut"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Source"
 msgstr "Kaynak"
@@ -1711,6 +1902,9 @@ msgstr "Adımlar eksik"
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
 
+msgid "Style default"
+msgstr "Varsayılan stil"
+
 msgid "Sub-Assembly"
 msgstr "Alt derleme"
 
@@ -1732,11 +1926,17 @@ msgstr "Anonim olarak gönder"
 msgid "Suggestion"
 msgstr "Öneri"
 
+msgid "Suggestions"
+msgstr "Öneriler"
+
 msgid "Support Required"
 msgstr "Destek Gerekli"
 
 msgid "Switch Operator"
 msgstr "Operatörü Değiştir"
+
+msgid "Synced"
+msgstr "Senkronize edildi"
 
 msgid "System"
 msgstr "Sistem"
@@ -1777,6 +1977,9 @@ msgstr "Bu öğelerin hala seçilecek malzemesi var. Şimdi bitirmek listeyi Kı
 
 msgid "This batch has no work instructions."
 msgstr "Bu partinin iş talimatı yok."
+
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "Bu bilgiler tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu lot'un süresi doldu ve toplanamaz."
@@ -1836,6 +2039,12 @@ msgstr "Araçlar"
 msgid "Top to Bottom"
 msgstr "Yukarıdan Aşağıya"
 
+msgid "Topic"
+msgstr "Konu"
+
+msgid "Topics"
+msgstr "Konular"
+
 msgid "Total"
 msgstr "Toplam"
 
@@ -1859,8 +2068,20 @@ msgstr "izlenen Satırlar"
 msgid "Tracking"
 msgstr "Takip"
 
+msgid "Training"
+msgstr "Eğitim"
+
 msgid "Two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulama"
+
+msgid "Two-factor authentication disabled"
+msgstr "İki faktörlü kimlik doğrulama devre dışı"
+
+msgid "Two-factor authentication enabled"
+msgstr "İki faktörlü kimlik doğrulama etkinleştirildi"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "İki faktörlü kimlik doğrulama etkinleştirilmedi."
 
 msgid "Two-factor authentication required"
 msgstr "İki faktörlü kimlik doğrulama gerekli"
@@ -1919,10 +2140,17 @@ msgstr "{0} tarihinde güncellendi"
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
 
+msgid "Upload"
+msgstr "Yükle"
+
+msgid "Upload completed but no file path returned"
+msgstr "Yükleme tamamlandı ancak dosya yolu döndürülmedi"
+
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "Yüklendi: {0}"
 
+#. placeholder {0}: avatarFile.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Yükleniyor {0}"
@@ -1940,6 +2168,9 @@ msgstr "Kullanan {0} · {1}"
 
 msgid "Value"
 msgstr "Değer"
+
+msgid "Verification failed"
+msgstr "Doğrulama başarısız"
 
 msgid "Verify"
 msgstr "Doğrula"
@@ -1985,6 +2216,9 @@ msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon 
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."
+
+msgid "Your profile could not be loaded."
+msgstr "Profiliniz yüklenemedi."
 
 msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlik nedeniyle kilitlendi."

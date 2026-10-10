@@ -604,6 +604,9 @@ msgstr "{unitCount} इकाई"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {पहले # शेष आवश्यक खाता मैप करें।} other {पहले # शेष आवश्यक खातों को मैप करें।}}"
 
+msgid "{unread} unread"
+msgstr "{unread} अपठित"
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} को शेड्यूल नहीं किया जा सकता"
 
@@ -1485,6 +1488,9 @@ msgstr "खाता नाम"
 msgid "Account Number"
 msgstr "खाता संख्या"
 
+msgid "Account settings"
+msgstr "खाता सेटिंग्स"
+
 msgid "Account Settings"
 msgstr "खाता सेटिंग्स"
 
@@ -2204,6 +2210,9 @@ msgstr "सभी निर्माण {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "चयनित समूहों के सभी सदस्य और चयनित व्यक्ति अनुरोधों को अनुमोदित करने में सक्षम होंगे"
+
+msgid "All modules"
+msgstr "सभी मॉड्यूल"
 
 msgid "All open jobs"
 msgstr "सभी खुले जॉब"
@@ -3547,6 +3556,9 @@ msgstr "अनुमोदन की प्रतीक्षा में"
 msgid "Back"
 msgstr "वापस"
 
+msgid "Back to menu"
+msgstr "मेनू में वापस जाएं"
+
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
@@ -4558,6 +4570,9 @@ msgstr "दूसरी फ़ाइल चुनें"
 msgid "Choose avatar"
 msgstr "अवतार चुनें"
 
+msgid "Choose how Carbon reaches you."
+msgstr "चुनें कि Carbon आपसे कैसे संपर्क करे।"
+
 msgid "Choose how to add lines to this return."
 msgstr "इस रिटर्न में पंक्तियाँ कैसे जोड़ें, यह चुनें।"
 
@@ -4686,6 +4701,9 @@ msgstr "समापन तारीख"
 
 msgid "Close Date"
 msgstr "बंद करने की तारीख"
+
+msgid "Close menu"
+msgstr "मेनू बंद करें"
 
 msgid "Close Period"
 msgstr "अवधि बंद करें"
@@ -9581,6 +9599,12 @@ msgstr "वित्तीय विवरण"
 msgid "Financing"
 msgstr "वित्तपोषण"
 
+msgid "Find company…"
+msgstr "कंपनी खोजें…"
+
+msgid "Find module…"
+msgstr "मॉड्यूल खोजें…"
+
 msgid "finish"
 msgstr "तैयार माल"
 
@@ -12297,6 +12321,9 @@ msgstr "अपनी कंपनी के लिए प्रमाणीक�
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "शेल्फ लाइफ को कैसे ट्रैक किया जाता है, गणना की जाती है, और इन्वेंटरी में लागू किया जाता है, इसे प्रबंधित करें।"
 
+msgid "Manage how you sign in to Carbon."
+msgstr "प्रबंधित करें कि आप Carbon में कैसे साइन इन करते हैं।"
+
 msgid "Manage Ownership"
 msgstr "स्वामित्व प्रबंधित करें"
 
@@ -12618,6 +12645,9 @@ msgstr "मेमो तारीख"
 
 msgid "Memo ID"
 msgstr "मेमो आईडी"
+
+msgid "Menu"
+msgstr "मेनू"
 
 msgid "Merchant"
 msgstr "व्यापारी"
@@ -13598,6 +13628,9 @@ msgstr "कोई टकराव-मुक्त पथ नहीं"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी कोई टिप्पणी नहीं है। पहली टिप्पणी जोड़ने वाले बनें।"
 
+msgid "No companies found"
+msgstr "कोई कंपनी नहीं मिली"
+
 msgid "No companies match \"{query}\""
 msgstr "कोई कंपनी \"{query}\" से मेल नहीं खाती"
 
@@ -13840,6 +13873,9 @@ msgstr "कोई सामग्री नहीं"
 
 msgid "No materials yet"
 msgstr "अभी कोई वस्तुएं नहीं हैं"
+
+msgid "No modules found"
+msgstr "कोई मॉड्यूल नहीं मिला"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
@@ -20104,6 +20140,9 @@ msgstr "स्टॉक आंदोलन सही किया गया"
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "स्टॉक आकार — उदा. शीट मोटाई या बार व्यास"
 
+msgid "Stock Transfer"
+msgstr "स्टॉक स्थानांतरण"
+
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"
 
@@ -20613,6 +20652,9 @@ msgstr "मॉड्यूल को बंद करने से यह हर
 
 msgid "Switch company"
 msgstr "कंपनी स्विच करें"
+
+msgid "Switch module"
+msgstr "मॉड्यूल स्विच करें"
 
 msgid "Switch to pan mode"
 msgstr "पैन मोड में स्विच करें"
@@ -22044,6 +22086,9 @@ msgstr "जब तक नीचे एक ईमेल डोमेन सत्
 msgid "This information will be used on document headers"
 msgstr "यह जानकारी दस्तावेज़ शीर्षलेख पर उपयोग की जाएगी"
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "यह जानकारी सभी उपयोगकर्ताओं को दिखाई देगी, इसलिए ध्यान रखें कि आप क्या साझा करते हैं।"
+
 msgid "this inspection plan"
 msgstr "इस निरीक्षण योजना"
 
@@ -22558,6 +22603,9 @@ msgid "Top-level classification (asset / liability / equity / revenue / expense)
 msgstr "शीर्ष-स्तर वर्गीकरण (संपत्ति / देयता / इक्विटी / राजस्व / व्यय); केवल मूल समूहों पर सेट, बच्चों द्वारा विरासत में।"
 
 msgid "Topic"
+msgstr "विषय"
+
+msgid "Topics"
 msgstr "विषय"
 
 msgid "Total"
@@ -24714,6 +24762,9 @@ msgstr "आपकी पार्ट संख्याएं"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "आपकी भाग संख्याएं और उनके पीछे की आइटम मास्टर"
+
+msgid "Your profile could not be loaded."
+msgstr "आपकी प्रोफ़ाइल लोड नहीं की जा सकी।"
 
 msgid "Your project end to end: the plan, the gates, and go-live"
 msgstr "आपकी परियोजना शुरू से अंत तक: योजना, गेट्स, और गो-लाइव"

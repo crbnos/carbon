@@ -76,6 +76,7 @@ export const path = {
     accountPassword: `${x}/account/password`,
     accountPersonal: `${x}/account/personal`,
     accountSecurity: `${x}/account/security`,
+    accountSettings: (tab: string) => `${x}?account=${tab}`,
     acknowledge: `${x}/acknowledge`,
     activateGauge: (id: string) =>
       generatePath(`${x}/quality/gauges/activate/${id}`),
@@ -88,6 +89,9 @@ export const path = {
     apAging: `${x}/reports/ap-aging`,
     api: {
       abilities: `${api}/resources/abilities`,
+      accountNotifications: `${api}/account/notifications`,
+      accountProfile: `${api}/account/profile`,
+      accountSecurity: `${api}/account/security`,
       accounts: `${api}/accounting/accounts`,
       agentChat: `${api}/agent/chat`,
       agentFeedback: `${api}/agent/feedback`,
@@ -293,6 +297,7 @@ export const path = {
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
         ),
+      root: api,
       salesCustomerOverride: `${api}/sales/customer-override`,
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesOrders: `${api}/sales/orders`,
@@ -2403,6 +2408,8 @@ export const path = {
     stockTransferStatus: (id: string) =>
       generatePath(`${x}/stock-transfer/${id}/status`),
     stockTransfers: `${x}/inventory/stock-transfers`,
+    /** Stock transfers list with the create wizard open (read by `StockTransfersTable`). */
+    stockTransfersNew: `${x}/inventory/stock-transfers?new=true`,
     storageRule: (id: string) =>
       generatePath(`${x}/inventory/storage-rules/${id}`),
     storageRuleAssignItem: (itemId: string) =>
