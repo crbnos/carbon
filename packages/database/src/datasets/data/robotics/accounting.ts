@@ -423,6 +423,35 @@ export const PROJECTS: ProjectSpec[] = [
     identifier: "LWC",
     costTreatment: "Contract",
     status: "Released",
+    // Phase 2a: the contract keeps its own stock — two parts received for
+    // it, and fasteners transferred in from common stock.
+    projectStock: {
+      openingStock: [
+        {
+          item: "FST-M5-SS",
+          shelf: "A1-L1",
+          qty: 100,
+          unitCost: 0.55,
+          dateOffset: -30
+        },
+        {
+          item: "MAT-CONN-M23",
+          shelf: "A1-L2",
+          qty: 10,
+          unitCost: 38,
+          dateOffset: -30
+        }
+      ],
+      transfers: [
+        {
+          item: "FST-M8-SS",
+          shelf: "A1-L1",
+          qty: 50,
+          reason: "Kit the contract cells' base fasteners",
+          dateOffset: -12
+        }
+      ]
+    },
     purchaseInvoiceLine: { invoiceKey: "paid", item: "ENC-ABS-19" },
     milestones: [
       {

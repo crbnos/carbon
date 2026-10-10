@@ -127,6 +127,7 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   const posting = await loadPostingContext(ctx, periods);
 
   await seedProjects(ctx);
+  await seedProjectStock(ctx);
   await seedServiceWork(ctx);
   for (const spec of data.projects) {
     const projectId = need(ctx.refs.misc, `project:${spec.key}`, "project");
@@ -1132,6 +1133,139 @@ function requirementColumns(
       ? parameterId(requirement.actualParameter)
       : null
   };
+}
+
+/**
+ * Project stock (Projects Phase 2a), after the projects exist: sets
+ * `project.projectStock`, then seeds each project's opening stock in its
+ * stripe (an item ledger row and its cost layer) and its Posted Transfers of
+ * common stock. A Transfer writes what `post-project-stock-transfer` writes:
+ * the header and line (with the drawn unit cost), the item ledger pair at one
+ * bin, the common relief row and the project's layer. Common opening stock has
+ * no cost layers, so the drawn cost is the item's unit cost, as a seeded
+ * shipment's is. No journal: both owners are inventory.
+ */
+async function seedProjectStock(ctx: Ctx): Promise<void> {
+  const { companyId, userId, anchor } = ctx;
+  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
+
+  for (const spec of ctx.dataset.accounting.projects) {
+    if (!spec.projectStock) continue;
+    ctx.log(`project stock ${spec.name}`);
+    const projectId = need(ctx.refs.misc, `project:${spec.key}`, "project");
+    await ctx.client.query(
+      `UPDATE project SET "projectStock" = true, "updatedBy" = $1
+       WHERE id = $2 AND "companyId" = $3`,
+      [userId, projectId, companyId]
+    );
+
+    for (const entry of spec.projectStock.openingStock) {
+      const itemRef = need(ctx.refs.items, entry.item);
+      const postingDate = resolveDate(anchor, entry.dateOffset);
+      const itemLedgerId = await insertId(ctx, "itemLedger", {
+        entryType: "Positive Adjmt.",
+        documentType: "Inventory Receipt",
+        postingDate,
+        itemId: itemRef.id,
+        locationId: plantId,
+        storageUnitId: need(ctx.refs.shelves, entry.shelf),
+        quantity: entry.qty,
+        projectId,
+        comment: "Opening balance"
+      });
+      await insertRow(ctx, "costLedger", {
+        itemLedgerType: "Positive Adjmt.",
+        costLedgerType: "Direct Cost",
+        adjustment: false,
+        documentType: "Inventory Receipt",
+        documentId: itemLedgerId,
+        itemId: itemRef.id,
+        quantity: round(entry.qty),
+        cost: round(entry.qty * entry.unitCost),
+        remainingQuantity: round(entry.qty),
+        projectId,
+        postingDate
+      });
+    }
+
+    for (const transfer of spec.projectStock.transfers) {
+      const itemRef = need(ctx.refs.items, transfer.item);
+      const storageUnitId = need(ctx.refs.shelves, transfer.shelf);
+      const postingDate = resolveDate(anchor, transfer.dateOffset);
+      const postedAt = resolveTimestamp(
+        anchor,
+        transfer.dateOffset,
+        "15:00:00"
+      );
+      const cost = await one<{ unitCost: number | null }>(
+        ctx.client,
+        `SELECT "unitCost" FROM "itemCost" WHERE "itemId" = $1 AND "companyId" = $2`,
+        [itemRef.id, companyId]
+      );
+      const unitCost = Number(cost.unitCost ?? 0);
+      const transferId = await insertId(ctx, "projectStockTransfer", {
+        projectStockTransferId: await nextSequence(ctx, "projectStockTransfer"),
+        type: "Transfer",
+        status: "Posted",
+        fromProjectId: null,
+        toProjectId: projectId,
+        locationId: plantId,
+        reason: transfer.reason,
+        approvedBy: userId,
+        approvedAt: resolveTimestamp(anchor, transfer.dateOffset, "09:00:00"),
+        postedAt
+      });
+      await insertRow(ctx, "projectStockTransferLine", {
+        projectStockTransferId: transferId,
+        itemId: itemRef.id,
+        quantity: transfer.qty,
+        storageUnitId,
+        unitCost
+      });
+      const ledgerBase = {
+        entryType: "Transfer",
+        documentType: "Project Transfer",
+        documentId: transferId,
+        postingDate,
+        itemId: itemRef.id,
+        locationId: plantId,
+        storageUnitId
+      };
+      await insertRow(ctx, "itemLedger", {
+        ...ledgerBase,
+        quantity: -transfer.qty,
+        projectId: null
+      });
+      await insertRow(ctx, "itemLedger", {
+        ...ledgerBase,
+        quantity: transfer.qty,
+        projectId
+      });
+      const layerBase = {
+        itemLedgerType: "Transfer",
+        costLedgerType: "Direct Cost",
+        adjustment: false,
+        documentType: "Project Transfer",
+        documentId: transferId,
+        itemId: itemRef.id,
+        postingDate
+      };
+      await insertRow(ctx, "costLedger", {
+        ...layerBase,
+        quantity: round(-transfer.qty),
+        cost: round(-transfer.qty * unitCost),
+        remainingQuantity: 0,
+        projectId: null
+      });
+      await insertRow(ctx, "costLedger", {
+        ...layerBase,
+        quantity: round(transfer.qty),
+        cost: round(transfer.qty * unitCost),
+        remainingQuantity: round(transfer.qty),
+        projectId
+      });
+    }
+  }
 }
 
 /**

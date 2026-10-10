@@ -53,7 +53,7 @@ Phase 2b plans MRP. Until 2b ships, every MRP and planning reader filters to com
 - [x] Task 16: Add the `post-project-stock-transfer` server function
 - [x] Task 17: Add the project stock transfer pages
 - [x] Task 18: Add the project stock UI
-- [ ] Task 19: Extend the demo datasets
+- [x] Task 19: Extend the demo datasets
 - [ ] Task 20: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 21: Verify in the browser
 
@@ -921,3 +921,7 @@ ls .ai/playbooks/projects-phase-2a.md
 - Task 18: `ProjectForm` gains **Project stock** (disabled past Draft; the details action keeps the stored value then, because a disabled switch submits nothing), and, while it is on, **Charge at receipt** and **Government-furnished**. `projectValidator`, `createProject` and `copyProject` take the three flags.
 - Task 18 (beyond the plan's file list): migration `20261010124108_inventory-count-lines-project.sql` recreates the `inventoryCountLines` view with `projectId`, `projectIdentifier` and `projectName`. The view was built with `icl.*`, which Postgres expands at creation, so it never had the Task 1 column; nothing depends on it. `InventoryCountLines` gains a **Stock Owner** column, visible by default once a line counts project stock, so the duplicate lines of Task 13 read as one line per owner. `db:check:backups` fails only on `supplierPartPrice.unitPrice`, so this commit skips it.
 - Task 18 Verify: `erp`, `mes` and `@carbon/server-functions` typecheck; the ERP suite passes (2063) and the server-functions suite passes (508). The workflow catalog check is clean.
+- Task 19 (deviation): the project stock is seeded in tier 09 (`seedProjectStock`, right after `seedProjects`), not tier 03, because the projects do not exist until tier 09. It follows the tier 03 opening stock pattern (a `Positive Adjmt.` / `Inventory Receipt` row, "Opening balance") and adds the cost layer in the project's stripe.
+- Task 19 (deviation): all four datasets seed it, not satellite only, so the coverage floor is real: `COVERAGE_FLOORS` takes the smallest count of any dataset, and a satellite-only table would floor at 0. Each Contract project (OB2, LWC, SSF, RTM) gets `projectStock` (`ProjectSpec.projectStock`): 2 untracked items of opening stock in its stripe at their standard cost, and 1 Posted Transfer of 50 fasteners from common stock at the same bin.
+- Task 19: the Transfer writes what `post-project-stock-transfer` writes: the header (Posted, approved and posted by the applying user, readable id from the `projectStockTransfer` sequence), the line with `unitCost`, the `Project Transfer` item ledger pair (−50 common, +50 project), the common relief row and the project's layer. Common opening stock has no cost layers, so the drawn cost is `itemCost.unitCost`, as a seeded shipment's is. No journal.
+- Task 19: the validator gains the `projectStock` rule (items and shelves resolve, untracked items, positive quantities and costs, dates in an Open period), and `onHandLedger` draws each Transfer from common stock, so the net on-hand check covers it. Measured: 1 `projectStockTransfer` and 1 `projectStockTransferLine` per dataset; both floors are 1. `pnpm db:check:datasets` passes for all four, and the dataset unit tests pass (10). `onboarding-company-templates.md` now says 273 floor tables (it said 267).

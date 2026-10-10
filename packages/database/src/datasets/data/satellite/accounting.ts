@@ -422,6 +422,36 @@ export const PROJECTS: ProjectSpec[] = [
     identifier: "OB2",
     costTreatment: "Contract",
     status: "Released",
+    // Phase 2a: the contract keeps its own stock — two parts received for
+    // it, and fasteners transferred in from common stock.
+    projectStock: {
+      openingStock: [
+        {
+          item: "FST-M6-A286",
+          shelf: "A1-L1",
+          qty: 100,
+          unitCost: 5.5,
+          dateOffset: -30
+        },
+        {
+          item: "VLV-SOLENOID-LP",
+          shelf: "A3-L2",
+          qty: 4,
+          unitCost: 950,
+          dateOffset: -30
+        }
+      ],
+      transfers: [
+        {
+          item: "FST-M4-TI",
+          shelf: "A1-L1",
+          qty: 50,
+          reason:
+            "Kit the Block 2 bus fasteners for the first two flight units",
+          dateOffset: -12
+        }
+      ]
+    },
     purchaseInvoiceLine: { invoiceKey: "paid", item: "BAT-LIION-48V" },
     milestones: [
       {

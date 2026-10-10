@@ -423,6 +423,35 @@ export const PROJECTS: ProjectSpec[] = [
     identifier: "RTM",
     costTreatment: "Contract",
     status: "Released",
+    // Phase 2a: the contract keeps its own stock — two parts received for
+    // it, and fasteners transferred in from common stock.
+    projectStock: {
+      openingStock: [
+        {
+          item: "FST-M10-SS",
+          shelf: "A1-L1",
+          qty: 100,
+          unitCost: 1.15,
+          dateOffset: -30
+        },
+        {
+          item: "TRM-BLK-6P",
+          shelf: "A1-L2",
+          qty: 10,
+          unitCost: 8.9,
+          dateOffset: -30
+        }
+      ],
+      transfers: [
+        {
+          item: "FST-M6-SS",
+          shelf: "A1-L1",
+          qty: 50,
+          reason: "Kit the contract motors' frame fasteners",
+          dateOffset: -12
+        }
+      ]
+    },
     purchaseInvoiceLine: { invoiceKey: "paid", item: "MAT-CU-18AWG" },
     milestones: [
       { key: "pilot", name: "Pilot Build", startOffset: -55, endOffset: -7 },

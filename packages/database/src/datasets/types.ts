@@ -2032,6 +2032,38 @@ export type ProjectSpec = {
   links?: ProjectElementLinkSpec[];
   /** The purchase invoice line this project's charge number codes. */
   purchaseInvoiceLine?: { invoiceKey: string; item: string };
+  /**
+   * Project stock (Projects Phase 2a): the project owns the stock received for
+   * it. Tier 09 sets `project.projectStock` and seeds, at the plant:
+   * - `openingStock`: untracked stock in the project's stripe, each row with
+   *   its cost layer at `unitCost`;
+   * - `transfers`: a Posted Transfer of common stock into the project, with
+   *   the Transfer pair, the common relief and the project's layer at the
+   *   item's unit cost, as `post-project-stock-transfer` writes them.
+   */
+  projectStock?: {
+    openingStock: ProjectOpeningStockSpec[];
+    transfers: ProjectStockTransferSpec[];
+  };
+};
+
+export type ProjectOpeningStockSpec = {
+  /** An untracked item (no Serial or Batch tracking). */
+  item: string;
+  shelf: string;
+  qty: number;
+  unitCost: number;
+  dateOffset: DayOffset;
+};
+
+/** A Posted Transfer from common stock into the project, at one shelf. */
+export type ProjectStockTransferSpec = {
+  /** An untracked item with common stock at `shelf`. */
+  item: string;
+  shelf: string;
+  qty: number;
+  reason: string;
+  dateOffset: DayOffset;
 };
 
 /** One rate per category, effective from `LABOR_RATE_EFFECTIVE_OFFSET`. */

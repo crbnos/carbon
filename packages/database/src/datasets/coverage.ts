@@ -178,6 +178,8 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   projectElementLink: 5,
   projectMilestone: 4,
   projectState: 12,
+  projectStockTransfer: 1,
+  projectStockTransferLine: 1,
   purchaseInvoice: 7,
   purchaseInvoiceDelivery: 7,
   purchaseInvoiceLine: 8,

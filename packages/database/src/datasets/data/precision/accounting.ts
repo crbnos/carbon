@@ -423,6 +423,35 @@ export const PROJECTS: ProjectSpec[] = [
     identifier: "SSF",
     costTreatment: "Contract",
     status: "Released",
+    // Phase 2a: the contract keeps its own stock — two parts received for
+    // it, and fasteners transferred in from common stock.
+    projectStock: {
+      openingStock: [
+        {
+          item: "HW-SHCS-M10",
+          shelf: "B1-L1",
+          qty: 100,
+          unitCost: 1.1,
+          dateOffset: -30
+        },
+        {
+          item: "PIN-CLEVIS-12",
+          shelf: "B2-L2",
+          qty: 20,
+          unitCost: 2.4,
+          dateOffset: -30
+        }
+      ],
+      transfers: [
+        {
+          item: "HW-SHCS-M6",
+          shelf: "B1-L1",
+          qty: 50,
+          reason: "Kit the contract fixtures' cap screws",
+          dateOffset: -12
+        }
+      ]
+    },
     purchaseInvoiceLine: { invoiceKey: "paid", item: "BRG-DBL-6205" },
     milestones: [
       {

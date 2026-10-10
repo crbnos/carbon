@@ -1001,6 +1001,15 @@ export function onHandLedger(
       if (shelves.has(part.shelf)) add(part.item, part.shelf, -part.quantity);
     }
   }
+  // Every movement above is common stock. A project's opening stock is in its
+  // own stripe and stays out; a Transfer into a project draws common stock.
+  for (const project of dataset.accounting.projects) {
+    for (const transfer of project.projectStock?.transfers ?? []) {
+      if (shelves.has(transfer.shelf)) {
+        add(transfer.item, transfer.shelf, -transfer.qty);
+      }
+    }
+  }
   return onHand;
 }
 
@@ -1910,6 +1919,45 @@ export function openingStock(ctx: ValidationCtx): void {
       fail(`${where}: shelf life on a non-Batch-tracked item`);
     }
     if (shelfLife.days <= 0) fail(`${where}: days must be positive`);
+  }
+}
+
+/**
+ * Project stock (Projects Phase 2a): the items and shelves resolve, the
+ * items are untracked (the tier writes untracked rows), the quantities and
+ * costs are positive, and the dates fall in an Open period.
+ */
+export function projectStock(ctx: ValidationCtx): void {
+  const { dataset, ix, fail, need } = ctx;
+  for (const project of dataset.accounting.projects) {
+    if (!project.projectStock) continue;
+    const where = `accounting.projects "${project.key}" projectStock`;
+    const rows = [
+      ...project.projectStock.openingStock.map((row) => ({
+        ...row,
+        kind: "openingStock"
+      })),
+      ...project.projectStock.transfers.map((row) => ({
+        ...row,
+        kind: "transfers"
+      }))
+    ];
+    if (rows.length === 0) fail(`${where}: no opening stock or transfer`);
+    for (const row of rows) {
+      const at = `${where}.${row.kind} "${row.item}"`;
+      need("item", at, row.item);
+      need("shelf", at, row.shelf);
+      if (ix.isTracked(row.item)) fail(`${at}: a tracked item`);
+      if (!(row.qty > 0)) fail(`${at}: quantity must be positive`);
+      if (row.dateOffset < OPEN_PERIOD_MIN_OFFSET || row.dateOffset > 0) {
+        fail(`${at}: dateOffset outside the Open periods`);
+      }
+    }
+    for (const row of project.projectStock.openingStock) {
+      if (!(row.unitCost > 0)) {
+        fail(`${where}.openingStock "${row.item}": unitCost must be positive`);
+      }
+    }
   }
 }
 
@@ -7295,6 +7343,7 @@ const RULES: Rule[] = [
   foundation,
   items,
   openingStock,
+  projectStock,
   batchProperties,
   trackedStockAndMovements,
   uniqueDocumentRefs,

@@ -544,7 +544,7 @@ which is exactly what lets one caller commit and the other roll back.
 The scratch company is attributed to the `system` user, never a real developer's.
 
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
-table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 267 tables, measured across all four
+table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 273 tables, measured across all four
 datasets: floor = the smallest count any dataset produced, ×0.8 for volume tables) in one
 `UNION ALL` query and fails the dataset with every shortfall listed as
 `table: expected ≥ N, got M`. That is what catches a tier that silently writes nothing. Most
