@@ -26,15 +26,49 @@ const icons: Record<ProjectElementType, IconType> = {
   Parameter: LuSigma
 };
 
-/** The icon of an element type. The type is meaning, so each has a hue. */
-const colors: Record<ProjectElementType, string> = {
-  Folder: "text-muted-foreground",
-  System: "text-blue-500",
-  Requirement: "text-violet-500",
-  Function: "text-teal-500",
-  Task: "text-muted-foreground",
-  "Test Case": "text-orange-500",
-  Parameter: "text-emerald-500"
+/**
+ * The colour of each element type: the icon, the type label and the tint of
+ * the Tree layout's box. The type is meaning, so each has a hue.
+ */
+export const elementTypeColors: Record<
+  ProjectElementType,
+  { icon: string; label: string; box: string }
+> = {
+  Requirement: {
+    icon: "text-blue-500",
+    label: "text-blue-700 dark:text-blue-400",
+    box: "border-blue-500/20 bg-blue-500/5 dark:bg-blue-500/10"
+  },
+  System: {
+    icon: "text-orange-500",
+    label: "text-orange-700 dark:text-orange-400",
+    box: "border-orange-500/20 bg-orange-500/5 dark:bg-orange-500/10"
+  },
+  "Test Case": {
+    icon: "text-teal-500",
+    label: "text-teal-700 dark:text-teal-400",
+    box: "border-teal-500/20 bg-teal-500/5 dark:bg-teal-500/10"
+  },
+  Function: {
+    icon: "text-violet-500",
+    label: "text-violet-700 dark:text-violet-400",
+    box: "border-violet-500/20 bg-violet-500/5 dark:bg-violet-500/10"
+  },
+  Parameter: {
+    icon: "text-emerald-500",
+    label: "text-emerald-700 dark:text-emerald-400",
+    box: "border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10"
+  },
+  Folder: {
+    icon: "text-muted-foreground",
+    label: "text-muted-foreground",
+    box: "border-border bg-muted/40"
+  },
+  Task: {
+    icon: "text-muted-foreground",
+    label: "text-muted-foreground",
+    box: "border-border bg-muted/40"
+  }
 };
 
 export function ElementTypeIcon({
@@ -48,7 +82,11 @@ export function ElementTypeIcon({
   return (
     <Icon
       aria-hidden
-      className={cn("size-4 shrink-0", colors[type], className)}
+      className={cn(
+        "size-4 shrink-0",
+        elementTypeColors[type]?.icon,
+        className
+      )}
     />
   );
 }
