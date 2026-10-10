@@ -1,6 +1,6 @@
 # Field Service: service orders on serials in stock and in the field
 
-> Status: Phases A and B implemented (2026-10-09, plans `.ai/plans/2026-10-09-field-service-phase-a.md` and `.ai/plans/2026-10-09-field-service-phase-b.md`); browser verification of both is still due. Phases C and D are planned. Every open question is resolved (Q1 answered 2026-10-08).
+> Status: Phases A, B and C implemented (2026-10-09, plans `.ai/plans/2026-10-09-field-service-phase-a.md`, `…-phase-b.md` and `…-phase-c.md`); browser verification of all 3 is still due. Phase D is planned. Every open question is resolved (Q1 answered 2026-10-08).
 > Author: Brad (with Claude)
 > Date: 2026-10-08
 > Research: `.ai/research/field-service.md` (SAP S/4HANA Service and FSM, D365 Field Service, Business Central, IFS, Salesforce Field Service, Epicor) and `.ai/research/serial-service-cost-treatment.md` (capitalize or expense)
@@ -193,17 +193,18 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 
 **Refurbishment completion**, in one transaction:
 1. Sum the order's WIP: the `projectLedger` amounts of the order's Service project with coverage Capitalized.
-2. **Make sure the serial has its own layer.** The serial may have no open stamped `costLedger` layer. Then split 1 unit from the oldest open unstamped layer of the item:
-   - decrease that layer's `remainingQuantity` by 1;
-   - insert a stamped layer of quantity 1 at the same unit cost.
-   This changes no value, so no journal is posted. The oldest layer is the one `calculateCOGS` would take for this serial anyway.
+2. **Make sure the serial has its own layer.** The serial may have no open stamped `costLedger` layer. Then split 1 unit from the layer that `calculateCOGS` takes next for the item (decision 48). That is the oldest open unstamped layer under FIFO, the newest under LIFO:
+   - move 1 unit of quantity, remaining quantity and cost off that layer, so it keeps its unit cost;
+   - insert a stamped layer of quantity 1 at the same unit cost;
+   - move 1 unit of the layer's open children onto the stamped layer, in the order `calculateCOGS` applies them (decision 49).
+   This changes no value, so no journal is posted. The serial and the other units relieve the cost they had before the split.
 3. Apply the cost by costing method:
    - **FIFO / LIFO:** insert a child row on the serial's layer: `costLedgerType 'Revaluation'`, `adjustment: true`, `appliesToCostLedgerId`, `trackedEntityId`, quantity 1, `cost` = the WIP sum. Post Dr inventory / Cr WIP.
    - **Average:** post Dr inventory / Cr WIP. Re-average `itemCost.unitCost` = (on-hand × unit cost + WIP sum) ÷ on-hand. The order page states that Average spreads the cost over every unit of the item.
    - **Standard:** post Dr `materialVarianceAccount` / Cr WIP. The unit stays at standard.
 4. **Abnormal rework.** If the order is flagged **Abnormal rework**, skip step 3. Post Dr `materialVarianceAccount` / Cr WIP.
 5. **Sale price cap** (FIFO / LIFO only):
-   1. The cap is the order's `expectedSellingPrice`, else the item's `itemUnitSalePrice.unitSalePrice` (converted to the item's inventory unit).
+   1. The cap is the order's `expectedSellingPrice`, else the item's `itemUnitSalePrice.unitSalePrice` (decision 51). The sale price counts only when its sales unit is empty or the inventory unit, and its currency is the base currency. Otherwise the completion skips the cap and warns.
    2. If the serial's new unit cost (layer + children) exceeds the cap, insert a negative child row for the excess. Post Dr `inventoryAdjustmentVarianceAccount` / Cr inventory.
    3. If there is no cap, skip the check and show a warning on the order. Selling costs are not subtracted in v1.
 6. Set the serial's status back to `Available`. Write a `trackedActivity` of type `Service` with the order id.
@@ -309,7 +310,7 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 | 13 | Covered items on the invoice | At zero price, with a "covered by" note. | D365 and Business Central keep cost and history visible. |
 | 14 | Depot Repair stock | The receipt and the return shipment of a `Repair` line write no stock ledger and no value. The serial stays `Consumed`. | SAP's non-valuated customer stock. Keeps planning and valuation clean. |
 | 15 | Refurbishment execution | The service order collects labor and parts in WIP and capitalizes at completion. No job. | A job always makes a new serial (`sync_insert_job_make_method`), and changing that touches 3 handlers and job completion. SAP PM04 is also a maintenance-style order, not a production order. A job-based refurbishment can come later. |
-| 16 | Serial layer for refurbishment | Split 1 unit from the oldest open unstamped layer when the serial has none (no value change). | Job output and RMA receipts write unstamped layers. The oldest layer is what `calculateCOGS` takes for the serial anyway. No change to job completion or receipts. |
+| 16 | Serial layer for refurbishment | Split 1 unit from the layer `calculateCOGS` takes next when the serial has none: the oldest open unstamped layer under FIFO, the newest under LIFO. Its open children move with the unit. No value changes. | Job output and RMA receipts write unstamped layers. The next layer keeps the relief cost unchanged (decisions 48 and 49). No change to job completion or receipts. Corrected by Phase C: the first text said "the oldest layer", which holds for FIFO only. |
 | 17 | Costing methods | FIFO/LIFO: child row. Average: re-average. Standard: variance. | `serial-service-cost-treatment.md`; SAP, Oracle and IFS. |
 | 18 | Abnormal rework | A flag on the order. Its cost posts to `materialVarianceAccount`. | ASC 330-10-30-7, IAS 2.16. |
 | 19 | Labor cost rate | The technician's labor category (projects Phase 1a). | One cost model for project time and service time. |
@@ -334,6 +335,12 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 | 45 | Missing asset at a repair receipt (B3) | The receipt creates the asset, with source Manual. | A unit shipped before Carbon, or before the asset backfill, has no asset. The repair must still work. Plan decision, 2026-10-09. |
 | 46 | Void of a repair receipt (B4) | The void cancels the line's orders. It is refused while an order has a charge that stands, or after its unit shipped back. | The order's subject is no longer at the depot. Posted cost needs a decision by a person. Plan decision, 2026-10-09. |
 | 47 | Replacement and credit (B5) | A replacement order skips Repair lines and is refused when every line is Repair. A credit refuses a Repair line. | `createReplacementSalesOrder` works on the whole RMA, so the other lines can still be replaced. A repaired unit goes back to the customer, so nothing is credited. Plan decision, 2026-10-09. |
+| 48 | Source of the layer split (C1) | The layer `calculateCOGS` takes next for the item: the oldest unstamped layer under FIFO, the newest under LIFO, picked with `orderLayersForConsumption`. | LIFO takes the newest layer first. The right layer keeps the relief cost unchanged. Plan decision, 2026-10-09. |
+| 49 | Children move with the split (C2) | The split moves the child cost that `calculateCOGS` would apply to the unit: the source's open children in `createdAt` order, 1 unit in total. | `calculateCOGS` applies a child only up to the quantity it takes from the parent. Without the move, the serial would leave without its share. Plan decision, 2026-10-09; made exact during the run. |
+| 50 | Revaluation row for every method (C3) | The completion writes a `'Revaluation'` child row for FIFO, LIFO and Average. For Average it also re-averages `itemCost.unitCost` in the same transaction. | No TypeScript re-average helper exists. `update-purchased-prices` recomputes `unitCost` from `costLedger` cost, so the child row keeps its value in that average. Plan decision, 2026-10-09. |
+| 51 | Sale price unit for the cap (C4) | The item's sale price caps the cost only when its sales unit is empty or the inventory unit, and its currency is the base currency. Else the cap is skipped with a warning. | Carbon has no sales unit conversion factor. A price per box must not cap a cost per each. Plan decision, 2026-10-09; the currency rule is an execution change. |
+| 52 | Child rows in the valuation report (C5) | `get_inventory_valuation` counts only parent rows as layers and adds each open child's remaining cost to its parent. | The report counted an open child as a layer of its own. Purchase price variance children already caused the error; refurbishment children would make it larger. Plan decision, 2026-10-09. |
+| 53 | Guard on shipping and picking (C6) | `post-shipment` (Sales Order) and `post-picking` (serial) refuse a serial with an open Refurbishment order. | Only the selection RPCs and routes skip On Hold serials. A guard keyed on the open order changes no other On Hold flow. Plan decision, 2026-10-09. |
 | 42 | RLS of the project tables | The `projectModule` rule piece decides between `projects_*` and `service_*` by `projectType`. Reads of a Standard project stay open to every employee. | One rule for every project table. MES operators and the PO line picker read Standard projects without `projects_view`, as before. Plan decision, 2026-10-09; the employee read is an execution change. |
 | 26 | Multi-tenancy (H1) | Every new table has `companyId`, `PRIMARY KEY ("id","companyId")` and `id('prefix')`. | conventions-database. |
 | 27 | Service shape (H2) | Client first, `{data, error}`, never throws. Posting and completion run in server functions (Kysely transactions). | conventions-services; `packages/server-functions/AGENTS.md`. |
@@ -636,7 +643,7 @@ Phase D: the contract project roll-up
 | Risk | Severity | Mitigation |
 |---|---|---|
 | **The RMA receipt and return shipment change for Repair lines.** A mistake would leave a customer's unit valued as stock, or relieve stock that was never added. | High | Branch only on `disposition = 'Repair'`. Database tests for receipt and ship-back assert zero ledger and zero journal rows. The on-hand assertion is in the acceptance criteria. |
-| **The layer split on refurbishment** picks the "wrong" unstamped layer for the serial | Med | It picks the oldest open layer, which is the layer `calculateCOGS` would take for this serial, so relief cost does not change. No GL posts. Pinned by a test. |
+| **The layer split on refurbishment** picks the "wrong" unstamped layer for the serial | Med | It picks the layer `calculateCOGS` takes next (oldest under FIFO, newest under LIFO), and the unit's share of the open children moves with it. So the relief cost does not change, and no GL posts. Pinned by tests. |
 | **Average-cost items** cannot hold a per-serial value | Med | The completion re-averages and the order page says so before the user completes. |
 | **Dependency on projects** (labor categories and the ledger in 1a; part links and *Build from part* in 1b; Service projects) | Med | Phase A starts after projects Phase 1b ships, and delivers the Service projects section of the projects spec with it. |
 | **A project per service order** adds rows (one project, 6 states) per order | Low | The rows are small and indexed by `companyId`. The project list hides Service projects by default. |
@@ -650,7 +657,7 @@ Each phase gets its own plan with `/plan`:
 
 1. **Phase A: customer assets, field visits, the work tree, components, coverage, invoicing, the phone pages.** It needs projects Phases 1a and 1b. It ships the projects spec's Service projects. **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-a.md`, Tasks 1–30); browser verification (Task 31) is deferred.
 2. **Phase B: depot repair through the RMA.** **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-b.md`, Tasks 1–12); browser verification (Task 13) is deferred.
-3. **Phase C: refurbishment of a serial in stock.**
+3. **Phase C: refurbishment of a serial in stock.** **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-c.md`, Tasks 1–10); browser verification (Task 11) is deferred.
 4. **Phase D: the contract project roll-up.**
 
 ## Implementation notes (Phase A)
@@ -684,6 +691,21 @@ The plan's *Execution notes* record each deviation. These change the design abov
 - **Ship back.** A Repair line ships a unit whose order is Completed or Closed, because a company may invoice before it ships the unit back. Under the posting lock, the shipment re-checks the order and the asset.
 - **UI.** The RMA line links its orders, and the explorer shows their count and the status that needs attention first. A Depot Repair order makes **Complete** its next step, since it has no visit, and offers **Ship Back** to the RMA. The RMA header hides **Issue Credit** and **Create Replacement** when they would only be refused.
 - **Demo datasets.** Satellite seeds a To Receive RMA with one Repair line for SAT-1000-S013. A received repair is not seeded.
+
+## Implementation notes (Phase C)
+
+The plan's *Execution notes* record each deviation. These change the design above.
+
+- **The split moves cost too.** The split moves 1 unit of quantity and cost off the source layer, not only 1 unit of remaining quantity. So the source keeps its unit cost, and the cost ledger's totals stay the same.
+- **Relief of a stamped layer.** `calculateCOGS` now applies every child of a stamped layer in full to its unit. Before, it applied the children of a layer in turn, as if each covered other units. So a refurbished serial would leave without its write-down. Unstamped layers are unchanged.
+- **Completion from Draft.** A Refurbishment completes from Draft, Scheduled or In Progress. A refurbishment in the shop has no visit, so it can stay Draft until it is done.
+- **One completion path.** `complete-service-order` completes every order type. The ERP's status route calls it. `syncServiceOrderStatus` refuses to complete or reopen a Refurbishment, so its cost cannot bypass the function.
+- **The journal.** The completion posts one journal with the new source type `Service Order`. The WIP credit is split by node, with the Project and Project Element dimensions. `POSTING_POLICY` does not push the journal to an external ledger by default.
+- **The preview.** The completion preview runs the same reads (`loadRefurbishmentCompletion`, without row locks) and the same planner, and writes nothing. **Complete** posts to the order's status route.
+- **Create and cancel.** A Refurbishment picks an item, then a serial in stock. The serial goes On Hold when the order is created, and back to Available when the order is cancelled.
+- **Build history.** A part issued to a Refurbishment node writes a `Service` activity from the part to the subject serial. It writes no installed component, because the unit has no customer asset.
+- **Demo datasets.** Satellite seeds one Draft Refurbishment on RW010-SN-0054, with the serial On Hold. A completed refurbishment is not seeded.
+- **Gap.** The SQL backflush (`backflush_job_materials`) still applies a layer's children in turn. A refurbished serial consumed by a backflush would take only its first child.
 
 ## Out of scope
 
@@ -733,4 +755,5 @@ Resolved autonomously (2026-10-08), open to veto:
 - 2026-10-08: Modules follow job roles (Brad). New *Who uses what* section. Q1 resolved: a Service module; `sales_view` → `service_view`, and full rights for the Admin employee type only. The order's Service project stays hidden from Projects, the dimension picker and the Ramp sync. The customer Assets tab shows with `service_view`.
 - 2026-10-09: Corrections from the Phase A planning research. The site comes from the sales order, not the shipment. `post-sales-invoice` must skip stock and COGS on lines that billable items stamp. Visit RLS follows `timeCardEntry` (owner rules), not `maintenanceDispatchEvent`. The account and default follow `revenue-recognition-core`. The demo datasets have no shipped serials, so the datasets register customer assets by hand.
 - 2026-10-09: Phase A implemented (`.ai/plans/2026-10-09-field-service-phase-a.md`, Tasks 1–30). Browser verification (Task 31) is deferred. Decisions 37–42 record the plan's choices, and *Implementation notes (Phase A)* records the main changes found during the run.
+- 2026-10-09: Phase C implemented (`.ai/plans/2026-10-09-field-service-phase-c.md`, Tasks 1–10). Browser verification (Task 11) is deferred. Decisions 48–53 record the plan's decisions C1–C6. Step 2 of *Refurbishment completion* and decision 16 now name the layer `calculateCOGS` takes next, not "the oldest layer". *Implementation notes (Phase C)* records the main changes found during the run.
 - 2026-10-09: Phase B implemented (`.ai/plans/2026-10-09-field-service-phase-b.md`, Tasks 1–12). Browser verification (Task 13) is deferred. Decisions 43–47 record the plan's decisions B1–B5. The link is `serviceOrder.salesReturnOrderLineId`, not `salesReturnOrderLine.serviceOrderId`. *Implementation notes (Phase B)* records the main changes found during the run.

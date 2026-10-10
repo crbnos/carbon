@@ -1,10 +1,10 @@
 # Service Module
 
-Field service (Phases A and B): customer assets, Field Visit service orders, their visits, the work tree, coverage, billable items, invoicing, the estimate PDF, service templates, the technician phone pages, and Depot Repair orders opened by the receipt of an RMA `Repair` line. Spec: `.ai/specs/2026-10-08-field-service.md`.
+Field service (Phases A, B and C): customer assets, Field Visit service orders, their visits, the work tree, coverage, billable items, invoicing, the estimate PDF, service templates, the technician phone pages, Depot Repair orders opened by the receipt of an RMA `Repair` line, and Refurbishment orders on a serial in stock. Spec: `.ai/specs/2026-10-08-field-service.md`.
 
 ## Key Domain Concepts
 - **Customer asset** — one shipped serial at a customer (`customerAsset` → `trackedEntity`), with site and labor/parts warranty end dates. `post-shipment` creates it (`upsertShippedCustomerAssets`); `registerCustomerAsset` registers a unit sold before Carbon. Status: In Service → At Depot / Returned. `warrantyStatus(asset, today)` gives In warranty / Labor ended / Expired.
-- **Service order** — work on one asset's serial. The New form creates `Field Visit` only (`serviceOrderTypes`). `post-receipt` creates `Depot Repair` orders for an RMA's `Repair` line, one per serial (`createDepotRepairOrders`, `serviceOrder.salesReturnOrderLineId`); such an order needs no visit, and its unit ships back from the RMA (`isReadyToShipBack`). The list filters both (`listedServiceOrderTypes`). Status: Draft → Scheduled → In Progress → Completed → Closed, plus On Hold and Cancelled. On Hold, Completed, Closed and Cancelled are set by the user. The other statuses come from the visits (`rollUpOrderStatus`). `canMoveServiceOrder` decides which moves a user can make.
+- **Service order** — work on one serial. The New form creates `Field Visit` (a customer asset's serial) and `Refurbishment` (a serial in stock, no customer; it goes On Hold until the order completes or is cancelled) (`serviceOrderTypes`). A Refurbishment completes through `complete-service-order`, which moves its WIP into the serial's cost; `CompleteRefurbishmentModal` previews it first (`$id.complete.tsx`, `previewRefurbishmentCompletion`). `post-receipt` creates `Depot Repair` orders for an RMA's `Repair` line, one per serial (`createDepotRepairOrders`, `serviceOrder.salesReturnOrderLineId`); such an order needs no visit, and its unit ships back from the RMA (`isReadyToShipBack`). The list filters all 3 (`listedServiceOrderTypes`). Status: Draft → Scheduled → In Progress → Completed → Closed, plus On Hold and Cancelled. On Hold, Completed, Closed and Cancelled are set by the user. The other statuses come from the visits (`rollUpOrderStatus`). `canMoveServiceOrder` decides which moves a user can make.
 - **Visit** — one technician trip (`serviceVisit`): Scheduled → Traveling → On Site → Completed, or Cancelled (`canMoveVisit`). Completing a visit asks **Work complete?**; Yes completes the order.
 - **Work tree** — every order owns a hidden `project` with `projectType` Service and `costTreatment` By Coverage (`insertServiceOrder` / `insertServiceProject`, `@carbon/server-functions/lib/service-orders`, shared with `post-receipt`). Its `projectElement` rows are **nodes** (System / Task / Folder). The tree can start Empty, or from a Template, the Serial or the Item (`serviceOrderStartFrom`). A Service user never sees the word "project".
 - **Coverage** — who pays for a charge: Warranty, Contract, Billable or Capitalized. `resolveCoverage` (`@carbon/utils`, `service-coverage.ts`) decides it when the charge posts. Each charge writes a `projectLedger` row and a `projectBillableItem` row (Unbilled / On Hold / Billed / Written Off).
@@ -19,7 +19,8 @@ Field service (Phases A and B): customer assets, Field Visit service orders, the
 - MUST name new path helpers `serviceOrder*`, `customerAsset*`, `serviceVisit*`, `serviceTemplate*`, `myVisits` or `serviceSchedule`. `path.to.service`, `serviceRoot`, `serviceDetails` and `services` belong to the Service ITEM page.
 
 ### Ask First
-- Letting a user create a Depot Repair order by hand, or adding Refurbishment to the UI. A Depot Repair order exists only through its RMA line (CHECK `serviceOrder_depot_check`); Refurbishment needs the capitalization flow, which the spec defers.
+- Letting a user create a Depot Repair order by hand. A Depot Repair order exists only through its RMA line (CHECK `serviceOrder_depot_check`).
+- Completing or reopening a Refurbishment any way other than `complete-service-order`. Its cost moves into the serial there, once; `syncServiceOrderStatus` refuses both.
 - Changing `resolveCoverage` or the `projectModule` / `serviceVisit` rules in `packages/database/src/authz/manifest.ts`. The posting accounts and the technician's access depend on them.
 
 ### Never
@@ -39,20 +40,21 @@ pnpm --filter @carbon/server-functions test   # posting + invoice functions
 | Table / View | Purpose |
 |---|---|
 | `customerAsset` / `customerAssetComponent` | Installed base and the parts installed by service. Components are written only by `post-project-issue` (`installServicePart`). |
-| `serviceOrder` | The order. Has `projectId` (NOT NULL, unique), `customerContractId`, `serviceTemplateId`, `salesInvoiceId` and, on a Depot Repair order, `salesReturnOrderLineId`. |
+| `serviceOrder` | The order. Has `projectId` (NOT NULL, unique), `customerContractId`, `serviceTemplateId`, `salesInvoiceId`; on a Depot Repair order, `salesReturnOrderLineId`; on a Refurbishment, `expectedSellingPrice`, `abnormalRework` and the completion columns (`capitalizedAmount`, `writeDownAmount`, `completionJournalId`, `completionCostingMethod`). |
 | `serviceVisit` | Technician, planned window, travel/arrive/complete stamps, notes, signature. |
 | `project` / `projectElement` | The work tree (Service type) and service templates (`isTemplate`). |
 | `projectLedger` / `projectBillableItem` | Posted charges with `coverage`, and what is left to bill. |
 
 ## Key Service Functions
-- `createServiceOrder(client, db, args)` (`service.server.ts`) — one transaction: checks the asset is In Service, uses the customer's only Active contract, creates the project and the order, then builds the tree (`insertElementsFromPart`, with `includePlanLines: true`).
+- `createServiceOrder(client, db, args)` (`service.server.ts`) — one transaction. A Field Visit: checks the asset is In Service and uses the customer's only Active contract. A Refurbishment: checks the serial is serial-tracked, Available or On Hold, with no open order, and sets it On Hold. Both create the project and the order, then build the tree (`buildServiceOrderTree` → `insertElementsFromPart`, with `includePlanLines: true`).
+- `completeServiceOrder(db, args)` (`service.server.ts`) — invokes `complete-service-order` for every order type; `previewRefurbishmentCompletion(db, args)` runs its reads and planner without writing.
 - `getDepotRepairOrdersByReturnOrder` (`service.service.ts`) — an RMA's Depot Repair orders with their unit's status; read by the RMA layout for Ship and the explorer.
 - `getServiceOrder`, `getServiceWork`, `getServiceNode`, `getServiceVisits`, `getCustomerAssets`, `getServiceBillableItems`, `getServiceEstimateInputs` (`service.service.ts`).
 - Pure, tested helpers in `service.models.ts` (`apps/erp/test/service-models.test.ts`): `summarizeWork`, `buildServiceEstimate` (also used by the estimate PDF, `ServiceEstimatePDF` in `@carbon/documents`), `inTreeOrder`, `canOverrideCoverage`, `canReverseCharge`, `buildExpenseReversal`, `isReadyToShipBack`, `worstServiceOrderStatus`.
 
 ## Routes
 - `x+/service-orders+/` — module pages: list, `new`, `assets`, `my-visits`, `schedule`, `templates`, and `templates_.$id.tsx`. The trailing `_` renders the template page in the module layout, not under the list.
-- `x+/service-order+/$id.tsx` — the order workspace, with tabs `details`, `work`, `visits` and `billing`. `$id_.visits.$visitId.tsx` is the phone visit page; the trailing `_` keeps it out of the workspace.
+- `x+/service-order+/$id.tsx` — the order workspace, with tabs `details`, `work`, `visits` and `billing`. `$id.complete.tsx` is the Refurbishment completion preview (loader only). `$id_.visits.$visitId.tsx` is the phone visit page; the trailing `_` keeps it out of the workspace.
 - `x+/customer-asset+/$assetId.tsx` — the asset page. `file+/service-estimate+/$id[.]pdf.tsx` — Print Estimate.
 
 ## Related Modules

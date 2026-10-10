@@ -1,9 +1,9 @@
 ---
 title: Service orders
-description: Send a technician to a customer's unit, charge time, parts and expenses to its work tree, decide who pays, and invoice the rest.
+description: Send a technician to a customer's unit, or refurbish a serial in stock. Charge time, parts and expenses to the work tree, decide who pays, and invoice the rest.
 ---
 
-A **service order** sends a technician to one [customer asset](/docs/reference/customer-assets) at the customer's site, or repairs a unit the customer sent back on an [RMA](/docs/reference/rmas). It holds a tree of work and collects every charge until you invoice it. Each charge decides on its own whether warranty, a contract or the customer pays.
+A **service order** sends a technician to one [customer asset](/docs/reference/customer-assets) at the customer's site, repairs a unit the customer sent back on an [RMA](/docs/reference/rmas), or refurbishes a serial you hold in stock. It holds a tree of work and collects every charge until you invoice it. Each charge decides on its own whether warranty, a contract or the customer pays.
 
 Open the **Service** module. It has **Service Orders**, **My Visits**, **Schedule**, **Customer Assets**, **Service Templates** and **My Timesheet**.
 
@@ -14,14 +14,17 @@ Open the **Service** module. It has **Service Orders**, **My Visits**, **Schedul
 Click **Add Service Order** on the list, **Service Order** in the Create menu, or **New Service Order** on an asset. Carbon numbers the order `SVC…`. A unit can have only one open service order at a time.
 
 <FieldTable>
-  <Field name="Unit" type="reference" required>The customer asset, found by serial. It must be "In Service". The unit sets the customer, the site, the item and the serial of the order.</Field>
+  <Field name="Type" type="enum" required>**Field Visit** (a unit at a customer) or **Refurbishment** (a serial in your stock). See [Refurbishment](#refurbishment).</Field>
+  <Field name="Unit" type="reference" required>Field Visit only. The customer asset, found by serial. It must be "In Service". The unit sets the customer, the site, the item and the serial of the order.</Field>
   <Field name="Service Location" type="reference" required>Your location that does the work.</Field>
-  <Field name="Coverage Contract" type="reference">A <Term>contract</Term> of the unit's customer that pays for work outside warranty. If you leave it empty and the customer has exactly one Active contract, Carbon uses that contract.</Field>
+  <Field name="Item" type="reference" required>Refurbishment only. The serial-tracked item to refurbish.</Field>
+  <Field name="Serial" type="reference" required>Refurbishment only. A serial of the item that is Available or On Hold, with no open service order.</Field>
+  <Field name="Coverage Contract" type="reference">Field Visit only. A <Term>contract</Term> of the unit's customer that pays for work outside warranty. If you leave it empty and the customer has exactly one Active contract, Carbon uses that contract.</Field>
   <Field name="Priority" type="enum">Low, Medium, High or Urgent.</Field>
   <Field name="Start Work From" type="enum">Where the first work tree comes from: **Empty**, **Service template**, **The unit's build history** or **The item's bill of materials**. See [the work tree](#the-work-tree).</Field>
 </FieldTable>
 
-The form also takes a **Contact** and the **Problem**. The order has the tabs **Details**, **Work**, **Visits** and **Billing**. Its contact, site and coverage contract can change only while it is "Draft".
+A Field Visit also takes a **Contact**, and every order takes the **Problem**. The order has the tabs **Details**, **Work**, **Visits** and **Billing**. Its contact, site and coverage contract can change only while it is "Draft".
 
 ## Status lifecycle
 
@@ -79,7 +82,7 @@ Carbon decides the coverage of each charge when it posts, from the charge date:
 4. Any other charge is **Contract** when the order has a coverage contract.
 5. Otherwise it is **Billable**.
 
-A **Capitalized** coverage exists for refurbishment work on your own stock. A field visit does not create it.
+Every charge on a Refurbishment is **Capitalized**: it posts to Work in Progress and has no billable item. A field visit never creates this coverage.
 
 | Coverage | Cost posts to | Billable item |
 |---|---|---|
@@ -143,7 +146,34 @@ A **Depot Repair** order repairs a unit in your shop. You do not create it by ha
 - Once the order is Completed or Closed and the unit is still At Depot, **Ship Back** opens the RMA. Ship the unit from there.
 - Invoice the order, or **Close** it, as any service order.
 
-The order list has a **Type** column to filter Field Visit and Depot Repair orders.
+The order list has a **Type** column to filter Field Visit, Depot Repair and Refurbishment orders.
+
+## Refurbishment
+
+A **Refurbishment** order reworks a serial you own while it is in stock. Its labor, parts and expenses collect in Work in Progress. When you complete the order, that cost moves into the serial's own cost, so the unit later ships at its refurbished cost.
+
+1. Click **Add Service Order** and choose the **Type** Refurbishment.
+2. Choose the **Item** and the **Serial**. Carbon puts the serial **On Hold**, so nobody ships or picks it while the work runs.
+3. Charge the work tree as on any order. A part you issue is recorded in the serial's build history.
+4. Click **Complete**. A preview shows the work in progress, the unit cost before and after, the sale price cap and the write-down. Click **Complete** in the preview to post it.
+
+Cancelling the order sets the serial back to Available.
+
+The item's costing method decides where the cost goes:
+
+| Costing method | Effect of the completion |
+|---|---|
+| **FIFO** or **LIFO** | The serial gets its own cost layer at its old unit cost, and the work's cost is added to it. The other units keep their cost. |
+| **Average** | The cost is spread over every unit of the item: the average unit cost goes up. |
+| **Standard** | The cost posts to material variance. The serial stays at its standard cost. |
+
+**Sale price cap.** Under FIFO and LIFO, the serial's new cost cannot exceed what it will sell for. Enter an **Expected Selling Price** in the order's properties, or Carbon uses the item's sale price. The excess posts to inventory adjustment variance. If there is no price, the preview warns that the cost was not capped. A sale price per another unit of measure, or in another currency, is not used.
+
+**Abnormal Rework.** Turn it on in the order's properties for work that should never be part of the unit's cost, such as rework after damage. The cost then posts to material variance, and the serial keeps its cost.
+
+<Callout type="info" title="A completed refurbishment cannot be reopened.">
+Its cost is already in the serial. The expected selling price and Abnormal Rework can change only until the order is completed.
+</Callout>
 
 ## Service templates
 
@@ -223,6 +253,21 @@ Coverage overrides need service_update.
 ### "This charge is already reversed or reclassed" / "The charge is already invoiced. Credit the invoice first."
 Override applies only to an original charge that is not reversed, not reclassed and not Billed.
 
+### "A refurbishment needs a serial in stock. Serial … is …" / "Serial … already has an open service order, …" / "A refurbishment needs a serial-tracked item"
+A Refurbishment needs a serial of a serial-tracked item that is Available or On Hold, with no open service order. A Consumed (shipped) serial is a customer asset: open a Field Visit instead.
+
+### "Serial … is under refurbishment on …. Complete the order first."
+A shipment or a serial pick names a serial with an open Refurbishment order. Complete or cancel the order first.
+
+### "Complete a refurbishment from its order, so its cost moves to the serial" / "A completed refurbishment cannot be reopened: its cost is already in the serial" / "A completed refurbishment cannot change: its cost is already in the serial"
+A Refurbishment completes only through **Complete** in its header, which posts the cost. A visit's Work complete? does not complete it, and Reopen is not available after completion.
+
+### "No open cost layer holds this serial. Correct the item's stock before you complete the refurbishment."
+Under FIFO or LIFO the serial needs its own open cost layer, or an open layer of the item without a serial, to split from. Fix the item's stock (for example with an inventory adjustment), then complete.
+
+### "No sale price; the cost was not capped" / "The sale price is per …, not per …; the cost was not capped" / "The sale price is in …, not …; the cost was not capped"
+A warning, not a refusal: the completion posted without a cap. Set the order's Expected Selling Price to cap the cost.
+
 ### "Only a refurbishment charge is Capitalized, and it stays Capitalized"
 Overrides cannot move a charge to or from Capitalized.
 
@@ -252,7 +297,8 @@ The user lacks inventory_update.
 
 ## Internals
 - Each service order owns a Service project (projectType Service, costTreatment By Coverage, identifier = the order's readable id). Its elements are the nodes. Service projects are hidden from the Projects module, charge number pickers and dimension pickers.
-- Readable id: sequence serviceOrder, prefix SVC, size 6 (SVC000001). Order types in the enum: Field Visit, Depot Repair, Refurbishment. The New form creates Field Visit only; the receipt of an RMA Repair line creates Depot Repair orders (`serviceOrder.salesReturnOrderLineId`, CHECK `serviceOrder_depot_check`; `post-receipt/repair.ts`). Refurbishment is not created.
+- Readable id: sequence serviceOrder, prefix SVC, size 6 (SVC000001). Order types in the enum: Field Visit, Depot Repair, Refurbishment. The New form creates Field Visit and Refurbishment; the receipt of an RMA Repair line creates Depot Repair orders (`serviceOrder.salesReturnOrderLineId`, CHECK `serviceOrder_depot_check`; `post-receipt/repair.ts`). A Refurbishment has no customer (CHECK `serviceOrder_customer_check`).
+- Refurbishment completion: server function complete-service-order (load.ts reads, plan.ts plans). FIFO/LIFO split one unit from the layer calculateCOGS takes next and add a 'Revaluation' child of the WIP; Average adds the child and re-averages itemCost.unitCost; Standard and Abnormal Rework post Dr Material Variance / Cr WIP; a write-down over the cap posts Dr Inventory Adjustment Variance / Cr inventory. The journal's source type is Service Order. The order stores capitalizedAmount, writeDownAmount, completionJournalId and completionCostingMethod. The preview route is `/x/service-order/<id>/complete` (loader only).
 - Status roll-up: rollUpOrderStatus (service.models.ts); allowed moves canMoveServiceOrder and canMoveVisit; saved by syncServiceOrderStatus (service.server.ts), which also sets the project status (On Hold → On Hold, Completed → Technically Complete, Closed/Cancelled → Closed, else Released).
 - Coverage: resolveCoverage (packages/utils/src/service-coverage.ts). Capitalized charges post to Work in Progress and create no billable item.
 - Charges: route service-order+/$id.charge.tsx with intent time / part / expense / reclass / reverse (reverseServiceCharge: a timesheet correction to 0 hours, or a projectExpenseEntry with reversalOfId and reversalReason); server functions post-timesheet, post-project-issue, post-project-expense, reclass-project-coverage. Time posts Dr coverage account / Cr Labor Absorption ("Service Labor"); expenses Dr coverage account / Cr GR/IR ("Service Expense"); parts "Service Material". All carry the Customer dimension.

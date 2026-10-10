@@ -14,16 +14,18 @@ paths:
   - "packages/server-functions/src/post-receipt/repair.ts"
   - "packages/server-functions/src/post-shipment/repair.ts"
   - "packages/server-functions/src/lib/service-orders.ts"
+  - "packages/server-functions/src/complete-service-order/**"
   - "packages/documents/src/pdf/ServiceEstimatePDF.tsx"
 ---
 
 # Field Service
 
-Phases A and B of `.ai/specs/2026-10-08-field-service.md`. Phase A: customer assets,
+Phases A, B and C of `.ai/specs/2026-10-08-field-service.md`. Phase A: customer assets,
 Field Visit service orders, visits, the work tree, coverage, invoicing, the estimate,
-templates and the technician's phone pages. Phase B: depot repair through the RMA. Plans:
-`.ai/plans/2026-10-09-field-service-phase-a.md` and `…-phase-b.md` (their *Execution
-notes* record every deviation). Module guide: `apps/erp/app/modules/service/AGENTS.md`.
+templates and the technician's phone pages. Phase B: depot repair through the RMA. Phase
+C: refurbishment of a serial in stock. Plans: `.ai/plans/2026-10-09-field-service-phase-a.md`,
+`…-phase-b.md` and `…-phase-c.md` (their *Execution notes* record every deviation).
+Module guide: `apps/erp/app/modules/service/AGENTS.md`.
 
 ## The shape
 
@@ -31,7 +33,7 @@ notes* record every deviation). Module guide: `apps/erp/app/modules/service/AGEN
   labor and parts warranty end dates, status In Service / At Depot / Returned, source
   Shipment or Manual.
 - **Service order** (`serviceOrder`, readable id `SVC…`, sequence `serviceOrder`): one
-  subject serial, one customer asset, and its own **Service project**
+  subject serial, one customer asset (none for a Refurbishment), and its own **Service project**
   (`project.projectType = 'Service'`, `costTreatment = 'By Coverage'`, identifier = the
   order's readable id). The project's elements are the **work tree** ("nodes"). There is
   no order line table.
@@ -45,9 +47,9 @@ notes* record every deviation). Module guide: `apps/erp/app/modules/service/AGEN
   On Hold / Billed / Written Off.
 
 At most one open order per subject serial (`serviceOrder_open_subject_key`). The New
-form creates Field Visit orders only (`serviceOrderTypes`). A Depot Repair order comes
-only from an RMA receipt (below); the list filters both (`listedServiceOrderTypes`).
-Refurbishment is never created.
+form creates Field Visit and Refurbishment orders (`serviceOrderTypes`). A Depot Repair
+order comes only from an RMA receipt (below); the list filters all 3
+(`listedServiceOrderTypes`).
 
 A Service user never sees the word "project". The Projects module, the charge number
 pickers (ERP and MES `getChargeNumbers`), the dimension picker (`getEntityValues`) and the
@@ -180,6 +182,56 @@ back. The unit never enters company stock or stock value. Every branch keys on
 Pinned by `post-receipt/sales-return-repair.test.ts` and
 `post-shipment/sales-return-repair.test.ts` (fixture `lib/sales-return-test-fixture.ts`).
 
+## Refurbishment of a serial in stock
+
+The company refurbishes a serial it owns. Labor, parts and expenses collect in WIP
+(coverage Capitalized), and the completion moves the WIP into that serial's cost.
+
+- **Create** (`createServiceOrder`): the New form picks an item, then a serial
+  (`SerialSelect`). The serial must be serial-tracked, Available or On Hold, with no open
+  order. The order has no customer, asset, site or contract (`serviceOrder_customer_check`);
+  `insertServiceOrder` takes null customer fields and names the project
+  "<order id> — <serial>". The serial goes **On Hold** in the same transaction.
+- **Cancel** (`cancelServiceOrder`): the serial goes from On Hold back to Available.
+- **Charges**: `resolveCoverage` gives Capitalized, so every charge posts Dr WIP. A part
+  issue writes no billable item and no installed component; `installServicePart` writes a
+  `Service` activity from the issued serial or batch to the subject serial (a later Build
+  from part shows the new parts). A return deletes the activity.
+- **Guard** (`assertNoOpenRefurbishment`, `lib/service-orders.ts`): `post-shipment` (Sales
+  Order) and `post-picking` (serial case) refuse a serial with an open Refurbishment order.
+- **Complete** (`complete-service-order`, one transaction, from Draft, Scheduled or In
+  Progress): `loadRefurbishmentCompletion` (`load.ts`) reads the WIP by node, the item cost,
+  the open layers and children as `calculateCOGS` selects them, the on-hand (Average) and
+  the cap; `planRefurbishmentCompletion` (`plan.ts`, pure, tested) decides:
+
+  | Case | Effect |
+  |---|---|
+  | Abnormal rework, or Standard | Dr `materialVarianceAccount` / Cr WIP; the unit keeps its cost |
+  | FIFO / LIFO | the serial's own layer, else a split of the layer `calculateCOGS` takes next (its open children move with the unit); a `Revaluation` child of the WIP; Dr inventory / Cr WIP |
+  | Average | a `Revaluation` child (attached when the serial has a layer); `itemCost.unitCost` re-averaged over the on-hand |
+  | Cap (FIFO / LIFO) | over the cap: a negative child, Dr `inventoryAdjustmentVarianceAccount` / Cr inventory |
+
+  The cap is `serviceOrder.expectedSellingPrice`, else the item's oldest `itemUnitSalePrice`
+  when its sales unit is empty or the inventory unit and its currency is the base
+  currency; otherwise the completion skips the cap and warns. The journal has source type
+  `Service Order` (not pushed to external ledgers by default, `POSTING_POLICY`); the WIP
+  credit is split by node with the Project and Project Element dimensions. The serial goes
+  Available with a `Service` activity, and the order saves `capitalizedAmount`,
+  `writeDownAmount`, `completionJournalId` and `completionCostingMethod`
+  (`serviceOrder_refurbishment_check`: only a Refurbishment has amounts).
+- **One path**: the status route sends every Complete through `completeServiceOrder`
+  (`service.server.ts`). `syncServiceOrderStatus` refuses to complete a Refurbishment,
+  ignores a visit's Work complete? for it, and refuses to reopen a completed one.
+- **UI**: Complete opens `CompleteRefurbishmentModal`, which loads the preview from
+  `$id.complete.tsx` (`previewRefurbishmentCompletion`: the same reads without locks, the
+  same planner, no writes) and posts `status=Completed` to the status route. Properties
+  edit **Expected Selling Price** and **Abnormal Rework** until completion
+  (`updateServiceOrder` refuses them on other types and after completion).
+
+Pinned by `complete-service-order/plan.test.ts`, `complete-service-order.test.ts`,
+`lib/calculate-cogs.test.ts`, `post-picking/refurbishment-guard.test.ts` and
+`post-shipment/customer-assets.test.ts`.
+
 ## Customer assets
 
 - **At shipment:** `upsertShippedCustomerAssets` (`post-shipment/customer-assets.ts`) is
@@ -254,7 +306,10 @@ the anchor day), one service template with plan lines, a Scheduled order with th
 template's tree and a visit tomorrow, and a Draft order (tier 09, `seedServiceWork`).
 No charges are seeded. Satellite also has a To Receive RMA (`bus-repair`) whose one line
 returns SAT-1000-S013 with disposition Repair (`SalesReturnLineSpec.disposition`); the
-validator keeps a Repair line out of on-hand and refuses one on a Completed return. The wipe deletes `customerAssetComponent`, `serviceVisit` and
+validator keeps a Repair line out of on-hand and refuses one on a Completed return.
+Satellite also seeds a Draft Refurbishment on stock serial RW010-SN-0054
+(`ServiceOrderSpec` with `type: "Refurbishment"` and `serial`), which the seed puts On
+Hold. The wipe deletes `customerAssetComponent`, `serviceVisit` and
 `serviceOrder` before its FK-nulling pass (`serviceOrder_customer_check`).
 
 ## Known gaps
@@ -264,7 +319,12 @@ validator keeps a Repair line out of on-hand and refuses one on a Completed retu
   `document` row.
 - A component the factory built in has no `customerAssetComponent` row, so a part issued
   in its place does not remove it.
-- No browser verification of Phase A (plan Task 31) or Phase B (plan Task 13) yet.
+- No browser verification of Phase A (plan Task 31), Phase B (plan Task 13) or Phase C
+  (plan Task 11) yet.
+- The SQL backflush (`backflush_job_materials`) applies a layer's children in turn, so a
+  refurbished serial consumed by a backflush takes only its first child.
+- A completed refurbishment cannot be reopened, and a refurbishment never changes the
+  serial's item.
 - Repair needs a Serial-tracked item. A Batch or untracked unit cannot come back for
   repair through an RMA.
 - A repair the company cannot complete has no credit path: reverse the order's charges,

@@ -47,7 +47,22 @@ Key service functions (verified):
   shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
   layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
   Pinned by `lib/cost-layer-order.test.ts` and the database test
-  `lib/calculate-cogs.test.ts`. The valuation
+  `lib/calculate-cogs.test.ts`. **Children of a layer** (`appliesToCostLedgerId`,
+  `adjustment = true`: purchase price variance, a refurbishment's `Revaluation` and
+  write-down) are applied with their parent. On an unstamped layer the children cover
+  its units in turn (`createdAt` order, each only up to the quantity taken). On a layer
+  stamped for one serial every child belongs to that unit and is applied in full. The SQL
+  backflush (`backflush_job_materials`) still applies children in turn on every layer.
+  **Refurbishment** (`complete-service-order`, Field Service Phase C): a serial with no
+  layer of its own gets one by a **split** of the layer `calculateCOGS` takes next
+  (oldest unstamped under FIFO, newest under LIFO): 1 unit of quantity, remaining
+  quantity and cost moves to a new stamped layer, and the unit's share of the source's
+  open children moves with it (`planRefurbishmentCompletion`,
+  `complete-service-order/plan.ts`). No value changes and no journal posts; the WIP then
+  lands as a `Revaluation` child. **`get_inventory_valuation`** (migration
+  `20261010002941_valuation-child-rows.sql`) counts only parent rows as layers and adds each
+  open child's remaining cost to its parent; it counted an open child as a layer of its
+  own before. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
   **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +
