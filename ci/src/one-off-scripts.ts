@@ -170,12 +170,39 @@ export function oneOffScriptOutcome(
   return exitCode === ONE_OFF_SCRIPT_DEFERRED ? "deferred" : "failed";
 }
 
+/** One entry of the Management API's `GET /v1/projects/{ref}/config/database/pooler`. */
+export type SupavisorConfig = {
+  database_type: "PRIMARY" | "READ_REPLICA";
+  db_user: string;
+  db_host: string;
+  db_port: number;
+  db_name: string;
+};
+
+/**
+ * The primary database's Supavisor URL (`aws-0-<region>.pooler.supabase.com`),
+ * which resolves to IPv4. The workspace's own pooler URL is the project's
+ * dedicated pooler on `db.<ref>.supabase.co`, which resolves to IPv6 only:
+ * the deployed app reaches it, a GitHub-hosted runner (no IPv6) gets
+ * ENETUNREACH. Null when the project lists no primary pooler.
+ */
+export function supavisorUrl(
+  configs: SupavisorConfig[],
+  password: string
+): string | null {
+  const primary = configs.find((c) => c.database_type === "PRIMARY");
+  if (!primary) return null;
+  const user = encodeURIComponent(primary.db_user);
+  return `postgresql://${user}:${encodeURIComponent(password)}@${primary.db_host}:${primary.db_port}/${primary.db_name}`;
+}
+
 /**
  * The environment a one-off script runs with: the workspace's, without the
- * database password (only `supabase db push` uses it), and the Postgres URL
- * the app gets (deploy.ts), else a self-hosted connection string. A
- * workspace with neither passes no `SUPABASE_DB_URL`, and a script that
- * needs one defers (`ONE_OFF_SCRIPT_DEFERRED`).
+ * database password (only `supabase db push` uses it), and a Postgres URL the
+ * runner can reach — the project's Supavisor URL (`supavisorUrl`), else the
+ * pooler URL the app gets (deploy.ts), else a self-hosted connection string.
+ * A workspace with none passes no `SUPABASE_DB_URL`, and a script that needs
+ * one defers (`ONE_OFF_SCRIPT_DEFERRED`).
  */
 export function oneOffScriptEnv(
   env: Record<string, string | undefined>,

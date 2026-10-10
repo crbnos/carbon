@@ -33,9 +33,13 @@ Nobody runs these by hand in production. Merging is what ships them.
 
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, with the rest of the
   workspace's Supabase settings.
-- `SUPABASE_DB_URL`: the workspace's pooler URL, as the deployed app gets it,
-  else its connection string when that starts with `postgresql://`. A workspace
-  with neither passes no `SUPABASE_DB_URL`.
+- `SUPABASE_DB_URL`: for a Supabase-hosted workspace, the project's Supavisor
+  URL (`aws-0-<region>.pooler.supabase.com`), read from the Management API with
+  the workspace's access token and password. The workspace's own pooler URL is
+  on `db.<ref>.supabase.co`, which resolves to IPv6 only, and GitHub-hosted
+  runners have no IPv6 (`ENETUNREACH`). Failing that, the workspace's pooler
+  URL, as the deployed app gets it, else its connection string when that starts
+  with `postgresql://`. A workspace with none passes no `SUPABASE_DB_URL`.
 - **No database password.** The runner removes `SUPABASE_DB_PASSWORD`; only
   `supabase db push` uses it. A script never needs it and must not read it.
 

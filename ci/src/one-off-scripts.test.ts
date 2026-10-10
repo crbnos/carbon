@@ -14,7 +14,8 @@ import {
   ONE_OFF_SCRIPT_DEFERRED,
   oneOffScriptEnv,
   oneOffScriptOutcome,
-  selectPendingScripts
+  selectPendingScripts,
+  supavisorUrl
 } from "./one-off-scripts";
 
 function withFiles<T>(names: string[], fn: (dir: string) => T): T {
@@ -157,6 +158,29 @@ test("passes a script the Postgres URL and not the database password", () => {
     oneOffScriptEnv(env, { poolerUrl: null, connectionString: "db.example" })
       .SUPABASE_DB_URL,
     undefined
+  );
+});
+
+test("builds the IPv4 Supavisor URL of the primary database", () => {
+  const pooler = {
+    db_user: "postgres.abcdef",
+    db_host: "aws-0-us-east-1.pooler.supabase.com",
+    db_port: 6543,
+    db_name: "postgres"
+  };
+  assert.equal(
+    supavisorUrl(
+      [
+        { ...pooler, database_type: "READ_REPLICA", db_host: "replica" },
+        { ...pooler, database_type: "PRIMARY" }
+      ],
+      "p@ss/word"
+    ),
+    "postgresql://postgres.abcdef:p%40ss%2Fword@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+  );
+  assert.equal(
+    supavisorUrl([{ ...pooler, database_type: "READ_REPLICA" }], "x"),
+    null
   );
 });
 
