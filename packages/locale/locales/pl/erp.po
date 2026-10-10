@@ -5068,6 +5068,9 @@ msgstr ""
 msgid "Common stock"
 msgstr ""
 
+msgid "Common stock for projects"
+msgstr ""
+
 msgid "Community support"
 msgstr "Wsparcie społeczności"
 
@@ -12439,6 +12442,9 @@ msgstr "Mniej nadgodzin"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "Umożliwij użytkownikom logowanie się za pośrednictwem dostawcy tożsamości z SAML."
+
+msgid "Let projects with project stock use spare common stock of this item at this location"
+msgstr ""
 
 msgid "Let's Build"
 msgstr "Zbudujmy"

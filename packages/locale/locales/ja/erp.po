@@ -5068,6 +5068,9 @@ msgstr ""
 msgid "Common stock"
 msgstr ""
 
+msgid "Common stock for projects"
+msgstr ""
+
 msgid "Community support"
 msgstr "コミュニティサポート"
 
@@ -12439,6 +12442,9 @@ msgstr "残業を減らす"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサインインできるようにします。"
+
+msgid "Let projects with project stock use spare common stock of this item at this location"
+msgstr ""
 
 msgid "Let's Build"
 msgstr "ビルドしましょう"

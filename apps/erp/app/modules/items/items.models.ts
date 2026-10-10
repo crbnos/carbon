@@ -650,7 +650,10 @@ export const itemPlanningValidator = z
     planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
     // the ownership ladder's leaf override (spec §P1.3): this item at this
     // location; empty = inherit item group → location → company default
-    responsibleEmployee: zfd.text(z.string().optional())
+    responsibleEmployee: zfd.text(z.string().optional()),
+    // Projects Phase 2b: whether a project segment may draw this item's
+    // common true surplus at this location (MRP emits a Transfer action).
+    allowCommonSupplyForProjects: zfd.checkbox()
     // critical: zfd.checkbox(),
   })
   .refine(

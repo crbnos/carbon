@@ -5068,6 +5068,9 @@ msgstr ""
 msgid "Common stock"
 msgstr ""
 
+msgid "Common stock for projects"
+msgstr ""
+
 msgid "Community support"
 msgstr "सामुदायिक समर्थन"
 
@@ -12439,6 +12442,9 @@ msgstr "कम ओवरटाइम"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "अपने सदस्यों को SAML के साथ अपने पहचान प्रदाता के माध्यम से साइन इन करने दें।"
+
+msgid "Let projects with project stock use spare common stock of this item at this location"
+msgstr ""
 
 msgid "Let's Build"
 msgstr "चलिए निर्माण करें"

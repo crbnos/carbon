@@ -283,7 +283,8 @@ project stock gets output identical to before, row for row.
      `allocateCommonSurplus` in period then segment order.
   4. What is left is new supply in the segment.
   A draw is skipped for a location and item in `commonSurplusBlocked`
-  (`itemPlanning.allowCommonSupplyForProjects = false`; no row allows it).
+  (`itemPlanning.allowCommonSupplyForProjects = false`; no row allows it). The
+  flag is the **Common stock for projects** switch on `ItemPlanningForm`.
   `horizonPeriods` limits how far a surplus looks ahead. `planCompany` returns
   the draws as `commonSurplusDraws`.
 - **Common only.** Forecast consumption, demand projections, the Phase 4.5

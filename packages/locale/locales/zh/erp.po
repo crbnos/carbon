@@ -5068,6 +5068,9 @@ msgstr ""
 msgid "Common stock"
 msgstr ""
 
+msgid "Common stock for projects"
+msgstr ""
+
 msgid "Community support"
 msgstr "社区支持"
 
@@ -12439,6 +12442,9 @@ msgstr "较少加班"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "允许成员通过您的身份提供商使用 SAML 登录。"
+
+msgid "Let projects with project stock use spare common stock of this item at this location"
+msgstr ""
 
 msgid "Let's Build"
 msgstr "让我们构建"
