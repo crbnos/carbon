@@ -36,7 +36,7 @@ These correct or add to the spec. Task 10 records them there.
 ## Progress
 
 - [x] Task 1: Add the completion columns
-- [ ] Task 2: Fix the layer count in `get_inventory_valuation`
+- [x] Task 2: Fix the layer count in `get_inventory_valuation`
 - [ ] Task 3: Add the pure completion planner
 - [ ] Task 4: Add `complete-service-order`
 - [ ] Task 5: Record refurbishment parts in the serial's build history
@@ -371,3 +371,10 @@ ls .ai/playbooks/field-service-phase-c.md
 ```
 
 **Out of scope:** Phase D.
+
+## Execution notes
+
+- Prerequisite check: the Phase A and B artifacts this plan names exist (`insertServiceOrder` in `lib/service-orders.ts`, `resolveCoverage` with Capitalized for a Refurbishment, the By Coverage posting).
+- Task 1: the migration also indexes `completionJournalId` (partial, `IS NOT NULL`); every FK column has an index. `journal` has a single-column primary key, so the FK is single-column. `pnpm db:migrate` applied it and regenerated the types and swagger; the workflow catalog did not change. `pnpm db:check:backups` fails only on `supplierPartPrice.unitPrice` (GitHub `main` changed that column after this branch was cut), so the commit skips that check with `CARBON_SKIP_BACKUP_CHECK=1`. The new columns are nullable, so they block no restore.
+- Task 2: the plan's line numbers had drifted; the open-layer CTE is the `layers` lateral of `carrying`. No later redefinition exists (Projects Phase 2a has not run). The new function adds `SET search_path = public, extensions`: `20261003224019` set it on every function with `ALTER FUNCTION`, and a `CREATE OR REPLACE` without it would drop it. The only writer of `adjustment = true` rows is `post-purchase-invoice`, and each of its rows names a parent, so the filter is the one `calculateCOGS` uses. The Projects Phase 2a plan now points its `get_inventory_valuation` step at this migration, so its fork keeps the fix.
+- Task 2 Verify (rolled-back transaction against the local database): a FIFO item with one layer of 10 at 1,000.00 and one open child of 10 units at 20.00. The new function gives a unit cost of 102.00. The old formula over the same rows gives 52.00 (it averaged over 20 units). With the parent and the child half consumed, the unit cost stays 102.00. With no child it is 100.00, as before. `rpc-privileges.test.sql` passes.

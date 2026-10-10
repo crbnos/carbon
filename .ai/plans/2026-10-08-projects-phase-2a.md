@@ -611,7 +611,7 @@ pnpm --filter @carbon/server-functions test -- post-project-issue
    - an id means that project.
 
    Filter all 3 arms (snapshot, tracked rows, untracked rows after `v_cutoff`) and the storage-unit CTE. Keep one row per item.
-3. Redefine `get_inventory_valuation` (latest `20260925121735…sql:1488–1612`):
+3. Redefine `get_inventory_valuation` (latest `20261010002941_valuation-child-rows.sql`, which Field Service Phase C Task 2 forked from `20260925121735…sql:1488–1612`; keep its child-row fix):
    1. Add `"projectId"` to its RETURNS TABLE. Because this is a signature change, `DROP FUNCTION` first.
    2. Add `"projectId"` to each arm and the GROUP BY.
    3. Group `carrying` by `(itemId, projectId)`.
