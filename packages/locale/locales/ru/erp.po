@@ -14771,6 +14771,9 @@ msgstr "Серийные номера ещё не выбраны."
 msgid "No service order has fitted a part to this unit."
 msgstr ""
 
+msgid "No service order names this contract."
+msgstr ""
+
 msgid "No service templates yet"
 msgstr ""
 
@@ -22715,6 +22718,9 @@ msgid "The serial gets its own cost layer and leaves stock at its new unit cost.
 msgstr ""
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
+msgstr ""
+
+msgid "The service orders this contract covers."
 msgstr ""
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."

@@ -409,6 +409,25 @@ export async function getServiceOrderFormOptions(
 }
 
 /**
+ * The service orders a customer contract covers (`customerContractId`), newest
+ * first: status, subject serial, site and dates. The contract page lists them.
+ */
+export async function getContractServiceOrders(
+  client: Client,
+  customerContractId: string,
+  companyId: string
+) {
+  return client
+    .from("serviceOrder")
+    .select(
+      "id, serviceOrderId, type, status, projectId, customerAssetId, createdAt, completedAt, trackedEntity:trackedEntity!serviceOrder_trackedEntityId_fkey(readableId), customerLocation:customerLocation!serviceOrder_customerLocationId_fkey(name)"
+    )
+    .eq("customerContractId", customerContractId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+/**
  * The posted cost of each order's work, keyed by project id: the sum of its
  * project's ledger amounts (a reversal nets its original out). One query
  * for every project.

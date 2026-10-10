@@ -23,6 +23,8 @@ import {
   LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
+  LuFileText,
+  LuHardHat,
   LuListChecks,
   LuPanelLeft,
   LuPencilLine,
@@ -31,6 +33,7 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import { usePanels } from "~/components/Layout";
+import DetailTopbar from "~/components/Layout/Navigation/DetailsTopbar";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCompanyToday, useDateFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -72,6 +75,23 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   // A cancellation can be reverted until its end date has passed.
   const canRevertCancellation =
     isActive && isCancelled && !!contract.endDate && contract.endDate >= today;
+
+  // The route tabs: the contract's Service Orders need service_view, and with
+  // only Details there is nothing to switch between.
+  const navigation = permissions.can("view", "service")
+    ? [
+        {
+          name: t`Details`,
+          to: path.to.contractDetails(id),
+          icon: LuFileText
+        },
+        {
+          name: t`Service Orders`,
+          to: path.to.contractServiceOrders(id),
+          icon: LuHardHat
+        }
+      ]
+    : [];
 
   const open = (next: PendingAction) => {
     setAction(next);
@@ -148,6 +168,7 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
             )}
           </HStack>
           <HStack>
+            {navigation.length > 1 && <DetailTopbar links={navigation} />}
             {canRevertCancellation && (
               <Button
                 variant="secondary"

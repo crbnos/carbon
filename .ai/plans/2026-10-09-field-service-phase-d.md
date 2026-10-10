@@ -25,7 +25,7 @@ A contract project (for example *Acme maintenance 2027*) must see the cost of th
 - [x] Task 2: Show service orders on the Costs tab
 - [x] Task 3: Keep the parent link in step with the coverage contract
 - [x] Task 4: Refuse Contract coverage on a closed parent
-- [ ] Task 5: List service orders on the contract page
+- [x] Task 5: List service orders on the contract page
 - [ ] Task 6: Extend the demo datasets
 - [ ] Task 7: Update the rules, docs and specs
 - [ ] Task 8: Verify in the browser
@@ -270,3 +270,6 @@ ls .ai/playbooks/field-service-phase-d.md
 - Task 3 (deviation): the coverage contract was a Draft-only field. It is now editable on any open order, because the spec's Phase D criterion changes the contract of an order that already has charges. `updateServiceOrder` no longer saves `customerContractId` at all, so the parent link cannot drift through it. Contact and site stay Draft-only.
 - Task 3: the local database has no open order of a customer with a contract, so the function was checked by typecheck only. Task 8 covers it in the browser.
 - Task 4: the parent's status needed no new query: `loadProjectPostingContexts` already loads the parent's project row into `ctx.parent`. The message names the parent's identifier, else its name. A reversal at Contract coverage is refused too while the parent is Closed. The new test also checks that a Billable or Warranty charge on the same order still posts. `pnpm --filter @carbon/server-functions test -- project-posting` runs the whole suite: the first run had one shared-database race, and a second run passed all 483.
+- Task 5 (deviation): the contract page had no tabs. The header now shows route tabs (`DetailTopbar`, as the service order header does): **Details** and **Service Orders**, only for a user with `service_view`. The new route is `contract+/$id.service-orders.tsx` (`path.to.contractServiceOrders`), and its loader needs `view: "service"`.
+- Task 5 (deviation): `ContractServiceOrders` is a card with the `Table` primitive, like the other cards of the contract page, not `ServiceOrdersTable`. That table is a full-page list: saved views on the `serviceOrder` table, URL filters and pages, and a New button. It has no cost columns either.
+- Task 5: the loader reads the contract's `projectId` and the orders (`getContractServiceOrders`, `service.service.ts`) together, then calls `get_child_service_project_costs` once on the contract's project. A contract with no project has no roll-up, so the loader reads only the posted cost (`getServiceOrderCosts`, one ledger query), and Billed shows "—". An order whose project names another parent (the contract's project changed after the order was created) shows "—" for both.

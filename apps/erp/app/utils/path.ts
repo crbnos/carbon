@@ -623,6 +623,8 @@ export const path = {
       generatePath(`${x}/contract/${id}/revert-cancellation`),
     contractSchedule: (id: string) =>
       generatePath(`${x}/contract/${id}/schedule`),
+    contractServiceOrders: (id: string) =>
+      generatePath(`${x}/contract/${id}/service-orders`),
     contractSetup: (
       id: string,
       step: "details" | "products" | "invoicing" | "revenue" | "review"
