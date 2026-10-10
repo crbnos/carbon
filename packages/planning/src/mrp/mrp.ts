@@ -259,27 +259,67 @@ export async function runMrp(
     // (a project with project stock, else common), the rule of the SQL
     // project_planning_segment. The projects with project stock are read
     // once for that mapping.
-    const [inventoryRows, stockedProjects, commonSupplyBlocked] =
-      await Promise.all([
-        db
-          .selectFrom("itemStockQuantities")
-          .select(["itemId", "locationId", "projectId", "quantityOnHand"])
-          .where("companyId", "=", companyId)
-          .execute(),
-        db
-          .selectFrom("project")
-          .select(["id"])
-          .where("companyId", "=", companyId)
-          .where("projectStock", "=", true)
-          .execute(),
-        // Items whose project segments may not draw common stock.
-        db
-          .selectFrom("itemPlanning")
-          .select(["itemId", "locationId"])
-          .where("companyId", "=", companyId)
-          .where("allowCommonSupplyForProjects", "=", false)
-          .execute()
-      ]);
+    const [
+      inventoryRows,
+      stockedProjects,
+      commonSupplyBlocked,
+      planningGroupRows,
+      groupMemberRows
+    ] = await Promise.all([
+      db
+        .selectFrom("itemStockQuantities")
+        .select(["itemId", "locationId", "projectId", "quantityOnHand"])
+        .where("companyId", "=", companyId)
+        .execute(),
+      db
+        .selectFrom("project")
+        .select(["id"])
+        .where("companyId", "=", companyId)
+        .where("projectStock", "=", true)
+        .execute(),
+      // Items whose project segments may not draw common stock.
+      db
+        .selectFrom("itemPlanning")
+        .select(["itemId", "locationId"])
+        .where("companyId", "=", companyId)
+        .where("allowCommonSupplyForProjects", "=", false)
+        .execute(),
+      // Projects Phase 3: the planning groups and their members. A member
+      // has project stock (project_planningGroup_stock_check).
+      db
+        .selectFrom("planningGroup")
+        .select(["id", "active"])
+        .where("companyId", "=", companyId)
+        .execute(),
+      db
+        .selectFrom("project")
+        .select(["id", "planningGroupId"])
+        .where("companyId", "=", companyId)
+        .where("planningGroupId", "is not", null)
+        .where("projectStock", "=", true)
+        .execute()
+    ]);
+
+    // Planning groups are commercial (PLANNING_GROUPS). Without the feature
+    // the run degrades: members net in their own segments and no group
+    // segment exists. The plan is read only when the company has a group.
+    const planningGroupsEnabled =
+      planningGroupRows.length > 0 &&
+      (await companyHasPlanningGroups(client, companyId));
+    const activeGroupIds = new Set(
+      planningGroupRows.filter((group) => group.active).map((group) => group.id)
+    );
+    const planningGroups = planningGroupsEnabled
+      ? [...activeGroupIds].map((id) => ({
+          id,
+          memberProjectIds: groupMemberRows
+            .filter((project) => project.planningGroupId === id)
+            .map((project) => project.id)
+        }))
+      : [];
+    const ungroupedPlanningGroupIds = planningGroupsEnabled
+      ? []
+      : planningGroupRows.map((group) => group.id);
 
     // Bulk-load all BOMs: use activeMakeMethods view (returns one method per item,
     // prioritizing 'Active' status then highest version — same logic as get_method_tree)
@@ -396,6 +436,8 @@ export async function runMrp(
       projectMaterialLines: projectMaterialLines.data ?? [],
       projectBorrows: projectBorrows.data ?? [],
       stockedProjectIds: stockedProjects.map((project) => project.id),
+      planningGroups,
+      ungroupedPlanningGroupIds,
       commonSupplyBlocked,
       items: allItems,
       replenishments: allReplenishments,
@@ -576,7 +618,8 @@ export async function runMrp(
       await generatePlanningActions(client, db, {
         companyId,
         userId,
-        commonSurplusDraws
+        commonSurplusDraws,
+        planningGroups
       });
 
       return { success: true };
@@ -593,6 +636,30 @@ export async function runMrp(
 // ──────────────────────────────────────────────────────────────
 // Helper functions
 // ──────────────────────────────────────────────────────────────
+
+/**
+ * Whether the company has the commercial PLANNING_GROUPS feature. The check
+ * lives in `@carbon/ee`; it is imported only for a company that has a
+ * planning group, so every other run loads no commercial code. A failed
+ * check degrades to "no", as `companyHasFeature` callers do.
+ */
+async function companyHasPlanningGroups(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<boolean> {
+  try {
+    const { companyHasFeature } = await import("@carbon/ee/plan.server");
+    return await companyHasFeature(client, companyId, {
+      feature: "PLANNING_GROUPS"
+    });
+  } catch (err) {
+    logger.warn("could not read the planning groups feature", {
+      companyId,
+      error: String(err)
+    });
+    return false;
+  }
+}
 
 function getStartAndEndDates(
   today: CalendarDate,

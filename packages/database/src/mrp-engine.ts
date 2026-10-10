@@ -38,6 +38,12 @@ type DemandContributorBase = {
   // The discontinued part this demand was redirected from, if any.
   redirectedFromItemId?: string;
   perAssemblyQuantity?: number;
+  // Projects Phase 3: the member project and element a group segment's
+  // demand is for, and the date it is needed (YYYY-MM-DD). A child
+  // contributor copies them from its parent contributor.
+  projectId?: string;
+  projectElementId?: string;
+  needDate?: string;
 };
 
 export type DemandContributor =
@@ -56,6 +62,11 @@ export type DemandContributor =
   | (DemandContributorBase & {
       sourceType: "Project Material";
       projectElementMaterialId: string;
+    })
+  | (DemandContributorBase & {
+      // An open borrow: demand on the borrower. It writes no lineage row.
+      sourceType: "Project Borrow";
+      projectBorrowId: string;
     });
 
 export type BomExplosionInput = {
@@ -82,6 +93,13 @@ export type BomExplosionInput = {
    * every segment explodes through `bomByItem`.
    */
   segmentBomByItem?: Map<string, BomChild[]>;
+  /**
+   * Projects Phase 3: the planning group segments. In a group segment a
+   * parent's contributors are scaled to its net requirement before they pass
+   * to its children, so the children's contributors attribute only what is
+   * still short. Absent: no segment is a group.
+   */
+  groupSegments?: ReadonlySet<string>;
 };
 
 export type BomExplosionOutput = {
@@ -261,6 +279,7 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
   const commonSurplusBlocked = input.commonSurplusBlocked ?? new Set<string>();
   const horizonPeriods = input.horizonPeriods ?? periods.length;
   const commonSurplusDraws = new Map<string, number>();
+  const groupSegments = input.groupSegments ?? new Set<string>();
 
   // The pre-swap BOM's edges level too: a project segment explodes through
   // it, so an item it names must be planned after every parent there.
@@ -440,10 +459,16 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
         ];
         if (parentContributors.length > 0) {
           const childContributors = demandContributors.get(childKey) ?? [];
+          // Contributors are gross. In a group segment, each member keeps
+          // its share of the net requirement only: on-hand and supply have
+          // covered the rest. Other segments keep their gross contributors.
+          const netShare = groupSegments.has(segmentId)
+            ? netRequirement / grossQty
+            : 1;
           for (const pc of parentContributors) {
             childContributors.push({
               ...pc,
-              quantity: pc.quantity * child.quantity,
+              quantity: pc.quantity * netShare * child.quantity,
               // A substituted child carries the old part it replaced so the
               // demand can be shown as "redirected from <old part>".
               redirectedFromItemId:

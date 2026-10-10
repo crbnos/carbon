@@ -80,11 +80,18 @@ export type PlanCompanyInputs = {
     | "quantityPerParent"
     | "quantityToIssue"
   > &
+    Partial<
+      Pick<
+        Views["openJobMaterialLines"]["Row"],
+        "ownerProjectId" | "projectElementId"
+      >
+    > &
     Segmented)[];
   productionLines: (Pick<
     Views["openProductionOrders"]["Row"],
     "deadlineType" | "dueDate" | "itemId" | "locationId" | "quantityToReceive"
   > &
+    Partial<Pick<Views["openProductionOrders"]["Row"], "ownerProjectId">> &
     Segmented)[];
   purchaseOrderLines: (Pick<
     Views["openPurchaseOrderLines"]["Row"],
@@ -96,9 +103,10 @@ export type PlanCompanyInputs = {
     | "promisedDate"
     | "quantityToReceive"
   > &
+    Partial<Pick<Views["openPurchaseOrderLines"]["Row"], "ownerProjectId">> &
     Segmented)[];
   /** Open plan-line materials (`openProjectMaterialLines`). */
-  projectMaterialLines?: Pick<
+  projectMaterialLines?: (Pick<
     Views["openProjectMaterialLines"]["Row"],
     | "id"
     | "itemId"
@@ -106,9 +114,15 @@ export type PlanCompanyInputs = {
     | "planningSegmentId"
     | "quantity"
     | "requiredDate"
-  >[];
+  > &
+    Partial<
+      Pick<
+        Views["openProjectMaterialLines"]["Row"],
+        "projectElementId" | "projectId"
+      >
+    >)[];
   /** Open borrows between projects (`openProjectBorrows`). */
-  projectBorrows?: Pick<
+  projectBorrows?: (Pick<
     Views["openProjectBorrows"]["Row"],
     | "borrowerSegmentId"
     | "id"
@@ -117,9 +131,27 @@ export type PlanCompanyInputs = {
     | "locationId"
     | "paybackDueDate"
     | "quantity"
-  >[];
+  > &
+    Partial<
+      Pick<
+        Views["openProjectBorrows"]["Row"],
+        "borrowerProjectId" | "lenderProjectId"
+      >
+    >)[];
   /** The ids of the company's projects with project stock. */
   stockedProjectIds?: string[];
+  /**
+   * Projects Phase 3: the company's active planning groups and their member
+   * projects (with project stock). Passed only when the company has the
+   * `PLANNING_GROUPS` feature. A member's stock and demand net in the group.
+   */
+  planningGroups?: { id: string; memberProjectIds: string[] }[];
+  /**
+   * Group ids whose rows the views put in a group segment while the company
+   * lacks `PLANNING_GROUPS`. Their demand nets in each member's own segment;
+   * grouped supply (no owner project) nets as common supply.
+   */
+  ungroupedPlanningGroupIds?: string[];
   /**
    * The items and locations whose `itemPlanning` turns
    * `allowCommonSupplyForProjects` off: their project segments never draw
@@ -178,11 +210,27 @@ type Segmented = { planningSegmentId?: string | null };
  */
 export function planningSegmentOf(
   projectId: string | null | undefined,
-  stockedProjectIds: ReadonlySet<string>
+  stockedProjectIds: ReadonlySet<string>,
+  // Projects Phase 3: project id -> its active planning group.
+  groupByProject?: ReadonlyMap<string, string>
 ): string {
-  return projectId && stockedProjectIds.has(projectId)
-    ? projectId
-    : COMMON_SEGMENT;
+  if (!projectId) return COMMON_SEGMENT;
+  const group = groupByProject?.get(projectId);
+  if (group) return group;
+  return stockedProjectIds.has(projectId) ? projectId : COMMON_SEGMENT;
+}
+
+/** Project id -> planning group id, from `PlanCompanyInputs.planningGroups`. */
+export function groupByProjectOf(
+  planningGroups: { id: string; memberProjectIds: string[] }[] | undefined
+): Map<string, string> {
+  const groupByProject = new Map<string, string>();
+  for (const group of planningGroups ?? []) {
+    for (const projectId of group.memberProjectIds) {
+      groupByProject.set(projectId, group.id);
+    }
+  }
+  return groupByProject;
 }
 
 /**
@@ -283,13 +331,45 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
   // On-hand per segment: a stripe of a project with project stock is that
   // project's segment; common stock (and any other stripe) is ''.
   const stockedProjectIds = new Set(input.stockedProjectIds ?? []);
+  // Projects Phase 3: a member's stock nets in its planning group.
+  const groupByProject = groupByProjectOf(input.planningGroups);
+  const groupSegments = new Set(
+    (input.planningGroups ?? []).map((group) => group.id)
+  );
+  // Without PLANNING_GROUPS, a row the views put in a group segment nets in
+  // its owner project's own segment, or as common when it has no owner.
+  const ungroupedSegments = new Set(input.ungroupedPlanningGroupIds ?? []);
+  const segmentOf = (
+    viewSegment: string | null | undefined,
+    ownerProjectId: string | null | undefined
+  ) => {
+    const segment = viewSegment ?? COMMON_SEGMENT;
+    return ungroupedSegments.has(segment)
+      ? planningSegmentOf(ownerProjectId, stockedProjectIds)
+      : segment;
+  };
+  // A group segment's contributor names its member project, element and
+  // need date, so the pegging can attribute the group's supply.
+  const memberAttribution = (
+    segmentId: string,
+    projectId: string | null | undefined,
+    projectElementId: string | null | undefined,
+    needDate: string
+  ) =>
+    groupSegments.has(segmentId)
+      ? {
+          ...(projectId ? { projectId } : {}),
+          ...(projectElementId ? { projectElementId } : {}),
+          needDate
+        }
+      : {};
   const baseInventoryByLocationItem = new Map<string, number>();
   for (const row of input.onHand) {
     if (row.itemId && row.locationId) {
       const key = makeLocationItemKey(
         row.locationId,
         row.itemId,
-        planningSegmentOf(row.projectId, stockedProjectIds)
+        planningSegmentOf(row.projectId, stockedProjectIds, groupByProject)
       );
       baseInventoryByLocationItem.set(
         key,
@@ -350,7 +430,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
       line.locationId ?? "",
       period.id ?? "",
       line.itemId,
-      line.planningSegmentId ?? COMMON_SEGMENT
+      segmentOf(line.planningSegmentId, line.ownerProjectId)
     );
     jobSupplyByLocationPeriodItem.set(
       periodKey,
@@ -379,7 +459,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
       line.locationId ?? "",
       period.id ?? "",
       line.itemId,
-      line.planningSegmentId ?? COMMON_SEGMENT
+      segmentOf(line.planningSegmentId, line.ownerProjectId)
     );
     poSupplyByLocationPeriodItem.set(
       periodKey,
@@ -400,7 +480,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
       borrow.locationId,
       period.id,
       borrow.itemId,
-      borrow.lenderSegmentId ?? COMMON_SEGMENT
+      segmentOf(borrow.lenderSegmentId, borrow.lenderProjectId)
     );
     borrowSupplyByLocationPeriodItem.set(
       periodKey,
@@ -520,7 +600,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     // A null locationId would write demandForecast/demandActual with
     // locationId="" and violate their locationId FK — skip (see above).
     if (!line.itemId || !line.quantityToIssue || !line.locationId) continue;
-    const segmentId = line.planningSegmentId ?? COMMON_SEGMENT;
+    const segmentId = segmentOf(line.planningSegmentId, line.ownerProjectId);
 
     const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
     const requiredDate = dueDate.add({ days: -(line.leadTime ?? 7) });
@@ -572,7 +652,14 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
         parentItemId: line.itemId,
         quantity: line.quantityToIssue,
         perAssemblyQuantity: Number(line.quantityPerParent) || undefined,
-        ...(segmentId === COMMON_SEGMENT ? {} : { segmentId })
+        ...(segmentId === COMMON_SEGMENT ? {} : { segmentId }),
+        // A grouped job has no project: its pegs split this demand later.
+        ...memberAttribution(
+          segmentId,
+          line.ownerProjectId,
+          line.projectElementId,
+          requiredDate.toString()
+        )
       });
       topLevelContributors.set(key, contributors);
     }
@@ -584,7 +671,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     if (!line.id || !line.itemId || !line.locationId || !line.quantity)
       continue;
     if (line.quantity <= 0) continue;
-    const segmentId = line.planningSegmentId ?? COMMON_SEGMENT;
+    const segmentId = segmentOf(line.planningSegmentId, line.projectId);
     const requiredDate = line.requiredDate
       ? parseDate(line.requiredDate)
       : today;
@@ -612,22 +699,48 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
       projectElementMaterialId: line.id,
       parentItemId: line.itemId,
       quantity: line.quantity,
-      ...(segmentId === COMMON_SEGMENT ? {} : { segmentId })
+      ...(segmentId === COMMON_SEGMENT ? {} : { segmentId }),
+      ...memberAttribution(
+        segmentId,
+        line.projectId,
+        line.projectElementId,
+        requiredDate.toString()
+      )
     });
     topLevelContributors.set(key, contributors);
   }
 
   // An open borrow is firm demand on the borrower: it pays the lender back
-  // on the payback due date. It has no lineage source type, so no
-  // contributor.
+  // on the payback due date. It has no lineage source type: only a group
+  // segment gets a contributor, for the pegging, and it writes no lineage row.
   for (const borrow of input.projectBorrows ?? []) {
     if (!borrow.itemId || !borrow.locationId || !borrow.quantity) continue;
     if (borrow.quantity <= 0) continue;
     const period = borrowPeriod(borrow.paybackDueDate, today, periods);
     if (!period) continue;
-    const segmentId = borrow.borrowerSegmentId ?? COMMON_SEGMENT;
+    const segmentId = segmentOf(
+      borrow.borrowerSegmentId,
+      borrow.borrowerProjectId
+    );
     const key = makeKey(borrow.locationId, period.id, borrow.itemId, segmentId);
     grossDemand.set(key, (grossDemand.get(key) ?? 0) + borrow.quantity);
+    if (groupSegments.has(segmentId) && borrow.id) {
+      const contributors = topLevelContributors.get(key) ?? [];
+      contributors.push({
+        sourceType: "Project Borrow",
+        projectBorrowId: borrow.id,
+        parentItemId: borrow.itemId,
+        quantity: borrow.quantity,
+        segmentId,
+        ...memberAttribution(
+          segmentId,
+          borrow.borrowerProjectId,
+          null,
+          borrow.paybackDueDate ?? today.toString()
+        )
+      });
+      topLevelContributors.set(key, contributors);
+    }
     const actualKey = makeActualKey(
       borrow.itemId,
       borrow.locationId,
@@ -929,7 +1042,8 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     ),
     // A surplus looks over the whole MRP window.
     horizonPeriods: periods.length,
-    segmentBomByItem
+    segmentBomByItem,
+    groupSegments
   });
 
   // demandForecast output, keyed by makeKey(location, period, item, segment)

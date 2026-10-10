@@ -137,6 +137,77 @@ it("explodeBom explodes a parent's demand in segment prj_1 into prj_1 only", () 
   expect(grossDemand.has(makeKey("loc", "p1", "child"))).toBe(false);
 });
 
+it("explodeBom scales a group segment's contributors to the net requirement", () => {
+  // Projects Phase 3: a grouped Make parent needs 30 (members P-101 20 and
+  // P-102 10) and the group holds 6. The child carries the net 24 split
+  // 16 / 8 by member, with each member's element and need date.
+  const periods = [{ id: "p1" }, { id: "p2" }];
+  const parentKey = makeKey("loc", "p2", "parent", "plg_1");
+  const { demandContributors } = explodeBom({
+    grossDemand: new Map([[parentKey, 30]]),
+    bomByItem: new Map<string, BomChild[]>([
+      [
+        "parent",
+        [{ itemId: "child", quantity: 1, methodType: "Pull from Inventory" }]
+      ]
+    ]),
+    replenishmentSystemByItem: new Map([
+      ["parent", "Make"],
+      ["child", "Buy"]
+    ]),
+    leadTimeByItem: new Map([["child", 7]]),
+    periods,
+    onHandByLocationItem: new Map([
+      [makeLocationItemKey("loc", "parent", "plg_1"), 6]
+    ]),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map([
+      [
+        parentKey,
+        [
+          {
+            sourceType: "Project Material",
+            projectElementMaterialId: "pem_1",
+            parentItemId: "parent",
+            quantity: 20,
+            segmentId: "plg_1",
+            projectId: "P-101",
+            projectElementId: "el_1",
+            needDate: "2026-10-20"
+          },
+          {
+            sourceType: "Project Material",
+            projectElementMaterialId: "pem_2",
+            parentItemId: "parent",
+            quantity: 10,
+            segmentId: "plg_1",
+            projectId: "P-102",
+            projectElementId: "el_2",
+            needDate: "2026-10-21"
+          }
+        ]
+      ]
+    ]),
+    commonSurplusBlocked: new Set([makeLocationItemKey("loc", "parent")]),
+    groupSegments: new Set(["plg_1"])
+  });
+
+  const children = demandContributors.get(
+    makeKey("loc", "p1", "child", "plg_1")
+  );
+  expect(
+    children?.map((c) => [
+      c.projectId,
+      c.projectElementId,
+      c.needDate,
+      c.quantity
+    ])
+  ).toEqual([
+    ["P-101", "el_1", "2026-10-20", 16],
+    ["P-102", "el_2", "2026-10-21", 8]
+  ]);
+});
+
 it("computeLowLevelCodes handles hyphenated ids and shared subassemblies", () => {
   const bomByItem = new Map<string, BomChild[]>([
     [

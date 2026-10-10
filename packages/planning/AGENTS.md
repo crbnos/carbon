@@ -25,7 +25,10 @@ to plan materials.
 ## Never
 
 - Never add an entitlement/plan gate here. This is CE — Material Planning is
-  ungated. (Gating lives at call sites if a feature ever needs it.)
+  ungated. The one exception is the commercial planning groups degrade
+  (Projects Phase 3): `runMrp` imports `companyHasFeature` from
+  `@carbon/ee/plan.server` lazily, and only for a company that has a planning
+  group. Without `PLANNING_GROUPS`, the members net in their own segments.
 - Never construct a connection/pool inside this package.
 
 ## Validation Commands

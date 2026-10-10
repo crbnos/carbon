@@ -75,6 +75,75 @@ describe("planCompany", () => {
     }).toMatchSnapshot();
   });
 
+  // Projects Phase 3: P-101 (stock 5, needs 20) and P-102 (needs 10) are
+  // members of planning group plg_1, so the views put their demand in plg_1.
+  const groupFixture = (): PlanCompanyInputs => {
+    const fixture = loadFixture("plan-company.project.json");
+    return {
+      ...fixture,
+      stockedProjectIds: ["prj_p101", "prj_p102"],
+      projectMaterialLines: [
+        {
+          id: "pem_p101",
+          itemId: "item_p",
+          locationId: "loc_plant",
+          planningSegmentId: "plg_1",
+          projectId: "prj_p101",
+          projectElementId: "el_p101",
+          quantity: 20,
+          requiredDate: "2026-10-14"
+        },
+        {
+          id: "pem_p102",
+          itemId: "item_p",
+          locationId: "loc_plant",
+          planningSegmentId: "plg_1",
+          projectId: "prj_p102",
+          projectElementId: null,
+          quantity: 10,
+          requiredDate: "2026-10-14"
+        }
+      ]
+    };
+  };
+  const projectMaterialActuals = (outputs: PlanCompanyOutputs) =>
+    outputs.demandActualUpserts
+      .filter((row) => row.sourceType === "Project Material")
+      .map((row) => [row.planningSegmentId, Number(row.actualQuantity)])
+      .sort();
+
+  it("nets the members of a planning group in the group segment", () => {
+    const outputs = planCompany({
+      ...groupFixture(),
+      planningGroups: [
+        { id: "plg_1", memberProjectIds: ["prj_p101", "prj_p102"] }
+      ]
+    });
+    expect(projectMaterialActuals(outputs)).toEqual([["plg_1", 30]]);
+    // The group holds P-101's 5 and needs 30, so it draws all 8 of the
+    // common true surplus.
+    expect(outputs.commonSurplusDraws).toEqual([
+      {
+        itemId: "item_p",
+        locationId: "loc_plant",
+        periodId: "per_w2",
+        planningSegmentId: "plg_1",
+        quantity: 8
+      }
+    ]);
+  });
+
+  it("nets each member on its own without the planning groups feature", () => {
+    const outputs = planCompany({
+      ...groupFixture(),
+      ungroupedPlanningGroupIds: ["plg_1"]
+    });
+    expect(projectMaterialActuals(outputs)).toEqual([
+      ["prj_p101", 20],
+      ["prj_p102", 10]
+    ]);
+  });
+
   it("writes one actual row per segment for the same item, location and week", () => {
     const fixture = loadFixture("plan-company.project.json");
     const jobMaterial = {

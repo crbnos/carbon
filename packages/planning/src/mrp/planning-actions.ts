@@ -52,7 +52,7 @@ import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
-import { planningSegmentOf } from "./plan-company.ts";
+import { groupByProjectOf, planningSegmentOf } from "./plan-company.ts";
 import { loadResponsibleEmployeeResolver } from "./responsible-employee.ts";
 import {
   jobCompletionDate,
@@ -1133,7 +1133,10 @@ export function itemLocationSegmentKey(
  */
 export async function loadSegmentOnHand(
   db: Kysely<DB>,
-  companyId: string
+  companyId: string,
+  // Projects Phase 3: project id -> its active planning group, when the
+  // company has PLANNING_GROUPS. A member's stock is its group's.
+  groupByProject?: ReadonlyMap<string, string>
 ): Promise<Map<string, number>> {
   const [rows, stockedProjects] = await Promise.all([
     db
@@ -1155,7 +1158,7 @@ export async function loadSegmentOnHand(
     const key = itemLocationSegmentKey(
       row.itemId,
       row.locationId,
-      planningSegmentOf(row.projectId, stockedProjectIds)
+      planningSegmentOf(row.projectId, stockedProjectIds, groupByProject)
     );
     onHand.set(key, (onHand.get(key) ?? 0) + (Number(row.quantityOnHand) || 0));
   }
@@ -1464,6 +1467,11 @@ export async function generatePlanningActions(
      * `commonSurplusDraws`). Each draw becomes a Transfer action.
      */
     commonSurplusDraws?: CommonSurplusDraw[];
+    /**
+     * Projects Phase 3: the active planning groups and their members, as
+     * `runMrp` passed them to `planCompany` (empty without PLANNING_GROUPS).
+     */
+    planningGroups?: { id: string; memberProjectIds: string[] }[];
   }
 ): Promise<{ inserted: number; updated: number; deleted: number }> {
   const { companyId, userId } = args;
@@ -1582,7 +1590,7 @@ export async function generatePlanningActions(
       ])
       .where("companyId", "=", companyId)
       .execute(),
-    loadSegmentOnHand(db, companyId),
+    loadSegmentOnHand(db, companyId, groupByProjectOf(args.planningGroups)),
     db
       .selectFrom("job")
       .select(["id", "status", "quantity", "quantityReceivedToInventory"])
