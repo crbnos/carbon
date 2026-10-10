@@ -755,6 +755,108 @@ export async function cancelServiceOrder(
   });
 }
 
+/**
+ * Changes an open order's coverage contract and keeps its Service project's
+ * parent in step: the parent is the new contract's project, or none. A Contract
+ * charge that stands (`openChargeIds` over the order's Contract rows) has
+ * already posted to the old contract project's account, so the change is
+ * refused until the charge is reclassed to another coverage. The contract must
+ * be one of the order's customer's contracts; a Refurbishment has none.
+ */
+export async function updateServiceOrderCoverageContract(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    serviceOrderId: string;
+    customerContractId: string | null;
+  }
+): Promise<void> {
+  await db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("serviceOrder")
+      .select([
+        "id",
+        "type",
+        "status",
+        "projectId",
+        "customerId",
+        "customerContractId"
+      ])
+      .where("id", "=", args.serviceOrderId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new ServiceOrderError("The service order was not found");
+    if (order.status === "Closed" || order.status === "Cancelled") {
+      throw new ServiceOrderError(
+        "A closed or cancelled service order cannot change"
+      );
+    }
+    if (order.type === "Refurbishment") {
+      throw new ServiceOrderError("A refurbishment has no coverage contract");
+    }
+    if ((order.customerContractId ?? null) === args.customerContractId) return;
+
+    let contractProjectId: string | null = null;
+    if (args.customerContractId) {
+      const contract = await trx
+        .selectFrom("customerContract")
+        .select(["id", "projectId"])
+        .where("id", "=", args.customerContractId)
+        .where("companyId", "=", args.companyId)
+        .where("customerId", "=", order.customerId ?? "")
+        .executeTakeFirst();
+      if (!contract) {
+        throw new ServiceOrderError(
+          "The coverage contract is not one of this customer's contracts"
+        );
+      }
+      contractProjectId = contract.projectId;
+    }
+
+    const contractCharges = await trx
+      .selectFrom("projectLedger")
+      .select(["id", "reversalOfId"])
+      .where("projectId", "=", order.projectId)
+      .where("companyId", "=", args.companyId)
+      .where("coverage", "=", "Contract")
+      .execute();
+    const open = openChargeIds(contractCharges).length;
+    if (open > 0) {
+      throw new ServiceOrderError(
+        `${
+          open === 1
+            ? "1 charge of this order is covered by the contract and has posted to its account."
+            : `${open} charges of this order are covered by the contract and have posted to its account.`
+        } Override their coverage to Billable or Warranty first, then change the contract.`
+      );
+    }
+
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("serviceOrder")
+      .set({
+        customerContractId: args.customerContractId,
+        updatedBy: args.userId,
+        updatedAt: now
+      })
+      .where("id", "=", order.id)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    await trx
+      .updateTable("project")
+      .set({
+        parentProjectId: contractProjectId,
+        updatedBy: args.userId,
+        updatedAt: now
+      })
+      .where("id", "=", order.projectId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+  });
+}
+
 // --- Charges -------------------------------------------------------------------
 
 const logger = getLogger("erp", "service");

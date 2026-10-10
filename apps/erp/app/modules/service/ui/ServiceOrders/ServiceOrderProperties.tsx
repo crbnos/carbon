@@ -290,7 +290,7 @@ const ServiceOrderProperties = () => {
               label={t`Coverage Contract`}
               options={contractOptions}
               isOptional
-              isReadOnly={isDraftOnlyDisabled}
+              isReadOnly={isDisabled}
               inline={(value, options) => (
                 <span>
                   {options.find((option) => option.value === value)?.label ??

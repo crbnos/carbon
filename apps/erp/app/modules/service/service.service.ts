@@ -440,11 +440,7 @@ export async function getServiceOrderCosts(
 }
 
 /** The fields of an order that change only while it is Draft. */
-const DRAFT_ONLY_FIELDS = [
-  "customerContactId",
-  "customerLocationId",
-  "customerContractId"
-] as const;
+const DRAFT_ONLY_FIELDS = ["customerContactId", "customerLocationId"] as const;
 
 /** The fields only a Refurbishment has; they decide its completion. */
 const REFURBISHMENT_FIELDS = [
@@ -453,9 +449,11 @@ const REFURBISHMENT_FIELDS = [
 ] as const;
 
 /**
- * Saves an order's fields. Contact, site and coverage contract change only
- * while the order is Draft; priority, assignee, invoice detail, problem and
- * resolution change until it is Closed or Cancelled. The expected selling
+ * Saves an order's fields. Contact and site change only while the order is
+ * Draft. The coverage contract never changes here: it also moves the Service
+ * project's parent (`updateServiceOrderCoverageContract`). Priority, assignee,
+ * invoice detail, problem and resolution change until it is Closed or
+ * Cancelled. The expected selling
  * price and abnormal rework belong to a Refurbishment and change until it is
  * completed: after that its cost is in the serial.
  */
@@ -483,6 +481,7 @@ export async function updateServiceOrder(
 
   const { id, companyId, updatedBy, abnormalRework, ...fields } = order;
   const changes: Record<string, unknown> = { ...fields };
+  delete changes.customerContractId;
   if (abnormalRework !== undefined) {
     changes.abnormalRework = abnormalRework === "true";
   }

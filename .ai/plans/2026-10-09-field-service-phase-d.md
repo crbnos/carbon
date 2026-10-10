@@ -23,7 +23,7 @@ A contract project (for example *Acme maintenance 2027*) must see the cost of th
 
 - [x] Task 1: Add `get_child_service_project_costs`
 - [x] Task 2: Show service orders on the Costs tab
-- [ ] Task 3: Keep the parent link in step with the coverage contract
+- [x] Task 3: Keep the parent link in step with the coverage contract
 - [ ] Task 4: Refuse Contract coverage on a closed parent
 - [ ] Task 5: List service orders on the contract page
 - [ ] Task 6: Extend the demo datasets
@@ -266,3 +266,6 @@ ls .ai/playbooks/field-service-phase-d.md
 - Task 2: `getChildServiceProjectCosts` also reads each order's subject serial, with one `.in()` query over the orders (the function returns the asset id, not the serial). The route calls it once, beside `getProjectCostSummary`.
 - Task 2: `buildProjectCostFigures` takes the service orders' actual as an optional third argument. It adds to the project total only, so the total's remaining and estimate follow it, and no element changes. A new case in `projects-cost-figures.test.ts` pins it. The total row shows the full actual, and its label says "Actual includes service orders: <amount>".
 - Task 2 (🛑 behavior note): a user without `service_view` sees no service orders, because RLS hides Service projects from them and the function is SECURITY INVOKER. Their total leaves the service cost out. So step 4's plain-text id never shows today; the link check stays in case that RLS changes.
+- Task 3: the refusal counts only Contract charges that stand (`openChargeIds` over the order's Contract ledger rows). A reclass reverses the old row, so after an override the change goes through. The message tells the user to override the coverage (the node drawer's **Override**, which posts through `reclass-project-coverage`). The function also refuses a Closed or Cancelled order, a Refurbishment (it has no contract) and a contract of another customer. It writes nothing when the contract does not change.
+- Task 3 (deviation): the coverage contract was a Draft-only field. It is now editable on any open order, because the spec's Phase D criterion changes the contract of an order that already has charges. `updateServiceOrder` no longer saves `customerContractId` at all, so the parent link cannot drift through it. Contact and site stay Draft-only.
+- Task 3: the local database has no open order of a customer with a contract, so the function was checked by typecheck only. Task 8 covers it in the browser.

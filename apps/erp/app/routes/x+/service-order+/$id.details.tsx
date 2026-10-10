@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Json } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -19,9 +20,16 @@ import {
   serviceOrderUpdateValidator,
   updateServiceOrder
 } from "~/modules/service";
+import {
+  ServiceOrderError,
+  updateServiceOrderCoverageContract
+} from "~/modules/service/service.server";
 import { ServiceRichText } from "~/modules/service/ui/ServiceRichText";
 import { WarrantyBadge } from "~/modules/service/ui/ServiceStatus";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "service-order-details");
 
 /** The order fields the Properties panel saves one at a time. */
 const PROPERTY_FIELDS = [
@@ -94,6 +102,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
       form
     );
     if (validation.error) return failure("Invalid value");
+    // The coverage contract also moves the Service project's parent, and is
+    // refused while a Contract charge stands.
+    if (field === "customerContractId") {
+      try {
+        await updateServiceOrderCoverageContract(getDatabaseClient(), {
+          companyId,
+          userId,
+          serviceOrderId: id,
+          customerContractId: validation.data.customerContractId ?? null
+        });
+      } catch (err) {
+        if (err instanceof ServiceOrderError) return failure(err.message);
+        logger.error("Failed to change the coverage contract", {
+          companyId,
+          serviceOrderId: id,
+          error: err
+        });
+        return failure("Failed to change the coverage contract");
+      }
+      return { success: true };
+    }
     // Only the one field: an absent key would be saved as null.
     changes = {
       [field as string]:
