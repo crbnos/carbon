@@ -126595,7 +126595,8 @@ export default {
             "Lease",
             "Project Issue",
             "Timesheet",
-            "Project Expense"
+            "Project Expense",
+            "Service Order"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -139978,7 +139979,8 @@ export default {
             "Contract",
             "Project Issue",
             "Timesheet",
-            "Project Expense"
+            "Project Expense",
+            "Service Order"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -140847,7 +140849,8 @@ export default {
             "Lease",
             "Project Issue",
             "Timesheet",
-            "Project Expense"
+            "Project Expense",
+            "Service Order"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -155586,7 +155589,8 @@ export default {
             "Contract",
             "Project Issue",
             "Timesheet",
-            "Project Expense"
+            "Project Expense",
+            "Service Order"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -155707,7 +155711,8 @@ export default {
             "Lease",
             "Project Issue",
             "Timesheet",
-            "Project Expense"
+            "Project Expense",
+            "Service Order"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -155789,7 +155794,8 @@ export default {
             "Contract",
             "Project Issue",
             "Timesheet",
-            "Project Expense"
+            "Project Expense",
+            "Service Order"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"

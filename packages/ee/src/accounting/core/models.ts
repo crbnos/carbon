@@ -563,6 +563,13 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // A refurbishment completion moves a service order's WIP into one serial's
+  // inventory cost. Off by default for the same reason as 'Revenue Recognition'.
+  "Service Order": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   // Inventory ↔ fixed-asset transfers and job completions to an asset. Off by
   // default for the same reason as 'Revenue Recognition'.
   "Asset Transfer": {

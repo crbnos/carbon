@@ -139,6 +139,12 @@ export async function calculateCOGS(
           .forUpdate()
           .execute();
 
+        // The children of a layer cover different units of it, in order — so
+        // a unit takes the next child's bump. A layer stamped for one serial
+        // unit is the exception: every child on it (a moved price variance, a
+        // refurbishment revaluation, a write-down) belongs to that one unit,
+        // so each applies in full.
+        const stamped = layer.trackedEntityId !== null;
         let unappliedQuantity = quantityFromLayer;
         for (const child of children) {
           if (unappliedQuantity <= 0) break;
@@ -149,7 +155,7 @@ export async function calculateCOGS(
               : 0;
           const applyQty = Math.min(childQty, unappliedQuantity);
           totalCost += applyQty * perUnitBump;
-          unappliedQuantity -= applyQty;
+          if (!stamped) unappliedQuantity -= applyQty;
           await trx
             .updateTable("costLedger")
             .set({ remainingQuantity: childQty - applyQty })

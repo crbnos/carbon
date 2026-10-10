@@ -98446,6 +98446,7 @@ export type Database = {
         | "Project Issue"
         | "Timesheet"
         | "Project Expense"
+        | "Service Order"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -98480,6 +98481,7 @@ export type Database = {
         | "Project Issue"
         | "Timesheet"
         | "Project Expense"
+        | "Service Order"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       lessorClassification: "Rental" | "Sale" | "Financing"
@@ -100074,6 +100076,7 @@ export const Constants = {
         "Project Issue",
         "Timesheet",
         "Project Expense",
+        "Service Order",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
@@ -100109,6 +100112,7 @@ export const Constants = {
         "Project Issue",
         "Timesheet",
         "Project Expense",
+        "Service Order",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],

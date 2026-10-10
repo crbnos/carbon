@@ -126,6 +126,14 @@ export const NO_CAP_WARNING = "No sale price; the cost was not capped";
 export const NO_SOURCE_LAYER_MESSAGE =
   "No open cost layer holds this serial. Correct the item's stock before you complete the refurbishment.";
 
+/** A completion the planner refuses; its message is for the user. */
+export class RefurbishmentCompletionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RefurbishmentCompletionError";
+  }
+}
+
 export function planRefurbishmentCompletion(
   input: RefurbishmentCompletionInput
 ): RefurbishmentCompletionPlan {
@@ -214,7 +222,9 @@ export function planRefurbishmentCompletion(
     const source = orderLayersForConsumption(ordered, [input.serialId]).find(
       (layer) => layer.trackedEntityId === null && layer.remainingQuantity >= 1
     );
-    if (!source) throw new Error(NO_SOURCE_LAYER_MESSAGE);
+    if (!source) {
+      throw new RefurbishmentCompletionError(NO_SOURCE_LAYER_MESSAGE);
+    }
 
     const unitCost = round(unitCostOf(source));
     split = {

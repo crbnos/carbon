@@ -15,6 +15,7 @@ import {
 } from "~/modules/service";
 import {
   cancelServiceOrder,
+  completeServiceOrder,
   ServiceOrderError,
   syncServiceOrderStatus
 } from "~/modules/service/service.server";
@@ -35,7 +36,8 @@ const MESSAGES: Record<ServiceOrderStatusAction, string> = {
  * Moves an order to the status the user chose, then rolls its status up
  * from its visits and sets its work tree's status to match
  * (`syncServiceOrderStatus`). A cancel goes through `cancelServiceOrder`,
- * which refuses an order with a charge that is not reversed.
+ * which refuses an order with a charge that is not reversed; a completion
+ * through `completeServiceOrder` (the `complete-service-order` function).
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -75,6 +77,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(null, `A ${current.data.status} service order cannot do that`)
+      )
+    );
+  }
+
+  if (to === "Completed") {
+    // Through complete-service-order: a Refurbishment's cost moves into its
+    // serial there.
+    const completed = await completeServiceOrder(getDatabaseClient(), {
+      companyId,
+      serviceOrderId: id,
+      userId
+    });
+    if (completed.error) {
+      throw redirect(back, await flash(request, error(null, completed.error)));
+    }
+    throw redirect(
+      back,
+      await flash(
+        request,
+        success(
+          [MESSAGES.Completed, ...completed.warnings]
+            .map((message) => message.replace(/\.$/, ""))
+            .join(". ")
+        )
       )
     );
   }

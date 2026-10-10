@@ -350,12 +350,37 @@ export async function syncServiceOrderStatus(
   const run = async (trx: KyselyTx) => {
     const order = await trx
       .selectFrom("serviceOrder")
-      .select(["id", "status", "projectId"])
+      .select(["id", "type", "status", "projectId"])
       .where("id", "=", args.serviceOrderId)
       .where("companyId", "=", args.companyId)
       .forUpdate()
       .executeTakeFirst();
     if (!order) throw new ServiceOrderError("The service order was not found");
+
+    // A refurbishment completes only through `completeServiceOrder`, which
+    // moves its cost into the serial; a visit's Work complete? leaves it
+    // open. Once completed, its cost is in the serial, so it never reopens.
+    const isRefurbishment = order.type === "Refurbishment";
+    if (
+      isRefurbishment &&
+      args.status === "Completed" &&
+      order.status !== "Completed"
+    ) {
+      throw new ServiceOrderError(
+        "Complete a refurbishment from its order, so its cost moves to the serial"
+      );
+    }
+    if (
+      isRefurbishment &&
+      order.status === "Completed" &&
+      args.status !== undefined &&
+      args.status !== "Completed" &&
+      args.status !== "Closed"
+    ) {
+      throw new ServiceOrderError(
+        "A completed refurbishment cannot be reopened: its cost is already in the serial"
+      );
+    }
 
     const visits = await trx
       .selectFrom("serviceVisit")
@@ -365,7 +390,10 @@ export async function syncServiceOrderStatus(
       .execute();
 
     const status = rollUpOrderStatus(
-      { status: args.status ?? order.status, workComplete: args.workComplete },
+      {
+        status: args.status ?? order.status,
+        workComplete: isRefurbishment ? false : args.workComplete
+      },
       visits
     );
     const now = datetime.timestamp();
@@ -403,6 +431,35 @@ export async function syncServiceOrderStatus(
   return db.isTransaction
     ? run(db as KyselyTx)
     : (db as Kysely<KyselyDatabase>).transaction().execute(run);
+}
+
+/**
+ * Completes an order through `complete-service-order`: a Field Visit or Depot
+ * Repair order is stamped Completed; a Refurbishment also moves its WIP into
+ * the serial's cost and releases the serial. Returns the refusal or failure
+ * message, or null, and the completion's warnings (no sale price to cap at).
+ */
+export async function completeServiceOrder(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; serviceOrderId: string; userId: string }
+): Promise<{ error: string | null; warnings: string[] }> {
+  const result = await serverFns
+    .system({ db, companyId: args.companyId, userId: args.userId })
+    .invoke("complete-service-order", {
+      serviceOrderId: args.serviceOrderId
+    });
+  if (result.error) {
+    logger.error("Failed to complete a service order", {
+      companyId: args.companyId,
+      serviceOrderId: args.serviceOrderId,
+      error: result.error
+    });
+    return {
+      error: result.error.message || "Failed to complete the service order",
+      warnings: []
+    };
+  }
+  return { error: null, warnings: result.data.warnings };
 }
 
 /**

@@ -41,7 +41,8 @@ export const journalReference = {
     timesheet: (entryId: string) => `timesheet:${entryId}`,
     projectExpense: (entryId: string) => `project-expense:${entryId}`,
     coverageReclass: (projectLedgerId: string) =>
-      `coverage-reclass:${projectLedgerId}`
+      `coverage-reclass:${projectLedgerId}`,
+    serviceOrder: (serviceOrderId: string) => `service-order:${serviceOrderId}`
   }
 };
 

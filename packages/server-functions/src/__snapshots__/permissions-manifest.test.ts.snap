@@ -11,6 +11,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "close-job": {
     "update": "production",
   },
+  "complete-service-order": {
+    "update": "service",
+  },
   "convert": {
     "by": "type",
     "rules": {
