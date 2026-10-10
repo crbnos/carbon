@@ -50,7 +50,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 - [x] Task 7: Diff-write the pegs in the planning-action transaction
 - [x] Task 8: Apply grouped Order and Make actions and move their pegs
 - [x] Task 9: Add `harden_pegs_for_supply`
-- [ ] Task 10: Distribute grouped PO receipts and their reversals
+- [x] Task 10: Distribute grouped PO receipts and their reversals
 - [ ] Task 11: Distribute grouped job output
 - [ ] Task 12: Charge price variance to member projects
 - [ ] Task 13: Add soft-peg commitments to the cost summary
@@ -789,3 +789,9 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 9 (deviation): the uncovered part of a peg keeps the peg's state, not always Soft. A Manual peg covered in part leaves a Manual row with its reason, so a receipt does not drop a planner's override.
 - Task 9: the excess row reads the group from the pegs, else from the PO line's or job's `planningGroupId`. Without a group the excess goes to common stock (`projectId` NULL).
 - Task 9: `harden-pegs-for-supply.test.sql` runs in an isolated company and rolls back. It passes 5 cases: the plan's 3 (60, 25, 65), excess to the exception project, and a second receipt that takes no Hard peg again. There is no `psql` binary here, so it ran as `/tmp/kpsql -X < packages/database/supabase/tests/harden-pegs-for-supply.test.sql` (exit 0, no ERROR line). `@carbon/database` typechecks.
+- Task 10: `post-receipt` collects the receipt lines of grouped PO lines (a stocked item, not outside processing, a positive quantity). In the posting transaction it calls `harden_pegs_for_supply` per receipt line, then splits the line's item ledger rows and cost layers into the returned stripes. The journal does not change: one inventory debit per line. A receipt line split in 2 calls the function twice, and the second call takes the Soft rest of the first.
+- Task 10 (beyond the plan's file list): the pure split and the 3 statements are in `post-receipt/grouped-receipt.ts` (`hardenPegsForSupply`, `allocateToStripes`, `stripeItemLedgerRows`, `stripeCostLedgerRows`, `linkPegsToItemLedger`, `softenPegsOfItemLedger`). `project-posting-test-fixture.ts` gains `addPlanningGroup`, `addPeg` and `planningGroupId` on a PO line.
+- Task 10: a cost layer piece takes the receipt's unit cost, and the last piece of a layer takes the rounding rest, so the pieces add up to the layer. An invoice-first layer and a PO-cost layer of one line are cut by the same walk. Serial rows take the stripes in order. A lot that spans 2 stripes gets 2 rows with the same `trackedEntityId`.
+- Task 10: each Hard peg's `itemLedgerId` is the first row written for it, set by one `UPDATE … FROM (VALUES …)`. The void runs one statement only when a PO line of the order has `planningGroupId`: it supersedes the current Hard pegs whose `itemLedgerId` is a row of the receipt and inserts a Soft copy of each. The reversing rows already copy each row's stripe.
+- Task 10 (known gap): a negative receipt on a grouped line draws common stock, as before. It does not draw a member stripe or soften a peg.
+- Task 10: `grouped-receipt.test.ts` has 4 pure cases and the plan's 2 database cases in one test (receive 60 against 20, 30 and 10; then void). The post-receipt tests pass (14). The full server-functions suite passes except `rows.test.ts` and `post-charge-transaction.test.ts`, the known shared-database races, which pass alone. The 5 job-completion and backflush pgTAP scripts and `harden-pegs-for-supply.test.sql` exit 0 with no ERROR line. `@carbon/server-functions` typechecks.

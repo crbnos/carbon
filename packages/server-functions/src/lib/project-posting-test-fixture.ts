@@ -658,6 +658,85 @@ export async function projectPostingFixture(
         finishedItemId
       };
     },
+    /** A planning group at `locationId` (Projects Phase 3) whose members are
+     *  new Released Expense projects with project stock, in the given order
+     *  and priority. Returns the group id and each member's project id. */
+    async addPlanningGroup(args: {
+      locationId: string;
+      members: { key: string; identifier: string; priority?: number }[];
+      excessRule?: Database["public"]["Enums"]["planningGroupExcessRule"];
+    }) {
+      const planningGroupId = `${prefix}-plg-${crypto.randomUUID().slice(0, 8)}`;
+      const projectIds = Object.fromEntries(
+        args.members.map((member) => [
+          member.key,
+          `${prefix}-member-${member.key}`
+        ])
+      );
+      await db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("planningGroup")
+          .values({
+            id: planningGroupId,
+            name: planningGroupId,
+            locationId: args.locationId,
+            excessRule: args.excessRule ?? "Common Stock",
+            companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("project")
+          .values(
+            args.members.map((member, index) => ({
+              id: projectIds[member.key]!,
+              name: `Member ${member.key}`,
+              identifier: member.identifier,
+              status: "Released" as const,
+              costTreatment: "Expense" as const,
+              projectStock: true,
+              planningGroupId,
+              planningPriority: member.priority ?? (index + 1) * 10,
+              companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+      return { planningGroupId, projectIds };
+    },
+    /** A current Soft peg of `quantity` units of a supply for a member. */
+    async addPeg(args: {
+      planningGroupId: string;
+      itemId: string;
+      locationId: string;
+      supplyType: Database["public"]["Enums"]["projectPegSupplyType"];
+      supplyId: string;
+      projectId: string;
+      quantity: number;
+      needDate: string;
+    }) {
+      return db
+        .insertInto("projectPeg")
+        .values({
+          planningGroupId: args.planningGroupId,
+          itemId: args.itemId,
+          locationId: args.locationId,
+          supplyType: args.supplyType,
+          supplyId: args.supplyId,
+          projectId: args.projectId,
+          demandSourceType: "Project Material",
+          demandSourceId: `${args.projectId}-demand`,
+          quantity: args.quantity,
+          needDate: args.needDate,
+          state: "Soft",
+          companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+    },
     /** An item with no stock (`Non-Inventory` for a purchased service). */
     async addItem(
       key: string,
@@ -708,6 +787,8 @@ export async function projectPostingFixture(
           quantity: number;
           unitPrice: number;
           charged?: boolean;
+          /** a PO line made for a planning group (no project) */
+          planningGroupId?: string;
         }[];
       }
     ) {
@@ -759,6 +840,7 @@ export async function projectPostingFixture(
               locationId: args.locationId,
               projectId: line.charged ? projectId : null,
               projectElementId: line.charged ? elementId : null,
+              planningGroupId: line.planningGroupId ?? null,
               companyId,
               createdBy: USER
             }))

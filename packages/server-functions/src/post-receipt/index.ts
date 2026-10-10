@@ -60,6 +60,13 @@ import {
   reverseProjectLedgerRows
 } from "../lib/project-posting";
 import { loadProjectStock, withStripe } from "../lib/stock-stripes";
+import {
+  hardenPegsForSupply,
+  linkPegsToItemLedger,
+  softenPegsOfItemLedger,
+  stripeCostLedgerRows,
+  stripeItemLedgerRows
+} from "./grouped-receipt";
 import { loadReceiptProjectRoutes } from "./project-routes";
 import { createDepotRepairOrders, voidDepotRepairOrders } from "./repair";
 
@@ -1018,6 +1025,18 @@ const postReceipt = defineServerFn({
               .execute();
           }
 
+          // A grouped PO line's receipt hardened its pegs: the void turns
+          // them Soft again, so the next MRP run can re-peg the open supply.
+          if (
+            purchaseOrderLinesVoid.data.some((line) => line.planningGroupId)
+          ) {
+            await softenPegsOfItemLedger(trx, {
+              companyId,
+              userId,
+              itemLedgerIds: originalItemLedger.data.map((entry) => entry.id)
+            });
+          }
+
           // Reverse the project charges of this receipt.
           await reverseProjectLedgerRows(trx, {
             companyId,
@@ -1172,7 +1191,19 @@ const postReceipt = defineServerFn({
           const costLedgerInserts: (Database["public"]["Tables"]["costLedger"]["Insert"] & {
             isInvoiceFirst?: boolean;
             poLineId?: string;
+            // a layer of a grouped PO line, split into member stripes in
+            // the transaction (Projects Phase 3)
+            groupedReceiptLineId?: string;
           })[] = [];
+          // Receipt lines of PO lines made for a planning group: their item
+          // ledger rows and cost layers split into member stripes by the
+          // line's pegs (harden_pegs_for_supply) inside the transaction.
+          const groupedReceiptLines: {
+            receiptLineId: string;
+            purchaseOrderLineId: string;
+            quantity: number;
+            itemLedgerRows: Database["public"]["Tables"]["itemLedger"]["Insert"][];
+          }[] = [];
           // Negative receipts consume layers at layer cost inside the
           // transaction (calculateCOGS); GL amounts are patched to match.
           // fallbackCost (PO cost) is used when no layers yield a cost.
@@ -1670,6 +1701,16 @@ const postReceipt = defineServerFn({
                 ? projectStockByProjectId.get(poLineProjectId)
                 : undefined;
             const stockStripe = projectStock ? poLineProjectId : null;
+            // A stocked item on a PO line made for a planning group: the
+            // receipt splits into the group's member stripes.
+            const groupedReceipt =
+              !isOutsideProcessing &&
+              itemTrackingType !== "Non-Inventory" &&
+              receivedQuantity > 0 &&
+              !!receiptLine.lineId &&
+              !!purchaseOrderLines.data.find(
+                (line) => line.id === receiptLine.lineId
+              )?.planningGroupId;
             // An inventory item charged to a project without project stock is
             // consumed by the project at receipt: it is received and issued
             // at once, so on-hand does not change and no cost layer stays in
@@ -1882,7 +1923,10 @@ const postReceipt = defineServerFn({
                   companyId,
                   postingDate: today,
                   isInvoiceFirst: true,
-                  poLineId: poLineId ?? undefined
+                  poLineId: poLineId ?? undefined,
+                  groupedReceiptLineId: groupedReceipt
+                    ? receiptLine.id
+                    : undefined
                 });
               }
               if (normalQty > 0) {
@@ -1902,7 +1946,10 @@ const postReceipt = defineServerFn({
                   supplierId: purchaseOrder.data?.supplierId ?? undefined,
                   projectId: stockStripe,
                   companyId,
-                  postingDate: today
+                  postingDate: today,
+                  groupedReceiptLineId: groupedReceipt
+                    ? receiptLine.id
+                    : undefined
                 });
               }
             }
@@ -2001,6 +2048,15 @@ const postReceipt = defineServerFn({
                   companyId
                 });
               }
+            }
+
+            if (groupedReceipt) {
+              groupedReceiptLines.push({
+                receiptLineId: receiptLine.id,
+                purchaseOrderLineId: receiptLine.lineId!,
+                quantity: receivedQuantity,
+                itemLedgerRows: itemLedgerInserts.slice(itemLedgerStartIdx)
+              });
             }
 
             if (consumedByProject) {
@@ -2301,6 +2357,53 @@ const postReceipt = defineServerFn({
 
           await db.transaction().execute(async (trx) => {
             await fixedAssetWrites.apply(trx, companyId);
+            // Grouped PO lines (Projects Phase 3): harden the line's pegs and
+            // split its item ledger rows and cost layers into the returned
+            // member stripes. The journal is unchanged: one inventory debit.
+            const pegIdByItemLedgerRow = new Map<object, string | null>();
+            for (const grouped of groupedReceiptLines) {
+              const stripes = await hardenPegsForSupply(trx, {
+                companyId,
+                userId,
+                supplyType: "Purchase Order Line",
+                supplyId: grouped.purchaseOrderLineId,
+                quantity: grouped.quantity
+              });
+              if (stripes.length === 0) continue;
+              const ledgerStart = itemLedgerInserts.indexOf(
+                grouped.itemLedgerRows[0]!
+              );
+              if (ledgerStart >= 0) {
+                const striped = stripeItemLedgerRows(
+                  grouped.itemLedgerRows.map((row) => ({
+                    ...row,
+                    quantity: Number(row.quantity)
+                  })),
+                  stripes
+                );
+                itemLedgerInserts.splice(
+                  ledgerStart,
+                  grouped.itemLedgerRows.length,
+                  ...striped.rows
+                );
+                striped.rows.forEach((row, index) => {
+                  pegIdByItemLedgerRow.set(row, striped.pegIds[index] ?? null);
+                });
+              }
+              const layerStart = costLedgerInserts.findIndex(
+                (row) => row.groupedReceiptLineId === grouped.receiptLineId
+              );
+              if (layerStart >= 0) {
+                const layers = costLedgerInserts.filter(
+                  (row) => row.groupedReceiptLineId === grouped.receiptLineId
+                );
+                costLedgerInserts.splice(
+                  layerStart,
+                  layers.length,
+                  ...stripeCostLedgerRows(layers, stripes)
+                );
+              }
+            }
             // Negative receipts: consume layers at layer cost (FIFO/LIFO with
             // adjustment children) and patch the placeholder GL amounts so the
             // GL credit matches what actually left the subledger.
@@ -2427,6 +2530,7 @@ const postReceipt = defineServerFn({
                 const {
                   isInvoiceFirst,
                   poLineId: rowPoLineId,
+                  groupedReceiptLineId: _groupedReceiptLineId,
                   ...insertRow
                 } = row;
                 if (isInvoiceFirst && rowPoLineId) {
@@ -2756,11 +2860,30 @@ const postReceipt = defineServerFn({
             }
 
             if (itemLedgerInserts.length > 0) {
-              await trx
+              const insertedItemLedger = await trx
                 .insertInto("itemLedger")
                 .values(itemLedgerInserts)
                 .returning(["id"])
                 .execute();
+              // Each Hard peg points at the first row written for it.
+              if (pegIdByItemLedgerRow.size > 0) {
+                const links = new Map<string, string>();
+                itemLedgerInserts.forEach((row, index) => {
+                  const pegId = pegIdByItemLedgerRow.get(row);
+                  const itemLedgerId = insertedItemLedger[index]?.id;
+                  if (pegId && itemLedgerId && !links.has(pegId)) {
+                    links.set(pegId, itemLedgerId);
+                  }
+                });
+                await linkPegsToItemLedger(
+                  trx,
+                  companyId,
+                  [...links].map(([pegId, itemLedgerId]) => ({
+                    pegId,
+                    itemLedgerId
+                  }))
+                );
+              }
             }
 
             await trx
