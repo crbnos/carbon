@@ -14,6 +14,7 @@ import {
   onHand,
   salesReturnRepairFixture
 } from "../lib/sales-return-test-fixture";
+import { insertServiceOrder } from "../lib/service-orders";
 import { databaseTest } from "../local-database-test-fixture";
 import postReceipt from "./index";
 
@@ -341,6 +342,51 @@ databaseTest(
       ).toBeNull();
       const [cancelled] = await depotOrders(f, r);
       expect(cancelled?.status).toBe("Cancelled");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a repair receipt is refused while the serial has an open service order, and writes nothing",
+  async () => {
+    const f = await projectPostingFixture();
+    try {
+      const r = await salesReturnRepairFixture(f);
+      const open = await f.db.transaction().execute((trx) =>
+        insertServiceOrder(trx, {
+          companyId: f.companyId,
+          userId: "system",
+          type: "Field Visit",
+          trackedEntityId: r.serialId,
+          serial: "SN-0001",
+          itemId: r.machineItemId,
+          customerAssetId: r.assetId,
+          customerId: r.customerId,
+          customerName: "Acme",
+          customerLocationId: r.siteId,
+          locationId: r.locationId,
+          customerContractId: null,
+          contractProjectId: null
+        })
+      );
+
+      const posted = await postReceipt(f.ctx, {
+        type: "post",
+        receiptId: r.receiptId
+      });
+      expect(posted.error?.message).toContain(
+        `has an open service order (${open.serviceOrderId})`
+      );
+      expect(await depotOrders(f, r)).toHaveLength(0);
+      expect(await serialAndAsset(f, r)).toEqual({
+        serial: "Consumed",
+        asset: "In Service"
+      });
+      const rows = await receiptRows(f, r);
+      expect(rows.itemLedger).toHaveLength(0);
+      expect(rows.journalLines).toHaveLength(0);
     } finally {
       await f.cleanup();
     }

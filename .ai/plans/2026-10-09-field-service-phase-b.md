@@ -45,7 +45,7 @@ Task 12 records these in the spec.
 - [x] Task 7: Post a `Repair` return shipment with no ledger
 - [x] Task 8: Guard the credit memo and the replacement order
 - [x] Task 9: Add the depot repair UI
-- [ ] Task 10: Add the database tests
+- [x] Task 10: Add the database tests
 - [ ] Task 11: Extend the demo datasets
 - [ ] Task 12: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 13: Verify in the browser
@@ -452,3 +452,4 @@ ls .ai/playbooks/field-service-phase-b.md
 - Task 9: on a Depot Repair order, the header shows the RMA's readable id as a link, **View Return Order** in the ⋯ menu, and the **At Depot** asset status pill (the existing `CustomerAssetStatus`) while the unit is At Depot. **Complete** is the primary button, because a shop order has no visit. **Ship Back** links to the RMA while `isReadyToShipBack` holds. `getServiceOrder` now embeds the RMA line and its return order.
 - Task 9: the order list gains a **Type** column with a filter (`listedServiceOrderTypes`: Field Visit, Depot Repair). The New form still offers Field Visit only.
 - Task 9: the asset list and the asset page needed no change. Both render the status through `CustomerAssetStatus`, and the list filter reads `customerAssetStatuses`, which already has At Depot.
+- Task 10: Tasks 4, 5 and 7 wrote the 2 test files early, and they cover every case the task lists. This task adds one receipt case: a serial that already has an open service order is refused, and the receipt writes no order, no stock and no journal. The serial stays Consumed and the asset stays In Service. Both files pass (8 cases). The credit and replacement guards (Task 8) are ERP service functions over the Supabase client, so no database test covers them.
