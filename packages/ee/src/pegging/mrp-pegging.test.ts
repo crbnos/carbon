@@ -4,12 +4,15 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  applyMemberMoves,
   type ComputedPeg,
   diffPegs,
   type ExistingPeg,
+  type MemberPosition,
   type PegDemand,
   type PegSupply,
   pegGroupSegment,
+  proposeMemberMoves,
   splitGroupedJobDemand
 } from "./mrp-pegging";
 
@@ -303,5 +306,153 @@ describe("pegging performance", () => {
 
     expect(result.pegs.length).toBeGreaterThan(10_000);
     expect(elapsed).toBeLessThan(500);
+  });
+});
+
+// The spec's sibling-excess case: a member short by 4, a sibling with 6.
+describe("proposeMemberMoves", () => {
+  const today = "2026-10-12";
+  const short: MemberPosition = {
+    projectId: "p-101",
+    priority: 100,
+    stock: 0,
+    supplies: [],
+    demands: [{ needDate: "2026-10-19", quantity: 4 }]
+  };
+
+  it("transfers 4 from a sibling with 6 excess and no demand in the horizon", () => {
+    const moves = proposeMemberMoves({
+      members: [
+        short,
+        {
+          projectId: "p-102",
+          priority: 100,
+          stock: 6,
+          supplies: [],
+          demands: []
+        }
+      ],
+      horizonEndDate: "2027-03-31",
+      leadTimeDays: 5,
+      today
+    });
+    expect(moves).toEqual([
+      {
+        type: "Transfer",
+        fromProjectId: "p-102",
+        toProjectId: "p-101",
+        quantity: 4,
+        needDate: "2026-10-19",
+        paybackDueDate: null
+      }
+    ]);
+  });
+
+  it("borrows 4 when the sibling needs its stock in 3 weeks, paid back a lead time before", () => {
+    const moves = proposeMemberMoves({
+      members: [
+        short,
+        {
+          projectId: "p-102",
+          priority: 100,
+          stock: 6,
+          supplies: [],
+          demands: [{ needDate: "2026-11-02", quantity: 6 }]
+        }
+      ],
+      horizonEndDate: "2027-03-31",
+      leadTimeDays: 5,
+      today
+    });
+    expect(moves).toEqual([
+      {
+        type: "Borrow",
+        fromProjectId: "p-102",
+        toProjectId: "p-101",
+        quantity: 4,
+        needDate: "2026-10-19",
+        // 3 weeks from today, less the 5-day lead time
+        paybackDueDate: "2026-10-28"
+      }
+    ]);
+  });
+
+  it("transfers the permanent excess first, never pays back before today, and lends nothing a sibling needs first", () => {
+    const moves = proposeMemberMoves({
+      members: [
+        short,
+        {
+          projectId: "p-102",
+          priority: 100,
+          stock: 3,
+          supplies: [],
+          demands: [{ needDate: "2026-10-26", quantity: 2 }]
+        },
+        {
+          projectId: "p-103",
+          priority: 100,
+          stock: 5,
+          supplies: [],
+          demands: [{ needDate: "2026-10-13", quantity: 5 }]
+        }
+      ],
+      horizonEndDate: "2027-03-31",
+      leadTimeDays: 30,
+      today
+    });
+    expect(
+      moves.map((move) => [
+        move.type,
+        move.fromProjectId,
+        move.quantity,
+        move.paybackDueDate
+      ])
+    ).toEqual([
+      ["Transfer", "p-102", 1, null],
+      ["Borrow", "p-102", 2, today]
+    ]);
+  });
+
+  it("moves the stock in the peg input, so the group total stays the same", () => {
+    const input = applyMemberMoves(
+      {
+        planningGroupId: "plg-1",
+        itemId: "item-1",
+        locationId: "loc-1",
+        demands: [],
+        supplies: [
+          {
+            supplyType: "Stock",
+            supplyId: "p-102",
+            ownerProjectId: "p-102",
+            availableDate: today,
+            quantity: 6
+          },
+          plannedOrder
+        ]
+      },
+      [
+        {
+          type: "Transfer",
+          fromProjectId: "p-102",
+          toProjectId: "p-101",
+          quantity: 4,
+          needDate: "2026-10-19",
+          paybackDueDate: null
+        }
+      ],
+      today
+    );
+    expect(
+      input.supplies.map((supply) => [
+        supply.supplyType,
+        supply.ownerProjectId,
+        supply.quantity
+      ])
+    ).toEqual([
+      ["Planning Action", null, 60],
+      ["Stock", "p-102", 2],
+      ["Stock", "p-101", 4]
+    ]);
   });
 });

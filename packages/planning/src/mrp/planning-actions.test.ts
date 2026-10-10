@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { DB } from "@carbon/database/client";
+import * as pegging from "@carbon/ee/pegging";
 import { computePlanningOrders } from "@carbon/utils";
 import {
   type CompiledQuery,
@@ -34,6 +35,7 @@ import {
   itemLocationSegmentKey,
   keyPeriodFor,
   loadSegmentOnHand,
+  memberMoveCandidates,
   naturalKey,
   projectionsWithExpedites,
   releaseByDate
@@ -1682,5 +1684,90 @@ describe("deriveRowActions in a project segment", () => {
       ["Order", 15]
     ]);
     expect(actions[0]?.policyName).toBe("Lot-for-Lot");
+  });
+});
+
+// Projects Phase 3: a member short by 4, with a sibling that needs its 6 in 3
+// weeks, gets a Borrow action in the group's segment.
+describe("memberMoveCandidates", () => {
+  it("emits a Borrow in the group segment and moves the stock in the peg input", () => {
+    const result = memberMoveCandidates(
+      {
+        inputs: [
+          {
+            planningGroupId: "plg-1",
+            itemId: "item-1",
+            locationId: "loc-1",
+            demands: [
+              {
+                projectId: "p-101",
+                projectElementId: null,
+                priority: 100,
+                sourceType: "Project Material",
+                sourceId: "pem-1",
+                needDate: "2026-10-19",
+                quantity: 4
+              },
+              {
+                projectId: "p-102",
+                projectElementId: null,
+                priority: 100,
+                sourceType: "Project Material",
+                sourceId: "pem-2",
+                needDate: "2026-11-02",
+                quantity: 6
+              }
+            ],
+            supplies: [
+              {
+                supplyType: "Stock",
+                supplyId: "p-102",
+                ownerProjectId: "p-102",
+                availableDate: "2026-10-12",
+                quantity: 6
+              }
+            ]
+          }
+        ],
+        planningGroups: [{ id: "plg-1", memberProjectIds: ["p-101", "p-102"] }],
+        priorityRuleByGroup: { "plg-1": "Earliest Need" },
+        priorityByProject: { "p-101": 100, "p-102": 100 },
+        leadTimeByItemLocation: new Map([["item-1\x1floc-1", 5]]),
+        periods: [
+          { id: "w1", startDate: "2026-10-11" },
+          { id: "w2", startDate: "2026-10-18" },
+          { id: "w3", startDate: "2026-10-25" },
+          // the horizon ends 2026-11-07, so p-102's need is inside it
+          { id: "w4", startDate: "2026-11-01" }
+        ],
+        todayDate: "2026-10-12",
+        assigneeOf: () => "emp-1"
+      },
+      pegging
+    );
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        type: "Borrow",
+        itemId: "item-1",
+        locationId: "loc-1",
+        periodId: "w2",
+        suggestedQuantity: 4,
+        suggestedDate: "2026-10-19",
+        planningSegmentId: "plg-1",
+        fromProjectId: "p-102",
+        toProjectId: "p-101",
+        triggerValues: { paybackDueDate: "2026-10-28" },
+        assignee: "emp-1"
+      })
+    ]);
+    expect(
+      result.inputs[0]?.supplies.map((supply) => [
+        supply.ownerProjectId,
+        supply.quantity
+      ])
+    ).toEqual([
+      ["p-102", 2],
+      ["p-101", 4]
+    ]);
   });
 });

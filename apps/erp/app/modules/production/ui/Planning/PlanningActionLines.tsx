@@ -400,8 +400,9 @@ export function PlanningActionRowActions({
             <Trans>Review</Trans>
           </Link>
         </Button>
-      ) : action.type === "Transfer" ? (
-        // applying a Transfer creates a Draft project stock transfer
+      ) : action.type === "Transfer" || action.type === "Borrow" ? (
+        // applying a Transfer or a Borrow creates a Draft project stock
+        // transfer
         <Button
           size="sm"
           variant="secondary"

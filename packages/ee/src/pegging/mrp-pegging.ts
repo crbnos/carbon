@@ -13,6 +13,7 @@ import {
   equals,
   round
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 
 export type PegSupplyType = "Purchase Order Line" | "Job" | "Planning Action";
 
@@ -432,4 +433,275 @@ export function diffPegs(
     .map(([, peg]) => peg);
 
   return { keepIds, supersedeIds, inserts };
+}
+
+/** One member's own position in an item at a location. */
+export type MemberPosition = {
+  projectId: string;
+  priority: number;
+  /** The member's own on-hand stock. */
+  stock: number;
+  /** The member's own open supply, by the date it arrives. */
+  supplies: { date: string; quantity: number }[];
+  /** The member's own demand, by the date it is needed. */
+  demands: { needDate: string; quantity: number }[];
+};
+
+/** A proposed move of stock from one member to a short sibling. */
+export type MemberMove = {
+  type: "Transfer" | "Borrow";
+  fromProjectId: string;
+  toProjectId: string;
+  quantity: number;
+  /** The date the short member needs the stock. */
+  needDate: string;
+  /** Borrow only: the date the borrower must pay the stock back. */
+  paybackDueDate: string | null;
+};
+
+type MemberTimeline = {
+  member: MemberPosition;
+  /** Each new deficit of the member's own balance, by date. */
+  shortfalls: { needDate: string; quantity: number }[];
+  /** Stock the member never needs within the horizon. */
+  permanentExcess: number;
+  /** The first date the member needs its own stock, within the horizon. */
+  nextNeedDate: string | null;
+};
+
+function timelineOf(
+  member: MemberPosition,
+  horizonEndDate: string
+): MemberTimeline {
+  const events = [
+    ...member.supplies
+      .filter((supply) => supply.quantity > 0 && supply.date <= horizonEndDate)
+      .map((supply) => ({ date: supply.date, quantity: supply.quantity })),
+    ...member.demands
+      .filter(
+        (demand) => demand.quantity > 0 && demand.needDate <= horizonEndDate
+      )
+      .map((demand) => ({ date: demand.needDate, quantity: -demand.quantity }))
+  ].sort(
+    // supply before demand on the same date
+    (a, b) => compareText(a.date, b.date) || b.quantity - a.quantity
+  );
+
+  const stock = Math.max(0, member.stock);
+  let balance = stock;
+  let lowest = Math.min(stock, 0);
+  let minBalance = stock;
+  let nextNeedDate: string | null = null;
+  const shortfalls: MemberTimeline["shortfalls"] = [];
+  for (const event of events) {
+    balance += event.quantity;
+    if (event.quantity < 0 && nextNeedDate === null) nextNeedDate = event.date;
+    minBalance = Math.min(minBalance, balance);
+    if (balance < lowest - EPSILON) {
+      shortfalls.push({ needDate: event.date, quantity: lowest - balance });
+      lowest = balance;
+    }
+  }
+  return {
+    member,
+    shortfalls,
+    permanentExcess: Math.max(0, Math.min(stock, minBalance)),
+    nextNeedDate
+  };
+}
+
+/**
+ * Proposes the moves of stock between the members of one planning group, for
+ * one item at one location. A move never changes the group's net requirement:
+ * it only moves stock the group already holds to the member that needs it.
+ * 1. A member's shortfall is the demand its own stock and supply do not cover
+ *    up to `horizonEndDate`.
+ * 2. The shortfalls are walked in the Task 6 order (`priorityRule`). Each one
+ *    takes from the siblings in project id order.
+ * 3. From each sibling, a **Transfer** takes its permanent excess first: the
+ *    stock it never needs within the horizon.
+ * 4. Then a **Borrow** takes the rest of its stock, if the sibling first needs
+ *    it after the short member does. The payback date is the sibling's next
+ *    need date less `leadTimeDays`, never before `today`.
+ * A member with a shortfall of its own lends nothing.
+ */
+export function proposeMemberMoves(args: {
+  members: MemberPosition[];
+  horizonEndDate: string;
+  leadTimeDays: number;
+  today: string;
+  priorityRule?: PegPriorityRule;
+}): MemberMove[] {
+  const timelines = args.members.map((member) =>
+    timelineOf(member, args.horizonEndDate)
+  );
+  const lenders = timelines
+    .filter((timeline) => timeline.shortfalls.length === 0)
+    .map((timeline) => ({
+      timeline,
+      transferable: timeline.permanentExcess,
+      borrowable: Math.max(0, timeline.member.stock) - timeline.permanentExcess
+    }))
+    .sort((a, b) =>
+      compareText(a.timeline.member.projectId, b.timeline.member.projectId)
+    );
+  if (lenders.length === 0) return [];
+
+  const shortfalls = timelines
+    .flatMap((timeline) =>
+      timeline.shortfalls.map((shortfall) => ({
+        ...shortfall,
+        member: timeline.member
+      }))
+    )
+    .sort((a, b) =>
+      args.priorityRule === "Project Priority"
+        ? a.member.priority - b.member.priority ||
+          compareText(a.needDate, b.needDate) ||
+          compareText(a.member.projectId, b.member.projectId)
+        : compareText(a.needDate, b.needDate) ||
+          a.member.priority - b.member.priority ||
+          compareText(a.member.projectId, b.member.projectId)
+    );
+
+  const leadTimeDays = Math.max(0, args.leadTimeDays || 0);
+  const moves: MemberMove[] = [];
+  for (const shortfall of shortfalls) {
+    let need = shortfall.quantity;
+    for (const lender of lenders) {
+      if (need <= EPSILON) break;
+      const fromProjectId = lender.timeline.member.projectId;
+      if (fromProjectId === shortfall.member.projectId) continue;
+
+      const transfer = Math.min(need, lender.transferable);
+      if (round(transfer) > 0) {
+        moves.push({
+          type: "Transfer",
+          fromProjectId,
+          toProjectId: shortfall.member.projectId,
+          quantity: round(transfer),
+          needDate: shortfall.needDate,
+          paybackDueDate: null
+        });
+        lender.transferable -= transfer;
+        need -= transfer;
+      }
+
+      const nextNeedDate = lender.timeline.nextNeedDate;
+      if (
+        need <= EPSILON ||
+        nextNeedDate === null ||
+        nextNeedDate <= shortfall.needDate
+      ) {
+        continue;
+      }
+      const borrow = Math.min(need, lender.borrowable);
+      if (round(borrow) > 0) {
+        const payback = parseDate(nextNeedDate)
+          .subtract({ days: leadTimeDays })
+          .toString();
+        moves.push({
+          type: "Borrow",
+          fromProjectId,
+          toProjectId: shortfall.member.projectId,
+          quantity: round(borrow),
+          needDate: shortfall.needDate,
+          paybackDueDate: payback < args.today ? args.today : payback
+        });
+        lender.borrowable -= borrow;
+        need -= borrow;
+      }
+    }
+  }
+  return moves;
+}
+
+/**
+ * The members' own positions in one peg input: each member's own stock, own
+ * open supply and own demand. A grouped job's component demand with no
+ * project yet is left out: it belongs to no member until the job is pegged.
+ */
+export function memberPositionsOf(
+  input: GroupPegInput,
+  memberProjectIds: readonly string[],
+  priorityByProject: Readonly<Record<string, number>>
+): MemberPosition[] {
+  return memberProjectIds.map((projectId) => {
+    const own = input.supplies.filter(
+      (supply) => supply.ownerProjectId === projectId
+    );
+    return {
+      projectId,
+      priority: priorityByProject[projectId] ?? 100,
+      stock: own
+        .filter((supply) => supply.supplyType === "Stock")
+        .reduce((sum, supply) => sum + supply.quantity, 0),
+      supplies: own
+        .filter((supply) => supply.supplyType !== "Stock")
+        .map((supply) => ({
+          date: supply.availableDate,
+          quantity: supply.quantity
+        })),
+      demands: input.demands
+        .filter((demand) => demand.projectId === projectId)
+        .map((demand) => ({
+          needDate: demand.needDate,
+          quantity: demand.quantity
+        }))
+    };
+  });
+}
+
+/**
+ * The peg input after the proposed moves: the stock leaves the lender and
+ * joins the short member, so the short member's own stock covers its demand
+ * before pegging (`pegGroupSegment` step 2). The group's total does not change.
+ */
+export function applyMemberMoves(
+  input: GroupPegInput,
+  moves: readonly MemberMove[],
+  today: string
+): GroupPegInput {
+  if (moves.length === 0) return input;
+  const delta = new Map<string, number>();
+  for (const move of moves) {
+    delta.set(
+      move.fromProjectId,
+      (delta.get(move.fromProjectId) ?? 0) - move.quantity
+    );
+    delta.set(
+      move.toProjectId,
+      (delta.get(move.toProjectId) ?? 0) + move.quantity
+    );
+  }
+  // One Stock row per member: the member's rows summed, then moved.
+  const stockByProject = new Map<string, number>();
+  const supplies: PegSupply[] = [];
+  for (const supply of input.supplies) {
+    if (supply.supplyType === "Stock" && supply.ownerProjectId) {
+      stockByProject.set(
+        supply.ownerProjectId,
+        (stockByProject.get(supply.ownerProjectId) ?? 0) + supply.quantity
+      );
+    } else {
+      supplies.push(supply);
+    }
+  }
+  for (const [projectId, change] of delta) {
+    stockByProject.set(
+      projectId,
+      (stockByProject.get(projectId) ?? 0) + change
+    );
+  }
+  for (const [projectId, quantity] of stockByProject) {
+    if (round(quantity) <= 0) continue;
+    supplies.push({
+      supplyType: "Stock",
+      supplyId: projectId,
+      ownerProjectId: projectId,
+      availableDate: today,
+      quantity: round(quantity)
+    });
+  }
+  return { ...input, supplies };
 }

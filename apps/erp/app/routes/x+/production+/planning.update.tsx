@@ -823,13 +823,17 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
 
-      // A Transfer creates a Draft project stock transfer (approved and posted
-      // on the transfer pages); it is never one of the change actions below.
+      // A Transfer or a Borrow creates a Draft project stock transfer
+      // (approved and posted on the transfer pages); it is never one of the
+      // change actions below.
       const transferIds =
         action === "apply"
           ? parsedIds.data.filter((id) => {
               const row = rowById.get(id);
-              return row?.type === "Transfer" && row.status === "Open";
+              return (
+                (row?.type === "Transfer" || row?.type === "Borrow") &&
+                row.status === "Open"
+              );
             })
           : [];
       const transferOutcome = await applyTransferPlanningActions({

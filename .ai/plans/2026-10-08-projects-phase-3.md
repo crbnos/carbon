@@ -54,7 +54,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 - [x] Task 11: Distribute grouped job output
 - [x] Task 12: Charge price variance to member projects
 - [x] Task 13: Add soft-peg commitments to the cost summary
-- [ ] Task 14: Propose member Transfers and Borrows
+- [x] Task 14: Propose member Transfers and Borrows
 - [ ] Task 15: Add the Pegging tab and manual pegs
 - [ ] Task 16: Extend the demo datasets
 - [ ] Task 17: Update the rules, AGENTS.md, docs and spec
@@ -815,3 +815,15 @@ ls .ai/playbooks/projects-phase-3.md
 - Fix (deviation): the user asked for the Hard pegs latest first. The excess comes back before them, because the distribution wrote it last. Under Common Stock, the excess part draws common stock, as before.
 - Fix (known gap): the void of a negative receipt puts the units back in the member stripes but leaves the pegs Soft. Only `harden_pegs_for_supply` turns a peg Hard, and the next MRP run re-pegs the open supply.
 - Fix: `soften-pegs-for-return.test.sql` passes 4 cases (latest Hard pegs first, excess first, exception project, return beyond the pegs). The new `grouped-receipt.test.ts` case receives 65 against 20, 30 and 10, then returns 18. It checks the rows (5 common, 10 from P-103, 3 from P-102), their layers, a credit of 180, and the pegs. The full server-functions suite passes (516).
+- Task 14 (gating): `proposeMemberMoves` is in `packages/ee/src/pegging/mrp-pegging.ts`, with 2 helpers. `memberPositionsOf` reads each member's own position from a peg input. `applyMemberMoves` moves the stock in the peg input. `generatePlanningActions` loads them lazily, only with `pegging` (PLANNING_GROUPS), through `memberMoveCandidates` (`planning-actions.ts`).
+- Task 14 (deviation): the function takes `today` and an optional `priorityRule`, because it has no clock and step 2 sorts by the Task 6 rule. It reads the members from the peg inputs, so it needs no new query.
+- Task 14 (deviation): the plan's steps 3 and 4 decide per sibling. The function decides per unit:
+  1. A Transfer takes the sibling's permanent excess first. That is the stock its own balance never needs up to the horizon end (the minimum of its balance, capped at its stock).
+  2. A Borrow takes the rest of the sibling's stock, only if the sibling first needs it after the short member does.
+  3. A member with a shortfall of its own lends nothing.
+- Task 14 (deviation, reason): with the plan's rule, a sibling with 10 in stock and a need of 2 would lend all 10 as a Borrow. The 2 spec cases give the same result under both rules.
+- Task 14: the horizon end is the last day of the run's last week. The lead time is the item's `leadTime` from the planning rows at the location. A move's period is the week of its need date, and moves with one natural key add up (the earliest payback wins).
+- Task 14: `triggerValues` on a candidate now allows a string, for `paybackDueDate`. A move changes the peg input before pegging: the lender's Stock supply goes down and the short member's goes up. The group total does not change.
+- Task 14 (beyond the plan's file list): the apply function is `createProjectStockTransfersFromActions` in `projects.server.ts`, not `createProjectStockTransferFromAction` in `projects.service.ts`. It now creates a Draft transfer of the action's type, and a Borrow takes its payback date from `triggerValues`. It refuses a Borrow with no payback date. Both `planning.update` routes and the **Create transfer** button now include Borrow actions.
+- Task 14: 4 `proposeMemberMoves` cases pass, with the plan's 2 (a Transfer of 4; a Borrow of 4 paid back 3 weeks less a 5-day lead time). The other 2 check the excess order and the stock move in the peg input. `memberMoveCandidates` has 1 planning case, and `transfer-planning-actions.test.ts` has 2 new Borrow cases. `@carbon/ee` passes (1943), `@carbon/planning` passes (327) with the basic snapshot unchanged, and `erp`, `@carbon/planning`, `@carbon/ee` and `@carbon/jobs` typecheck.
+- Task 14 (found, not fixed): a group segment can still get a Transfer from common stock (`commonSurplusDraws`) with the group id as `toProjectId`. Applying it would fail on the project FK. The draw names the group, not the member that needs the stock.

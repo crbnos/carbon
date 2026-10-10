@@ -4095,10 +4095,12 @@ export async function applyTransferPlanningActions(args: {
 }
 
 /**
- * Applies Transfer planning actions, set-based in one transaction:
+ * Applies Transfer and Borrow planning actions, set-based in one transaction:
  * 1. claim the actions (Open → Actioned; the claim is the lock),
- * 2. create one Draft project stock transfer per claimed action, with one
- *    line for the action's item and quantity,
+ * 2. create one Draft project stock transfer per claimed action, of the
+ *    action's type, with one line for the action's item and quantity. A
+ *    Borrow takes its payback date from `triggerValues.paybackDueDate`
+ *    (Projects Phase 3: a member's stock lent to a short sibling),
  * 3. record each transfer on its action (`projectStockTransferId`).
  *
  * An action someone else applied first is returned in `alreadyApplied` and
@@ -4142,22 +4144,34 @@ export async function createProjectStockTransfersFromActions(
           "locationId",
           "fromProjectId",
           "toProjectId",
-          "reason"
+          "reason",
+          "triggerValues"
         ])
         .where("id", "in", ids)
         .where("companyId", "=", companyId)
         .orderBy("id")
         .execute();
       const rows = actions.map((action) => {
-        if (action.type !== "Transfer") {
-          throw new Error(`Planning action ${action.id} is not a Transfer`);
+        if (action.type !== "Transfer" && action.type !== "Borrow") {
+          throw new Error(
+            `Planning action ${action.id} is not a Transfer or a Borrow`
+          );
         }
         // the quantity as it is at the claim, not as the page read it
         const quantity = Number(claimed.get(action.id)?.suggestedQuantity);
         if (!(quantity > 0)) {
           throw new Error(`Planning action ${action.id} has no quantity`);
         }
-        return { ...action, quantity };
+        const payback = (action.triggerValues as Record<string, unknown> | null)
+          ?.paybackDueDate;
+        const paybackDueDate =
+          action.type === "Borrow" && typeof payback === "string"
+            ? payback
+            : null;
+        if (action.type === "Borrow" && !paybackDueDate) {
+          throw new Error(`Planning action ${action.id} has no payback date`);
+        }
+        return { ...action, type: action.type, quantity, paybackDueDate };
       });
 
       // One readable id per transfer, from the projectStockTransfer sequence.
@@ -4176,9 +4190,10 @@ export async function createProjectStockTransfersFromActions(
           rows.map((action, i) => ({
             companyId,
             projectStockTransferId: readableIds[i]!,
-            type: "Transfer" as const,
+            type: action.type,
             fromProjectId: action.fromProjectId,
             toProjectId: action.toProjectId,
+            paybackDueDate: action.paybackDueDate,
             locationId: action.locationId,
             reason: action.reason ?? "Planning action",
             planningActionId: action.id,

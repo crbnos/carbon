@@ -139,6 +139,79 @@ describe("createProjectStockTransfersFromActions", () => {
     expect(link?.sql).toContain(`SET "projectStockTransferId"`);
   });
 
+  // Projects Phase 3: a member Borrow becomes a Draft Borrow with the
+  // payback date the run proposed.
+  it("creates a Draft Borrow with the action's payback date", async () => {
+    const { db, driver } = database([
+      [{ id: "a2", suggestedDate: "2026-10-19", suggestedQuantity: 4 }],
+      [
+        {
+          id: "a2",
+          type: "Borrow",
+          itemId: "i1",
+          locationId: "l1",
+          fromProjectId: "prj_102",
+          toProjectId: "prj_101",
+          reason: "Sibling stock lent until the sibling needs it",
+          triggerValues: { paybackDueDate: "2026-10-28" }
+        }
+      ],
+      [{ id: "PST-000002" }],
+      [
+        {
+          id: "pst_2",
+          planningActionId: "a2",
+          projectStockTransferId: "PST-000002"
+        }
+      ]
+    ]);
+
+    const result = await createProjectStockTransfersFromActions(db, {
+      companyId: "c1",
+      userId: "u1",
+      planningActionIds: ["a2"]
+    });
+
+    expect(result.error).toBeNull();
+    const header = driver.sent[3];
+    expect(header?.sql).toMatch(/^insert into "projectStockTransfer"/);
+    expect(header?.parameters).toEqual(
+      expect.arrayContaining([
+        "Borrow",
+        "prj_102",
+        "prj_101",
+        "2026-10-28",
+        "a2"
+      ])
+    );
+  });
+
+  it("refuses a Borrow with no payback date", async () => {
+    const { db } = database([
+      [{ id: "a3", suggestedDate: "2026-10-19", suggestedQuantity: 4 }],
+      [
+        {
+          id: "a3",
+          type: "Borrow",
+          itemId: "i1",
+          locationId: "l1",
+          fromProjectId: "prj_102",
+          toProjectId: "prj_101",
+          reason: null,
+          triggerValues: null
+        }
+      ]
+    ]);
+
+    const result = await createProjectStockTransfersFromActions(db, {
+      companyId: "c1",
+      userId: "u1",
+      planningActionIds: ["a3"]
+    });
+
+    expect(result.error).toBe("Planning action a3 has no payback date");
+  });
+
   // The claim is the lock: an action another apply took first gets nothing.
   it("creates nothing for an action already applied", async () => {
     const { db, driver } = database([[]]);

@@ -10,7 +10,11 @@
 //   Increase / Decrease   — change an existing order's quantity
 //   Cancel                — an existing order has no remaining requirement
 //   Transfer              — move common stock a project segment needs into
-//                           the project (from the common segment's true surplus)
+//                           the project (from the common segment's true surplus),
+//                           or a planning group member's permanent excess to a
+//                           short sibling (Projects Phase 3)
+//   Borrow                — lend a member's stock to a short sibling until the
+//                           member needs it back (Projects Phase 3)
 //
 // Every action belongs to a netting segment (`planningSegmentId`): '' is
 // common, a project id is a project with project stock. Each segment is
@@ -40,7 +44,12 @@ import { getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { COMMON_SEGMENT, KEY_SEP } from "@carbon/database/mrp-engine";
-import type { GroupPegInput, PegPriorityRule } from "@carbon/ee/pegging";
+import type {
+  GroupPegInput,
+  MemberMove,
+  MemberPosition,
+  PegPriorityRule
+} from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
 import {
   computePlanningOrders,
@@ -123,7 +132,8 @@ export type PlanningActionCandidate = {
   supplierId: string | null;
   policyName: string | null;
   reason: string | null;
-  triggerValues: Record<string, number | null | undefined> | null;
+  /** A Borrow carries its payback date (`paybackDueDate`) as a string. */
+  triggerValues: Record<string, number | string | null | undefined> | null;
   assignee: string | null;
 } & PlanningActionSegment;
 
@@ -1143,6 +1153,151 @@ export function withPlannedPegSupplies(args: {
   return inputs;
 }
 
+const MEMBER_TRANSFER_REASON = "Sibling stock not needed within the horizon";
+const MEMBER_BORROW_REASON = "Sibling stock lent until the sibling needs it";
+
+/** The pure pegging functions `memberMoveCandidates` uses (`@carbon/ee/pegging`). */
+export type MemberMovePegging = {
+  proposeMemberMoves: (args: {
+    members: MemberPosition[];
+    horizonEndDate: string;
+    leadTimeDays: number;
+    today: string;
+    priorityRule?: PegPriorityRule;
+  }) => MemberMove[];
+  memberPositionsOf: (
+    input: GroupPegInput,
+    memberProjectIds: readonly string[],
+    priorityByProject: Readonly<Record<string, number>>
+  ) => MemberPosition[];
+  applyMemberMoves: (
+    input: GroupPegInput,
+    moves: readonly MemberMove[],
+    today: string
+  ) => GroupPegInput;
+};
+
+/**
+ * Projects Phase 3: the member Transfers and Borrows of every planning group.
+ * Per (group, item, location) peg input, `proposeMemberMoves` moves stock
+ * from a sibling with excess to a short member. Each move is a candidate in
+ * the group's segment; moves with one natural key add up. The returned peg
+ * inputs carry the moved stock, so the short member's own stock covers its
+ * demand before pegging. A move never changes the group's net requirement.
+ */
+export function memberMoveCandidates(
+  args: {
+    inputs: GroupPegInput[];
+    planningGroups: { id: string; memberProjectIds: string[] }[];
+    priorityRuleByGroup: Record<string, PegPriorityRule>;
+    priorityByProject: Record<string, number>;
+    /** `itemId + KEY_SEP + locationId` -> the item's lead time in days. */
+    leadTimeByItemLocation: ReadonlyMap<string, number>;
+    periods: { id: string; startDate: string }[];
+    todayDate: string;
+    assigneeOf: (
+      itemId: string,
+      locationId: string,
+      segmentId: string
+    ) => string | null;
+  },
+  pegging: MemberMovePegging
+): { candidates: PlanningActionCandidate[]; inputs: GroupPegInput[] } {
+  const { periods, todayDate } = args;
+  const lastPeriod = periods[periods.length - 1];
+  if (!lastPeriod) return { candidates: [], inputs: args.inputs };
+  const horizonEndDate = parseDate(lastPeriod.startDate)
+    .add({ days: DAYS_PER_PERIOD - 1 })
+    .toString();
+  const membersByGroup = new Map(
+    args.planningGroups.map((group) => [group.id, group.memberProjectIds])
+  );
+  const periodFor = (dateIso: string) => {
+    let match = periods[0]!;
+    for (const p of periods) {
+      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
+      else break;
+    }
+    return match;
+  };
+
+  const byKey = new Map<string, PlanningActionCandidate>();
+  const inputs = args.inputs.map((input) => {
+    const memberIds = membersByGroup.get(input.planningGroupId) ?? [];
+    if (memberIds.length < 2) return input;
+    const moves = pegging.proposeMemberMoves({
+      members: pegging.memberPositionsOf(
+        input,
+        memberIds,
+        args.priorityByProject
+      ),
+      horizonEndDate,
+      leadTimeDays:
+        args.leadTimeByItemLocation.get(
+          input.itemId + KEY_SEP + input.locationId
+        ) ?? 0,
+      today: todayDate,
+      priorityRule: args.priorityRuleByGroup[input.planningGroupId]
+    });
+    for (const move of moves) {
+      const date = laterDate(move.needDate, todayDate);
+      const candidate: PlanningActionCandidate = {
+        itemId: input.itemId,
+        locationId: input.locationId,
+        periodId: periodFor(date).id,
+        type: move.type,
+        suggestedQuantity: move.quantity,
+        suggestedDate: date,
+        horizonDate: date,
+        latestOrderDate: null,
+        isASAP: daysBetween(move.needDate, todayDate) <= 0,
+        purchaseOrderLineId: null,
+        jobId: null,
+        requiresManualAction: false,
+        supplierId: null,
+        policyName: null,
+        reason:
+          move.type === "Borrow"
+            ? MEMBER_BORROW_REASON
+            : MEMBER_TRANSFER_REASON,
+        triggerValues: move.paybackDueDate
+          ? { paybackDueDate: move.paybackDueDate }
+          : null,
+        assignee: args.assigneeOf(
+          input.itemId,
+          input.locationId,
+          input.planningGroupId
+        ),
+        planningSegmentId: input.planningGroupId,
+        fromProjectId: move.fromProjectId,
+        toProjectId: move.toProjectId
+      };
+      const key = naturalKey(candidate);
+      const current = byKey.get(key);
+      if (!current) {
+        byKey.set(key, candidate);
+        continue;
+      }
+      current.suggestedQuantity = round(
+        current.suggestedQuantity + candidate.suggestedQuantity
+      );
+      current.isASAP = current.isASAP || candidate.isASAP;
+      // the earliest payback of the moves it holds
+      const payback = candidate.triggerValues?.paybackDueDate;
+      const held = current.triggerValues?.paybackDueDate;
+      if (
+        typeof payback === "string" &&
+        typeof held === "string" &&
+        payback < held
+      ) {
+        current.triggerValues = { paybackDueDate: payback };
+      }
+    }
+    return pegging.applyMemberMoves(input, moves, todayDate);
+  });
+  return { candidates: [...byKey.values()], inputs };
+}
+
 // ──────────────────────────────────────────────────────────────
 // Orchestrator
 // ──────────────────────────────────────────────────────────────
@@ -1863,6 +2018,8 @@ export async function generatePlanningActions(
 
   // ── planning rows (projections + reorder params) per location and segment
   const candidates: PlanningActionCandidate[] = [];
+  // The lead time of each item at each location, for the member Borrows.
+  const leadTimeByItemLocation = new Map<string, number>();
 
   for (const location of locations) {
     // Paged like every other read in the run: a bare RPC call stops at
@@ -1918,6 +2075,10 @@ export async function generatePlanningActions(
         todayDate
       });
 
+      leadTimeByItemLocation.set(
+        row.id + KEY_SEP + location.id,
+        Number(row.leadTime) || 0
+      );
       const assignee = resolveAssignee(
         row.id,
         location.id,
@@ -1938,6 +2099,28 @@ export async function generatePlanningActions(
 
     for (const row of purchasing.data ?? []) process(row, "Order");
     for (const row of production.data ?? []) process(row, "Make");
+  }
+
+  // ── Projects Phase 3: member Transfers and Borrows inside each planning
+  // group. Only with PLANNING_GROUPS (`args.pegging`); the commercial
+  // functions load lazily, so a company without the feature loads none.
+  let pegging = args.pegging;
+  if (pegging && (args.planningGroups ?? []).length > 0) {
+    const moves = memberMoveCandidates(
+      {
+        inputs: pegging.inputs,
+        planningGroups: args.planningGroups ?? [],
+        priorityRuleByGroup: pegging.priorityRuleByGroup,
+        priorityByProject: pegging.priorityByProject,
+        leadTimeByItemLocation,
+        periods,
+        todayDate,
+        assigneeOf: resolveAssignee
+      },
+      await import("@carbon/ee/pegging")
+    );
+    candidates.push(...moves.candidates);
+    pegging = { ...pegging, inputs: moves.inputs };
   }
 
   // ── diff-write. One transaction holds a per-company advisory lock across
@@ -2009,11 +2192,11 @@ export async function generatePlanningActions(
       updatedAt: datetime.timestamp()
     });
 
-    if (args.pegging) {
+    if (pegging) {
       const pegs = await writePegs(trx, {
         companyId,
         userId,
-        pegging: args.pegging,
+        pegging,
         candidates,
         keyPeriod: keyPeriodFor(periods)
       });
