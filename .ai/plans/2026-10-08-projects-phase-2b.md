@@ -39,7 +39,7 @@ The plan covers:
 - [x] Task 5: Segment the demand and supply views
 - [x] Task 6: Segment the inputs of `runMrp`
 - [x] Task 7: Net segments and draw common surplus in `explodeBom`
-- [ ] Task 8: Segment the actuals and the Phase 7 writes
+- [x] Task 8: Segment the actuals and the Phase 7 writes
 - [ ] Task 9: Segment the planning RPCs and grids
 - [ ] Task 10: Generate segmented and Transfer planning actions
 - [ ] Task 11: Apply segmented Order, Make and Transfer actions
@@ -680,3 +680,7 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 7 (deviation): supersession applies to segment `''` only (spec decision 24). The Consume First redirect in `explodeBom` runs for common keys only. Project segments explode through `segmentBomByItem`, a copy of the BOM taken before the swap. Its edges level too. `planCompany` builds the copy only when an effective supersession exists and some demand is in a project segment, so a company with no project stock levels as before.
 - Task 7: `horizonPeriods` limits how far a true surplus looks ahead (`surplusWithinHorizon`). `planCompany` passes the whole MRP window. `planCompany` returns `commonSurplusDraws` as rows (`itemId`, `locationId`, `periodId`, `planningSegmentId`, `quantity`) for Task 10.
 - Task 7: the Task 3 test "explodes a parent's demand in segment prj_1 into prj_1 only" now blocks the draw. Its point is that common on-hand does not net the segment, and by default the segment would draw that stock. 4 new engine tests pass: the spec case (draw 8, remainder 7), the blocked item (15), a Make item that explodes only its remainder after a draw of 5, and the horizon. The new `plan-company.project.json` holds the spec case (common on-hand 10, common demand 2, P-101 demand 20 and stock 5). Its snapshot is written and the basic snapshot is unchanged. The database suite passes (425), the planning suite passes (315), and `@carbon/planning`, `@carbon/server-functions` and `@carbon/jobs` typecheck.
+- Task 8 (deviation): a row in a project segment carries `planningSegmentId`. A common row leaves the column out (`segmentColumn`), so Postgres writes the default `''` (Kysely sends `default` for a column one row of a batch lacks). Writing `''` on every row would change the basic snapshot, which pins the rows of a company with no project stock.
+- Task 8: the `demandForecast` map key, the lineage rows and both zeroing passes carry the segment, and `runMrp` reads `planningSegmentId` with the existing actuals. The 3 Phase 7 `onConflict` lists and both actuals reads (`.order("planningSegmentId")`) gain the segment. `consumptionUpdates` come from projections only, which are common, so they needed no change.
+- Task 8: both `planning.update.tsx` routes read `planningSegmentId` from the posted item row (default `''`). It reaches the `supplyForecast` row, its dedupe key (now joined on `\u001f`, not `-`) and the conflict columns.
+- Task 8: a new test writes 2 `Job Material` actuals for one item, location and week, one per segment. The planning suite passes (316). The basic snapshot is unchanged; the project snapshot gains `planningSegmentId` on its project row. `erp` and `@carbon/planning` typecheck. A real `runMrp` on Carbon Development wrote the same totals as before (83 `demandForecast`, 56 `demandActual`, 9 `supplyActual`, 84 open actions, equal sums) and 0 segmented rows.

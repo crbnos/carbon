@@ -21,6 +21,7 @@ exports[`planCompany > nets a project segment and draws the common true surplus 
       "itemId": "item_p",
       "locationId": "loc_plant",
       "periodId": "per_w2",
+      "planningSegmentId": "prj_p101",
       "sourceType": "Project Material",
       "updatedBy": "system",
     },

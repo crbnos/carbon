@@ -343,6 +343,7 @@ export async function runMrp(
           .order("locationId")
           .order("periodId")
           .order("sourceType")
+          .order("planningSegmentId")
       ),
       fetchAll<Database["public"]["Tables"]["supplyActual"]["Row"]>(() =>
         client
@@ -357,6 +358,7 @@ export async function runMrp(
           .order("locationId")
           .order("periodId")
           .order("sourceType")
+          .order("planningSegmentId")
       )
     ]);
 
@@ -461,12 +463,19 @@ export async function runMrp(
             .insertInto("demandForecast")
             .values(batch)
             .onConflict((oc) =>
-              oc.columns(["itemId", "locationId", "periodId"]).doUpdateSet({
-                forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
-                forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
-                updatedAt: datetime.timestamp(),
-                updatedBy: userId
-              })
+              oc
+                .columns([
+                  "itemId",
+                  "locationId",
+                  "periodId",
+                  "planningSegmentId"
+                ])
+                .doUpdateSet({
+                  forecastQuantity: (eb) => eb.ref("excluded.forecastQuantity"),
+                  forecastMethod: (eb) => eb.ref("excluded.forecastMethod"),
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
+                })
             )
             .execute();
         }
@@ -490,7 +499,13 @@ export async function runMrp(
             .values(batch)
             .onConflict((oc) =>
               oc
-                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .columns([
+                  "itemId",
+                  "locationId",
+                  "periodId",
+                  "sourceType",
+                  "planningSegmentId"
+                ])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
                   updatedAt: datetime.timestamp(),
@@ -508,7 +523,13 @@ export async function runMrp(
             .values(batch)
             .onConflict((oc) =>
               oc
-                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .columns([
+                  "itemId",
+                  "locationId",
+                  "periodId",
+                  "sourceType",
+                  "planningSegmentId"
+                ])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
                   updatedAt: datetime.timestamp(),

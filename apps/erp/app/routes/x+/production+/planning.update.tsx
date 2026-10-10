@@ -62,6 +62,8 @@ async function notifyScheduleChange(
 const itemsValidator = z
   .object({
     id: z.string(),
+    // The netting segment of the grid row ('' is common).
+    planningSegmentId: z.string().default(""),
     orders: z.array(productionOrderValidator)
   })
   .array();
@@ -214,6 +216,7 @@ export async function action({ request }: ActionFunctionArgs) {
           sourceType: "Production Order";
           forecastQuantity: number;
           periodId: string;
+          planningSegmentId: string;
           companyId: string;
           createdBy: string;
           updatedBy: string;
@@ -365,6 +368,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   sourceType: "Production Order" as const,
                   forecastQuantity: quantity,
                   periodId,
+                  planningSegmentId: item.planningSegmentId,
                   companyId,
                   createdBy: userId,
                   updatedBy: userId
@@ -394,7 +398,12 @@ export async function action({ request }: ActionFunctionArgs) {
           const forecastMap = new Map<string, (typeof allSupplyForecasts)[0]>();
 
           for (const forecast of allSupplyForecasts) {
-            const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+            const key = [
+              forecast.itemId,
+              forecast.locationId,
+              forecast.periodId,
+              forecast.planningSegmentId
+            ].join("\u001f");
             const existing = forecastMap.get(key);
 
             if (existing) {
@@ -410,7 +419,7 @@ export async function action({ request }: ActionFunctionArgs) {
           const insertForecasts = await client
             .from("supplyForecast")
             .upsert(uniqueSupplyForecasts, {
-              onConflict: "itemId,locationId,periodId",
+              onConflict: "itemId,locationId,periodId,planningSegmentId",
               ignoreDuplicates: false
             });
 

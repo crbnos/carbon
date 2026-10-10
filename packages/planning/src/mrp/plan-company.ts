@@ -156,14 +156,16 @@ export type PlanCompanyInputs = {
     methodType: MethodType;
   }[];
   /** The actuals an earlier run wrote in these periods; this run zeroes them. */
-  existingDemandActuals: Pick<
+  existingDemandActuals: (Pick<
     Tables["demandActual"]["Row"],
     "itemId" | "locationId" | "periodId" | "sourceType"
-  >[];
-  existingSupplyActuals: Pick<
+  > &
+    Segmented)[];
+  existingSupplyActuals: (Pick<
     Tables["supplyActual"]["Row"],
     "itemId" | "locationId" | "periodId" | "sourceType"
-  >[];
+  > &
+    Segmented)[];
 };
 
 /** The netting segment of a demand or supply row; absent is common (''). */
@@ -181,6 +183,15 @@ export function planningSegmentOf(
   return projectId && stockedProjectIds.has(projectId)
     ? projectId
     : COMMON_SEGMENT;
+}
+
+/**
+ * The `planningSegmentId` column of an output row. Common rows leave it out
+ * and take the column default (''), so a company with no project stock
+ * writes the same rows as before Phase 2b.
+ */
+function segmentColumn(segmentId: string): { planningSegmentId?: string } {
+  return segmentId === COMMON_SEGMENT ? {} : { planningSegmentId: segmentId };
 }
 
 type DemandForecastSourceInsert =
@@ -921,7 +932,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     segmentBomByItem
   });
 
-  // demandForecast output: Map<"itemId-locationId-periodId", record>
+  // demandForecast output, keyed by makeKey(location, period, item, segment)
   const demandForecastMap = new Map<
     string,
     Database["public"]["Tables"]["demandForecast"]["Insert"]
@@ -933,9 +944,10 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
   const demandForecastSourceInserts: DemandForecastSourceInsert[] = [];
   for (const [key, qty] of bomDerivedDemand) {
     if (qty <= 0) continue;
-    const [locationId, periodId, itemId] = splitKey(key);
+    const [locationId, periodId, itemId, segmentId] = splitKey(key);
+    const segment = segmentColumn(segmentId);
 
-    const forecastKey = makeKey(locationId, periodId, itemId);
+    const forecastKey = makeKey(locationId, periodId, itemId, segmentId);
     const existing = demandForecastMap.get(forecastKey);
     if (existing) {
       existing.forecastQuantity = Number(existing.forecastQuantity) + qty;
@@ -944,6 +956,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
         itemId,
         locationId,
         periodId,
+        ...segment,
         forecastQuantity: qty,
         forecastMethod: "mrp",
         companyId,
@@ -960,6 +973,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
           itemId,
           locationId,
           periodId,
+          ...segment,
           sourceType: "Job Material",
           jobId: c.jobId,
           salesOrderLineId: null,
@@ -974,6 +988,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
           itemId,
           locationId,
           periodId,
+          ...segment,
           sourceType: "Sales Order",
           jobId: null,
           salesOrderLineId: c.salesOrderLineId,
@@ -988,6 +1003,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
           itemId,
           locationId,
           periodId,
+          ...segment,
           sourceType: "Demand Projection",
           jobId: null,
           salesOrderLineId: null,
@@ -1018,16 +1034,19 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
 
   // Zero out existing demand actuals (they'll be overwritten if still relevant)
   for (const existing of input.existingDemandActuals) {
+    const segmentId = existing.planningSegmentId ?? COMMON_SEGMENT;
     const key = makeActualKey(
       existing.itemId,
       existing.locationId ?? "",
       existing.periodId,
-      existing.sourceType
+      existing.sourceType,
+      segmentId
     );
     demandActualsMap.set(key, {
       itemId: existing.itemId,
       locationId: existing.locationId,
       periodId: existing.periodId,
+      ...segmentColumn(segmentId),
       actualQuantity: 0,
       sourceType: existing.sourceType,
       companyId,
@@ -1039,11 +1058,12 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
   // Sales order demand actuals
   for (const [key, quantity] of salesDemandByKey) {
     if (quantity > 0) {
-      const [itemId, locationId, periodId] = splitActualKey(key);
+      const [itemId, locationId, periodId, , segmentId] = splitActualKey(key);
       demandActualsMap.set(key, {
         itemId,
         locationId,
         periodId,
+        ...segmentColumn(segmentId),
         actualQuantity: quantity,
         sourceType: "Sales Order",
         companyId,
@@ -1061,11 +1081,12 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
   ] as const) {
     for (const [key, quantity] of actuals) {
       if (quantity > 0) {
-        const [itemId, locationId, periodId] = splitActualKey(key);
+        const [itemId, locationId, periodId, , segmentId] = splitActualKey(key);
         demandActualsMap.set(key, {
           itemId,
           locationId,
           periodId,
+          ...segmentColumn(segmentId),
           actualQuantity: quantity,
           sourceType,
           companyId,
@@ -1078,16 +1099,19 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
 
   // Zero out existing supply actuals
   for (const existing of input.existingSupplyActuals) {
+    const segmentId = existing.planningSegmentId ?? COMMON_SEGMENT;
     const key = makeActualKey(
       existing.itemId,
       existing.locationId ?? "",
       existing.periodId,
-      existing.sourceType
+      existing.sourceType,
+      segmentId
     );
     supplyActualsMap.set(key, {
       itemId: existing.itemId,
       locationId: existing.locationId,
       periodId: existing.periodId,
+      ...segmentColumn(segmentId),
       actualQuantity: 0,
       sourceType: existing.sourceType,
       companyId,
@@ -1116,6 +1140,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
           itemId,
           locationId,
           periodId,
+          ...segmentColumn(segmentId),
           actualQuantity: quantity,
           sourceType,
           companyId,

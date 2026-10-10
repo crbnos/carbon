@@ -70,6 +70,8 @@ type PlanningLine = {
 const itemsValidator = z
   .object({
     id: z.string(),
+    // The netting segment of the grid row ('' is common).
+    planningSegmentId: z.string().default(""),
     orders: z.array(plannedOrderValidator)
   })
   .array();
@@ -221,6 +223,7 @@ export async function action({ request }: ActionFunctionArgs) {
           sourceType: "Purchase Order";
           forecastQuantity: number;
           periodId: string;
+          planningSegmentId: string;
           companyId: string;
           createdBy: string;
           updatedBy: string;
@@ -234,6 +237,7 @@ export async function action({ request }: ActionFunctionArgs) {
         // promised-date and tax-pair guards.
         type OrderEntry = {
           itemId: string;
+          planningSegmentId: string;
           order: (typeof itemsToOrder)[0]["orders"][0];
         };
         const ordersBySupplier = new Map<string, OrderEntry[]>();
@@ -255,6 +259,7 @@ export async function action({ request }: ActionFunctionArgs) {
               }
               ordersBySupplier.get(order.supplierId)!.push({
                 itemId: item.id,
+                planningSegmentId: item.planningSegmentId,
                 order
               });
               itemHasUsableOrder = true;
@@ -281,7 +286,8 @@ export async function action({ request }: ActionFunctionArgs) {
         // bypassRls hands back the service role, and every id below comes
         // from the request body: the location and items must belong to this
         // company before anything is read or written by them
-        // (supplyForecast upserts on (itemId, locationId, periodId) alone).
+        // (supplyForecast upserts on (itemId, locationId, periodId,
+        // planningSegmentId) alone).
         await requireCompanyRecord(client, "location", companyId, {
           id: locationId
         });
@@ -552,7 +558,7 @@ export async function action({ request }: ActionFunctionArgs) {
             });
 
             // Create one line per order for this supplier and week
-            for (const { itemId, order } of ordersInGroup) {
+            for (const { itemId, planningSegmentId, order } of ordersInGroup) {
               const supplierPart = supplierParts?.data?.find(
                 (sp) => sp.itemId === itemId && sp.supplierId === supplierId
               );
@@ -743,6 +749,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 sourceType: "Purchase Order" as const,
                 forecastQuantity: order.quantity * conversionFactor,
                 periodId: order.periodId,
+                planningSegmentId,
                 companyId,
                 createdBy: userId,
                 updatedBy: userId
@@ -758,7 +765,7 @@ export async function action({ request }: ActionFunctionArgs) {
           const insertForecasts = await client
             .from("supplyForecast")
             .upsert(uniqueSupplyForecasts, {
-              onConflict: "itemId,locationId,periodId",
+              onConflict: "itemId,locationId,periodId,planningSegmentId",
               ignoreDuplicates: false
             });
 
@@ -1486,12 +1493,18 @@ function deduplicateForecasts<
     itemId: string;
     locationId: string;
     periodId: string;
+    planningSegmentId: string;
     forecastQuantity: number;
   }
 >(forecasts: T[]): T[] {
   const map = new Map<string, T>();
   for (const forecast of forecasts) {
-    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+    const key = [
+      forecast.itemId,
+      forecast.locationId,
+      forecast.periodId,
+      forecast.planningSegmentId
+    ].join("\u001f");
     const existing = map.get(key);
     if (existing) {
       existing.forecastQuantity += forecast.forecastQuantity;

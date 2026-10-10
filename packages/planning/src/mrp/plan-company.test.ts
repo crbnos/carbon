@@ -74,4 +74,30 @@ describe("planCompany", () => {
       commonSurplusDraws: outputs.commonSurplusDraws
     }).toMatchSnapshot();
   });
+
+  it("writes one actual row per segment for the same item, location and week", () => {
+    const fixture = loadFixture("plan-company.project.json");
+    const jobMaterial = {
+      dueDate: "2026-10-21",
+      itemId: "item_p",
+      jobId: "job_common",
+      leadTime: 7,
+      locationId: "loc_plant",
+      quantityPerParent: 1,
+      quantityToIssue: 3
+    };
+    const outputs = planCompany({
+      ...fixture,
+      jobMaterialLines: [
+        { ...jobMaterial, planningSegmentId: "" },
+        { ...jobMaterial, jobId: "job_p101", planningSegmentId: "prj_p101" }
+      ]
+    });
+    const jobMaterialRows = outputs.demandActualUpserts.filter(
+      (row) => row.sourceType === "Job Material"
+    );
+    expect(
+      jobMaterialRows.map((row) => row.planningSegmentId ?? "").sort()
+    ).toEqual(["", "prj_p101"]);
+  });
 });
