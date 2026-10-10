@@ -44,7 +44,7 @@ Task 12 records these in the spec.
 - [x] Task 6: Let the return shipment take `Repair` serials
 - [x] Task 7: Post a `Repair` return shipment with no ledger
 - [x] Task 8: Guard the credit memo and the replacement order
-- [ ] Task 9: Add the depot repair UI
+- [x] Task 9: Add the depot repair UI
 - [ ] Task 10: Add the database tests
 - [ ] Task 11: Extend the demo datasets
 - [ ] Task 12: Update the rules, AGENTS.md, docs and spec
@@ -448,3 +448,7 @@ ls .ai/playbooks/field-service-phase-b.md
 - Task 7 verification: the full `@carbon/server-functions` suite passes (460 of 462); the 2 failures are the known shared-database races (`get-accounting-period`, `post-charge-concurrency`), which pass alone.
 - Task 8: the refusal texts are constants in `sales.models.ts` (`REPAIR_LINE_CREDIT_MESSAGE`, `REPAIR_ONLY_REPLACEMENT_MESSAGE`). The credit refusal names the line: "Line 2: Change the disposition before you credit a repair line."
 - Task 8 (deviation): the RMA header changes too, outside the task's file list. **Issue Credit** shows only when a line that is not Repair has a received quantity. **Create Replacement** hides when every line is Repair. Without this, both buttons opened a dialog or a request that the service then refuses.
+- Task 9: the RMA line loader reads the line's orders with one query (`id`, `serviceOrderId`, `status`). The line form shows one **Service Order** link per order. The explorer uses the orders the RMA layout already loads (`depotRepairOrders`, Task 6), so it adds no query. It shows the count and the worst status in the line's expanded details. `worstServiceOrderStatus` (`service.models.ts`, tested) picks On Hold first, then the least advanced open status.
+- Task 9: on a Depot Repair order, the header shows the RMA's readable id as a link, **View Return Order** in the ⋯ menu, and the **At Depot** asset status pill (the existing `CustomerAssetStatus`) while the unit is At Depot. **Complete** is the primary button, because a shop order has no visit. **Ship Back** links to the RMA while `isReadyToShipBack` holds. `getServiceOrder` now embeds the RMA line and its return order.
+- Task 9: the order list gains a **Type** column with a filter (`listedServiceOrderTypes`: Field Visit, Depot Repair). The New form still offers Field Visit only.
+- Task 9: the asset list and the asset page needed no change. Both render the status through `CustomerAssetStatus`, and the list filter reads `customerAssetStatuses`, which already has At Depot.

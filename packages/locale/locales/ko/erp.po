@@ -7577,6 +7577,9 @@ msgstr "보증금:"
 msgid "Deposits"
 msgstr "보증금"
 
+msgid "Depot Repair"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "감가상각"
 
@@ -9916,6 +9919,9 @@ msgstr "필드 정보"
 
 msgid "Field Mapping"
 msgstr "필드 매핑"
+
+msgid "Field Visit"
+msgstr ""
 
 msgid "Fields"
 msgstr "필드"
@@ -17951,6 +17957,9 @@ msgstr "환불 메모"
 msgid "Refund to Customer"
 msgstr "고객 환불"
 
+msgid "Refurbishment"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "재생성"
 
@@ -20290,6 +20299,9 @@ msgstr "이 스테이션에 할당된 교대조"
 
 msgid "Ship"
 msgstr "출하"
+
+msgid "Ship Back"
+msgstr ""
 
 msgid "Ship Date"
 msgstr ""
@@ -24796,6 +24808,9 @@ msgstr "대체 발주서 보기"
 
 msgid "View replacement sales order"
 msgstr "대체 수주 보기"
+
+msgid "View Return Order"
+msgstr ""
 
 msgid "View Run"
 msgstr "실행 보기"

@@ -7577,6 +7577,9 @@ msgstr "जमा:"
 msgid "Deposits"
 msgstr "जमा राशि"
 
+msgid "Depot Repair"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "मूल्यह्रास"
 
@@ -9916,6 +9919,9 @@ msgstr "फील्ड जानकारी"
 
 msgid "Field Mapping"
 msgstr "फील्ड मैपिंग"
+
+msgid "Field Visit"
+msgstr ""
 
 msgid "Fields"
 msgstr "फील्ड्स"
@@ -17951,6 +17957,9 @@ msgstr "धनवापसी ज्ञापन"
 msgid "Refund to Customer"
 msgstr "ग्राहक को धनवापसी"
 
+msgid "Refurbishment"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "पुनर्जीवित करें"
 
@@ -20290,6 +20299,9 @@ msgstr "इस स्टेशन को सौंपी गई शिफ्ट"
 
 msgid "Ship"
 msgstr "भेजें"
+
+msgid "Ship Back"
+msgstr ""
 
 msgid "Ship Date"
 msgstr ""
@@ -24796,6 +24808,9 @@ msgstr "प्रतिस्थापन क्रय आदेश देखे
 
 msgid "View replacement sales order"
 msgstr "प्रतिस्थापन विक्रय आदेश देखें"
+
+msgid "View Return Order"
+msgstr ""
 
 msgid "View Run"
 msgstr "रन देखें"

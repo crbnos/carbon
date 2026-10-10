@@ -7577,6 +7577,9 @@ msgstr "Deposito:"
 msgid "Deposits"
 msgstr "Cauzioni"
 
+msgid "Depot Repair"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "Ammortamento"
 
@@ -9916,6 +9919,9 @@ msgstr "Informazioni campo"
 
 msgid "Field Mapping"
 msgstr "Mappatura campi"
+
+msgid "Field Visit"
+msgstr ""
 
 msgid "Fields"
 msgstr "Campi"
@@ -17951,6 +17957,9 @@ msgstr "Memo di rimborso"
 msgid "Refund to Customer"
 msgstr "Rimborso a Cliente"
 
+msgid "Refurbishment"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "Rigenera"
 
@@ -20290,6 +20299,9 @@ msgstr "Turni assegnati a questa stazione"
 
 msgid "Ship"
 msgstr "Spedisci"
+
+msgid "Ship Back"
+msgstr ""
 
 msgid "Ship Date"
 msgstr ""
@@ -24796,6 +24808,9 @@ msgstr "Visualizza ordine di acquisto sostitutivo"
 
 msgid "View replacement sales order"
 msgstr "Visualizza ordine di vendita sostitutivo"
+
+msgid "View Return Order"
+msgstr ""
 
 msgid "View Run"
 msgstr "Visualizza Esecuzione"

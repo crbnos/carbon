@@ -17,6 +17,7 @@ import {
   LuServer,
   LuSquareUser,
   LuStar,
+  LuTag,
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
@@ -25,6 +26,7 @@ import {
   DateTime,
   EmployeeAvatar,
   EmployeeAvatarGroup,
+  Enumerable,
   Hyperlink,
   New,
   Table
@@ -32,7 +34,11 @@ import {
 import { usePermissions } from "~/hooks";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
-import { serviceOrderStatuses } from "../../service.models";
+import type { ServiceOrderType } from "../../service.models";
+import {
+  listedServiceOrderTypes,
+  serviceOrderStatuses
+} from "../../service.models";
 import type { ServiceOrderListItem } from "../../types";
 import { ServiceOrderStatus } from "../ServiceStatus";
 
@@ -74,8 +80,13 @@ const ServiceOrdersTable = memo(({ data, count }: ServiceOrdersTableProps) => {
   const [customers] = useCustomers();
   const [people] = usePeople();
 
-  const columns = useMemo<ColumnDef<ServiceOrderListItem>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<ServiceOrderListItem>[]>(() => {
+    const typeLabels: Record<ServiceOrderType, string> = {
+      "Field Visit": t`Field Visit`,
+      "Depot Repair": t`Depot Repair`,
+      Refurbishment: t`Refurbishment`
+    };
+    return [
       {
         accessorKey: "serviceOrderId",
         header: t`Service Order`,
@@ -104,6 +115,23 @@ const ServiceOrdersTable = memo(({ data, count }: ServiceOrdersTableProps) => {
           },
           pluralHeader: t`Statuses`,
           icon: <LuStar />
+        }
+      },
+      {
+        accessorKey: "type",
+        header: t`Type`,
+        cell: ({ row }) => <Enumerable value={typeLabels[row.original.type]} />,
+        meta: {
+          filter: {
+            type: "static",
+            options: listedServiceOrderTypes.map((type) => ({
+              value: type,
+              label: <Enumerable value={typeLabels[type]} />
+            }))
+          },
+          pluralHeader: t`Types`,
+          icon: <LuTag />,
+          exportValue: (row: ServiceOrderListItem) => typeLabels[row.type]
         }
       },
       {
@@ -263,9 +291,8 @@ const ServiceOrdersTable = memo(({ data, count }: ServiceOrdersTableProps) => {
             row.assignee
         }
       }
-    ],
-    [customers, people, t]
-  );
+    ];
+  }, [customers, people, t]);
 
   const renderContextMenu = useMemo(() => {
     return (row: ServiceOrderListItem) => (

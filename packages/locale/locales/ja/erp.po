@@ -7577,6 +7577,9 @@ msgstr "デポジット："
 msgid "Deposits"
 msgstr "前受金"
 
+msgid "Depot Repair"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "減価償却"
 
@@ -9916,6 +9919,9 @@ msgstr "フィールド情報"
 
 msgid "Field Mapping"
 msgstr "フィールドマッピング"
+
+msgid "Field Visit"
+msgstr ""
 
 msgid "Fields"
 msgstr "フィールド"
@@ -17951,6 +17957,9 @@ msgstr "返金メモ"
 msgid "Refund to Customer"
 msgstr "得意先への返金"
 
+msgid "Refurbishment"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "再生成"
 
@@ -20290,6 +20299,9 @@ msgstr "このステーションに割り当てられたシフト"
 
 msgid "Ship"
 msgstr "出荷"
+
+msgid "Ship Back"
+msgstr ""
 
 msgid "Ship Date"
 msgstr ""
@@ -24796,6 +24808,9 @@ msgstr "交換発注書を表示"
 
 msgid "View replacement sales order"
 msgstr "代替受注を表示"
+
+msgid "View Return Order"
+msgstr ""
 
 msgid "View Run"
 msgstr "実行を表示"

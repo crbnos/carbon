@@ -7577,6 +7577,9 @@ msgstr "Депозит:"
 msgid "Deposits"
 msgstr "Авансовые платежи"
 
+msgid "Depot Repair"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "Амортизация"
 
@@ -9916,6 +9919,9 @@ msgstr "Информация о поле"
 
 msgid "Field Mapping"
 msgstr "Сопоставление полей"
+
+msgid "Field Visit"
+msgstr ""
 
 msgid "Fields"
 msgstr "Поля"
@@ -17951,6 +17957,9 @@ msgstr "Служебные записки о возврате"
 msgid "Refund to Customer"
 msgstr "Возврат Покупателю"
 
+msgid "Refurbishment"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "Пересчитать"
 
@@ -20290,6 +20299,9 @@ msgstr "Смены, назначенные на эту станцию"
 
 msgid "Ship"
 msgstr "Отправить"
+
+msgid "Ship Back"
+msgstr ""
 
 msgid "Ship Date"
 msgstr ""
@@ -24796,6 +24808,9 @@ msgstr "Просмотр замещающего заказа поставщик�
 
 msgid "View replacement sales order"
 msgstr "Просмотр замещающего заказа покупателя"
+
+msgid "View Return Order"
+msgstr ""
 
 msgid "View Run"
 msgstr "Просмотр запуска"

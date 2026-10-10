@@ -7577,6 +7577,9 @@ msgstr "押金:"
 msgid "Deposits"
 msgstr "押金"
 
+msgid "Depot Repair"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "折旧"
 
@@ -9916,6 +9919,9 @@ msgstr "字段信息"
 
 msgid "Field Mapping"
 msgstr "字段映射"
+
+msgid "Field Visit"
+msgstr ""
 
 msgid "Fields"
 msgstr "字段"
@@ -17951,6 +17957,9 @@ msgstr "退款单据"
 msgid "Refund to Customer"
 msgstr "向客户退款"
 
+msgid "Refurbishment"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "重新生成"
 
@@ -20290,6 +20299,9 @@ msgstr "分配给此工作站的班次"
 
 msgid "Ship"
 msgstr "发货"
+
+msgid "Ship Back"
+msgstr ""
 
 msgid "Ship Date"
 msgstr ""
@@ -24796,6 +24808,9 @@ msgstr "查看替换采购订单"
 
 msgid "View replacement sales order"
 msgstr "查看替换销售订单"
+
+msgid "View Return Order"
+msgstr ""
 
 msgid "View Run"
 msgstr "查看运行"

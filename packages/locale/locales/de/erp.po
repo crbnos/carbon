@@ -7577,6 +7577,9 @@ msgstr "Kaution:"
 msgid "Deposits"
 msgstr "Anzahlungen"
 
+msgid "Depot Repair"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "Abschreibung"
 
@@ -9916,6 +9919,9 @@ msgstr "Feldinformationen"
 
 msgid "Field Mapping"
 msgstr "Feldzuordnung"
+
+msgid "Field Visit"
+msgstr ""
 
 msgid "Fields"
 msgstr "Felder"
@@ -17951,6 +17957,9 @@ msgstr "Gutschriftsnotizen"
 msgid "Refund to Customer"
 msgstr "Gutschrift an den Kunden"
 
+msgid "Refurbishment"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "Neu generieren"
 
@@ -20290,6 +20299,9 @@ msgstr "Diesem Arbeitsplatz zugewiesene Schichten"
 
 msgid "Ship"
 msgstr "Versand"
+
+msgid "Ship Back"
+msgstr ""
 
 msgid "Ship Date"
 msgstr ""
@@ -24796,6 +24808,9 @@ msgstr "Ersatz-Bestellung anzeigen"
 
 msgid "View replacement sales order"
 msgstr "Ersatz-Kundenauftrag anzeigen"
+
+msgid "View Return Order"
+msgstr ""
 
 msgid "View Run"
 msgstr "Durchlauf anzeigen"

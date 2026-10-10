@@ -7577,6 +7577,9 @@ msgstr "Depozito:"
 msgid "Deposits"
 msgstr "Depozitolar"
 
+msgid "Depot Repair"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "Amortisman"
 
@@ -9916,6 +9919,9 @@ msgstr "Alan bilgisi"
 
 msgid "Field Mapping"
 msgstr "Alan Adlandırma"
+
+msgid "Field Visit"
+msgstr ""
 
 msgid "Fields"
 msgstr "Alanlar"
@@ -17951,6 +17957,9 @@ msgstr "İade Muhasebe Notları"
 msgid "Refund to Customer"
 msgstr "Müşteriye İade"
 
+msgid "Refurbishment"
+msgstr ""
+
 msgid "Regenerate"
 msgstr "Yeniden oluştur"
 
@@ -20290,6 +20299,9 @@ msgstr "Bu istasyona atanan vardiyalar"
 
 msgid "Ship"
 msgstr "Sevk Et"
+
+msgid "Ship Back"
+msgstr ""
 
 msgid "Ship Date"
 msgstr ""
@@ -24796,6 +24808,9 @@ msgstr "Yedek Satın Alma Siparişini Görüntüle"
 
 msgid "View replacement sales order"
 msgstr "Yedek Satış Siparişini Görüntüle"
+
+msgid "View Return Order"
+msgstr ""
 
 msgid "View Run"
 msgstr "Çalıştırmayı Görüntüle"

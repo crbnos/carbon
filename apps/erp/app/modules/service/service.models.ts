@@ -78,6 +78,43 @@ export const serviceOrderTypes = [
 ] as const satisfies readonly ServiceOrderType[];
 
 /**
+ * The types the order list filters by. A Depot Repair order is created by
+ * the receipt of an RMA's Repair line, never by the New form.
+ */
+export const listedServiceOrderTypes = [
+  "Field Visit",
+  "Depot Repair"
+] as const satisfies readonly ServiceOrderType[];
+
+/**
+ * The statuses that need attention first, in order. The worst status of
+ * several orders is the first one of this list any of them has.
+ */
+const serviceOrderStatusUrgency = [
+  "On Hold",
+  "Draft",
+  "Scheduled",
+  "In Progress",
+  "Completed",
+  "Closed",
+  "Cancelled"
+] as const satisfies readonly ServiceOrderStatus[];
+
+/**
+ * The status of several orders that needs attention first: On Hold, then the
+ * least advanced open status, then Completed, Closed and Cancelled. Null for
+ * no orders.
+ */
+export function worstServiceOrderStatus(
+  statuses: readonly ServiceOrderStatus[]
+): ServiceOrderStatus | null {
+  return (
+    serviceOrderStatusUrgency.find((status) => statuses.includes(status)) ??
+    null
+  );
+}
+
+/**
  * Where a new order's work tree comes from: nothing, a service template, the
  * unit's build history (its serial) or the item's bill of materials.
  */

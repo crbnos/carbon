@@ -71,6 +71,8 @@ type SalesReturnOrderLineFormProps = {
     salesOrderReadableId?: string | null;
     salesInvoiceId?: string | null;
     salesInvoiceReadableId?: string | null;
+    /** A Repair line's Depot Repair orders, one per received serial */
+    serviceOrders?: { id: string; serviceOrderId: string }[];
   };
 };
 
@@ -339,7 +341,12 @@ const SalesReturnOrderLineForm = ({
             label: t`Invoice`,
             value: linkage.salesInvoiceReadableId
           }
-        : null
+        : null,
+      ...(linkage?.serviceOrders ?? []).map((order) => ({
+        to: path.to.serviceOrderDetails(order.id),
+        label: t`Service Order`,
+        value: order.serviceOrderId
+      }))
     ] as ({ to?: string; label: string; value: string } | null)[]
   ).filter((source): source is { to?: string; label: string; value: string } =>
     Boolean(source)
@@ -375,7 +382,7 @@ const SalesReturnOrderLineForm = ({
               {sources.length > 0 && (
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-sm">
                   {sources.map((source, index) => (
-                    <Fragment key={source.label}>
+                    <Fragment key={`${source.label}:${source.value}`}>
                       {index > 0 && (
                         <span className="text-muted-foreground/50">·</span>
                       )}

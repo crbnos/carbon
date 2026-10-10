@@ -27,7 +27,9 @@ import {
   LuPlay,
   LuPrinter,
   LuRotateCcw,
-  LuServer
+  LuServer,
+  LuTruck,
+  LuUndo2
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
@@ -36,9 +38,13 @@ import Confirm from "~/components/Modals/Confirm/Confirm";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ServiceOrderStatusAction } from "../../service.models";
-import { canMoveServiceOrder } from "../../service.models";
+import { canMoveServiceOrder, isReadyToShipBack } from "../../service.models";
 import type { ServiceOrder } from "../../types";
-import { ServiceOrderStatus, WarrantyBadge } from "../ServiceStatus";
+import {
+  CustomerAssetStatus,
+  ServiceOrderStatus,
+  WarrantyBadge
+} from "../ServiceStatus";
 import { useServiceOrderNavigation } from "./useServiceOrderNavigation";
 
 /**
@@ -86,6 +92,12 @@ const ServiceOrderHeader = () => {
   const isOpen =
     status === "Draft" || status === "Scheduled" || status === "In Progress";
 
+  // A Depot Repair order is worked in the shop: it needs no visit to
+  // complete, and its unit ships back from the RMA it came in on.
+  const isDepotRepair = order.type === "Depot Repair";
+  const returnOrder = order.salesReturnOrderLine?.salesReturnOrder ?? null;
+  const canShipBack = isDepotRepair && isReadyToShipBack(order);
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
@@ -115,6 +127,14 @@ const ServiceOrderHeader = () => {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {returnOrder && (
+                  <DropdownMenuItem asChild>
+                    <Link to={path.to.salesReturnOrderDetails(returnOrder.id)}>
+                      <DropdownMenuIcon icon={<LuUndo2 />} />
+                      <Trans>View Return Order</Trans>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <a
                     href={path.to.serviceOrderEstimate(id)}
@@ -135,8 +155,19 @@ const ServiceOrderHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             <ServiceOrderStatus status={status} />
+            {isDepotRepair && order.customerAsset?.status === "At Depot" && (
+              <CustomerAssetStatus status="At Depot" />
+            )}
             {order.customerAsset && (
               <WarrantyBadge asset={order.customerAsset} />
+            )}
+            {returnOrder && (
+              <Link
+                to={path.to.salesReturnOrderDetails(returnOrder.id)}
+                className="whitespace-nowrap text-sm text-muted-foreground hover:text-foreground"
+              >
+                {returnOrder.salesReturnOrderId}
+              </Link>
             )}
           </HStack>
           <HStack>
@@ -171,12 +202,24 @@ const ServiceOrderHeader = () => {
 
             {isOpen && (
               <Button
-                variant={status === "In Progress" ? "primary" : "secondary"}
+                variant={
+                  status === "In Progress" || isDepotRepair
+                    ? "primary"
+                    : "secondary"
+                }
                 leftIcon={<LuCircleCheck />}
                 isDisabled={!can("Completed")}
                 onClick={completeDisclosure.onOpen}
               >
                 <Trans>Complete</Trans>
+              </Button>
+            )}
+
+            {canShipBack && returnOrder && (
+              <Button variant="secondary" leftIcon={<LuTruck />} asChild>
+                <Link to={path.to.salesReturnOrderDetails(returnOrder.id)}>
+                  <Trans>Ship Back</Trans>
+                </Link>
               </Button>
             )}
 

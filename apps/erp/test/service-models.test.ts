@@ -14,7 +14,8 @@ import {
   rollUpOrderStatus,
   serviceChargeReversalValidator,
   serviceTemplateIdentifier,
-  warrantyStatus
+  warrantyStatus,
+  worstServiceOrderStatus
 } from "~/modules/service/service.models";
 
 describe("rollUpOrderStatus", () => {
@@ -453,3 +454,17 @@ describe("serviceTemplateIdentifier", () => {
   });
 });
 
+
+describe("worstServiceOrderStatus", () => {
+  it("puts On Hold first, then the least advanced open status", () => {
+    expect(worstServiceOrderStatus(["Completed", "On Hold", "Draft"])).toBe(
+      "On Hold"
+    );
+    expect(worstServiceOrderStatus(["Completed", "In Progress", "Draft"])).toBe(
+      "Draft"
+    );
+    expect(worstServiceOrderStatus(["Closed", "Completed"])).toBe("Completed");
+    expect(worstServiceOrderStatus(["Cancelled", "Closed"])).toBe("Closed");
+    expect(worstServiceOrderStatus([])).toBeNull();
+  });
+});
