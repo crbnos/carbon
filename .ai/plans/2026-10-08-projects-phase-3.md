@@ -43,7 +43,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 
 - [x] Task 1: Create the Phase 3 enum and table migration
 - [x] Task 2: Redefine the segment rule and the views for groups
-- [ ] Task 3: Regenerate types and add the RLS rules
+- [x] Task 3: Regenerate types and add the RLS rules
 - [ ] Task 4: Add the planning group services and pages
 - [ ] Task 5: Carry member attribution through the explosion
 - [ ] Task 6: Add `pegGroupSegment` as a pure function
@@ -748,3 +748,5 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 2: a grouped PO line or job stays in its group's segment when the group is inactive. Only the members leave the group then, through `project_planning_segment`.
 - Task 2: on Carbon Development the 5 views give the same row counts and the same md5 over the old columns, before and after (PO lines 7, production 2, job materials 101, project materials 0, borrows 0). `SELECT project_planning_segment('does-not-exist')` returns an empty string. A rolled-back smoke test gave the project id for a stocked project, the group id once it joined a group, and the project id again when the group turned inactive.
 - Task 2: the TS twin `planningSegmentOf` (`plan-company.ts`) changes in Task 5, with the other `plan-company.ts` work. No company has a group before Task 4, so MRP output does not change between the 2 commits.
+- Task 3: the 2 rules are in `manifest.ts` as written. `authz migration projects-3-rls` wrote `20261010150329_projects-3-rls.sql`. `pnpm db:migrate` then synced with no error: `planningGroup` has 4 policies, `projectPeg` has SELECT only, and RLS is on for both. `vitest run src/authz` passes (35), and `@carbon/database` and `@carbon/jobs` typecheck.
+- Task 3 (beyond the plan's file list): `id-refs.ts` gains `projectPeg` (`demandSourceId`, `itemLedgerId`, `parentPegId`, `supplyId`). These hold row ids with no FK, so a backup restore into another company must rewrite them. The run ids are not row ids. The backups tests pass (58).

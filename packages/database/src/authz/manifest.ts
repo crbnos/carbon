@@ -1105,6 +1105,7 @@ export const manifest = {
     update: false,
     delete: false
   }),
+  planningGroup: company("projects"),
   pricingRule: company("sales"),
   printerRoute: company("printing", { read: "printing_view" }),
   printJob: company("printing", { read: "printing_view" }),
@@ -1168,6 +1169,13 @@ export const manifest = {
     delete: false
   }),
   projectMilestone: projectTable(),
+  // MRP writes pegs with the service role; a manual peg goes through a server
+  // action that checks update: projects first.
+  projectPeg: company("projects", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   projectState: projectTable(),
   projectStockTransfer: company("projects"),
   projectStockTransferLine: company("projects"),

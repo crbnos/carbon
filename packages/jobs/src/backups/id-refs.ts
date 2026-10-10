@@ -111,6 +111,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
     "laborCategoryId",
     "supplierId"
   ],
+  projectPeg: ["demandSourceId", "itemLedgerId", "parentPegId", "supplyId"],
   projectStockTransfer: ["planningActionId"],
   purchaseInvoiceLine: ["assetId", "serviceId"],
   purchaseOrderLine: ["locationId"],
