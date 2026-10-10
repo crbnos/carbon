@@ -240,7 +240,7 @@ function Document({
         <title>{title}</title>
         <Links />
       </head>
-      <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
+      <body className="h-full bg-card antialiased selection:bg-primary/10 selection:text-primary">
         {children}
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
