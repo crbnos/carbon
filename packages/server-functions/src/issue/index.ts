@@ -312,7 +312,8 @@ async function issueJobOperationMaterials(
         locationId: job.locationId,
         companyId,
         opStorageUnitId,
-        takenShared
+        takenShared,
+        stripes
       }),
       material.itemId
     );
@@ -335,8 +336,8 @@ async function issueJobOperationMaterials(
           quantity: -row.quantity,
           locationId: job.locationId,
           storageUnitId: row.storageUnitId,
-          // Picked stock is common until picking carries the stripe (Task 12).
-          projectId: null,
+          // The stripe the budget's pick or lineside stock holds.
+          projectId: take.budget.projectId,
           postingDate: today,
           createdBy: userId
         });
@@ -3552,7 +3553,8 @@ const issue = defineServerFn({
                     opStorageUnitId: await getOperationLinesideBin(trx, {
                       jobOperationId: material.jobOperationId,
                       companyId
-                    })
+                    }),
+                    stripes
                   }),
                   material.itemId
                 );
@@ -3575,9 +3577,8 @@ const issue = defineServerFn({
                       locationId: job?.locationId,
                       storageUnitId: row.storageUnitId,
                       quantity: -row.quantity,
-                      // Picked stock is common until picking carries the
-                      // stripe (Task 12).
-                      projectId: null,
+                      // The stripe the budget's pick or lineside stock holds.
+                      projectId: take.budget.projectId,
                       createdBy: userId
                     });
                   }

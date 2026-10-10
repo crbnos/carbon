@@ -42,10 +42,11 @@ export const path = {
       suggestedAllocation: (
         itemId: string,
         locationId: string,
-        quantity: number
+        quantity: number,
+        operationId?: string
       ) =>
         generatePath(
-          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}`
+          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}${operationId ? `&operationId=${operationId}` : ""}`
         )
     },
     assembly: (id: string) => generatePath(`${x}/assembly/${id}`),

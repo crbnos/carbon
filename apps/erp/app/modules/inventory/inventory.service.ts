@@ -3597,6 +3597,65 @@ export async function getPickingSchedule(
   });
 }
 
+/** A stock stripe (Projects Phase 2a): a project id, or null for common stock. */
+type PickStripe = string | null;
+
+/** Whether an on-hand row (get_item_quantities_by_tracking_id) is in `stripes`. */
+function inPickStripes(row: unknown, stripes: readonly PickStripe[]): boolean {
+  const projectId = (row as { projectId?: string | null }).projectId ?? null;
+  return stripes.includes(projectId);
+}
+
+/**
+ * The stock stripes each job's demand may draw, in order: its project's stock
+ * first when the project has project stock, then common stock (null). Every
+ * other job draws common stock only. Two reads for any number of jobs.
+ */
+async function getJobStockStripes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobIds: string[]
+): Promise<{
+  data: Map<string, PickStripe[]> | null;
+  error: PostgrestError | null;
+}> {
+  const stripes = new Map<string, PickStripe[]>();
+  if (jobIds.length === 0) return { data: stripes, error: null };
+  const jobs = await client
+    .from("job")
+    .select("id, projectId")
+    .eq("companyId", companyId)
+    .in("id", jobIds);
+  if (jobs.error) return { data: null, error: jobs.error };
+  const projectIds = [
+    ...new Set(
+      (jobs.data ?? [])
+        .map((job) => job.projectId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const stocked = new Set<string>();
+  if (projectIds.length > 0) {
+    const projects = await client
+      .from("project")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("projectStock", true)
+      .in("id", projectIds);
+    if (projects.error) return { data: null, error: projects.error };
+    for (const project of projects.data ?? []) stocked.add(project.id);
+  }
+  for (const job of jobs.data ?? []) {
+    stripes.set(
+      job.id,
+      job.projectId && stocked.has(job.projectId)
+        ? [job.projectId, null]
+        : [null]
+    );
+  }
+  return { data: stripes, error: null };
+}
+
 /**
  * On-hand of an item at a location, aggregated per storage unit (bin).
  *
@@ -3607,7 +3666,12 @@ export async function getPickingSchedule(
  */
 async function getItemOnHandByStorageUnit(
   client: SupabaseClient<Database>,
-  args: { itemId: string; locationId: string; companyId: string }
+  args: {
+    itemId: string;
+    locationId: string;
+    companyId: string;
+    stripes: readonly PickStripe[];
+  }
 ): Promise<Map<string, number>> {
   const quantities = await getItemStorageUnitQuantities(
     client,
@@ -3618,6 +3682,7 @@ async function getItemOnHandByStorageUnit(
 
   const byUnit = new Map<string, number>();
   for (const row of quantities.data ?? []) {
+    if (!inPickStripes(row, args.stripes)) continue;
     const unitId = (row as { storageUnitId?: string | null }).storageUnitId;
     if (!unitId) continue;
     const qty = Number((row as { quantity?: number | null }).quantity ?? 0);
@@ -3661,7 +3726,12 @@ function toPickFactor(value: number | string | null | undefined): number {
 
 async function getWarehouseOnHand(
   client: SupabaseClient<Database>,
-  args: { itemId: string; locationId: string; companyId: string }
+  args: {
+    itemId: string;
+    locationId: string;
+    companyId: string;
+    stripes: readonly PickStripe[];
+  }
 ): Promise<number> {
   const quantities = await getItemStorageUnitQuantities(
     client,
@@ -3673,6 +3743,7 @@ async function getWarehouseOnHand(
   const perUnit = new Map<string, number>();
   let total = 0;
   for (const row of quantities.data ?? []) {
+    if (!inPickStripes(row, args.stripes)) continue;
     const unitId = (row as { storageUnitId?: string | null }).storageUnitId;
     const qty = Number((row as { quantity?: number | null }).quantity ?? 0);
     if (!unitId) {
@@ -3712,7 +3783,12 @@ async function getWarehouseOnHand(
  */
 async function hasWarehouseStock(
   client: SupabaseClient<Database>,
-  args: { itemId: string; locationId: string; companyId: string }
+  args: {
+    itemId: string;
+    locationId: string;
+    companyId: string;
+    stripes: readonly PickStripe[];
+  }
 ): Promise<boolean> {
   const quantities = await getItemStorageUnitQuantities(
     client,
@@ -3724,6 +3800,7 @@ async function hasWarehouseStock(
   const perUnit = new Map<string, number>();
   let unassignedQty = 0;
   for (const row of quantities.data ?? []) {
+    if (!inPickStripes(row, args.stripes)) continue;
     const unitId = (row as { storageUnitId?: string | null }).storageUnitId;
     const qty = Number((row as { quantity?: number | null }).quantity ?? 0);
     // The unassigned (null) bin is warehouse stock — it has no work center.
@@ -3902,45 +3979,123 @@ export async function generatePickingList(
   // boundary.
   const asOfDate = datetime.today("UTC").toString();
 
+  // The stock stripes each job may draw (Projects Phase 2a): its project's
+  // stock first when it has project stock, then common stock. Every stock
+  // test, credit and pick below reads only the job's stripes, and each pick
+  // line records the stripe it draws.
+  const jobStripes = await getJobStockStripes(
+    client,
+    args.companyId,
+    Array.from(new Set((materials.data ?? []).map((m) => m.jobId)))
+  );
+  if (jobStripes.error || !jobStripes.data) {
+    await client.from("pickingList").delete().eq("id", plId);
+    return { data: null, error: jobStripes.error };
+  }
+  const stripesByJob = jobStripes.data;
+  const stripesFor = (jobId: string): PickStripe[] =>
+    stripesByJob.get(jobId) ?? [null];
+  // With no project stock on the list every job draws common stock only, and
+  // no line needs splitting by stripe.
+  const anyProjectStock = Array.from(stripesByJob.values()).some(
+    (stripes) => stripes.length > 1
+  );
+  const stripeKeyOf = (itemId: string, stripe: PickStripe) =>
+    `${itemId}|${stripe ?? ""}`;
+
   const warehouseStockCache = new Map<string, boolean>();
-  const inWarehouseStock = async (itemId: string): Promise<boolean> => {
-    const cached = warehouseStockCache.get(itemId);
-    if (cached !== undefined) return cached;
-    const result = await hasWarehouseStock(client, {
-      itemId,
-      locationId: args.locationId,
-      companyId: args.companyId
-    });
-    warehouseStockCache.set(itemId, result);
-    return result;
+  const inWarehouseStock = async (
+    itemId: string,
+    stripes: PickStripe[]
+  ): Promise<boolean> => {
+    for (const stripe of stripes) {
+      const key = stripeKeyOf(itemId, stripe);
+      let result = warehouseStockCache.get(key);
+      if (result === undefined) {
+        result = await hasWarehouseStock(client, {
+          itemId,
+          locationId: args.locationId,
+          companyId: args.companyId,
+          stripes: [stripe]
+        });
+        warehouseStockCache.set(key, result);
+      }
+      if (result) return true;
+    }
+    return false;
   };
-  const warehouseRemaining = new Map<string, number>();
-  const remainingWarehouseStock = async (itemId: string): Promise<number> => {
-    const cached = warehouseRemaining.get(itemId);
+  // Warehouse on-hand per (item, stripe) when generation started.
+  const warehouseOnHandCache = new Map<string, number>();
+  const warehouseOnHandOf = async (
+    itemId: string,
+    stripe: PickStripe
+  ): Promise<number> => {
+    const key = stripeKeyOf(itemId, stripe);
+    const cached = warehouseOnHandCache.get(key);
     if (cached !== undefined) return cached;
     const result = await getWarehouseOnHand(client, {
       itemId,
       locationId: args.locationId,
-      companyId: args.companyId
+      companyId: args.companyId,
+      stripes: [stripe]
     });
-    warehouseRemaining.set(itemId, result);
+    warehouseOnHandCache.set(key, result);
     return result;
   };
+  // The running warehouse balance per (item, stripe), drawn down by every
+  // earlier Consume First line of this list.
+  const warehouseRemaining = new Map<string, number>();
+  const remainingIn = async (itemId: string, stripe: PickStripe) => {
+    const key = stripeKeyOf(itemId, stripe);
+    const cached = warehouseRemaining.get(key);
+    if (cached !== undefined) return cached;
+    const result = await warehouseOnHandOf(itemId, stripe);
+    warehouseRemaining.set(key, result);
+    return result;
+  };
+  const remainingWarehouseStock = async (
+    itemId: string,
+    stripes: PickStripe[]
+  ): Promise<number> => {
+    let total = 0;
+    for (const stripe of stripes) total += await remainingIn(itemId, stripe);
+    return total;
+  };
+  const drawWarehouse = async (
+    itemId: string,
+    stripes: PickStripe[],
+    used: number
+  ) => {
+    let left = used;
+    for (const stripe of stripes) {
+      const available = await remainingIn(itemId, stripe);
+      const take = Math.min(Math.max(0, left), available);
+      warehouseRemaining.set(
+        stripeKeyOf(itemId, stripe),
+        Math.max(0, available - take)
+      );
+      left -= take;
+    }
+  };
 
-  // Cache per-item on-hand-by-bin so a supersession redirect doesn't refetch.
+  // Cache per-(item, stripe) on-hand-by-bin so a supersession redirect doesn't
+  // refetch.
   const onHandCache = new Map<string, Map<string, number>>();
-  const claimsByItem = new Map<string, LinesideClaim[]>();
+  const claimsByItem = new Map<
+    string,
+    (LinesideClaim & { projectId: string | null })[]
+  >();
   const claimsFor = async (
     itemId: string,
     storageUnitId: string
-  ): Promise<LinesideClaim[]> => {
+  ): Promise<(LinesideClaim & { projectId: string | null })[]> => {
     const key = `${itemId}|${storageUnitId}`;
     const cached = claimsByItem.get(key);
     if (cached) return cached;
     const { data, error } = await client
       .from("pickingListLine")
       .select(
-        "jobId, jobMaterialId, quantityPicked, quantityReturned, pickingList!inner(status), job!inner(status)"
+        "jobId, jobMaterialId, projectId, quantityPicked, quantityReturned, pickingList!inner(status), job!inner(status)"
       )
       .eq("companyId", args.companyId)
       .eq("itemId", itemId)
@@ -3952,80 +4107,145 @@ export async function generatePickingList(
     const claims = (data ?? []).map((line) => ({
       jobId: line.jobId,
       jobMaterialId: line.jobMaterialId,
+      projectId: line.projectId ?? null,
       staged:
         Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
     }));
     claimsByItem.set(key, claims);
     return claims;
   };
-  const consumedByItem = new Map<string, Map<string, number>>();
+  // Consumption at a bin per stripe, then per job.
+  const consumedByItem = new Map<string, Map<string, Map<string, number>>>();
   const consumedFor = async (
     itemId: string,
-    storageUnitId: string
+    storageUnitId: string,
+    stripe: PickStripe
   ): Promise<Map<string, number>> => {
     const key = `${itemId}|${storageUnitId}`;
-    const cached = consumedByItem.get(key);
-    if (cached) return cached;
-    const { data, error } = await client
-      .from("itemLedger")
-      .select("documentId, quantity")
-      .eq("companyId", args.companyId)
-      .eq("locationId", args.locationId)
-      .eq("itemId", itemId)
-      .eq("storageUnitId", storageUnitId)
-      .eq("documentType", "Job Consumption");
-    if (error) throw new PickingReadError(error);
-    const byJob = new Map<string, number>();
-    for (const row of data ?? []) {
-      if (!row.documentId) continue;
-      byJob.set(
-        row.documentId,
-        (byJob.get(row.documentId) ?? 0) +
-          Math.max(0, -Number(row.quantity ?? 0))
-      );
+    let byStripe = consumedByItem.get(key);
+    if (!byStripe) {
+      const { data, error } = await client
+        .from("itemLedger")
+        .select("documentId, projectId, quantity")
+        .eq("companyId", args.companyId)
+        .eq("locationId", args.locationId)
+        .eq("itemId", itemId)
+        .eq("storageUnitId", storageUnitId)
+        .eq("documentType", "Job Consumption");
+      if (error) throw new PickingReadError(error);
+      byStripe = new Map<string, Map<string, number>>();
+      for (const row of data ?? []) {
+        if (!row.documentId) continue;
+        const stripeKey = row.projectId ?? "";
+        const byJob = byStripe.get(stripeKey) ?? new Map<string, number>();
+        byJob.set(
+          row.documentId,
+          (byJob.get(row.documentId) ?? 0) +
+            Math.max(0, -Number(row.quantity ?? 0))
+        );
+        byStripe.set(stripeKey, byJob);
+      }
+      consumedByItem.set(key, byStripe);
     }
-    consumedByItem.set(key, byJob);
-    return byJob;
+    return byStripe.get(stripe ?? "") ?? new Map<string, number>();
+  };
+  // Lineside credit is taken per stripe (linesideCredit, one definition with
+  // get_lineside_credit), and the running unclaimed balance is kept per
+  // (item, bin, stripe) so two materials never credit the same stock.
+  type LinesideCreditPart = { key: string; own: number };
+  type LinesideCreditTotal = {
+    own: number;
+    unclaimed: number;
+    parts: LinesideCreditPart[];
   };
   const unclaimedRemaining = new Map<string, number>();
   const linesideCreditFor = async (
     itemId: string,
     storageUnitId: string,
     jobId: string,
-    jobMaterialId: string
-  ): Promise<{ own: number; unclaimed: number; key: string }> => {
-    const key = `${itemId}|${storageUnitId}`;
-    const credit = linesideCredit({
-      onHand: (await onHandFor(itemId)).get(storageUnitId) ?? 0,
-      claims: await claimsFor(itemId, storageUnitId),
-      consumedByJob: await consumedFor(itemId, storageUnitId),
-      jobId,
-      jobMaterialId
-    });
-    if (!unclaimedRemaining.has(key)) {
-      unclaimedRemaining.set(key, credit.unclaimed);
+    jobMaterialId: string,
+    stripes: PickStripe[]
+  ): Promise<LinesideCreditTotal> => {
+    const claims = await claimsFor(itemId, storageUnitId);
+    const total: LinesideCreditTotal = { own: 0, unclaimed: 0, parts: [] };
+    for (const stripe of stripes) {
+      const key = `${itemId}|${storageUnitId}|${stripe ?? ""}`;
+      const credit = linesideCredit({
+        onHand: (await onHandFor(itemId, stripe)).get(storageUnitId) ?? 0,
+        claims: claims.filter((claim) => claim.projectId === stripe),
+        consumedByJob: await consumedFor(itemId, storageUnitId, stripe),
+        jobId,
+        jobMaterialId
+      });
+      if (!unclaimedRemaining.has(key)) {
+        unclaimedRemaining.set(key, credit.unclaimed);
+      }
+      total.own += credit.own;
+      total.unclaimed += unclaimedRemaining.get(key) ?? 0;
+      total.parts.push({ key, own: credit.own });
     }
-    return {
-      own: credit.own,
-      unclaimed: unclaimedRemaining.get(key) ?? 0,
-      key
-    };
+    return total;
   };
-  const chargeUnclaimed = (key: string, used: number, own: number) => {
-    const current = unclaimedRemaining.get(key) ?? 0;
-    unclaimedRemaining.set(key, Math.max(0, current - Math.max(0, used - own)));
+  // Charge what a material used beyond its own picks to the shared pool,
+  // stripe by stripe in draw order.
+  const chargeUnclaimed = (credit: LinesideCreditTotal, used: number) => {
+    let shared = Math.max(0, used - credit.own);
+    for (const part of credit.parts) {
+      if (shared <= 0) break;
+      const current = unclaimedRemaining.get(part.key) ?? 0;
+      const take = Math.min(shared, current);
+      unclaimedRemaining.set(part.key, current - take);
+      shared -= take;
+    }
   };
 
-  const onHandFor = async (itemId: string): Promise<Map<string, number>> => {
-    const cached = onHandCache.get(itemId);
+  const onHandFor = async (
+    itemId: string,
+    stripe: PickStripe
+  ): Promise<Map<string, number>> => {
+    const key = stripeKeyOf(itemId, stripe);
+    const cached = onHandCache.get(key);
     if (cached) return cached;
     const map = await getItemOnHandByStorageUnit(client, {
       itemId,
       locationId: args.locationId,
-      companyId: args.companyId
+      companyId: args.companyId,
+      stripes: [stripe]
     });
-    onHandCache.set(itemId, map);
+    onHandCache.set(key, map);
     return map;
+  };
+
+  // A pick of `quantity` split by stripe, in the job's draw order: each
+  // stripe before the last up to its warehouse balance, the last (common)
+  // stripe the rest. One part, on the job's only stripe, when the list holds
+  // no project stock.
+  const pickBalance = new Map<string, number>();
+  const splitPickByStripe = async (
+    itemId: string,
+    quantity: number,
+    stripes: PickStripe[]
+  ): Promise<{ stripe: PickStripe; quantity: number }[]> => {
+    if (!anyProjectStock || stripes.length === 0) {
+      return [{ stripe: stripes[0] ?? null, quantity }];
+    }
+    const parts: { stripe: PickStripe; quantity: number }[] = [];
+    let left = quantity;
+    for (const [index, stripe] of stripes.entries()) {
+      if (left <= 0) break;
+      const key = stripeKeyOf(itemId, stripe);
+      const available =
+        pickBalance.get(key) ?? (await warehouseOnHandOf(itemId, stripe));
+      const take =
+        index === stripes.length - 1
+          ? left
+          : Math.min(left, Math.max(0, available));
+      if (take <= 0) continue;
+      pickBalance.set(key, available - take);
+      parts.push({ stripe, quantity: take });
+      left -= take;
+    }
+    return parts;
   };
 
   // Lazily resolve (and cache) the lineside destination per work center. A
@@ -4063,6 +4283,7 @@ export async function generatePickingList(
     quantityToPick: number;
     storageUnitId: string | null;
     toStorageUnitId: string | null;
+    projectId: string | null;
     companyId: string;
     createdBy: string;
   }> = [];
@@ -4070,6 +4291,7 @@ export async function generatePickingList(
     for (const mat of materials.data ?? []) {
       const quantityToIssue = Number(mat.quantityToIssue ?? 0);
       if (quantityToIssue <= 0) continue;
+      const stripes = stripesFor(mat.jobId);
 
       // Unassigned materials attach to the earliest selected operation of their
       // make method; its work center drives the lineside destination.
@@ -4107,12 +4329,15 @@ export async function generatePickingList(
           ? mat.itemId
           : effectiveSuccessorId(supersession, asOfDate);
         if (successorId) {
-          const available = await remainingWarehouseStock(predecessorItemId);
+          const available = await remainingWarehouseStock(
+            predecessorItemId,
+            stripes
+          );
           predecessorInStock =
             supersession.supersessionMode === "Consume First"
               ? consumableInWholeAssemblies(available, perAssemblyOld) > 0
               : available > 0;
-          successorInStock = await inWarehouseStock(successorId);
+          successorInStock = await inWarehouseStock(successorId, stripes);
         }
       }
 
@@ -4142,7 +4367,8 @@ export async function generatePickingList(
               predecessorItemId,
               toStorageUnitId,
               mat.jobId,
-              mat.id
+              mat.id,
+              stripes
             )
           : null;
         const newCredit = toStorageUnitId
@@ -4150,10 +4376,14 @@ export async function generatePickingList(
               successorId,
               toStorageUnitId,
               mat.jobId,
-              mat.id
+              mat.id,
+              stripes
             )
           : null;
-        const warehouseOld = await remainingWarehouseStock(predecessorItemId);
+        const warehouseOld = await remainingWarehouseStock(
+          predecessorItemId,
+          stripes
+        );
         const split = splitConsumeFirstPick({
           needOld: quantityToIssue * oldPerLine,
           perAssemblyOld,
@@ -4163,15 +4393,12 @@ export async function generatePickingList(
           warehouseOld,
           successorInStock
         });
-        warehouseRemaining.set(
-          predecessorItemId,
-          Math.max(0, warehouseOld - split.warehouseOldUsed)
-        );
+        await drawWarehouse(predecessorItemId, stripes, split.warehouseOldUsed);
         if (oldCredit) {
-          chargeUnclaimed(oldCredit.key, split.stagedOldUsed, oldCredit.own);
+          chargeUnclaimed(oldCredit, split.stagedOldUsed);
         }
         if (newCredit) {
-          chargeUnclaimed(newCredit.key, split.stagedNewUsed, newCredit.own);
+          chargeUnclaimed(newCredit, split.stagedNewUsed);
         }
         if (split.picks.length === 0) continue;
         targets = split.picks.map((pick) => ({
@@ -4185,10 +4412,11 @@ export async function generatePickingList(
             target.itemId,
             toStorageUnitId,
             mat.jobId,
-            mat.id
+            mat.id,
+            stripes
           );
           const credited = Math.min(need, credit.own + credit.unclaimed);
-          chargeUnclaimed(credit.key, credited, credit.own);
+          chargeUnclaimed(credit, credited);
           if (credited >= need) continue;
           targets = [{ itemId: target.itemId, quantity: need - credited }];
         } else {
@@ -4196,8 +4424,24 @@ export async function generatePickingList(
         }
       }
 
-      for (const { itemId: pickItemId, quantity: quantityToPick } of targets) {
-        const onHandByUnit = await onHandFor(pickItemId);
+      const stripeTargets: {
+        itemId: string;
+        quantity: number;
+        stripe: PickStripe;
+      }[] = [];
+      for (const { itemId, quantity } of targets) {
+        for (const part of await splitPickByStripe(itemId, quantity, stripes)) {
+          stripeTargets.push({ itemId, ...part });
+        }
+      }
+
+      for (const {
+        itemId: pickItemId,
+        quantity: quantityToPick,
+        stripe
+      } of stripeTargets) {
+        // The source shelf is resolved within the stripe the line draws.
+        const onHandByUnit = await onHandFor(pickItemId, stripe);
 
         let sourceStorageUnitId: string | null;
         if (pickItemId === mat.itemId && mat.storageUnitId) {
@@ -4225,6 +4469,7 @@ export async function generatePickingList(
           quantityToPick,
           storageUnitId: sourceStorageUnitId,
           toStorageUnitId,
+          projectId: stripe,
           companyId: args.companyId,
           createdBy: args.createdBy
         });

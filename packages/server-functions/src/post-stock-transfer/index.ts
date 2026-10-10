@@ -21,6 +21,7 @@ import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { loadTrackedEntityStripe, withStripe } from "../lib/stock-stripes";
 import {
   type ExpiredEntityPolicy,
   type ExpiryOverride,
@@ -215,11 +216,12 @@ const postStockTransfer = defineServerFn({
             companyId
           });
 
-          // Insert item ledger entries
+          // An untracked stock transfer line names no stripe: it moves common
+          // stock (project stock moves through a project stock transfer).
           if (itemLedgerInserts.length > 0) {
             await trx
               .insertInto("itemLedger")
-              .values(itemLedgerInserts)
+              .values(withStripe(itemLedgerInserts, null))
               .execute();
           }
 
@@ -291,11 +293,11 @@ const postStockTransfer = defineServerFn({
               companyId
             });
 
-            // Insert reverse item ledger entries
+            // The reversal copies the pick: common stock.
             if (itemLedgerInserts.length > 0) {
               await trx
                 .insertInto("itemLedger")
-                .values(itemLedgerInserts)
+                .values(withStripe(itemLedgerInserts, null))
                 .execute();
             }
           }
@@ -358,6 +360,13 @@ const postStockTransfer = defineServerFn({
             .select(["id", "readableId"])
             .forUpdate()
             .executeTakeFirstOrThrow();
+
+          // Both legs carry the stripe of the stock the serial sits in.
+          const stripe = await loadTrackedEntityStripe(
+            trx,
+            companyId,
+            trackedEntityId
+          );
 
           // Refuse a REPEAT scan of the same serial on this transfer. Each scan
           // posts a Transfer activity + a −1/+1 ledger pair, so a silent no-op
@@ -455,7 +464,7 @@ const postStockTransfer = defineServerFn({
           if (itemLedgerInserts.length > 0) {
             await trx
               .insertInto("itemLedger")
-              .values(itemLedgerInserts)
+              .values(withStripe(itemLedgerInserts, stripe))
               .execute();
           }
 
@@ -526,6 +535,13 @@ const postStockTransfer = defineServerFn({
             entityQuantity: Number(trackedEntity.quantity),
             transferQuantity: quantity
           });
+
+          // The split and both legs carry the stripe of the lot they move.
+          const stripe = await loadTrackedEntityStripe(
+            trx,
+            companyId,
+            trackedEntityId
+          );
 
           // Expiry policy gate (throws on hard reject; returns warning for 'Warn').
           const expiredCheck = checkExpiredEntity(
@@ -705,7 +721,7 @@ const postStockTransfer = defineServerFn({
           if (itemLedgerInserts.length > 0) {
             await trx
               .insertInto("itemLedger")
-              .values(itemLedgerInserts)
+              .values(withStripe(itemLedgerInserts, stripe))
               .execute();
           }
 
@@ -778,6 +794,13 @@ const postStockTransfer = defineServerFn({
             .selectAll("trackedActivity")
             .executeTakeFirstOrThrow();
 
+          // The reversal copies the stripe of the lot it moves back.
+          const stripe = await loadTrackedEntityStripe(
+            trx,
+            companyId,
+            trackedEntityId
+          );
+
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
             [];
 
@@ -816,7 +839,7 @@ const postStockTransfer = defineServerFn({
           if (itemLedgerInserts.length > 0) {
             await trx
               .insertInto("itemLedger")
-              .values(itemLedgerInserts)
+              .values(withStripe(itemLedgerInserts, stripe))
               .execute();
           }
 
@@ -914,6 +937,13 @@ const postStockTransfer = defineServerFn({
             .where("trackedActivity.companyId", "=", companyId)
             .selectAll("trackedActivity")
             .executeTakeFirstOrThrow();
+
+          // The reversal copies the stripe of the lot it moves back.
+          const stripe = await loadTrackedEntityStripe(
+            trx,
+            companyId,
+            trackedEntityId
+          );
 
           // The whole child returns to its parent, so round once here and let
           // the parent increase, the ledger pair and the pickedQuantity
@@ -1203,7 +1233,7 @@ const postStockTransfer = defineServerFn({
           if (itemLedgerInserts.length > 0) {
             await trx
               .insertInto("itemLedger")
-              .values(itemLedgerInserts)
+              .values(withStripe(itemLedgerInserts, stripe))
               .execute();
           }
 

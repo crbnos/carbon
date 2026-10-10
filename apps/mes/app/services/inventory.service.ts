@@ -303,6 +303,39 @@ export async function getPickingListRecommendations(
 }
 
 /**
+ * The stock stripes a job operation's demand may draw, in order (Projects
+ * Phase 2a): its job's project stock first when the project has project
+ * stock, then common stock (null). Common stock only otherwise.
+ */
+export async function getJobOperationStockStripes(
+  client: SupabaseClient<Database>,
+  args: { jobOperationId: string; companyId: string }
+): Promise<(string | null)[]> {
+  const operation = await client
+    .from("jobOperation")
+    .select("jobId")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (!operation.data?.jobId) return [null];
+  const job = await client
+    .from("job")
+    .select("projectId")
+    .eq("id", operation.data.jobId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  const projectId = job.data?.projectId;
+  if (!projectId) return [null];
+  const project = await client
+    .from("project")
+    .select("projectStock")
+    .eq("id", projectId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  return project.data?.projectStock ? [projectId, null] : [null];
+}
+
+/**
  * On-the-fly batch/lot suggestion for issuing a single tracked material when no
  * picking list has allocated it — the same allocation the picking list would make,
  * computed per material. Sources the ordered, allocation-netted, warehouse-only
@@ -317,6 +350,9 @@ export async function getSuggestedAllocationForMaterial(
     companyId: string;
     locationId: string;
     quantity: number;
+    // The job's stock stripes, in draw order (getJobOperationStockStripes).
+    // Common stock only when omitted.
+    projectIds?: (string | null)[];
   }
 ): Promise<SuggestedAllocationLot[]> {
   if (args.quantity <= 0) return [];
@@ -333,7 +369,8 @@ export async function getSuggestedAllocationForMaterial(
     locationId: args.locationId,
     excludeLineside: true,
     excludeAllocated: true,
-    sortMethod
+    sortMethod,
+    projectIds: args.projectIds
   });
   if (error || !data) return [];
 

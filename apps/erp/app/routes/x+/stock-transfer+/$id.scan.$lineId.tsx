@@ -63,6 +63,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const locationId = (line.data.stockTransfer as { locationId: string } | null)
     ?.locationId;
 
+  // A bin move keeps a lot's stock stripe, so every stripe's lots may move:
+  // common stock and the stock of each project that holds project stock.
+  const stockedProjects =
+    locationId && line.data.itemId
+      ? await client
+          .from("project")
+          .select("id")
+          .eq("companyId", companyId)
+          .eq("projectStock", true)
+      : { data: [] };
+
   const entities =
     locationId && line.data.itemId
       ? await getAvailableTrackedEntities(client, {
@@ -71,7 +82,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           locationId,
           // A stock transfer moves stock between bins in the warehouse, so
           // lineside (work-center) bins are not valid sources.
-          excludeLineside: true
+          excludeLineside: true,
+          projectIds: [
+            null,
+            ...(stockedProjects.data ?? []).map((project) => project.id)
+          ]
         })
       : { data: [] };
 

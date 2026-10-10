@@ -216,3 +216,33 @@ export async function loadProjectStock(
   }
   return stock;
 }
+
+/**
+ * The stripe that holds a tracked entity, read from its item ledger rows
+ * (`trackedEntityStripe`). One query.
+ */
+export async function loadTrackedEntityStripe(
+  db: Kysely<DB> | Transaction<DB>,
+  companyId: string,
+  trackedEntityId: string
+): Promise<StockStripe> {
+  const rows = await db
+    .selectFrom("itemLedger")
+    .select(["trackedEntityId", "projectId", "quantity"])
+    .where("trackedEntityId", "=", trackedEntityId)
+    .where("companyId", "=", companyId)
+    .execute();
+  return trackedEntityStripe(rows, trackedEntityId);
+}
+
+/**
+ * Sets `projectId` on every row: a Transfer pair, and every row a move writes
+ * with it, carries the stripe of the stock it moves. Every row of a multi-row
+ * insert gets the key, so Kysely writes no NULL into a sibling by accident.
+ */
+export function withStripe<T extends object>(
+  rows: readonly T[],
+  stripe: StockStripe
+): (T & { projectId: string | null })[] {
+  return rows.map((row) => ({ ...row, projectId: stripe }));
+}

@@ -462,7 +462,8 @@ export function IssueMaterialModal({
       ? {
           itemId: selectedItemId,
           locationId: locationId as string,
-          quantity: initialQuantity
+          quantity: initialQuantity,
+          operationId
         }
       : undefined
   );
@@ -2124,11 +2125,12 @@ function useSuggestedAllocation(args?: {
   itemId: string;
   locationId: string;
   quantity: number;
+  operationId?: string;
 }) {
   const fetcher = useFetcher<{ data: SuggestedAllocationLot[]; error: null }>();
   const key =
     args && args.itemId && args.locationId && args.quantity > 0
-      ? `${args.itemId}:${args.locationId}:${args.quantity}`
+      ? `${args.itemId}:${args.locationId}:${args.quantity}:${args.operationId ?? ""}`
       : undefined;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on args identity
@@ -2138,7 +2140,8 @@ function useSuggestedAllocation(args?: {
         path.to.api.suggestedAllocation(
           args.itemId,
           args.locationId,
-          args.quantity
+          args.quantity,
+          args.operationId
         )
       );
     }
