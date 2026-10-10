@@ -4017,6 +4017,9 @@ msgstr "Fecha de bloqueo de libros (manual)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "Las transacciones crearán asientos de diario y actualizarán el libro m
 
 msgid "Transfer"
 msgstr "Transferencia"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "Fecha de Transferencia"

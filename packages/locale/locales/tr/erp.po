@@ -4017,6 +4017,9 @@ msgstr "Defterlerin kilitlenme tarihi (manuel)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "İşlemler muhasebe fişileri oluşturacak ve Büyük defteri güncelley
 
 msgid "Transfer"
 msgstr "Transfer"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "Transfer Tarihi"

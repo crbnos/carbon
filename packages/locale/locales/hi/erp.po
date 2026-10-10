@@ -4017,6 +4017,9 @@ msgstr "पुस्तकें लॉक तारीख (मैनुअल)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "लेनदेन जर्नल प्रविष्टियां 
 
 msgid "Transfer"
 msgstr "स्थानांतरण"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "स्थानांतरण तारीख"

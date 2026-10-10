@@ -4017,6 +4017,9 @@ msgstr "帳簿ロック日 (手動)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "トランザクションは仕訳帳エントリを作成し、総勘定
 
 msgid "Transfer"
 msgstr "転送"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "転送日"

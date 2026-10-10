@@ -4017,6 +4017,9 @@ msgstr "Data di blocco dei registri (manuale)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "Le transazioni creeranno voci di prima nota e aggiorneranno la contabili
 
 msgid "Transfer"
 msgstr "Trasferimento"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "Data di trasferimento"

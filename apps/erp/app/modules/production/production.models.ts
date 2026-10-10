@@ -76,7 +76,10 @@ export const planningActionType = [
   "Cancel",
   "Increase",
   "Decrease",
-  "Release"
+  "Release",
+  // Projects Phase 2b: move stock between owners (common and project stock).
+  "Transfer",
+  "Borrow"
 ] as const;
 
 export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;

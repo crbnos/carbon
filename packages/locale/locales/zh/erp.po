@@ -4017,6 +4017,9 @@ msgstr "账册锁定日期（手动）"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "交易将创建凭证并更新总账。"
 
 msgid "Transfer"
 msgstr "转移"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "转移日期"

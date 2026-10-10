@@ -14404,6 +14404,9 @@ export default {
             $ref: "#/parameters/rowFilter.demandForecastSource.redirectedFromItemId"
           },
           {
+            $ref: "#/parameters/rowFilter.demandForecastSource.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -14502,6 +14505,9 @@ export default {
             $ref: "#/parameters/rowFilter.demandForecastSource.redirectedFromItemId"
           },
           {
+            $ref: "#/parameters/rowFilter.demandForecastSource.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -14552,6 +14558,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandForecastSource.redirectedFromItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandForecastSource.planningSegmentId"
           },
           {
             $ref: "#/parameters/body.demandForecastSource"
@@ -23377,6 +23386,9 @@ export default {
             $ref: "#/parameters/rowFilter.demandForecast.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.demandForecast.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -23472,6 +23484,9 @@ export default {
             $ref: "#/parameters/rowFilter.demandForecast.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.demandForecast.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -23519,6 +23534,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandForecast.planningSegmentId"
           },
           {
             $ref: "#/parameters/body.demandForecast"
@@ -23803,6 +23821,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplyForecast.sourceType"
           },
           {
+            $ref: "#/parameters/rowFilter.supplyForecast.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -23901,6 +23922,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplyForecast.sourceType"
           },
           {
+            $ref: "#/parameters/rowFilter.supplyForecast.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -23951,6 +23975,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplyForecast.sourceType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.planningSegmentId"
           },
           {
             $ref: "#/parameters/body.supplyForecast"
@@ -33292,6 +33319,9 @@ export default {
             $ref: "#/parameters/rowFilter.demandActual.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.demandActual.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -33384,6 +33414,9 @@ export default {
             $ref: "#/parameters/rowFilter.demandActual.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.demandActual.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -33428,6 +33461,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandActual.planningSegmentId"
           },
           {
             $ref: "#/parameters/body.demandActual"
@@ -49126,6 +49162,21 @@ export default {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.planningAction.planningSegmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.fromProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.toProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.projectBorrowId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -49260,6 +49311,21 @@ export default {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.planningAction.planningSegmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.fromProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.toProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.projectBorrowId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -49346,6 +49412,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.planningSegmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.fromProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.toProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.projectBorrowId"
           },
           {
             $ref: "#/parameters/body.planningAction"
@@ -93166,6 +93247,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplyActual.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.supplyActual.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -93258,6 +93342,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplyActual.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.supplyActual.planningSegmentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93302,6 +93389,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplyActual.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.planningSegmentId"
           },
           {
             $ref: "#/parameters/body.supplyActual"
@@ -115753,6 +115843,63 @@ export default {
         tags: ["(rpc) secure_audit_log_table"]
       }
     },
+    "/rpc/project_planning_segment": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_project_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) project_planning_segment"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_project_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_project_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) project_planning_segment"]
+      }
+    },
     "/rpc/backflush_job_materials": {
       post: {
         parameters: [
@@ -128859,7 +129006,8 @@ export default {
         "parentItemId",
         "quantity",
         "companyId",
-        "createdAt"
+        "createdAt",
+        "planningSegmentId"
       ],
       properties: {
         id: {
@@ -128887,7 +129035,12 @@ export default {
           type: "string"
         },
         sourceType: {
-          enum: ["Job Material", "Sales Order", "Demand Projection"],
+          enum: [
+            "Job Material",
+            "Sales Order",
+            "Demand Projection",
+            "Project Material"
+          ],
           format: 'public."demandForecastSourceType"',
           type: "string"
         },
@@ -128933,6 +129086,11 @@ export default {
         redirectedFromItemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        planningSegmentId: {
+          default: "",
           format: "text",
           type: "string"
         }
@@ -133354,7 +133512,8 @@ export default {
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "planningSegmentId"
       ],
       properties: {
         itemId: {
@@ -133417,6 +133576,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        planningSegmentId: {
+          default: "",
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
         }
@@ -133522,7 +133687,8 @@ export default {
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "planningSegmentId"
       ],
       properties: {
         itemId: {
@@ -133589,8 +133755,14 @@ export default {
           type: "string"
         },
         sourceType: {
-          enum: ["Purchase Order", "Production Order"],
+          enum: ["Purchase Order", "Production Order", "Project Borrow"],
           format: 'public."supplySourceType"',
+          type: "string"
+        },
+        planningSegmentId: {
+          default: "",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
           type: "string"
         }
       },
@@ -138122,7 +138294,8 @@ export default {
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "planningSegmentId"
       ],
       properties: {
         itemId: {
@@ -138150,7 +138323,12 @@ export default {
         },
         sourceType: {
           description: "Note:\nThis is a Primary Key.<pk/>",
-          enum: ["Sales Order", "Job Material"],
+          enum: [
+            "Sales Order",
+            "Job Material",
+            "Project Material",
+            "Project Borrow"
+          ],
           format: 'public."demandSourceType"',
           type: "string"
         },
@@ -138183,6 +138361,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        planningSegmentId: {
+          default: "",
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
         }
@@ -145446,7 +145630,8 @@ export default {
         "requiresManualAction",
         "assigneeOverridden",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "planningSegmentId"
       ],
       properties: {
         id: {
@@ -145488,7 +145673,9 @@ export default {
             "Cancel",
             "Increase",
             "Decrease",
-            "Release"
+            "Release",
+            "Transfer",
+            "Borrow"
           ],
           format: 'public."planningActionType"',
           type: "string"
@@ -145584,6 +145771,27 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        planningSegmentId: {
+          default: "",
+          format: "text",
+          type: "string"
+        },
+        fromProjectId: {
+          format: "text",
+          type: "string"
+        },
+        toProjectId: {
+          format: "text",
+          type: "string"
+        },
+        projectStockTransferId: {
+          format: "text",
+          type: "string"
+        },
+        projectBorrowId: {
+          format: "text",
           type: "string"
         }
       },
@@ -166084,7 +166292,8 @@ export default {
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "planningSegmentId"
       ],
       properties: {
         itemId: {
@@ -166112,7 +166321,7 @@ export default {
         },
         sourceType: {
           description: "Note:\nThis is a Primary Key.<pk/>",
-          enum: ["Purchase Order", "Production Order"],
+          enum: ["Purchase Order", "Production Order", "Project Borrow"],
           format: 'public."supplySourceType"',
           type: "string"
         },
@@ -166145,6 +166354,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        planningSegmentId: {
+          default: "",
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
         }
@@ -181228,6 +181443,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.demandForecastSource.planningSegmentId": {
+      name: "planningSegmentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.configurationParameterGroup": {
       name: "configurationParameterGroup",
       description: "configurationParameterGroup",
@@ -186323,6 +186544,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.demandForecast.planningSegmentId": {
+      name: "planningSegmentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.balloon": {
       name: "balloon",
       description: "balloon",
@@ -186505,6 +186732,12 @@ export default {
     },
     "rowFilter.supplyForecast.sourceType": {
       name: "sourceType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplyForecast.planningSegmentId": {
+      name: "planningSegmentId",
       required: false,
       in: "query",
       type: "string"
@@ -191703,6 +191936,12 @@ export default {
     },
     "rowFilter.demandActual.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.demandActual.planningSegmentId": {
+      name: "planningSegmentId",
       required: false,
       in: "query",
       type: "string"
@@ -199801,6 +200040,36 @@ export default {
     },
     "rowFilter.planningAction.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.planningSegmentId": {
+      name: "planningSegmentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.fromProjectId": {
+      name: "fromProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.toProjectId": {
+      name: "toProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.projectStockTransferId": {
+      name: "projectStockTransferId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.projectBorrowId": {
+      name: "projectBorrowId",
       required: false,
       in: "query",
       type: "string"
@@ -222747,6 +223016,12 @@ export default {
     },
     "rowFilter.supplyActual.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplyActual.planningSegmentId": {
+      name: "planningSegmentId",
       required: false,
       in: "query",
       type: "string"

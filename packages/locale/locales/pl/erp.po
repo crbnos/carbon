@@ -4017,6 +4017,9 @@ msgstr "Data zablokowania ksiąg (ręczna)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "Transakcje będą tworzyć dowody księgowe i aktualizować księgę gł
 
 msgid "Transfer"
 msgstr "Przesyłka"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "Data transferu"

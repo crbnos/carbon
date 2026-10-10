@@ -4017,6 +4017,9 @@ msgstr "Date de verrouillage des livres (manuel)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "Les transactions créeront des écritures de journal et mettront à jour
 
 msgid "Transfer"
 msgstr "Transfert"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "Date de transfert"

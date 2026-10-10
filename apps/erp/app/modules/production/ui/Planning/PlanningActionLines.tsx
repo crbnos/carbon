@@ -22,12 +22,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import {
+  LuArrowLeftRight,
   LuBan,
   LuChevronsDown,
   LuChevronsUp,
   LuCirclePlay,
   LuEllipsisVertical,
   LuEyeOff,
+  LuHandCoins,
   LuMinus,
   LuPlus,
   LuRotateCcw,
@@ -96,7 +98,9 @@ const TYPE_ICONS: Record<PlanningActionType, ReactNode> = {
   Increase: <LuPlus />,
   Decrease: <LuMinus />,
   Cancel: <LuBan />,
-  Release: <LuSend />
+  Release: <LuSend />,
+  Transfer: <LuArrowLeftRight />,
+  Borrow: <LuHandCoins />
 };
 
 const TYPE_ORDER: PlanningActionType[] = [
@@ -107,7 +111,9 @@ const TYPE_ORDER: PlanningActionType[] = [
   "Release",
   "Defer",
   "Order",
-  "Make"
+  "Make",
+  "Transfer",
+  "Borrow"
 ];
 
 export function usePlanningActionTypeLabels(): Record<
@@ -124,7 +130,9 @@ export function usePlanningActionTypeLabels(): Record<
       Increase: t`Increase`,
       Decrease: t`Decrease`,
       Cancel: t`Cancel`,
-      Release: t`Release`
+      Release: t`Release`,
+      Transfer: t`Transfer`,
+      Borrow: t`Borrow`
     }),
     [t]
   );
@@ -627,6 +635,20 @@ function PlanningActionSentence({
       ) : (
         <Trans>
           Release purchase order {target} by {date}
+        </Trans>
+      );
+      break;
+    case "Transfer":
+      sentence = (
+        <Trans>
+          Transfer {amount} for {date}
+        </Trans>
+      );
+      break;
+    case "Borrow":
+      sentence = (
+        <Trans>
+          Borrow {amount} for {date}
         </Trans>
       );
       break;

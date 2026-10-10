@@ -4017,6 +4017,9 @@ msgstr "Дата блокировки книг (вручную)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "Операции создадут записи и обновят Гла�
 
 msgid "Transfer"
 msgstr "Передача"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "Дата передачи"

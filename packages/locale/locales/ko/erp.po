@@ -4017,6 +4017,9 @@ msgstr "장부 잠금 날짜(수동)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "거래에 따라 전표 항목이 생성되고 총계정원장이 업데
 
 msgid "Transfer"
 msgstr "이동"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "이동일"

@@ -14455,6 +14455,7 @@ export type Database = {
           locationId: string
           notes: string | null
           periodId: string
+          planningSegmentId: string
           sourceType: Database["public"]["Enums"]["demandSourceType"]
           updatedAt: string
           updatedBy: string
@@ -14468,6 +14469,7 @@ export type Database = {
           locationId: string
           notes?: string | null
           periodId: string
+          planningSegmentId?: string
           sourceType: Database["public"]["Enums"]["demandSourceType"]
           updatedAt?: string
           updatedBy: string
@@ -14481,6 +14483,7 @@ export type Database = {
           locationId?: string
           notes?: string | null
           periodId?: string
+          planningSegmentId?: string
           sourceType?: Database["public"]["Enums"]["demandSourceType"]
           updatedAt?: string
           updatedBy?: string
@@ -14654,6 +14657,7 @@ export type Database = {
           locationId: string
           notes: string | null
           periodId: string
+          planningSegmentId: string
           updatedAt: string
           updatedBy: string
         }
@@ -14668,6 +14672,7 @@ export type Database = {
           locationId: string
           notes?: string | null
           periodId: string
+          planningSegmentId?: string
           updatedAt?: string
           updatedBy: string
         }
@@ -14682,6 +14687,7 @@ export type Database = {
           locationId?: string
           notes?: string | null
           periodId?: string
+          planningSegmentId?: string
           updatedAt?: string
           updatedBy?: string
         }
@@ -14853,6 +14859,7 @@ export type Database = {
           locationId: string | null
           parentItemId: string
           periodId: string
+          planningSegmentId: string
           quantity: number
           redirectedFromItemId: string | null
           salesOrderLineId: string | null
@@ -14868,6 +14875,7 @@ export type Database = {
           locationId?: string | null
           parentItemId: string
           periodId: string
+          planningSegmentId?: string
           quantity: number
           redirectedFromItemId?: string | null
           salesOrderLineId?: string | null
@@ -14883,6 +14891,7 @@ export type Database = {
           locationId?: string | null
           parentItemId?: string
           periodId?: string
+          planningSegmentId?: string
           quantity?: number
           redirectedFromItemId?: string | null
           salesOrderLineId?: string | null
@@ -44030,6 +44039,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          fromProjectId: string | null
           horizonDate: string
           id: string
           isASAP: boolean
@@ -44038,7 +44048,10 @@ export type Database = {
           latestOrderDate: string | null
           locationId: string
           periodId: string
+          planningSegmentId: string
           policyName: string | null
+          projectBorrowId: string | null
+          projectStockTransferId: string | null
           purchaseOrderLineId: string | null
           reason: string | null
           requiresManualAction: boolean
@@ -44046,6 +44059,7 @@ export type Database = {
           suggestedDate: string
           suggestedQuantity: number
           supplierId: string | null
+          toProjectId: string | null
           triggerValues: Json | null
           type: Database["public"]["Enums"]["planningActionType"]
           updatedAt: string | null
@@ -44057,6 +44071,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          fromProjectId?: string | null
           horizonDate: string
           id?: string
           isASAP?: boolean
@@ -44065,7 +44080,10 @@ export type Database = {
           latestOrderDate?: string | null
           locationId: string
           periodId: string
+          planningSegmentId?: string
           policyName?: string | null
+          projectBorrowId?: string | null
+          projectStockTransferId?: string | null
           purchaseOrderLineId?: string | null
           reason?: string | null
           requiresManualAction?: boolean
@@ -44073,6 +44091,7 @@ export type Database = {
           suggestedDate: string
           suggestedQuantity: number
           supplierId?: string | null
+          toProjectId?: string | null
           triggerValues?: Json | null
           type: Database["public"]["Enums"]["planningActionType"]
           updatedAt?: string | null
@@ -44084,6 +44103,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          fromProjectId?: string | null
           horizonDate?: string
           id?: string
           isASAP?: boolean
@@ -44092,7 +44112,10 @@ export type Database = {
           latestOrderDate?: string | null
           locationId?: string
           periodId?: string
+          planningSegmentId?: string
           policyName?: string | null
+          projectBorrowId?: string | null
+          projectStockTransferId?: string | null
           purchaseOrderLineId?: string | null
           reason?: string | null
           requiresManualAction?: boolean
@@ -44100,6 +44123,7 @@ export type Database = {
           suggestedDate?: string
           suggestedQuantity?: number
           supplierId?: string | null
+          toProjectId?: string | null
           triggerValues?: Json | null
           type?: Database["public"]["Enums"]["planningActionType"]
           updatedAt?: string | null
@@ -72016,6 +72040,7 @@ export type Database = {
           locationId: string
           notes: string | null
           periodId: string
+          planningSegmentId: string
           sourceType: Database["public"]["Enums"]["supplySourceType"]
           updatedAt: string
           updatedBy: string
@@ -72029,6 +72054,7 @@ export type Database = {
           locationId: string
           notes?: string | null
           periodId: string
+          planningSegmentId?: string
           sourceType: Database["public"]["Enums"]["supplySourceType"]
           updatedAt?: string
           updatedBy: string
@@ -72042,6 +72068,7 @@ export type Database = {
           locationId?: string
           notes?: string | null
           periodId?: string
+          planningSegmentId?: string
           sourceType?: Database["public"]["Enums"]["supplySourceType"]
           updatedAt?: string
           updatedBy?: string
@@ -72215,6 +72242,7 @@ export type Database = {
           locationId: string
           notes: string | null
           periodId: string
+          planningSegmentId: string
           sourceType: Database["public"]["Enums"]["supplySourceType"] | null
           updatedAt: string
           updatedBy: string
@@ -72230,6 +72258,7 @@ export type Database = {
           locationId: string
           notes?: string | null
           periodId: string
+          planningSegmentId?: string
           sourceType?: Database["public"]["Enums"]["supplySourceType"] | null
           updatedAt?: string
           updatedBy: string
@@ -72245,6 +72274,7 @@ export type Database = {
           locationId?: string
           notes?: string | null
           periodId?: string
+          planningSegmentId?: string
           sourceType?: Database["public"]["Enums"]["supplySourceType"] | null
           updatedAt?: string
           updatedBy?: string
@@ -98245,6 +98275,10 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["projectCostTreatment"]
       }
+      project_planning_segment: {
+        Args: { p_project_id: string }
+        Returns: string
+      }
       project_posting_account: {
         Args: {
           p_company_id: string
@@ -98891,7 +98925,12 @@ export type Database = {
         | "Job Material"
         | "Sales Order"
         | "Demand Projection"
-      demandSourceType: "Sales Order" | "Job Material"
+        | "Project Material"
+      demandSourceType:
+        | "Sales Order"
+        | "Job Material"
+        | "Project Material"
+        | "Project Borrow"
       depreciationMethod:
         | "Straight Line"
         | "Declining Balance"
@@ -99377,6 +99416,8 @@ export type Database = {
         | "Increase"
         | "Decrease"
         | "Release"
+        | "Transfer"
+        | "Borrow"
       pricingRuleAmountType: "Percentage" | "Fixed"
       pricingRuleType: "Discount" | "Markup" | "Configuration"
       procedureStatus: "Draft" | "Active" | "Archived"
@@ -99671,7 +99712,7 @@ export type Database = {
         | "Declined"
         | "Cancelled"
       supplierStatusType: "Active" | "Inactive" | "Pending" | "Rejected"
-      supplySourceType: "Purchase Order" | "Production Order"
+      supplySourceType: "Purchase Order" | "Production Order" | "Project Borrow"
       syncOperationStatus:
         | "Pending"
         | "In Flight"
@@ -100499,8 +100540,14 @@ export const Constants = {
         "Job Material",
         "Sales Order",
         "Demand Projection",
+        "Project Material",
       ],
-      demandSourceType: ["Sales Order", "Job Material"],
+      demandSourceType: [
+        "Sales Order",
+        "Job Material",
+        "Project Material",
+        "Project Borrow",
+      ],
       depreciationMethod: [
         "Straight Line",
         "Declining Balance",
@@ -101027,6 +101074,8 @@ export const Constants = {
         "Increase",
         "Decrease",
         "Release",
+        "Transfer",
+        "Borrow",
       ],
       pricingRuleAmountType: ["Percentage", "Fixed"],
       pricingRuleType: ["Discount", "Markup", "Configuration"],
@@ -101353,7 +101402,11 @@ export const Constants = {
         "Cancelled",
       ],
       supplierStatusType: ["Active", "Inactive", "Pending", "Rejected"],
-      supplySourceType: ["Purchase Order", "Production Order"],
+      supplySourceType: [
+        "Purchase Order",
+        "Production Order",
+        "Project Borrow",
+      ],
       syncOperationStatus: [
         "Pending",
         "In Flight",

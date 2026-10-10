@@ -4017,6 +4017,9 @@ msgstr "Büchersperrungsdatum (manuell)"
 msgid "Borrow"
 msgstr ""
 
+msgid "Borrow {amount} for {date}"
+msgstr ""
+
 msgid "Borrow Status"
 msgstr ""
 
@@ -23996,6 +23999,9 @@ msgstr "Transaktionen erstellen Buchungssätze und aktualisieren das Hauptbuch."
 
 msgid "Transfer"
 msgstr "Übertragung"
+
+msgid "Transfer {amount} for {date}"
+msgstr ""
 
 msgid "Transfer Date"
 msgstr "Transferdatum"

@@ -50,6 +50,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
     "memoId",
     "salesInvoiceLineId"
   ],
+  demandForecast: ["planningSegmentId"],
   document: ["sourceDocumentId"],
   documentExtraction: ["sourceDocumentId"],
   documentTemplate: ["footerSectionId", "headerSectionId"],
@@ -88,6 +89,13 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   notification: ["documentId"],
   notificationDelivery: ["documentId"],
   periodCloseTask: ["evidenceJournalId"],
+  planningAction: [
+    "fromProjectId",
+    "planningSegmentId",
+    "projectBorrowId",
+    "projectStockTransferId",
+    "toProjectId"
+  ],
   pricingRule: ["customerIds", "customerTypeIds", "itemIds"],
   printJob: ["sourceDocumentId"],
   printerRoute: ["templateId"],

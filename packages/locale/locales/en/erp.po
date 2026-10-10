@@ -4017,6 +4017,9 @@ msgstr "Books lock date (manual)"
 msgid "Borrow"
 msgstr "Borrow"
 
+msgid "Borrow {amount} for {date}"
+msgstr "Borrow {amount} for {date}"
+
 msgid "Borrow Status"
 msgstr "Borrow Status"
 
@@ -23996,6 +23999,9 @@ msgstr "Transactions will create journal entries and update the general ledger."
 
 msgid "Transfer"
 msgstr "Transfer"
+
+msgid "Transfer {amount} for {date}"
+msgstr "Transfer {amount} for {date}"
 
 msgid "Transfer Date"
 msgstr "Transfer Date"

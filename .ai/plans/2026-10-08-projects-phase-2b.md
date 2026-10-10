@@ -33,7 +33,7 @@ The plan covers:
 ## Progress
 
 - [x] Task 1: Extract the planning core and pin a golden test
-- [ ] Task 2: Create the Phase 2b enum and segment migration
+- [x] Task 2: Create the Phase 2b enum and segment migration
 - [ ] Task 3: Add the segment to the engine keys
 - [ ] Task 4: Add the netting sequence as a pure module
 - [ ] Task 5: Segment the demand and supply views
@@ -658,4 +658,8 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 1 (deviation): `runMrp` reads the existing actuals before it calls `planCompany`, not inside Phase 6. The core is then pure. The read depends on nothing that Phases 3–5 compute, so the order changes no output. The BOM cycle warning moved after the call, and `planCompany` returns `cycleItemIds`. MRP never inserts `supplyForecast` rows, so the outputs have no `supplyForecast` array.
 - Task 1: the fixture comes from the existing satellite company Carbon Development (`db47qcsgq0g02bpief00`), seeded before Phase 2a Task 19. No new seed was needed, so no company data was wiped. A temporary dump in `runMrp` wrote the inputs and threw before Phase 7, and was then removed. The fixture keeps only the columns `planCompany` reads. A one-off check gave equal outputs for the full dump and the trimmed fixture.
 - Task 1: the fixture covers the 6 cases: 4 Make items with a 2-level BOM, 25 Buy items, 7 open PO lines and 2 open jobs, 7 sales order lines, 28 demand projections and 1 effective Consume First supersession. The output holds 83 `demandForecast` rows, 391 `demandForecastSource` rows (8 redirected), 56 demand actuals, 9 supply actuals and 28 consumption updates. The planning suite passes (314), and `@carbon/planning` typechecks.
+- Task 2: `20261010131214_projects-2b-enums.sql` and `20261010131217_mrp-planning-segment.sql` hold the plan's SQL as written. The real constraint names match the plan. `pnpm db:migrate` applied both and regenerated the types and swagger; `authz sync` changed nothing. 0 `planningAction` rows have a segment, and `@carbon/database` typechecks.
+- Task 2 (deviation): `id-refs.ts` lists none of the 5 tables' key columns. But `planningSegmentId`, `fromProjectId`, `toProjectId`, `projectStockTransferId` and `projectBorrowId` hold row ids with no foreign key. The id-refs rule needs every such column, so `demandForecast` and `planningAction` gain entries. A backup carries both tables; the 4 other tables are transient and are not backed up.
+- Task 2 (beyond the plan's file list): the ERP's hand-written `planningActionType` list (`production.models.ts`) gains `Transfer` and `Borrow`, or the `erp` typecheck fails. `PlanningActionLines` gives them an icon (`LuArrowLeftRight`, `LuHandCoins`), a label and a plain sentence ("Transfer 8 for Oct 4"). Task 13 replaces the sentence. The new strings wait for the run's final `/translate` pass. The commit carries the regenerated MCP digest. The workflow catalog check is clean.
+- Task 2: `@carbon/jobs` fails to typecheck before and after this task, in `picked-consumption.ts` and `stock-stripes.ts` (Phase 2a). A separate `fix(projects)` commit after Task 2 fixes it.
 
