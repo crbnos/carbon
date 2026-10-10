@@ -161,7 +161,7 @@ export default function AppIndexRoute() {
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div className="relative z-10 w-full h-full overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8 max-md:p-4">
+        <div className="max-w-7xl mx-auto p-8 max-md:p-4 max-md:pb-[calc(var(--dock-height,0px)+1rem)]">
           <div className="mb-8">
             {!CONTROLLED_ENVIRONMENT && (
               <div className="max-md:hidden">

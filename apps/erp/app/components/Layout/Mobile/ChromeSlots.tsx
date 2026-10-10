@@ -65,7 +65,11 @@ export function PhoneActionBar({
  * Removed on desktop, where the stylesheet values apply unchanged.
  */
 export function useCompactCssVar(
-  name: "--header-height" | "--hero-height" | "--content-inset",
+  name:
+    | "--header-height"
+    | "--hero-height"
+    | "--content-inset"
+    | "--dock-height",
   element: HTMLElement | null
 ) {
   const { isPhone } = useViewport();
@@ -88,16 +92,25 @@ export function useCompactCssVar(
 }
 
 /**
- * The shell's bottom chrome: the target for <BottomBar> and the dock. Its
- * height becomes `--content-inset`, so full-height pages end above it.
+ * The shell's bottom chrome: the target for <BottomBar> and the dock. A
+ * bottom bar is in flow and its height becomes `--content-inset`, so
+ * full-height pages end above it. The dock floats over the page with nothing
+ * behind the pill; its height becomes `--dock-height`, the room a scroller
+ * leaves at its end so its last row can scroll clear of the pill.
  */
 export function MobileBottomChrome({ children }: { children: ReactNode }) {
   const [element, setElement] = useState<HTMLElement | null>(null);
+  const [dock, setDock] = useState<HTMLElement | null>(null);
   useCompactCssVar("--content-inset", element);
+  useCompactCssVar("--dock-height", dock);
   return (
-    <div ref={setElement} className="md:hidden shrink-0">
-      <bottomBarSlot.Target className="empty:hidden" />
-      {children}
-    </div>
+    <>
+      <div ref={setElement} className="md:hidden shrink-0">
+        <bottomBarSlot.Target className="empty:hidden" />
+      </div>
+      <div ref={setDock} className="md:hidden absolute inset-x-0 bottom-0 z-40">
+        {children}
+      </div>
+    </>
   );
 }
