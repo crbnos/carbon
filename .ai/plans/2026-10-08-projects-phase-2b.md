@@ -35,7 +35,7 @@ The plan covers:
 - [x] Task 1: Extract the planning core and pin a golden test
 - [x] Task 2: Create the Phase 2b enum and segment migration
 - [x] Task 3: Add the segment to the engine keys
-- [ ] Task 4: Add the netting sequence as a pure module
+- [x] Task 4: Add the netting sequence as a pure module
 - [ ] Task 5: Segment the demand and supply views
 - [ ] Task 6: Segment the inputs of `runMrp`
 - [ ] Task 7: Net segments and draw common surplus in `explodeBom`
@@ -664,4 +664,6 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 2: `@carbon/jobs` fails to typecheck before and after this task, in `picked-consumption.ts` and `stock-stripes.ts` (Phase 2a). A separate `fix(projects)` commit after Task 2 fixes it.
 - Task 3: `makeKey`, `makeLocationItemKey` and `makeActualKey` take the segment as their last part (default `COMMON_SEGMENT`, `''`), and the split helpers return it. `explodeBom` reads the segment from each key with `splitLocationItemKey`. The on-hand key, the period key, the child key and the Consume First successor key all carry the parent's segment. `DemandContributorBase` gains an optional `segmentId`, which no caller sets yet.
 - Task 3: the 3 existing key tests in `mrp-engine.test.ts` now expect the extra `''` part, because the split helpers return one more element. The 2 new tests pass: the round trip, and a parent in `prj_1` that explodes into `prj_1` only and ignores common on-hand. The database suite passes (416) and the planning suite passes (314) with the golden snapshot unchanged. `@carbon/database`, `@carbon/planning`, `@carbon/server-functions` and `@carbon/jobs` typecheck.
+- Task 4 (deviation): a draw in `allocateCommonSurplus` lowers the surplus of its own period and of every LATER period by the amount taken. An earlier period keeps at most what the draw period has left. Step 2 says "that period and every earlier period". But the draw leaves common stock from its period on, and test case 3 needs a later need to see less (5 for week 1, then 1 for week 2). The rule is exact: it equals `trueSurplusByPeriod` recomputed with the draw taken out of on-hand at its period.
+- Task 4: `mrp-netting-sequence.ts` is exported as `@carbon/database/mrp-netting-sequence`. Its 5 tests failed before the module existed and pass now. The database suite passes (421, with `SUPABASE_DB_URL` exported), and `@carbon/database` typechecks.
 

@@ -28,6 +28,7 @@
     "./rows": "./src/rows.ts",
     "./methods": "./src/methods.ts",
     "./mrp-engine": "./src/mrp-engine.ts",
+    "./mrp-netting-sequence": "./src/mrp-netting-sequence.ts",
     "./supersession-pick": "./src/supersession-pick.ts",
     "./contract-schedule": "./src/contract-schedule.ts",
     "./contract-revenue-schedule": "./src/contract-revenue-schedule.ts",
