@@ -61,7 +61,7 @@ Make the Tree layout of the project Elements page look and work like Flow's tree
 - [x] Task 1: Add the pure tree layout and trace-link helpers with tests
 - [x] Task 2: Define the type colours once
 - [x] Task 3: Load the full list, the comment counts and the open change requests
-- [ ] Task 4: Add the card node and the box node
+- [x] Task 4: Add the card node and the box node
 - [ ] Task 5: Draw the Tree layout as boxes
 - [ ] Task 6: Add the breadcrumb root
 - [ ] Task 7: Add the change request picker
@@ -785,3 +785,4 @@ ls .ai/playbooks/ | grep -i tree
 ## Execution notes
 
 - Task 1: `layoutElementTree` also keeps a set of visited boxes, so a bad `parentId` cycle under a `?root=` cannot recurse forever (the plan named the guard for `matchingDescendants` only). The 13 cases pass. The license fixer only sees git-tracked files, so each new file is staged with `git add -N` before the fixer runs.
+- Task 4 (deviation): an `aria-label` takes a string, and `<Plural>` renders an element. So the comment count's accessible name is a `sr-only` span with the `<Plural>` ("# comment" / "# comments"), and the visible icon and number are `aria-hidden`.

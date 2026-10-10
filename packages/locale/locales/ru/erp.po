@@ -55,6 +55,10 @@ msgstr "(Неактивный)"
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr ""
 
+#. placeholder {0}: data.commentCount
+msgid "{0, plural, one {# comment} other {# comments}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# компонент в этой группе} other {# компонентов в этой группе}}"
@@ -79,6 +83,14 @@ msgstr ""
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr ""
 
+#. placeholder {0}: data.hiddenCount
+msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
+msgstr ""
+
+#. placeholder {0}: data.collapsedCount
+msgid "{0, plural, one {# item} other {# items}}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
 msgstr ""
@@ -95,6 +107,10 @@ msgstr ""
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# операция не имеет временных нормативов} few {# операции не имеют временных нормативов} many {# операций не имеют временных нормативов} other {# операций не имеют временных нормативов}}"
 
+#. placeholder {0}: linkCount.count
+msgid "{0, plural, one {# req} other {# reqs}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.} other {# строк связаны с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.}}"
@@ -102,6 +118,10 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому она не может быть зарезервирована. Пропуск позволит зарезервировать все остальное.} other {# строк связаны с данными вне этой организации, поэтому они не могут быть зарезервированы. Пропуск позволит зарезервировать все остальное.}}"
+
+#. placeholder {0}: linkCount.count
+msgid "{0, plural, one {# test} other {# tests}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -10252,6 +10272,9 @@ msgstr "Единица парка"
 
 msgid "Fleet Units"
 msgstr "Единицы флота"
+
+msgid "Focus on {label}"
+msgstr ""
 
 msgid "Folder"
 msgstr ""

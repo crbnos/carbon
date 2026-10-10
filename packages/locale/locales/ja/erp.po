@@ -55,6 +55,10 @@ msgstr "(無効)"
 msgid "{0, plural, one {# bill of materials line is left out: its item has no cost record} other {# bill of materials lines are left out: their items have no cost record}}"
 msgstr ""
 
+#. placeholder {0}: data.commentCount
+msgid "{0, plural, one {# comment} other {# comments}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {このグループ内の # 個のコンポーネント} other {このグループ内の # 個のコンポーネント}}"
@@ -79,6 +83,14 @@ msgstr ""
 msgid "{0, plural, one {# element} other {# elements}}"
 msgstr ""
 
+#. placeholder {0}: data.hiddenCount
+msgid "{0, plural, one {# hidden by the type filter} other {# hidden by the type filter}}"
+msgstr ""
+
+#. placeholder {0}: data.collapsedCount
+msgid "{0, plural, one {# item} other {# items}}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
 msgstr ""
@@ -95,6 +107,10 @@ msgstr ""
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標準時間がない}}"
 
+#. placeholder {0}: linkCount.count
+msgid "{0, plural, one {# req} other {# reqs}}"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンクしているため、現在のデータの安全なコピーを作成できません。} other {# 行はこの会社の外部のデータにリンクしているため、現在のデータの安全なコピーを作成できません。}}"
@@ -102,6 +118,10 @@ msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンク�
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンクしているため、バックアップできません。スキップすると、他のすべてがバックアップされます。} other {# 行はこの会社の外部のデータにリンクしているため、バックアップできません。スキップすると、他のすべてがバックアップされます。}}"
+
+#. placeholder {0}: linkCount.count
+msgid "{0, plural, one {# test} other {# tests}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -10252,6 +10272,9 @@ msgstr "フリートユニット"
 
 msgid "Fleet Units"
 msgstr "フリート個"
+
+msgid "Focus on {label}"
+msgstr ""
 
 msgid "Folder"
 msgstr ""

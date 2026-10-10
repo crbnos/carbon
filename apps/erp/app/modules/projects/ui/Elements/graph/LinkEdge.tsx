@@ -16,6 +16,8 @@ export type LinkEdgeData = {
   linkType: ProjectElementLinkType;
   label: string;
   isSuspect: boolean;
+  /** Another card's links are lit up: this one fades out. */
+  isDimmed?: boolean;
 };
 
 /** The line style of each link type: dashed for relates to, dotted for feeds. */
@@ -61,10 +63,11 @@ function LinkEdgeImpl({
         style={{
           stroke: color,
           strokeWidth: 1.5,
-          strokeDasharray: data ? linkDash(data.linkType) : undefined
+          strokeDasharray: data ? linkDash(data.linkType) : undefined,
+          opacity: data?.isDimmed ? 0.15 : 1
         }}
       />
-      {data && (
+      {data && !data.isDimmed && (
         <EdgeLabelRenderer>
           <div
             className={cn(
