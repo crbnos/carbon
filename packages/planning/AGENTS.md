@@ -47,13 +47,25 @@ Single subpath `@carbon/planning` (`./src/index.ts`):
 | `resolveLocationWindows` / `resolveWorkCenterWindows` / `subtractIntervals` | Machine/work-center availability window resolvers (`src/scheduling/`) |
 | types (`LadderShiftRow`, `MrpPayload`, `MrpResult`, `LocationScheduleResult`, `ExpediteWhatIfResult`, `NewlyLateJob`, …) | Engine type surface |
 
-Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId })`
+`runMrp` keeps the loads and the Phase-7 writes. The pure core between them is
+`planCompany(inputs)` (`src/mrp/plan-company.ts`, Phases 3–6, no I/O), which also returns
+`commonSurplusDraws` — what each project netting segment takes from the common segment's
+true surplus. **Golden test:** `plan-company.test.ts` snapshots `planCompany` on
+`__fixtures__/plan-company.basic.json`, a company with no project stock. Never edit that
+snapshot to make a test pass; a change there means the change broke the "no project stock,
+identical output" invariant. `plan-company.project.json` pins the segment spec case.
+Netting segments (`planningSegmentId`, `''` = common) are described in
+`.claude/rules/mrp-system.md` → *Project netting segments*.
+
+Internal to the engine, not exported: `generatePlanningActions(client, db, { companyId, userId, commonSurplusDraws })`
 (`src/mrp/planning-actions.ts` — the planning action messages, Order / Make / Expedite / Defer /
-Increase / Decrease / Cancel, diff-written to `planningAction` in one transaction that holds a
+Increase / Decrease / Cancel / Release / Transfer, one row's set computed by the pure
+`deriveRowActions` (a project segment is lot-for-lot; each draw is a Transfer), diff-written to `planningAction` in one transaction that holds a
 per-company `pg_advisory_xact_lock` across the read and the write; `runMrp` calls it after its
 Phase-7 commit), `loadResponsibleEmployeeResolver(db, companyId)` / `resolveResponsibleEmployee(rungs)`
-(`src/mrp/responsible-employee.ts` — who owns an item + location's actions: item → location item
-group → location → company default, first non-null wins), `consumeForecast` (`src/mrp/forecast-consumption.ts` —
+(`src/mrp/responsible-employee.ts` — who owns an item + location's actions: the segment
+project's manager (project segments only) → item → location item group → location → company
+default, first non-null wins), `consumeForecast` (`src/mrp/forecast-consumption.ts` —
 actual demand consumes the demand projection in its own week, then backward, then forward,
 per the company's consumption window; the consumed amount is persisted on
 `demandProjection.consumedQuantity`), and `purchaseOrderLineArrivalDate` / `jobCompletionDate`

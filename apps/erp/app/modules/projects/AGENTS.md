@@ -45,6 +45,10 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 - **Project stock transfer** — `projectStockTransfer` + lines: Transfer, Borrow or Payback,
   Draft → Approved → Posted, or Cancelled. A Borrow opens a `projectBorrow`; a Payback
   settles it and charges the borrower the Payback Variance.
+- **Netting segment** (Phase 2b) — MRP plans a project with project stock on its own
+  (`planningSegmentId` = the project id). A **Transfer** planning action proposes common
+  stock the common segment does not need; applying it creates a Draft transfer with
+  `planningActionId`. An overdue Open borrow shows as a badge in `ProjectHeader`.
 
 ## Safety
 
@@ -154,9 +158,17 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   `getStockOwnerProjects`; `postProjectStockTransfer`, `getProjectStockOnHand` (`.server`);
   `projectStockTransferValidator`, `projectStockTransferLineValidator`,
   `governmentFurnishedRefusal`, `isBorrowOverdue` (models) — project stock.
+  `getProjectBorrows` filters by project, status, `locationId` and `dueBefore` (the
+  overdue borrows of the header badge and the planning worklists).
+- `applyTransferPlanningActions`, `createProjectStockTransfersFromActions` (`.server`) —
+  Apply of Transfer planning actions from both planning routes: needs `update: projects`;
+  one transaction claims the actions and creates one Draft transfer each, readable ids
+  from the `projectStockTransfer` sequence. Kept out of the service so it is no MCP tool.
 
 ## Related Modules
-- **production** — `job.projectId/projectElementId/consumeToProject`; `getJobProjectCharge`.
+- **production** — `job.projectId/projectElementId/consumeToProject`; `getJobProjectCharge`;
+  the planning worklists' Segment column, Transfer actions and Overdue borrows group
+  (`.claude/rules/mrp-system.md` → *Project netting segments*).
 - **purchasing / invoicing** — charge number on PO and invoice lines; `getLineChargeNumber`.
 - **settings / ee approvals** — approval document type `projectChangeRequest`; the
   approvals engine flips the change request status.

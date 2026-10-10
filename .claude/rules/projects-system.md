@@ -12,11 +12,12 @@ paths:
 
 # Projects
 
-Phases 1a, 1b, 1c and 2a of `.ai/specs/2026-10-03-projects.md`; plans
+Phases 1a, 1b, 1c, 2a and 2b of `.ai/specs/2026-10-03-projects.md`; plans
 `.ai/plans/2026-10-07-projects-phase-1a.md`,
 `.ai/plans/2026-10-08-projects-phase-1b.md`,
-`.ai/plans/2026-10-08-projects-phase-1c.md` and
-`.ai/plans/2026-10-08-projects-phase-2a.md` (their *Execution notes* record every
+`.ai/plans/2026-10-08-projects-phase-1c.md`,
+`.ai/plans/2026-10-08-projects-phase-2a.md` and
+`.ai/plans/2026-10-08-projects-phase-2b.md` (their *Execution notes* record every
 deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
@@ -209,7 +210,22 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   project's on-hand by item, location, bin and lot (`getProjectStockOnHand`), its open
   borrows owed and lent (overdue in red, `isBorrowOverdue`), and **Transfer**, **Borrow** and
   **Payback** buttons that open a prefilled Draft (`?type`, `?to`, `?borrow`).
-- **Planning** reads common stock only until Phase 2b.
+- **Planning (Phase 2b).** MRP nets the project in its own netting segment
+  (`planningSegmentId` = the project id; `project_planning_segment`). Plan-line
+  materials of Unstarted / Started elements are `Project Material` demand; an
+  Open borrow is firm demand on the borrower and firm supply on the lender. The
+  segment draws common stock only from the common segment's true surplus, and
+  only through a **Transfer** planning action. Applying it creates a Draft
+  transfer (`applyTransferPlanningActions` → `createProjectStockTransfersFromActions`,
+  `projects.server.ts`, `planningActionId` on the header). An Order or Make in the
+  segment creates a PO line charged to the project or a job with
+  `receiveToProjectStock`. The project's manager owns its planning actions.
+  Details: `mrp-system.md` → *Project netting segments*.
+- **Overdue borrows.** `ProjectHeader` shows a red **Overdue borrows** badge,
+  linked to the Stock tab, when an Open borrow the project owes or lent is past
+  its due date on the company's calendar (`getProjectBorrows` with `dueBefore`,
+  in the `$projectId.tsx` loader). The planning worklists list the same
+  borrows above the grid.
 
 ## Timesheets
 
@@ -414,5 +430,7 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
   default; Brad to confirm.
 - The MES issue picker lists every lot; `issue` refuses a lot outside the job's stripes.
 - A Posted project stock transfer has no void; a Transfer back is the correction.
-- A borrow has no overdue exception yet; the Stock tab shows it in red (MRP exceptions are
-  Phase 2b).
+- Planning: a Project Material demand writes no `demandForecastSource` lineage row,
+  so the item planning chart cannot name the plan line. The order drawer's Open
+  Orders / Open Jobs list every segment's orders of the item, and a `?item=` link
+  opens the item's first segment row.
