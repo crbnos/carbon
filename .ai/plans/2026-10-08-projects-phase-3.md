@@ -41,7 +41,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 
 ## Progress
 
-- [ ] Task 1: Create the Phase 3 enum and table migration
+- [x] Task 1: Create the Phase 3 enum and table migration
 - [ ] Task 2: Redefine the segment rule and the views for groups
 - [ ] Task 3: Regenerate types and add the RLS rules
 - [ ] Task 4: Add the planning group services and pages
@@ -734,3 +734,11 @@ ls .ai/playbooks/projects-phase-3.md
 ```
 
 **Out of scope:** Phase 4 billing.
+
+## Execution notes
+
+- Before Task 1: `@carbon/ee` does not depend on `@carbon/planning`, directly or through its workspace dependencies. Only `@carbon/jobs` and `erp` depend on `@carbon/planning`. So `@carbon/planning` may import `@carbon/ee` with no cycle.
+- Task 1: `20261010145055_projects-3-enums.sql` and `20261010145057_planning-groups-and-pegs.sql` hold the plan's SQL. The second file also adds an index on `companyId` and on each FK column: `planningGroup` (location, exception project, `createdBy`, `updatedBy`), the 3 new `planningGroupId` columns (partial, not null), and `projectPeg` (group, project, item, location, `createdBy`).
+- Task 1: `pnpm db:migrate` applied both files and regenerated the types and swagger. Then `authz sync` failed on the 2 new tables, which have no rule until Task 3, as in Phase 2a Task 1. The commit carries the regenerated MCP digest and workflow catalog (`job.planningGroupId` gains a label).
+- Task 1 (beyond the plan's file list): the new FK on `purchaseOrderLine` made 2 bare embeds in `purchasing+/planning.update.tsx` fail with TS2589. Both now name `purchaseOrderLine_purchaseOrderId_fkey`, as the lesson on new FKs says. `erp`, `mes`, `@carbon/jobs`, `@carbon/server-functions`, `@carbon/planning` and `@carbon/ee` typecheck.
+- Task 1 (open point for Task 6): `projectPeg.demandSourceType` uses `demandForecastSourceType`, which has no `Project Borrow` value. `PegDemand.sourceType` allows `Project Borrow`. So the peg writer cannot store a peg for a borrow demand. Task 6 or 7 must add the value or skip borrow demand.

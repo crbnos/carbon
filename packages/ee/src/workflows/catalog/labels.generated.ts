@@ -160,6 +160,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.job.locationId": msg`Location`,
   "entity.job.modelUploadId": msg`Model upload`,
   "entity.job.notes": msg`Notes`,
+  "entity.job.planningGroupId": msg`Planning group`,
   "entity.job.priority": msg`Priority`,
   "entity.job.productionQuantity": msg`Production quantity`,
   "entity.job.projectElementId": msg`Project element`,

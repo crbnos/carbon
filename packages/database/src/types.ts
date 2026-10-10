@@ -27820,6 +27820,7 @@ export type Database = {
           locationId: string
           modelUploadId: string | null
           notes: Json | null
+          planningGroupId: string | null
           priority: number
           productionQuantity: number | null
           projectedCompletionAt: string | null
@@ -27869,6 +27870,7 @@ export type Database = {
           locationId: string
           modelUploadId?: string | null
           notes?: Json | null
+          planningGroupId?: string | null
           priority?: number
           productionQuantity?: number | null
           projectedCompletionAt?: string | null
@@ -27918,6 +27920,7 @@ export type Database = {
           locationId?: string
           modelUploadId?: string | null
           notes?: Json | null
+          planningGroupId?: string | null
           priority?: number
           productionQuantity?: number | null
           projectedCompletionAt?: string | null
@@ -28134,6 +28137,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_planningGroup_fkey"
+            columns: ["planningGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "planningGroup"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "job_projectElement_fkey"
@@ -44405,6 +44415,164 @@ export type Database = {
           }
         ]
       }
+      planningGroup: {
+        Row: {
+          active: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          exceptionProjectId: string | null
+          excessRule: Database["public"]["Enums"]["planningGroupExcessRule"]
+          id: string
+          locationId: string
+          name: string
+          priorityRule: Database["public"]["Enums"]["planningGroupPriorityRule"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          exceptionProjectId?: string | null
+          excessRule?: Database["public"]["Enums"]["planningGroupExcessRule"]
+          id?: string
+          locationId: string
+          name: string
+          priorityRule?: Database["public"]["Enums"]["planningGroupPriorityRule"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          exceptionProjectId?: string | null
+          excessRule?: Database["public"]["Enums"]["planningGroupExcessRule"]
+          id?: string
+          locationId?: string
+          name?: string
+          priorityRule?: Database["public"]["Enums"]["planningGroupPriorityRule"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planningGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "planningGroup_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "planningGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "planningGroup_exception_fkey"
+            columns: ["exceptionProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "planningGroup_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planningGroup_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       pricingRule: {
         Row: {
           active: boolean
@@ -45912,6 +46080,8 @@ export type Database = {
           nextElementSequence: number
           ownerId: string | null
           parentProjectId: string | null
+          planningGroupId: string | null
+          planningPriority: number
           priority: Database["public"]["Enums"]["projectElementPriority"]
           projectStock: boolean
           projectType: Database["public"]["Enums"]["projectType"]
@@ -45946,6 +46116,8 @@ export type Database = {
           nextElementSequence?: number
           ownerId?: string | null
           parentProjectId?: string | null
+          planningGroupId?: string | null
+          planningPriority?: number
           priority?: Database["public"]["Enums"]["projectElementPriority"]
           projectStock?: boolean
           projectType?: Database["public"]["Enums"]["projectType"]
@@ -45980,6 +46152,8 @@ export type Database = {
           nextElementSequence?: number
           ownerId?: string | null
           parentProjectId?: string | null
+          planningGroupId?: string | null
+          planningPriority?: number
           priority?: Database["public"]["Enums"]["projectElementPriority"]
           projectStock?: boolean
           projectType?: Database["public"]["Enums"]["projectType"]
@@ -46162,6 +46336,13 @@ export type Database = {
             columns: ["parentProjectId", "companyId"]
             isOneToOne: false
             referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "project_planningGroup_fkey"
+            columns: ["planningGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "planningGroup"
             referencedColumns: ["id", "companyId"]
           },
           {
@@ -49663,6 +49844,214 @@ export type Database = {
           }
         ]
       }
+      projectPeg: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          createdByRunId: string | null
+          demandSourceId: string
+          demandSourceType: Database["public"]["Enums"]["demandForecastSourceType"]
+          exception: string | null
+          hardenedAt: string | null
+          id: string
+          itemId: string
+          itemLedgerId: string | null
+          locationId: string
+          manualReason: string | null
+          needDate: string | null
+          parentPegId: string | null
+          planningGroupId: string
+          projectElementId: string | null
+          projectId: string
+          quantity: number
+          state: Database["public"]["Enums"]["projectPegState"]
+          supersededAt: string | null
+          supersededByRunId: string | null
+          supplyId: string
+          supplyType: Database["public"]["Enums"]["projectPegSupplyType"]
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          createdByRunId?: string | null
+          demandSourceId: string
+          demandSourceType: Database["public"]["Enums"]["demandForecastSourceType"]
+          exception?: string | null
+          hardenedAt?: string | null
+          id?: string
+          itemId: string
+          itemLedgerId?: string | null
+          locationId: string
+          manualReason?: string | null
+          needDate?: string | null
+          parentPegId?: string | null
+          planningGroupId: string
+          projectElementId?: string | null
+          projectId: string
+          quantity: number
+          state?: Database["public"]["Enums"]["projectPegState"]
+          supersededAt?: string | null
+          supersededByRunId?: string | null
+          supplyId: string
+          supplyType: Database["public"]["Enums"]["projectPegSupplyType"]
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          createdByRunId?: string | null
+          demandSourceId?: string
+          demandSourceType?: Database["public"]["Enums"]["demandForecastSourceType"]
+          exception?: string | null
+          hardenedAt?: string | null
+          id?: string
+          itemId?: string
+          itemLedgerId?: string | null
+          locationId?: string
+          manualReason?: string | null
+          needDate?: string | null
+          parentPegId?: string | null
+          planningGroupId?: string
+          projectElementId?: string | null
+          projectId?: string
+          quantity?: number
+          state?: Database["public"]["Enums"]["projectPegState"]
+          supersededAt?: string | null
+          supersededByRunId?: string | null
+          supplyId?: string
+          supplyType?: Database["public"]["Enums"]["projectPegSupplyType"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectPeg_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectPeg_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectPeg_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectPeg_group_fkey"
+            columns: ["planningGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "planningGroup"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectPeg_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectPeg_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          }
+        ]
+      }
       projectState: {
         Row: {
           color: string
@@ -52171,6 +52560,7 @@ export type Database = {
           locationId: string | null
           modelUploadId: string | null
           ownerId: string | null
+          planningGroupId: string | null
           projectElementId: string | null
           projectId: string | null
           promisedDate: string | null
@@ -52225,6 +52615,7 @@ export type Database = {
           locationId?: string | null
           modelUploadId?: string | null
           ownerId?: string | null
+          planningGroupId?: string | null
           projectElementId?: string | null
           projectId?: string | null
           promisedDate?: string | null
@@ -52279,6 +52670,7 @@ export type Database = {
           locationId?: string | null
           modelUploadId?: string | null
           ownerId?: string | null
+          planningGroupId?: string | null
           projectElementId?: string | null
           projectId?: string | null
           promisedDate?: string | null
@@ -52534,6 +52926,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_planningGroup_fkey"
+            columns: ["planningGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "planningGroup"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "purchaseOrderLine_projectElement_fkey"
@@ -99670,6 +100069,8 @@ export type Database = {
         | "Release"
         | "Transfer"
         | "Borrow"
+      planningGroupExcessRule: "Common Stock" | "Exception Project"
+      planningGroupPriorityRule: "Earliest Need" | "Project Priority"
       pricingRuleAmountType: "Percentage" | "Fixed"
       pricingRuleType: "Discount" | "Markup" | "Configuration"
       procedureStatus: "Draft" | "Active" | "Archived"
@@ -99736,6 +100137,8 @@ export type Database = {
         | "Test Case"
         | "Parameter"
       projectLayout: "list" | "board" | "table" | "tree" | "timeline" | "reader"
+      projectPegState: "Soft" | "Hard" | "Manual"
+      projectPegSupplyType: "Purchase Order Line" | "Job" | "Planning Action"
       projectPlanTable:
         | "projectElement"
         | "projectElementLink"
@@ -101329,6 +101732,8 @@ export const Constants = {
         "Transfer",
         "Borrow",
       ],
+      planningGroupExcessRule: ["Common Stock", "Exception Project"],
+      planningGroupPriorityRule: ["Earliest Need", "Project Priority"],
       pricingRuleAmountType: ["Percentage", "Fixed"],
       pricingRuleType: ["Discount", "Markup", "Configuration"],
       procedureStatus: ["Draft", "Active", "Archived"],
@@ -101402,6 +101807,8 @@ export const Constants = {
         "Parameter",
       ],
       projectLayout: ["list", "board", "table", "tree", "timeline", "reader"],
+      projectPegState: ["Soft", "Hard", "Manual"],
+      projectPegSupplyType: ["Purchase Order Line", "Job", "Planning Action"],
       projectPlanTable: [
         "projectElement",
         "projectElementLink",

@@ -16651,6 +16651,9 @@ msgstr "Pianificazione"
 msgid "Planning action"
 msgstr "Proposta di pianificazione"
 
+msgid "Planning group"
+msgstr ""
+
 msgid "Planning horizon"
 msgstr "Orizzonte di pianificazione"
 

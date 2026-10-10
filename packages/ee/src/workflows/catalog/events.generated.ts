@@ -995,7 +995,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     projectId: { kind: "primitive", of: "string" },
     projectElementId: { kind: "primitive", of: "string" },
     consumeToProject: { kind: "primitive", of: "boolean" },
-    receiveToProjectStock: { kind: "primitive", of: "boolean" }
+    receiveToProjectStock: { kind: "primitive", of: "boolean" },
+    planningGroupId: { kind: "primitive", of: "string" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },

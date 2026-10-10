@@ -453,7 +453,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const openPurchaseOrders = await client
           .from("purchaseOrder")
           .select(
-            "id, purchaseOrderId, supplierId, currencyCode, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine(id, itemId, projectId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+            "id, purchaseOrderId, supplierId, currencyCode, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
           )
           .eq("companyId", companyId)
           .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -979,7 +979,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const target = await client
         .from("purchaseOrderLine")
         .select(
-          "id, locationId, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
+          "id, locationId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
         )
         .eq("id", parsedLine.data.id)
         .eq("companyId", companyId)

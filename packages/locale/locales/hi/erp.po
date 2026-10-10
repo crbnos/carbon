@@ -16651,6 +16651,9 @@ msgstr "योजना"
 msgid "Planning action"
 msgstr "योजना कार्रवाई"
 
+msgid "Planning group"
+msgstr ""
+
 msgid "Planning horizon"
 msgstr "योजना क्षितिज"
 

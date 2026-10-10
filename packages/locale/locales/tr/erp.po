@@ -16651,6 +16651,9 @@ msgstr "Planlama"
 msgid "Planning action"
 msgstr "Planlama aksiyonu"
 
+msgid "Planning group"
+msgstr ""
+
 msgid "Planning horizon"
 msgstr "Planlama ufku"
 

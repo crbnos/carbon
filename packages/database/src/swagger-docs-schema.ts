@@ -39970,6 +39970,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.receiveToProjectStock"
           },
           {
+            $ref: "#/parameters/rowFilter.job.planningGroupId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -40170,6 +40173,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.receiveToProjectStock"
           },
           {
+            $ref: "#/parameters/rowFilter.job.planningGroupId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -40322,6 +40328,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.receiveToProjectStock"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.planningGroupId"
           },
           {
             $ref: "#/parameters/body.job"
@@ -45958,6 +45967,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.projectElementId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -46173,6 +46185,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.projectElementId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -46340,6 +46355,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.planningGroupId"
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine"
@@ -49831,6 +49849,204 @@ export default {
           }
         },
         tags: ["supplierQuoteLines"]
+      }
+    },
+    "/planningGroup": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.excessRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.exceptionProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.priorityRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/planningGroup"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["planningGroup"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.planningGroup"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["planningGroup"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.excessRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.exceptionProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.priorityRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["planningGroup"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.excessRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.exceptionProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.priorityRule"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningGroup.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.planningGroup"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["planningGroup"]
       }
     },
     "/quoteFavorite": {
@@ -65989,6 +66205,312 @@ export default {
           }
         },
         tags: ["nonConformanceReviewer"]
+      }
+    },
+    "/projectPeg": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supplyType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supplyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.demandSourceType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.demandSourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.parentPegId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.needDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.manualReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.exception"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdByRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supersededAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supersededByRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.hardenedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.itemLedgerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectPeg"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectPeg"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectPeg"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectPeg"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supplyType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supplyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.demandSourceType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.demandSourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.parentPegId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.needDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.manualReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.exception"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdByRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supersededAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supersededByRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.hardenedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.itemLedgerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectPeg"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supplyType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supplyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.demandSourceType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.demandSourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.parentPegId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.needDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.manualReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.exception"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdByRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supersededAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.supersededByRunId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.hardenedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.itemLedgerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectPeg.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.projectPeg"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectPeg"]
       }
     },
     "/customerContractRevenue": {
@@ -100999,6 +101521,12 @@ export default {
             $ref: "#/parameters/rowFilter.project.governmentFurnished"
           },
           {
+            $ref: "#/parameters/rowFilter.project.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.planningPriority"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -101154,6 +101682,12 @@ export default {
             $ref: "#/parameters/rowFilter.project.governmentFurnished"
           },
           {
+            $ref: "#/parameters/rowFilter.project.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.planningPriority"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -101261,6 +101795,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.project.governmentFurnished"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.planningPriority"
           },
           {
             $ref: "#/parameters/body.project"
@@ -141901,6 +142441,10 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        planningGroupId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -144498,6 +145042,10 @@ export default {
         projectElementId: {
           format: "text",
           type: "string"
+        },
+        planningGroupId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -146318,6 +146866,86 @@ export default {
         },
         accountName: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    planningGroup: {
+      required: [
+        "id",
+        "companyId",
+        "name",
+        "locationId",
+        "excessRule",
+        "priorityRule",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('plg'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        excessRule: {
+          default: "Common Stock",
+          enum: ["Common Stock", "Exception Project"],
+          format: 'public."planningGroupExcessRule"',
+          type: "string"
+        },
+        exceptionProjectId: {
+          format: "text",
+          type: "string"
+        },
+        priorityRule: {
+          default: "Earliest Need",
+          enum: ["Earliest Need", "Project Priority"],
+          format: 'public."planningGroupPriorityRule"',
+          type: "string"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -153550,6 +154178,143 @@ export default {
           type: "string"
         },
         completedDate: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    projectPeg: {
+      required: [
+        "id",
+        "companyId",
+        "planningGroupId",
+        "itemId",
+        "locationId",
+        "supplyType",
+        "supplyId",
+        "projectId",
+        "demandSourceType",
+        "demandSourceId",
+        "quantity",
+        "state",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('peg'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        planningGroupId: {
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplyType: {
+          enum: ["Purchase Order Line", "Job", "Planning Action"],
+          format: 'public."projectPegSupplyType"',
+          type: "string"
+        },
+        supplyId: {
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        demandSourceType: {
+          enum: [
+            "Job Material",
+            "Sales Order",
+            "Demand Projection",
+            "Project Material"
+          ],
+          format: 'public."demandForecastSourceType"',
+          type: "string"
+        },
+        demandSourceId: {
+          format: "text",
+          type: "string"
+        },
+        parentPegId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        needDate: {
+          format: "date",
+          type: "string"
+        },
+        state: {
+          default: "Soft",
+          enum: ["Soft", "Hard", "Manual"],
+          format: 'public."projectPegState"',
+          type: "string"
+        },
+        manualReason: {
+          format: "text",
+          type: "string"
+        },
+        exception: {
+          format: "text",
+          type: "string"
+        },
+        createdByRunId: {
+          format: "text",
+          type: "string"
+        },
+        supersededAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        supersededByRunId: {
+          format: "text",
+          type: "string"
+        },
+        hardenedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        itemLedgerId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
           format: "timestamp with time zone",
           type: "string"
         }
@@ -170685,7 +171450,8 @@ export default {
         "projectType",
         "projectStock",
         "chargeAtReceipt",
-        "governmentFurnished"
+        "governmentFurnished",
+        "planningPriority"
       ],
       properties: {
         id: {
@@ -170863,6 +171629,15 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        planningGroupId: {
+          format: "text",
+          type: "string"
+        },
+        planningPriority: {
+          default: 100,
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -195950,6 +196725,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.job.planningGroupId": {
+      name: "planningGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.changeOrderAffectedItem": {
       name: "changeOrderAffectedItem",
       description: "changeOrderAffectedItem",
@@ -198841,6 +199622,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderLine.planningGroupId": {
+      name: "planningGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.stockTransferLines": {
       name: "stockTransferLines",
       description: "stockTransferLines",
@@ -200786,6 +201573,87 @@ export default {
     },
     "rowFilter.supplierQuoteLines.accountName": {
       name: "accountName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.planningGroup": {
+      name: "planningGroup",
+      description: "planningGroup",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/planningGroup"
+      }
+    },
+    "rowFilter.planningGroup.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.excessRule": {
+      name: "excessRule",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.exceptionProjectId": {
+      name: "exceptionProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.priorityRule": {
+      name: "priorityRule",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningGroup.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -208848,6 +209716,159 @@ export default {
     },
     "rowFilter.nonConformanceReviewer.completedDate": {
       name: "completedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.projectPeg": {
+      name: "projectPeg",
+      description: "projectPeg",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectPeg"
+      }
+    },
+    "rowFilter.projectPeg.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.planningGroupId": {
+      name: "planningGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.supplyType": {
+      name: "supplyType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.supplyId": {
+      name: "supplyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.demandSourceType": {
+      name: "demandSourceType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.demandSourceId": {
+      name: "demandSourceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.parentPegId": {
+      name: "parentPegId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.needDate": {
+      name: "needDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.state": {
+      name: "state",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.manualReason": {
+      name: "manualReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.exception": {
+      name: "exception",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.createdByRunId": {
+      name: "createdByRunId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.supersededAt": {
+      name: "supersededAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.supersededByRunId": {
+      name: "supersededByRunId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.hardenedAt": {
+      name: "hardenedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.itemLedgerId": {
+      name: "itemLedgerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectPeg.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"
@@ -228164,6 +229185,18 @@ export default {
     },
     "rowFilter.project.governmentFurnished": {
       name: "governmentFurnished",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.planningGroupId": {
+      name: "planningGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.planningPriority": {
+      name: "planningPriority",
       required: false,
       in: "query",
       type: "string"

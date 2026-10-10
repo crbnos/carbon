@@ -16651,6 +16651,9 @@ msgstr "計画"
 msgid "Planning action"
 msgstr "計画提案"
 
+msgid "Planning group"
+msgstr ""
+
 msgid "Planning horizon"
 msgstr "計画期間"
 

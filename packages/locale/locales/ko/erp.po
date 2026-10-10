@@ -16651,6 +16651,9 @@ msgstr "계획"
 msgid "Planning action"
 msgstr "계획 조치"
 
+msgid "Planning group"
+msgstr ""
+
 msgid "Planning horizon"
 msgstr "계획 호라이즌"
 
