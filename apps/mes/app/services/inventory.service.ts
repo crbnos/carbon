@@ -182,6 +182,9 @@ export async function getAvailableTrackedEntities(
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
     sortMethod?: Database["public"]["Enums"]["pickMethodSortMethod"];
+    // The stock stripes to list, in draw order: a project id, or null for
+    // common stock. Common stock only when omitted.
+    projectIds?: (string | null)[];
   }
 ) {
   return client.rpc("get_available_tracked_entities", {
@@ -191,7 +194,9 @@ export async function getAvailableTrackedEntities(
     p_exclude_lineside: args.excludeLineside ?? false,
     p_exclude_allocated: args.excludeAllocated ?? false,
     p_exclude_line_id: args.excludeLineId ?? undefined,
-    p_sort_method: args.sortMethod ?? undefined
+    p_sort_method: args.sortMethod ?? undefined,
+    // A null element is common stock; the generated type cannot say so.
+    p_project_ids: args.projectIds as string[] | undefined
   });
 }
 
@@ -234,7 +239,7 @@ export async function getPickingListRecommendations(
     client
       .from("pickingListLine")
       .select(
-        "id, itemId, quantityToPick, quantityPicked, status, item(itemTrackingType)"
+        "id, itemId, projectId, quantityToPick, quantityPicked, status, item(itemTrackingType)"
       )
       .eq("pickingListId", pickingListId)
       .order("jobOperationId")
@@ -247,20 +252,24 @@ export async function getPickingListRecommendations(
   const recommendations: Record<string, PickingListRecommendation[]> = {};
   if (linesResult.error || availableResult.error) return recommendations;
 
-  // Ordered, mutable pool of available lots per item (the RPC already orders each
-  // item's rows by its configured pick method).
+  // Ordered, mutable pool of available lots per item and stock stripe (the RPC
+  // already orders each item's rows by its configured pick method). A line
+  // draws only its own stripe: a project's stock, or common stock ('').
+  const poolKey = (itemId: string, projectId: string | null) =>
+    `${itemId}:${projectId ?? ""}`;
   const poolByItem = new Map<
     string,
     Array<{ trackedEntityId: string; readableId: string | null; qty: number }>
   >();
   for (const row of availableResult.data ?? []) {
-    const list = poolByItem.get(row.itemId) ?? [];
+    const key = poolKey(row.itemId, row.projectId);
+    const list = poolByItem.get(key) ?? [];
     list.push({
       trackedEntityId: row.trackedEntityId,
       readableId: row.readableId,
       qty: Number(row.availableQuantity ?? 0)
     });
-    poolByItem.set(row.itemId, list);
+    poolByItem.set(key, list);
   }
 
   for (const line of linesResult.data ?? []) {
@@ -272,7 +281,7 @@ export async function getPickingListRecommendations(
       Number(line.quantityToPick ?? 0) - Number(line.quantityPicked ?? 0);
     if (remaining <= 0) continue;
 
-    const pool = poolByItem.get(line.itemId);
+    const pool = poolByItem.get(poolKey(line.itemId, line.projectId));
     if (!pool?.length) continue;
 
     const picks: PickingListRecommendation[] = [];

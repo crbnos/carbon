@@ -42,7 +42,7 @@ Phase 2b plans MRP. Until 2b ships, every MRP and planning reader filters to com
 - [x] Task 5: Make the planning readers read common stock only
 - [x] Task 6: Add the stripe to `calculateCOGS` and the SQL FIFO
 - [x] Task 7: Add the stripe to `bookAdjustment` and corrections
-- [ ] Task 8: Make the bin and lot pickers stripe-aware
+- [x] Task 8: Make the bin and lot pickers stripe-aware
 - [ ] Task 9: Stripe PO receipts and their voids
 - [ ] Task 10: Stripe job output and the backflush
 - [ ] Task 11: Record the drawn stripe in `issue`
@@ -848,3 +848,15 @@ ls .ai/playbooks/projects-phase-2a.md
   2. `post-project-issue` is Task 14. `post-inventory-count` and `post-nonconformance` are Task 13. The maintenance paths of `issue` are Task 11 (common).
   3. The tracked paths of `post-inventory-adjustment` (scrap, storage unit transfer and adjustment of an entity) and the stock check of `correct-stock-movement` read `get_item_quantities_by_tracking_id`. Task 8 gives that RPC a `projectId` column, and Task 8 fixes those callers.
 - Task 7: the fixture gains `enableProjectStock` and `addStripeStock` (an item ledger row and a cost layer in one stripe). The new `correct-stock-movement.test.ts` corrects a project stock movement from 4 to 3. The correction row and its relief carry the project, and the relief is 12.00 from the project's layer, not 10.00 from the older common layer. The server-functions suite passes (485; the known `post-charge-transaction` race passed alone).
+- Task 8: `stock-stripes.ts` returns `{ draws, remaining }` from `splitAcrossStripes`. It also exports `stripeKey` (`''` for common), `itemLedgerInStripes` (a Kysely filter on `itemLedger`) and `loadDemandStripes(db, companyId, projectId)`, which reads `project.projectStock` once. Tasks 11–14 use them.
+- Task 8: `getStorageUnitWithHighestQuantity` returns the bin of the first stripe that holds stock in any bin, and the bin with the most on-hand within it. Its 5 callers in `issue` pass `stripes: [null]` until Task 11. `getStorageUnitId` now takes an args object with `companyId` and optional `stripes` (common by default); its one caller is `get-method`.
+- Task 8: migration `20261010024754_stock-pickers-project-stripe.sql`. Each filter compares `COALESCE("projectId", '')` with the stripe set mapped the same way (step 5). Each function keeps its `SECURITY` setting; `get_item_quantities_by_tracking_id` keeps `assert_company_access` and its `search_path`. A smoke query on the local data returns the same rows for the default set, and none for a set without common stock.
+  1. `get_available_tracked_entities` returns one row per entity and stripe.
+  2. `get_picking_list_availability` counts the stock of the line's own stripe (`IS NOT DISTINCT FROM pll."projectId"`).
+  3. `get_picking_list_tracked_available` lists the entities of each stripe the list's lines draw, with `projectId`. The ERP and MES `getPickingListRecommendations` key their pools by item and stripe, so a line gets lots of its own stripe only.
+- Task 8: the RPC callers that read `get_item_quantities_by_tracking_id` now match the stripe:
+  1. `post-inventory-adjustment` books a tracked entity's movement in the stripe of its row with the most on-hand. It books a serial picked by readable id, or the one entity in a bin, in that row's stripe. Untracked lookups read common rows only, because an untracked adjustment has no stripe input until Task 18.
+  2. `correct-stock-movement` checks the stock of the corrected root's stripe.
+  3. `post-project-issue` reads common rows for an untracked issue until Task 14.
+- Task 8: the ERP and MES `getAvailableTrackedEntities` take optional `projectIds`. No caller passes them yet, so the pickers list common stock. The MES issue picker for a job of a stocked project needs its job's stripes (follow-up, with Task 12).
+- Task 8 Verify: `stock-stripes.test.ts` passes (3). `@carbon/server-functions`, `erp` and `mes` typecheck green. The server-functions suite passes (488), and the backflush and job completion scripts pass.

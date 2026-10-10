@@ -210,16 +210,24 @@ const correctStockMovement = defineServerFn({
         trackedEntityId: string | null;
         storageUnitId: string | null;
         quantity: number | null;
+        projectId: string | null;
       };
       const trackingRows = (trackingQuantities.data ??
         []) as TrackingQuantityRow[];
       // null == undefined — loose equality is deliberate (matches
       // post-inventory-adjustment's storage-unit lookup).
+      // Only the stripe the correction books (the root's) can cover it.
       const stockTarget = root.trackedEntityId
-        ? trackingRows.find((q) => q.trackedEntityId == root.trackedEntityId)
+        ? trackingRows.find(
+            (q) =>
+              q.trackedEntityId == root.trackedEntityId &&
+              q.projectId == root.projectId
+          )
         : trackingRows.find(
             (q) =>
-              q.trackedEntityId == null && q.storageUnitId == root.storageUnitId
+              q.trackedEntityId == null &&
+              q.storageUnitId == root.storageUnitId &&
+              q.projectId == root.projectId
           );
       if ((stockTarget?.quantity ?? 0) < Math.abs(delta)) {
         throw new InvalidInputError(

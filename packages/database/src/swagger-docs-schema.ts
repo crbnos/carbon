@@ -111288,6 +111288,13 @@ export default {
             name: "p_sort_method",
             required: false,
             type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "p_project_ids",
+            required: false,
+            type: "string"
           }
         ],
         produces: [
@@ -111333,6 +111340,13 @@ export default {
                 p_location_id: {
                   format: "text",
                   type: "string"
+                },
+                p_project_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
                 },
                 p_sort_method: {
                   format: "text",

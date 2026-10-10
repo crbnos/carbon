@@ -96107,12 +96107,14 @@ export type Database = {
           p_exclude_lineside?: boolean
           p_item_id: string
           p_location_id: string
+          p_project_ids?: string[]
           p_sort_method?: string
         }
         Returns: {
           availableQuantity: number
           createdAt: string
           expirationDate: string
+          projectId: string
           readableId: string
           status: string
           storageUnitId: string
@@ -96549,6 +96551,7 @@ export type Database = {
         Args: { company_id: string; item_id: string; location_id: string }
         Returns: {
           itemId: string
+          projectId: string
           quantity: number
           readableId: string
           storageUnitId: string
@@ -97063,6 +97066,7 @@ export type Database = {
           createdAt: string
           expirationDate: string
           itemId: string
+          projectId: string
           readableId: string
           storageUnitId: string
           storageUnitName: string

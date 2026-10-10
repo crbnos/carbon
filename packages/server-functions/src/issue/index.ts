@@ -291,18 +291,26 @@ async function issueJobOperationMaterials(
           proposedStorageUnitId = pickMethod?.defaultStorageUnitId ?? null;
 
           if (!proposedStorageUnitId) {
-            proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-              trx,
-              material.itemId,
-              job.locationId!
-            );
+            proposedStorageUnitId =
+              (
+                await getStorageUnitWithHighestQuantity(trx, {
+                  companyId,
+                  itemId: material.itemId,
+                  locationId: job.locationId!,
+                  stripes: [null]
+                })
+              )?.storageUnitId ?? null;
           }
         } else {
-          proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-            trx,
-            material.itemId,
-            job.locationId!
-          );
+          proposedStorageUnitId =
+            (
+              await getStorageUnitWithHighestQuantity(trx, {
+                companyId,
+                itemId: material.itemId,
+                locationId: job.locationId!,
+                stripes: [null]
+              })
+            )?.storageUnitId ?? null;
         }
       }
 
@@ -3368,11 +3376,15 @@ const issue = defineServerFn({
                 .executeTakeFirst();
               storageUnitId = pickMethod?.defaultStorageUnitId;
             } else {
-              storageUnitId = await getStorageUnitWithHighestQuantity(
-                trx,
-                itemId,
-                job?.locationId!
-              );
+              storageUnitId =
+                (
+                  await getStorageUnitWithHighestQuantity(trx, {
+                    companyId,
+                    itemId: itemId,
+                    locationId: job?.locationId!,
+                    stripes: [null]
+                  })
+                )?.storageUnitId ?? null;
             }
 
             // Rounded once here: it drives the ledger rows, the budget
@@ -3491,11 +3503,15 @@ const issue = defineServerFn({
 
               storageUnitId =
                 pickMethod?.defaultStorageUnitId ??
-                (await getStorageUnitWithHighestQuantity(
-                  trx,
-                  itemId,
-                  job?.locationId!
-                ));
+                (
+                  await getStorageUnitWithHighestQuantity(trx, {
+                    companyId,
+                    itemId: itemId,
+                    locationId: job?.locationId!,
+                    stripes: [null]
+                  })
+                )?.storageUnitId ??
+                null;
 
               itemLedgerInserts.push({
                 entryType: "Consumption",
@@ -5246,7 +5262,14 @@ const issue = defineServerFn({
           ) {
             // Get storage unit with highest quantity for this item at this location
             const storageUnitId = locationId
-              ? await getStorageUnitWithHighestQuantity(trx, itemId, locationId)
+              ? ((
+                  await getStorageUnitWithHighestQuantity(trx, {
+                    companyId,
+                    itemId: itemId,
+                    locationId: locationId,
+                    stripes: [null]
+                  })
+                )?.storageUnitId ?? null)
               : null;
 
             await trx

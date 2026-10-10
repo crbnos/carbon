@@ -333,9 +333,24 @@ const postInventoryAdjustment = defineServerFn({
       storageUnitId: string | null;
       quantity: number | null;
       readableId: string | null;
+      // The stock stripe of the row: a project id, or null for common stock.
+      projectId: string | null;
     };
     const trackingRows = (storageUnitQuantities.data ??
       []) as TrackingQuantityRow[];
+
+    // A tracked entity's movements stay in the stripe that holds it: the
+    // stripe of its row with the most on-hand. Untracked stock is adjusted
+    // in common stock.
+    const entityStripe = trackedEntityId
+      ? (trackingRows
+          .filter((q) => q.trackedEntityId == trackedEntityId)
+          .reduce<TrackingQuantityRow | null>(
+            (best, q) =>
+              !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
+            null
+          )?.projectId ?? null)
+      : null;
 
     const ledgerBase = {
       postingDate: today,
@@ -346,6 +361,7 @@ const postInventoryAdjustment = defineServerFn({
       documentType: null,
       documentId: null,
       comment: comment || null,
+      projectId: entityStripe,
       companyId,
       createdBy: userId
     };
@@ -353,7 +369,9 @@ const postInventoryAdjustment = defineServerFn({
     // null == undefined — loose equality is deliberate (ported behavior).
     const currentQuantity = trackedEntityId
       ? trackingRows.find((q) => q.trackedEntityId == trackedEntityId)
-      : trackingRows.find((q) => q.storageUnitId == storageUnitId);
+      : trackingRows.find(
+          (q) => q.storageUnitId == storageUnitId && q.projectId == null
+        );
     const currentQuantityOnHand = currentQuantity?.quantity ?? 0;
 
     // Fixed Duration shelf-life fallback for NEW tracked entities when the
@@ -640,7 +658,10 @@ const postInventoryAdjustment = defineServerFn({
           );
         }
         const untrackedRow = trackingRows.find(
-          (q) => q.trackedEntityId == null && q.storageUnitId == storageUnitId
+          (q) =>
+            q.trackedEntityId == null &&
+            q.storageUnitId == storageUnitId &&
+            q.projectId == null
         );
         if ((untrackedRow?.quantity ?? 0) < quantity) {
           throw new InvalidInputError("Insufficient quantity for scrap");
@@ -978,6 +999,7 @@ const postInventoryAdjustment = defineServerFn({
             ledger: {
               ...ledgerBase,
               trackedEntityId: resolvedId,
+              projectId: resolvedQtyRow.projectId ?? null,
               entryType,
               quantity: -Math.abs(adjustmentQuantity)
             },
@@ -991,7 +1013,10 @@ const postInventoryAdjustment = defineServerFn({
 
         // No serial number provided. Prefer untracked (legacy) stock in this bin.
         const legacyRow = trackingRows.find(
-          (q) => q.trackedEntityId == null && q.storageUnitId == storageUnitId
+          (q) =>
+            q.trackedEntityId == null &&
+            q.storageUnitId == storageUnitId &&
+            q.projectId == null
         );
         if (legacyRow) {
           const legacyQty = legacyRow.quantity ?? 0;
@@ -1056,6 +1081,7 @@ const postInventoryAdjustment = defineServerFn({
           ledger: {
             ...ledgerBase,
             trackedEntityId: targetId,
+            projectId: targetRow.projectId ?? null,
             entryType,
             quantity: -Math.abs(adjustmentQuantity)
           },

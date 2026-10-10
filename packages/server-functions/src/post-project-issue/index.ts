@@ -231,6 +231,7 @@ const postProjectIssue = defineServerFn({
       trackedEntityId: string | null;
       storageUnitId: string | null;
       quantity: number | null;
+      projectId: string | null;
     };
     const trackingRows = (quantities.data ?? []) as TrackingQuantityRow[];
     if (isIssue) {
@@ -239,7 +240,10 @@ const postProjectIssue = defineServerFn({
         ? trackingRows.find((row) => row.trackedEntityId === trackedEntityId)
         : trackingRows.find(
             (row) =>
-              row.trackedEntityId == null && row.storageUnitId == storageUnitId
+              row.trackedEntityId == null &&
+              row.storageUnitId == storageUnitId &&
+              // common stock: the issue books no stripe
+              row.projectId == null
           );
       if (round(quantity) > round(source?.quantity ?? 0)) {
         throw new InvalidInputError("Insufficient quantity to issue");

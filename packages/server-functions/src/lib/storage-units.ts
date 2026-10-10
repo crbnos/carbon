@@ -5,12 +5,24 @@
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import type { Transaction } from "kysely";
+import { itemLedgerInStripes, type StockStripe } from "./stock-stripes";
 
 export async function getStorageUnitId(
   trx: Transaction<DB>,
-  itemId: string,
-  locationId: string,
-  storageUnitId?: string
+  {
+    companyId,
+    itemId,
+    locationId,
+    storageUnitId,
+    stripes = [null]
+  }: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    storageUnitId?: string;
+    // The stripes the demand may draw; common stock by default.
+    stripes?: readonly StockStripe[];
+  }
 ): Promise<string | undefined> {
   if (storageUnitId) return storageUnitId;
 
@@ -24,32 +36,59 @@ export async function getStorageUnitId(
   if (pickMethod?.defaultStorageUnitId) return pickMethod.defaultStorageUnitId;
 
   const storageUnitWithHighestQuantity =
-    await getStorageUnitWithHighestQuantity(trx, itemId, locationId);
+    await getStorageUnitWithHighestQuantity(trx, {
+      companyId,
+      itemId,
+      locationId,
+      stripes
+    });
 
-  return storageUnitWithHighestQuantity ?? undefined;
+  return storageUnitWithHighestQuantity?.storageUnitId ?? undefined;
 }
 
-// Utility function to get the storage unit with the highest quantity
+// The bin with the most on-hand of an item at a location, within the stripes a
+// demand may draw (stock-stripes.ts). The first stripe that holds stock in any
+// bin wins, so a project demand prefers its project's stock; within a stripe,
+// the bin with the highest quantity wins. Returns the bin and its stripe, or
+// null when no bin of those stripes holds stock.
 export async function getStorageUnitWithHighestQuantity(
   trx: Transaction<DB>,
-  itemId: string,
-  locationId: string
-): Promise<string | null> {
-  const storageUnitWithHighestQuantity = await trx
+  {
+    companyId,
+    itemId,
+    locationId,
+    stripes
+  }: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    stripes: readonly StockStripe[];
+  }
+): Promise<{ storageUnitId: string; projectId: StockStripe } | null> {
+  const bins = await trx
     .selectFrom("itemLedger")
+    .where("companyId", "=", companyId)
     .where("itemId", "=", itemId)
     .where("locationId", "=", locationId)
     .where("storageUnitId", "is not", null)
-    .groupBy("storageUnitId")
+    .where((eb) => itemLedgerInStripes(eb, stripes))
+    .groupBy(["storageUnitId", "projectId"])
     .select([
       "storageUnitId",
+      "projectId",
       (eb) => eb.fn.sum("quantity").as("totalQuantity")
     ])
     .having((eb) => eb.fn.sum("quantity"), ">", 0)
     .orderBy("totalQuantity", "desc")
-    .executeTakeFirst();
+    .execute();
 
-  return storageUnitWithHighestQuantity?.storageUnitId ?? null;
+  for (const stripe of stripes) {
+    const bin = bins.find((row) => (row.projectId ?? null) === stripe);
+    if (bin?.storageUnitId) {
+      return { storageUnitId: bin.storageUnitId, projectId: stripe };
+    }
+  }
+  return null;
 }
 
 // Utility function to update pickMethod defaultStorageUnitId if this is the only non-null storage unit

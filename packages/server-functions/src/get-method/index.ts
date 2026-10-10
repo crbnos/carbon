@@ -7915,7 +7915,12 @@ async function itemDerivedJobMaterialFields(opts: {
       .where("itemId", "=", itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst(),
-    getStorageUnitId(trx, itemId, locationId, lineStorageUnitId)
+    getStorageUnitId(trx, {
+      companyId,
+      itemId,
+      locationId,
+      storageUnitId: lineStorageUnitId
+    })
   ]);
 
   if (!item) return null;
