@@ -2308,6 +2308,9 @@ msgstr ""
 msgid "All steps"
 msgstr "Tüm adımlar"
 
+msgid "All stock owners"
+msgstr ""
+
 msgid "All Suppliers"
 msgstr "Tüm Tedarikçiler"
 
@@ -4020,6 +4023,12 @@ msgstr ""
 msgid "Borrowed"
 msgstr ""
 
+msgid "Borrowed by this project"
+msgstr ""
+
+msgid "Borrower"
+msgstr ""
+
 msgid "Both"
 msgstr "Her ikisi"
 
@@ -4650,6 +4659,9 @@ msgstr "Özellikler"
 msgid "Charge"
 msgstr "Masraf"
 
+msgid "Charge at receipt"
+msgstr ""
+
 msgid "Charge Date"
 msgstr "Ücret Tarihi"
 
@@ -4663,6 +4675,9 @@ msgid "Charge number (optional)"
 msgstr ""
 
 msgid "Charge Numbers"
+msgstr ""
+
+msgid "Charge the project when its stock is received, not when it is issued"
 msgstr ""
 
 msgid "Chargeable"
@@ -4800,6 +4815,9 @@ msgstr "Stilini seçin"
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Bağlandığınızda seçildi ve bu kurulum için sabitlendi. Değiştirmek için kaldırın ve farklı bir modda yeniden bağlanın."
+
+msgid "Chosen while the project is Draft"
+msgstr ""
 
 msgid "CIP Class"
 msgstr ""
@@ -10645,6 +10663,9 @@ msgstr "Günaydın, {name}."
 msgid "Google Places API key not configured"
 msgstr "Google Yerler API anahtarı yapılandırılmamış"
 
+msgid "Government-furnished"
+msgstr ""
+
 msgid "GR/IR (goods received, not invoiced)"
 msgstr "GR/IR (mallar alındı, faturalandırılmadı)"
 
@@ -12390,6 +12411,12 @@ msgid "Leftover staged material returns when the whole job completes."
 msgstr "Kalan hazırlanan malzeme tüm iş tamamlandığında geri döner."
 
 msgid "Legend"
+msgstr ""
+
+msgid "Lender"
+msgstr ""
+
+msgid "Lent by this project"
 msgstr ""
 
 msgid "Less manual work"
@@ -15139,6 +15166,12 @@ msgstr "Eşitlemeyi açana kadar hiçbir şey eşitlenmez."
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Senkronizasyonu açana kadar hiçbir şey senkronize edilmez. Tüm gerekli hesaplar eşleştirilmiştir."
 
+msgid "Nothing lent"
+msgstr ""
+
+msgid "Nothing owed"
+msgstr ""
+
 msgid "Nothing planned yet"
 msgstr ""
 
@@ -15390,6 +15423,9 @@ msgstr "Yalnızca nitelikli çalışanlar bu işlem için planlanabilir ve çal�
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Yalnızca seri numaralı ve sabit kıymet olarak aktifleştirilen adetler kiralanabilir. Bir adet eklemek için, parçanın Envanter sekmesini açın, Depolama birimleri altında seri numarasını bulun ve Sabit Kıymet Olarak Aktifleştir'i seçin."
+
+msgid "Only this project's demand draws its stock. Another project needs a transfer or a borrow first."
+msgstr ""
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydedilemedi. Tekrar denemek için entegrasyon ayarlarını kaydedin."
@@ -16181,6 +16217,9 @@ msgstr "Yol"
 
 msgid "Pay"
 msgstr "Öde"
+
+msgid "Pay Back"
+msgstr ""
 
 msgid "Pay expense"
 msgstr "Gider Öde"
@@ -17095,6 +17134,12 @@ msgstr "Proje Planı"
 
 msgid "Project start"
 msgstr "Proje başlangıcı"
+
+msgid "Project stock"
+msgstr ""
+
+msgid "Project Stock"
+msgstr ""
 
 msgid "Project Stock Transfers"
 msgstr ""
@@ -21152,14 +21197,35 @@ msgstr "Fabrikada hala karanlık."
 msgid "Still owed"
 msgstr ""
 
+msgid "Still Owed"
+msgstr ""
+
+msgid "Stock"
+msgstr ""
+
+msgid "Stock another project owes this one."
+msgstr ""
+
 msgid "Stock Availability"
 msgstr "Stok Mevcudiyeti"
 
 msgid "Stock movement corrected"
 msgstr "Stok hareketi düzeltildi"
 
+msgid "Stock owner"
+msgstr ""
+
+msgid "Stock Owner"
+msgstr ""
+
+msgid "Stock received for the project is the project's own, and only its demand draws it"
+msgstr ""
+
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "Stok boyutu — örn. levha kalınlığı veya çubuk çapı"
+
+msgid "Stock the project owes another project."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"
@@ -22674,6 +22740,12 @@ msgstr "Teknikerin bu bakım gerçekleştirildiğinde izlediği prosedür; krono
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Bu iş merkezinin çalıştırabileceği prosesler; operasyonları zamanlarken proses seçicilerinde görünür ve hangi iş emirlerinin bu iş merkezinden geçebileceğini sınırlar."
+
+msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
+msgstr ""
+
+msgid "The project's stock moves only to projects of the same customer"
+msgstr ""
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Sağlayıcı boyut hedefleri sunmaz. Önce sağlayıcıda özelliği etkinleştirin (örneğin, izleme kategorileri, sınıf izleme veya alanlar)."

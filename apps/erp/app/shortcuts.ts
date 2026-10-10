@@ -53,6 +53,7 @@ export const PROJECT_TAB_SHORTCUTS = {
   changeRequests: "mod+shift+r",
   costs: "mod+shift+c",
   time: "mod+shift+h",
+  stock: "mod+shift+k",
   settings: "mod+shift+s",
   details: DETAIL_TAB_SHORTCUTS.details
 } as const satisfies Record<string, ShortcutInput>;

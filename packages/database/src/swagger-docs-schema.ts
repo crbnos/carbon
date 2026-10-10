@@ -21601,6 +21601,9 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLines.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.projectId"
+          },
+          {
             $ref: "#/parameters/rowFilter.inventoryCountLines.itemName"
           },
           {
@@ -21653,6 +21656,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLines.storageTypeIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.projectIdentifier"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.projectName"
           },
           {
             $ref: "#/parameters/select"
@@ -132505,6 +132514,10 @@ export default {
         customFields: {
           format: "jsonb"
         },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
         itemName: {
           format: "text",
           type: "string"
@@ -132603,6 +132616,14 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        projectIdentifier: {
+          format: "text",
+          type: "string"
+        },
+        projectName: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -185316,6 +185337,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inventoryCountLines.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.inventoryCountLines.itemName": {
       name: "itemName",
       required: false,
@@ -185420,6 +185447,18 @@ export default {
     },
     "rowFilter.inventoryCountLines.storageTypeIds": {
       name: "storageTypeIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountLines.projectIdentifier": {
+      name: "projectIdentifier",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountLines.projectName": {
+      name: "projectName",
       required: false,
       in: "query",
       type: "string"

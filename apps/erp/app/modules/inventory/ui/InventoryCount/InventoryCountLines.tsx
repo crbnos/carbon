@@ -11,6 +11,7 @@ import {
   LuBox,
   LuCalculator,
   LuExpand,
+  LuFolderKanban,
   LuGlassWater,
   LuHash,
   LuPackage,
@@ -293,6 +294,29 @@ const InventoryCountLines = ({
         }
       },
       {
+        // Projects Phase 2a: a count gives one line per stock stripe, so a
+        // bin holding project stock lists the item once per owner.
+        accessorKey: "projectId",
+        header: t`Stock Owner`,
+        cell: ({ row }) =>
+          row.original.projectId ? (
+            <span className="whitespace-nowrap">
+              {row.original.projectIdentifier ??
+                row.original.projectName ??
+                t`Project stock`}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">{t`Common stock`}</span>
+          ),
+        meta: {
+          exportValue: (row) =>
+            row.projectId
+              ? (row.projectIdentifier ?? row.projectName ?? row.projectId)
+              : t`Common stock`,
+          icon: <LuFolderKanban />
+        }
+      },
+      {
         accessorKey: "storageTypeIds",
         header: t`Storage Type`,
         cell: ({ row }) => {
@@ -510,6 +534,8 @@ const InventoryCountLines = ({
   // The material attributes are filter-only — hidden by default (the item column
   // already identifies the row) but available in the column picker.
   const defaultColumnVisibility = {
+    // The owner column shows once a line counts project stock.
+    projectId: lines.some((line) => line.projectId),
     type: false,
     storageTypeIds: false,
     materialSubstanceId: false,

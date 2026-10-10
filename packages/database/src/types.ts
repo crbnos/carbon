@@ -81560,6 +81560,9 @@ export type Database = {
           materialType: string | null
           materialTypeId: string | null
           postedItemLedgerId: string | null
+          projectId: string | null
+          projectIdentifier: string | null
+          projectName: string | null
           readableId: string | null
           storageTypeIds: string[] | null
           storageUnitId: string | null
@@ -81719,6 +81722,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "inventoryCountLine_updatedBy_fkey"

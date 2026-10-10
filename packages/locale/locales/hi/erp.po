@@ -2308,6 +2308,9 @@ msgstr ""
 msgid "All steps"
 msgstr "सभी चरण"
 
+msgid "All stock owners"
+msgstr ""
+
 msgid "All Suppliers"
 msgstr "सभी आपूर्तिकर्ता"
 
@@ -4020,6 +4023,12 @@ msgstr ""
 msgid "Borrowed"
 msgstr ""
 
+msgid "Borrowed by this project"
+msgstr ""
+
+msgid "Borrower"
+msgstr ""
+
 msgid "Both"
 msgstr "दोनों"
 
@@ -4650,6 +4659,9 @@ msgstr "विशेषताएं"
 msgid "Charge"
 msgstr "प्रभार"
 
+msgid "Charge at receipt"
+msgstr ""
+
 msgid "Charge Date"
 msgstr "शुल्क की तारीख"
 
@@ -4663,6 +4675,9 @@ msgid "Charge number (optional)"
 msgstr ""
 
 msgid "Charge Numbers"
+msgstr ""
+
+msgid "Charge the project when its stock is received, not when it is issued"
 msgstr ""
 
 msgid "Chargeable"
@@ -4800,6 +4815,9 @@ msgstr "अपनी शैली चुनें"
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "जब आप कनेक्ट किए थे तब चुना गया था और इस इंस्टॉल के लिए तय किया गया है। इसे बदलने के लिए, अनइंस्टॉल करें और एक अलग मोड में फिर से कनेक्ट करें।"
+
+msgid "Chosen while the project is Draft"
+msgstr ""
 
 msgid "CIP Class"
 msgstr ""
@@ -10645,6 +10663,9 @@ msgstr "सुबह की शुभकामनाएं, {name}।"
 msgid "Google Places API key not configured"
 msgstr "Google Places API कुंजी कॉन्फ़िगर नहीं की गई"
 
+msgid "Government-furnished"
+msgstr ""
+
 msgid "GR/IR (goods received, not invoiced)"
 msgstr "GR/IR (प्राप्त सामान, चालान नहीं किया गया)"
 
@@ -12390,6 +12411,12 @@ msgid "Leftover staged material returns when the whole job completes."
 msgstr "बची हुई सामग्री पूरी जॉब पूरी होने पर वापस आती है।"
 
 msgid "Legend"
+msgstr ""
+
+msgid "Lender"
+msgstr ""
+
+msgid "Lent by this project"
 msgstr ""
 
 msgid "Less manual work"
@@ -15139,6 +15166,12 @@ msgstr "जब तक आप सिंक को चालू नहीं क�
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "जब तक आप सिंक चालू नहीं करते, कुछ भी सिंक नहीं होता है। हर आवश्यक खाता मैप किया गया है।"
 
+msgid "Nothing lent"
+msgstr ""
+
+msgid "Nothing owed"
+msgstr ""
+
 msgid "Nothing planned yet"
 msgstr ""
 
@@ -15390,6 +15423,9 @@ msgstr "केवल योग्य कर्मचारी ही इस प�
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "केवल सीरियल नंबर वाली इकाइयों को अचल संपत्ति के रूप में पूंजीकृत करके ही किराए पर दिया जा सकता है। एक जोड़ने के लिए, पार्ट के इन्वेंटरी टैब को खोलें, भंडारण इकाई के तहत सीरियल नंबर खोजें, और अचल संपत्ति के रूप में पूंजीकृत करें विकल्प चुनें।"
+
+msgid "Only this project's demand draws its stock. Another project needs a transfer or a borrow first."
+msgstr ""
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया लेकिन इसे सहेजना विफल रहा। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"
@@ -16181,6 +16217,9 @@ msgstr "पथ"
 
 msgid "Pay"
 msgstr "भुगतान करें"
+
+msgid "Pay Back"
+msgstr ""
 
 msgid "Pay expense"
 msgstr "व्यय का भुगतान करें"
@@ -17095,6 +17134,12 @@ msgstr "प्रोजेक्ट प्लान"
 
 msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
+
+msgid "Project stock"
+msgstr ""
+
+msgid "Project Stock"
+msgstr ""
 
 msgid "Project Stock Transfers"
 msgstr ""
@@ -21152,14 +21197,35 @@ msgstr "अभी भी फर्श पर अंधकार है।"
 msgid "Still owed"
 msgstr ""
 
+msgid "Still Owed"
+msgstr ""
+
+msgid "Stock"
+msgstr ""
+
+msgid "Stock another project owes this one."
+msgstr ""
+
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
 
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"
 
+msgid "Stock owner"
+msgstr ""
+
+msgid "Stock Owner"
+msgstr ""
+
+msgid "Stock received for the project is the project's own, and only its demand draws it"
+msgstr ""
+
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "स्टॉक आकार — उदा. शीट मोटाई या बार व्यास"
+
+msgid "Stock the project owes another project."
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"
@@ -22674,6 +22740,12 @@ msgstr "कार्यविधि जिसका पालन तकनीश
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "प्रक्रियाएँ जो यह वर्क सेंटर चला सकता है; ऑपरेशन शेड्यूल करते समय प्रक्रिया-पिकर में दिखाई देता है, और यह सीमित करता है कि कौन से जॉब इस वर्क सेंटर के माध्यम से रूट हो सकते हैं।"
+
+msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
+msgstr ""
+
+msgid "The project's stock moves only to projects of the same customer"
+msgstr ""
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "प्रदाता कोई आयाम लक्ष्य प्रदान नहीं करता है। पहले प्रदाता में सुविधा सक्षम करें (जैसे ट्रैकिंग श्रेणियां, कक्षा ट्रैकिंग, या फ़ील्ड)।"

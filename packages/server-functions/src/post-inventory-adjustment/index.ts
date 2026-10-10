@@ -91,7 +91,11 @@ export const postInventoryAdjustmentInput = z
     scrapReasonId: z.string().optional().nullable(),
     // Unscrap: the original scrap itemLedger row to reverse against. Optional —
     // resolved server-side from the tracked entity's newest Scrap movement.
-    unscrapOfItemLedgerId: z.string().optional().nullable()
+    unscrapOfItemLedgerId: z.string().optional().nullable(),
+    // The stock stripe of untracked stock, and of a NEW tracked entity: a
+    // project with project stock, or null / omitted for common stock. An
+    // existing tracked entity always moves in the stripe that holds it.
+    projectId: z.string().optional().nullable()
   })
   .superRefine((data, ctx) => {
     if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {
@@ -126,7 +130,8 @@ const postInventoryAdjustment = defineServerFn({
       expirationDate: providedExpirationDate,
       comment,
       scrapReasonId,
-      unscrapOfItemLedgerId
+      unscrapOfItemLedgerId,
+      projectId
     }
   ) {
     const { db, companyId, userId } = ctx;
@@ -158,6 +163,21 @@ const postInventoryAdjustment = defineServerFn({
       companyId,
       "Scrap reason"
     );
+    // A requested stripe must be a project of this company that keeps
+    // project stock.
+    const requestedStripe = projectId ?? null;
+    if (requestedStripe) {
+      const project = await db
+        .selectFrom("project")
+        .select("projectStock")
+        .where("id", "=", requestedStripe)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!project) throw new NotFoundError("Project not found");
+      if (!project.projectStock) {
+        throw new InvalidInputError("The project does not keep project stock");
+      }
+    }
     // A trackedEntityId that exists nowhere is legitimate: the app mints the id
     // (nanoid) for a NEW serial/batch and this function inserts it. One that
     // belongs to another company is not — the paths below would write ledger
@@ -340,17 +360,20 @@ const postInventoryAdjustment = defineServerFn({
       []) as TrackingQuantityRow[];
 
     // A tracked entity's movements stay in the stripe that holds it: the
-    // stripe of its row with the most on-hand. Untracked stock is adjusted
-    // in common stock.
-    const entityStripe = trackedEntityId
-      ? (trackingRows
+    // stripe of its row with the most on-hand. Untracked stock, and a new
+    // entity, are adjusted in the requested stripe (common by default).
+    const entityHolding = trackedEntityId
+      ? trackingRows
           .filter((q) => q.trackedEntityId == trackedEntityId)
           .reduce<TrackingQuantityRow | null>(
             (best, q) =>
               !best || (q.quantity ?? 0) > (best.quantity ?? 0) ? q : best,
             null
-          )?.projectId ?? null)
+          )
       : null;
+    const entityStripe = entityHolding
+      ? (entityHolding.projectId ?? null)
+      : requestedStripe;
 
     const ledgerBase = {
       postingDate: today,
@@ -370,7 +393,8 @@ const postInventoryAdjustment = defineServerFn({
     const currentQuantity = trackedEntityId
       ? trackingRows.find((q) => q.trackedEntityId == trackedEntityId)
       : trackingRows.find(
-          (q) => q.storageUnitId == storageUnitId && q.projectId == null
+          (q) =>
+            q.storageUnitId == storageUnitId && q.projectId == requestedStripe
         );
     const currentQuantityOnHand = currentQuantity?.quantity ?? 0;
 
@@ -661,7 +685,7 @@ const postInventoryAdjustment = defineServerFn({
           (q) =>
             q.trackedEntityId == null &&
             q.storageUnitId == storageUnitId &&
-            q.projectId == null
+            q.projectId == requestedStripe
         );
         if ((untrackedRow?.quantity ?? 0) < quantity) {
           throw new InvalidInputError("Insufficient quantity for scrap");
@@ -1016,7 +1040,7 @@ const postInventoryAdjustment = defineServerFn({
           (q) =>
             q.trackedEntityId == null &&
             q.storageUnitId == storageUnitId &&
-            q.projectId == null
+            q.projectId == requestedStripe
         );
         if (legacyRow) {
           const legacyQty = legacyRow.quantity ?? 0;

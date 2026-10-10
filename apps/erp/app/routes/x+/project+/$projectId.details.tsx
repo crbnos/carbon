@@ -63,8 +63,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  // Project stock is chosen while Draft only: after that the switch is
+  // disabled, so its absent value never turns it off.
+  const current = await getProject(client, companyId, projectId);
+  if (current.error) {
+    return data(
+      {},
+      await flash(request, error(current.error, "Failed to load the project"))
+    );
+  }
+  const { projectStock, ...rest } = fields;
+
   const update = await updateProject(client, {
-    ...fields,
+    ...rest,
+    ...(current.data.status === "Draft"
+      ? { projectStock: projectStock ?? false }
+      : {}),
     id: projectId,
     companyId,
     updatedBy: userId
@@ -80,8 +94,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // A released project that becomes Capitalize needs its assets under
   // construction before it takes charges.
   if (fields.costTreatment === "Capitalize") {
-    const project = await getProject(client, companyId, projectId);
-    if (project.data && project.data.status !== "Draft") {
+    if (current.data.status !== "Draft") {
       try {
         await ensureCapitalAssets(getDatabaseClient(), {
           companyId,
@@ -146,8 +159,12 @@ export default function ProjectDetailsRoute() {
           endDate: project.endDate ?? undefined,
           priority: project.priority ?? undefined,
           lockPlanAfterMilestoneId:
-            project.lockPlanAfterMilestoneId ?? undefined
+            project.lockPlanAfterMilestoneId ?? undefined,
+          projectStock: project.projectStock,
+          chargeAtReceipt: project.chargeAtReceipt,
+          governmentFurnished: project.governmentFurnished
         }}
+        isProjectStockLocked={project.status !== "Draft"}
         milestones={(routeData?.milestones ?? []).map((milestone) => ({
           value: milestone.id,
           label: milestone.name

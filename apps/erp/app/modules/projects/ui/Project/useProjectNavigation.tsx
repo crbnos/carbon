@@ -10,17 +10,25 @@ import {
   LuGitPullRequestArrow,
   LuHistory,
   LuListTree,
+  LuPackage,
   LuSettings2,
   LuTimer
 } from "react-icons/lu";
 import { useParams } from "react-router";
+import { useRouteData } from "~/hooks";
 import { PROJECT_TAB_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
+import type { Project } from "../../types";
 
 export function useProjectNavigation() {
   const { t } = useLingui();
   const { projectId } = useParams();
   if (!projectId) throw new Error("projectId not found");
+  const routeData = useRouteData<{ project: Project }>(
+    path.to.project(projectId)
+  );
+  // The Stock tab shows for a project that keeps project stock.
+  const hasProjectStock = routeData?.project?.projectStock === true;
 
   return [
     {
@@ -62,6 +70,16 @@ export function useProjectNavigation() {
       icon: LuTimer,
       shortcut: PROJECT_TAB_SHORTCUTS.time
     },
+    ...(hasProjectStock
+      ? [
+          {
+            name: t`Stock`,
+            to: path.to.projectStock(projectId),
+            icon: LuPackage,
+            shortcut: PROJECT_TAB_SHORTCUTS.stock
+          }
+        ]
+      : []),
     {
       name: t`Settings`,
       to: path.to.projectSettings(projectId),

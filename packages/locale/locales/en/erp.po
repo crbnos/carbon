@@ -2308,6 +2308,9 @@ msgstr "All statuses"
 msgid "All steps"
 msgstr "All steps"
 
+msgid "All stock owners"
+msgstr "All stock owners"
+
 msgid "All Suppliers"
 msgstr "All Suppliers"
 
@@ -4020,6 +4023,12 @@ msgstr "Borrow Status"
 msgid "Borrowed"
 msgstr "Borrowed"
 
+msgid "Borrowed by this project"
+msgstr "Borrowed by this project"
+
+msgid "Borrower"
+msgstr "Borrower"
+
 msgid "Both"
 msgstr "Both"
 
@@ -4650,6 +4659,9 @@ msgstr "Characteristics"
 msgid "Charge"
 msgstr "Charge"
 
+msgid "Charge at receipt"
+msgstr "Charge at receipt"
+
 msgid "Charge Date"
 msgstr "Charge Date"
 
@@ -4664,6 +4676,9 @@ msgstr "Charge number (optional)"
 
 msgid "Charge Numbers"
 msgstr "Charge Numbers"
+
+msgid "Charge the project when its stock is received, not when it is issued"
+msgstr "Charge the project when its stock is received, not when it is issued"
 
 msgid "Chargeable"
 msgstr "Chargeable"
@@ -4800,6 +4815,9 @@ msgstr "Choose your style"
 
 msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
 msgstr "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
+
+msgid "Chosen while the project is Draft"
+msgstr "Chosen while the project is Draft"
 
 msgid "CIP Class"
 msgstr "CIP Class"
@@ -10645,6 +10663,9 @@ msgstr "Good morning, {name}."
 msgid "Google Places API key not configured"
 msgstr "Google Places API key not configured"
 
+msgid "Government-furnished"
+msgstr "Government-furnished"
+
 msgid "GR/IR (goods received, not invoiced)"
 msgstr "GR/IR (goods received, not invoiced)"
 
@@ -12391,6 +12412,12 @@ msgstr "Leftover staged material returns when the whole job completes."
 
 msgid "Legend"
 msgstr "Legend"
+
+msgid "Lender"
+msgstr "Lender"
+
+msgid "Lent by this project"
+msgstr "Lent by this project"
 
 msgid "Less manual work"
 msgstr "Less manual work"
@@ -15139,6 +15166,12 @@ msgstr "Nothing is synced until you turn sync on."
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Nothing is synced until you turn sync on. Every required account is mapped."
 
+msgid "Nothing lent"
+msgstr "Nothing lent"
+
+msgid "Nothing owed"
+msgstr "Nothing owed"
+
 msgid "Nothing planned yet"
 msgstr "Nothing planned yet"
 
@@ -15390,6 +15423,9 @@ msgstr "Only qualified employees can be scheduled for and run this process"
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
+
+msgid "Only this project's demand draws its stock. Another project needs a transfer or a borrow first."
+msgstr "Only this project's demand draws its stock. Another project needs a transfer or a borrow first."
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
 msgstr "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
@@ -16181,6 +16217,9 @@ msgstr "Path"
 
 msgid "Pay"
 msgstr "Pay"
+
+msgid "Pay Back"
+msgstr "Pay Back"
 
 msgid "Pay expense"
 msgstr "Pay expense"
@@ -17095,6 +17134,12 @@ msgstr "Project Plan"
 
 msgid "Project start"
 msgstr "Project start"
+
+msgid "Project stock"
+msgstr "Project stock"
+
+msgid "Project Stock"
+msgstr "Project Stock"
 
 msgid "Project Stock Transfers"
 msgstr "Project Stock Transfers"
@@ -21152,14 +21197,35 @@ msgstr "Still dark out on the floor."
 msgid "Still owed"
 msgstr "Still owed"
 
+msgid "Still Owed"
+msgstr "Still Owed"
+
+msgid "Stock"
+msgstr "Stock"
+
+msgid "Stock another project owes this one."
+msgstr "Stock another project owes this one."
+
 msgid "Stock Availability"
 msgstr "Stock Availability"
 
 msgid "Stock movement corrected"
 msgstr "Stock movement corrected"
 
+msgid "Stock owner"
+msgstr "Stock owner"
+
+msgid "Stock Owner"
+msgstr "Stock Owner"
+
+msgid "Stock received for the project is the project's own, and only its demand draws it"
+msgstr "Stock received for the project is the project's own, and only its demand draws it"
+
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "Stock size — e.g. sheet thickness or bar diameter"
+
+msgid "Stock the project owes another project."
+msgstr "Stock the project owes another project."
 
 msgid "Stock Transfer ID"
 msgstr "Stock Transfer ID"
@@ -22674,6 +22740,12 @@ msgstr "The procedure technicians follow when this maintenance is performed; rep
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
+
+msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
+msgstr "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
+
+msgid "The project's stock moves only to projects of the same customer"
+msgstr "The project's stock moves only to projects of the same customer"
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."

@@ -27,6 +27,7 @@ import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
   Account,
+  Boolean as BooleanField,
   Customer,
   DatePicker,
   Employee,
@@ -62,6 +63,8 @@ type ProjectFormProps = {
   };
   /** An existing project only: its milestones, for the plan lock. */
   milestones?: { value: string; label: string }[];
+  /** Project stock is chosen while the project is Draft only. */
+  isProjectStockLocked?: boolean;
 };
 
 /**
@@ -75,7 +78,8 @@ const ProjectForm = ({
   onClose,
   isDisabled = false,
   copyFrom,
-  milestones
+  milestones,
+  isProjectStockLocked = false
 }: ProjectFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -101,6 +105,9 @@ const ProjectForm = ({
     initialValues.costTreatment
   );
   const cipClasses = useCipClasses(costTreatment === "Capitalize");
+  const [projectStock, setProjectStock] = useState(
+    initialValues.projectStock ?? false
+  );
 
   const treatmentOptions = projectCostTreatments.map((treatment) => ({
     label: treatment,
@@ -182,6 +189,33 @@ const ProjectForm = ({
         <Select name="priority" label={t`Priority`} options={priorityOptions} />
         <DatePicker name="startDate" label={t`Start Date`} />
         <DatePicker name="endDate" label={t`End Date`} />
+        <div className="flex flex-col gap-4 @xl:col-span-2">
+          <BooleanField
+            name="projectStock"
+            label={t`Project stock`}
+            description={
+              isProjectStockLocked
+                ? t`Chosen while the project is Draft`
+                : t`Stock received for the project is the project's own, and only its demand draws it`
+            }
+            isDisabled={isProjectStockLocked}
+            onChange={setProjectStock}
+          />
+          {projectStock && (
+            <>
+              <BooleanField
+                name="chargeAtReceipt"
+                label={t`Charge at receipt`}
+                description={t`Charge the project when its stock is received, not when it is issued`}
+              />
+              <BooleanField
+                name="governmentFurnished"
+                label={t`Government-furnished`}
+                description={t`The project's stock moves only to projects of the same customer`}
+              />
+            </>
+          )}
+        </div>
         {isEditing && (
           <Select
             name="lockPlanAfterMilestoneId"

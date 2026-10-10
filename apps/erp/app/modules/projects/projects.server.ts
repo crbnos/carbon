@@ -124,6 +124,9 @@ export async function createProject(
         startDate: args.startDate ?? null,
         endDate: args.endDate ?? null,
         priority: args.priority ?? "None",
+        projectStock: args.projectStock ?? false,
+        chargeAtReceipt: args.chargeAtReceipt ?? false,
+        governmentFurnished: args.governmentFurnished ?? false,
         active: true,
         companyId: args.companyId,
         createdBy: args.userId
@@ -282,6 +285,9 @@ export async function copyProject(
         startDate: args.startDate ?? null,
         endDate: args.endDate ?? null,
         priority: args.priority ?? "None",
+        projectStock: args.projectStock ?? false,
+        chargeAtReceipt: args.chargeAtReceipt ?? false,
+        governmentFurnished: args.governmentFurnished ?? false,
         nextElementSequence: plan.nextElementSequence,
         active: true,
         companyId,
@@ -3684,6 +3690,46 @@ export async function postProjectIssue(
     return posting.error.message || "Failed to issue the material";
   }
   return null;
+}
+
+/**
+ * A project's own stock: on-hand per item, location, storage unit and lot,
+ * summed from its stripe of `itemLedger` in one query. Rows that net to zero
+ * drop out.
+ */
+export async function getProjectStockOnHand(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; projectId: string }
+) {
+  const rows = await db
+    .selectFrom("itemLedger")
+    .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
+    .leftJoin("trackedEntity", "trackedEntity.id", "itemLedger.trackedEntityId")
+    .select([
+      "itemLedger.itemId",
+      "itemLedger.locationId",
+      "itemLedger.storageUnitId",
+      "storageUnit.name as storageUnitName",
+      "itemLedger.trackedEntityId",
+      "trackedEntity.readableId as trackedEntityReadableId",
+      (eb) => eb.fn.sum<number>("itemLedger.quantity").as("quantity")
+    ])
+    .where("itemLedger.companyId", "=", args.companyId)
+    .where("itemLedger.projectId", "=", args.projectId)
+    .groupBy([
+      "itemLedger.itemId",
+      "itemLedger.locationId",
+      "itemLedger.storageUnitId",
+      "storageUnit.name",
+      "itemLedger.trackedEntityId",
+      "trackedEntity.readableId"
+    ])
+    .having((eb) => eb.fn.sum("itemLedger.quantity"), "<>", 0)
+    .orderBy("itemLedger.itemId")
+    .orderBy("storageUnit.name")
+    .execute();
+
+  return rows.map((row) => ({ ...row, quantity: Number(row.quantity) }));
 }
 
 /**

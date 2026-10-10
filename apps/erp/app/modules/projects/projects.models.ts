@@ -154,7 +154,14 @@ export const projectValidator = z
     priority: zfd.text(z.enum(projectElementPriorities).optional()),
     // After this milestone completes, the plan layer changes only through a
     // change request.
-    lockPlanAfterMilestoneId: zfd.text(z.string().optional())
+    lockPlanAfterMilestoneId: zfd.text(z.string().optional()),
+    // Project stock (Phase 2a): the project owns the stock received for it.
+    // Set while Draft only; the details action keeps it after that.
+    projectStock: zfd.checkbox().optional(),
+    // Project stock: write the projectLedger row at receipt, not at issue.
+    chargeAtReceipt: zfd.checkbox().optional(),
+    // Project stock: government-furnished material stays with its customer.
+    governmentFurnished: zfd.checkbox().optional()
   })
   .refine(
     (data) => data.costTreatment !== "Capitalize" || !!data.fixedAssetClassId,
