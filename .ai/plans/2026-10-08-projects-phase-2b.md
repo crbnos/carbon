@@ -32,7 +32,7 @@ The plan covers:
 
 ## Progress
 
-- [ ] Task 1: Extract the planning core and pin a golden test
+- [x] Task 1: Extract the planning core and pin a golden test
 - [ ] Task 2: Create the Phase 2b enum and segment migration
 - [ ] Task 3: Add the segment to the engine keys
 - [ ] Task 4: Add the netting sequence as a pure module
@@ -651,3 +651,11 @@ ls .ai/playbooks/projects-phase-2b.md
 ```
 
 **Out of scope:** planning groups (Phase 3).
+
+## Execution notes
+
+- Task 1: `planCompany` (`plan-company.ts`) holds Phases 3–6 and the pure map building of Phase 2. These are the replenishment and lead-time maps, the supersession maps, the on-hand map and the BOM map. Its inputs are the raw rows that Phase 1 loads, so the fixture is plain JSON. `activeMethodIdByItem` is shared, because `runMrp` needs the method ids to load the materials.
+- Task 1 (deviation): `runMrp` reads the existing actuals before it calls `planCompany`, not inside Phase 6. The core is then pure. The read depends on nothing that Phases 3–5 compute, so the order changes no output. The BOM cycle warning moved after the call, and `planCompany` returns `cycleItemIds`. MRP never inserts `supplyForecast` rows, so the outputs have no `supplyForecast` array.
+- Task 1: the fixture comes from the existing satellite company Carbon Development (`db47qcsgq0g02bpief00`), seeded before Phase 2a Task 19. No new seed was needed, so no company data was wiped. A temporary dump in `runMrp` wrote the inputs and threw before Phase 7, and was then removed. The fixture keeps only the columns `planCompany` reads. A one-off check gave equal outputs for the full dump and the trimmed fixture.
+- Task 1: the fixture covers the 6 cases: 4 Make items with a 2-level BOM, 25 Buy items, 7 open PO lines and 2 open jobs, 7 sales order lines, 28 demand projections and 1 effective Consume First supersession. The output holds 83 `demandForecast` rows, 391 `demandForecastSource` rows (8 redirected), 56 demand actuals, 9 supply actuals and 28 consumption updates. The planning suite passes (314), and `@carbon/planning` typechecks.
+
