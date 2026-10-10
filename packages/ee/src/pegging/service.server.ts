@@ -3,8 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { requireEntitlement } from "../entitlements.server";
 
 /**
@@ -109,4 +111,118 @@ export async function upsertPlanningGroup(
     .eq("companyId", group.companyId)
     .select("id")
     .single();
+}
+
+/**
+ * A planner's override of one Soft peg of a project: a Manual peg, with a
+ * reason, on a PO line or job made for the same group and item. MRP keeps a
+ * Manual peg on every run. One transaction:
+ * 1. Lock the Soft peg it replaces and supersede it.
+ * 2. Insert the Manual peg with the replaced peg's demand.
+ * `db` writes past row-level security (`projectPeg` takes no direct write),
+ * so the caller checks `update: projects` first. The entitlement LOCK is
+ * here. The next MRP run re-pegs what the Manual peg does not cover.
+ */
+export async function createManualPeg(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    pegId: string;
+    supplyType: "Purchase Order Line" | "Job";
+    supplyId: string;
+    quantity: number;
+    manualReason: string;
+  }
+): Promise<{ id: string | null; error: string | null }> {
+  await requireEntitlement(client, args.companyId, "PLANNING_GROUPS");
+  const { companyId } = args;
+  if (!(args.quantity > 0)) {
+    return { id: null, error: "Quantity must be greater than 0" };
+  }
+  const reason = args.manualReason.trim();
+  if (!reason) return { id: null, error: "Reason is required" };
+
+  return db.transaction().execute(async (trx) => {
+    const peg = await trx
+      .selectFrom("projectPeg")
+      .selectAll()
+      .where("id", "=", args.pegId)
+      .where("companyId", "=", companyId)
+      .where("projectId", "=", args.projectId)
+      .where("supersededAt", "is", null)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!peg) {
+      return { id: null, error: "The peg has changed. Reload the page." };
+    }
+    if (peg.state !== "Soft") {
+      return { id: null, error: "Only a Soft peg can be overridden" };
+    }
+
+    // The supply must be open and made for the same group and item.
+    const supply =
+      args.supplyType === "Purchase Order Line"
+        ? await trx
+            .selectFrom("purchaseOrderLine")
+            .select("id")
+            .where("id", "=", args.supplyId)
+            .where("companyId", "=", companyId)
+            .where("planningGroupId", "=", peg.planningGroupId)
+            .where("itemId", "=", peg.itemId)
+            .where("receivedComplete", "=", false)
+            .executeTakeFirst()
+        : await trx
+            .selectFrom("job")
+            .select("id")
+            .where("id", "=", args.supplyId)
+            .where("companyId", "=", companyId)
+            .where("planningGroupId", "=", peg.planningGroupId)
+            .where("itemId", "=", peg.itemId)
+            .where("status", "in", [
+              "Planned",
+              "Ready",
+              "In Progress",
+              "Paused"
+            ])
+            .executeTakeFirst();
+    if (!supply) {
+      return {
+        id: null,
+        error: "Choose an open order of the planning group for this item"
+      };
+    }
+
+    await trx
+      .updateTable("projectPeg")
+      .set({ supersededAt: sql<string>`now()` })
+      .where("id", "=", peg.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    const inserted = await trx
+      .insertInto("projectPeg")
+      .values({
+        companyId,
+        planningGroupId: peg.planningGroupId,
+        itemId: peg.itemId,
+        locationId: peg.locationId,
+        supplyType: args.supplyType,
+        supplyId: args.supplyId,
+        projectId: peg.projectId,
+        projectElementId: peg.projectElementId,
+        demandSourceType: peg.demandSourceType,
+        demandSourceId: peg.demandSourceId,
+        parentPegId: peg.parentPegId,
+        quantity: args.quantity,
+        needDate: peg.needDate,
+        state: "Manual",
+        manualReason: reason,
+        createdBy: args.userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    return { id: inserted.id, error: null };
+  });
 }

@@ -1045,6 +1045,9 @@ msgstr "Carbonのマネージド クラウド ホスト版"
 msgid "A managed version with all the advanced features"
 msgstr "すべての高度な機能を備えた管理版"
 
+msgid "A manual peg reserves an order of the planning group for this project. MRP keeps it on every run."
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料は部品を製造するために使用される物理的品目で、複数の製造指図にわたって使用できます"
 
@@ -10771,6 +10774,9 @@ msgstr "ハンズオン"
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "最初の3～4週間のハンズオン、迅速対応サポート"
 
+msgid "Hard"
+msgstr ""
+
 msgid "Hard to see true cost or margin on a job"
 msgstr "ジョブの真の原価またはマージンを確認するのが難しい"
 
@@ -13711,6 +13717,9 @@ msgstr "タイプ別NCR"
 msgid "Need by"
 msgstr "必要日"
 
+msgid "Need Date"
+msgstr ""
+
 msgid "Need the right columns?"
 msgstr "正しい列が必要ですか？"
 
@@ -16034,6 +16043,9 @@ msgstr ""
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "上書きにはinventory:update権限と理由が必要です。"
 
+msgid "Override Peg"
+msgstr ""
+
 msgid "Override Price"
 msgstr "上書き価格"
 
@@ -16368,6 +16380,13 @@ msgstr "PDFプレビュー"
 msgid "PDF Watermark"
 msgstr "PDF透かし"
 
+msgid "Pegged"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(total)
+msgid "Pegged {0}"
+msgstr ""
+
 msgid "Pegging"
 msgstr ""
 
@@ -16662,6 +16681,9 @@ msgstr "これまでの計画済請求書"
 
 msgid "Planned job"
 msgstr "計画済みジョブ"
+
+msgid "Planned order"
+msgstr ""
 
 msgid "Planned Order"
 msgstr "計画注文"
@@ -20927,6 +20949,9 @@ msgstr "コアの毎日のワークフローをエンドツーエンドでスモ
 msgid "so you can assign it here."
 msgstr "ここで割り当てることができます。"
 
+msgid "Soft"
+msgstr ""
+
 msgid "Sold"
 msgstr "売却"
 
@@ -22750,6 +22775,9 @@ msgstr "このワークフローを使用するイシューが完了する必要
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "製造指図が実行する工程の順序（製法の工程表からコピー）。"
 
+msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The original model file is no longer available"
 msgstr "元のモデルファイルはもう利用できません。"
 
@@ -22798,6 +22826,9 @@ msgstr "計画提案が割り当てられる個人：その拠点での品目の
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "契約の計画請求書。契約の明細から請求頻度、調整、タイミングに基づいて作成されます。契約が下書きの間、各明細が全額を請求する限り、請求書を変更、追加、削除できます。"
 
+msgid "The planning group has no open purchase order or job for this item."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "あなたの仕事と在庫が存在する工場、倉庫、およびサイト"
 
@@ -22821,6 +22852,12 @@ msgstr "この保全が実施されるときに技術者が従う手順書。ス
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "この作業区が実行できる工法。工程のスケジュール時にプロセスピッカーに表示され、この作業区を経由できる製造指図を制限します。"
+
+msgid "The project had no pegs on that day."
+msgstr ""
+
+msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
 
 msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
 msgstr ""

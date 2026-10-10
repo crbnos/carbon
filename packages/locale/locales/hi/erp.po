@@ -1045,6 +1045,9 @@ msgstr "Carbon का एक प्रबंधित क्लाउड-हो�
 msgid "A managed version with all the advanced features"
 msgstr "सभी उन्नत सुविधाओं के साथ एक प्रबंधित संस्करण"
 
+msgid "A manual peg reserves an order of the planning group for this project. MRP keeps it on every run."
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक सामग्री एक भौतिक आइटम है जो एक पार्ट बनाने के लिए उपयोग की जाती है जिसे कई जॉब में उपयोग किया जा सकता है"
 
@@ -10771,6 +10774,9 @@ msgstr "हैंड्स-ऑन"
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "पहले 3–4 हफ्तों के लिए व्यावहारिक, तेज़ प्रतिक्रिया समर्थन"
 
+msgid "Hard"
+msgstr ""
+
 msgid "Hard to see true cost or margin on a job"
 msgstr "किसी काम पर सच्ची लागत या मार्जिन देखना मुश्किल है"
 
@@ -13711,6 +13717,9 @@ msgstr "प्रकार के अनुसार NCR"
 msgid "Need by"
 msgstr "आवश्यकता की तारीख"
 
+msgid "Need Date"
+msgstr ""
+
 msgid "Need the right columns?"
 msgstr "क्या आपको सही कॉलम चाहिए?"
 
@@ -16034,6 +16043,9 @@ msgstr ""
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "ओवरराइड के लिए inventory:update अनुमति और कारण की आवश्यकता है।"
 
+msgid "Override Peg"
+msgstr ""
+
 msgid "Override Price"
 msgstr "ओवरराइड मूल्य"
 
@@ -16368,6 +16380,13 @@ msgstr "PDF पूर्वावलोकन"
 msgid "PDF Watermark"
 msgstr "PDF वॉटरमार्क"
 
+msgid "Pegged"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(total)
+msgid "Pegged {0}"
+msgstr ""
+
 msgid "Pegging"
 msgstr ""
 
@@ -16662,6 +16681,9 @@ msgstr "अब तक योजनाबद्ध चालान"
 
 msgid "Planned job"
 msgstr "नियोजित कार्य"
+
+msgid "Planned order"
+msgstr ""
 
 msgid "Planned Order"
 msgstr "नियोजित आदेश"
@@ -20927,6 +20949,9 @@ msgstr "कोर दैनिक प्रवाह को अंत से अ
 msgid "so you can assign it here."
 msgstr "तो आप इसे यहाँ असाइन कर सकते हैं।"
 
+msgid "Soft"
+msgstr ""
+
 msgid "Sold"
 msgstr "बेचा गया"
 
@@ -22750,6 +22775,9 @@ msgstr "कार्यों की क्रमित सूची जो इ�
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "ऑपरेशन का क्रमबद्ध अनुक्रम जिसके माध्यम से एक जॉब चलता है, विधि की प्रक्रिया सूची से कॉपी किया गया।"
 
+msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The original model file is no longer available"
 msgstr "मूल मॉडल फ़ाइल अब उपलब्ध नहीं है"
 
@@ -22798,6 +22826,9 @@ msgstr "वह व्यक्ति जिसे योजना कार्�
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "अनुबंध के योजनाबद्ध चालान, बिलिंग आवृत्ति, संरेखण और समय द्वारा इसकी पंक्तियों से काटे गए; जबकि अनुबंध एक ड्राफ्ट है, आप चालान बदल सकते हैं, जोड़ सकते हैं और हटा सकते हैं, जब तक प्रत्येक पंक्ति अभी भी अपनी पूर्ण राशि को बिल करती है।"
 
+msgid "The planning group has no open purchase order or job for this item."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "वह संयंत्र, गोदाम, और साइटें जहां आपका काम और स्टॉक रहता है"
 
@@ -22821,6 +22852,12 @@ msgstr "कार्यविधि जिसका पालन तकनीश
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "प्रक्रियाएँ जो यह वर्क सेंटर चला सकता है; ऑपरेशन शेड्यूल करते समय प्रक्रिया-पिकर में दिखाई देता है, और यह सीमित करता है कि कौन से जॉब इस वर्क सेंटर के माध्यम से रूट हो सकते हैं।"
+
+msgid "The project had no pegs on that day."
+msgstr ""
+
+msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
 
 msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
 msgstr ""

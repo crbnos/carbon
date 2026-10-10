@@ -9,4 +9,4 @@ export {
 } from "./peg-writer";
 // Server-only entry point (`@carbon/ee/pegging.server`): planning group
 // authoring and the MRP run's peg writer. Never import from a client module.
-export { upsertPlanningGroup } from "./service.server";
+export { createManualPeg, upsertPlanningGroup } from "./service.server";

@@ -2587,6 +2587,202 @@ export async function getPlanningGroupMembers(
     .order("identifier", { ascending: true });
 }
 
+/** One peg on the project Pegging tab, with the labels it shows. */
+export type ProjectPegRow =
+  Database["public"]["Tables"]["projectPeg"]["Row"] & {
+    item: { readableIdWithRevision: string | null; name: string } | null;
+    /** The supply's readable id: the PO, the job, or null for a planned order. */
+    supplyReadableId: string | null;
+    /** The supply's document id, for the link (PO id or job id). */
+    supplyDocumentId: string | null;
+    element: { readableId: string | null; name: string } | null;
+  };
+
+/**
+ * The pegs of one project (Projects Phase 3). With no `asOf`, the current
+ * rows (`supersededAt IS NULL`). With an `asOf` instant, the rows that were
+ * current then: created on or before it, and not superseded until after it.
+ * The supply has no FK (it is a PO line, a job or a planning action), so its
+ * readable id comes from one read per supply type.
+ */
+export async function getProjectPegs(
+  client: Client,
+  args: { companyId: string; projectId: string; asOf?: string | null }
+): Promise<{ data: ProjectPegRow[]; error: PostgrestError | null }> {
+  let query = client
+    .from("projectPeg")
+    .select("*, item:item!projectPeg_itemId_fkey(readableIdWithRevision, name)")
+    .eq("companyId", args.companyId)
+    .eq("projectId", args.projectId);
+  if (args.asOf) {
+    query = query
+      .lte("createdAt", args.asOf)
+      .or(`supersededAt.is.null,supersededAt.gt."${args.asOf}"`);
+  } else {
+    query = query.is("supersededAt", null);
+  }
+  const pegs = await query
+    .order("itemId")
+    .order("needDate", { ascending: true, nullsFirst: false })
+    .order("createdAt");
+  if (pegs.error) return { data: [], error: pegs.error };
+  const rows = pegs.data ?? [];
+
+  const idsOf = (type: string) => [
+    ...new Set(
+      rows.filter((row) => row.supplyType === type).map((row) => row.supplyId)
+    )
+  ];
+  const lineIds = idsOf("Purchase Order Line");
+  const jobIds = idsOf("Job");
+  const elementIds = [
+    ...new Set(
+      rows
+        .map((row) => row.projectElementId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const [lines, jobs, elements] = await Promise.all([
+    lineIds.length > 0
+      ? client
+          .from("purchaseOrderLine")
+          .select(
+            "id, purchaseOrderId, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId)"
+          )
+          .in("id", lineIds)
+          .eq("companyId", args.companyId)
+      : Promise.resolve({ data: [], error: null }),
+    jobIds.length > 0
+      ? client
+          .from("job")
+          .select("id, jobId")
+          .in("id", jobIds)
+          .eq("companyId", args.companyId)
+      : Promise.resolve({ data: [], error: null }),
+    elementIds.length > 0
+      ? client
+          .from("projectElement")
+          .select("id, readableId, name")
+          .in("id", elementIds)
+          .eq("companyId", args.companyId)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  const error = lines.error ?? jobs.error ?? elements.error ?? null;
+  if (error) return { data: [], error };
+
+  const lineById = new Map(
+    (lines.data ?? []).map((line) => [
+      line.id,
+      {
+        documentId: line.purchaseOrderId,
+        readableId:
+          (line.purchaseOrder as { purchaseOrderId: string } | null)
+            ?.purchaseOrderId ?? null
+      }
+    ])
+  );
+  const jobById = new Map((jobs.data ?? []).map((job) => [job.id, job.jobId]));
+  const elementById = new Map(
+    (elements.data ?? []).map((element) => [
+      element.id,
+      { readableId: element.readableId, name: element.name }
+    ])
+  );
+
+  return {
+    data: rows.map((row) => {
+      const line =
+        row.supplyType === "Purchase Order Line"
+          ? lineById.get(row.supplyId)
+          : undefined;
+      const jobReadableId =
+        row.supplyType === "Job" ? (jobById.get(row.supplyId) ?? null) : null;
+      return {
+        ...row,
+        item: row.item as ProjectPegRow["item"],
+        supplyReadableId: line?.readableId ?? jobReadableId,
+        supplyDocumentId:
+          line?.documentId ?? (row.supplyType === "Job" ? row.supplyId : null),
+        element: row.projectElementId
+          ? (elementById.get(row.projectElementId) ?? null)
+          : null
+      };
+    }),
+    error: null
+  };
+}
+
+/**
+ * The open supply made for a planning group, for some items: the PO lines
+ * not yet received in full and the jobs not yet done. A Manual peg names one
+ * of them (Projects Phase 3).
+ */
+export async function getPlanningGroupOpenSupplies(
+  client: Client,
+  args: { companyId: string; planningGroupId: string; itemIds: string[] }
+): Promise<{
+  data: {
+    supplyType: "Purchase Order Line" | "Job";
+    supplyId: string;
+    itemId: string;
+    readableId: string;
+  }[];
+  error: PostgrestError | null;
+}> {
+  if (args.itemIds.length === 0) return { data: [], error: null };
+  const [lines, jobs] = await Promise.all([
+    client
+      .from("purchaseOrderLine")
+      .select(
+        "id, itemId, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId)"
+      )
+      .eq("companyId", args.companyId)
+      .eq("planningGroupId", args.planningGroupId)
+      .eq("receivedComplete", false)
+      .in("itemId", args.itemIds),
+    client
+      .from("job")
+      .select("id, jobId, itemId")
+      .eq("companyId", args.companyId)
+      .eq("planningGroupId", args.planningGroupId)
+      .in("status", ["Planned", "Ready", "In Progress", "Paused"])
+      .in("itemId", args.itemIds)
+  ]);
+  const error = lines.error ?? jobs.error ?? null;
+  if (error) return { data: [], error };
+  return {
+    data: [
+      ...(lines.data ?? []).flatMap((line) =>
+        line.itemId
+          ? [
+              {
+                supplyType: "Purchase Order Line" as const,
+                supplyId: line.id,
+                itemId: line.itemId,
+                readableId:
+                  (line.purchaseOrder as { purchaseOrderId: string } | null)
+                    ?.purchaseOrderId ?? line.id
+              }
+            ]
+          : []
+      ),
+      ...(jobs.data ?? []).flatMap((job) =>
+        job.itemId
+          ? [
+              {
+                supplyType: "Job" as const,
+                supplyId: job.id,
+                itemId: job.itemId,
+                readableId: job.jobId
+              }
+            ]
+          : []
+      )
+    ],
+    error: null
+  };
+}
+
 /**
  * Deletes a planning group. It refuses while a project is a member, or a
  * purchase order line or job is made for the group.

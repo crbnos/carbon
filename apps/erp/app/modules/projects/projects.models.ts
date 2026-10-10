@@ -553,6 +553,42 @@ export const planningGroupValidator = z
     }
   );
 
+/** The supply types a Manual peg may name: a planned order is never fixed. */
+export const manualPegSupplyTypes = ["Purchase Order Line", "Job"] as const;
+
+/**
+ * A Manual peg (Projects Phase 3): a planner's override of one Soft peg of
+ * the project. `supply` is `<supplyType>:<supplyId>`.
+ */
+export const manualPegValidator = z.object({
+  pegId: z.string().min(1, { message: "Peg is required" }),
+  supply: z
+    .string()
+    .min(1, { message: "Supply is required" })
+    .refine(
+      (value) =>
+        manualPegSupplyTypes.some((type) => value.startsWith(`${type}:`)),
+      { message: "Supply is required" }
+    ),
+  quantity: zfd.numeric(
+    z.number().positive({ message: "Quantity must be greater than 0" })
+  ),
+  manualReason: z.string().trim().min(1, { message: "Reason is required" })
+});
+
+/** Splits a Manual peg form's `supply` value into its type and id. */
+export function parseManualPegSupply(value: string): {
+  supplyType: (typeof manualPegSupplyTypes)[number];
+  supplyId: string;
+} | null {
+  const supplyType = manualPegSupplyTypes.find((type) =>
+    value.startsWith(`${type}:`)
+  );
+  if (!supplyType) return null;
+  const supplyId = value.slice(supplyType.length + 1);
+  return supplyId ? { supplyType, supplyId } : null;
+}
+
 const timesheetCellFields = {
   entryDate: z.string().min(1, { message: "Date is required" }),
   projectId: z.string().min(1, { message: "Project is required" }),

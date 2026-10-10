@@ -1045,6 +1045,9 @@ msgstr "관리형 클라우드 호스팅 Carbon 버전"
 msgid "A managed version with all the advanced features"
 msgstr "모든 고급 기능이 포함된 관리되는 버전"
 
+msgid "A manual peg reserves an order of the planning group for this project. MRP keeps it on every run."
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "자재는 부품을 만드는 데 사용되는 물리적 품목으로 여러 작업 지시에서 사용할 수 있습니다."
 
@@ -10771,6 +10774,9 @@ msgstr "밀착형"
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "첫 3–4주간 밀착형으로 신속하게 대응하는 지원"
 
+msgid "Hard"
+msgstr ""
+
 msgid "Hard to see true cost or margin on a job"
 msgstr "작업의 실제 원가나 마진을 파악하기 어려움"
 
@@ -13711,6 +13717,9 @@ msgstr "유형별 NCR"
 msgid "Need by"
 msgstr "필요일"
 
+msgid "Need Date"
+msgstr ""
+
 msgid "Need the right columns?"
 msgstr "적절한 열이 필요하신가요?"
 
@@ -16034,6 +16043,9 @@ msgstr ""
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "재정의는 inventory:update 권한과 사유가 필요합니다."
 
+msgid "Override Peg"
+msgstr ""
+
 msgid "Override Price"
 msgstr "가격 재정의"
 
@@ -16368,6 +16380,13 @@ msgstr "PDF 미리보기"
 msgid "PDF Watermark"
 msgstr "PDF 워터마크"
 
+msgid "Pegged"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(total)
+msgid "Pegged {0}"
+msgstr ""
+
 msgid "Pegging"
 msgstr ""
 
@@ -16662,6 +16681,9 @@ msgstr "지금까지의 계획된 송장"
 
 msgid "Planned job"
 msgstr "계획 작업"
+
+msgid "Planned order"
+msgstr ""
 
 msgid "Planned Order"
 msgstr "계획 주문"
@@ -20927,6 +20949,9 @@ msgstr "핵심 매일 흐름의 종단 간 스모크 테스트"
 msgid "so you can assign it here."
 msgstr "그래서 여기에 할당할 수 있습니다."
 
+msgid "Soft"
+msgstr ""
+
 msgid "Sold"
 msgstr "판매됨"
 
@@ -22750,6 +22775,9 @@ msgstr "이 워크플로를 사용하는 이슈가 완료해야 하는 작업의
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "작업 지시가 실행하는 공정의 순서(방법의 공정 목록에서 복사됨)."
 
+msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The original model file is no longer available"
 msgstr "원본 모델 파일을 더 이상 사용할 수 없습니다."
 
@@ -22798,6 +22826,9 @@ msgstr "계획 조치가 할당되는 사람입니다: 해당 사업장의 품�
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "계약의 계획된 송장으로, 청구 빈도, 정렬 및 타이밍에 따라 라인에서 분할됩니다. 계약이 초안인 동안 각 라인이 전체 금액을 청구하는 한, 송장을 변경, 추가, 삭제할 수 있습니다."
 
+msgid "The planning group has no open purchase order or job for this item."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "작업과 재고가 위치하는 공장, 창고, 사업장"
 
@@ -22821,6 +22852,12 @@ msgstr "이 유지보수가 수행될 때 기술자가 따르는 절차서로, �
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "이 작업장이 실행할 수 있는 공법으로, 공정 일정 시 공법 선택기에 표시되며, 이 작업장을 통해 라우팅할 수 있는 작업 지시를 제한합니다."
+
+msgid "The project had no pegs on that day."
+msgstr ""
+
+msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
 
 msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
 msgstr ""

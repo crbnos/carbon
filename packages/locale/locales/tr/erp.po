@@ -1045,6 +1045,9 @@ msgstr "Carbon'ın yönetilen bulut barındırılan sürümü"
 msgid "A managed version with all the advanced features"
 msgstr "Tüm gelişmiş özellikleri içeren yönetilen bir sürüm"
 
+msgid "A manual peg reserves an order of the planning group for this project. MRP keeps it on every run."
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Malzeme, bir Parça yapmak için kullanılan ve birden fazla İş emirlerine göre kullanılabilen fiziksel bir Stok kartıdır."
 
@@ -10771,6 +10774,9 @@ msgstr "Uygulamalı"
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "İlk 3–4 hafta boyunca uygulamalı, hızlı yanıt veren destek"
 
+msgid "Hard"
+msgstr ""
+
 msgid "Hard to see true cost or margin on a job"
 msgstr "Bir işte gerçek maliyeti veya marjı görmek zor"
 
@@ -13711,6 +13717,9 @@ msgstr "Tipe Göre NCR'ler"
 msgid "Need by"
 msgstr "Gerektiğinde"
 
+msgid "Need Date"
+msgstr ""
+
 msgid "Need the right columns?"
 msgstr "Doğru sütunlara ihtiyacınız var mı?"
 
@@ -16034,6 +16043,9 @@ msgstr ""
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Geçersiz kılma işlemi inventory:update İzni ve bir neden gerektirir"
 
+msgid "Override Peg"
+msgstr ""
+
 msgid "Override Price"
 msgstr "Fiyatı Geçersiz Kıl"
 
@@ -16368,6 +16380,13 @@ msgstr "PDF Önizleme"
 msgid "PDF Watermark"
 msgstr "PDF Filigranı"
 
+msgid "Pegged"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(total)
+msgid "Pegged {0}"
+msgstr ""
+
 msgid "Pegging"
 msgstr ""
 
@@ -16662,6 +16681,9 @@ msgstr "Şu Ana Kadar Planlanmış Faturalar"
 
 msgid "Planned job"
 msgstr "Planlanan iş"
+
+msgid "Planned order"
+msgstr ""
 
 msgid "Planned Order"
 msgstr "Planlanmış Sipariş"
@@ -20927,6 +20949,9 @@ msgstr "Temel günlük akışları uçtan uca test et"
 msgid "so you can assign it here."
 msgstr "burada atayabilmeniz için."
 
+msgid "Soft"
+msgstr ""
+
 msgid "Sold"
 msgstr "Satıldı"
 
@@ -22750,6 +22775,9 @@ msgstr "Bu iş akışını kullanan sorunların tamamlaması gereken görevlerin
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "İş emrinin gerçekleştirdiği Operasyonların sırası, Yöntemin Operasyon listesinden kopyalanmıştır."
 
+msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The original model file is no longer available"
 msgstr "Orijinal model dosyası artık kullanılamıyor"
 
@@ -22798,6 +22826,9 @@ msgstr "Planlama aksiyonunun atandığı kişi: o lokasyondaki stok kartının s
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "Bir sözleşmenin planlanan faturaları, satırlarından faturalandırma sıklığı, hizalama ve zamanlama ile kesilen; sözleşme taslak iken faturaları değiştirebilir, ekleyebilir ve silebilirsiniz, her satır yine de tam tutarını faturalandırması koşuluyla."
 
+msgid "The planning group has no open purchase order or job for this item."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Çalışmanızın ve stokunuzun bulunduğu fabrikalar, depolar ve tesisler"
 
@@ -22821,6 +22852,12 @@ msgstr "Teknikerin bu bakım gerçekleştirildiğinde izlediği prosedür; krono
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Bu iş merkezinin çalıştırabileceği prosesler; operasyonları zamanlarken proses seçicilerinde görünür ve hangi iş emirlerinin bu iş merkezinden geçebileceğini sınırlar."
+
+msgid "The project had no pegs on that day."
+msgstr ""
+
+msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
 
 msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
 msgstr ""

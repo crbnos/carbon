@@ -2038,6 +2038,9 @@ export const path = {
     projectLogTime: `${x}/projects/log-time`,
     projectMilestones: (id: string) =>
       generatePath(`${x}/project/${id}/milestones`),
+    projectPegging: (id: string) => generatePath(`${x}/project/${id}/pegging`),
+    projectPeggingManual: (id: string) =>
+      generatePath(`${x}/project/${id}/pegging/manual`),
     projectPlaceInService: (id: string) =>
       generatePath(`${x}/project/${id}/place-in-service`),
     projectSettings: (id: string) =>

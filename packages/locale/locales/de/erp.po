@@ -1045,6 +1045,9 @@ msgstr "Eine verwaltete, cloud-gehostete Version von Carbon."
 msgid "A managed version with all the advanced features"
 msgstr "Eine verwaltete Version mit allen erweiterten Funktionen"
 
+msgid "A manual peg reserves an order of the planning group for this project. MRP keeps it on every run."
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Ein Werkstoff ist ein physischer Artikel, der zur Herstellung eines Teils verwendet wird und der über mehrere Fertigungsaufträge hinweg verwendet werden kann."
 
@@ -10771,6 +10774,9 @@ msgstr "Praktisch"
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Praktische, schnelle Unterstützung für die ersten 3–4 Wochen"
 
+msgid "Hard"
+msgstr ""
+
 msgid "Hard to see true cost or margin on a job"
 msgstr "Schwer zu sehen, was die wahren Kosten oder die Marge bei einem Auftrag sind"
 
@@ -13711,6 +13717,9 @@ msgstr "NCRs nach Typ"
 msgid "Need by"
 msgstr "Benötigt bis"
 
+msgid "Need Date"
+msgstr ""
+
 msgid "Need the right columns?"
 msgstr "Benötigen Sie die richtigen Spalten?"
 
@@ -16034,6 +16043,9 @@ msgstr ""
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Die Übersteuerung benötigt die Berechtigung Inventar:Aktualisieren und einen Grund."
 
+msgid "Override Peg"
+msgstr ""
+
 msgid "Override Price"
 msgstr "Preis übersteuern"
 
@@ -16368,6 +16380,13 @@ msgstr "PDF-Vorschau"
 msgid "PDF Watermark"
 msgstr "PDF-Wasserzeichen"
 
+msgid "Pegged"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(total)
+msgid "Pegged {0}"
+msgstr ""
+
 msgid "Pegging"
 msgstr ""
 
@@ -16662,6 +16681,9 @@ msgstr "Bislang geplante Rechnungen"
 
 msgid "Planned job"
 msgstr "Geplanter Auftrag"
+
+msgid "Planned order"
+msgstr ""
 
 msgid "Planned Order"
 msgstr "Geplante Bestellung"
@@ -20927,6 +20949,9 @@ msgstr "Smoke-Test der täglichen Kernabläufe von Anfang bis Ende"
 msgid "so you can assign it here."
 msgstr "damit Sie es hier zuweisen können."
 
+msgid "Soft"
+msgstr ""
+
 msgid "Sold"
 msgstr "Verkauft"
 
@@ -22750,6 +22775,9 @@ msgstr "Die geordnete Liste der Aufgaben, die Probleme mit diesem Workflow ausf�
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "Die geordnete Abfolge der Arbeitsgänge, die ein Fertigungsauftrag durchläuft, kopiert aus der Arbeitsgangliste der Methode."
 
+msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The original model file is no longer available"
 msgstr "Die ursprüngliche Modelldatei ist nicht mehr verfügbar"
 
@@ -22798,6 +22826,9 @@ msgstr "Die Person, der eine Planungsaktion zugewiesen ist: der Verantwortliche 
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "Die geplanten Rechnungen eines Vertrags, die aus seinen Positionen nach Abrechnungshäufigkeit, Ausrichtung und Zeitpunkt erstellt werden; während der Vertrag ein Entwurf ist, können Sie Rechnungen ändern, hinzufügen und löschen, solange jede Position ihren vollen Betrag abrechnet."
 
+msgid "The planning group has no open purchase order or job for this item."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Die Fabriken, Lagerhäuser und Standorte, an denen sich Ihre Arbeit und Bestände befinden"
 
@@ -22821,6 +22852,12 @@ msgstr "Die Verfahrensanweisung, die Techniker befolgen, wenn diese Instandhaltu
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Die Verfahren, die dieser Arbeitsplatz ausführen kann; erscheint in Verfahren-Auswahlfeldern beim Planen von Arbeitsgängen und begrenzt, welche Fertigungsaufträge über diesen Arbeitsplatz laufen können."
+
+msgid "The project had no pegs on that day."
+msgstr ""
+
+msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
 
 msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
 msgstr ""

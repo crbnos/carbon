@@ -1045,6 +1045,9 @@ msgstr "Carbon 的托管云版本"
 msgid "A managed version with all the advanced features"
 msgstr "具有所有高级功能的托管版本"
 
+msgid "A manual peg reserves an order of the planning group for this project. MRP keeps it on every run."
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "原材料是用于制造零件的物质物品，可跨多个工单使用。"
 
@@ -10771,6 +10774,9 @@ msgstr "动手实践"
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "动手操作、快速响应的支持，为期前3-4周"
 
+msgid "Hard"
+msgstr ""
+
 msgid "Hard to see true cost or margin on a job"
 msgstr "难以看清工作的真实成本或利润"
 
@@ -13711,6 +13717,9 @@ msgstr "按类型分类的NCR"
 msgid "Need by"
 msgstr "需要日期"
 
+msgid "Need Date"
+msgstr ""
+
 msgid "Need the right columns?"
 msgstr "需要正确的列吗？"
 
@@ -16034,6 +16043,9 @@ msgstr ""
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "覆盖需要库存管理:更新权限和原因。"
 
+msgid "Override Peg"
+msgstr ""
+
 msgid "Override Price"
 msgstr "覆盖价格"
 
@@ -16368,6 +16380,13 @@ msgstr "PDF 预览"
 msgid "PDF Watermark"
 msgstr "PDF 水印"
 
+msgid "Pegged"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(total)
+msgid "Pegged {0}"
+msgstr ""
+
 msgid "Pegging"
 msgstr ""
 
@@ -16662,6 +16681,9 @@ msgstr "迄今为止已计划的发票"
 
 msgid "Planned job"
 msgstr "已计划工单"
+
+msgid "Planned order"
+msgstr ""
 
 msgid "Planned Order"
 msgstr "计划订单"
@@ -20927,6 +20949,9 @@ msgstr "进行核心日常流程的端到端冒烟测试"
 msgid "so you can assign it here."
 msgstr "这样你可以在这里分配它。"
 
+msgid "Soft"
+msgstr ""
+
 msgid "Sold"
 msgstr "已售出"
 
@@ -22750,6 +22775,9 @@ msgstr "使用此工作流的问题必须完成的有序任务列表;此处的�
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "工单经历的工序有序序列,从该方法的工序清单复制。"
 
+msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The original model file is no longer available"
 msgstr "原始模型文件不再可用"
 
@@ -22798,6 +22826,9 @@ msgstr "计划行动被分配给的个人：该地点的物料负责人，否则
 msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount."
 msgstr "合同的计划发票，从其行按计费频率、对齐和时间切割；当合同处于草稿状态时，您可以更改、添加和删除发票，只要每行仍然计费其全额。"
 
+msgid "The planning group has no open purchase order or job for this item."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "您的工作和库存所在的工厂、仓库和场所"
 
@@ -22821,6 +22852,12 @@ msgstr "技术人员执行此维护时遵循的程序文件；在已生成排程
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "此工作中心可以运行的工艺；在排程工序时显示在工艺选择器中，并限制哪些工单可以通过此工作中心。"
+
+msgid "The project had no pegs on that day."
+msgstr ""
+
+msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
 
 msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
 msgstr ""

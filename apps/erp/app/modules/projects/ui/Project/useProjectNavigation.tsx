@@ -9,6 +9,7 @@ import {
   LuFlag,
   LuGitPullRequestArrow,
   LuHistory,
+  LuLink2,
   LuListTree,
   LuPackage,
   LuSettings2,
@@ -29,6 +30,9 @@ export function useProjectNavigation() {
   );
   // The Stock tab shows for a project that keeps project stock.
   const hasProjectStock = routeData?.project?.projectStock === true;
+  // The Pegging tab shows for a member of a planning group. A company without
+  // PLANNING_GROUPS still sees it, with the upgrade overlay.
+  const isGroupMember = Boolean(routeData?.project?.planningGroupId);
 
   return [
     {
@@ -77,6 +81,16 @@ export function useProjectNavigation() {
             to: path.to.projectStock(projectId),
             icon: LuPackage,
             shortcut: PROJECT_TAB_SHORTCUTS.stock
+          }
+        ]
+      : []),
+    ...(isGroupMember
+      ? [
+          {
+            name: t`Pegging`,
+            to: path.to.projectPegging(projectId),
+            icon: LuLink2,
+            shortcut: PROJECT_TAB_SHORTCUTS.pegging
           }
         ]
       : []),
