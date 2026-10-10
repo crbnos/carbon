@@ -62,23 +62,13 @@ type AccountDefaultsFormProps = {
   initialValues: Record<string, string>;
 };
 
-const AccountDefaultsForm = ({
-  balanceSheetAccounts,
-  incomeStatementAccounts,
-  initialValues
-}: AccountDefaultsFormProps) => {
+/** The account default fields, grouped as the defaults page shows them.
+ *  Built in a hook so labels and descriptions go through `t`. The tooltip body
+ *  comes from the glossary via `termId`; the on-row `description` is the short
+ *  context shown below the label. */
+export function useAccountDefaultGroups(): CategoryGroup[] {
   const { t } = useLingui();
-  const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
-  const [salesAccount, setSalesAccount] = useState(initialValues.salesAccount);
-
-  const isDisabled = !permissions.can("update", "accounting");
-
-  // Built inside the component so labels/descriptions go through `t`. The
-  // tooltip body comes from the glossary via `termId`; the on-row `description`
-  // is the short context shown below the label.
-  const categoryGroups: CategoryGroup[] = useMemo(
+  return useMemo<CategoryGroup[]>(
     () => [
       {
         id: "cash-banking",
@@ -311,6 +301,13 @@ const AccountDefaultsForm = ({
             description: t`Equity account for currency translation adjustments (CTA)`,
             badgeType: "Equity",
             termId: "account-default-currency-translation"
+          },
+          {
+            name: "migrationClearingAccount",
+            label: t`Migration Clearing`,
+            description: t`Equity account that offsets the opening balances when accounting is set up. It must total zero.`,
+            badgeType: "Equity",
+            termId: "account-default-migration-clearing"
           }
         ]
       },
@@ -559,6 +556,21 @@ const AccountDefaultsForm = ({
     ],
     [t]
   );
+}
+
+const AccountDefaultsForm = ({
+  balanceSheetAccounts,
+  incomeStatementAccounts,
+  initialValues
+}: AccountDefaultsFormProps) => {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
+  const [salesAccount, setSalesAccount] = useState(initialValues.salesAccount);
+
+  const isDisabled = !permissions.can("update", "accounting");
+  const categoryGroups = useAccountDefaultGroups();
 
   const accountOptions: Record<
     BadgeType,

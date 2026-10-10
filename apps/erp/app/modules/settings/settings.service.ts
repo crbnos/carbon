@@ -1028,18 +1028,6 @@ export async function updateDigitalQuoteSetting(
 // would pull the service-role client into the browser bundle (Vite blocks it).
 
 /** @mcp update */
-export async function updateAccountingEnabledSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  accountingEnabled: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ accountingEnabled }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
 export async function updateAssetTaxDepreciationSettings(
   client: SupabaseClient<Database>,
   companyId: string,

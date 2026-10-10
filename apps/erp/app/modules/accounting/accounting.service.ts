@@ -18,6 +18,7 @@ import {
   daysBetweenInclusive,
   earnsInterest,
   fiscalYearAndPeriodFor,
+  GL_JOURNAL_STATUSES,
   getDateNYearsAgo,
   isBalanced,
   isUniqueViolation,
@@ -70,7 +71,9 @@ import {
 import {
   buildDepreciationLines,
   type DepreciationLine,
+  depreciationFloor,
   diffJournalLines,
+  hasAccountingCutover,
   monthEndOf,
   usageKey
 } from "./accounting.utils";
@@ -202,15 +205,11 @@ export async function getAccountLedger(
     offset: number;
   }
 ) {
-  // Draft journals are excluded so the lines shown always sum to the balances
-  // from accountTreeBalancesByCompany, which excludes them too — unposted
-  // entries belong in the Journal Entries list, not the account ledger.
   // TODO: remove the cast once cloud-generated DB types include the view.
   let query = client
     .from("journalLines" as any)
     .select("*", { count: "exact" })
     .eq("accountId", args.accountId)
-    .neq("status", "Draft")
     .gte(
       "postingDate",
       args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0]
@@ -1296,6 +1295,62 @@ export async function upsertReportPin(
     },
     { onConflict: "reportKey,userId,companyId" }
   );
+}
+
+// -- Accounting cutover --
+
+// Manual accounting work — journal entries, period lock and close,
+// depreciation and recognition runs, intercompany matching and eliminations —
+// runs only after the company's accounting cutover. Before it, journals are
+// Provisional and count nowhere, so this work would have no effect
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1).
+export const ACCOUNTING_NOT_STARTED =
+  "Set up accounting before you post journals, runs or period closes.";
+
+export async function requireAccountingCutover(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ error: { message: string } | null }> {
+  const settings = await client
+    .from("companySettings")
+    .select("accountingCutoverDate")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return { error: settings.error };
+  if (!hasAccountingCutover(settings.data)) {
+    return { error: { message: ACCOUNTING_NOT_STARTED } };
+  }
+  return { error: null };
+}
+
+/**
+ * The group form: every operating company of the group must have a cutover.
+ * The group's elimination entity never sets up accounting, so it is left out.
+ * A company with no settings row counts as not set up: the check compares
+ * the companies with a cutover against all of them, so it fails closed.
+ */
+export async function requireGroupAccountingCutover(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+): Promise<{ error: { message: string } | null }> {
+  const companies = await client
+    .from("company")
+    .select("id")
+    .eq("companyGroupId", companyGroupId)
+    .eq("isEliminationEntity", false);
+  if (companies.error) return { error: companies.error };
+  const ids = (companies.data ?? []).map((company) => company.id);
+  if (ids.length === 0) return { error: null };
+  const withCutover = await client
+    .from("companySettings")
+    .select("id", { count: "exact", head: true })
+    .in("id", ids)
+    .not("accountingCutoverDate", "is", null);
+  if (withCutover.error) return { error: withCutover.error };
+  if ((withCutover.count ?? 0) !== ids.length) {
+    return { error: { message: ACCOUNTING_NOT_STARTED } };
+  }
+  return { error: null };
 }
 
 // -- Dimensional analytics (pivot) reports --
@@ -2619,9 +2674,12 @@ export async function getFiscalCalendarCommitted(
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
       .neq("closeStatus", "Open"),
+    // A Provisional journal (before the accounting cutover) has no period
+    // and must not commit the calendar the cutover will be set up on.
     (client.from("journal") as any)
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
+      .in("status", [...GL_JOURNAL_STATUSES])
   ]);
   if (nonOpen.error) return { data: null, error: nonOpen.error };
   if (journals.error) return { data: null, error: journals.error };
@@ -2639,6 +2697,8 @@ export async function lockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
 ) {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const period = await getAccountingPeriodById(
     client,
     args.periodId,
@@ -2717,6 +2777,8 @@ export async function closeAccountingPeriod(
   },
   previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args)
 ) {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const period = await getAccountingPeriodById(
     client,
     args.periodId,
@@ -5599,6 +5661,8 @@ export async function runIntercompanyMatching(
   client: SupabaseClient<Database>,
   companyGroupId: string
 ) {
+  const cutover = await requireGroupAccountingCutover(client, companyGroupId);
+  if (cutover.error) return { data: null, error: cutover.error };
   return client.rpc("matchIntercompanyTransactions", {
     p_company_group_id: companyGroupId
   });
@@ -5611,6 +5675,8 @@ export async function generateEliminations(
   userId: string,
   regenerate = false
 ) {
+  const cutover = await requireGroupAccountingCutover(client, companyGroupId);
+  if (cutover.error) return { data: null, error: cutover.error };
   return client.rpc("generateEliminationEntries", {
     p_company_group_id: companyGroupId,
     p_user_id: userId,
@@ -5674,11 +5740,28 @@ export async function getJournalEntries(
   }
 
   if (args.status) {
-    query = query.eq("status", args.status as "Draft" | "Posted" | "Reversed");
+    query = query.eq(
+      "status",
+      args.status as Database["public"]["Enums"]["journalEntryStatus"]
+    );
   }
 
+  // A Superseded journal is a Provisional one the opening journal replaced at
+  // the cutover. It stays out of the list unless a status filter asks for it.
+  const filtersOnStatus =
+    Boolean(args.status) ||
+    (args.filters ?? []).some(
+      (filter) => filter.column === "status" && Boolean(filter.value)
+    );
+  if (!filtersOnStatus) {
+    query = query.neq("status", "Superseded");
+  }
+
+  // The enable writes many journals in one transaction, so they share a
+  // createdAt; the entry number breaks the tie.
   query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
+    { column: "createdAt", ascending: false },
+    { column: "journalEntryId", ascending: false }
   ]);
 
   return query;
@@ -6385,6 +6468,8 @@ export async function postJournalEntry(
   // 1. Fetch entry + lines
   const entry = await getJournalEntry(client, id);
   if (entry.error) return entry;
+  const cutover = await requireAccountingCutover(client, entry.data.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   if (entry.data.status !== "Draft") {
     return {
       data: null,
@@ -6464,200 +6549,6 @@ export async function postJournalEntry(
     .single();
 }
 
-// Returns `{ id }` of the company's current posted Opening Balance journal
-// entry, or null. Callers only need existence — this is the re-entry gate. Only
-// status='Posted' blocks a new set; a Reversed entry lets the user enter a fresh
-// one.
-/** @mcp read */
-export async function getExistingOpeningBalanceEntry(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  const entry = await client
-    .from("journal")
-    .select("id")
-    .eq("companyId", companyId)
-    .eq("sourceType", "Opening Balance")
-    .eq("status", "Posted")
-    .order("createdAt", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (entry.error) return { data: null, error: entry.error };
-  return { data: entry.data ? { id: entry.data.id } : null, error: null };
-}
-
-// Posts the company's opening balances as a single balanced journal entry
-// (sourceType 'Opening Balance'). Each `balances` row carries one signed
-// natural-balance amount for a posting account; the net difference is plugged to
-// the Retained Earnings default account so debits equal credits. Reuses the
-// manual-JE stack: createJournalEntry (Draft) → saveJournalEntryWithLines →
-// postJournalEntry (which validates the balance and resolves the period).
-/** @mcp create destructive */
-export async function createOpeningBalanceJournal(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    companyGroupId: string;
-    userId: string;
-    postingDate: string;
-    balances: Array<{ accountId: string; amount: number }>;
-  }
-) {
-  const { companyId, companyGroupId, userId, postingDate, balances } = args;
-
-  const entered = balances.filter((b) => b.amount !== 0);
-  if (entered.length === 0) {
-    return { data: null, error: { message: "No opening balances entered" } };
-  }
-
-  // Guard here — not only in the route — so every caller (the route action AND
-  // the MCP-exposed tool) is protected. Opening balances are entered once; an
-  // un-reversed posted entry must be reversed before a new set is posted.
-  const existing = await getExistingOpeningBalanceEntry(client, companyId);
-  if (existing.error) return { data: null, error: existing.error };
-  if (existing.data) {
-    return {
-      data: null,
-      error: {
-        message:
-          "An opening balance entry already exists — reverse it before entering new balances"
-      }
-    };
-  }
-
-  // Retained Earnings is the balancing plug.
-  const defaults = await getDefaultAccounts(client, companyId);
-  if (defaults.error) return { data: null, error: defaults.error };
-  const retainedEarningsAccount = defaults.data?.retainedEarningsAccount;
-  if (!retainedEarningsAccount) {
-    return {
-      data: null,
-      error: {
-        message:
-          "No Retained Earnings account is configured in Default Accounts"
-      }
-    };
-  }
-
-  // Account classes turn each signed natural-balance amount into debit/credit
-  // (saveJournalEntryWithLines re-derives the stored amount from debit/credit).
-  const accountIds = [...new Set(entered.map((b) => b.accountId))];
-  const accounts = await client
-    .from("account")
-    .select("id, class")
-    .in("id", accountIds)
-    // Scope to the caller's chart of accounts (company-group). A foreign id then
-    // resolves to no class and aborts below with "Account not found", so a
-    // crafted payload can't post against another tenant's accounts.
-    .eq("companyGroupId", companyGroupId);
-  if (accounts.error) return { data: null, error: accounts.error };
-  const classById = new Map(
-    accounts.data.map((a) => [
-      a.id,
-      a.class as Database["public"]["Enums"]["glAccountClass"]
-    ])
-  );
-
-  const isNaturalDebit = (cls: Database["public"]["Enums"]["glAccountClass"]) =>
-    cls === "Asset" || cls === "Expense";
-
-  // Sum in "debit positive" space so the plug's sign is unambiguous.
-  let netDebitMinusCredit = 0;
-  const lines: Array<{ accountId: string; debit: number; credit: number }> = [];
-  for (const b of entered) {
-    const cls = classById.get(b.accountId);
-    if (!cls) {
-      return {
-        data: null,
-        error: { message: `Account not found: ${b.accountId}` }
-      };
-    }
-    const isDebit = isNaturalDebit(cls) ? b.amount >= 0 : b.amount < 0;
-    const magnitude = Math.abs(b.amount);
-    const debit = isDebit ? magnitude : 0;
-    const credit = isDebit ? 0 : magnitude;
-    netDebitMinusCredit += debit - credit;
-    lines.push({ accountId: b.accountId, debit, credit });
-  }
-
-  // Plug to Retained Earnings unless the entered lines already balance (shared
-  // tolerance, no literal). More debit ⇒ the plug is a credit, and vice-versa.
-  if (!isBalanced(netDebitMinusCredit, 0, JOURNAL_BALANCE_TOLERANCE)) {
-    lines.push({
-      accountId: retainedEarningsAccount,
-      debit: netDebitMinusCredit < 0 ? -netDebitMinusCredit : 0,
-      credit: netDebitMinusCredit > 0 ? netDebitMinusCredit : 0
-    });
-  }
-
-  const journalEntryId = await getNextSequence(
-    client,
-    "journalEntry",
-    companyId
-  );
-  if (journalEntryId.error || !journalEntryId.data) {
-    return {
-      data: null,
-      error: journalEntryId.error ?? {
-        message: "Failed to allocate journal entry number"
-      }
-    };
-  }
-
-  const created = await createJournalEntry(client, {
-    journalEntryId: journalEntryId.data as string,
-    sourceType: "Opening Balance",
-    companyId,
-    createdBy: userId,
-    postingDate,
-    description: "Opening balances"
-  });
-  if (created.error || !created.data) {
-    return {
-      data: null,
-      error: created.error ?? { message: "Failed to create journal entry" }
-    };
-  }
-  const id = created.data.id;
-
-  // No transaction spans create → save → post (these reuse the supabase-client
-  // JE helpers), so on any failure roll back the Draft header we just created —
-  // journalLine cascades (ON DELETE CASCADE). Otherwise an orphan 'Opening
-  // Balance' Draft lingers that the Posted-only re-entry gate can't see, and the
-  // user would accumulate one per retry (e.g. an as-of date in a Closed period).
-  const rollbackDraft = () =>
-    client.from("journal").delete().eq("id", id).eq("status", "Draft");
-
-  const saved = await saveJournalEntryWithLines(client, {
-    journalEntryId: id,
-    postingDate,
-    description: "Opening balances",
-    updatedBy: userId,
-    lines,
-    companyId,
-    companyGroupId
-  });
-  if (saved.error) {
-    await rollbackDraft();
-    return { data: null, error: saved.error };
-  }
-
-  const posted = await postJournalEntry(client, id, userId);
-  if (posted.error) {
-    await rollbackDraft();
-    // A unique violation on journal_one_posted_opening_balance_per_company means
-    // a concurrent request already posted the company's opening balances — the
-    // atomic backstop for the check-then-post race.
-    const message = isUniqueViolation(posted.error)
-      ? "An opening balance entry already exists — reverse it before entering new balances"
-      : posted.error.message;
-    return { data: null, error: { message } };
-  }
-
-  return { data: { id }, error: null };
-}
-
 /** @mcp action */
 export async function reverseJournalEntry(
   client: SupabaseClient<Database>,
@@ -6668,6 +6559,9 @@ export async function reverseJournalEntry(
     userId: string;
   }
 ) {
+  const cutover = await requireAccountingCutover(client, data.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
+
   // 1. Fetch original
   const original = await getJournalEntry(client, id);
   if (original.error) return original;
@@ -7240,7 +7134,7 @@ export async function buildDepreciationRunLines(
   ] = await Promise.all([
     client
       .from("companySettings")
-      .select("assetTaxDepreciationEnabled")
+      .select("assetTaxDepreciationEnabled, accountingCutoverDate")
       .eq("id", companyId)
       .single(),
     client
@@ -7298,7 +7192,14 @@ export async function buildDepreciationRunLines(
   }
   if (assets.error || !assets.data) return { data: null, error: assets.error };
 
-  const lastPostedPeriodEnd = lastPosted.data?.periodEnd ?? null;
+  // Depreciation before the accounting cutover is in the prior system and in
+  // each asset's accumulated depreciation at the cutover, never in a Carbon
+  // run. So with no run posted after it, a run starts at the cutover month,
+  // not at the asset's depreciation start date.
+  const lastPostedPeriodEnd = depreciationFloor(
+    lastPosted.data?.periodEnd ?? null,
+    settings.data?.accountingCutoverDate ?? null
+  );
 
   // A run can cover several months (a picked later period), so units of
   // production sums every usage log since the last posted run.
@@ -7379,6 +7280,8 @@ export async function createDepreciationRun(
   | { data: { id: string; depreciationRunId: string }; error: null }
   | { data: null; error: { message: string } }
 > {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const proposal = await buildDepreciationRunLines(client, args);
   if (!proposal.data) {
     return {

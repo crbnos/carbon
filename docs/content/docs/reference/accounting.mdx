@@ -1,21 +1,29 @@
 ---
 title: Accounting & the ledger
-description: "How operations become journal entries: accounts, periods, and the postings behind every flow."
+description: "How operations become journal entries: accounts, periods, the postings behind every flow, and setting up accounting at a cutover date."
 ---
 
 Shipping, receiving, job completion, and asset depreciation can each post to the **<Term id="general-ledger">general ledger</Term>**. This page describes their shared accounting behavior.
 
-## Accounting is a switch
+## Before and after accounting is set up
 
-The company setting **accounting enabled** is off by default. When disabled, operational transactions still update quantities and document statuses, but they do not create journal entries. All postings described below require this setting.
+Every company posts journals for its receipts, shipments, invoices, payments, adjustments and jobs. The company's **<Term id="accounting-cutover">cutover date</Term>** decides only the journal's status. A company with no cutover date writes *<Term id="provisional-journal">Provisional</Term>* journals: they record the document's accounting, but no balance or report counts them, and they have no accounting period. After you [set up accounting](#setting-up-accounting), every posting writes a *Posted* journal.
 
-<Callout type="warn">
-Receiving, production, and shipping can operate without accounting. After accounting is enabled, those actions begin posting to the ledger. Carbon does not create entries retroactively for earlier activity.
-</Callout>
+Cost layers, inventory valuation, fixed-asset cost, deferred revenue schedules and intercompany records do not wait for the cutover. Every company writes them from the first document.
+
+A new company starts with accounting set up: its cutover date is the first day of its current month, so it posts Posted journals from its first document and never sees the setup wizard.
 
 ## The journal
 
-Each <Term id="posting">posting</Term> creates a **<Term>journal</Term>** with balanced **journal lines**: debits are positive and credits are negative. The journal records its source type. Each line references an account and can include dimensions. Journals can be *Draft*, *Posted*, or *Reversed*. Voiding a posted journal creates a reversing journal instead of deleting the original.
+Each <Term id="posting">posting</Term> creates a **<Term>journal</Term>** with balanced **journal lines**: debits are positive and credits are negative. The journal records its source type. Each line references an account and can include dimensions. Voiding a posted journal creates a reversing journal instead of deleting the original.
+
+| Status | Meaning |
+| --- | --- |
+| Draft | A manual journal entry that is not posted yet, or the trial balance that the setup wizard saves as an Opening Balance journal. It counts nowhere. |
+| Provisional | An automatic posting before the company's cutover. It counts nowhere and has no accounting period. |
+| Posted | Counts in every balance and report. |
+| Reversed | A posted journal that a reversing journal offsets. Both count, so they net to zero. |
+| Before cutover | A Provisional journal dated before the cutover date. Setting up accounting replaced it with the opening journal, and it can never change. The journal list hides these unless you filter the status column for them. |
 
 | Source type | Posted by |
 | --- | --- |
@@ -27,6 +35,7 @@ Each <Term id="posting">posting</Term> creates a **<Term>journal</Term>** with b
 | Job Consumption / Production Event / Job Receipt | A job consuming material, logging time, and finishing into inventory. |
 | Job Close | Sweeping a job's residual work-in-process to variance. |
 | Asset Depreciation / Asset Disposal | Depreciation runs and asset write-offs. |
+| Opening Balance | Setting up accounting: the balances at the end of the day before the cutover. It never syncs to an accounting provider. |
 
 ## Accounts come from one place
 
@@ -51,7 +60,69 @@ A journal line can include dimensions for location, department, cost center, ite
 
 ## Periods
 
-Every posting belongs to an **<Term id="accounting-period">accounting period</Term>**, which Carbon creates and activates as needed. A period can be **Open**, **Closed**, or **Locked**. Receipts, shipments, invoices, and payments cannot post to a Closed or Locked period. Reopen or unlock the period, or change the posting date to an open period.
+Every Posted journal belongs to an **<Term id="accounting-period">accounting period</Term>**, which Carbon creates and activates as needed. A Provisional journal has no period, and Carbon creates no periods until accounting is set up. A period can be **Open**, **Closed**, or **Locked**. Receipts, shipments, invoices, and payments cannot post to a Closed or Locked period. Reopen or unlock the period, or change the posting date to an open period. See [period close](/docs/reference/period-close).
+
+## Setting up accounting
+
+Setting up accounting opens your books in Carbon at a **cutover date**. Carbon takes the open items it already knows (for example invoices, unapplied payments, goods received but not invoiced, open jobs, stock and fixed assets) and your prior system's trial balance, and posts one opening journal from them. Open it from **Settings → Accounting** with **Set up accounting**. Until it is done, the **Reporting**, **Journal Entries**, **Intercompany**, **Accounting Periods**, **Depreciation** and **Assets** pages are blurred behind an overlay that reads "Accounting is not set up for this company." and has a **Set up accounting** button. You need permission to view accounting to open the wizard, and to update accounting to save a step or enable. Editing an item's unit cost on the Inventory step needs permission to update parts.
+
+<Screenshot label="Set Up Accounting wizard: the Readiness step with the cutover date picker and the readiness checklist" caption="Every check must pass before you can continue." />
+
+<Steps>
+<Step>
+**Readiness.** Choose the cutover date: the first day of the current month, or of one of the 3 months before it. The opening balances are as of the end of the day before. All 6 checks must pass:
+- **Every account default is set**: each default account is set to an active account. A default that falls back to another one, such as Employee Reimbursements Payable, can stay empty. **Migration Clearing** must be an active Equity account that is not a group. Each failing default links to **Accounting → Default Accounts**.
+- **Fiscal year and base currency are set.**
+- **The cutover date is valid**: the first day of a period, not after today, and at most 3 periods before the current one.
+- **No unposted documents dated before the cutover**: no receipt, shipment or invoice that is Draft or Pending, and no Draft payment or memo. Post or delete them.
+- **No open jobs from before Carbon recorded their costs.** Complete or cancel them.
+- **No posted opening balance**: the company has no Posted Opening Balance journal.
+</Step>
+<Step>
+**Inventory.** Each item's on-hand quantity at the cutover date across all locations, and its unit cost. You can edit the unit cost of an Average item only. A FIFO or LIFO item opens at the value of its cost layers dated before the cutover, and a Standard item opens at its standard cost. The page totals the opening value per inventory account.
+</Step>
+<Step>
+**Fixed assets.** Each asset on the books the day before the cutover, with its cost, accumulated depreciation and net book value as of that day. No depreciation run happens before the cutover, so enter each asset's accumulated depreciation here.
+</Step>
+<Step>
+**Trial balance.** Enter your prior system's trial balance as of the day before the cutover, for every account, or **Import CSV** with the columns `accountNumber`, `debit` and `credit`. An import replaces the whole trial balance and saves nothing when a row has an error. **Save Trial Balance** keeps it as a Draft Opening Balance journal, which the opening journal replaces when you enable. Accounts marked **Control** (receivables, payables, inventory, work in process and the others Carbon opens from its own records) are only compared: the **Migration Clearing** table shows, per control account, the trial balance amount, Carbon's opening total and the difference.
+</Step>
+<Step>
+**Enable.** The summary lists the documents posted before Carbon kept journals, per type, when there are any (see below). Migration Clearing must total zero and every readiness check must pass. Type the company name and press **Enable accounting**.
+</Step>
+</Steps>
+
+When you enable, Carbon:
+
+- Writes the journals of documents posted before Carbon kept journals that are dated on or after the cutover.
+- Resets each item's stock to its on-hand quantity at the cutover date at the reviewed unit cost, and recosts the outbound stock movements of FIFO and LIFO items dated on or after it.
+- Posts the opening journal, dated the day before the cutover, against <Term id="account-default-migration-clearing">Migration Clearing</Term>. Each open invoice, unapplied payment, received but not invoiced order line, invoiced but not received order line and open job gets its own opening line, so a later payment, supplier invoice or job close finds it as if the original posting had written it.
+- Turns Provisional journals dated on or after the cutover into **Posted**, and those dated before it into **Before cutover**.
+- Closes every accounting period that ends before the cutover date.
+
+**Documents posted before Carbon kept journals.** A posted document can have no journal: one posted while Carbon wrote no journals for the company. The opening journal covers such a document only when it is dated before the cutover. For one dated on or after the cutover, Carbon writes the journal its posting writes today, when you enable.
+
+That journal uses today's account defaults and item costs, because the original ones are not stored. This covers invoices, memos, payments, charges, reimbursements, receipts, shipments, inventory adjustments and counts, non-conformance scrap, maintenance parts, job material issues and completions, depreciation runs, scrap disposals and revenue recognition runs.
+
+Labor and machine absorption of a job is not written again. Carbon does not send a rewritten depreciation, disposal or recognition journal to your accounting provider on its own, because the provider may already hold the original.
+
+**Journals still missing after the enable.** A company that set up accounting before the enable wrote these journals can still have posted documents dated on or after its cutover with no journal. **Settings → Accounting** then shows a warning with the number of such documents and a **Write missing journals** button. The button writes the same journals the enable writes, with today's account defaults and item costs, and posts them. It needs permission to update settings and to update accounting. If one of the journals falls in a Closed or Locked period, Carbon writes none of them.
+
+<Callout type="warn" title="Setting up accounting cannot be undone">
+The cutover date never changes after you enable. The base currency and the fiscal year start month lock too.
+</Callout>
+
+Until accounting is set up, Carbon refuses manual journal entries, depreciation runs, revenue recognition runs, intercompany eliminations and period close.
+
+After the cutover, a document dated before it keeps its status, with some limits:
+
+- Pay an invoice from before the cutover as usual. The payment settles its opening line.
+- Void a payment or a memo from before the cutover as usual, except the credit memo below. Carbon posts the reversal today.
+- A sales invoice from before the cutover cannot be voided: issue a credit memo instead. A purchase invoice: record a debit memo instead.
+- A receipt or a shipment from before the cutover cannot be voided: record a return or an inventory adjustment instead.
+- A charge or a reimbursement from before the cutover cannot be voided: record a journal entry to correct it instead.
+- A credit memo from before the cutover that credits a contract or a rental agreement cannot be voided: invoice the customer for the amount instead.
+- A job or maintenance time entry posted before the cutover cannot be edited, deleted or posted again: record a journal entry to correct it instead.
 
 ## Related
 
@@ -62,12 +133,62 @@ Every posting belongs to an **<Term id="accounting-period">accounting period</Te
   <Card title="Ship, invoice, get paid" href="/guides/order-to-cash">
     Where the sales shipment and invoice postings come from.
   </Card>
+  <Card title="Period close" href="/docs/reference/period-close">
+    Locking and closing a period once accounting is set up.
+  </Card>
+  <Card title="Financial statement reports" href="/docs/reference/financial-reports">
+    The balance sheet, income statement and trial balance the Posted journals feed.
+  </Card>
 </Cards>
 
 <AgentContext>
 ## Troubleshooting
 
-Exact errors from period close and journal immutability.
+Exact errors from period close, journal immutability and the accounting setup.
+
+The setup wizard is `x+/accounting+/activation.tsx` with one route per step (`activation.readiness`, `.inventory`, `.fixed-assets`, `.trial-balance`, `.enable`); the cutover date rides the `?cutover=` search param. The enable is the `activate-accounting` server function. The cutover is `companySettings.accountingCutoverDate`; `accountingEnabled` is unused. A Provisional journal's lines may sit on Retained Earnings with `journalLine.accountDefaultRole` naming the empty default they wanted; the enable moves them to that default.
+
+### "Set up accounting before you post journals, runs or period closes."
+The company has no cutover date. Manual journals, reversals, depreciation runs and disposals, revenue recognition runs, intercompany matching and eliminations, and period lock and close all wait for the setup.
+
+### "Accounting was just set up. Post the document again."
+Accounting was set up while this document was posting, so its journal status changed under it. Post it again; it now posts as Posted.
+
+### "This invoice is from before your accounting cutover. Issue a credit memo instead." / "… Record a debit memo instead."
+A sales or purchase invoice dated before the cutover cannot be voided. Its balance is in the opening journal. Issue a credit memo (sales) or record a debit memo (purchase).
+
+### "This document is from before your accounting cutover. Record a return or an inventory adjustment instead."
+A receipt or shipment dated before the cutover cannot be voided; the setup reset the stock it moved.
+
+### "This charge is from before your accounting cutover. Record a journal entry to correct it instead." / "This reimbursement is …"
+A charge or reimbursement dated before the cutover cannot be voided. Setting up accounting replaced its journal with the opening journal, so reversing that journal would change nothing. Record a manual journal entry for the correction.
+
+### "This credit memo is from before your accounting cutover and credits a contract or a rental agreement. Invoice the customer for the amount instead."
+Voiding such a memo would need a contract or rental posting the opening journal does not carry.
+
+### "Migration Clearing totals …. It must be zero to set up accounting."
+The trial balance disagrees with Carbon's open items on at least one control account. The Trial balance step shows the difference per account.
+
+### "Type the company name to confirm."
+The confirmation on the Enable step must match the company name exactly.
+
+### "Set the … account in Accounting → Default Accounts."
+After the cutover, a posting needed a default account that is empty. Set it under Accounting → Default Accounts.
+
+### "This time entry was posted before your accounting cutover. Record a journal entry to correct it instead."
+A production event or a maintenance time entry whose journal became Before cutover cannot be posted again. For a production event, setting up accounting opened the job's work in process with its cost, so a re-post would add the cost twice. `TIME_ENTRY_BEFORE_CUTOVER_ERROR`, from `post-production-event` and `post-maintenance-event`.
+
+### "Target is missing its original control account"
+A payment applied to a document posted before Carbon kept journals, dated on or after the cutover. Press **Write missing journals** on Settings → Accounting (the `journal-legacy-documents` server function), then apply the payment again.
+
+### "Set the Migration Clearing account to an active Equity account that is not a group." / "Migration Clearing must be an Equity account, not …"
+The Migration Clearing default names an account of another class, or a group account. The opening journal signs its lines as equity.
+
+### "Journal … was superseded at the accounting cutover and cannot change"
+A Before cutover journal is permanent. Nothing can edit, post, reverse or delete it.
+
+### "The accounting cutover is one-way and cannot change" / "The base currency is locked: accounting was set up …" / "The fiscal year start is locked: accounting was set up …"
+After accounting is set up, the cutover date, the base currency and the fiscal year start month cannot change.
 
 ### "Accounting period is closed. Reopen it before posting."
 The posting date falls in a period whose close status is **Closed**. Reopen the period from the accounting periods screen, or change the document's posting date to fall in an Open period, then post again.

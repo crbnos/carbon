@@ -149,3 +149,48 @@ export async function selectPendingScripts(
   const alreadyRan = new Set((data ?? []).map((row) => row.name));
   return scripts.filter((script) => !alreadyRan.has(script.name));
 }
+
+/**
+ * The exit code of a one-off script that cannot run on this workspace yet,
+ * because the runner did not pass something it needs (EX_TEMPFAIL in
+ * sysexits.h). The runner writes no ledger row, so the next deploy runs the
+ * script again, and it does not fail the deploy: the workspace is not
+ * broken, only not ready for the script. A script that uses it says so in
+ * its header and logs why.
+ */
+export const ONE_OFF_SCRIPT_DEFERRED = 75;
+
+export type OneOffScriptOutcome = "completed" | "deferred" | "failed";
+
+/** What a script's exit code tells the runner. */
+export function oneOffScriptOutcome(
+  exitCode: number | undefined
+): OneOffScriptOutcome {
+  if (exitCode === 0) return "completed";
+  return exitCode === ONE_OFF_SCRIPT_DEFERRED ? "deferred" : "failed";
+}
+
+/**
+ * The environment a one-off script runs with: the workspace's, without the
+ * database password (only `supabase db push` uses it), and the Postgres URL
+ * the app gets (deploy.ts), else a self-hosted connection string. A
+ * workspace with neither passes no `SUPABASE_DB_URL`, and a script that
+ * needs one defers (`ONE_OFF_SCRIPT_DEFERRED`).
+ */
+export function oneOffScriptEnv(
+  env: Record<string, string | undefined>,
+  {
+    poolerUrl,
+    connectionString
+  }: { poolerUrl: string | null; connectionString: string | null }
+): Record<string, string | undefined> {
+  const { SUPABASE_DB_PASSWORD: _password, ...scriptEnv } = env;
+  return {
+    ...scriptEnv,
+    SUPABASE_DB_URL:
+      poolerUrl ??
+      (connectionString?.startsWith("postgresql://")
+        ? connectionString
+        : undefined)
+  };
+}

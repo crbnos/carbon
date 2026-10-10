@@ -17,7 +17,7 @@ A count moves through three statuses in order. Posting is atomic, so a count is 
     Counting is confirmed and the count is queued to post. The entered quantities are locked in for review; nothing has hit the ledger yet.
   </Status>
   <Status name="Posted" accent>
-    Every non-zero variance has been booked as a Positive or Negative Adjustment, tracked-entity quantities updated, and (when accounting is on) a journal written. This is the pivotal transition.
+    Every non-zero variance has been booked as a Positive or Negative Adjustment, tracked-entity quantities updated, and a journal written. This is the pivotal transition.
   </Status>
 </StatusFlow>
 
@@ -62,7 +62,7 @@ Counted quantities are non-negative, so a count can never drive on-hand below ze
 Posting reconciles against the **frozen snapshot**, not live on-hand. For each counted line Carbon computes the variance as `counted − systemQuantity` and posts a single adjustment for it:
 
 - A shortfall books a **"Negative Adjmt."**, an overage a **"Positive Adjmt."**, written to the <Term id="item-ledger">item ledger</Term> with the document type **"Inventory Count"**.
-- Cost layers are maintained on every variance. When the company has **accounting enabled**, one journal is written for the whole post, debiting or crediting inventory against the inventory adjustment variance account, valued at the item's current cost. Counts with accounting off still adjust quantity and cost layers, just without the GL entry.
+- Cost layers are maintained on every variance. One journal is written for the whole post, debiting or crediting inventory against the inventory adjustment variance account, valued at the item's current cost. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), that journal is Provisional and counts in no balance.
 - For a tracked lot, the same variance is applied to the entity's quantity — the delta is added, not set — so any receipt or shipment that posted between the snapshot and the post survives the count rather than being clobbered.
 
 <Callout type="info">
@@ -71,7 +71,7 @@ Reconciling against the snapshot delta (not live on-hand) is deliberate. If a <T
 
 ## Count vs. a direct adjustment
 
-Both end in the same place — a Positive or Negative Adjustment on the ledger, and the same <Term id="journal">journal</Term> when accounting is on. The difference is the workflow:
+Both end in the same place — a Positive or Negative Adjustment on the ledger, and the same <Term id="journal">journal</Term>. The difference is the workflow:
 
 <FieldTable>
   <Field name="Inventory count">
@@ -118,6 +118,6 @@ Reopen (Pending → Draft) only works from **"Pending"**. A **Posted** count is 
 ### "Inventory count is no longer pending"
 A concurrent post already moved the count out of **"Pending"** while this post was running. Reload the count to see its current state before acting again.
 
-### No journal was written for the post
-GL journals are only written when the company has **accounting enabled**. With accounting off, the post still books the quantity variances (Positive/Negative Adjmt.) and maintains cost layers — it just skips the GL entry. All post actions require the **inventory update** permission.
+### The post's journal is not in the balances
+Every post writes its journal. Before the company sets up accounting (no `companySettings.accountingCutoverDate`), the journal is **Provisional**, and no balance or report counts it. All post actions require the **inventory update** permission.
 </AgentContext>

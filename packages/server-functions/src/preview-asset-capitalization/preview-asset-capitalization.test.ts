@@ -18,14 +18,49 @@ type Fixture = Awaited<ReturnType<typeof chargeFixture>>;
 
 // A FIFO serial item whose unit cost (100) is NOT what either unit carries:
 // one unit has its own layer at 60, the other has none and the item's unit
-// cost is the fallback. Accounting is off, so no posting setup is needed.
+// cost is the fallback. The company has no accounting cutover, so every
+// journal is Provisional; a Retained Earnings (Equity) account is there to
+// credit an entered cost to.
 async function capitalizationFixture(f: Fixture, unitCost: number) {
   const { db, companyId } = f;
-  await db
-    .updateTable("companySettings")
-    .set({ accountingEnabled: false })
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
     .where("id", "=", companyId)
-    .execute();
+    .executeTakeFirstOrThrow();
+  const companyGroupId = company.companyGroupId;
+  if (!companyGroupId) throw new Error("Expected a company group");
+  const retainedEarnings = f.account("retained-earnings");
+  await db.transaction().execute(async (trx) => {
+    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    await trx
+      .insertInto("account")
+      .values({
+        id: retainedEarnings,
+        name: "Retained Earnings",
+        class: "Equity",
+        incomeBalance: "Balance Sheet",
+        companyGroupId,
+        createdBy: "system"
+      })
+      .execute();
+    await trx
+      .insertInto("accountDefault")
+      .values({
+        companyId,
+        ...Object.fromEntries(
+          FILLER_ACCOUNT_DEFAULTS.map((column) => [column, f.account("bank")])
+        ),
+        payablesAccount: f.account("bank"),
+        employeeReimbursementsPayableAccount: f.account("bank")
+      } as unknown as Insertable<KyselyDatabase["accountDefault"]>)
+      .execute();
+    await trx
+      .updateTable("companySettings")
+      .set({ accountingCutoverDate: null })
+      .where("id", "=", companyId)
+      .execute();
+  });
 
   const item = await db
     .insertInto("item")
@@ -125,7 +160,13 @@ async function capitalizationFixture(f: Fixture, unitCost: number) {
     return entity.id;
   };
 
-  return { itemId: item.id, locationId: location.id, assetClass, unit };
+  return {
+    itemId: item.id,
+    locationId: location.id,
+    assetClass,
+    retainedEarnings,
+    unit
+  };
 }
 
 const context = (f: Fixture) =>
@@ -250,7 +291,8 @@ databaseTest(
         trackedEntityId: serial,
         locationId: c.locationId,
         transferDate: "2026-01-02",
-        cost: 4200
+        cost: 4200,
+        offsetAccountId: c.retainedEarnings
       });
       if (posted.error) throw posted.error;
 
@@ -269,6 +311,19 @@ databaseTest(
       expect(Number(transfer.amount)).toEqual(4200);
       expect(transfer.type).toEqual("Capitalization");
       expect(transfer.status).toEqual("Posted");
+      // Before the cutover the journal is Provisional and has no period.
+      const journal = await f.db
+        .selectFrom("journal")
+        .innerJoin("fixedAssetTransfer", (join) =>
+          join
+            .onRef("fixedAssetTransfer.journalId", "=", "journal.id")
+            .onRef("fixedAssetTransfer.companyId", "=", "journal.companyId")
+        )
+        .select(["journal.status", "journal.accountingPeriodId"])
+        .where("fixedAssetTransfer.fixedAssetId", "=", posted.data.fixedAssetId)
+        .executeTakeFirstOrThrow();
+      expect(journal.status).toEqual("Provisional");
+      expect(journal.accountingPeriodId).toBeNull();
       // The unit left stock all the same.
       const entity = await f.db
         .selectFrom("trackedEntity")
@@ -297,7 +352,8 @@ databaseTest(
         trackedEntityId: serial,
         locationId: c.locationId,
         transferDate: "2026-01-02",
-        cost: 4200
+        cost: 4200,
+        offsetAccountId: c.retainedEarnings
       });
       expect(posted.error?.message).toMatch(
         /SN-4 is carried in inventory at a cost/
@@ -343,6 +399,7 @@ databaseTest(
           type: "adjustCost",
           fixedAssetId: asset.id,
           amount,
+          offsetAccountId: c.retainedEarnings,
           locationId: c.locationId,
           transferDate: "2026-03-01"
         });
@@ -455,49 +512,18 @@ databaseTest(
   }
 );
 
-// Accounting on, with a Retained Earnings (Equity) account to credit: the
-// journal must sign each line by its own account's class.
-async function withAccounting(f: Fixture) {
-  const { db, companyId } = f;
-  const company = await db
-    .selectFrom("company")
-    .select("companyGroupId")
-    .where("id", "=", companyId)
-    .executeTakeFirstOrThrow();
-  const companyGroupId = company.companyGroupId;
-  if (!companyGroupId) throw new Error("Expected a company group");
-  const retainedEarnings = f.account("retained-earnings");
-  await db.transaction().execute(async (trx) => {
-    await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
-    await trx
-      .insertInto("account")
-      .values({
-        id: retainedEarnings,
-        name: "Retained Earnings",
-        class: "Equity",
-        incomeBalance: "Balance Sheet",
-        companyGroupId,
-        createdBy: "system"
-      })
-      .execute();
-    await trx
-      .insertInto("accountDefault")
-      .values({
-        companyId,
-        ...Object.fromEntries(
-          FILLER_ACCOUNT_DEFAULTS.map((column) => [column, f.account("bank")])
-        ),
-        payablesAccount: f.account("bank"),
-        employeeReimbursementsPayableAccount: f.account("bank")
-      } as unknown as Insertable<KyselyDatabase["accountDefault"]>)
-      .execute();
-    await trx
-      .updateTable("companySettings")
-      .set({ accountingEnabled: true })
-      .where("id", "=", companyId)
-      .execute();
-  });
-  return { retainedEarnings };
+// After the accounting cutover: the journal is Posted, and must sign each
+// line by its own account's class.
+async function withAccounting(
+  f: Fixture,
+  c: Awaited<ReturnType<typeof capitalizationFixture>>
+) {
+  await f.db
+    .updateTable("companySettings")
+    .set({ accountingCutoverDate: "2000-01-01" })
+    .where("id", "=", f.companyId)
+    .execute();
+  return { retainedEarnings: c.retainedEarnings };
 }
 
 async function journalLines(f: Fixture, journalId: string | null) {
@@ -518,7 +544,7 @@ databaseTest(
     const f = await chargeFixture();
     try {
       const c = await capitalizationFixture(f, 0);
-      const { retainedEarnings } = await withAccounting(f);
+      const { retainedEarnings } = await withAccounting(f, c);
       const serial = await c.unit("SN-8");
 
       const posted = await postAssetTransfer(context(f), {
@@ -585,7 +611,7 @@ databaseTest(
     const f = await chargeFixture();
     try {
       const c = await capitalizationFixture(f, 0);
-      const { retainedEarnings } = await withAccounting(f);
+      const { retainedEarnings } = await withAccounting(f, c);
       const serial = await c.unit("SN-9");
       // Completed by a job that recorded nothing: a layer at zero.
       await f.db

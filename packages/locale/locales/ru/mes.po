@@ -216,7 +216,7 @@ msgid "Available"
 msgstr "Доступно"
 
 msgid "Back"
-msgstr ""
+msgstr "Назад"
 
 msgid "Back to batch"
 msgstr "Вернуться к серии"
@@ -299,7 +299,7 @@ msgid "Choose a job"
 msgstr "Выбрать производственный заказ"
 
 msgid "Choose an option"
-msgstr ""
+msgstr "Выберите вариант"
 
 msgid "Clear"
 msgstr "Очистить"
@@ -368,7 +368,7 @@ msgstr "Завершить"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
 msgid "Complete {0}?"
-msgstr ""
+msgstr "Завершить {0}?"
 
 msgid "Complete All"
 msgstr "Завершить все"
@@ -678,7 +678,7 @@ msgid "First due {0}"
 msgstr "Первый срок {0}"
 
 msgid "Fit"
-msgstr ""
+msgstr "По размеру"
 
 msgid "Fix the highlighted quantities before completing."
 msgstr "Исправьте выделенные количества перед завершением."
@@ -702,7 +702,7 @@ msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
 
 msgid "Heading {level}"
-msgstr ""
+msgstr "Заголовок {level}"
 
 msgid "Hide description"
 msgstr "Скрыть описание"
@@ -826,7 +826,7 @@ msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
 msgid "Left to Right"
-msgstr ""
+msgstr "Слева направо"
 
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
@@ -898,7 +898,7 @@ msgid "Machine down for maintenance now?"
 msgstr "Станок на техобслуживание сейчас?"
 
 msgid "Main"
-msgstr ""
+msgstr "Основное"
 
 msgid "Maintenance"
 msgstr "Техобслуживание"
@@ -953,7 +953,7 @@ msgid "Model"
 msgstr "Модель"
 
 msgid "More"
-msgstr ""
+msgstr "Ещё"
 
 msgid "More actions"
 msgstr "Дополнительные действия"
@@ -1184,7 +1184,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения MRB"
 
 msgid "Open Jobs"
-msgstr ""
+msgstr "Открытые производственные заказы"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
@@ -1212,7 +1212,7 @@ msgid "Optional"
 msgstr "Опционально"
 
 msgid "Options"
-msgstr ""
+msgstr "Параметры"
 
 msgid "or"
 msgstr "или"
@@ -1254,7 +1254,7 @@ msgid "Pause"
 msgstr "Приостановить"
 
 msgid "Pause timer"
-msgstr ""
+msgstr "Приостановить таймер"
 
 msgid "Pick"
 msgstr "Выбрать"
@@ -1312,7 +1312,7 @@ msgid "Press ? on any page to open this list. Shortcuts are ignored while you ty
 msgstr "Нажмите ? на любой странице, чтобы открыть этот список. Горячие клавиши отключены при вводе в поле."
 
 msgid "Press '/' for commands"
-msgstr ""
+msgstr "Нажмите «/» для команд"
 
 msgid "Prev"
 msgstr "Назад"
@@ -1681,7 +1681,7 @@ msgid "Start or pause the operation"
 msgstr "Запустить или приостановить операцию"
 
 msgid "Start timer"
-msgstr ""
+msgstr "Запустить таймер"
 
 msgid "Station User"
 msgstr "Пользователь станции"
@@ -1782,7 +1782,7 @@ msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
 
 msgid "This marks the dispatch as completed."
-msgstr ""
+msgstr "Это отмечает заявку на техобслуживание как завершённую."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Эта деталь была произведена на заказ. Списание может открыть заново ее маршрут для создания замены."
@@ -1819,13 +1819,13 @@ msgid "Today"
 msgstr "Сегодня"
 
 msgid "Toggle labor"
-msgstr ""
+msgstr "Переключить труд"
 
 msgid "Toggle machine"
-msgstr ""
+msgstr "Переключить станок"
 
 msgid "Toggle setup"
-msgstr ""
+msgstr "Переключить наладку"
 
 msgid "Toggle the sidebar"
 msgstr "Открыть/закрыть боковую панель"
@@ -1834,7 +1834,7 @@ msgid "Tools"
 msgstr "Инструменты"
 
 msgid "Top to Bottom"
-msgstr ""
+msgstr "Сверху вниз"
 
 msgid "Total"
 msgstr "Итого"
@@ -1972,7 +1972,7 @@ msgid "Work instructions"
 msgstr "Рабочие инструкции"
 
 msgid "Write a note…"
-msgstr ""
+msgstr "Напишите примечание…"
 
 msgid "Yes"
 msgstr "Да"

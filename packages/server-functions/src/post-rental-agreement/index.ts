@@ -19,6 +19,7 @@ import {
   currencyDecimals,
   type Db,
   insertUnitActivity,
+  LEASE_ACCOUNTS_REQUIRED,
   loadLeaseAccounting,
   lockAgreement,
   postLeaseJournal,
@@ -132,11 +133,10 @@ async function activate(
       agreement.currencyCode
     );
 
-    // One read for the ledger switch and the classification thresholds.
+    // The classification thresholds.
     const settings = await trx
       .selectFrom("companySettings")
       .select([
-        "accountingEnabled",
         "leaseMajorPartThresholdPercent",
         "leaseSubstantiallyAllThresholdPercent"
       ])
@@ -351,7 +351,6 @@ async function activate(
       companyGroupId: company.companyGroupId,
       userId,
       today,
-      accountingEnabled: settings.accountingEnabled,
       plans: plans.filter((plan) => plan.classification === "Sale")
     });
 
@@ -409,14 +408,11 @@ async function activate(
  * Commences every sales-type line of an activating agreement (spec §4), in
  * the caller's transaction: derecognizes the fleet unit (asset Disposed by
  * Sale with a disposal row; the tracked unit Consumed into the lease), posts
- * the 'Lease' commencement journal when accounting is on, and writes the
- * effective-interest schedule — one `rentalLeaseScheduleLine` per payment and,
- * with accounting on, one Planned `Interest` recognition row per line that
- * earns interest (Dr net investment / Cr lease interest income).
- *
- * With accounting off the subledger is identical (asset disposed, schedule
- * written) and nothing is posted: no journal, and no Interest rows, since
- * there is no net investment on a ledger for them to accrue against.
+ * the 'Lease' commencement journal (Provisional before the accounting
+ * cutover, Posted after it), and writes the effective-interest schedule — one
+ * `rentalLeaseScheduleLine` per payment and one Planned `Interest`
+ * recognition row per line that earns interest (Dr net investment / Cr lease
+ * interest income).
  */
 async function commenceSalesTypeLines(
   trx: Trx,
@@ -426,7 +422,6 @@ async function commenceSalesTypeLines(
     companyGroupId: string | null;
     userId: string;
     today: string;
-    accountingEnabled: boolean;
     plans: ActivationPlan[];
   }
 ): Promise<
@@ -480,13 +475,11 @@ async function commenceSalesTypeLines(
     .execute();
   const classById = new Map(classes.map((row) => [row.id, row]));
 
-  const accounting = args.accountingEnabled
-    ? await loadLeaseAccounting(trx, {
-        companyId,
-        companyGroupId: args.companyGroupId,
-        today
-      })
-    : null;
+  const accounting = await loadLeaseAccounting(trx, {
+    companyId,
+    companyGroupId: args.companyGroupId,
+    today
+  });
 
   const scheduleInserts: Array<{
     rentalAgreementLineId: string;
@@ -534,35 +527,32 @@ async function commenceSalesTypeLines(
       locationId: agreement.locationId
     };
 
-    let journalId: string | null = null;
-    if (accounting) {
-      journalId = await postLeaseJournal(trx, {
-        accounting,
-        companyId,
-        userId,
-        postingDate: today,
-        description: `Lease commencement ${agreement.rentalAgreementId} ${serial}`,
-        lines: buildCommencementLines({
-          pvPayments: pv.pvPayments,
-          pvResidual: pv.pvResidual,
-          acquisitionCost,
-          accumulatedDepreciation,
-          accounts: {
-            netInvestmentInLeasesAccountId:
-              accounting.accounts.netInvestmentInLeasesAccount,
-            costOfGoodsSoldAccountId:
-              accounting.accounts.costOfGoodsSoldAccount,
-            leaseRevenueAccountId: accounting.accounts.leaseRevenueAccount,
-            assetAccountId: assetClass.assetAccountId,
-            accumulatedDepreciationAccountId:
-              assetClass.accumulatedDepreciationAccountId
-          }
-        }),
-        rentalAgreementId: agreement.id,
-        rentalAgreementLineId: plan.lineId,
-        tags
-      });
-    }
+    const journalId = await postLeaseJournal(trx, {
+      accounting,
+      companyId,
+      userId,
+      postingDate: today,
+      description: `Lease commencement ${agreement.rentalAgreementId} ${serial}`,
+      lines: buildCommencementLines({
+        pvPayments: pv.pvPayments,
+        pvResidual: pv.pvResidual,
+        acquisitionCost,
+        accumulatedDepreciation,
+        accounts: {
+          netInvestmentInLeasesAccountId:
+            accounting.accounts.netInvestmentInLeasesAccount,
+          costOfGoodsSoldAccountId: accounting.accounts.costOfGoodsSoldAccount,
+          leaseRevenueAccountId: accounting.accounts.leaseRevenueAccount,
+          assetAccountId: assetClass.assetAccountId,
+          accumulatedDepreciationAccountId:
+            assetClass.accumulatedDepreciationAccountId
+        },
+        accountDefaultRoles: accounting.accountDefaultRoles
+      }),
+      rentalAgreementId: agreement.id,
+      rentalAgreementLineId: plan.lineId,
+      tags
+    });
 
     // The unit leaves the register: sold to the lease at its net investment.
     // Guarded on the statuses activation accepted, so a concurrent disposal
@@ -655,16 +645,14 @@ async function commenceSalesTypeLines(
         createdBy: userId
       });
     }
-    if (accounting) {
-      for (const row of interestRows(schedule, spans)) {
-        pendingInterest.push({
-          rentalAgreementLineId: plan.lineId,
-          periodStart: row.periodStart,
-          periodEnd: row.periodEnd,
-          scheduledDate: row.scheduledDate,
-          amount: row.amount
-        });
-      }
+    for (const row of interestRows(schedule, spans)) {
+      pendingInterest.push({
+        rentalAgreementLineId: plan.lineId,
+        periodStart: row.periodStart,
+        periodEnd: row.periodEnd,
+        scheduledDate: row.scheduledDate,
+        amount: row.amount
+      });
     }
 
     result.set(plan.lineId, {
@@ -694,7 +682,13 @@ async function commenceSalesTypeLines(
       row.id
     ])
   );
-  if (accounting && pendingInterest.length > 0) {
+  if (pendingInterest.length > 0) {
+    // A Planned schedule row is not re-pointed at the cutover, so it names
+    // the real accounts or the activation is refused.
+    const { interestAccounts } = accounting;
+    if (!interestAccounts) {
+      throw new InvalidInputError(LEASE_ACCOUNTS_REQUIRED);
+    }
     await trx
       .insertInto("revenueRecognitionSchedule")
       .values(
@@ -714,8 +708,8 @@ async function commenceSalesTypeLines(
             periodEnd: row.periodEnd,
             scheduledDate: row.scheduledDate,
             amount: row.amount,
-            debitAccountId: accounting.accounts.netInvestmentInLeasesAccount,
-            creditAccountId: accounting.accounts.leaseInterestIncomeAccount,
+            debitAccountId: interestAccounts.debitAccountId,
+            creditAccountId: interestAccounts.creditAccountId,
             companyId,
             createdBy: userId
           };
@@ -999,8 +993,8 @@ async function cancel(
       invoicedPeriods: state.invoicedPeriods,
       billedCharges: state.billedCharges,
       recognizedRows: Number(recognized.count),
-      // Booked at activation: journal when accounting is on, the net
-      // investment either way (the unit was disposed regardless).
+      // Booked at activation: the journal and the net investment (the
+      // unit was disposed).
       commencedSalesTypeLines: state.lines.filter(
         (line) =>
           line.lessorClassification === "Sale" &&

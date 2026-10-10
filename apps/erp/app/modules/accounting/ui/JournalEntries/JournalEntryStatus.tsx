@@ -20,7 +20,9 @@ const JournalEntryStatus = ({ status }: JournalEntryStatusProps) => {
   const labels: Record<(typeof journalEntryStatuses)[number], string> = {
     Draft: t`Draft`,
     Posted: t`Posted`,
-    Reversed: t`Reversed`
+    Reversed: t`Reversed`,
+    Provisional: t`Provisional`,
+    Superseded: t`Before cutover`
   };
 
   return <Status color={color}>{labels[status] ?? status}</Status>;

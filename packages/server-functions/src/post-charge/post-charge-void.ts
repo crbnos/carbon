@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { OPEN_ITEM_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import { getNextSequence } from "@carbon/database/sequence";
+import {
+  CHARGE_VOID_BEFORE_CUTOVER_ERROR,
+  refuseVoidBeforeCutover
+} from "../lib/cutover-void";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { allocateJournalLineIds } from "./journal-line-ids";
 import type { ChargeContext } from "./post-charge-post";
@@ -10,22 +15,20 @@ import type { ChargeContext } from "./post-charge-post";
 export async function voidCharge(
   context: ChargeContext
 ): Promise<{ journalId: string | null }> {
-  const {
+  const { trx, charge, postingStatus, companyId, userId, timestamp, today } =
+    context;
+
+  // The enable superseded the journal of a charge dated before the cutover
+  // and opened its balances in the opening journal, so a reversal of its own
+  // lines would undo nothing. The date is the one the posting used.
+  await refuseVoidBeforeCutover(
     trx,
-    charge,
-    accountingEnabled,
     companyId,
-    userId,
-    timestamp,
-    today
-  } = context;
+    charge.postingDate ?? charge.transactionDate,
+    CHARGE_VOID_BEFORE_CUTOVER_ERROR
+  );
 
   if (charge.journalId) {
-    if (!accountingEnabled) {
-      throw new Error(
-        "Enable accounting before reversing a posted charge journal"
-      );
-    }
     const originalJournal = await trx
       .selectFrom("journal")
       .select(["id", "status", "sourceType"])
@@ -35,7 +38,9 @@ export async function voidCharge(
       .executeTakeFirst();
     if (
       !originalJournal ||
-      originalJournal.status !== "Posted" ||
+      !(OPEN_ITEM_JOURNAL_STATUSES as readonly string[]).includes(
+        originalJournal.status
+      ) ||
       originalJournal.sourceType !== "Charge"
     ) {
       throw new Error("Original charge journal has invalid provenance");
@@ -43,6 +48,7 @@ export async function voidCharge(
     const originalLines = await trx
       .selectFrom("journalLine")
       .selectAll()
+      // The journal's status was checked above, under FOR SHARE.
       .where("journalId", "=", originalJournal.id)
       .where("companyId", "=", companyId)
       .orderBy("id")
@@ -56,22 +62,22 @@ export async function voidCharge(
     ) {
       throw new Error("Original charge journal has invalid lines");
     }
-    const period = await resolveAccountingPeriod(
-      trx,
-      companyId,
-      today,
-      "current"
-    );
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
     const reversal = await trx
       .insertInto("journal")
       .values({
         journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-        accountingPeriodId: period.id,
+        accountingPeriodId: period?.id ?? null,
         description: `VOID Charge ${charge.chargeId}`,
-        postingDate: period.postingDate,
+        postingDate: period?.postingDate ?? today,
         companyId,
         sourceType: "Charge",
-        status: "Posted",
+        status: postingStatus,
         postedAt: timestamp,
         postedBy: userId,
         createdBy: userId
@@ -96,6 +102,7 @@ export async function voidCharge(
           documentId: charge.id,
           documentLineReference: line.documentLineReference,
           journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
           companyId
         }))
       )

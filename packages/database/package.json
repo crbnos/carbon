@@ -34,6 +34,7 @@
     "./contract-revenue-schedule": "./src/contract-revenue-schedule.ts",
     "./contract-position": "./src/contract-position.ts",
     "./revenue-schedule": "./src/revenue-schedule.ts",
+    "./run-journals": "./src/run-journals.ts",
     "./picked-consumption": "./src/picked-consumption.ts",
     "./realtime-tables": "./src/realtime-tables.ts",
     "./posting": "./src/posting.ts",
@@ -53,9 +54,16 @@
     "./precision": "./src/precision.ts",
     "./accounting-currency": "./src/accounting-currency.ts",
     "./accounting-posting": "./src/accounting-posting.ts",
+    "./journal-posting-status": "./src/journal-posting-status.ts",
+    "./accounting-cutover": "./src/accounting-cutover.ts",
+    "./cost-relief": "./src/cost-relief.ts",
+    "./accounting-cutover-dates": "./src/accounting-cutover-dates.ts",
+    "./accounting-cutover-reads": "./src/accounting-cutover-reads.ts",
+    "./legacy-documents": "./src/legacy-documents.ts",
     "./sales-posting-amounts": "./src/sales-posting-amounts.ts",
     "./ledger": "./src/ledger.ts",
-    "./deposit-scope": "./src/deposit-scope.ts"
+    "./deposit-scope": "./src/deposit-scope.ts",
+    "./payment-processor-fee": "./src/payment-processor-fee.ts"
   },
   "private": true,
   "scripts": {

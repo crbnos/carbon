@@ -159,10 +159,38 @@ describe("noUnscopedKyselyWrite", () => {
     expect(scan(ts)).toHaveLength(0);
   });
 
-  it("exempts the company table, whose id is the tenant", () => {
-    const ts =
-      'await trx.updateTable("company").set(fields).where("id", "=", companyId).execute();';
-    expect(scan(ts)).toHaveLength(0);
+  it("accepts an id predicate on company and companySettings, whose id is the tenant", () => {
+    for (const table of ["company", "companySettings"]) {
+      const ts = `await trx.updateTable("${table}").set(fields).where("id", "=", companyId).execute();`;
+      expect(scan(ts)).toHaveLength(0);
+    }
+    expect(
+      scan(
+        'await updateRows(db, "companySettings", { digitalReceipts }, { id: companyId });'
+      )
+    ).toHaveLength(0);
+  });
+
+  it("flags a company or companySettings write with no where", () => {
+    for (const table of ["company", "companySettings"]) {
+      expect(
+        scan(`await trx.updateTable("${table}").set(fields).execute();`)
+      ).toHaveLength(1);
+      expect(scan(`await trx.deleteFrom("${table}").execute();`)).toHaveLength(
+        1
+      );
+    }
+    expect(
+      scan('await updateRows(db, "companySettings", { digitalReceipts }, {});')
+    ).toHaveLength(1);
+  });
+
+  it("does not let an id predicate scope any other table", () => {
+    expect(
+      scan(
+        'await trx.updateTable("item").set(fields).where("id", "=", id).execute();'
+      )
+    ).toHaveLength(1);
   });
 
   it("covers routes, MES and jobs", () => {

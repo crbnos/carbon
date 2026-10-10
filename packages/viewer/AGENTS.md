@@ -46,6 +46,7 @@ pnpm --filter @carbon/viewer typecheck   # tsgo --noEmit
 | `.` | `AssemblyPlayer` (+ `AssemblyPlayerHandle`/`Props`), `AssemblyViewer`, `ModelCanvas`, all plan/motion/graph/camera/describe/visibility helpers and types |
 | `./steps` | Three-free plan→steps logic for server code: `buildAssemblyStepGroups`, `assignStepPhases`, `indexAssemblyGraph`, `CURRENT_PLAN_VERSION` |
 | `./canvas` | `ModelCanvas` — standalone static GLB viewer (orbit + view, no steps) |
+| `./empty-cabinet` | `EmptyCabinet` — the rendered filing cabinet on ERP empty states (`~/components/Empty`). Lazy-imports `empty-cabinet/scene.ts`, which builds the cabinet procedurally and renders every instance on ONE shared `WebGLRenderer`, copied into a per-instance 2D canvas (browsers cap live WebGL contexts at ~16). Colours come from the theme's CSS variables |
 | `./model-preview` | `ModelPreview` — progressive multi-tier preview (LOD → optimised → raw WASM), lazy-loads three.js on scroll-into-view |
 | `./optimize-progress` | `OptimizeProgress` — optimise-status chip |
 | `./use-optimized-model` | `useOptimizedModel` — TanStack Query polling of the model optimise lifecycle (shared by ERP `CadModel` + MES model tab) |

@@ -54,9 +54,15 @@
 #
 set -euo pipefail
 # Private, unpredictable error-log path (a fixed /tmp name is symlink-attackable
-# and can be pre-created by another local user).
-RESTORE_LOG="$(mktemp "${TMPDIR:-/tmp}/restore-errors.XXXXXX.log")"
+# and can be pre-created by another local user). The X's must END the template:
+# BSD mktemp (macOS) only replaces trailing X's, so a ".log" suffix left the
+# literal name restore-errors.XXXXXX.log — fixed, and refused on the next run.
+RESTORE_LOG="$(mktemp "${TMPDIR:-/tmp}/restore-errors.XXXXXX")"
+# Scratch files for this run (column map, filter stats, object lists).
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/restore-work.XXXXXX")"
+trap 'rm -rf "$WORK_DIR"' EXIT
 RESTORE_INCOMPLETE=""
+RESTORE_UNVERIFIED=""
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-localpass}"
 SCRUB_EMAILS="${SCRUB_EMAILS:-}"
@@ -157,7 +163,7 @@ if head -c 5 "$BACKUP_FILE" | grep -q '^PGDMP'; then
   pg_restore -h 127.0.0.1 -p "$PORT_DB" -U supabase_admin -d postgres \
     --no-owner --no-privileges \
     "$BACKUP_FILE" 2> "$RESTORE_LOG" || true
-  restore_pipe=(0 0)
+  restore_pipe=(0 0 0)
 else
   # Plain-text SQL: strip PG17 \restrict/\unrestrict so psql isn't sandboxed.
   # The pipeline must not run bare under `set -e`: if the server drops the
@@ -167,11 +173,99 @@ else
   # the local DB with no warning. But a blanket `|| true` would ALSO swallow an
   # unreadable backup or a psql that never connected, so capture PIPESTATUS and
   # sort the failure modes out below.
+  #
+  # Fit every non-public COPY block to the LOCAL table before psql sees it.
+  # The auth/storage/realtime tables already exist here, built by THIS stack's
+  # GoTrue/Storage/Realtime images, and their columns drift from the source's
+  # (storage.objects gained "archived_at" in prod before it did locally). A
+  # COPY naming a column or table that doesn't exist fails at PARSE time, so
+  # psql never enters copy mode and reads the block's data rows as SQL. One
+  # unbalanced quote in that data then swallows the rest of the file: every
+  # index, constraint, trigger and policy, and the migration ledger — after
+  # which the trailing `migration up --include-all` replays every migration.
+  # So: drop the columns the local table lacks (dropping each row's matching
+  # field), and drop the whole block when a local schema lacks the table
+  # (realtime's dated message partitions). A schema that doesn't exist locally
+  # is the dump's own to create and passes through untouched; so does public,
+  # dropped above. Generated columns count as absent: COPY refuses them too.
+  #
+  # The same drift reaches DDL: the backup carries the source's NEWER service
+  # functions (storage.protect_bucket_control_columns), and the trigger it then
+  # creates reads columns this stack's storage.buckets lacks — every bucket
+  # insert fails, the re-seed below included. Functions owned by a service's
+  # admin role belong to THIS stack's image, so the backup's are skipped: one
+  # that exists locally would only fail "already exists" anyway, and a trigger
+  # calling one that doesn't fails to create, harmlessly.
+  COLUMN_MAP="$WORK_DIR/local-columns.txt"
+  COPY_STATS="$WORK_DIR/copy-filter.txt"
+  $PSQL_SA -At -c "
+    SELECT n.nspname || '.' || c.relname || '|' || a.attname
+    FROM pg_attribute a
+    JOIN pg_class c ON c.oid = a.attrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE c.relkind IN ('r', 'p') AND a.attnum > 0
+      AND NOT a.attisdropped AND a.attgenerated = ''
+      AND n.nspname NOT IN ('public', 'information_schema')
+      AND n.nspname NOT LIKE 'pg\_%'
+    UNION ALL
+    SELECT nspname || '|' FROM pg_namespace
+    WHERE nspname NOT IN ('public', 'information_schema')
+      AND nspname NOT LIKE 'pg\_%'
+  " > "$COLUMN_MAP"
   if sed -E '/^\\(restrict|unrestrict)([[:space:]]|$)/d' "$BACKUP_FILE" \
+    | awk -v map="$COLUMN_MAP" -v stats="$COPY_STATS" '
+      function unquote(s) { gsub(/"/, "", s); return s }
+      BEGIN {
+        while ((getline line < map) > 0) {
+          bar = index(line, "|")
+          key = substr(line, 1, bar - 1); col = substr(line, bar + 1)
+          if (col == "") localSchema[key] = 1; else { localTable[key] = 1; localCol[key "|" col] = 1 }
+        }
+      }
+      mode == "skip" { if ($0 == "\\.") mode = ""; next }
+      mode == "data" { print; if ($0 == "\\.") mode = ""; next }
+      mode == "project" {
+        if ($0 == "\\.") { mode = ""; print; next }
+        n = split($0, f, "\t"); out = ""
+        for (i = 1; i <= kept; i++) out = out (i > 1 ? "\t" : "") f[keep[i]]
+        print out; next
+      }
+      # A skipped function runs up to the next object header, which is then
+      # handled below like any other line.
+      mode == "function" { if ($0 !~ /^-- Name: /) next; mode = "" }
+      /^-- Name: .*; Type: FUNCTION; Schema: [a-z_]+; Owner: supabase_(auth|storage|realtime|functions)_admin$/ {
+        mode = "function"; functions++; next
+      }
+      /^COPY public\./ { print; mode = "data"; next }
+      /^COPY / {
+        open = index($0, " ("); table = unquote(substr($0, 6, open - 6))
+        schema = substr(table, 1, index(table, ".") - 1)
+        if (!(schema in localSchema)) { print; mode = "data"; next }
+        if (!(table in localTable)) {
+          mode = "skip"; print "skipped " table " (no such table here)" > stats; next
+        }
+        cols = substr($0, open + 2); cols = substr(cols, 1, index(cols, ") FROM stdin;") - 1)
+        n = split(cols, c, ", "); kept = 0; header = ""; dropped = ""
+        for (i = 1; i <= n; i++) {
+          if ((table "|" unquote(c[i])) in localCol) { keep[++kept] = i; header = header (kept > 1 ? ", " : "") c[i] }
+          else dropped = dropped " " unquote(c[i])
+        }
+        if (dropped == "") { print; mode = "data"; next }
+        if (kept == 0) { mode = "skip"; print "skipped " table " (no shared columns)" > stats; next }
+        mode = "project"; print "trimmed " table " (dropped:" dropped ")" > stats
+        print "COPY " substr($0, 6, open - 6) " (" header ") FROM stdin;"; next
+      }
+      { print }
+      END { if (functions) print "kept this stack'"'"'s own service functions (skipped the backup'"'"'s " functions ")" > stats }
+    ' \
     | $PSQL_SA -v ON_ERROR_STOP=0 2> "$RESTORE_LOG"; then
-    restore_pipe=(0 0)
+    restore_pipe=(0 0 0)
   else
     restore_pipe=("${PIPESTATUS[@]}")
+  fi
+  if [[ -s "$COPY_STATS" ]]; then
+    echo "  → fitted the backup to this stack's auth/storage/realtime schemas:"
+    sed 's/^/      /' "$COPY_STATS"
   fi
 fi
 err_count=$(grep -ci '^\(pg_restore: \)\?error' "$RESTORE_LOG" || true)
@@ -180,8 +274,9 @@ echo "  → $RESTORE_LOG ($err_count errors; most are harmless 'already exists' 
 # failure we deliberately continue through (Docker restarts Postgres, and the
 # post-restore safety steps — localization, email scrub — must still run over
 # whatever data landed); the script then exits nonzero at the END. Note the
-# connection-loss check comes first: when psql dies mid-pipe, sed is killed by
-# SIGPIPE too, so its exit code is only meaningful when the connection held.
+# connection-loss check comes first: when psql dies mid-pipe, sed and awk are
+# killed by SIGPIPE too, so their exit codes only mean something when the
+# connection held. restore_pipe is (sed, awk, psql).
 if grep -qE 'server closed the connection|connection to server was lost' "$RESTORE_LOG"; then
   RESTORE_INCOMPLETE=1
   echo "  ⚠ the server connection dropped during the restore — the restored data is"
@@ -191,7 +286,10 @@ elif [[ "${restore_pipe[0]:-0}" -ne 0 ]]; then
   echo "✗ Could not read the backup file (exit ${restore_pipe[0]}) — nothing was restored." >&2
   exit 1
 elif [[ "${restore_pipe[1]:-0}" -ne 0 ]]; then
-  echo "✗ psql failed before the data load completed (exit ${restore_pipe[1]}) — see $RESTORE_LOG" >&2
+  echo "✗ The COPY filter failed (exit ${restore_pipe[1]}) — nothing past that point was restored." >&2
+  exit 1
+elif [[ "${restore_pipe[2]:-0}" -ne 0 ]]; then
+  echo "✗ psql failed before the data load completed (exit ${restore_pipe[2]}) — see $RESTORE_LOG" >&2
   exit 1
 fi
 for attempt in $(seq 1 30); do
@@ -209,6 +307,107 @@ done
 # Reapply superuser to postgres (the dump's ALTER ROLE strips it).
 $PSQL_SA -c "ALTER ROLE postgres WITH SUPERUSER CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;" \
   >/dev/null 2>&1 || true
+# ── 3a. Verify the schema landed ────────────────────────────────────────────
+# psql under ON_ERROR_STOP=0 reports a restore that lost its whole post-data
+# section exactly like a clean one, so check by NAME: every index, constraint,
+# trigger and policy the dump defines in public must exist now (public was
+# dropped first, so everything there came from the dump), and the migration
+# ledger must hold every row the dump's does — a short ledger makes the
+# trailing `migration up --include-all` replay migrations onto a schema that
+# already has them.
+echo "▶ Verifying the restored schema against the backup"
+# Every read below tolerates failure (|| true): this runs BEFORE the email
+# scrub, so it must never abort the script. A read that fails leaves its
+# expectation empty or its live side short, which reports as ✗ below.
+EXPECTED_OBJECTS="$WORK_DIR/expected-objects.txt"
+LIVE_OBJECTS="$WORK_DIR/live-objects.txt"
+MISSING_OBJECTS="$WORK_DIR/missing-objects.txt"
+POST_DATA_SQL="$WORK_DIR/post-data.sql"
+if head -c 5 "$BACKUP_FILE" | grep -q '^PGDMP'; then
+  pg_restore -l "$BACKUP_FILE" \
+    | sed -nE 's/^[0-9]+; [0-9]+ [0-9]+ (INDEX|CONSTRAINT|FK CONSTRAINT|TRIGGER|POLICY) public (.*) [^ ]+$/\1|\2/p' \
+    > "$EXPECTED_OBJECTS" || true
+  pg_restore --section=post-data -f "$POST_DATA_SQL" "$BACKUP_FILE" 2>>"$RESTORE_LOG" || true
+  EXPECTED_LEDGER=$(pg_restore -a -n supabase_migrations -t schema_migrations -f - "$BACKUP_FILE" 2>>"$RESTORE_LOG" \
+    | awk '/^COPY /{on=1; next} /^\\\.$/{on=0} on{n++} END{print n+0}' || true)
+else
+  # pg_dump heads every object with "-- Name: <tag>; Type: <type>; Schema: <schema>;".
+  sed -nE 's/^-- Name: (.*); Type: (INDEX|CONSTRAINT|FK CONSTRAINT|TRIGGER|POLICY); Schema: public;.*/\2|\1/p' \
+    "$BACKUP_FILE" > "$EXPECTED_OBJECTS"
+  POST_DATA_SQL="$BACKUP_FILE"
+  EXPECTED_LEDGER=$(awk '/^COPY supabase_migrations\.schema_migrations /{on=1; next} on && /^\\\.$/{exit} on{n++} END{print n+0}' "$BACKUP_FILE")
+fi
+list_live_objects() {
+  $PSQL_PG -At -c "
+    SELECT 'INDEX|' || c.relname
+    FROM pg_index i
+    JOIN pg_class c ON c.oid = i.indexrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+    UNION ALL
+    SELECT CASE WHEN con.contype = 'f' THEN 'FK CONSTRAINT|' ELSE 'CONSTRAINT|' END
+           || rel.relname || ' ' || con.conname
+    FROM pg_constraint con
+    JOIN pg_class rel ON rel.oid = con.conrelid
+    JOIN pg_namespace n ON n.oid = rel.relnamespace
+    WHERE n.nspname = 'public'
+    UNION ALL
+    SELECT 'TRIGGER|' || rel.relname || ' ' || t.tgname
+    FROM pg_trigger t
+    JOIN pg_class rel ON rel.oid = t.tgrelid
+    JOIN pg_namespace n ON n.oid = rel.relnamespace
+    WHERE n.nspname = 'public' AND NOT t.tgisinternal
+    UNION ALL
+    SELECT 'POLICY|' || tablename || ' ' || policyname FROM pg_policies WHERE schemaname = 'public'
+  " 2>>"$RESTORE_LOG" | LC_ALL=C sort -u > "$LIVE_OBJECTS" || true
+  LC_ALL=C sort -u "$EXPECTED_OBJECTS" | LC_ALL=C comm -23 - "$LIVE_OBJECTS" > "$MISSING_OBJECTS"
+}
+list_live_objects
+# A Supabase backup is not one consistent snapshot: rows written while it ran
+# can reference parents that were dumped before them (seen: payments whose
+# journal is absent from the dump). Such a foreign key cannot be validated, so
+# it is re-added NOT VALID — the schema matches the source, the existing
+# orphans stay as they were, and new writes and cascades are enforced.
+if grep -q '^FK CONSTRAINT|' "$MISSING_OBJECTS"; then
+  awk -v missing="$MISSING_OBJECTS" '
+    BEGIN { while ((getline l < missing) > 0) if (l ~ /^FK CONSTRAINT\|/) want[substr(l, 15)] = 1 }
+    /^ALTER TABLE (ONLY )?public\./ { hdr = $0; t = $NF; sub(/^public\./, "", t); gsub(/"/, "", t); next }
+    hdr != "" && /^    ADD CONSTRAINT .* FOREIGN KEY .*;$/ {
+      name = $3; gsub(/"/, "", name)
+      if ((t " " name) in want) { line = $0; sub(/;$/, " NOT VALID;", line); print hdr; print line }
+    }
+    { hdr = "" }
+  ' "$POST_DATA_SQL" | $PSQL_PG -v ON_ERROR_STOP=0 >/dev/null 2>>"$RESTORE_LOG" || true
+  readded=$(grep -c '^FK CONSTRAINT|' "$MISSING_OBJECTS" || true)
+  list_live_objects
+  readded=$((readded - $(grep -c '^FK CONSTRAINT|' "$MISSING_OBJECTS" || true)))
+  if [[ "$readded" -gt 0 ]]; then
+    echo "  ✓ re-added $readded foreign key(s) NOT VALID — the backup holds rows whose"
+    echo "    parent rows it does not (it was not taken as one consistent snapshot)"
+  fi
+fi
+LIVE_LEDGER=$($PSQL_PG -At -c "SELECT count(*) FROM supabase_migrations.schema_migrations" 2>/dev/null || echo 0)
+expected_count=$(LC_ALL=C sort -u "$EXPECTED_OBJECTS" | wc -l | tr -d ' ')
+missing_count=$(wc -l < "$MISSING_OBJECTS" | tr -d ' ')
+if [[ "$expected_count" -eq 0 ]]; then
+  RESTORE_UNVERIFIED=1
+  echo "  ✗ found no public indexes, constraints, triggers or policies in the backup's"
+  echo "    object list — the restored schema could NOT be verified"
+elif [[ "$missing_count" -gt 0 ]]; then
+  RESTORE_UNVERIFIED=1
+  echo "  ✗ $missing_count of the backup's $expected_count public indexes/constraints/triggers/policies are MISSING:"
+  head -20 "$MISSING_OBJECTS" | sed 's/^/      /'
+  [[ "$missing_count" -gt 20 ]] && echo "      … and $((missing_count - 20)) more"
+else
+  echo "  ✓ all $expected_count public indexes, constraints, triggers and policies present"
+fi
+if [[ "$LIVE_LEDGER" -lt "${EXPECTED_LEDGER:-0}" ]]; then
+  RESTORE_UNVERIFIED=1
+  echo "  ✗ the migration ledger holds $LIVE_LEDGER of the backup's $EXPECTED_LEDGER rows —"
+  echo "    applying migrations now would replay ones this schema already has"
+else
+  echo "  ✓ migration ledger restored ($LIVE_LEDGER rows)"
+fi
 # Realign pgmq queue sequences with restored max msg_id. The dump COPYs
 # pgmq.q_* rows but doesn't reset the underlying sequences, so the first
 # trigger-fired INSERT after restore collides on the primary key.
@@ -297,9 +496,23 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO storage.buckets (id, name, public)
 SELECT id, id, false FROM public.company
 ON CONFLICT (id) DO NOTHING;
-" >/dev/null 2>&1 || true
-BUCKET_COUNT=$($PSQL_PG -At -c "SELECT count(*) FROM storage.buckets;" 2>/dev/null || echo "?")
-echo "  ✓ $BUCKET_COUNT storage buckets present (5 fixed + one per company)"
+" >/dev/null 2>"$WORK_DIR/buckets.err" || true
+cat "$WORK_DIR/buckets.err" >> "$RESTORE_LOG"
+# Every company needs its bucket (uploads go there), so a short count is a
+# broken restore, not a number to eyeball.
+BUCKET_COUNT=$($PSQL_PG -At -c "SELECT count(*) FROM storage.buckets;" 2>/dev/null || echo 0)
+BUCKETS_EXPECTED=$($PSQL_PG -At -c "SELECT 5 + count(*) FROM public.company;" 2>/dev/null || echo 5)
+if [[ "$BUCKET_COUNT" -ge "$BUCKETS_EXPECTED" ]]; then
+  echo "  ✓ $BUCKET_COUNT storage buckets present (5 fixed + one per company)"
+else
+  RESTORE_UNVERIFIED=1
+  echo "  ✗ $BUCKET_COUNT of $BUCKETS_EXPECTED storage buckets present — the re-seed failed:"
+  grep -m 2 -E '^(ERROR|CONTEXT)' "$WORK_DIR/buckets.err" | sed 's/^/      /' || true
+  # Only public is dropped, so service-schema objects a PREVIOUS restore put
+  # there (before the backup's service functions were skipped) are still here.
+  echo "    A storage trigger left by an earlier restore is the usual cause: drop the"
+  echo "    function named above (DROP FUNCTION storage.<name> CASCADE) and re-run."
+fi
 # ── 3b. Localize environment-sensitive rows (RESTORE_MODE=local only) ───────
 if [[ "$RESTORE_MODE" == "local" ]]; then
 # The dump carries prod's singleton "config" row and Vault secrets (among them
@@ -313,14 +526,20 @@ ANON_KEY=$(grep '^SUPABASE_ANON_KEY=' "$REPO_ROOT/.env.local" 2>/dev/null | cut 
 if [[ -n "$ANON_KEY" ]]; then
   # Same values crbn seeds (packages/dev/src/services/migrations.ts
   # ensureConfigRow): apiUrl must be the in-network Kong URL — pg_net runs
-  # inside the postgres container and can't reach host ports.
-  $PSQL_PG -v ON_ERROR_STOP=0 -v anon_key="$ANON_KEY" <<'SQL' >/dev/null
+  # inside the postgres container and can't reach host ports. An UPDATE then
+  # an INSERT-if-empty rather than ON CONFLICT: the upsert needs the table's
+  # primary key, and a restore that lost constraints has none.
+  if $PSQL_PG -v ON_ERROR_STOP=1 -v anon_key="$ANON_KEY" <<'SQL' >/dev/null; then
+UPDATE "config" SET "apiUrl" = 'http://kong:8000', "anonKey" = :'anon_key';
 INSERT INTO "config" ("id", "apiUrl", "anonKey")
-VALUES (TRUE, 'http://kong:8000', :'anon_key')
-ON CONFLICT ("id") DO UPDATE
-  SET "apiUrl" = EXCLUDED."apiUrl", "anonKey" = EXCLUDED."anonKey";
+SELECT TRUE, 'http://kong:8000', :'anon_key'
+WHERE NOT EXISTS (SELECT 1 FROM "config");
 SQL
-  echo "  ✓ config row → http://kong:8000 with local anon key"
+    echo "  ✓ config row → http://kong:8000 with local anon key"
+  else
+    echo "  ⚠ could not localize the config row — it may still point at the source"
+    echo "    environment; 'crbn up' reseeds it, or update public.config by hand."
+  fi
 else
   echo "  ⚠ SUPABASE_ANON_KEY not found in $REPO_ROOT/.env.local — config row still"
   echo "    points at prod: the event queue (audit logs, webhooks) will NOT process"
@@ -612,6 +831,14 @@ if [[ -n "$RESTORE_INCOMPLETE" ]]; then
   echo "✗ The server connection dropped during the restore, so the data load is likely" >&2
   echo "  incomplete. Localization and the email scrub DID run over what landed." >&2
   echo "  Check $RESTORE_LOG, then re-run this script end-to-end." >&2
+  exit 1
+fi
+# Same for a schema that did not fully land (step 3a) or missing buckets. Exiting nonzero also
+# stops `crbn restore` before it applies migrations onto that schema.
+if [[ -n "$RESTORE_UNVERIFIED" ]]; then
+  echo "✗ The restore did not land cleanly (see the ✗ lines above)." >&2
+  echo "  Localization and the email scrub DID run. Do NOT apply migrations to this" >&2
+  echo "  database; check $RESTORE_LOG, then re-run this script end-to-end." >&2
   exit 1
 fi
 echo "✅ Done — Studio: http://127.0.0.1:$((PORT_DB+2))   (port_db+2 is the Studio port crbn assigned)"

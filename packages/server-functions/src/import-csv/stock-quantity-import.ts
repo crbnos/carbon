@@ -11,14 +11,14 @@
 //   "Inventory Adjustment" attributes stamp as a new entity there).
 // - The movement writes what the shared posting core (`bookAdjustment`) writes
 //   for a positive adjustment: item ledger + cost layer at the item's current
-//   cost + (when companySettings.accountingEnabled) a balanced journal against
-//   the inventory adjustment variance account. EVERY one of those rows is
+//   cost + a balanced journal (Provisional before the accounting cutover,
+//   Posted after it) against the inventory adjustment variance account. EVERY one of those rows is
 //   BUILT by the pure builders `bookAdjustment` itself uses
 //   (`../lib/plan-adjustment.ts`: `buildItemLedgerRow`, `buildCostLedgerRow`,
 //   `buildAdjustmentJournalLines`, `buildJournalLineDimensions`) and
 //   inserted in bulk — one statement per table per chunk instead of ~7 round
 //   trips per row, which keeps a large file fast.
-// - With accounting on, the whole import shares ONE adjustment journal,
+// - The whole import shares ONE adjustment journal,
 //   created lazily on the first movement that carries value — the
 //   post-inventory-count pattern.
 //
@@ -27,6 +27,10 @@
 
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import { many, single } from "@carbon/database/rows";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -254,70 +258,57 @@ export async function importStockQuantities(
     .toString();
   const nowIso = datetime.timestamp();
 
-  const accountingSettings = await single(
-    db,
-    "companySettings",
-    { id: companyId },
-    { columns: ["accountingEnabled"] }
-  );
-  // Fail closed: a failed settings read must not silently post without GL.
-  if (accountingSettings.error) {
-    throw new Error("Failed to fetch company settings");
-  }
-  const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
-  const accountDefaults = accountingEnabled
-    ? await getDefaultPostingGroup(db, companyId)
-    : null;
-  if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
+  // The journal is Provisional before the company's accounting cutover and
+  // Posted after it. Read here to decide whether to resolve a period, and
+  // again inside the transaction. A Provisional journal has no period.
+  const postingStatus = await journalPostingStatus(db, companyId);
+  const accountDefaults = await getDefaultPostingGroup(db, companyId);
+  if (accountDefaults.error || !accountDefaults.data) {
     throw new Error("Error getting account defaults");
   }
-  const accountingPeriodId = accountingEnabled
-    ? await getCurrentAccountingPeriod(companyId, db, today)
-    : null;
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, db, today)
+      : null;
 
   // Active dimensions for the company group — journal lines get Item /
   // ItemPostingGroup / Location tags.
   const dimensionMap: Record<string, string> = {};
-  if (accountingEnabled) {
-    const companyRecord = await single(
-      db,
-      "company",
-      { id: companyId },
-      { columns: ["companyGroupId"] }
-    );
-    if (companyRecord.error) throw new Error("Failed to fetch company");
-    const dimensions = await many(
-      db,
-      "dimension",
-      {
-        companyGroupId: companyRecord.data.companyGroupId!,
-        active: true,
-        entityType: ["Item", "ItemPostingGroup", "Location"]
-      },
-      { columns: ["id", "entityType"] }
-    );
-    // Fail closed: journal lines must not silently lose dimension tags.
-    if (dimensions.error) throw new Error("Failed to fetch dimensions");
-    for (const dim of dimensions.data ?? []) {
-      if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
-    }
+  const companyRecord = await single(
+    db,
+    "company",
+    { id: companyId },
+    { columns: ["companyGroupId"] }
+  );
+  if (companyRecord.error) throw new Error("Failed to fetch company");
+  const dimensions = await many(
+    db,
+    "dimension",
+    {
+      companyGroupId: companyRecord.data.companyGroupId!,
+      active: true,
+      entityType: ["Item", "ItemPostingGroup", "Location"]
+    },
+    { columns: ["id", "entityType"] }
+  );
+  // Fail closed: journal lines must not silently lose dimension tags.
+  if (dimensions.error) throw new Error("Failed to fetch dimensions");
+  for (const dim of dimensions.data ?? []) {
+    if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
   }
 
-  const accounting =
-    accountingEnabled && accountDefaults?.data && accountingPeriodId
-      ? {
-          accountingPeriodId,
-          accountDefaults: {
-            rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
-            finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
-            inventoryAdjustmentVarianceAccount:
-              accountDefaults.data.inventoryAdjustmentVarianceAccount
-          },
-          description: "Inventory Adjustment — CSV import",
-          userId,
-          dimensions: dimensionMap
-        }
-      : null;
+  const accounting = {
+    accountingPeriodId,
+    accountDefaults: {
+      rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+      finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+      inventoryAdjustmentVarianceAccount:
+        accountDefaults.data.inventoryAdjustmentVarianceAccount
+    },
+    description: "Inventory Adjustment — CSV import",
+    userId,
+    dimensions: dimensionMap
+  };
 
   // Fixed Duration shelf-life fallback for a new tracked entity with no typed
   // expiry — same rule as post-inventory-adjustment's
@@ -342,6 +333,8 @@ export async function importStockQuantities(
   // cost layers are valued by replaying the per-row read (see
   // `planIncreaseUnitCosts`). Nothing here re-derives a field.
   await db.transaction().execute(async (trx) => {
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
     // A tracked entity's id is ours to choose, so the ledger rows can name it
     // before anything is inserted.
     const trackedEntityIds = planned.map(() => (isTracked ? nanoid() : null));
@@ -371,8 +364,7 @@ export async function importStockQuantities(
     const rowPlans = planStockRows({
       rows: planInputs,
       itemCosts: itemCostByItem,
-      openLayersByItem,
-      hasAccounting: accounting !== null
+      openLayersByItem
     });
 
     // Tracked entities first: the ledger rows reference them.
@@ -489,10 +481,11 @@ export async function importStockQuantities(
     const postingRowIndexes = planned
       .map((_, rowIndex) => rowIndex)
       .filter((rowIndex) => rowPlans[rowIndex]!.postsJournal);
-    if (accounting && postingRowIndexes.length > 0) {
+    if (postingRowIndexes.length > 0) {
       const journalId = await createAdjustmentJournal(trx, {
         companyId,
         accountingPeriodId: accounting.accountingPeriodId,
+        status: postingStatus,
         description: accounting.description,
         postingDate: today,
         userId

@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { OPEN_ITEM_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import { getNextSequence } from "@carbon/database/sequence";
+import {
+  REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR,
+  refuseVoidBeforeCutover
+} from "../lib/cutover-void";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import type { ReimbursementContext } from "./post-reimbursement-post";
@@ -13,12 +18,22 @@ export async function voidReimbursement(
   const {
     trx,
     reimbursement,
-    accountingEnabled,
+    postingStatus,
     companyId,
     userId,
     timestamp,
     today
   } = context;
+
+  // The enable superseded the journal of a reimbursement dated before the
+  // cutover and opened its balances in the opening journal, so a reversal of
+  // its own lines would undo nothing. The date is the one the posting used.
+  await refuseVoidBeforeCutover(
+    trx,
+    companyId,
+    reimbursement.postingDate ?? reimbursement.reimbursementDate,
+    REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR
+  );
 
   // A paid-out reimbursement cannot be voided. Without this the void wrote a
   // second journal crediting the employee payable again, leaving that account
@@ -46,11 +61,6 @@ export async function voidReimbursement(
   }
 
   if (reimbursement.journalId) {
-    if (!accountingEnabled) {
-      throw new Error(
-        "Enable accounting before reversing a posted reimbursement journal"
-      );
-    }
     const originalJournal = await trx
       .selectFrom("journal")
       .select(["id", "status", "sourceType"])
@@ -60,7 +70,9 @@ export async function voidReimbursement(
       .executeTakeFirst();
     if (
       !originalJournal ||
-      originalJournal.status !== "Posted" ||
+      !(OPEN_ITEM_JOURNAL_STATUSES as readonly string[]).includes(
+        originalJournal.status
+      ) ||
       originalJournal.sourceType !== "Reimbursement"
     ) {
       throw new Error("Original reimbursement journal has invalid provenance");
@@ -68,6 +80,7 @@ export async function voidReimbursement(
     const originalLines = await trx
       .selectFrom("journalLine")
       .selectAll()
+      // The journal's status was checked above, under FOR SHARE.
       .where("journalId", "=", originalJournal.id)
       .where("companyId", "=", companyId)
       .orderBy("id")
@@ -82,22 +95,22 @@ export async function voidReimbursement(
     ) {
       throw new Error("Original reimbursement journal has invalid lines");
     }
-    const period = await resolveAccountingPeriod(
-      trx,
-      companyId,
-      today,
-      "current"
-    );
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
     const reversal = await trx
       .insertInto("journal")
       .values({
         journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-        accountingPeriodId: period.id,
+        accountingPeriodId: period?.id ?? null,
         description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
-        postingDate: period.postingDate,
+        postingDate: period?.postingDate ?? today,
         companyId,
         sourceType: "Reimbursement",
-        status: "Posted",
+        status: postingStatus,
         postedAt: timestamp,
         postedBy: userId,
         createdBy: userId
@@ -122,6 +135,7 @@ export async function voidReimbursement(
           documentId: reimbursement.id,
           documentLineReference: line.documentLineReference,
           journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
           companyId
         }))
       )

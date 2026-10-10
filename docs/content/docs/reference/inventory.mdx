@@ -32,7 +32,7 @@ On hand can go **negative**. Shipping, issuing to a job, and picking all post th
 
 A **warehouse transfer** moves stock between locations by posting a <Term id="shipment">shipment</Term> from one and a receipt into the other. A **stock transfer** moves stock between storage units in one location. A manual **adjustment** posts a positive or negative ledger entry; *Set Quantity* calculates the entry needed to reach a target.
 
-When accounting is enabled, adjustments also post a <Term id="journal">journal</Term>. A loss debits inventory adjustment and credits inventory; a gain posts the reverse, valued at current item cost. Inventory count variances use the same accounts. Storage-unit transfers create no journal because value remains at the location. [Scrap](/docs/reference/scrap) uses a negative adjustment offset to the scrap account.
+Adjustments also post a <Term id="journal">journal</Term>, Provisional until the company has [set up accounting](/docs/reference/accounting#setting-up-accounting). A loss debits inventory adjustment and credits inventory; a gain posts the reverse, valued at current item cost. Inventory count variances use the same accounts. Storage-unit transfers create no journal because value remains at the location. [Scrap](/docs/reference/scrap) uses a negative adjustment offset to the scrap account.
 
 ## Correcting a movement
 
@@ -46,7 +46,7 @@ Inventory value is on-hand quantity multiplied by item unit cost, aggregated by 
 
 On an item's **Inventory** tab, each serialized unit in **Storage Units** shows what it is carried at: the cost a shipment, a scrap or a capitalization would take out of inventory for it. A unit with its own cost layer shows that cost; any other unit shows the next layer in the item's FIFO or LIFO order. A unit carried at nothing reads **No cost**. Only users who can view accounting see these costs.
 
-To give one unit a cost of its own, for example a unit a job completed with no production or material recorded, use the row's **Recost** action. You need permission to update accounting, and the item must use FIFO or LIFO costing, since a Standard or Average item carries every unit at the item's one cost. Enter the **Unit Cost** and, with accounting enabled, the **Offset Account** the cost was spent from (Retained Earnings by default). Carbon takes the unit off the layer it was on and books it on a layer of its own at the new cost; the difference posts between the inventory account and the offset account. Nothing moves, so the unit's quantity and location are unchanged.
+To give one unit a cost of its own, for example a unit a job completed with no production or material recorded, use the row's **Recost** action. You need permission to update accounting, and the item must use FIFO or LIFO costing, since a Standard or Average item carries every unit at the item's one cost. Enter the **Unit Cost** and the **Offset Account** the cost was spent from (Retained Earnings by default). Carbon takes the unit off the layer it was on and books it on a layer of its own at the new cost; the difference posts between the inventory account and the offset account. Nothing moves, so the unit's quantity and location are unchanged.
 
 ## Related
 

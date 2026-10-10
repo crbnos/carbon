@@ -3,10 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
 import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
+import type { Kysely } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -17,6 +19,26 @@ import { inngest } from "../../client";
  */
 export function priorMonthEnd(today: string): string {
   return parseDate(today).set({ day: 1 }).subtract({ days: 1 }).toString();
+}
+
+/**
+ * The companies a proposal runs for: only those with an accounting cutover.
+ * The synthesizers write rental accruals and contract revenue rows for any
+ * company they are pointed at, and a company with no cutover cannot post the
+ * run (.ai/specs/implemented/2026-10-08-accounting-cutover.md).
+ *
+ * One read: `company` joined to its settings. It enumerates `company`, never
+ * `companyPlan` — that billing table is empty on every install where nobody
+ * completed Stripe checkout (see mrp.ts). Kysely has no row cap, so the list
+ * is never truncated.
+ */
+export function companiesToPropose(db: Kysely<KyselyDatabase>) {
+  return db
+    .selectFrom("company")
+    .innerJoin("companySettings", "companySettings.id", "company.id")
+    .select(["company.id", "company.name"])
+    .where("companySettings.accountingCutoverDate", "is not", null)
+    .orderBy("company.id");
 }
 
 export const revenueRecognitionProposalFunction = inngest.createFunction(
@@ -33,29 +55,20 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
         `Scheduled revenue recognition proposal started: ${datetime.timestamp()}`
       );
 
-      // Enumerate `company`, never `companyPlan` — that billing table is empty
-      // on every install where nobody completed Stripe checkout (see mrp.ts).
-      // Paged, because max_rows would truncate the work list the same silent
-      // way.
-      const companies = await fetchAllFromTable<{ id: string; name: string }>(
-        serviceRole,
-        "company",
-        "id, name",
-        (query) => query.order("id")
-      );
+      const proposing = await companiesToPropose(getJobDatabaseClient())
+        .execute()
+        .catch((error) => {
+          logger.error("Failed to get companies", { error });
+          // Throwing, not returning: a return is a step that succeeds having
+          // proposed for nobody, and never spends the configured retries.
+          throw error;
+        });
 
-      if (companies.error) {
-        logger.error("Failed to get companies", { error: companies.error });
-        // Throwing, not returning: a return is a step that succeeds having
-        // proposed for nobody, and never spends the configured retries.
-        throw companies.error;
-      }
-
-      if (companies.data.length === 0) {
+      if (proposing.length === 0) {
         logger.warn("No companies to propose revenue recognition runs for");
       }
 
-      return companies.data;
+      return proposing;
     });
 
     // One step per company: each is its own invocation with its own retries

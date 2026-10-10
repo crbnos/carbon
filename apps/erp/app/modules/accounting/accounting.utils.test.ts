@@ -7,12 +7,14 @@ import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
   acquisitionLines,
+  activationCutoverDates,
   addOneMonth,
   buildDepreciationLines,
   calculateDepreciation,
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
   computeDisposalGainLoss,
+  depreciationFloor,
   depreciationRunLineDisplay,
   depreciationRunLinesMatch,
   diffJournalLines,
@@ -22,6 +24,7 @@ import {
   getMonthsElapsed,
   getNextPeriodEnd,
   getNextRevenueRecognitionPeriodEnd,
+  hasAccountingCutover,
   isFutureRunPeriod,
   monthEndOf,
   runPostingTargets,
@@ -1473,5 +1476,73 @@ describe("cost adjustment catch-up", () => {
     );
     // 6,000 less a 20 % residual is 4,800 — all of it, in one line.
     expect(lines.map((line) => line.amount)).toEqual([4800]);
+  });
+});
+
+describe("depreciationFloor", () => {
+  it("starts a company with no posted run at its accounting cutover", () => {
+    expect(depreciationFloor(null, "2026-10-01")).toBe("2026-09-30");
+  });
+
+  it("keeps a run posted after the cutover", () => {
+    expect(depreciationFloor("2026-11-30", "2026-10-01")).toBe("2026-11-30");
+  });
+
+  it("moves a run posted before the cutover up to the cutover", () => {
+    expect(depreciationFloor("2026-03-31", "2026-10-01")).toBe("2026-09-30");
+  });
+
+  it("changes nothing for a company with no cutover", () => {
+    expect(depreciationFloor("2026-03-31", null)).toBe("2026-03-31");
+    expect(depreciationFloor(null, null)).toBeNull();
+  });
+});
+
+describe("activationCutoverDates", () => {
+  const today = parseDate("2026-10-09");
+
+  it("defaults to the first day of the current period", () => {
+    expect(activationCutoverDates(null, today, 3)).toEqual({
+      cutoverDate: "2026-10-01",
+      earliestCutoverDate: "2026-07-01",
+      latestCutoverDate: "2026-10-01"
+    });
+  });
+
+  it("takes a calendar date from the search param", () => {
+    expect(activationCutoverDates("2026-08-01", today, 3).cutoverDate).toBe(
+      "2026-08-01"
+    );
+  });
+
+  it("keeps a date outside the range, for the readiness check to refuse", () => {
+    expect(activationCutoverDates("2026-03-15", today, 3).cutoverDate).toBe(
+      "2026-03-15"
+    );
+  });
+
+  it("ignores a param that is not a calendar date", () => {
+    for (const param of ["", "2026-8-1", "2026-02-30", "tomorrow", "2026-08"]) {
+      expect(activationCutoverDates(param, today, 3).cutoverDate).toBe(
+        "2026-10-01"
+      );
+    }
+  });
+
+  it("crosses a year boundary going back", () => {
+    expect(
+      activationCutoverDates(null, parseDate("2026-02-28"), 3)
+        .earliestCutoverDate
+    ).toBe("2025-11-01");
+  });
+});
+
+describe("hasAccountingCutover", () => {
+  it("is true only with a cutover date", () => {
+    expect(hasAccountingCutover({ accountingCutoverDate: "2026-10-01" })).toBe(
+      true
+    );
+    expect(hasAccountingCutover({ accountingCutoverDate: null })).toBe(false);
+    expect(hasAccountingCutover(null)).toBe(false);
   });
 });

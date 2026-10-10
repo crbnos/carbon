@@ -8,6 +8,11 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type AutomaticJournalStatus,
+  journalPostingStatus,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
 import { round } from "@carbon/database/precision";
 import {
   buildJournalLineDimensionInserts,
@@ -18,7 +23,7 @@ import { nanoid } from "nanoid";
 import { InvalidInputError, NotFoundError } from "../errors";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
-import type { PostingLine } from "./lessor";
+import type { LeaseStandInRoles, PostingLine } from "./lessor";
 
 export type Db = Kysely<KyselyDatabase>;
 export type Trx = Transaction<KyselyDatabase>;
@@ -131,27 +136,43 @@ export function billingPeriodRow(
 }
 
 // What the 'Lease' journals need, resolved once per request inside the
-// transaction. The period resolver reuses the caller's transaction and locks
+// transaction. The status read holds FOR SHARE on the company's settings
+// until commit; the period resolver reuses the caller's transaction and locks
 // the period row, so a close cannot slip in between.
 export type LeaseAccounting = {
-  accountingPeriodId: string;
+  // Provisional before the company's accounting cutover, Posted after it.
+  postingStatus: AutomaticJournalStatus;
+  // null for a Provisional journal: it has no accounting period
+  accountingPeriodId: string | null;
+  // The accounts journal lines use. Before the cutover an empty lease default
+  // is a stand-in on retained earnings (resolveDefaultAccount).
   accounts: {
     netInvestmentInLeasesAccount: string;
     leaseRevenueAccount: string;
-    leaseInterestIncomeAccount: string;
     costOfGoodsSoldAccount: string;
     finishedGoodsAccount: string;
     rawMaterialsAccount: string;
   };
+  // The default each lease account stands in for; the lessor builders put
+  // it on the line that uses the account (journalLine.accountDefaultRole).
+  accountDefaultRoles: LeaseStandInRoles;
+  // The accounts a Planned Interest recognition row names. A schedule row is
+  // not re-pointed at the cutover, so it never takes a stand-in: null when
+  // either default is empty.
+  interestAccounts: { debitAccountId: string; creditAccountId: string } | null;
   // active dimensions for the company group, entityType → dimension id
   dimensionMap: Map<string, string>;
 };
+
+export const LEASE_ACCOUNTS_REQUIRED =
+  "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before activating a rental treated as a sale";
 
 export async function loadLeaseAccounting(
   trx: Trx,
   args: { companyId: string; companyGroupId: string | null; today: string }
 ): Promise<LeaseAccounting> {
   const { companyId } = args;
+  const postingStatus = await journalPostingStatus(trx, companyId);
   const defaults = await trx
     .selectFrom("accountDefault")
     .select([
@@ -160,7 +181,8 @@ export async function loadLeaseAccounting(
       "leaseInterestIncomeAccount",
       "costOfGoodsSoldAccount",
       "finishedGoodsAccount",
-      "rawMaterialsAccount"
+      "rawMaterialsAccount",
+      "retainedEarningsAccount"
     ])
     .where("companyId", "=", companyId)
     .executeTakeFirst();
@@ -170,15 +192,25 @@ export async function loadLeaseAccounting(
     leaseRevenueAccount,
     leaseInterestIncomeAccount
   } = defaults;
+  // After the cutover every lease default is required, as it always was.
   if (
-    !netInvestmentInLeasesAccount ||
-    !leaseRevenueAccount ||
-    !leaseInterestIncomeAccount
+    postingStatus === "Posted" &&
+    (!netInvestmentInLeasesAccount ||
+      !leaseRevenueAccount ||
+      !leaseInterestIncomeAccount)
   ) {
-    throw new InvalidInputError(
-      "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before activating a rental treated as a sale"
-    );
+    throw new InvalidInputError(LEASE_ACCOUNTS_REQUIRED);
   }
+  const netInvestment = resolveDefaultAccount(
+    defaults,
+    "netInvestmentInLeasesAccount",
+    postingStatus
+  );
+  const leaseRevenue = resolveDefaultAccount(
+    defaults,
+    "leaseRevenueAccount",
+    postingStatus
+  );
 
   // Dimensions are configured per company group; a company outside one
   // tags nothing.
@@ -193,29 +225,42 @@ export async function loadLeaseAccounting(
           .where("entityType", "in", ["Customer", "Item", "Location"])
           .execute();
 
-  const accountingPeriodId = await getCurrentAccountingPeriod(
-    companyId,
-    trx,
-    args.today
-  );
+  // A Provisional journal has no period, and no posting creates one before
+  // the cutover.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, trx, args.today)
+      : null;
 
   return {
+    postingStatus,
     accountingPeriodId,
     accounts: {
-      netInvestmentInLeasesAccount,
-      leaseRevenueAccount,
-      leaseInterestIncomeAccount,
+      netInvestmentInLeasesAccount: netInvestment.accountId,
+      leaseRevenueAccount: leaseRevenue.accountId,
       costOfGoodsSoldAccount: defaults.costOfGoodsSoldAccount,
       finishedGoodsAccount: defaults.finishedGoodsAccount,
       rawMaterialsAccount: defaults.rawMaterialsAccount
     },
+    accountDefaultRoles: {
+      netInvestmentInLeases: netInvestment.accountDefaultRole,
+      leaseRevenue: leaseRevenue.accountDefaultRole
+    },
+    interestAccounts:
+      netInvestmentInLeasesAccount && leaseInterestIncomeAccount
+        ? {
+            debitAccountId: netInvestmentInLeasesAccount,
+            creditAccountId: leaseInterestIncomeAccount
+          }
+        : null,
     dimensionMap: new Map(
       dimensions.map((dimension) => [dimension.entityType, dimension.id])
     )
   };
 }
 
-// One posted 'Lease' journal from already-balanced lines. Every line carries
+// One 'Lease' journal from already-balanced lines, Provisional before the
+// accounting cutover and Posted after it. Every line carries
 // the agreement as its document and the agreement line as the line
 // reference, tagged with the Customer / Item / Location dimensions the
 // company group has active.
@@ -237,6 +282,7 @@ export async function postLeaseJournal(
   const journalId = await createAdjustmentJournal(trx, {
     companyId,
     accountingPeriodId: accounting.accountingPeriodId,
+    status: accounting.postingStatus,
     description: args.description,
     postingDate: args.postingDate,
     userId,
@@ -257,6 +303,7 @@ export async function postLeaseJournal(
         documentId: args.rentalAgreementId,
         documentLineReference: args.rentalAgreementLineId,
         journalLineReference,
+        accountDefaultRole: line.accountDefaultRole ?? null,
         companyId
       }))
     )

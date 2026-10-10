@@ -202,7 +202,7 @@ The rent billed then equals the rent stream the lease was valued on. A start in 
 
 When the rent and residual, discounted at the agreement's rate, are worth more than the unit's fair value, the unit's accounting treatment and the **"Activate"** confirmation warn about it. A lease is valued at the rate implicit in it, the rate that makes the two equal, so a lower rate books lease revenue above what the unit is worth. Raise the **"Discount Rate (%)"** or check the fair value. Activation is not refused.
 
-With accounting on, activation needs the **Net Investment in Leases**, **Lease Revenue**, and **Interest Income – Leases** account defaults (seeded as 1160, 4070, and 4150). For the example, on a unit that cost 36,000 and has 6,000 of accumulated depreciation, it posts one **Lease** journal:
+Once the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), activation needs the **Net Investment in Leases**, **Lease Revenue**, and **Interest Income – Leases** account defaults (seeded as 1160, 4070, and 4150). Before that, the journal is Provisional and an empty default posts to retained earnings until the setup moves it. For the example, on a unit that cost 36,000 and has 6,000 of accumulated depreciation, it posts one **Lease** journal:
 
 | Account | Debit | Credit |
 | --- | --- | --- |
@@ -214,7 +214,7 @@ With accounting on, activation needs the **Net Investment in Leases**, **Lease R
 
 Cost of goods sold is the unit's net book value less the present value of any unguaranteed residual. Lease revenue less that cost, 7,049.24 here, is the selling profit stored on the unit. The **"Activate"** confirmation previews this journal for every unit that would be treated as a sale.
 
-The unit leaves the fleet. Its asset is Disposed by sale with a disposal record at net book value, so the Fleet register reads **"Sold"** from activation on, while the unit keeps its own status on the agreement. Its serial is consumed into the lease and tagged with the agreement and the customer. With accounting off the unit leaves the fleet and the schedule below is written the same way, but nothing posts.
+The unit leaves the fleet. Its asset is Disposed by sale with a disposal record at net book value, so the Fleet register reads **"Sold"** from activation on, while the unit keeps its own status on the agreement. Its serial is consumed into the lease and tagged with the agreement and the customer.
 
 ### Interest and invoicing
 
@@ -244,7 +244,7 @@ When the customer exercises the purchase option, its invoice also clears the res
 | Below the closing balance | Dr Cost of Goods Sold, Cr Net Investment in Leases, for the shortfall |
 | Above the closing balance | Dr Net Investment in Leases, Cr Lease Revenue, for the excess |
 
-With accounting on, this needs the **Cost of Goods Sold** or **Lease Revenue** account default mapped, whichever the settlement uses. Voiding the invoice reverses the settlement with the rest of the line.
+Once accounting is set up, this needs the **Cost of Goods Sold** or **Lease Revenue** account default mapped, whichever the settlement uses. Voiding the invoice reverses the settlement with the rest of the line.
 
 <Callout type="warn" title="Early termination is a manual journal">
 Before the end date the net investment still carries unpaid rent, so a unit treated as a sale cannot be returned early and its agreement cannot be cancelled. Book an early termination as a manual journal.
@@ -378,7 +378,7 @@ The recognition run's accrual synthesis needs both defaults.
 A Purchase Option charge cannot be invoiced on a unit treated as a rental. "Sell to Customer" is offered only on a `Sale` line that is On Rent.
 
 ### "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before activating a rental treated as a sale"
-Activation (with accounting on) or the return of a unit treated as a sale found `accountDefault.netInvestmentInLeasesAccount`, `leaseRevenueAccount` or `leaseInterestIncomeAccount` empty. Seeded as 1160, 4070 and 4150; map them in the account defaults.
+After the accounting cutover, activation or the return of a unit treated as a sale found `accountDefault.netInvestmentInLeasesAccount`, `leaseRevenueAccount` or `leaseInterestIncomeAccount` empty. Seeded as 1160, 4070 and 4150; map them in the account defaults.
 
 ### "UNIT is treated as a sale, which needs an agreement end date" / "UNIT is treated as a sale; enter the unit's fair value"
 Activation refuses a line that classifies (or is overridden to) `Sale` without `rentalAgreement.endDate` or `rentalAgreementLine.fairValue` > 0. Set the end date on the agreement or the Fair Value on the unit, or override the treatment to Rental.

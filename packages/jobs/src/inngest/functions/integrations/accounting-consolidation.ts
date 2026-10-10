@@ -576,20 +576,22 @@ async function consolidateCompany(args: {
         journals: members.map(({ journal }) => journal)
       });
 
-      const preflight = runJournalEntryPreflight({
-        journal: aggregate.journal,
-        accountCodesById,
-        controlAccountIds,
-        lockDate,
-        settings
-      });
-      if (preflight.failure) {
-        throw new JournalEntrySyncError(preflight.failure);
-      }
-
       let externalId: string | undefined;
 
       if (aggregate.journal.lines.length > 0) {
+        // Only a summary with lines is checked: a net-zero day pushes
+        // nothing, so a lock date must not fail its members.
+        const preflight = runJournalEntryPreflight({
+          journal: aggregate.journal,
+          accountCodesById,
+          controlAccountIds,
+          lockDate,
+          settings
+        });
+        if (preflight.failure) {
+          throw new JournalEntrySyncError(preflight.failure);
+        }
+
         const payload = mapJournalEntryToManualJournal({
           journal: aggregate.journal,
           accountCodesById,

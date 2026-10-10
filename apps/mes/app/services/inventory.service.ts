@@ -497,8 +497,8 @@ export async function getPickedTrackedEntitiesForMaterial(
 
 // Thin wrapper over the post-inventory-adjustment operation — the same
 // unified write path the ERP uses. It books the item ledger, cost layers, and
-// (when companySettings.accountingEnabled) the GL journal in one transaction,
-// and owns the insufficient-quantity guard.
+// the GL journal (Provisional before the accounting cutover, Posted after) in
+// one transaction, and owns the insufficient-quantity guard.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,

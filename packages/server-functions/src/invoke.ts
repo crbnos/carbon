@@ -13,6 +13,7 @@ import type { ServerFnError } from "./errors";
 import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
+  "activate-accounting": () => import("./activate-accounting"),
   "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
   "close-job": () => import("./close-job"),
@@ -26,6 +27,7 @@ const registry = {
   "get-method": () => import("./get-method"),
   "import-csv": () => import("./import-csv"),
   issue: () => import("./issue"),
+  "journal-legacy-documents": () => import("./journal-legacy-documents"),
   "post-asset-transfer": () => import("./post-asset-transfer"),
   "post-charge": () => import("./post-charge"),
   "post-customer-contract": () => import("./post-customer-contract"),

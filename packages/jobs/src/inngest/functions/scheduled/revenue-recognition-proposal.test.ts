@@ -2,8 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { KyselyDatabase } from "@carbon/database/client";
+import {
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler
+} from "kysely";
 import { describe, expect, it, vi } from "vitest";
-import { priorMonthEnd } from "./revenue-recognition-proposal";
+import {
+  companiesToPropose,
+  priorMonthEnd
+} from "./revenue-recognition-proposal";
 
 // priorMonthEnd is pure, but its module's neighbors are not:
 // @carbon/auth/client.server pulls in @carbon/env, which validates required
@@ -28,5 +39,27 @@ describe("priorMonthEnd", () => {
 
   it("crosses the year boundary from January", () => {
     expect(priorMonthEnd("2026-01-10")).toBe("2025-12-31");
+  });
+});
+
+describe("companiesToPropose", () => {
+  // Compiles only: the dummy driver never connects.
+  const db = new Kysely<KyselyDatabase>({
+    dialect: {
+      createAdapter: () => new PostgresAdapter(),
+      createDriver: () => new DummyDriver(),
+      createIntrospector: (kysely) => new PostgresIntrospector(kysely),
+      createQueryCompiler: () => new PostgresQueryCompiler()
+    }
+  });
+
+  it("reads only companies with an accounting cutover, in one query", () => {
+    const { sql } = companiesToPropose(db).compile();
+    expect(sql).toContain(
+      'inner join "companySettings" on "companySettings"."id" = "company"."id"'
+    );
+    expect(sql).toContain(
+      'where "companySettings"."accountingCutoverDate" is not null'
+    );
   });
 });

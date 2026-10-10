@@ -37,8 +37,6 @@ type FixedAssetAdjustCostFormProps = {
   netBookValue: number;
   // The transfer needs a location; asked for only when the asset has none.
   hasLocation: boolean;
-  // Whether the adjustment posts a journal, and so needs an offset account.
-  accountingEnabled: boolean;
   onClose: () => void;
 };
 
@@ -47,7 +45,6 @@ const FixedAssetAdjustCostForm = ({
   acquisitionCost,
   netBookValue,
   hasLocation,
-  accountingEnabled,
   onClose
 }: FixedAssetAdjustCostFormProps) => {
   const { t } = useLingui();
@@ -91,20 +88,13 @@ const FixedAssetAdjustCostForm = ({
                   </DetailRow>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {accountingEnabled ? (
-                    <Trans>
-                      Adds cost the asset was never charged with, such as the
-                      labor and material of a job that recorded none. The value
-                      is booked to the asset from the account it was spent from:
-                      Retained Earnings for an earlier year, or this year's
-                      labor or material expense.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Adds cost the asset was never charged with, such as the
-                      labor and material of a job that recorded none.
-                    </Trans>
-                  )}
+                  <Trans>
+                    Adds cost the asset was never charged with, such as the
+                    labor and material of a job that recorded none. The value is
+                    booked to the asset from the account it was spent from:
+                    Retained Earnings for an earlier year, or this year's labor
+                    or material expense.
+                  </Trans>
                 </p>
                 <Number
                   name="amount"
@@ -115,9 +105,7 @@ const FixedAssetAdjustCostForm = ({
                     currencyDecimals
                   )}
                 />
-                {accountingEnabled && (
-                  <Account name="offsetAccountId" label={t`Offset Account`} />
-                )}
+                <Account name="offsetAccountId" label={t`Offset Account`} />
                 {hasLocation ? (
                   <Hidden name="locationId" />
                 ) : (

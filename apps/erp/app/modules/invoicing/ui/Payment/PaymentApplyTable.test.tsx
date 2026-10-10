@@ -109,8 +109,71 @@ vi.mock("~/components", () => ({
 }));
 vi.mock("~/components/Enumerable", () => ({ Enumerable: () => null }));
 vi.mock("@react-aria/i18n", () => ({
+  useLocale: () => ({ locale: "en-US" }),
   useNumberFormatter: () => new Intl.NumberFormat("en-US")
 }));
+// The apply table edits its amounts in a Grid through EditableNumber cells.
+// The Grid stand-in renders every cell and registers each editable cell as an
+// amount input labelled like the column ("Applied amount for INV1"), whose
+// onChange commits through the cell's own update callback.
+type CellUpdate = (key: string, value: string, row: unknown) => unknown;
+vi.mock("~/components/Editable", () => ({
+  EditableNumber: (onUpdate: CellUpdate) => ({ onUpdate })
+}));
+vi.mock("~/components/Grid", () => {
+  const labels: Record<string, string> = {
+    appliedAmount: "Applied amount",
+    discountAmount: "Discount",
+    writeOffAmount: "Write-off"
+  };
+  type Row = { id: string; invoiceId: string };
+  type Column = {
+    accessorKey?: string;
+    cell?: (ctx: { row: { original: Row } }) => ReactNode;
+  };
+  return {
+    default: ({
+      data,
+      columns,
+      canEdit,
+      editableComponents
+    }: {
+      data: Row[];
+      columns: Column[];
+      canEdit: boolean;
+      editableComponents: Record<string, { onUpdate: CellUpdate }>;
+    }) =>
+      createElement(
+        "div",
+        null,
+        data.map((row) => {
+          if (canEdit) {
+            // Like the Grid, only a shown column's editor is reachable.
+            for (const { accessorKey: key } of columns) {
+              const editor = key ? editableComponents[key] : undefined;
+              if (!key || !editor) continue;
+              harness.amounts.push({
+                "aria-label": `${labels[key]} for ${row.invoiceId}`,
+                onChange: (value: number) =>
+                  void editor.onUpdate(key, String(value), row)
+              });
+            }
+          }
+          return createElement(
+            "div",
+            { key: row.id },
+            columns.map((column, i) =>
+              createElement(
+                "span",
+                { key: i },
+                column.cell?.({ row: { original: row } })
+              )
+            )
+          );
+        })
+      )
+  };
+});
 vi.mock("~/hooks", () => ({
   usePermissions: () => ({ can: () => true }),
   useCompanyToday: () => ({ toString: () => "2026-09-07" }),

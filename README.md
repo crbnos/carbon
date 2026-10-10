@@ -339,7 +339,7 @@ The full command reference is in the [local development guide](https://docs.carb
 <details>
 <summary><h3>Restoring a production snapshot</h3></summary>
 
-To restore a production database snapshot locally, use `crbn restore`. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, realigns internal sequences, resets storage metadata, then applies any migrations the backup predates and regenerates types.
+To restore a production database snapshot locally, use `crbn restore`. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, fits the backup to your stack's auth/storage/realtime schemas, verifies that every index, constraint, trigger and policy landed, realigns internal sequences, resets storage metadata, then applies any migrations the backup predates and regenerates types. If verification fails, it exits nonzero and applies no migrations.
 
 1. Export a backup of your production database with `pg_dump`.
 2. Run it from your worktree root:

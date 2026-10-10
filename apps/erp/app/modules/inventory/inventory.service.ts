@@ -1900,8 +1900,8 @@ export async function getWarehouseTransferLines(
 // Thin wrapper over the post-inventory-adjustment server function — the single
 // write path for manual adjustments (shared with MES). The server function owns
 // Set Quantity resolution, storage-unit transfers, serial/batch stock-target
-// resolution, tracked-entity updates, cost layers, and GL posting (only when
-// companySettings.accountingEnabled) in one transaction.
+// resolution, tracked-entity updates, cost layers, and GL posting (Provisional
+// before the accounting cutover) in one transaction.
 /**
  * @mcp create
  * @mcp audit createdBy

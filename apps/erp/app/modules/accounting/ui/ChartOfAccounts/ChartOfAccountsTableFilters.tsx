@@ -12,7 +12,7 @@ import {
   InputLeftElement
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuPlus, LuSearch, LuWallet, LuX } from "react-icons/lu";
+import { LuPlus, LuSearch, LuX } from "react-icons/lu";
 import { Link } from "react-router";
 import { New, PeriodSelector } from "~/components";
 import { AppBarAction } from "~/components/New";
@@ -22,24 +22,12 @@ type ChartOfAccountsTableFiltersProps = {
   fiscalStartMonth?: number;
   search: string;
   onSearchChange: (value: string) => void;
-  openingBalanceMode: boolean;
-  canEnterOpeningBalances: boolean;
-  hasOpeningBalanceEntries: boolean;
-  onEnterOpeningBalances: () => void;
-  onCancelOpeningBalances: () => void;
-  onPostOpeningBalances: () => void;
 };
 
 const ChartOfAccountsTableFilters = ({
   fiscalStartMonth,
   search,
-  onSearchChange,
-  openingBalanceMode,
-  canEnterOpeningBalances,
-  hasOpeningBalanceEntries,
-  onEnterOpeningBalances,
-  onCancelOpeningBalances,
-  onPostOpeningBalances
+  onSearchChange
 }: ChartOfAccountsTableFiltersProps) => {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -77,55 +65,26 @@ const ChartOfAccountsTableFilters = ({
         )}
       </HStack>
       <HStack className="max-md:ml-auto max-md:mr-4">
-        {openingBalanceMode ? (
-          // Entering opening balances: Add Group / Add Account are hidden; only
-          // Cancel + Post remain.
-          <>
-            <Button variant="secondary" onClick={onCancelOpeningBalances}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              variant="primary"
-              leftIcon={<LuCheckCheck />}
-              isDisabled={!hasOpeningBalanceEntries}
-              onClick={onPostOpeningBalances}
-            >
-              <Trans>Post</Trans>
-            </Button>
-          </>
-        ) : (
-          <>
-            {permissions.can("create", "accounting") && (
-              // Phones: one app bar "+" opens both Add actions, instead of
-              // two identical "+" icons.
-              <AppBarAction
-                icon={<LuPlus />}
-                label={t`Add`}
-                menu={
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link to={newGroupTo}>{t`Add Group`}</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to={newAccountTo}>{t`Add Account`}</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                }
-              >
-                <New label={t`Group`} to={newGroupTo} />
-                <New label={t`Account`} to={newAccountTo} />
-              </AppBarAction>
-            )}
-            {canEnterOpeningBalances && (
-              <Button
-                variant="secondary"
-                leftIcon={<LuWallet />}
-                onClick={onEnterOpeningBalances}
-              >
-                <Trans>Opening Balances</Trans>
-              </Button>
-            )}
-          </>
+        {permissions.can("create", "accounting") && (
+          // Phones: one app bar "+" opens both Add actions, instead of
+          // two identical "+" icons.
+          <AppBarAction
+            icon={<LuPlus />}
+            label={t`Add`}
+            menu={
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to={newGroupTo}>{t`Add Group`}</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to={newAccountTo}>{t`Add Account`}</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            }
+          >
+            <New label={t`Group`} to={newGroupTo} />
+            <New label={t`Account`} to={newAccountTo} />
+          </AppBarAction>
         )}
       </HStack>
     </div>

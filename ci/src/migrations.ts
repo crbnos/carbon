@@ -7,7 +7,11 @@ import { $ } from "execa";
 
 import { client } from "./client";
 import type { LedgerDatabase } from "./one-off-scripts";
-import { selectPendingScripts } from "./one-off-scripts";
+import {
+  oneOffScriptEnv,
+  oneOffScriptOutcome,
+  selectPendingScripts
+} from "./one-off-scripts";
 import {
   SUPABASE_ACCESS_TOKEN,
   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
@@ -48,6 +52,7 @@ export type Workspace = {
   active: boolean;
   seeded: boolean;
   connection_string: string | null;
+  database_connection_pooler_url: string | null;
   database_url: string | null;
   project_id: string | null;
   access_token: string | null;
@@ -77,7 +82,9 @@ export type Workspace = {
  * already pushed and correct. Returns false instead of throwing so the caller
  * can mark the run errored without the failure being re-reported as a failed
  * migration; because nothing is recorded in the ledger, the next deploy
- * retries it.
+ * retries it. A script that exits with `ONE_OFF_SCRIPT_DEFERRED` is not ready
+ * for this workspace: it is not recorded either, and does not count as a
+ * failure.
  */
 async function runPendingScripts(
   workspace: Workspace,
@@ -103,8 +110,22 @@ async function runPendingScripts(
   for (const script of pending) {
     console.log(`✅ 📜 Running ${script.name} for ${workspace.id}`);
     try {
-      const { stdout } = await $$`tsx ${script.path}`;
-      const tail = stdout.trim().split("\n").slice(-20).join("\n");
+      // reject: false, so a deferral (ONE_OFF_SCRIPT_DEFERRED) is read
+      // rather than thrown.
+      const result = await $$({ reject: false })`tsx ${script.path}`;
+      const outcome = oneOffScriptOutcome(result.exitCode);
+      if (outcome === "deferred") {
+        console.warn(
+          `⏭️  📜 ${script.name} deferred for ${workspace.id}; it runs again on the next deploy.\n${result.stderr.trim()}`
+        );
+        continue;
+      }
+      if (outcome === "failed") {
+        throw new Error(
+          `exited with ${result.exitCode ?? "a signal"}\n${result.stderr.trim()}`
+        );
+      }
+      const tail = result.stdout.trim().split("\n").slice(-20).join("\n");
 
       // ignoreDuplicates: a row for this name may already exist — a retried
       // insert whose first attempt landed, or an earlier run that recorded it.
@@ -172,6 +193,7 @@ async function migrate(): Promise<void> {
       console.log(`✅ 🥚 Migrating ${workspace.id}`);
       const {
         connection_string,
+        database_connection_pooler_url,
         database_url,
         database_password,
         service_role_key,
@@ -186,23 +208,24 @@ async function migrate(): Promise<void> {
 
       console.log(`✅ 🔑 Setting up environment for ${workspace.id}`);
 
+      const env = {
+        SUPABASE_ACCESS_TOKEN:
+          access_token === null ? SUPABASE_ACCESS_TOKEN : access_token,
+        SUPABASE_URL: database_url ?? undefined,
+        SUPABASE_DB_PASSWORD: database_password ?? undefined,
+        SUPABASE_PROJECT_ID: project_id ?? undefined,
+        SUPABASE_ANON_KEY: anon_key ?? undefined,
+        SUPABASE_SERVICE_ROLE_KEY: service_role_key ?? undefined,
+        SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
+        SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET,
+        SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI,
+        ...(connection_string?.startsWith("postgresql://") && {
+          PGSSLMODE: "disable",
+        }),
+      };
       let $$ = $({
         // @ts-ignore
-        env: {
-          SUPABASE_ACCESS_TOKEN:
-            access_token === null ? SUPABASE_ACCESS_TOKEN : access_token,
-          SUPABASE_URL: database_url ?? undefined,
-          SUPABASE_DB_PASSWORD: database_password ?? undefined,
-          SUPABASE_PROJECT_ID: project_id ?? undefined,
-          SUPABASE_ANON_KEY: anon_key ?? undefined,
-          SUPABASE_SERVICE_ROLE_KEY: service_role_key ?? undefined,
-          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
-          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET,
-          SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI,
-          ...(connection_string?.startsWith("postgresql://") && {
-            PGSSLMODE: "disable",
-          }),
-        },
+        env,
         cwd: "supabase",
       });
 
@@ -281,7 +304,16 @@ async function migrate(): Promise<void> {
       // After the success log: the schema is pushed and correct regardless of
       // how the scripts go, so a script failure must not read as a failed
       // migration. It still fails the overall run via `hasErrors`.
-      if (!(await runPendingScripts(workspace, $$))) {
+      // `$(options)` replaces `env` rather than merging it, so the scripts get
+      // their own (`oneOffScriptEnv`).
+      const scripts$ = $$({
+        // @ts-ignore
+        env: oneOffScriptEnv(env, {
+          poolerUrl: database_connection_pooler_url,
+          connectionString: connection_string,
+        }),
+      });
+      if (!(await runPendingScripts(workspace, scripts$))) {
         hasErrors = true;
       }
     } catch (error) {

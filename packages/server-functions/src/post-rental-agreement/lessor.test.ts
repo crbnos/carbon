@@ -696,6 +696,46 @@ it("commencement books NI, COGS at C − PVres, lease revenue at PVpay and the f
   expect(round(39049.24083 + 22000 + 6000)).toEqual(round(37049.24083 + 30000));
 });
 
+it("a stand-in lease account carries its own role on the line that uses it", () => {
+  // Both lease defaults empty before the cutover: both lines stand in on
+  // retained earnings, and each names the default it wanted.
+  const lines = buildCommencementLines({
+    pvPayments: 37049.24083,
+    pvResidual: 2000,
+    acquisitionCost: 30000,
+    accumulatedDepreciation: 6000,
+    accounts: {
+      ...ACCOUNTS,
+      netInvestmentInLeasesAccountId: "3000",
+      leaseRevenueAccountId: "3000"
+    },
+    accountDefaultRoles: {
+      netInvestmentInLeases: "netInvestmentInLeasesAccount",
+      leaseRevenue: "leaseRevenueAccount"
+    }
+  });
+  expect(
+    lines.map((line) => [line.amount, line.accountDefaultRole ?? null])
+  ).toEqual([
+    [39049.24083, "netInvestmentInLeasesAccount"],
+    [22000, null],
+    [37049.24083, "leaseRevenueAccount"],
+    [6000, null],
+    [-30000, null]
+  ]);
+  expect(
+    buildResidualReturnLines({
+      closing: 5000,
+      debitAccountId: "1370",
+      debitDescription: "Fixed Asset Acquisition",
+      netInvestmentInLeasesAccountId: "3000",
+      accountDefaultRoles: {
+        netInvestmentInLeases: "netInvestmentInLeasesAccount"
+      }
+    }).map((line) => line.accountDefaultRole ?? null)
+  ).toEqual([null, "netInvestmentInLeasesAccount"]);
+});
+
 it("an undepreciated unit posts no accumulated depreciation leg", () => {
   const lines = buildCommencementLines({
     pvPayments: 37049.24083,

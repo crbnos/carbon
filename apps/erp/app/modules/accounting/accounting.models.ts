@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Constants } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { months } from "~/modules/shared";
@@ -495,6 +496,9 @@ export const defaultBalanceSheetAccountValidator = z.object({
   deferredTaxLiabilityAccountId: z.string().min(1, {
     message: "Deferred tax liability account is required"
   }),
+  // Optional here: a company may not have the account yet. The accounting
+  // enable wizard's readiness step requires it.
+  migrationClearingAccount: z.string().optional(),
   deferredRevenueAccount: z.string().optional(),
   contractAssetAccount: z.string().optional(),
   netInvestmentInLeasesAccount: z.string().optional()
@@ -702,60 +706,6 @@ export const intercompanyTransactionValidator = z
     }
   );
 
-export const openingBalanceValidator = z.object({
-  postingDate: z.string().min(1, { message: "Posting date is required" }),
-  // JSON-encoded array of { accountId, amount } produced by the form's hidden
-  // input. `amount` is the signed base-currency figure the user typed against
-  // the account, positive = the account's natural balance side (debit for
-  // Asset/Expense, credit for Liability/Equity/Revenue). The service converts
-  // each amount → {debit, credit} per class and appends the Retained Earnings
-  // plug before posting. Zero-amount rows are dropped.
-  lines: z
-    .string()
-    .min(1, { message: "At least one balance is required" })
-    .transform((val, ctx) => {
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(val);
-      } catch {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
-        return z.NEVER;
-      }
-      if (!Array.isArray(parsed)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
-        return z.NEVER;
-      }
-
-      // Reject structurally-invalid rows rather than silently dropping them, so
-      // a malformed payload fails loudly instead of posting a partial entry. A
-      // zero amount is a legitimately-empty input and is the only thing skipped.
-      const result: Array<{ accountId: string; amount: number }> = [];
-      for (const row of parsed) {
-        const accountId = (row as { accountId?: unknown }).accountId;
-        const amount = (row as { amount?: unknown }).amount;
-        if (typeof accountId !== "string" || accountId.length === 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "An opening balance row is missing its account"
-          });
-          return z.NEVER;
-        }
-        if (typeof amount !== "number" || !Number.isFinite(amount)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "An opening balance row has an invalid amount"
-          });
-          return z.NEVER;
-        }
-        if (amount !== 0) result.push({ accountId, amount });
-      }
-      return result;
-    })
-    .refine((lines) => lines.length > 0, {
-      message: "At least one balance is required"
-    })
-});
-
 export const journalEntrySourceTypes = [
   "Manual",
   "Opening Balance",
@@ -790,7 +740,9 @@ export const journalEntrySourceTypes = [
   "Lease"
 ] as const;
 
-export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
+// Provisional: written before the accounting cutover, counts nowhere.
+// Superseded: a Provisional journal dated before the cutover.
+export const journalEntryStatuses = Constants.public.Enums.journalEntryStatus;
 
 export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
 
@@ -1145,6 +1097,96 @@ export const fixedAssetCapitalizeCipValidator = z.object({
 
 export const fixedAssetOutOfServiceValidator = z.object({
   reason: z.string().trim().min(1, { message: "Reason is required" })
+});
+
+const cutoverDateField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Cutover date is required" });
+
+/** The accounting cutover date the enable wizard works against. */
+export const activationCutoverValidator = z.object({
+  cutoverDate: cutoverDateField
+});
+
+/** The prior system's trial balance as of the day before the cutover. `lines`
+ *  is a JSON array of `{ accountId, debit, credit }` from the form's hidden
+ *  input; rows with neither a debit nor a credit are dropped. */
+export const openingTrialBalanceValidator = z.object({
+  cutoverDate: cutoverDateField,
+  lines: z.string().transform((val, ctx) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(val);
+    } catch {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+      return z.NEVER;
+    }
+    if (!Array.isArray(parsed)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+      return z.NEVER;
+    }
+    const result: Array<{ accountId: string; debit: number; credit: number }> =
+      [];
+    for (const row of parsed) {
+      const { accountId, debit, credit } = (row ?? {}) as {
+        accountId?: unknown;
+        debit?: unknown;
+        credit?: unknown;
+      };
+      if (typeof accountId !== "string" || accountId.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A trial balance row is missing its account"
+        });
+        return z.NEVER;
+      }
+      const amounts = [debit ?? 0, credit ?? 0];
+      if (
+        amounts.some(
+          (amount) =>
+            typeof amount !== "number" || !Number.isFinite(amount) || amount < 0
+        )
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A trial balance row has an invalid debit or credit"
+        });
+        return z.NEVER;
+      }
+      const [rowDebit, rowCredit] = amounts as [number, number];
+      if (rowDebit !== 0 || rowCredit !== 0) {
+        result.push({ accountId, debit: rowDebit, credit: rowCredit });
+      }
+    }
+    return result;
+  })
+});
+
+/** The prior system's trial balance as a CSV (`accountNumber, debit, credit`),
+ *  uploaded in the wizard. The route action parses it and maps the account
+ *  numbers to accounts. */
+export const openingTrialBalanceImportValidator = z.object({
+  cutoverDate: cutoverDateField,
+  csv: z.string().min(1, { message: "The CSV file is empty" })
+});
+
+/** The enable: the cutover date and the company name typed to confirm. */
+export const activateAccountingValidator = z.object({
+  cutoverDate: cutoverDateField,
+  confirmation: z
+    .string()
+    .trim()
+    .min(1, { message: "Type the company name to confirm" })
+});
+
+/** An asset's accumulated depreciation at the cutover, set in the wizard. */
+export const cutoverAccumulatedDepreciationValidator = z.object({
+  fixedAssetId: z.string().min(1, { message: "Asset is required" }),
+  accumulatedDepreciation: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Accumulated depreciation must be zero or more" })
+  )
 });
 
 /** Journal source types that only their period run may reverse: a plain

@@ -273,6 +273,9 @@ describe("mapChargeToQboPurchase", () => {
       expect((err as JournalEntrySyncError).failure).toMatchObject({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
+        message: expect.stringMatching(
+          /not posted yet.*dated before your accounting cutover/
+        ),
         metadata: { chargeId: "ct_1" }
       });
     }

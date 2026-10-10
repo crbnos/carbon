@@ -4214,9 +4214,6 @@ msgstr ""
 msgid "Long Description"
 msgstr ""
 
-msgid "Looks empty here"
-msgstr ""
-
 msgid "Lost"
 msgstr ""
 
@@ -4877,6 +4874,9 @@ msgstr ""
 
 msgid "No"
 msgstr ""
+
+msgid "No data yet"
+msgstr "Nog geen gegevens"
 
 #. placeholder {0}: node.name.toLowerCase()
 msgid "No {0} found"
@@ -8347,6 +8347,9 @@ msgstr ""
 
 msgid "Your Console PIN"
 msgstr ""
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "Uw gegevens verschijnen hier zodra u uw eerste records aanmaakt of importeert"
 
 msgid "Your Email"
 msgstr ""

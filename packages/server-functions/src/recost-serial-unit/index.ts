@@ -14,6 +14,10 @@
 // item's one cost, so a single unit cannot have its own.
 
 import type { KyselyDatabase as DB, Kysely } from "@carbon/database/client";
+import {
+  type AutomaticJournalStatus,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import { inOrder } from "@carbon/database/rows";
 import { round } from "@carbon/utils";
 import { sql } from "kysely";
@@ -125,16 +129,14 @@ const recostSerialUnit = defineServerFn({
       }
       const locationId = stock[0]?.locationId ?? null;
 
-      const settings = await trx
-        .selectFrom("companySettings")
-        .select("accountingEnabled")
-        .where("id", "=", companyId)
-        .executeTakeFirst();
-      // Fail closed: a failed settings read must not silently skip the GL.
-      if (!settings) throw new Error("Failed to fetch company settings");
-      const accounting = settings.accountingEnabled
-        ? await loadAccounting(trx, companyId, input)
-        : null;
+      // Provisional before the company's accounting cutover, Posted after it.
+      const postingStatus = await journalPostingStatus(trx, companyId);
+      const accounting = await loadAccounting(
+        trx,
+        companyId,
+        input,
+        postingStatus
+      );
 
       // Relieve what the unit carries today, exactly as a shipment would.
       const relieved = await calculateCOGS(trx, {
@@ -184,60 +186,58 @@ const recostSerialUnit = defineServerFn({
         ])
         .execute();
 
-      let journalId: string | null = null;
-      if (accounting) {
-        const inventoryAccount = resolveInventoryAccount(
-          item.replenishmentSystem,
-          accounting.accountDefaults
-        );
-        journalId = await createAdjustmentJournal(trx, {
-          companyId,
-          accountingPeriodId: accounting.accountingPeriodId,
-          description: `Recost ${item.readableId} ${serial}`,
-          postingDate: input.postingDate,
-          userId,
-          sourceType: "Inventory Adjustment"
-        });
-        const journalLineReference = nanoid();
-        const lines = await trx
-          .insertInto("journalLine")
-          .values(
-            buildOffsetLines({
-              amount: delta,
-              accountId: inventoryAccount.account,
-              description: inventoryAccount.description,
-              offsetAccountId: accounting.offsetAccount.id,
-              offsetDescription: "Inventory Recost",
-              offsetAccountType: accounting.offsetAccount.type,
-              label: "Inventory recost journal"
-            }).map((line) => ({
-              journalId: journalId as string,
-              accountId: line.accountId,
-              description: line.description,
-              amount: line.amount,
-              quantity: 1,
-              documentType: "Inventory Adjustment" as const,
-              documentId: entity.id,
-              journalLineReference,
-              companyId
-            }))
-          )
-          .returning(["id"])
+      const inventoryAccount = resolveInventoryAccount(
+        item.replenishmentSystem,
+        accounting.accountDefaults
+      );
+      const journalId = await createAdjustmentJournal(trx, {
+        companyId,
+        accountingPeriodId: accounting.accountingPeriodId,
+        status: postingStatus,
+        description: `Recost ${item.readableId} ${serial}`,
+        postingDate: input.postingDate,
+        userId,
+        sourceType: "Inventory Adjustment"
+      });
+      const journalLineReference = nanoid();
+      const lines = await trx
+        .insertInto("journalLine")
+        .values(
+          buildOffsetLines({
+            amount: delta,
+            accountId: inventoryAccount.account,
+            description: inventoryAccount.description,
+            offsetAccountId: accounting.offsetAccount.id,
+            offsetDescription: "Inventory Recost",
+            offsetAccountType: accounting.offsetAccount.type,
+            label: "Inventory recost journal"
+          }).map((line) => ({
+            journalId,
+            accountId: line.accountId,
+            description: line.description,
+            amount: line.amount,
+            quantity: 1,
+            documentType: "Inventory Adjustment" as const,
+            documentId: entity.id,
+            journalLineReference,
+            companyId
+          }))
+        )
+        .returning(["id"])
+        .execute();
+      const dimensions = buildJournalLineDimensions({
+        journalLineIds: lines.map((line) => line.id),
+        dimensions: accounting.dimensions,
+        itemId,
+        itemPostingGroupId: itemCost.itemPostingGroupId,
+        locationId,
+        companyId
+      });
+      if (dimensions.length > 0) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(dimensions)
           .execute();
-        const dimensions = buildJournalLineDimensions({
-          journalLineIds: lines.map((line) => line.id),
-          dimensions: accounting.dimensions,
-          itemId,
-          itemPostingGroupId: itemCost.itemPostingGroupId,
-          locationId,
-          companyId
-        });
-        if (dimensions.length > 0) {
-          await trx
-            .insertInto("journalLineDimension")
-            .values(dimensions)
-            .execute();
-        }
       }
 
       return { previousCost, unitCost, journalId };
@@ -249,7 +249,8 @@ const recostSerialUnit = defineServerFn({
 async function loadAccounting(
   db: Kysely<DB>,
   companyId: string,
-  input: z.output<typeof recostSerialUnitInput>
+  input: z.output<typeof recostSerialUnitInput>,
+  postingStatus: AutomaticJournalStatus
 ) {
   const [defaults, offsetAccount, company] = await inOrder([
     () => getDefaultPostingGroup(db, companyId),
@@ -277,11 +278,11 @@ async function loadAccounting(
   for (const row of dimensionRows) {
     if (row.entityType) dimensions[row.entityType] = row.id;
   }
-  const accountingPeriodId = await getAccountingPeriodForDate(
-    companyId,
-    db,
-    input.postingDate
-  );
+  // A Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getAccountingPeriodForDate(companyId, db, input.postingDate)
+      : null;
   return {
     accountingPeriodId,
     accountDefaults: {

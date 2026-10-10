@@ -657,3 +657,61 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "before the cutover a reimbursement posts and voids Provisional journals with no period",
+  async () => {
+    const f = await reimbursementFixture();
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ accountingCutoverDate: null })
+        .where("id", "=", f.companyId)
+        .execute();
+      await f.db
+        .deleteFrom("accountingPeriod")
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const posted = await postReimbursementTransaction(f.db, f.args);
+      const voided = await postReimbursementTransaction(f.db, {
+        ...f.args,
+        type: "void"
+      });
+      expect(voided.journalId).toEqual(posted.journalId);
+
+      const journals = await f.db
+        .selectFrom("journal")
+        .select(["status", "accountingPeriodId", "description"])
+        .where("companyId", "=", f.companyId)
+        .orderBy("journalEntryId")
+        .execute();
+      expect(journals.length).toEqual(2);
+      expect(
+        journals.every(
+          (journal) =>
+            journal.status === "Provisional" &&
+            journal.accountingPeriodId === null
+        )
+      ).toEqual(true);
+      expect(journals[1]?.description?.startsWith("VOID")).toEqual(true);
+
+      const periods = await f.db
+        .selectFrom("accountingPeriod")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(periods.length).toEqual(0);
+
+      const header = await f.db
+        .selectFrom("reimbursement")
+        .select(["status", "journalId"])
+        .where("id", "=", f.reimbursementId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(header).toEqual({ status: "Voided", journalId: posted.journalId });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

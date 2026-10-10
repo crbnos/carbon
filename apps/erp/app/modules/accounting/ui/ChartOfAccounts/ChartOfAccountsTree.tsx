@@ -9,11 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   MENU_ITEM_SHORTCUTS,
-  NumberField,
-  NumberInput,
   ScrollArea
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useMemo, useRef } from "react";
 import {
@@ -30,22 +27,14 @@ import {
 import { useNavigate } from "react-router";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
-import {
-  useCurrencyDecimals,
-  useRealtime,
-  useSettings,
-  useUrlParams,
-  useUser
-} from "~/hooks";
+import { useRealtime, useSettings, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
+import { hasAccountingCutover } from "../../accounting.utils";
 import type { Chart } from "../../types";
 
 type ChartOfAccountsTreeProps = {
   data: Chart[];
   search: string;
-  openingBalanceMode?: boolean;
-  amounts?: Record<string, number>;
-  onAmountChange?: (accountId: string, value: number) => void;
 };
 
 function accountsToFlatTree(accounts: Chart[]): FlatTree<Chart> {
@@ -118,23 +107,14 @@ function formatCurrency(value: number): string {
 }
 
 const ChartOfAccountsTree = memo(
-  ({
-    data,
-    search,
-    openingBalanceMode = false,
-    amounts = {},
-    onAmountChange
-  }: ChartOfAccountsTreeProps) => {
+  ({ data, search }: ChartOfAccountsTreeProps) => {
     const { t } = useLingui();
     useRealtime("journal");
     const settings = useSettings();
-    const accountingEnabled = (settings as any).accountingEnabled ?? false;
+    const showBalances = hasAccountingCutover(settings);
     const parentRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const [params] = useUrlParams();
-    const { company } = useUser();
-    const currencyCode = company.baseCurrencyCode;
-    const currencyDecimals = useCurrencyDecimals(currencyCode);
 
     const openLedger = (accountId: string) => {
       const nextParams = new URLSearchParams(params);
@@ -182,16 +162,10 @@ const ChartOfAccountsTree = memo(
           <div className="flex-1 px-4">
             <Trans>Account</Trans>
           </div>
-          {openingBalanceMode ? (
-            <span className="w-44 text-right px-4">
-              <Trans>Opening Balance</Trans>
+          {showBalances && (
+            <span className="w-32 text-right px-4 max-md:w-24 max-md:pl-0">
+              {params.get("startDate") ? t`Net Change` : t`Balance`}
             </span>
-          ) : (
-            accountingEnabled && (
-              <span className="w-32 text-right px-4 max-md:w-24 max-md:pl-0">
-                {params.get("startDate") ? t`Net Change` : t`Balance`}
-              </span>
-            )
           )}
         </div>
         <TreeView<Chart>
@@ -228,9 +202,7 @@ const ChartOfAccountsTree = memo(
                   selectNode(node.id, false);
                   if (isGroup) {
                     toggleExpandNode(node.id);
-                  } else if (!openingBalanceMode) {
-                    // In opening-balance mode a leaf row hosts an input; don't
-                    // navigate away and lose the entered amounts.
+                  } else {
                     openLedger(account.id as string);
                   }
                 }}
@@ -284,39 +256,8 @@ const ChartOfAccountsTree = memo(
                   <span className="truncate">{account.name}</span>
                 </div>
 
-                {/* Balance / opening-balance input */}
-                {openingBalanceMode ? (
-                  isGroup ? (
-                    // Groups are rollups — no balance can be posted to them.
-                    <span className="w-44 shrink-0" />
-                  ) : (
-                    <div
-                      className="w-44 shrink-0 pl-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <NumberField
-                        aria-label={t`Opening balance for ${account.name}`}
-                        value={amounts[account.id as string] ?? 0}
-                        onChange={(value) =>
-                          onAmountChange?.(
-                            account.id as string,
-                            isNaN(value) ? 0 : value
-                          )
-                        }
-                        formatOptions={INPUT_FORMAT.rate(
-                          currencyCode,
-                          currencyDecimals
-                        )}
-                      >
-                        <NumberInput
-                          size="sm"
-                          className="h-7 text-right font-mono tabular-nums"
-                        />
-                      </NumberField>
-                    </div>
-                  )
-                ) : (
-                  accountingEnabled &&
+                {/* Balance */}
+                {showBalances &&
                   (isGroup ? (
                     <span className="w-32 text-right tabular-nums shrink-0 text-muted-foreground max-md:w-24">
                       {formatCurrency(balance)}
@@ -332,73 +273,22 @@ const ChartOfAccountsTree = memo(
                     >
                       {formatCurrency(balance)}
                     </button>
-                  ))
-                )}
+                  ))}
 
-                {/* Actions menu — hidden while entering opening balances */}
-                {!openingBalanceMode && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className="ml-1 shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100 max-md:-mr-3 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <LuEllipsisVertical className="h-3.5 w-3.5 text-muted-foreground max-md:size-5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {isGroup ? (
-                        <>
-                          {!account.isSystem && (
-                            <DropdownMenuItem
-                              shortcut={MENU_ITEM_SHORTCUTS.edit}
-                              onClick={() =>
-                                runMenuAction(() =>
-                                  navigate(account.id as string)
-                                )
-                              }
-                            >
-                              <LuPencil className="mr-2 h-4 w-4" />
-                              <Trans>Edit Group</Trans>
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() =>
-                              runMenuAction(() =>
-                                navigate(`new-group?parentId=${account.id}`)
-                              )
-                            }
-                          >
-                            <LuFolderPlus className="mr-2 h-4 w-4" />
-                            <Trans>Add Group</Trans>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              runMenuAction(() =>
-                                navigate(`new?parentId=${account.id}`)
-                              )
-                            }
-                          >
-                            <LuFilePlus className="mr-2 h-4 w-4" />
-                            <Trans>Add Account</Trans>
-                          </DropdownMenuItem>
-                          {!account.isSystem && (
-                            <DropdownMenuItem
-                              shortcut={MENU_ITEM_SHORTCUTS.delete}
-                              className="text-destructive"
-                              onClick={() =>
-                                runMenuAction(() =>
-                                  navigate(`delete/${account.id}`)
-                                )
-                              }
-                            >
-                              <LuTrash2 className="mr-2 h-4 w-4" />
-                              <Trans>Delete</Trans>
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      ) : (
-                        <>
+                {/* Actions menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="ml-1 shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover/row:opacity-100 max-md:-mr-3 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <LuEllipsisVertical className="h-3.5 w-3.5 text-muted-foreground max-md:size-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {isGroup ? (
+                      <>
+                        {!account.isSystem && (
                           <DropdownMenuItem
                             shortcut={MENU_ITEM_SHORTCUTS.edit}
                             onClick={() =>
@@ -408,8 +298,30 @@ const ChartOfAccountsTree = memo(
                             }
                           >
                             <LuPencil className="mr-2 h-4 w-4" />
-                            <Trans>Edit</Trans>
+                            <Trans>Edit Group</Trans>
                           </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            runMenuAction(() =>
+                              navigate(`new-group?parentId=${account.id}`)
+                            )
+                          }
+                        >
+                          <LuFolderPlus className="mr-2 h-4 w-4" />
+                          <Trans>Add Group</Trans>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            runMenuAction(() =>
+                              navigate(`new?parentId=${account.id}`)
+                            )
+                          }
+                        >
+                          <LuFilePlus className="mr-2 h-4 w-4" />
+                          <Trans>Add Account</Trans>
+                        </DropdownMenuItem>
+                        {!account.isSystem && (
                           <DropdownMenuItem
                             shortcut={MENU_ITEM_SHORTCUTS.delete}
                             className="text-destructive"
@@ -422,11 +334,35 @@ const ChartOfAccountsTree = memo(
                             <LuTrash2 className="mr-2 h-4 w-4" />
                             <Trans>Delete</Trans>
                           </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.edit}
+                          onClick={() =>
+                            runMenuAction(() => navigate(account.id as string))
+                          }
+                        >
+                          <LuPencil className="mr-2 h-4 w-4" />
+                          <Trans>Edit</Trans>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.delete}
+                          className="text-destructive"
+                          onClick={() =>
+                            runMenuAction(() =>
+                              navigate(`delete/${account.id}`)
+                            )
+                          }
+                        >
+                          <LuTrash2 className="mr-2 h-4 w-4" />
+                          <Trans>Delete</Trans>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             );
           }}

@@ -125,6 +125,10 @@ export async function applyDatasetTiers(
   // Suppresses dispatch_event_batch (pgmq + pg_net). Sync interceptors
   // still run, so the satellite rows we depend on are still created.
   await client.query(`SET LOCAL "app.sync_in_progress" = 'true'`);
+  // Lets tier 01 date the accounting cutover at the dataset's first seeded
+  // period even when the company already has one; check_accounting_config_locked
+  // refuses that change in any other transaction.
+  await client.query(`SET LOCAL "app.dataset_apply" = 'true'`);
 
   // Must run before resetSequences, and before any nextSequence() call.
   await ensureSequences(client, companyId);

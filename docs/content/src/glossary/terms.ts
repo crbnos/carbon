@@ -358,13 +358,31 @@ export const terms = {
   },
   "general-ledger": {
     term: msg`General ledger`,
-    definition: msg`The book of all posted journal lines, summed by account — written only when the company has accounting enabled.`,
+    definition: msg`The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it.`,
     href: "/docs/reference/accounting"
   },
   "accounting-period": {
     term: msg`Accounting period`,
     definition: msg`A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings.`,
     href: "/docs/reference/period-close"
+  },
+  "accounting-cutover": {
+    term: msg`Accounting cutover`,
+    definition: msg`The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal.`,
+    href: "/docs/reference/accounting#setting-up-accounting",
+    aliases: ["cutover-date"]
+  },
+  "provisional-journal": {
+    term: msg`Provisional journal`,
+    definition: msg`An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report.`,
+    href: "/docs/reference/accounting#the-journal",
+    aliases: ["provisional"]
+  },
+  "superseded-journal": {
+    term: msg`Before cutover (journal)`,
+    definition: msg`A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again.`,
+    href: "/docs/reference/accounting#the-journal",
+    aliases: ["before-cutover"]
   },
 
   // ── Cost centers ────────────────────────────────────────────────────────
@@ -698,6 +716,12 @@ export const terms = {
   "account-default-currency-translation": {
     term: msg`Currency Translation (default)`,
     definition: msg`GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L.`
+  },
+  "account-default-migration-clearing": {
+    term: msg`Migration Clearing (default)`,
+    definition: msg`Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable.`,
+    href: "/docs/reference/accounting#setting-up-accounting",
+    aliases: ["migration-clearing"]
   },
   "account-default-sales": {
     term: msg`Sales (default)`,

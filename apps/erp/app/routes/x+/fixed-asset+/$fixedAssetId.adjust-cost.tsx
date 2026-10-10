@@ -16,7 +16,6 @@ import {
   invokeAssetTransfer
 } from "~/modules/accounting";
 import { FixedAssetAdjustCostForm } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -29,14 +28,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const [asset, companySettings, accountDefaults, timeZone] = await Promise.all(
-    [
-      getFixedAsset(client, fixedAssetId, companyId),
-      getCompanySettings(client, companyId),
-      getDefaultAccounts(client, companyId),
-      getCompanyTimeZone(client, companyId)
-    ]
-  );
+  const [asset, accountDefaults, timeZone] = await Promise.all([
+    getFixedAsset(client, fixedAssetId, companyId),
+    getDefaultAccounts(client, companyId),
+    getCompanyTimeZone(client, companyId)
+  ]);
   if (asset.error) {
     throw redirect(
       path.to.fixedAssets,
@@ -60,16 +56,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const accountingEnabled =
-    (companySettings.data as { accountingEnabled?: boolean } | null)
-      ?.accountingEnabled ?? false;
   const acquisitionCost = Number(asset.data.acquisitionCost);
 
   return {
     acquisitionCost,
     netBookValue: acquisitionCost - Number(asset.data.accumulatedDepreciation),
     hasLocation: Boolean(asset.data.locationId),
-    accountingEnabled,
     initialValues: {
       amount: 0,
       // Retained Earnings unless the accountant picks the account the cost
@@ -131,13 +123,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function AdjustFixedAssetCostRoute() {
-  const {
-    acquisitionCost,
-    netBookValue,
-    hasLocation,
-    accountingEnabled,
-    initialValues
-  } = useLoaderData<typeof loader>();
+  const { acquisitionCost, netBookValue, hasLocation, initialValues } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   return (
@@ -146,7 +133,6 @@ export default function AdjustFixedAssetCostRoute() {
       acquisitionCost={acquisitionCost}
       netBookValue={netBookValue}
       hasLocation={hasLocation}
-      accountingEnabled={accountingEnabled}
       onClose={() => navigate(-1)}
     />
   );

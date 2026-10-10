@@ -1439,6 +1439,20 @@ export const accounts = [
     consolidatedRate: "Historical",
     createdBy: "system"
   },
+  {
+    // The opening journal of the accounting cutover offsets every open item
+    // and trial balance line here; it must total zero before the enable.
+    key: "3400",
+    number: "3400",
+    name: "Migration Clearing",
+    isGroup: false,
+    parentKey: "equity",
+    accountType: "Equity - No Close",
+    incomeBalance: "Balance Sheet",
+    class: "Equity",
+    consolidatedRate: "Historical",
+    createdBy: "system"
+  },
 
   // ═══════════════════════════════════════════════════════════
   // INCOME STATEMENT
@@ -2170,6 +2184,7 @@ export const accountDefaults = {
   purchaseTaxPayableAccount: "2220",
   reverseChargeSalesTaxPayableAccount: "2230",
   retainedEarningsAccount: "3100",
+  migrationClearingAccount: "3400",
   currencyTranslationAccount: "3200",
   customerWriteOffAccount: "6050",
   supplierWriteOffAccount: "4130",

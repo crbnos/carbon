@@ -380,6 +380,7 @@ export type Database = {
           lotSizeVarianceAccount: string
           maintenanceAccount: string
           materialVarianceAccount: string
+          migrationClearingAccount: string | null
           netInvestmentInLeasesAccount: string | null
           overheadAbsorptionAccount: string | null
           overheadVarianceAccount: string
@@ -444,6 +445,7 @@ export type Database = {
           lotSizeVarianceAccount: string
           maintenanceAccount: string
           materialVarianceAccount: string
+          migrationClearingAccount?: string | null
           netInvestmentInLeasesAccount?: string | null
           overheadAbsorptionAccount?: string | null
           overheadVarianceAccount: string
@@ -508,6 +510,7 @@ export type Database = {
           lotSizeVarianceAccount?: string
           maintenanceAccount?: string
           materialVarianceAccount?: string
+          migrationClearingAccount?: string | null
           netInvestmentInLeasesAccount?: string | null
           overheadAbsorptionAccount?: string | null
           overheadVarianceAccount?: string
@@ -8056,6 +8059,9 @@ export type Database = {
       }
       companySettings: {
         Row: {
+          accountingActivatedAt: string | null
+          accountingActivatedBy: string | null
+          accountingCutoverDate: string | null
           accountingEnabled: boolean
           accountsPayableAddress: boolean | null
           accountsPayableEmail: string | null
@@ -8123,6 +8129,9 @@ export type Database = {
           useMetric: boolean
         }
         Insert: {
+          accountingActivatedAt?: string | null
+          accountingActivatedBy?: string | null
+          accountingCutoverDate?: string | null
           accountingEnabled?: boolean
           accountsPayableAddress?: boolean | null
           accountsPayableEmail?: string | null
@@ -8190,6 +8199,9 @@ export type Database = {
           useMetric?: boolean
         }
         Update: {
+          accountingActivatedAt?: string | null
+          accountingActivatedBy?: string | null
+          accountingCutoverDate?: string | null
           accountingEnabled?: boolean
           accountsPayableAddress?: boolean | null
           accountsPayableEmail?: string | null
@@ -8257,6 +8269,41 @@ export type Database = {
           useMetric?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "companySettings_companyId_fkey"
             columns: ["id"]
@@ -30285,6 +30332,7 @@ export type Database = {
       }
       journalLine: {
         Row: {
+          accountDefaultRole: string | null
           accountId: string | null
           accrual: boolean
           amount: number
@@ -30309,6 +30357,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          accountDefaultRole?: string | null
           accountId?: string | null
           accrual?: boolean
           amount: number
@@ -30333,6 +30382,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          accountDefaultRole?: string | null
           accountId?: string | null
           accrual?: boolean
           amount?: number
@@ -77791,6 +77841,7 @@ export type Database = {
       }
       journalLines: {
         Row: {
+          accountDefaultRole: string | null
           accountId: string | null
           accrual: boolean | null
           amount: number | null
@@ -91704,6 +91755,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      journal_posting_status: {
+        Args: { p_company_id: string }
+        Returns: Database["public"]["Enums"]["journalEntryStatus"]
+      }
       journalDimensionPivot: {
         Args: {
           p_account_classes?: string[]
@@ -92771,7 +92826,12 @@ export type Database = {
         | "Revenue Recognition"
         | "Asset Transfer"
         | "Lease"
-      journalEntryStatus: "Draft" | "Posted" | "Reversed"
+      journalEntryStatus:
+        | "Draft"
+        | "Posted"
+        | "Reversed"
+        | "Provisional"
+        | "Superseded"
       journalLineDocumentType:
         | "Receipt"
         | "Invoice"
@@ -94285,7 +94345,13 @@ export const Constants = {
         "Asset Transfer",
         "Lease",
       ],
-      journalEntryStatus: ["Draft", "Posted", "Reversed"],
+      journalEntryStatus: [
+        "Draft",
+        "Posted",
+        "Reversed",
+        "Provisional",
+        "Superseded",
+      ],
       journalLineDocumentType: [
         "Receipt",
         "Invoice",

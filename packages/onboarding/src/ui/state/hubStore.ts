@@ -73,8 +73,8 @@ export interface HubData {
   tier: Tier;
   status: HubStatus;
   exclusions: HubExclusions;
-  // Modules forced out of scope by app settings (e.g. "acc" while the company's
-  // accountingEnabled setting is off). Merged into the exclusions every view
+  // Modules forced out of scope by app settings (e.g. "acc" while the company
+  // has no accounting cutover). Merged into the exclusions every view
   // filters by, but never written back to the stored, staff-editable exclusions.
   forcedModules: Mod[];
   checkStates: CheckStateRow[];

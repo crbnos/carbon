@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
 import { paymentFixture } from "./payment-test-fixture";
@@ -160,13 +161,84 @@ databaseTest(
 );
 
 databaseTest(
-  "accounting-disabled posting still rejects an invalid bank account",
+  "with no cutover, a payment against an invoice with no journal posts a Provisional journal on the default receivables account",
   async () => {
     const f = await paymentFixture();
     try {
       await f.db
         .updateTable("companySettings")
-        .set({ accountingEnabled: false })
+        .set({ accountingCutoverDate: null })
+        .where("id", "=", f.companyId)
+        .execute();
+      // An invoice posted before every company posted journals: no control line.
+      const invoiceId = `${f.companyId}-unjournaled-invoice`;
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("salesInvoice")
+          .values({
+            id: invoiceId,
+            invoiceId,
+            customerId: f.customerId,
+            currencyCode: "EUR",
+            exchangeRate: 1.1,
+            status: "Submitted",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .insertInto("salesInvoiceLine")
+          .values({
+            invoiceId,
+            invoiceLineType: "Service",
+            quantity: 1,
+            unitPrice: 100,
+            unitOfMeasureCode: "EA",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+      });
+      const paymentId = await f.payment({ invoiceId });
+      const { journalId } = await postPaymentTransaction(f.db, {
+        ...f.args,
+        paymentId
+      });
+      expect(
+        await f.db
+          .selectFrom("journal")
+          .select(["status", "accountingPeriodId"])
+          .where("id", "=", journalId!)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: "Provisional", accountingPeriodId: null });
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount", "description"])
+        .where("journalId", "=", journalId!)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        lines.find((line) => line.accountId === f.account("bank"))?.amount
+      ).toEqual(100);
+      expect(
+        lines.find((line) => line.accountId === f.account("control"))?.amount
+      ).toEqual(-100);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "with no cutover, posting still rejects an invalid bank account",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ accountingCutoverDate: null })
         .where("id", "=", f.companyId)
         .execute();
       await f.db

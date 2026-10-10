@@ -65,14 +65,12 @@ import type {
   paymentValidator,
   purchaseInvoiceDeliveryValidator,
   purchaseInvoiceLineValidator,
-  purchaseInvoiceStatusType,
   purchaseInvoiceValidator,
   ReimbursementStatusType,
   reimbursementLineValidator,
   reimbursementUpdateValidator,
   salesInvoiceLineValidator,
   salesInvoiceShipmentValidator,
-  salesInvoiceStatusType,
   salesInvoiceValidator
 } from "./invoicing.models";
 
@@ -539,33 +537,6 @@ export async function updatePurchaseInvoiceExchangeRate(
 }
 
 /** @mcp update */
-export async function updatePurchaseInvoiceStatus(
-  client: SupabaseClient<Database>,
-  update: {
-    id: string;
-    status: (typeof purchaseInvoiceStatusType)[number];
-    assignee: null | undefined;
-    updatedBy: string;
-    datePaid?: string | null;
-  }
-) {
-  // Partially Paid / Overdue are derived in the purchaseInvoices view from
-  // invoiceSettlement. Base-status 'Paid' is the manual/legacy/Xero "settled"
-  // signal honored by the views and aging/tie-out RPCs; the route enforces
-  // that manual 'Paid' is only allowed when accounting is disabled.
-  if (update.status === "Partially Paid" || update.status === "Overdue") {
-    return {
-      data: null,
-      error: {
-        message: `Cannot set status to ${update.status} directly — this status is derived from payment applications.`
-      }
-    };
-  }
-
-  return client.from("purchaseInvoice").update(update).eq("id", update.id);
-}
-
-/** @mcp update */
 export async function updateSalesInvoiceExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -581,33 +552,6 @@ export async function updateSalesInvoiceExchangeRate(
     updatedBy: data.updatedBy,
     updatedAt: new Date().toISOString()
   };
-
-  return client.from("salesInvoice").update(update).eq("id", update.id);
-}
-
-/** @mcp update */
-export async function updateSalesInvoiceStatus(
-  client: SupabaseClient<Database>,
-  update: {
-    id: string;
-    status: (typeof salesInvoiceStatusType)[number];
-    assignee: null | undefined;
-    updatedBy: string;
-    datePaid?: string | null;
-  }
-) {
-  // Partially Paid / Overdue are derived in the salesInvoices view from
-  // invoiceSettlement. Base-status 'Paid' is the manual/legacy/Xero "settled"
-  // signal honored by the views and aging/tie-out RPCs; the route enforces
-  // that manual 'Paid' is only allowed when accounting is disabled.
-  if (update.status === "Partially Paid" || update.status === "Overdue") {
-    return {
-      data: null,
-      error: {
-        message: `Cannot set status to ${update.status} directly — this status is derived from payment applications.`
-      }
-    };
-  }
 
   return client.from("salesInvoice").update(update).eq("id", update.id);
 }

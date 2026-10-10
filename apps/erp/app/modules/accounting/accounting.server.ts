@@ -6,19 +6,29 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
+import { ACTIVATION_CUTOVER_PARAM } from "@carbon/database/accounting-cutover";
+import { CUTOVER_MAX_PERIODS_BACK } from "@carbon/database/accounting-cutover-reads";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  journalPostingStatus,
+  readAccountingCutoverDate
+} from "@carbon/database/journal-posting-status";
+import {
+  buildDeferredTaxJournals,
+  buildDepreciationJournals,
+  buildDisposalJournal,
+  buildRecognitionJournals,
+  deferredTaxSettings,
+  type RecognitionSources,
+  type RunJournal
+} from "@carbon/database/run-journals";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import {
-  datetime,
-  equals,
-  formatDate,
-  round,
-  toStoredAmount
-} from "@carbon/utils";
+import { datetime, equals, formatDate, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
+  ACCOUNTING_NOT_STARTED,
   applyCtaToReportPeriodSeries,
   getAccountLedger,
   getAccountLedgerSummary,
@@ -27,13 +37,33 @@ import {
   getOrCreateAccountingPeriod
 } from "./accounting.service";
 import {
+  type ActivationCutoverDates,
   acquisitionLines,
+  activationCutoverDates,
   type DepreciationLine,
   depreciationRunLinesMatch,
   isFutureRunPeriod,
   monthEndOf,
   runPostingTargets
 } from "./accounting.utils";
+
+/**
+ * The cutover date the enable wizard works against, with the earliest and the
+ * latest date its date picker allows (`activationCutoverDates`), from the
+ * company's current period.
+ */
+export async function getActivationCutover(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  request: Request
+): Promise<ActivationCutoverDates> {
+  const timeZone = await getCompanyTimeZone(client, companyId);
+  return activationCutoverDates(
+    new URL(request.url).searchParams.get(ACTIVATION_CUTOVER_PARAM),
+    datetime.today(timeZone),
+    CUTOVER_MAX_PERIODS_BACK
+  );
+}
 
 /**
  * Saves a currency's config and, when given, pins its exchange rate as a
@@ -259,6 +289,76 @@ export async function getConsolidatedAccountLedger(
   return { ledger, summary };
 }
 
+/**
+ * Inserts a Posted run journal (`@carbon/database/run-journals`) with its
+ * lines, and a dimension row for each line value whose dimension the company
+ * has. A journal with no lines is still inserted, as the run posters always
+ * have.
+ */
+async function insertPostedRunJournal(
+  trx: KyselyTx,
+  journal: RunJournal,
+  posting: {
+    accountingPeriodId: string;
+    postingDate: string;
+    dimensionIds: Partial<Record<DimensionEntityType, string | undefined>>;
+    companyId: string;
+    userId: string;
+    now: string;
+  }
+): Promise<{ id: string; journalEntryId: string }> {
+  const { accountingPeriodId, postingDate, dimensionIds, companyId, userId } =
+    posting;
+  const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
+  const { id } = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId,
+      companyId,
+      description: journal.description,
+      postingDate,
+      sourceType: journal.sourceType,
+      status: "Posted",
+      postedAt: posting.now,
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+  if (journal.lines.length === 0) return { id, journalEntryId };
+
+  const lines = await trx
+    .insertInto("journalLine")
+    .values(
+      journal.lines.map(({ dimensions: _, ...line }) => ({
+        ...line,
+        journalId: id,
+        journalLineReference: crypto.randomUUID(),
+        companyId
+      }))
+    )
+    .returning(["id"])
+    .execute();
+  const dimensionRows = lines.flatMap((line, index) =>
+    Object.entries(journal.lines[index]!.dimensions).flatMap(
+      ([entityType, valueId]) => {
+        const dimensionId = dimensionIds[entityType as DimensionEntityType];
+        return dimensionId && valueId
+          ? [{ journalLineId: line.id, dimensionId, valueId, companyId }]
+          : [];
+      }
+    )
+  );
+  if (dimensionRows.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(dimensionRows)
+      .execute();
+  }
+  return { id, journalEntryId };
+}
+
 export async function postDisposal(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -299,10 +399,153 @@ export async function postDisposal(
     userId
   } = args;
 
-  const nbv = acquisitionCost - accumulatedDepreciation;
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
+
+  const journal = buildDisposalJournal({
+    assetReadableId: fixedAssetReadableId,
+    disposalMethod,
+    disposalDate,
+    acquisitionCost,
+    accumulatedDepreciation,
+    locationId,
+    fixedAssetClassId,
+    assetAccountId,
+    accumulatedDepreciationAccountId,
+    lossOnDisposalAccountId
+  });
+  const nbv = journal.netBookValue;
   const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
+    const { id: journalId } = await insertPostedRunJournal(trx, journal, {
+      accountingPeriodId,
+      postingDate: journal.postingDate,
+      dimensionIds: {
+        Location: locationDimensionId,
+        FixedAssetClass: assetClassDimensionId
+      },
+      companyId,
+      userId,
+      now
+    });
+
+    await trx
+      .insertInto("fixedAssetDisposal")
+      .values({
+        fixedAssetId,
+        disposalMethod,
+        disposalDate,
+        saleProceeds: 0,
+        netBookValueAtDisposal: nbv,
+        gainLoss: -nbv,
+        journalId,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    await trx
+      .updateTable("fixedAsset")
+      .set({
+        status: "Disposed",
+        disposalDate,
+        disposalMethod,
+        saleProceeds: 0,
+        updatedBy: userId
+      })
+      .where("id", "=", fixedAssetId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/**
+ * Registers a Draft asset: Active, or Under Construction for a
+ * construction-in-progress class. It posts the acquisition journal first:
+ * Provisional before the accounting cutover (no period), Posted after it, in
+ * the acquisition date's period. The status is read once, in the transaction,
+ * under the lock the enable takes, so no registration writes a Provisional
+ * journal after the enable commits. One transaction, so no asset is
+ * registered without its journal or its CIP cost row.
+ */
+export async function postAssetRegistration(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    fixedAssetId: string;
+    fixedAssetReadableId: string;
+    registration: {
+      acquisitionCost: number;
+      acquisitionDate: string;
+      accumulatedDepreciation: number;
+      depreciationStartDate: string;
+    };
+    posting: {
+      locationId: string | null;
+      fixedAssetClassId: string;
+      assetAccountId: string;
+      // Contra-asset account credited with any opening accumulated
+      // depreciation when the asset is capitalized mid-life (from the class).
+      accumulatedDepreciationAccountId: string;
+      // Equity offset for a direct (non-purchase) registration — owner equity
+      // / retained earnings. Brings the asset onto the books at NBV.
+      offsetAccountId: string;
+      locationDimensionId: string | undefined;
+      assetClassDimensionId: string | undefined;
+      /** The period of a Posted journal. Called only after the cutover. */
+      resolveAccountingPeriodId: (postingDate: string) => Promise<string>;
+    };
+    // "Under Construction" for an asset registered into a construction-in-
+    // progress class: it accumulates cost and is not depreciated until it is
+    // capitalized into its in-service class.
+    status?: "Active" | "Under Construction";
+    companyId: string;
+    userId: string;
+  }
+) {
+  const {
+    fixedAssetId,
+    fixedAssetReadableId,
+    registration,
+    posting,
+    status = "Active",
+    companyId,
+    userId
+  } = args;
+  const {
+    locationId,
+    fixedAssetClassId,
+    assetAccountId,
+    accumulatedDepreciationAccountId,
+    offsetAccountId,
+    locationDimensionId,
+    assetClassDimensionId
+  } = posting;
+
+  const { acquisitionCost, acquisitionDate, accumulatedDepreciation } =
+    registration;
+  const now = datetime.timestamp();
+
+  return db.transaction().execute(async (trx) => {
+    const postingStatus = await journalPostingStatus(trx, companyId);
+    let accountingPeriodId: string | null = null;
+    if (postingStatus === "Posted") {
+      // A Provisional journal counts nowhere, so only a Posted one needs the
+      // dimensions.
+      if (!locationDimensionId || !assetClassDimensionId) {
+        throw new Error("Missing dimensions required for asset registration");
+      }
+      accountingPeriodId =
+        await posting.resolveAccountingPeriodId(acquisitionDate);
+    }
+
+    // Post the acquisition journal FIRST, then flip the asset to Active — so a
+    // capitalized asset can never exist without its GL entry (if the journal
+    // fails the whole transaction rolls back and the asset stays Draft).
+    //   Dr  assetAccountId                     acquisitionCost           (capitalize at gross cost)
+    //       Cr  accumulatedDepreciationAccountId   accumulatedDepreciation   (opening contra, mid-life only)
+    //       Cr  offsetAccountId                    nbv                       (owner equity)
     const journalEntryId = await getNextSequence(
       trx,
       "journalEntry",
@@ -315,10 +558,10 @@ export async function postDisposal(
         journalEntryId,
         accountingPeriodId,
         companyId,
-        description: `Asset Disposal: ${fixedAssetReadableId} (${disposalMethod})`,
-        postingDate: disposalDate,
-        sourceType: "Asset Disposal",
-        status: "Posted",
+        description: `Asset Registration: ${fixedAssetReadableId}`,
+        postingDate: acquisitionDate,
+        sourceType: "Manual",
+        status: postingStatus,
         postedAt: now,
         postedBy: userId,
         createdBy: userId
@@ -326,52 +569,25 @@ export async function postDisposal(
       .returning(["id"])
       .executeTakeFirstOrThrow();
 
-    const journalLines: Array<{
-      journalId: string;
-      accountId: string;
-      description: string;
-      amount: number;
-      journalLineReference: string;
-      companyId: string;
-    }> = [];
-
-    if (accumulatedDepreciation > 0) {
-      journalLines.push({
-        journalId: journal.id,
-        accountId: accumulatedDepreciationAccountId,
-        description: "Clear accumulated depreciation",
-        amount: toStoredAmount(accumulatedDepreciation, 0, "Asset"),
-        journalLineReference: crypto.randomUUID(),
-        companyId
-      });
-    }
-
-    if (nbv > 0) {
-      // Scrap has no proceeds, so the entire net book value is a loss booked to
-      // the dedicated Loss on Disposal account (not comingled with the write-off
-      // account). gainLoss = 0 − nbv = −nbv → a full debit (loss).
-      journalLines.push({
-        journalId: journal.id,
-        accountId: lossOnDisposalAccountId,
-        description: "Loss on disposal (scrap)",
-        amount: toStoredAmount(nbv, 0, "Expense"),
-        journalLineReference: crypto.randomUUID(),
-        companyId
-      });
-    }
-
-    journalLines.push({
-      journalId: journal.id,
-      accountId: assetAccountId,
-      description: "Remove asset at cost",
-      amount: toStoredAmount(0, acquisitionCost, "Asset"),
-      journalLineReference: crypto.randomUUID(),
-      companyId
-    });
-
     const journalLineResults = await trx
       .insertInto("journalLine")
-      .values(journalLines)
+      .values(
+        acquisitionLines(acquisitionCost, accumulatedDepreciation).map(
+          (line) => ({
+            journalId: journal.id,
+            accountId:
+              line.role === "asset"
+                ? assetAccountId
+                : line.role === "accumulatedDepreciation"
+                  ? accumulatedDepreciationAccountId
+                  : offsetAccountId,
+            description: line.description,
+            amount: line.amount,
+            journalLineReference: crypto.randomUUID(),
+            companyId
+          })
+        )
+      )
       .returning(["id"])
       .execute();
 
@@ -401,184 +617,6 @@ export async function postDisposal(
           }))
         )
         .execute();
-    }
-
-    await trx
-      .insertInto("fixedAssetDisposal")
-      .values({
-        fixedAssetId,
-        disposalMethod,
-        disposalDate,
-        saleProceeds: 0,
-        netBookValueAtDisposal: nbv,
-        gainLoss: -nbv,
-        journalId: journal.id,
-        companyId,
-        createdBy: userId
-      })
-      .execute();
-
-    await trx
-      .updateTable("fixedAsset")
-      .set({
-        status: "Disposed",
-        disposalDate,
-        disposalMethod,
-        saleProceeds: 0,
-        updatedBy: userId
-      })
-      .where("id", "=", fixedAssetId)
-      .where("companyId", "=", companyId)
-      .execute();
-  });
-}
-
-/**
- * Registers a Draft asset: Active, or Under Construction for a
- * construction-in-progress class. With `posting` (accounting on) it posts the
- * acquisition journal first; with `posting: null` it writes the same asset and
- * CIP cost rows with no journal. One transaction either way, so no asset is
- * registered without its journal or its CIP cost row.
- */
-export async function postAssetRegistration(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    fixedAssetId: string;
-    fixedAssetReadableId: string;
-    registration: {
-      acquisitionCost: number;
-      acquisitionDate: string;
-      accumulatedDepreciation: number;
-      depreciationStartDate: string;
-    };
-    posting: {
-      locationId: string | null;
-      fixedAssetClassId: string;
-      assetAccountId: string;
-      // Contra-asset account credited with any opening accumulated
-      // depreciation when the asset is capitalized mid-life (from the class).
-      accumulatedDepreciationAccountId: string;
-      // Equity offset for a direct (non-purchase) registration — owner equity
-      // / retained earnings. Brings the asset onto the books at NBV.
-      offsetAccountId: string;
-      accountingPeriodId: string;
-      locationDimensionId: string | undefined;
-      assetClassDimensionId: string | undefined;
-    } | null;
-    // "Under Construction" for an asset registered into a construction-in-
-    // progress class: it accumulates cost and is not depreciated until it is
-    // capitalized into its in-service class.
-    status?: "Active" | "Under Construction";
-    companyId: string;
-    userId: string;
-  }
-) {
-  const {
-    fixedAssetId,
-    fixedAssetReadableId,
-    registration,
-    posting,
-    status = "Active",
-    companyId,
-    userId
-  } = args;
-
-  const { acquisitionCost, acquisitionDate, accumulatedDepreciation } =
-    registration;
-  const now = datetime.timestamp();
-
-  return db.transaction().execute(async (trx) => {
-    // Post the acquisition journal FIRST, then flip the asset to Active — so a
-    // capitalized asset can never exist without its GL entry (if the journal
-    // fails the whole transaction rolls back and the asset stays Draft).
-    //   Dr  assetAccountId                     acquisitionCost           (capitalize at gross cost)
-    //       Cr  accumulatedDepreciationAccountId   accumulatedDepreciation   (opening contra, mid-life only)
-    //       Cr  offsetAccountId                    nbv                       (owner equity)
-    let journalId: string | null = null;
-    if (posting) {
-      const {
-        locationId,
-        fixedAssetClassId,
-        assetAccountId,
-        accumulatedDepreciationAccountId,
-        offsetAccountId,
-        accountingPeriodId,
-        locationDimensionId,
-        assetClassDimensionId
-      } = posting;
-      const journalEntryId = await getNextSequence(
-        trx,
-        "journalEntry",
-        companyId
-      );
-
-      const journal = await trx
-        .insertInto("journal")
-        .values({
-          journalEntryId,
-          accountingPeriodId,
-          companyId,
-          description: `Asset Registration: ${fixedAssetReadableId}`,
-          postingDate: acquisitionDate,
-          sourceType: "Manual",
-          status: "Posted",
-          postedAt: now,
-          postedBy: userId,
-          createdBy: userId
-        })
-        .returning(["id"])
-        .executeTakeFirstOrThrow();
-      journalId = journal.id;
-
-      const journalLineResults = await trx
-        .insertInto("journalLine")
-        .values(
-          acquisitionLines(acquisitionCost, accumulatedDepreciation).map(
-            (line) => ({
-              journalId: journal.id,
-              accountId:
-                line.role === "asset"
-                  ? assetAccountId
-                  : line.role === "accumulatedDepreciation"
-                    ? accumulatedDepreciationAccountId
-                    : offsetAccountId,
-              description: line.description,
-              amount: line.amount,
-              journalLineReference: crypto.randomUUID(),
-              companyId
-            })
-          )
-        )
-        .returning(["id"])
-        .execute();
-
-      if (locationDimensionId && locationId) {
-        await trx
-          .insertInto("journalLineDimension")
-          .values(
-            journalLineResults.map((jl) => ({
-              journalLineId: jl.id,
-              dimensionId: locationDimensionId,
-              valueId: locationId,
-              companyId
-            }))
-          )
-          .execute();
-      }
-
-      if (assetClassDimensionId && fixedAssetClassId) {
-        await trx
-          .insertInto("journalLineDimension")
-          .values(
-            journalLineResults.map((jl) => ({
-              journalLineId: jl.id,
-              dimensionId: assetClassDimensionId,
-              valueId: fixedAssetClassId,
-              companyId
-            }))
-          )
-          .execute();
-      }
     }
 
     const updateResult = await trx
@@ -613,7 +651,7 @@ export async function postAssetRegistration(
           sourceType: "Manual",
           amount: acquisitionCost,
           costDate: acquisitionDate,
-          journalId,
+          journalId: journal.id,
           companyId,
           createdBy: userId
         })
@@ -818,6 +856,9 @@ export async function postDepreciationRun(
     userId
   } = args;
 
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
   const now = datetime.timestamp();
 
   const periodOf = (monthEnd: string) => {
@@ -914,96 +955,27 @@ export async function postDepreciationRun(
     // A line from before per-month lines has no periodEnd: it is the run's.
     const lines = runLines.map((line) => ({
       ...line,
-      periodEnd: line.periodEnd ?? run.periodEnd,
+      monthEnd: line.periodEnd ?? run.periodEnd,
       amount: Number(line.amount),
       taxAmount: Number(line.taxAmount ?? 0)
     }));
+    const dimensionIds = {
+      Location: locationDimensionId,
+      FixedAssetClass: assetClassDimensionId
+    };
 
-    for (const line of lines) {
-      const { amount } = line;
-      // A month with no book depreciation (a tax-only line) has no journal
-      // to post; it still counts toward the deferred tax below.
-      if (equals(amount, 0)) continue;
-      const { accountingPeriodId, postingDate } = periodOf(line.periodEnd);
-
-      const journalEntryId = await getNextSequence(
-        trx,
-        "journalEntry",
-        companyId
-      );
-
-      const journal = await trx
-        .insertInto("journal")
-        .values({
-          journalEntryId,
-          accountingPeriodId,
-          companyId,
-          description: `Depreciation: ${line.assetReadableId}`,
-          postingDate,
-          sourceType: "Asset Depreciation",
-          status: "Posted",
-          postedAt: now,
-          postedBy: userId,
-          createdBy: userId
-        })
-        .returning(["id"])
-        .executeTakeFirstOrThrow();
-
-      const journalLineResults = await trx
-        .insertInto("journalLine")
-        .values([
-          {
-            journalId: journal.id,
-            accountId: line.depreciationExpenseAccountId,
-            description: "Depreciation Expense",
-            amount: toStoredAmount(amount, 0, "Expense"),
-            journalLineReference: crypto.randomUUID(),
-            companyId
-          },
-          {
-            journalId: journal.id,
-            accountId: line.accumulatedDepreciationAccountId,
-            description: "Accumulated Depreciation",
-            amount: toStoredAmount(0, amount, "Asset"),
-            journalLineReference: crypto.randomUUID(),
-            companyId
-          }
-        ])
-        .returning(["id"])
-        .execute();
-
-      if (locationDimensionId && line.locationId) {
-        await trx
-          .insertInto("journalLineDimension")
-          .values(
-            journalLineResults.map((jl) => ({
-              journalLineId: jl.id,
-              dimensionId: locationDimensionId,
-              valueId: line.locationId!,
-              companyId
-            }))
-          )
-          .execute();
-      }
-
-      if (assetClassDimensionId && line.fixedAssetClassId) {
-        await trx
-          .insertInto("journalLineDimension")
-          .values(
-            journalLineResults.map((jl) => ({
-              journalLineId: jl.id,
-              dimensionId: assetClassDimensionId,
-              valueId: line.fixedAssetClassId,
-              companyId
-            }))
-          )
-          .execute();
-      }
-
+    for (const journal of buildDepreciationJournals(lines)) {
+      const { id } = await insertPostedRunJournal(trx, journal, {
+        ...periodOf(journal.monthEnd),
+        dimensionIds,
+        companyId,
+        userId,
+        now
+      });
       await trx
         .updateTable("depreciationRunLine")
-        .set({ journalId: journal.id })
-        .where("id", "=", line.id)
+        .set({ journalId: id })
+        .where("id", "=", journal.lineId)
         .where("companyId", "=", companyId)
         .execute();
     }
@@ -1055,186 +1027,32 @@ export async function postDepreciationRun(
         .execute();
     }
 
-    // Deferred tax liability journal entry, one per month, linked to that
-    // month's lines so Reverse Run can find it.
-    const linesByMonth = new Map<string, typeof lines>();
-    for (const line of lines) {
-      const monthLines = linesByMonth.get(line.periodEnd) ?? [];
-      monthLines.push(line);
-      linesByMonth.set(line.periodEnd, monthLines);
-    }
-
-    for (const [monthEnd, monthLines] of linesByMonth) {
-      if (taxEnabled && taxRate && dtlAccountId && dtExpenseAccountId) {
-        const { accountingPeriodId, postingDate } = periodOf(monthEnd);
-        const diffByGroup = new Map<
-          string,
-          { locationId: string | null; fixedAssetClassId: string; diff: number }
-        >();
-
-        for (const line of monthLines) {
-          const bookAmount = line.amount;
-          const taxAmt = line.taxAmount;
-          const diff = taxAmt - bookAmount;
-          const locId = line.locationId ?? null;
-          const classId = line.fixedAssetClassId;
-          const key = `${locId ?? ""}|${classId}`;
-          const existing = diffByGroup.get(key);
-          if (existing) {
-            existing.diff += diff;
-          } else {
-            diffByGroup.set(key, {
-              locationId: locId,
-              fixedAssetClassId: classId,
-              diff
-            });
-          }
-        }
-
-        const totalTemporaryDifference = [...diffByGroup.values()].reduce(
-          (sum, g) => sum + g.diff,
-          0
-        );
-        const dtlAmount = Math.abs(totalTemporaryDifference * (taxRate / 100));
-
-        if (dtlAmount > 0.01) {
-          const dtlEntryId = await getNextSequence(
-            trx,
-            "journalEntry",
-            companyId
-          );
-
-          const dtlJournal = await trx
-            .insertInto("journal")
-            .values({
-              journalEntryId: dtlEntryId,
-              accountingPeriodId,
-              companyId,
-              description: `Deferred Tax: Depreciation ${depreciationRunReadableId}`,
-              postingDate,
-              sourceType: "Asset Depreciation",
-              status: "Posted",
-              postedAt: now,
-              postedBy: userId,
-              createdBy: userId
-            })
-            .returning(["id"])
-            .executeTakeFirstOrThrow();
-
-          await trx
-            .updateTable("depreciationRunLine")
-            .set({ deferredTaxJournalId: dtlJournal.id })
-            .where(
-              "id",
-              "in",
-              monthLines.map((line) => line.id)
-            )
-            .where("companyId", "=", companyId)
-            .execute();
-
-          const isLiability = totalTemporaryDifference > 0;
-
-          const significantEntries = [...diffByGroup.values()].filter(
-            (g) => Math.abs(g.diff * (taxRate / 100)) > 0.01
-          );
-
-          const dtlLineValues = significantEntries.flatMap((g) => {
-            const locAmount = Math.abs(g.diff * (taxRate / 100));
-            return [
-              {
-                journalId: dtlJournal.id,
-                accountId: isLiability ? dtExpenseAccountId : dtlAccountId,
-                description: isLiability
-                  ? "Deferred Tax Expense"
-                  : "Deferred Tax Liability",
-                amount: toStoredAmount(
-                  locAmount,
-                  0,
-                  isLiability ? "Expense" : "Liability"
-                ),
-                journalLineReference: crypto.randomUUID(),
-                companyId
-              },
-              {
-                journalId: dtlJournal.id,
-                accountId: isLiability ? dtlAccountId : dtExpenseAccountId,
-                description: isLiability
-                  ? "Deferred Tax Liability"
-                  : "Deferred Tax Benefit",
-                amount: toStoredAmount(
-                  0,
-                  locAmount,
-                  isLiability ? "Liability" : "Expense"
-                ),
-                journalLineReference: crypto.randomUUID(),
-                companyId
-              }
-            ];
-          });
-
-          if (dtlLineValues.length > 0) {
-            const dtlLineResults = await trx
-              .insertInto("journalLine")
-              .values(dtlLineValues)
-              .returning(["id"])
-              .execute();
-
-            const dimensionValues: Array<{
-              journalLineId: string;
-              dimensionId: string;
-              valueId: string;
-              companyId: string;
-            }> = [];
-
-            for (let i = 0; i < significantEntries.length; i++) {
-              const g = significantEntries[i];
-              const debitLineId = dtlLineResults[i * 2].id;
-              const creditLineId = dtlLineResults[i * 2 + 1].id;
-
-              if (locationDimensionId && g.locationId) {
-                dimensionValues.push(
-                  {
-                    journalLineId: debitLineId,
-                    dimensionId: locationDimensionId,
-                    valueId: g.locationId,
-                    companyId
-                  },
-                  {
-                    journalLineId: creditLineId,
-                    dimensionId: locationDimensionId,
-                    valueId: g.locationId,
-                    companyId
-                  }
-                );
-              }
-
-              if (assetClassDimensionId && g.fixedAssetClassId) {
-                dimensionValues.push(
-                  {
-                    journalLineId: debitLineId,
-                    dimensionId: assetClassDimensionId,
-                    valueId: g.fixedAssetClassId,
-                    companyId
-                  },
-                  {
-                    journalLineId: creditLineId,
-                    dimensionId: assetClassDimensionId,
-                    valueId: g.fixedAssetClassId,
-                    companyId
-                  }
-                );
-              }
-            }
-
-            if (dimensionValues.length > 0) {
-              await trx
-                .insertInto("journalLineDimension")
-                .values(dimensionValues)
-                .execute();
-            }
-          }
-        }
-      }
+    // Deferred tax journal entry, one per month, linked to that month's
+    // lines so Reverse Run can find it.
+    const deferredTax = buildDeferredTaxJournals({
+      runReadableId: depreciationRunReadableId,
+      lines,
+      settings: deferredTaxSettings({
+        enabled: taxEnabled,
+        taxRate,
+        dtlAccountId,
+        dtExpenseAccountId
+      })
+    });
+    for (const journal of deferredTax) {
+      const { id } = await insertPostedRunJournal(trx, journal, {
+        ...periodOf(journal.monthEnd),
+        dimensionIds,
+        companyId,
+        userId,
+        now
+      });
+      await trx
+        .updateTable("depreciationRunLine")
+        .set({ deferredTaxJournalId: id })
+        .where("id", "in", journal.lineIds)
+        .where("companyId", "=", companyId)
+        .execute();
     }
 
     await trx
@@ -1264,23 +1082,8 @@ export type RevenueRecognitionDimensionIds = {
   project?: string;
 };
 
-type RevenueScheduleType = Database["public"]["Enums"]["revenueScheduleType"];
 type AccountClass = NonNullable<Database["public"]["Enums"]["glAccountClass"]>;
-
-const REVENUE_LINE_DESCRIPTIONS: Record<
-  RevenueScheduleType,
-  { debit: string; credit: string }
-> = {
-  Deferral: {
-    debit: "Deferred revenue released",
-    credit: "Revenue recognized"
-  },
-  Accrual: { debit: "Unbilled rent accrued", credit: "Rental income accrued" },
-  Interest: {
-    debit: "Net investment interest",
-    credit: "Lease interest income"
-  }
-};
+type DimensionEntityType = Database["public"]["Enums"]["dimensionEntityType"];
 
 /**
  * Posts a Draft revenue recognition run as one journal per month its rows
@@ -1305,6 +1108,9 @@ export async function postRevenueRecognitionRun(
   }
 ) {
   const { runId, companyId, userId, periods, dimensionIds } = args;
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
   const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
@@ -1418,11 +1224,6 @@ export async function postRevenueRecognitionRun(
     for (const account of accounts) {
       if (account.class) classById.set(account.id, account.class);
     }
-    for (const id of accountIds) {
-      if (!classById.has(id)) {
-        throw new Error(`Account ${id} on the revenue schedule has no class`);
-      }
-    }
 
     // Deferral rows point at the invoice line that funded them; the journal
     // line references the invoice and carries its customer/item/location.
@@ -1529,197 +1330,94 @@ export async function postRevenueRecognitionRun(
     // One journal per month: a row posts in the period of the month it was
     // scheduled for (the run's own period when that month is Closed), so a
     // catch-up run puts each month's revenue where it was earned.
-    const periodOfRow = (row: { scheduledDate: string }) => {
-      const period = periods.get(monthEndOf(row.scheduledDate));
+    const periodOfMonth = (monthEnd: string) => {
+      const period = periods.get(monthEnd);
       if (!period) {
-        throw new Error(
-          `No accounting period resolved for ${monthEndOf(row.scheduledDate)}`
-        );
+        throw new Error(`No accounting period resolved for ${monthEnd}`);
       }
       return period;
     };
-    const targets = [
-      ...new Map(
-        rows.map((row) => {
-          const period = periodOfRow(row);
-          return [period.postingDate, period] as const;
-        })
-      ).values()
-    ].sort((a, b) => a.postingDate.localeCompare(b.postingDate));
-    const journalByDate = new Map<
-      string,
+    const periodIdByDate = new Map<string, string>();
+    const scheduleRows = rows.map((row) => {
+      const period = periodOfMonth(monthEndOf(row.scheduledDate));
+      periodIdByDate.set(period.postingDate, period.accountingPeriodId);
+      return { ...row, postingDate: period.postingDate };
+    });
+    const sources: RecognitionSources = {
+      invoiceLines: invoiceLineById,
+      rentalLines: rentalLineById,
+      contractLines: contractLineById
+    };
+    // Throws when an account has no class.
+    const { journals, runJournal } = buildRecognitionJournals({
+      runReadableId: run.runId,
+      runPeriodEnd: run.periodEnd,
+      rows: scheduleRows,
+      sources,
+      classById
+    });
+    const recognitionDimensionIds = {
+      Customer: dimensionIds.customer,
+      Item: dimensionIds.item,
+      Location: dimensionIds.location,
+      Project: dimensionIds.project
+    };
+
+    const written = new Map<
+      (typeof journals)[number],
       { id: string; journalEntryId: string }
     >();
-    for (const target of targets) {
-      const journalEntryId = await getNextSequence(
-        trx,
-        "journalEntry",
-        companyId
-      );
-      const journal = await trx
-        .insertInto("journal")
-        .values({
-          journalEntryId,
-          accountingPeriodId: target.accountingPeriodId,
-          companyId,
-          description: `Revenue Recognition ${run.runId}`,
-          postingDate: target.postingDate,
-          sourceType: "Revenue Recognition",
-          status: "Posted",
-          postedAt: now,
-          postedBy: userId,
-          createdBy: userId
-        })
-        .returning(["id"])
-        .executeTakeFirstOrThrow();
-      journalByDate.set(target.postingDate, {
-        id: journal.id,
-        journalEntryId
+    for (const journal of journals) {
+      const inserted = await insertPostedRunJournal(trx, journal, {
+        accountingPeriodId: periodIdByDate.get(journal.postingDate)!,
+        postingDate: journal.postingDate,
+        dimensionIds: recognitionDimensionIds,
+        companyId,
+        userId,
+        now
       });
-    }
-    const journalOf = (row: { scheduledDate: string }) =>
-      journalByDate.get(periodOfRow(row).postingDate)!;
-
-    for (const row of rows) {
-      const journal = journalOf(row);
-      const amount = Number(row.amount);
-      const descriptions =
-        row.customerContractLineId && row.type === "Accrual"
-          ? { debit: "Contract asset accrued", credit: "Revenue recognized" }
-          : REVENUE_LINE_DESCRIPTIONS[row.type];
-      const invoiceSource = row.salesInvoiceLineId
-        ? invoiceLineById.get(row.salesInvoiceLineId)
-        : undefined;
-      const rentalSource =
-        !invoiceSource && row.rentalAgreementLineId
-          ? rentalLineById.get(row.rentalAgreementLineId)
-          : undefined;
-      const contractSource =
-        !invoiceSource && !rentalSource && row.customerContractLineId
-          ? contractLineById.get(row.customerContractLineId)
-          : undefined;
-      const source:
-        | {
-            customerId: string | null;
-            itemId: string | null;
-            locationId?: string | null;
-            projectId?: string | null;
-          }
-        | undefined = invoiceSource ?? rentalSource ?? contractSource;
-      const document = invoiceSource
-        ? {
-            documentType: "Invoice" as const,
-            documentId: invoiceSource.invoiceId
-          }
-        : rentalSource
-          ? {
-              documentType: "Rental Agreement" as const,
-              documentId: rentalSource.rentalAgreementId
-            }
-          : contractSource
-            ? {
-                documentType: "Contract" as const,
-                documentId: contractSource.customerContractId
-              }
-            : {};
-
-      if (amount !== 0) {
-        // A negative row (a credit memo's deferral) reverses the legs: the
-        // stored amount is signed by account class, so the debit leg of a
-        // negative row is a credit of its magnitude and vice versa.
-        const magnitude = Math.abs(amount);
-        const debitClass = classById.get(row.debitAccountId)!;
-        const creditClass = classById.get(row.creditAccountId)!;
-        const debitAmount =
-          amount > 0
-            ? toStoredAmount(magnitude, 0, debitClass)
-            : toStoredAmount(0, magnitude, debitClass);
-        const creditAmount =
-          amount > 0
-            ? toStoredAmount(0, magnitude, creditClass)
-            : toStoredAmount(magnitude, 0, creditClass);
-
-        const journalLines = await trx
-          .insertInto("journalLine")
-          .values([
-            {
-              journalId: journal.id,
-              accountId: row.debitAccountId,
-              description: descriptions.debit,
-              amount: debitAmount,
-              journalLineReference: crypto.randomUUID(),
-              companyId,
-              ...document
-            },
-            {
-              journalId: journal.id,
-              accountId: row.creditAccountId,
-              description: descriptions.credit,
-              amount: creditAmount,
-              journalLineReference: crypto.randomUUID(),
-              companyId,
-              ...document
-            }
-          ])
-          .returning(["id"])
-          .execute();
-
-        const dimensionValues: Array<{ dimensionId: string; valueId: string }> =
-          [];
-        if (dimensionIds.customer && source?.customerId) {
-          dimensionValues.push({
-            dimensionId: dimensionIds.customer,
-            valueId: source.customerId
-          });
-        }
-        if (dimensionIds.item && source?.itemId) {
-          dimensionValues.push({
-            dimensionId: dimensionIds.item,
-            valueId: source.itemId
-          });
-        }
-        if (dimensionIds.location && source?.locationId) {
-          dimensionValues.push({
-            dimensionId: dimensionIds.location,
-            valueId: source.locationId
-          });
-        }
-        if (dimensionIds.project && source?.projectId) {
-          dimensionValues.push({
-            dimensionId: dimensionIds.project,
-            valueId: source.projectId
-          });
-        }
-        if (dimensionValues.length > 0) {
-          await trx
-            .insertInto("journalLineDimension")
-            .values(
-              journalLines.flatMap((line) =>
-                dimensionValues.map((dimension) => ({
-                  journalLineId: line.id,
-                  dimensionId: dimension.dimensionId,
-                  valueId: dimension.valueId,
-                  companyId
-                }))
-              )
-            )
-            .execute();
-        }
-      }
+      written.set(journal, inserted);
 
       await trx
         .updateTable("revenueRecognitionSchedule")
-        .set({ journalId: journal.id, status: "Posted", updatedBy: userId })
-        .where("id", "=", row.scheduleId)
+        .set({ journalId: inserted.id, status: "Posted", updatedBy: userId })
+        .where("id", "in", journal.scheduleIds)
         .where("companyId", "=", companyId)
         .execute();
+      // Each contract row's Recognition ledger entry records the journal
+      // that posted it.
+      if (journal.contractScheduleIds.length > 0) {
+        await trx
+          .updateTable("customerContractLedgerEntry")
+          .set({ journalId: inserted.id })
+          .where(
+            "revenueRecognitionScheduleId",
+            "in",
+            journal.contractScheduleIds
+          )
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      // An Interest row posts one period of a sales-type lease's effective
+      // interest schedule; the schedule line records the journal that posted
+      // it, which is how the net investment report tells posted principal
+      // from future principal.
+      if (journal.leaseScheduleLineIds.length > 0) {
+        await trx
+          .updateTable("rentalLeaseScheduleLine")
+          .set({
+            journalId: inserted.id,
+            postedAt: now,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "in", journal.leaseScheduleLineIds)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
     }
 
-    // A contract month is recognized once its schedule rows post, and each
-    // row's Recognition ledger entry records the journal that posted it.
-    const contractScheduleIds = rows
-      .filter((row) => row.customerContractLineId)
-      .map((row) => row.scheduleId);
+    // A contract month is recognized once its schedule rows post.
     const recognizedRevenueIds = [
       ...new Set(
         rows
@@ -1735,73 +1433,16 @@ export async function postRevenueRecognitionRun(
         .where("companyId", "=", companyId)
         .execute();
     }
-    // Each ledger entry and lease schedule line records the journal of its
-    // own month: one statement per journal, not per row.
-    const byJournal = (ids: (row: (typeof rows)[number]) => string | null) => {
-      const grouped = new Map<string, Set<string>>();
-      for (const row of rows) {
-        const id = ids(row);
-        if (!id) continue;
-        const journalId = journalOf(row).id;
-        const set = grouped.get(journalId) ?? new Set<string>();
-        set.add(id);
-        grouped.set(journalId, set);
-      }
-      return grouped;
-    };
-
-    if (contractScheduleIds.length > 0) {
-      for (const [journalId, scheduleIds] of byJournal((row) =>
-        row.customerContractLineId ? row.scheduleId : null
-      )) {
-        await trx
-          .updateTable("customerContractLedgerEntry")
-          .set({ journalId })
-          .where("revenueRecognitionScheduleId", "in", [...scheduleIds])
-          .where("companyId", "=", companyId)
-          .execute();
-      }
-    }
-
-    // An Interest row posts one period of a sales-type lease's effective
-    // interest schedule; the schedule line records the journal that posted it,
-    // which is how the net investment report tells posted principal from
-    // future principal.
-    const leaseScheduleLineIds = [
-      ...new Set(
-        rows
-          .map((row) => row.rentalLeaseScheduleLineId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    if (leaseScheduleLineIds.length > 0) {
-      for (const [journalId, lineIds] of byJournal(
-        (row) => row.rentalLeaseScheduleLineId
-      )) {
-        await trx
-          .updateTable("rentalLeaseScheduleLine")
-          .set({
-            journalId,
-            postedAt: now,
-            updatedBy: userId,
-            updatedAt: now
-          })
-          .where("id", "in", [...lineIds])
-          .where("companyId", "=", companyId)
-          .execute();
-      }
-    }
 
     // The run names the journal of its own period, else its latest month's;
-    // every journal is reachable from the schedule rows it posted.
-    const runJournal =
-      journalByDate.get(run.periodEnd) ??
-      journalByDate.get(targets[targets.length - 1].postingDate)!;
+    // every journal is reachable from the schedule rows it posted. The run
+    // has rows, so it has a journal.
+    const runJournalRow = written.get(runJournal!)!;
 
     await trx
       .updateTable("revenueRecognitionRun")
       .set({
-        journalId: runJournal.id,
+        journalId: runJournalRow.id,
         status: "Posted",
         postedAt: now,
         postedBy: userId,
@@ -1812,8 +1453,8 @@ export async function postRevenueRecognitionRun(
       .execute();
 
     return {
-      journalId: runJournal.id,
-      journalEntryId: runJournal.journalEntryId
+      journalId: runJournalRow.id,
+      journalEntryId: runJournalRow.journalEntryId
     };
   });
 }

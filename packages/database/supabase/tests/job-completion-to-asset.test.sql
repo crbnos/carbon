@@ -122,11 +122,9 @@ BEGIN
   INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
     VALUES ('T-PART', 'Stocked part', 'Part', 'Buy', 'Inventory', 'EA', v_company_id, 'system') RETURNING id INTO v_part;
 
-  -- Accounting on, with the defaults, sequences and asset classes a fleet needs.
-  UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = v_company_id;
-  IF NOT FOUND THEN
-    INSERT INTO "companySettings" (id, "accountingEnabled") VALUES (v_company_id, true);
-  END IF;
+  -- The settings row the posting reads, and the defaults, sequences and asset
+  -- classes a fleet needs.
+  INSERT INTO "companySettings" (id) VALUES (v_company_id) ON CONFLICT (id) DO NOTHING;
   INSERT INTO "sequence" ("table", name, prefix, "companyId", "updatedBy") VALUES
     ('journalEntry', 'Journal entries', 'JE-', v_company_id, 'system'),
     ('fixedAsset', 'Fixed assets', 'FA-', v_company_id, 'system'),
