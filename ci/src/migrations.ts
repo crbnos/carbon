@@ -6,11 +6,12 @@ import { createClient } from "@supabase/supabase-js";
 import { $ } from "execa";
 
 import { client } from "./client";
-import type { LedgerDatabase } from "./one-off-scripts";
+import type { LedgerDatabase, SupavisorConfig } from "./one-off-scripts";
 import {
   oneOffScriptEnv,
   oneOffScriptOutcome,
-  selectPendingScripts
+  selectPendingScripts,
+  supavisorUrl
 } from "./one-off-scripts";
 import {
   SUPABASE_ACCESS_TOKEN,
@@ -63,6 +64,41 @@ export type Workspace = {
   inngest_base_url: string | null;
   inngest_event_key: string | null;
 };
+
+/**
+ * The project's IPv4 Supavisor URL, for the one-off scripts (see
+ * `supavisorUrl`). Null, with a warning, when the Management API does not
+ * give one; the scripts then get the workspace's pooler URL as before.
+ */
+async function lookUpSupavisorUrl(
+  workspace: Workspace,
+  accessToken: string
+): Promise<string | null> {
+  const { project_id, database_password } = workspace;
+  if (!project_id || !database_password) return null;
+  try {
+    const response = await fetch(
+      `https://api.supabase.com/v1/projects/${project_id}/config/database/pooler`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!response.ok) {
+      throw new Error(`${response.status} ${await response.text()}`);
+    }
+    const url = supavisorUrl(
+      (await response.json()) as SupavisorConfig[],
+      database_password
+    );
+    if (!url) throw new Error("no primary pooler listed");
+    return url;
+  } catch (e) {
+    console.warn(
+      `⚠️  📜 No Supavisor URL for ${workspace.id}, using its pooler URL: ${
+        e instanceof Error ? e.message : String(e)
+      }`
+    );
+    return null;
+  }
+}
 
 /**
  * Run the one-off scripts this workspace has not run yet, recording each in the
@@ -306,10 +342,17 @@ async function migrate(): Promise<void> {
       // migration. It still fails the overall run via `hasErrors`.
       // `$(options)` replaces `env` rather than merging it, so the scripts get
       // their own (`oneOffScriptEnv`).
+      const isSelfHosted = connection_string?.startsWith("postgresql://");
       const scripts$ = $$({
         // @ts-ignore
         env: oneOffScriptEnv(env, {
-          poolerUrl: database_connection_pooler_url,
+          poolerUrl:
+            (!isSelfHosted &&
+              (await lookUpSupavisorUrl(
+                workspace,
+                env.SUPABASE_ACCESS_TOKEN
+              ))) ||
+            database_connection_pooler_url,
           connectionString: connection_string,
         }),
       });

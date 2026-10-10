@@ -21,7 +21,8 @@
 // written and the next deploy retries.
 //
 // Needs a Postgres connection: SUPABASE_DB_URL, which the migrations runner
-// passes to one-off scripts (the workspace's pooler URL, as the app gets it).
+// passes to one-off scripts (the project's IPv4 Supavisor URL, see
+// scripts/one-off/README.md).
 // A workspace with no Postgres URL defers the script: it logs why and exits
 // with ONE_OFF_SCRIPT_DEFERRED (75, ci/src/one-off-scripts.ts), so the runner
 // records nothing and runs it again on the next deploy, without failing this
