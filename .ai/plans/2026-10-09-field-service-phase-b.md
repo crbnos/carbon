@@ -46,7 +46,7 @@ Task 12 records these in the spec.
 - [x] Task 8: Guard the credit memo and the replacement order
 - [x] Task 9: Add the depot repair UI
 - [x] Task 10: Add the database tests
-- [ ] Task 11: Extend the demo datasets
+- [x] Task 11: Extend the demo datasets
 - [ ] Task 12: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 13: Verify in the browser
 
@@ -453,3 +453,9 @@ ls .ai/playbooks/field-service-phase-b.md
 - Task 9: the order list gains a **Type** column with a filter (`listedServiceOrderTypes`: Field Visit, Depot Repair). The New form still offers Field Visit only.
 - Task 9: the asset list and the asset page needed no change. Both render the status through `CustomerAssetStatus`, and the list filter reads `customerAssetStatuses`, which already has At Depot.
 - Task 10: Tasks 4, 5 and 7 wrote the 2 test files early, and they cover every case the task lists. This task adds one receipt case: a serial that already has an open service order is refused, and the receipt writes no order, no stock and no journal. The serial stays Consumed and the asset stays In Service. Both files pass (8 cases). The credit and replacement guards (Task 8) are ERP service functions over the Supabase client, so no database test covers them.
+- Task 11: the satellite dataset gains RMA `bus-repair` (To Receive, Apex Space Research, "Defective"). Its one line is SAT-1000 with disposition Repair. The unit is SAT-1000-S013, the "expired" customer asset, because the seeded service orders hold the other 2 assets and a receipt refuses a serial with an open order. `SalesReturnLineSpec.disposition` is typed `"Repair"` only, the one value the seed writes.
+- Task 11: the validator leaves a Repair line out of the on-hand count. It also checks 3 things for a Repair line, because the old rule refused every tracked item on an RMA line:
+  1. The item is Serial-tracked.
+  2. The return is not Completed (a received repair needs a Depot Repair order, which the seed does not write).
+  3. A customer asset of the item exists at the return's customer.
+- Task 11: `pnpm db:check:datasets` passes for all four datasets. `pnpm db:check:backups` still fails on `supplierPartPrice.unitPrice` only, a column this branch does not change, so the commit skips that check with `CARBON_SKIP_BACKUP_CHECK=1`.

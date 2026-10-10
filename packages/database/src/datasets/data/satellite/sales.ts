@@ -954,6 +954,23 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
     lines: [{ item: "THR-HYDRA-1N", quantity: 1, unitPrice: 11400 }]
   },
   {
+    // A unit back for repair: the receipt writes no stock and opens a Depot
+    // Repair order for SAT-1000-S013 (the "expired" customer asset).
+    key: "bus-repair",
+    status: "To Receive",
+    customer: "Apex Space Research",
+    returnReason: "Defective",
+    dateOffset: -3,
+    lines: [
+      {
+        item: "SAT-1000",
+        quantity: 1,
+        unitPrice: 1800000,
+        disposition: "Repair"
+      }
+    ]
+  },
+  {
     key: "bearings",
     status: "Draft",
     customer: "PolarView Earth",

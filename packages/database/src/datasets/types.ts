@@ -822,6 +822,13 @@ export type SalesReturnLineSpec = {
   unitPrice: number;
   /** Required when Completed — the receipt books stock back onto it. */
   toShelf?: string;
+  /**
+   * Repair: the unit is repaired and shipped back, never stocked. The item is
+   * Serial-tracked and has a customer asset at the return's customer. Set on
+   * a return that is not Completed only: a received repair needs its Depot
+   * Repair order, which the seed does not write.
+   */
+  disposition?: "Repair";
 };
 
 /**

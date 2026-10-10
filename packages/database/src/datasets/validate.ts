@@ -958,6 +958,8 @@ export function onHandLedger(
   for (const rma of dataset.sales.salesReturns) {
     if (rma.status !== "Completed") continue;
     for (const line of rma.lines) {
+      // A repair never adds stock: its receipt writes no ledger row.
+      if (line.disposition === "Repair") continue;
       if (line.toShelf !== undefined && shelves.has(line.toShelf)) {
         add(line.item, line.toShelf, line.quantity);
       }
@@ -2394,7 +2396,28 @@ export function sales(ctx: ValidationCtx): void {
       if (line.quantity <= 0) {
         fail(`${where} line "${line.item}": quantity must be positive`);
       }
-      if (isTracked(line.item)) {
+      if (line.disposition === "Repair") {
+        if (ix.trackingByItem.get(line.item) !== "Serial") {
+          fail(
+            `${where} line "${line.item}": a Repair line needs a Serial-tracked item`
+          );
+        }
+        if (rma.status === "Completed") {
+          fail(
+            `${where} line "${line.item}": a received Repair line needs a Depot Repair order the seed does not write`
+          );
+        }
+        if (
+          !dataset.sales.customerAssets.some(
+            (asset) =>
+              asset.item === line.item && asset.customer === rma.customer
+          )
+        ) {
+          fail(
+            `${where} line "${line.item}": a Repair line needs a customer asset of the item at "${rma.customer}"`
+          );
+        }
+      } else if (isTracked(line.item)) {
         fail(
           `${where} line "${line.item}": tracked items need per-entity returns the seed does not model`
         );
