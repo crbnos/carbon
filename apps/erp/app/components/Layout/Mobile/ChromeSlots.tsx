@@ -108,7 +108,10 @@ export function MobileBottomChrome({ children }: { children: ReactNode }) {
       <div ref={setElement} className="md:hidden shrink-0">
         <bottomBarSlot.Target className="empty:hidden" />
       </div>
-      <div ref={setDock} className="md:hidden absolute inset-x-0 bottom-0 z-40">
+      <div
+        ref={setDock}
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-40 md:hidden"
+      >
         {children}
       </div>
     </>
