@@ -94,8 +94,8 @@ msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# settimana} other {# settimane}}"
 
 #. placeholder {0}: check.count
-msgid "{0, plural, one {Complete or cancel the # job created before Carbon recorded its costs.} other {Complete or cancel the # jobs created before Carbon recorded their costs.}}"
-msgstr "{0, plural, one {Completa o annulla l'# ordine di produzione creato prima che Carbon registrasse i relativi costi.} other {Completa o annulla gli # ordini di produzione creati prima che Carbon registrassero i relativi costi.}}"
+msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
+msgstr "{0, plural, one {Completa o annulla l'# ordine di produzione che ha sostenuto costi prima che Carbon li registrasse.} other {Completa o annulla gli # ordini di produzione che hanno sostenuto costi prima che Carbon li registrasse.}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
@@ -13862,8 +13862,8 @@ msgstr "Nessun ordine di produzione aperto per gli ordini di vendita è previsto
 msgid "No open jobs for sales orders at this location."
 msgstr "Nessun ordine di produzione aperto per gli ordini di vendita in questa ubicazione."
 
-msgid "No open jobs from before Carbon recorded their costs"
-msgstr "Nessun ordine di produzione aperto da prima che Carbon ne registrasse i costi"
+msgid "No open jobs with costs from before Carbon recorded them"
+msgstr "Nessun ordine di produzione aperto con costi precedenti alla loro registrazione in Carbon"
 
 msgid "No open lines. Add a service to amend."
 msgstr "Nessuna riga aperta. Aggiungi un servizio per modificare."
