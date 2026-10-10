@@ -1019,7 +1019,7 @@ const postPurchaseInvoice = defineServerFn({
         itemId: string | null;
         quantity: number;
         amount: number;
-        journalLineIndex: number;
+        journalLineIndex: number | null;
         fixedAssetId: string | null;
         postCapitalization: boolean;
       }[] = [];
@@ -1576,7 +1576,9 @@ const postPurchaseInvoice = defineServerFn({
                   }
 
                   // DR Inventory for the on-hand share of the variance
+                  let inventoryVarianceLineIndex: number | null = null;
                   if (Math.abs(allocation.inventoryShare) > 0.005) {
+                    inventoryVarianceLineIndex = journalLineInserts.length;
                     const inventoryAccount = resolveInventoryAccount(
                       invoiceLineItem?.replenishmentSystem ?? null,
                       accountDefaults.data
@@ -1601,7 +1603,9 @@ const postPurchaseInvoice = defineServerFn({
 
                   // DR/CR Purchase Price Variance for the consumed share
                   let projectVarianceLineIndex: number | null = null;
+                  let ppvLineIndex: number | null = null;
                   if (Math.abs(allocation.ppvShare) > 0.005) {
+                    ppvLineIndex = journalLineInserts.length;
                     if (receiptProjectCharge) {
                       projectVarianceLineIndex = journalLineInserts.length;
                       projectLedgerDrafts.push({
@@ -1637,6 +1641,37 @@ const postPurchaseInvoice = defineServerFn({
                         ),
                       journalLineReference,
                       companyId
+                    });
+                  }
+
+                  // Charge at receipt into project stock (Projects Phase 2a):
+                  // the receipt charged the project at receipt cost while the
+                  // goods entered its stock, so the project's ledger gets the
+                  // price variance too, on the line that carries it (the
+                  // inventory write-up, else the PPV of consumed units).
+                  const stockReceiptCharge =
+                    !receiptProjectCharge && invoiceLine.purchaseOrderLineId
+                      ? projectCharges.stockChargedAtReceipt(
+                          invoiceLine.purchaseOrderLineId
+                        )
+                      : null;
+                  const stockVariance = round(
+                    allocation.inventoryShare + allocation.ppvShare
+                  );
+                  if (stockReceiptCharge && Math.abs(stockVariance) > 0.005) {
+                    projectLedgerDrafts.push({
+                      invoiceLineId: invoiceLine.id,
+                      projectId: stockReceiptCharge.projectId,
+                      projectElementId: stockReceiptCharge.projectElementId,
+                      // Stock builds no asset until it is issued.
+                      fixedAssetId: null,
+                      postCapitalization: false,
+                      costType: "Material Variance",
+                      itemId: invoiceLine.itemId ?? null,
+                      quantity: quantityToReverse,
+                      amount: stockVariance,
+                      journalLineIndex:
+                        inventoryVarianceLineIndex ?? ppvLineIndex
                     });
                   }
 
@@ -2729,7 +2764,9 @@ const postPurchaseInvoice = defineServerFn({
                   quantity: draft.quantity,
                   amount: draft.amount,
                   journalLineId:
-                    invoiceJournalLineIds[draft.journalLineIndex] ?? null,
+                    draft.journalLineIndex === null
+                      ? null
+                      : (invoiceJournalLineIds[draft.journalLineIndex] ?? null),
                   createdBy: userId
                 })
               )

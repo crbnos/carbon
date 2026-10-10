@@ -60,6 +60,15 @@ export type InvoiceProjectCharges = {
    * project when that project has project stock, else null (common stock).
    */
   stockStripe(invoiceLineId: string): string | null;
+  /**
+   * The project a receipt of this purchase order line charged at receipt
+   * while the goods entered its project stock (Charge at receipt), or null.
+   * The invoice adjusts the stock's layers, and the project's ledger gets
+   * the price variance as well.
+   */
+  stockChargedAtReceipt(
+    purchaseOrderLineId: string
+  ): { projectId: string; projectElementId: string | null } | null;
 };
 
 /**
@@ -202,6 +211,14 @@ export async function loadInvoiceProjectCharges(
     stockStripe(invoiceLineId) {
       const ref = refByInvoiceLineId.get(invoiceLineId);
       return ref && projectStock.has(ref.projectId) ? ref.projectId : null;
+    },
+    stockChargedAtReceipt(purchaseOrderLineId) {
+      const row = receiptRowByLineId.get(purchaseOrderLineId);
+      if (!row || !projectStock.has(row.projectId)) return null;
+      return {
+        projectId: row.projectId,
+        projectElementId: row.projectElementId
+      };
     },
     chargedAtReceipt(purchaseOrderLineId) {
       const row = receiptRowByLineId.get(purchaseOrderLineId);

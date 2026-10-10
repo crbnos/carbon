@@ -382,7 +382,8 @@ databaseTest(
 // Project stock (Projects Phase 2a), with Charge at receipt: the receipt
 // charges the project and puts the goods in its stock. The invoice adjusts the
 // project's cost layer like any stocked receipt: the variance writes up
-// inventory and becomes a child row in the project's stripe.
+// inventory and becomes a child row in the project's stripe, and the project's
+// ledger gets a Material Variance row.
 databaseTest(
   "the invoice of a receipt into project stock adjusts the project's cost layer",
   async () => {
@@ -480,11 +481,13 @@ databaseTest(
         [true, 8, f.projectId]
       ]);
 
-      // The receipt charged the project; the invoice adds no variance row.
+      // The receipt charged the project at receipt cost; the invoice adds
+      // the price variance, on the inventory write-up line.
       const ledger = await f.db
         .selectFrom("projectLedger")
-        .select(["costType", "documentType", "amount"])
+        .select(["costType", "documentType", "amount", "journalLineId"])
         .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
         .execute();
       expect(
         ledger.map((row) => [
@@ -492,7 +495,33 @@ databaseTest(
           row.documentType,
           Number(row.amount)
         ])
-      ).toEqual([["Material", "Purchase Receipt", 40]]);
+      ).toEqual([
+        ["Material", "Purchase Receipt", 40],
+        ["Material Variance", "Purchase Invoice", 8]
+      ]);
+      const writeUp = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("id", "=", ledger[1]!.journalLineId!)
+        .executeTakeFirstOrThrow();
+      expect([writeUp.accountId, Number(writeUp.amount)]).toEqual([
+        f.account("inventory"),
+        8
+      ]);
+
+      // The void reverses the variance row with the invoice.
+      const voided = await postPurchaseInvoice(f.ctx, {
+        type: "void",
+        invoiceId: invoice.invoiceId
+      });
+      expect(voided.error).toBeNull();
+      const net = await f.db
+        .selectFrom("projectLedger")
+        .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Purchase Invoice")
+        .executeTakeFirst();
+      expect(Number(net?.amount ?? 0)).toEqual(0);
     } finally {
       await f.cleanup();
     }
