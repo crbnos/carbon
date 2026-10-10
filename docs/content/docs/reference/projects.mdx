@@ -5,7 +5,7 @@ description: Break engineering and contract work into elements, charge time, mat
 
 A **project** holds a tree of <Term id="element">elements</Term>: the systems, requirements, tasks and tests that make up the work. Jobs, purchase order lines, purchase invoice lines, timesheets and material issues charge their cost to a project or to one of its elements. The <Term>project ledger</Term> records each charge, so you can compare it with the plan.
 
-Open **Projects** in the sidebar. The module has **Projects**, **My Timesheet** and **Labor Categories**, plus **Approvals** when timesheet approval is on.
+Open **Projects** in the sidebar. The module has **Projects**, **My Timesheet**, **Transfers** and **Labor Categories**, plus **Approvals** when timesheet approval is on.
 
 <Screenshot label="A project's Elements tab in the List layout, with the element tree, state and owner pills, and the tabs Elements, Milestones, Costs, Time & materials, Settings and Details" caption="Each project opens on its Elements tab." />
 
@@ -26,6 +26,9 @@ Click **New Project** on the project list. A new project starts in **"Draft"**.
   <Field name="Priority" type="enum">`Urgent`, `High`, `Medium`, `Low` or `None`.</Field>
   <Field name="Start Date / End Date" type="date">The planned window of the project.</Field>
   <Field name="Lock Plan After Milestone" type="reference">On an existing project only. When this milestone is completed, the plan changes only through a [change request](#change-requests).</Field>
+  <Field name="Project stock" type="boolean">The project owns the stock received for it. You can change it only while the project is Draft. See [project stock](#project-stock).</Field>
+  <Field name="Charge at receipt" type="boolean">With project stock. Charges the project when its stock is received, not when the stock is issued.</Field>
+  <Field name="Government-furnished" type="boolean">With project stock. The project's stock can move only to a project of the same customer.</Field>
 </FieldTable>
 
 Edit these fields later on the **Details** tab.
@@ -214,6 +217,24 @@ A labor category is the cost class of an hour, such as Engineer II. Create them 
 
 Log time and Issue material are not available on a Closed project or an element that does not take charges.
 
+## Project stock
+
+A project with **Project stock** owns the stock received for it. Other stock is **common stock**.
+
+- A purchase order line charged to the project receives into its stock. So does a job with **Receive to project stock**.
+- A job or an issue for the project draws the project's stock first, then common stock. Other demand draws common stock only. A sales shipment always ships common stock.
+- Stock received into the project is inventory, not project cost. The project is charged when the stock is issued, or at receipt with **Charge at receipt**.
+
+**Inventory → Quantities** filters by **Stock owner**. The item's storage units list each owner's stock on its own, and an inventory count gives each owner its own line, with a **Stock Owner** column. The project's **Stock** tab shows its stock by item, storage unit and lot, and the borrows it owes and has lent. A borrow past its due date shows in red.
+
+### Transfers, borrows and paybacks
+
+Another project's stock needs a transfer first. Open **Projects → Transfers**, or use **Transfer**, **Borrow** and **Payback** on the project's Stock tab. Add the lines while the transfer is Draft. A user who can update projects approves it, then posts it.
+
+- **Transfer** moves stock between two owners at its cost. Either owner can be common stock.
+- **Borrow** moves stock from one project to another until a payback due date. The lender keeps the cost.
+- **Payback** returns borrowed stock. The lender gets back the cost it lent. When the returned stock cost more or less, the borrower takes the difference as **Payback Variance**.
+
 ## Costs and the project ledger
 
 The **Costs** tab rolls each element up with its children, and adds a **Project total** row:
@@ -235,7 +256,7 @@ Time, issues, receipts, charges and reimbursements write ledger rows in every co
 
 ## Keyboard shortcuts
 
-**⌘⇧E**, **⌘⇧M**, **⌘⇧B**, **⌘⇧R**, **⌘⇧C**, **⌘⇧H**, **⌘⇧S** and **⌘⇧D** open the project tabs in order (Ctrl instead of ⌘ on Windows). On the Elements tab and the element page, **C** adds an element, and **S**, **A**, **P** and **L** change the state, owner, priority and labels. On the element page, **T** logs time and **I** issues material. Press **?** for the [full list](/docs/reference/keyboard-shortcuts).
+**⌘⇧E**, **⌘⇧M**, **⌘⇧B**, **⌘⇧R**, **⌘⇧C**, **⌘⇧H**, **⌘⇧K** (Stock, with project stock), **⌘⇧S** and **⌘⇧D** open the project tabs in order (Ctrl instead of ⌘ on Windows). On the Elements tab and the element page, **C** adds an element, and **S**, **A**, **P** and **L** change the state, owner, priority and labels. On the element page, **T** logs time and **I** issues material. Press **?** for the [full list](/docs/reference/keyboard-shortcuts).
 
 ## Related
 
@@ -293,6 +314,15 @@ A job's charge number can change only while the job is Draft or Planned.
 ### "Project XX is Statistical. A job cannot consume to a Statistical project."
 Consume to project needs an Expense or Contract project. It also cannot be combined with a fixed asset target or a sales order line.
 
+### "Government-furnished stock of project XX can only move to a project of the same customer"
+Approve and Post refuse a transfer, borrow or payback that moves a government-furnished project's stock to common stock or to a project of another customer. Pick a project of the same customer.
+
+### "LOT-1 is in the stock of project XX. Transfer it first."
+A job, an issue or a pick can draw only its own project's stock and common stock. Move the lot with a transfer or a borrow first.
+
+### "Insufficient quantity in the stock of project XX to transfer"
+Posting checks the from-owner's stock at each line's storage unit and lot. The line modal shows what is available there.
+
 ### Approvals is missing from the Projects menu
 The Approvals item shows only when Settings → Projects → "Require approval of timesheets" is on. Approving needs the Projects update permission; an approver sees time on every project.
 
@@ -301,7 +331,7 @@ Actual is the sum of the project ledger. A Statistical project writes no ledger 
 
 ## Internals
 
-Tables: `project` (`identifier` matches `^[A-Z][A-Z0-9]{1,5}$`, `status` enum `projectStatus`, `costTreatment` enum `projectCostTreatment`: Statistical, Expense, Capitalize, Contract; `fixedAssetClassId` and `fixedAssetId` for Capitalize; `isTemplate`), `projectElement` (`readableId`, `type` enum `projectElementType`, `stateId`, `isChargeable`, `isFinalAsset`, `fixedAssetId`, `itemId`, `trackedEntityId`, Requirement target columns, `verdict`, Parameter columns `parameterSource` / `parameterValue` / `parameterFormula` / `parameterItemField` / `allocationPercent` / `parameterContingencyPercent`), `projectElementLink` (`linkType` enum `projectElementLinkType`, `suspectSince`, `reviewedAt`), `projectView`, `projectUserPreference`, `projectState` (`group` enum `projectStateGroup`), `projectLabel`, `projectMilestone`, `projectElementMaterial` / `projectElementLabor` / `projectElementCost` (plan lines), `laborCategory`, `laborCategoryRate`, `timesheetEntry` (status enum `timesheetEntryStatus`), `projectLedger` (`costType` enum `projectCostType`, `reversalOfId`). Charge number columns: `projectId` + `projectElementId` on `job`, `purchaseOrderLine`, `purchaseInvoiceLine`, `chargeLine`, `reimbursementLine`; `job.consumeToProject`. Settings: `companySettings.timesheetApprovalRequired`, `companySettings.requireProjectElement`. Account defaults: `projectWorkInProgressAccount`, `projectExpenseAccount`. Server functions: `post-timesheet`, `post-project-issue`. Journal sources: `Timesheet`, `Project Issue`. Routes: `/x/projects`, `/x/timesheet` (My Timesheet; `/x/projects/timesheet` redirects to it), `/x/projects/approvals`, `/x/projects/labor-categories`, `/x/projects/issue`, `/x/project/:id/elements|milestones|costs|time|settings|details`, `/x/settings/projects`; MES `/x/timesheet`. Capital projects write `fixedAssetCipCost` rows (`projectId`, `projectElementId`, `postCapitalization`). RPC `get_element_history_by_item`; RPC `get_child_service_project_costs` (the Costs tab's service orders, one row per child Service project). Routes added in Phase 1b: `/x/project/:id/place-in-service`, `/x/project/:id/elements/build`, `/x/project/:id/elements/links`, `/x/project/:id/views`, `/x/project/:id/template`, `/x/project/:id/elements/:elementId/create-job`, `/x/project/:id/elements/:elementId/create-po-line`, `/file/project/:id.pdf`. Phase 1c tables: `projectBaseline` (`snapshot` JSONB with `formatVersion`, `source` enum `projectBaselineSource`), `projectChangeRequest` (`status` enum `projectChangeRequestStatus`, `readableId` `<identifier>-CR-<n>`, `baseBaselineId`, `appliedBaselineId`), `projectChangeRequestItem` (`operation`, `targetTable`, `targetId`, `payload`, `baseRow`), `projectChangeRequestComment`, `projectChangeRequestView`; `project.lockPlanAfterMilestoneId`. Approval document type `projectChangeRequest`. Routes added in Phase 1c: `/x/project/:id/baselines`, `/x/project/:id/baselines/compare`, `/x/project/:id/change-requests`, `/x/project/:id/change-requests/new`, `/x/project/:id/change-requests/:crId` (with `/status`, `/comments`, `/viewed`); `?cr=<id>` on the Elements and element pages opens a change request. Not built yet: element cost-treatment overrides in the UI, attachments on elements.
+Tables: `project` (`identifier` matches `^[A-Z][A-Z0-9]{1,5}$`, `status` enum `projectStatus`, `costTreatment` enum `projectCostTreatment`: Statistical, Expense, Capitalize, Contract; `fixedAssetClassId` and `fixedAssetId` for Capitalize; `isTemplate`), `projectElement` (`readableId`, `type` enum `projectElementType`, `stateId`, `isChargeable`, `isFinalAsset`, `fixedAssetId`, `itemId`, `trackedEntityId`, Requirement target columns, `verdict`, Parameter columns `parameterSource` / `parameterValue` / `parameterFormula` / `parameterItemField` / `allocationPercent` / `parameterContingencyPercent`), `projectElementLink` (`linkType` enum `projectElementLinkType`, `suspectSince`, `reviewedAt`), `projectView`, `projectUserPreference`, `projectState` (`group` enum `projectStateGroup`), `projectLabel`, `projectMilestone`, `projectElementMaterial` / `projectElementLabor` / `projectElementCost` (plan lines), `laborCategory`, `laborCategoryRate`, `timesheetEntry` (status enum `timesheetEntryStatus`), `projectLedger` (`costType` enum `projectCostType`, `reversalOfId`). Charge number columns: `projectId` + `projectElementId` on `job`, `purchaseOrderLine`, `purchaseInvoiceLine`, `chargeLine`, `reimbursementLine`; `job.consumeToProject`. Settings: `companySettings.timesheetApprovalRequired`, `companySettings.requireProjectElement`. Account defaults: `projectWorkInProgressAccount`, `projectExpenseAccount`. Server functions: `post-timesheet`, `post-project-issue`. Journal sources: `Timesheet`, `Project Issue`. Routes: `/x/projects`, `/x/timesheet` (My Timesheet; `/x/projects/timesheet` redirects to it), `/x/projects/approvals`, `/x/projects/labor-categories`, `/x/projects/issue`, `/x/project/:id/elements|milestones|costs|time|settings|details`, `/x/settings/projects`; MES `/x/timesheet`. Capital projects write `fixedAssetCipCost` rows (`projectId`, `projectElementId`, `postCapitalization`). RPC `get_element_history_by_item`; RPC `get_child_service_project_costs` (the Costs tab's service orders, one row per child Service project). Routes added in Phase 1b: `/x/project/:id/place-in-service`, `/x/project/:id/elements/build`, `/x/project/:id/elements/links`, `/x/project/:id/views`, `/x/project/:id/template`, `/x/project/:id/elements/:elementId/create-job`, `/x/project/:id/elements/:elementId/create-po-line`, `/file/project/:id.pdf`. Phase 1c tables: `projectBaseline` (`snapshot` JSONB with `formatVersion`, `source` enum `projectBaselineSource`), `projectChangeRequest` (`status` enum `projectChangeRequestStatus`, `readableId` `<identifier>-CR-<n>`, `baseBaselineId`, `appliedBaselineId`), `projectChangeRequestItem` (`operation`, `targetTable`, `targetId`, `payload`, `baseRow`), `projectChangeRequestComment`, `projectChangeRequestView`; `project.lockPlanAfterMilestoneId`. Approval document type `projectChangeRequest`. Routes added in Phase 1c: `/x/project/:id/baselines`, `/x/project/:id/baselines/compare`, `/x/project/:id/change-requests`, `/x/project/:id/change-requests/new`, `/x/project/:id/change-requests/:crId` (with `/status`, `/comments`, `/viewed`); `?cr=<id>` on the Elements and element pages opens a change request. Phase 2a (project stock): `project.projectStock` / `chargeAtReceipt` / `governmentFurnished`; `itemLedger.projectId` and `costLedger.projectId` (NULL = common stock); `itemStockQuantities.projectId` (`''` = common); `job.receiveToProjectStock`; `pickingListLine.projectId`, `inventoryCountLine.projectId`; tables `projectStockTransfer` (`type` enum `projectStockTransferType`, `status` enum `projectStockTransferStatus`, readable id `PST…`), `projectStockTransferLine` (`unitCost` stamped at posting), `projectBorrow` (`status` enum `projectBorrowStatus`); `costLedger.projectBorrowId`. Server function `post-project-stock-transfer`; journal source and item ledger document type `Project Transfer`; cost type `Payback Variance`. `get_inventory_quantities` takes `project_id`; `get_inventory_valuation` returns `projectId`. Routes added in Phase 2a: `/x/projects/transfers`, `/x/projects/transfers/new`, `/x/project-stock-transfer/:id` (with `/lines`, `/status`), `/x/project/:id/stock`. Not built yet: element cost-treatment overrides in the UI, attachments on elements.
 
 ### "This capital project has no asset under construction. Release the project first."
 A Capitalize charge needs the asset of its project or final-asset element. Release creates the assets; marking an element Final asset on a released project creates its asset.

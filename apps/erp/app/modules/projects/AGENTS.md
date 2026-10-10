@@ -38,6 +38,13 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 - **Timesheet entry** — `timesheetEntry`: Draft → Submitted → Approved → Posted, or
   Rejected (editable again). A Posted entry changes only by a correction (reversal +
   replacement).
+- **Project stock** — `project.projectStock` (set while Draft). The project owns the stock
+  received for it: `itemLedger.projectId` / `costLedger.projectId` stripe it, NULL is
+  common stock. `chargeAtReceipt` charges the project at receipt; `governmentFurnished`
+  keeps the stock with the project's customer.
+- **Project stock transfer** — `projectStockTransfer` + lines: Transfer, Borrow or Payback,
+  Draft → Approved → Posted, or Cancelled. A Borrow opens a `projectBorrow`; a Payback
+  settles it and charges the borrower the Payback Variance.
 
 ## Safety
 
@@ -53,6 +60,11 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 - MUST post time with `postTimesheetEntries` and issues with `postProjectIssue` — they call
   the `post-timesheet` / `post-project-issue` server functions with `serverFns.system`.
 - MUST validate a document's charge number with `chargeNumberError` in the route action.
+- MUST post a project stock transfer with `postProjectStockTransfer` (`projects.server.ts`,
+  `post-project-stock-transfer`) and approve or cancel it with
+  `updateProjectStockTransferStatus` — Approve runs the government-furnished guard.
+- MUST store common stock as a null owner: the owner pickers send `COMMON_STOCK_OWNER`
+  (`common`), and the routes map it with `toStockOwner`.
 - MUST pass `db` (Kysely) from the route to `deleteProjectState`, `setProjectStateDefault`
   and the `projects.server.ts` functions.
 - MUST route every plan-layer write through `readChangeRequestId` +
@@ -70,6 +82,8 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 
 ### Never
 - Never write `projectLedger` from the ERP — only the server functions and the job SQL do.
+- Never write `itemLedger` / `costLedger` rows of a project stock move from the ERP — only
+  `post-project-stock-transfer` does. Never change `projectStock` past Draft.
 - Never update a Posted `timesheetEntry` — use `createTimesheetCorrection`.
 - Never write a bare PostgREST embed from `job` or `purchaseOrderLine` — name the FK
   (`item!job_itemId_fkey`). The project FKs push bare embeds past TS2589.
@@ -102,6 +116,9 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `projectBaseline` | Plan snapshots (`snapshot` JSONB, `formatVersion`) |
 | `projectChangeRequest`, `projectChangeRequestItem` | Change requests and their row edits (`payload`, `baseRow`) |
 | `projectChangeRequestComment`, `projectChangeRequestView` | Review comments (field-level) and per-user Viewed marks |
+| `project.projectStock` / `chargeAtReceipt` / `governmentFurnished` | Project stock flags (Phase 2a) |
+| `projectStockTransfer`, `projectStockTransferLine` | Transfer / Borrow / Payback documents; the line's `unitCost` is stamped at posting |
+| `projectBorrow` | An open borrow: quantity, `quantityPaidBack`, `borrowedUnitCost`, due date |
 
 ## Key Service Functions
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
@@ -131,6 +148,12 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   requests.
 - `requireProjectPlanEditable`, `requireEditablePlanRoute` (`.server`),
   `isProjectPlanLocked` (models) — the plan lock.
+- `getProjectStockTransfers`, `getProjectStockTransfer`, `getProjectStockTransferLines`,
+  `upsertProjectStockTransfer` (Draft only), `upsertProjectStockTransferLine`,
+  `deleteProjectStockTransferLine`, `updateProjectStockTransferStatus`, `getProjectBorrows`,
+  `getStockOwnerProjects`; `postProjectStockTransfer`, `getProjectStockOnHand` (`.server`);
+  `projectStockTransferValidator`, `projectStockTransferLineValidator`,
+  `governmentFurnishedRefusal`, `isBorrowOverdue` (models) — project stock.
 
 ## Related Modules
 - **production** — `job.projectId/projectElementId/consumeToProject`; `getJobProjectCharge`.
@@ -141,13 +164,17 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   Project Expense; journal sources `Timesheet` and `Project Issue`; CIP assets, `capitalizeCip`
   and the remaining-life Straight Line for capital projects.
 - **items / inventory** — part links, `getMethodTree` and the lineage RPCs for Build from part,
-  `getMethodMaterialsByMakeMethod` for the Issue Material BOM picks.
+  `getMethodMaterialsByMakeMethod` for the Issue Material BOM picks; project stock stripes
+  (`inventory-system.md` → *Project stock*), the quantities page's owner filter and the
+  count lines' Stock Owner column.
 - **MES** — `apps/mes/app/services/projects.service.ts` copies the timesheet functions.
 
 ## Rules References
 - `.claude/rules/projects-system.md` — posting, charge gates, ids, consume-to-project jobs,
   capital projects, trace links, verification, layouts, templates, Build from part,
-  baselines, change requests and the plan lock.
+  baselines, change requests, the plan lock and project stock.
+- `.claude/rules/inventory-system.md` → *Project stock* — stripes, the stripe set of a
+  demand, the key order.
 - `.claude/rules/fixed-asset-lifecycle.md` — the CIP side of capital projects.
 - `.claude/rules/accounting-sync-handlers.md` — how the new journal sources sync.
 - `.claude/rules/database-patterns.md` — Kysely transactions and server functions.

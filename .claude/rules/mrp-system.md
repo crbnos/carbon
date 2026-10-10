@@ -189,6 +189,12 @@ Phase-7 write) and throws on failure.
      `20260812002454`) — an indexed per-company read, replacing the old full
      `itemLedger` GROUP BY that grew with total history. Excludes `Rejected`
      tracked stock (matching `get_inventory_quantities`); the raw scan counted it.
+     **Common stock only** until Projects Phase 2b: the key includes `projectId`
+     (`''` = common, Projects Phase 2a), and every planning reader filters
+     `projectId = ''` — `mrp.ts`, `quote-lead-time.ts` and `loadCommonOnHand`
+     (`planning-actions.ts`, pinned by `planning-actions.test.ts`). `get-method`
+     reads the job's stripes (`jobStockStripes`: common, plus the job's project).
+     Project stock never reaches a plan, so planning output does not change.
    - **Reads paginate**: every PostgREST read goes through `fetchAll`
      (`@carbon/database/fetch-all`, 1000-row pages + stable `.order()`) —
      production `max_rows = 1000`

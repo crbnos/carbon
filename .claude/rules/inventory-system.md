@@ -23,7 +23,8 @@ All inventory service code lives in a single module: `apps/erp/app/modules/inven
 
 Key service functions (verified):
 - `getInventoryItems` / `getInventoryItemsCount` — call the `get_inventory_quantities` RPC
-  (args `{ location_id, company_id }`, `count: "exact"`); supports search + generic filters.
+  (args `{ location_id, company_id }`, plus `project_id` from `getInventoryItems`'s
+  `projectId`; `count: "exact"`); supports search + generic filters.
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
 - `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
   server function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
@@ -161,8 +162,10 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`itemPlanning`** / **`itemReplenishment`** — reorder/planning params and replenishment strategy.
 - **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
 
-`get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
-read. Newest definition is `20261006130001_demand-forecast-consumption.sql` (the
+`get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL, project_id TEXT DEFAULT NULL)` — the central
+read. Newest definition is `20261010035358_inventory-rpcs-project-stripe.sql`, which adds
+`project_id` (NULL: every stripe; `''`: common stock; an id: that project's stock — see
+*Project stock* below) to the body of `20261006130001_demand-forecast-consumption.sql` (the
 `20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
 `item_id` restricts to one item for detail-page loads — plus a net-projection demand arm:
 `GREATEST("forecastQuantity" - "consumedQuantity", 0)` of `demandProjection`). Returns ~52 cols:
@@ -178,6 +181,57 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 (`Available`, `Reserved`, `On Hold`, `Consumed`, `Rejected`, `Scrapped`), `warehouseTransferStatus`,
 `itemTrackingType`, `itemReplenishmentSystem`, `itemReorderingPolicy`.
 
+## Project stock (stock stripes)
+
+Projects Phase 2a (`.ai/plans/2026-10-08-projects-phase-2a.md`, execution notes; spec
+`.ai/specs/2026-10-03-projects.md` → *Project stock*). A project with `project.projectStock`
+owns the stock received for it. The model is **valuated striping**: `itemLedger.projectId` and
+`costLedger.projectId` name the owning project, and NULL is common stock.
+`itemStockQuantities.projectId` is part of its primary key, with `''` for common stock (a key
+column cannot be NULL). `trackedEntity` has no `projectId`: a partial transfer leaves one lot in
+two stripes, and a lot's stripe is the stripe of its rows with the most net on-hand
+(`trackedEntityStripe`).
+
+- **The stripe rule.** A row that creates stock sets the stripe its source names (a PO line
+  charged to a project with project stock; a job with `receiveToProjectStock`; a Transfer). A
+  row that draws stock sets the stripe it drew. A reversal or correction copies the row it
+  reverses.
+- **The stripe set of a demand.** A job or a plan line of a project with project stock draws
+  that project's stock, then common stock. Every other demand draws common stock only.
+  Another project's stock needs a Transfer or a Borrow first. The helpers are in
+  `packages/server-functions/src/lib/stock-stripes.ts`: `stripesForDemand`,
+  `loadDemandStripes`, `splitAcrossStripes` / `drawFromStripes` (one row per stripe drawn),
+  `itemLedgerInStripes`, `stripeKey` (`''` for common), `assertEntitiesInStripes`,
+  `assertEntitiesInCommonStock`, `loadProjectStock`, `withStripe`.
+- **Handler and key order.** `20261010021027_item-stock-quantities-project.sql` changes the
+  primary key and `reconcile_item_stock_quantities`. The generated authz migration
+  `20261010021110_item-stock-quantities-project-handler.sql` changes the
+  `apply_item_stock_quantities` ON CONFLICT to the new key. Between the two every
+  `itemLedger` insert fails, so they always apply together.
+- **Costing.** `calculateCOGS` takes `projectId` and relieves only that stripe's layers; the SQL
+  backflush (`20261010023707`) and job completion (`20261010030228`) follow it.
+  `bookAdjustment`, `buildItemLedgerRow` and `buildCostLedgerRow` take `projectId`.
+- **Pickers.** `get_available_tracked_entities` takes `p_project_ids`;
+  `get_item_quantities_by_tracking_id` returns `projectId`; the picking-list RPCs and
+  `get_picking_schedule` read the line's or job's stripes (`20261010024754`,
+  `20261010032726`). `pickingListLine.projectId` and `inventoryCountLine.projectId` carry the
+  stripe.
+- **Common stock only.** Sales shipments, direct sales invoices, return-to-customer shipments,
+  warehouse transfers and maintenance draw common stock. A purchase return draws the stripe
+  its stock came in on.
+- **Counts** give one line per (item, bin, lot, stripe). The `inventoryCountLines` view
+  (`20261010124108`) carries `projectId`, `projectIdentifier` and `projectName`, and the count
+  table shows a **Stock Owner** column.
+- **Reads.** `itemLedgerSnapshot` is grouped by `COALESCE("projectId", '')` and its unique
+  index includes it. `get_inventory_valuation` returns one row per (location, item, stripe)
+  with a trailing `projectId`. `get_inventory_tie_out`, `get_item_ledger_balance` and
+  `get_inventory_value_by_location` still sum every stripe. The quantities page takes
+  `?project` (absent, `common` or a project id) and the item's storage-unit card groups rows
+  by owner. `post-inventory-adjustment` takes `projectId` for untracked stock and a new lot.
+- **Planning** reads common stock only until Projects Phase 2b (`mrp-system.md`).
+- **Transfer, Borrow, Payback** post through `post-project-stock-transfer`; the costing is in
+  `projects-system.md` → *Project stock*.
+
 ## Gotchas
 
 - **Migrations are timestamp-ordered; tables get renamed.** `shelf`→`storageUnit`/`shelfId`→`storageUnitId`,
@@ -189,7 +243,7 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
   `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
   `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
   `quantityOnPurchaseOrder`.
-- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261006130001`), not the
+- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261010035358`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
 - **The auto-generated MCP reference (`.claude/rules/mcp-tools-reference.md`) is stale** for storage units —

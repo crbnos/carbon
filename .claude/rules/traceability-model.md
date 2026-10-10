@@ -234,6 +234,23 @@ per jobMaterial:
 sweep (the lineside bin is shared per work center). Spec:
 `.ai/specs/2026-08-04-picked-material-return-timing.md`.
 
+## Project stock stripes and lots
+
+Projects Phase 2a stripes stock by owner on `itemLedger.projectId` (NULL = common stock; see
+`inventory-system.md` → *Project stock*). `trackedEntity` has **no** `projectId`: a partial
+transfer can leave one lot in two stripes. A lot's stripe is the stripe of its ledger rows
+with the most net on-hand (`trackedEntityStripe`, `server-functions/src/lib/stock-stripes.ts`;
+`loadTrackedEntityStripe(s)` read it).
+
+- Every split, consumption, scrap, unconsume and convert row of a lot carries the lot's
+  stripe; a batch split child keeps its parent's stripe.
+- `issue`'s `mergeTrackedEntities` refuses lots of different stripes; the merged lot keeps
+  the one stripe.
+- A pick, a consumption or a Project Issue refuses a lot outside the demand's stripes
+  (`assertEntitiesInStripes`: "LOT-1 is in the stock of project TP. Transfer it first."). A
+  customer shipment refuses a lot in project stock (`assertEntitiesInCommonStock`).
+- Quality disposition's batch split writes the source lot's stripe.
+
 ## Quantity integrity — the four invariants
 
 `trackedEntity.quantity` is a bare NUMERIC (no declared scale, per the DB

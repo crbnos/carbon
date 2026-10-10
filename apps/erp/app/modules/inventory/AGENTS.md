@@ -13,6 +13,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 - **Warehouse Transfer** — moves inventory between locations (inter-location).
 - **Picking List** — generated pick instructions with FEFO/FIFO ordering and tracked entity allocation.
 - **Kanban** — pull-based replenishment signal between storage units.
+- **Stock owner (stripe)** — Projects Phase 2a. `itemLedger.projectId` / `costLedger.projectId` name the project that owns the stock; NULL is common stock. `itemStockQuantities.projectId` is part of its key, with `''` for common. The quantities page filters by owner (`?project`: absent, `common` or a project id → `getInventoryItems({ projectId })`), the storage-unit card groups rows by owner, and an adjustment on a row passes its `projectId`. Count lines carry the stripe (**Stock Owner** column). Rules: `.claude/rules/inventory-system.md` → *Project stock*.
 - **Inventory Count** — physical/cycle count. Posted is terminal (there is no count-level "Rectify" — fixing a posted movement happens per-movement via `correctStockMovement`). Created with an optional scope (`storageUnitIds` + `itemType`) recorded in the header's `scope` JSONB (written at create; not yet read back). `generateInventoryCountLines` snapshots on-hand into `inventoryCountLine` rows, **excluding Rejected AND Consumed tracked lots**. The count **detail** table filters lines by item type / storage unit / storage type / tags / material attributes via the `inventoryCountLines` **view** (line → item → subtype tables → storageUnit, flattened) — the same generic column-filter set the quantities screen uses. There is no material-attribute scope at create time.
 
 ## Safety
@@ -44,7 +45,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 | Table / View | Purpose |
 |---|---|
 | `itemLedger` / `itemLedgers` (view) | Append-only movement log: item, location, quantity, document ref, trackedEntityId |
-| `itemStockQuantities` | On-hand per (item, company, location) — a real TABLE maintained transactionally by a statement-level event handler on `itemLedger` (`apply_item_stock_quantities`, attached via `attach_statement_handler`; was a 30-min-refresh matview until `20260812002454`). Excludes `Rejected` tracked stock. Never write to it directly — it is derived state; the nightly `reconcile-item-stock-quantities` cron repairs any drift. Read by the item-dropdown store (with realtime push), the workflow engine's `item.quantityOnHand`, and MRP's on-hand input |
+| `itemStockQuantities` | On-hand per (item, company, location, project stripe — `''` = common) — a real TABLE maintained transactionally by a statement-level event handler on `itemLedger` (`apply_item_stock_quantities`, attached via `attach_statement_handler`; was a 30-min-refresh matview until `20260812002454`). Excludes `Rejected` tracked stock. Never write to it directly — it is derived state; the nightly `reconcile-item-stock-quantities` cron repairs any drift. Read by the item-dropdown store (with realtime push), the workflow engine's `item.quantityOnHand`, and MRP's on-hand input |
 | `storageUnit` | Hierarchical bins/shelves via `parentId`; scoped to location |
 | `storageType` | Storage unit type definitions (capacity, constraints) |
 | `trackedEntity` | Serial/batch/lot instances with readableId, status, quantity, expirationDate |
@@ -59,7 +60,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 
 ## Key Service Functions
 
-- `getInventoryItems` / `getInventoryItemsCount` — calls `get_inventory_quantities` RPC for on-hand quantities
+- `getInventoryItems` / `getInventoryItemsCount` — calls `get_inventory_quantities` RPC for on-hand quantities; `getInventoryItems` takes `projectId` (`project_id`: null every stripe, `''` common, an id that project)
 - `getItemLedgerPage` / `getItemLedgerActivity` — paginated ledger history
 - `getItemLedgerBalance` — `get_item_ledger_balance` RPC: on-hand right after one ledger entry, on the `quantityOnHand` definition (Rejected tracked stock counts zero). The item Activity feed fetches it ONCE for its newest loaded row; `withRunningBalance` (`ui/Inventory/ledgerFeed.ts`) derives every row's before → after from it as pages load, so paging adds no queries. Run it on raw rows, before `collapseTransferPairs`
 - `insertManualInventoryAdjustment` — adjustments with tracked entity handling; wraps the `post-inventory-adjustment` server function, which also maintains cost layers and posts GL journals (5310 vs RM/FG) in one transaction when accounting is enabled
@@ -72,7 +73,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 - `generatePickingList` / `getPickingListAvailability` / `getPickingSchedule` — picking operations
 - `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` — picking defaults
 - `getTrackedEntities` / `getTrackedEntityExpirations` / `getShelfLifeForItems` — tracking and expiry
-- `generateInventoryCountLines` — Kysely; aggregates `itemLedger` on-hand into `inventoryCountLine` rows, scoped by the optional `storageUnitIds` + `itemType`. Excludes `Rejected` and `Consumed` tracked lots (status-aware, matching `quantityOnHand`); non-tracked rows (NULL status) always included. `getInventoryCountLines` reads the `inventoryCountLines` view (joins item + subtype tables on `id = item."readableId"` — the same predicate `get_inventory_quantities` uses, all LEFT — + `storageUnit`) so the detail table can apply generic column filters on flat columns.
+- `generateInventoryCountLines` — Kysely; aggregates `itemLedger` on-hand into `inventoryCountLine` rows, one per (item, bin, lot, stripe), scoped by the optional `storageUnitIds` + `itemType`. Excludes `Rejected` and `Consumed` tracked lots (status-aware, matching `quantityOnHand`); non-tracked rows (NULL status) always included. `getInventoryCountLines` reads the `inventoryCountLines` view (joins item + subtype tables on `id = item."readableId"` — the same predicate `get_inventory_quantities` uses, all LEFT — + `storageUnit`) so the detail table can apply generic column filters on flat columns.
 
 ## Key Exports
 
@@ -113,3 +114,4 @@ Service functions: the admin CRUD is NOT in `inventory.service.ts`. The read hel
 
 - `.claude/rules/inventory-system.md` — comprehensive guide to inventory code, RPCs, storage units, and gotchas
 - `.claude/rules/traceability-model.md` — serial/batch lineage graph model (trackedEntity/trackedActivity)
+- `.claude/rules/projects-system.md` → *Project stock* — Transfer, Borrow and Payback between owners

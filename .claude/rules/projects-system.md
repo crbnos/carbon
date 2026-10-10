@@ -6,14 +6,17 @@ paths:
   - "packages/server-functions/src/post-project-expense/**"
   - "packages/server-functions/src/lib/project-posting.ts"
   - "packages/server-functions/src/lib/project-cip.ts"
+  - "packages/server-functions/src/post-project-stock-transfer/**"
+  - "packages/server-functions/src/lib/stock-stripes.ts"
 ---
 
 # Projects
 
-Phases 1a, 1b and 1c of `.ai/specs/2026-10-03-projects.md`; plans
+Phases 1a, 1b, 1c and 2a of `.ai/specs/2026-10-03-projects.md`; plans
 `.ai/plans/2026-10-07-projects-phase-1a.md`,
-`.ai/plans/2026-10-08-projects-phase-1b.md` and
-`.ai/plans/2026-10-08-projects-phase-1c.md` (their *Execution notes* record every
+`.ai/plans/2026-10-08-projects-phase-1b.md`,
+`.ai/plans/2026-10-08-projects-phase-1c.md` and
+`.ai/plans/2026-10-08-projects-phase-2a.md` (their *Execution notes* record every
 deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
@@ -158,6 +161,55 @@ and `parentProjectId` names a coverage contract's project. Field service owns th
 - **Hidden outside Service.** The Projects lists, Copy from, Build from part's template
   list, the charge number pickers, the dimension picker and the Ramp sync filter
   `projectType = 'Standard'`. Never list a Service project in Projects.
+
+## Project stock (Phase 2a)
+
+`project.projectStock` (set while Draft only; `$projectId.details.tsx` keeps the stored value
+after that) makes the project own the stock received for it. The stripes, the stripe set of a
+demand and the key order are in `inventory-system.md` → *Project stock*. What it changes here:
+
+- **Receipts.** A stocked item on a PO line charged to a project with project stock is
+  received into the project's stripe: Dr inventory, no Project Issue row, no `projectLedger`
+  row. With `project.chargeAtReceipt` the receipt also writes a `projectLedger` row (no
+  asset), and the purchase invoice writes a `Material Variance` row for the whole price
+  variance (`stockChargedAtReceipt`, `loadInvoiceProjectCharges`). The stripe does not depend
+  on the cost treatment.
+- **Jobs.** `job.receiveToProjectStock` (needs a charge number; refused with Consume to
+  project, Make to Asset or a sales order line; `chargeNumberError` refuses it on a project
+  without project stock) receives the output into the project's stripe
+  (`complete_job_to_inventory`, `20261010030228`). A job of a project with project stock
+  draws that project's stock, then common stock, in `issue`, the backflush and picking.
+- **Issue to Project.** `post-project-issue` splits an untracked issue across the project's
+  stripes at the bin (`splitAcrossStripes`), one `bookAdjustment` per stripe sharing one
+  journal and one `projectLedger` row. A Return goes back to the project's stock.
+- **`projectStockTransfer`** (Draft → Approved → Posted, or Cancelled) with lines;
+  `projectBorrow` records an open borrow. Pages: Projects → **Transfers**
+  (`projects+/transfers.tsx`, `transfers.new.tsx`) and the document
+  (`project-stock-transfer+/$id.tsx`, `$id.lines.tsx`, `$id.status.tsx`). The owner pickers
+  carry `common` for common stock (`COMMON_STOCK_OWNER`, `toStockOwner`).
+- **Approval** is `update: projects`, not the approvals engine (`updateProjectStockTransferStatus`).
+  Approve refuses a transfer without lines and runs the government-furnished guard
+  (`governmentFurnishedRefusal`): stock of a `governmentFurnished` project moves only to a
+  project of the same customer. The posting checks it again.
+- **Posting** (`post-project-stock-transfer`, called by `postProjectStockTransfer` with
+  `serverFns.system`): one transaction locks the Approved header, checks the from-stripe's
+  on-hand per (item, bin, lot), draws it with `calculateCOGS({ projectId })`, writes the
+  `Project Transfer` Transfer pair at the line's bin and a relief `costLedger` row, and stamps
+  the line's `unitCost`.
+  - **Transfer** opens a layer in the to-stripe at the drawn cost. No journal.
+  - **Borrow** opens the borrower's layer at the lender's cost (`costLedger.projectBorrowId`)
+    and an Open `projectBorrow` with the due date. No journal.
+  - **Payback** relieves the borrower at its current FIFO cost and gives the lender back the
+    **borrowed** cost, one layer per borrow settled (`planBorrowMatching`: the borrow the
+    payback names first, then the oldest). The difference is the borrower's
+    `Payback Variance` `projectLedger` row and a journal against
+    `inventoryAdjustmentVarianceAccount`, tagged with the borrower's project
+    (`paybackVariance`). A Payback header names both owners, filled from its borrow.
+- **Stock tab** (`$projectId.stock.tsx`, `ProjectStock`, shown when `projectStock` is on): the
+  project's on-hand by item, location, bin and lot (`getProjectStockOnHand`), its open
+  borrows owed and lent (overdue in red, `isBorrowOverdue`), and **Transfer**, **Borrow** and
+  **Payback** buttons that open a prefilled Draft (`?type`, `?to`, `?borrow`).
+- **Planning** reads common stock only until Phase 2b.
 
 ## Timesheets
 
@@ -356,3 +408,11 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
 - With the plan locked, the Elements page turns off only create and delete; the other
   plan-layer controls stay enabled and the server refuses them.
 - The demo datasets seed no baseline, change request, item, comment or view.
+- The demo datasets seed project stock and one Posted Transfer per Contract project
+  (`seedProjectStock`, tier 09), but no borrow.
+- `POSTING_POLICY` keeps `Project Transfer` journals (paybacks) off external ledgers by
+  default; Brad to confirm.
+- The MES issue picker lists every lot; `issue` refuses a lot outside the job's stripes.
+- A Posted project stock transfer has no void; a Transfer back is the correction.
+- A borrow has no overdue exception yet; the Stock tab shows it in red (MRP exceptions are
+  Phase 2b).
