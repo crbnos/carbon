@@ -51,7 +51,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 - [x] Task 8: Apply grouped Order and Make actions and move their pegs
 - [x] Task 9: Add `harden_pegs_for_supply`
 - [x] Task 10: Distribute grouped PO receipts and their reversals
-- [ ] Task 11: Distribute grouped job output
+- [x] Task 11: Distribute grouped job output
 - [ ] Task 12: Charge price variance to member projects
 - [ ] Task 13: Add soft-peg commitments to the cost summary
 - [ ] Task 14: Propose member Transfers and Borrows
@@ -795,3 +795,8 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 10: each Hard peg's `itemLedgerId` is the first row written for it, set by one `UPDATE … FROM (VALUES …)`. The void runs one statement only when a PO line of the order has `planningGroupId`: it supersedes the current Hard pegs whose `itemLedgerId` is a row of the receipt and inserts a Soft copy of each. The reversing rows already copy each row's stripe.
 - Task 10 (known gap): a negative receipt on a grouped line draws common stock, as before. It does not draw a member stripe or soften a peg.
 - Task 10: `grouped-receipt.test.ts` has 4 pure cases and the plan's 2 database cases in one test (receive 60 against 20, 30 and 10; then void). The post-receipt tests pass (14). The full server-functions suite passes except `rows.test.ts` and `post-charge-transaction.test.ts`, the known shared-database races, which pass alone. The 5 job-completion and backflush pgTAP scripts and `harden-pegs-for-supply.test.sql` exit 0 with no ERROR line. `@carbon/server-functions` typechecks.
+- Task 11: `20261010160658_complete-job-grouped.sql` forks `complete_job_to_inventory` from `20261010030228` and `backflush_job_materials` from `20261010023707`, the newest definitions (checked against the live functions). Make to Asset, consume-to-project, capital jobs, Receive to project stock, the guards, stamped layer children and project stripes are kept.
+- Task 11: every stocked receipt now loops over a stripe list. A job without `planningGroupId` has one stripe (the output project or common stock) with the whole delta, so it writes the same rows as before. A grouped job calls `harden_pegs_for_supply('Job', job, delta)` once (one `array_agg` statement `WITH ORDINALITY`) and writes its untracked, batch, serial and seed-serial rows per returned row. Serial units take the stripes in order. Each Hard peg gets `itemLedgerId` (for serial units, one of the stripe's rows).
+- Task 11: the Output layer is written per stripe at the job's unit cost (`ROUND(…, 5)`), and the last stripe takes the rounding rest. So scrap spreads by quantity, with no extra posting.
+- Task 11: the backflush of a grouped job reads the job's current pegs (any state) in the order `harden_pegs_for_supply` walks and draws the members' stock in that order, then common stock. A grouped job with no peg draws common stock, as before. The migration changed no signature, so `generate:types` gave no diff.
+- Task 11: the new `project-issue.test.ts` case completes 3 of a grouped job with pegs 2 and 1. It checks 2 striped receipt rows, 2 Output layers (65.33333 and 32.66667), the backflush (member A's 4, then 5 common) and 2 Hard pegs linked to their rows. `project-issue` passes (13), and the full server-functions suite passes (514). The 5 job-completion and backflush pgTAP scripts and `harden-pegs-for-supply.test.sql` exit 0 with no ERROR line.

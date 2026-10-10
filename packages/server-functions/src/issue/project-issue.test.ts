@@ -1013,3 +1013,141 @@ databaseTest(
     }
   }
 );
+
+// Projects Phase 3: a job made for a planning group receives its output into
+// the members' stripes by its pegs, and draws its components from the
+// members' stock in peg order, then from common stock.
+databaseTest(
+  "completing a grouped job writes one striped receipt row per peg",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      // 10 bolts in common stock at 10.00, 4 in member A's stock at 12.00.
+      const { itemId, locationId } = await f.addStockedItem("bolt", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const group = await f.addPlanningGroup({
+        locationId,
+        members: [
+          { key: "a", identifier: "GA" },
+          { key: "b", identifier: "GB" }
+        ]
+      });
+      const memberA = group.projectIds.a!;
+      const memberB = group.projectIds.b!;
+      await f.addStripeStock({
+        itemId,
+        locationId,
+        projectId: memberA,
+        quantity: 4,
+        unitCost: 12
+      });
+      const job = await f.addConsumeToProjectJob("grouped", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 3,
+        jobQuantity: 3,
+        consumeToProject: false
+      });
+      await f.db
+        .updateTable("job")
+        .set({ planningGroupId: group.planningGroupId })
+        .where("id", "=", job.jobId)
+        .execute();
+      for (const [projectId, quantity, needDate] of [
+        [memberA, 2, "2026-11-01"],
+        [memberB, 1, "2026-11-02"]
+      ] as const) {
+        await f.addPeg({
+          planningGroupId: group.planningGroupId,
+          itemId: job.finishedItemId,
+          locationId,
+          supplyType: "Job",
+          supplyId: job.jobId,
+          projectId,
+          quantity,
+          needDate
+        });
+      }
+
+      await completeJob(f, job.jobId, 3, locationId);
+
+      // The backflush draws member A's 4, then 5 from common stock (member B
+      // has none).
+      const consumption = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .orderBy("quantity")
+        .execute();
+      expect(
+        consumption.map((row) => [Number(row.quantity), row.projectId])
+      ).toEqual([
+        [-5, null],
+        [-4, memberA]
+      ]);
+
+      // Two striped receipt rows, one per peg.
+      const receipt = await f.db
+        .selectFrom("itemLedger")
+        .select(["id", "quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Receipt")
+        .where("documentId", "=", job.jobId)
+        .orderBy("quantity", "desc")
+        .execute();
+      expect(
+        receipt.map((row) => [Number(row.quantity), row.projectId])
+      ).toEqual([
+        [2, memberA],
+        [1, memberB]
+      ]);
+
+      // One Output layer per stripe at the job's unit cost:
+      // (4 x 12.00 + 5 x 10.00) / 3 per unit.
+      const output = await f.db
+        .selectFrom("costLedger")
+        .select(["quantity", "cost", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Receipt")
+        .where("documentId", "=", job.jobId)
+        .orderBy("quantity", "desc")
+        .execute();
+      expect(
+        output.map((row) => [
+          Number(row.quantity),
+          Number(row.cost),
+          row.projectId
+        ])
+      ).toEqual([
+        [2, 65.33333, memberA],
+        [1, 32.66667, memberB]
+      ]);
+
+      // The pegs are Hard and point at their rows.
+      const pegs = await f.db
+        .selectFrom("projectPeg")
+        .select(["projectId", "quantity", "state", "itemLedgerId"])
+        .where("companyId", "=", f.companyId)
+        .where("supersededAt", "is", null)
+        .orderBy("quantity", "desc")
+        .execute();
+      expect(
+        pegs.map((peg) => [
+          peg.projectId,
+          Number(peg.quantity),
+          peg.state,
+          peg.itemLedgerId
+        ])
+      ).toEqual([
+        [memberA, 2, "Hard", receipt[0]!.id],
+        [memberB, 1, "Hard", receipt[1]!.id]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
