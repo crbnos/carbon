@@ -3,7 +3,7 @@ title: Service orders
 description: Send a technician to a customer's unit, charge time, parts and expenses to its work tree, decide who pays, and invoice the rest.
 ---
 
-A **service order** sends a technician to one [customer asset](/docs/reference/customer-assets) at the customer's site. It holds a tree of work and collects every charge until you invoice it. Each charge decides on its own whether warranty, a contract or the customer pays.
+A **service order** sends a technician to one [customer asset](/docs/reference/customer-assets) at the customer's site, or repairs a unit the customer sent back on an [RMA](/docs/reference/rmas). It holds a tree of work and collects every charge until you invoice it. Each charge decides on its own whether warranty, a contract or the customer pays.
 
 Open the **Service** module. It has **Service Orders**, **My Visits**, **Schedule**, **Customer Assets**, **Service Templates** and **My Timesheet**.
 
@@ -134,6 +134,17 @@ On **Work complete?**, **Yes, Work Complete** completes the order. **No, More Wo
 
 **Schedule** shows 7 days of visits by day and technician, filtered to **Not done** by default. You schedule visits from the order, not from this page.
 
+## Depot Repair
+
+A **Depot Repair** order repairs a unit in your shop. You do not create it by hand: posting the receipt of an RMA line with the **Repair** disposition opens one Draft Depot Repair order per received serial. The order takes the RMA's customer, site and contact, and your receiving location. If the customer has exactly one Active contract, the order uses it as its coverage contract. See [Repair](/docs/reference/rmas#repair) for the RMA side.
+
+- The header shows the RMA, linked, and **At Depot** while the unit is in your shop. **View Return Order** is in the order's menu.
+- Charge the work tree as on a field visit. The order needs no visit, so **Complete** is the next step.
+- Once the order is Completed or Closed and the unit is still At Depot, **Ship Back** opens the RMA. Ship the unit from there.
+- Invoice the order, or **Close** it, as any service order.
+
+The order list has a **Type** column to filter Field Visit and Depot Repair orders.
+
 ## Service templates
 
 A **service template** is a reusable work tree. Click **Add Service Template**, add nodes, then open a node to plan its materials, labor and other costs. An order started from a template copies its nodes and plan lines, so its estimate has prices.
@@ -161,6 +172,9 @@ Service uses its own `service` permissions: view, create, update and delete.
   </Card>
   <Card title="Invoices" href="/docs/reference/invoices">
     Post the Draft invoice that a service order creates.
+  </Card>
+  <Card title="RMAs" href="/docs/reference/rmas">
+    Receive a unit for repair and ship it back.
   </Card>
   <Card title="Contracts" href="/docs/reference/contracts">
     Customer contracts that pay for work outside warranty.
@@ -238,10 +252,10 @@ The user lacks inventory_update.
 
 ## Internals
 - Each service order owns a Service project (projectType Service, costTreatment By Coverage, identifier = the order's readable id). Its elements are the nodes. Service projects are hidden from the Projects module, charge number pickers and dimension pickers.
-- Readable id: sequence serviceOrder, prefix SVC, size 6 (SVC000001). Order types in the enum: Field Visit, Depot Repair, Refurbishment; only Field Visit is created.
+- Readable id: sequence serviceOrder, prefix SVC, size 6 (SVC000001). Order types in the enum: Field Visit, Depot Repair, Refurbishment. The New form creates Field Visit only; the receipt of an RMA Repair line creates Depot Repair orders (`serviceOrder.salesReturnOrderLineId`, CHECK `serviceOrder_depot_check`; `post-receipt/repair.ts`). Refurbishment is not created.
 - Status roll-up: rollUpOrderStatus (service.models.ts); allowed moves canMoveServiceOrder and canMoveVisit; saved by syncServiceOrderStatus (service.server.ts), which also sets the project status (On Hold → On Hold, Completed → Technically Complete, Closed/Cancelled → Closed, else Released).
 - Coverage: resolveCoverage (packages/utils/src/service-coverage.ts). Capitalized charges post to Work in Progress and create no billable item.
-- Charges: route service-order+/$id.charge.tsx with intent time / part / expense / reclass; server functions post-timesheet, post-project-issue, post-project-expense, reclass-project-coverage. Time posts Dr coverage account / Cr Labor Absorption ("Service Labor"); expenses Dr coverage account / Cr GR/IR ("Service Expense"); parts "Service Material". All carry the Customer dimension.
+- Charges: route service-order+/$id.charge.tsx with intent time / part / expense / reclass / reverse (reverseServiceCharge: a timesheet correction to 0 hours, or a projectExpenseEntry with reversalOfId and reversalReason); server functions post-timesheet, post-project-issue, post-project-expense, reclass-project-coverage. Time posts Dr coverage account / Cr Labor Absorption ("Service Labor"); expenses Dr coverage account / Cr GR/IR ("Service Expense"); parts "Service Material". All carry the Customer dimension.
 - Invoice: create-service-order-invoice (layout in plan.ts). post-sales-invoice skips stock and COGS on lines stamped by billable items. Deleting the Draft invoice runs releaseServiceOrderStamps.
 - The Start Work clock is stored in the browser's localStorage (key `carbon:service-work:<visitId>`); clearing storage or switching devices loses a running clock.
 - Visit photos: private bucket `${companyId}/service/${orderId}/${visitId}/`; signature `signature.png` in the same folder (PNG, at most 2 MB).

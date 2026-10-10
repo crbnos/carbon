@@ -1,6 +1,6 @@
 # Field Service: service orders on serials in stock and in the field
 
-> Status: Phase A implemented (2026-10-09, plan `.ai/plans/2026-10-09-field-service-phase-a.md`); browser verification is still due. Phases B, C and D are planned. Every open question is resolved (Q1 answered 2026-10-08).
+> Status: Phases A and B implemented (2026-10-09, plans `.ai/plans/2026-10-09-field-service-phase-a.md` and `.ai/plans/2026-10-09-field-service-phase-b.md`); browser verification of both is still due. Phases C and D are planned. Every open question is resolved (Q1 answered 2026-10-08).
 > Author: Brad (with Claude)
 > Date: 2026-10-08
 > Research: `.ai/research/field-service.md` (SAP S/4HANA Service and FSM, D365 Field Service, Business Central, IFS, Salesforce Field Service, Epicor) and `.ai/research/serial-service-cost-treatment.md` (capitalize or expense)
@@ -212,19 +212,21 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 
 ### Depot Repair through the RMA
 
-1. On an RMA line for a serialized item, the user sets the disposition **Repair**. This is the one disposition allowed before receipt, because it decides how the receipt posts.
+1. On an RMA line for a serialized item, the user sets the disposition **Repair** before receipt. Before receipt a line takes Pending or Repair only, because Repair decides how the receipt posts. After receipt, a change to or from Repair is refused (decision 43).
 2. Un-comment `Repair` in `salesReturnDispositionType` (`sales.models.ts:1258`).
 3. **`post-receipt`, case "Sales Return Order", for a `Repair` line:**
    - Write no `itemLedger` row, no `costLedger` row and no journal.
    - Keep the `trackedEntity` status `Consumed`. The unit stays the customer's.
    - Write the `Return Receipt` activity with an `At Depot` attribute.
-   - Create the Depot Repair service order for the serial: customer, site and coverage contract from the RMA. Link it with `salesReturnOrderLine.serviceOrderId`.
+   - Create one Depot Repair service order per received serial: the RMA's customer, site and contact, and the receiving location. The coverage contract is the customer's only Active contract, because the RMA has no contract column. Link it with `serviceOrder.salesReturnOrderLineId` (decision 43).
+   - A serial with no customer asset gets one, with source Manual (decision 45).
 4. The shop works the order. Parts and labor post by coverage, as for a field visit.
-5. **Ship back.** When the order is Completed, the RMA's Return to Customer shipment ships the serial:
+5. **Ship back.** When the order is Completed (or Closed after its invoice), the RMA's return shipment ships the serial:
    - For a `Repair` line, `post-shipment` writes no `itemLedger`, no COGS and no journal.
    - It writes the `Return Shipment` activity and clears `At Depot`.
    - The asset's site and ship date update. The order goes to Closed after invoicing.
-6. An RMA line with disposition `Repair` cannot get a credit memo or a replacement order. Change the disposition first.
+6. An RMA line with disposition `Repair` cannot get a credit memo or a replacement order (decision 47). Before receipt, change the disposition. After receipt, void the receipt first.
+7. **Void.** A receipt void cancels the line's Depot Repair orders and sets their assets back In Service. It is refused while an order has a charge that stands (decision 46). A shipment void sets the asset back At Depot.
 
 ### Parts
 
@@ -327,6 +329,11 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 | 39 | Service time posting | `post-timesheet` posts a Service project's Draft entries. **Submit week** submits Standard entries only. | Service time posts at Stop Work or Add Time (decision 35), so it never waits in a weekly submit. Plan decision, 2026-10-09. |
 | 40 | Second stock relief | `post-sales-invoice` skips stock and COGS on a line that a billable item stamps (`billedServiceLineIds`). Revenue still posts. | The part left stock when it was issued to the node. Plan decision, 2026-10-09. |
 | 41 | My Timesheet | Moved to `x+/timesheet`, outside the Projects layout. `x+/projects+/timesheet` redirects there. | My Timesheet is personal: project and service hours in one week, for any employee. Plan decision, 2026-10-09. |
+| 43 | Depot Repair link (B1) | `serviceOrder.salesReturnOrderLineId`, not `salesReturnOrderLine.serviceOrderId`. | One RMA line can return several serials, and each serial gets its own order (decision 9). A column on the line holds one order only. Plan decision, 2026-10-09. |
+| 44 | Repair needs a serial (B2) | The Repair disposition needs an item tracked by Serial. | An order has one subject serial. A batch or an untracked unit has no identity to ship back. Plan decision, 2026-10-09. |
+| 45 | Missing asset at a repair receipt (B3) | The receipt creates the asset, with source Manual. | A unit shipped before Carbon, or before the asset backfill, has no asset. The repair must still work. Plan decision, 2026-10-09. |
+| 46 | Void of a repair receipt (B4) | The void cancels the line's orders. It is refused while an order has a charge that stands, or after its unit shipped back. | The order's subject is no longer at the depot. Posted cost needs a decision by a person. Plan decision, 2026-10-09. |
+| 47 | Replacement and credit (B5) | A replacement order skips Repair lines and is refused when every line is Repair. A credit refuses a Repair line. | `createReplacementSalesOrder` works on the whole RMA, so the other lines can still be replaced. A repaired unit goes back to the customer, so nothing is credited. Plan decision, 2026-10-09. |
 | 42 | RLS of the project tables | The `projectModule` rule piece decides between `projects_*` and `service_*` by `projectType`. Reads of a Standard project stay open to every employee. | One rule for every project table. MES operators and the PO line picker read Standard projects without `projects_view`, as before. Plan decision, 2026-10-09; the employee read is an execution change. |
 | 26 | Multi-tenancy (H1) | Every new table has `companyId`, `PRIMARY KEY ("id","companyId")` and `id('prefix')`. | conventions-database. |
 | 27 | Service shape (H2) | Client first, `{data, error}`, never throws. Posting and completion run in server functions (Kysely transactions). | conventions-services; `packages/server-functions/AGENTS.md`. |
@@ -477,7 +484,10 @@ CREATE TABLE "customerAssetComponent" (
 );
 CREATE INDEX "customerAssetComponent_asset_idx" ON "customerAssetComponent" ("customerAssetId", "companyId") WHERE "removedDate" IS NULL;
 
-ALTER TABLE "salesReturnOrderLine" ADD COLUMN IF NOT EXISTS "serviceOrderId" TEXT;
+-- Phase B (decision 43): the link is on the order, not on the RMA line
+ALTER TABLE "serviceOrder" ADD COLUMN IF NOT EXISTS "salesReturnOrderLineId" TEXT;
+-- composite FK ("salesReturnOrderLineId", "companyId") → salesReturnOrderLine, NO ACTION;
+-- CHECK ("type" <> 'Depot Repair' OR "salesReturnOrderLineId" IS NOT NULL)
 ALTER TABLE "salesInvoice" ADD COLUMN IF NOT EXISTS "serviceOrderId" TEXT;
 -- invoice lines link back through projectBillableItem.salesInvoiceLineId (projects spec)
 -- each with an FK on (column, "companyId") ON DELETE SET NULL (column), and an index
@@ -639,7 +649,7 @@ Phase D: the contract project roll-up
 Each phase gets its own plan with `/plan`:
 
 1. **Phase A: customer assets, field visits, the work tree, components, coverage, invoicing, the phone pages.** It needs projects Phases 1a and 1b. It ships the projects spec's Service projects. **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-a.md`, Tasks 1–30); browser verification (Task 31) is deferred.
-2. **Phase B: depot repair through the RMA.**
+2. **Phase B: depot repair through the RMA.** **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-b.md`, Tasks 1–12); browser verification (Task 13) is deferred.
 3. **Phase C: refurbishment of a serial in stock.**
 4. **Phase D: the contract project roll-up.**
 
@@ -656,12 +666,24 @@ The plan's *Execution notes* record each deviation. These change the design abov
 - **The work tree UI.** `WorkTree` is a component of the service module, not the projects element list. The element list posts to project routes that need `projects_*`.
 - **Pages.** Work, Visits and Billing are tabs of the order. The asset page is `x+/customer-asset+/$assetId.tsx`. The visit page is `x+/service-order+/$id_.visits.$visitId.tsx` and the template page `x+/service-orders+/templates_.$id.tsx`, so they render as full pages.
 - **Work timer.** `serviceVisit` has no work-start column, so the clock is kept on the device. **Stop Work** opens Log Time with the elapsed hours.
-- **Visit window.** The window uses the existing `DateTimePicker`, which reads the browser's time zone, not the company's.
+- **Visit window.** The window is typed and stored in the company's time zone. `DateTimePicker` gained an optional `timeZone` prop for this (a fix after Phase A).
+- **Reversing charges.** The node drawer reverses a time or expense charge, with a reason. Time is reversed by a timesheet correction to 0 hours. An expense is reversed by an expense entry with `reversalOfId` and the new `reversalReason` column. So an order with time or an expense can be cancelled once each charge is reversed (a fix after Phase A).
 - **Templates.** Build from part copied a template's nodes but not their plan lines. A service order now passes `includePlanLines`, so its estimate has prices. Projects' Build from part is unchanged.
 - **Estimate PDF.** `ServiceEstimatePDF` is hand-built, like the project Reader. A template-engine document needs a new document type, which `packages/documents/AGENTS.md` puts under Ask First.
 - **Settings.** `upsertItemUnitSalePrice` now filters by `companyId`. The van must be a storage unit at the employee job's location.
 - **Demo datasets.** The templates and orders are seeded in tier 09, after the labor categories. The dataset wipe deletes the service order tables first, because nulling `customerId` breaks `serviceOrder_customer_check`.
 - **Not built.** The contract project roll-up on the Costs tab (Phase D). Search excludes Service projects by default, because no search source lists projects.
+
+## Implementation notes (Phase B)
+
+The plan's *Execution notes* record each deviation. These change the design above.
+
+- **Shared order creation.** `insertServiceOrder` and `ensureCustomerAssets` (`@carbon/server-functions/lib/service-orders`) create an order with its Service project in the caller's transaction. The ERP's New Service Order and `post-receipt` both call them. An order's project is named "<order id> — <serial> — <customer>". A project name is unique in its company, and a unit can have a second order.
+- **The disposition race.** Both the disposition change and the receipt take the RMA's row lock. The receipt re-reads the dispositions under it and refuses one that changed while it posted.
+- **One open order per serial.** A repair receipt refuses a serial that already has an open service order, before it writes anything.
+- **Ship back.** A Repair line ships a unit whose order is Completed or Closed, because a company may invoice before it ships the unit back. Under the posting lock, the shipment re-checks the order and the asset.
+- **UI.** The RMA line links its orders, and the explorer shows their count and the status that needs attention first. A Depot Repair order makes **Complete** its next step, since it has no visit, and offers **Ship Back** to the RMA. The RMA header hides **Issue Credit** and **Create Replacement** when they would only be refused.
+- **Demo datasets.** Satellite seeds a To Receive RMA with one Repair line for SAT-1000-S013. A received repair is not seeded.
 
 ## Out of scope
 
@@ -711,3 +733,4 @@ Resolved autonomously (2026-10-08), open to veto:
 - 2026-10-08: Modules follow job roles (Brad). New *Who uses what* section. Q1 resolved: a Service module; `sales_view` → `service_view`, and full rights for the Admin employee type only. The order's Service project stays hidden from Projects, the dimension picker and the Ramp sync. The customer Assets tab shows with `service_view`.
 - 2026-10-09: Corrections from the Phase A planning research. The site comes from the sales order, not the shipment. `post-sales-invoice` must skip stock and COGS on lines that billable items stamp. Visit RLS follows `timeCardEntry` (owner rules), not `maintenanceDispatchEvent`. The account and default follow `revenue-recognition-core`. The demo datasets have no shipped serials, so the datasets register customer assets by hand.
 - 2026-10-09: Phase A implemented (`.ai/plans/2026-10-09-field-service-phase-a.md`, Tasks 1–30). Browser verification (Task 31) is deferred. Decisions 37–42 record the plan's choices, and *Implementation notes (Phase A)* records the main changes found during the run.
+- 2026-10-09: Phase B implemented (`.ai/plans/2026-10-09-field-service-phase-b.md`, Tasks 1–12). Browser verification (Task 13) is deferred. Decisions 43–47 record the plan's decisions B1–B5. The link is `serviceOrder.salesReturnOrderLineId`, not `salesReturnOrderLine.serviceOrderId`. *Implementation notes (Phase B)* records the main changes found during the run.

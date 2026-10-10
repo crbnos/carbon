@@ -58,7 +58,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 | `pricingRule` | Company-scoped discount/markup rules |
 | `customerItemPriceOverride` / `customerItemPriceOverrideBreak` | Customer-specific price overrides with quantity breaks |
 | `noQuoteReason` | Why a quote line was declined |
-| `salesReturnOrder` / `salesReturnOrderLine` / `salesReturnOrders` (view) | Customer RMAs: non-posting authorization document; receipt-driven statuses (Draft → Confirmed → Partially Received → Received → Completed/Cancelled); lines link optionally to SO/shipment/invoice lines with a `disposition` + `closedComplete` short-close |
+| `salesReturnOrder` / `salesReturnOrderLine` / `salesReturnOrders` (view) | Customer RMAs: non-posting authorization document; statuses Draft → To Receive → Completed, or Cancelled (`salesReturnOrderStatus`; receiving drives To Receive → Completed); lines link optionally to SO/shipment/invoice lines with a `disposition` + `closedComplete` short-close. A `Repair` line's units are repaired and shipped back with no stock movement, one Depot Repair `serviceOrder` per serial (`serviceOrder.salesReturnOrderLineId`) — see `.claude/rules/field-service.md` → Depot repair |
 | `salesReturnOrderLineTrackedEntity` / `salesReturnOrderCreditLine` | Legacy expected-serials junction (no longer written — "which serial is it" lives entirely on the receipt; existing rows still honored by disposition) ; per-line credit breakdown behind the header-level AR `memo` (`memo.salesReturnOrderId`) |
 | `returnReason` | Why goods came back (company-defined, seeded; `inventoryValueZero` re-enters stock at zero value). Shared with purchasing's supplier returns |
 
@@ -79,8 +79,8 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `getOpportunity` / `getOpportunityDocuments` — deal tracking
 - `getSalesReturnOrders` / `insertSalesReturnOrder` / `upsertSalesReturnOrderLine` — RMA CRUD; `confirmSalesReturnOrder` (Kysely, row-locked reversible-quantity caps, THROWS), `cancelSalesReturnOrder` / `completeSalesReturnOrder` (guarded), `shortCloseSalesReturnOrderLine`
 - `getReturnableLinesForCustomer` (posted shipment lines minus already-authorized) — RMA line picker; `getShippedTrackedEntitiesForCustomer` — receipt-side serial/batch candidates (entities of the item currently with the customer via posted shipments)
-- `createSalesReturnOrderCredit` (Kysely, row-locked creditable cap, THROWS) / `getCreditableQuantities` / `createReplacementSalesOrder` (resolvePrice-priced draft SO)
-- `setSalesReturnOrderLineDisposition` — Use As Is releases returned entities; Scrap/Rework escalate to a quality Issue via the line's issue route
+- `createSalesReturnOrderCredit` (Kysely, row-locked creditable cap, THROWS) / `getCreditableQuantities` / `createReplacementSalesOrder` (resolvePrice-priced draft SO). A `Repair` line is never credited (`REPAIR_LINE_CREDIT_MESSAGE`) and never replaced; an RMA of Repair lines only gets no replacement (`REPAIR_ONLY_REPLACEMENT_MESSAGE`). The guards are in the service because all three are MCP tools
+- `setSalesReturnOrderLineDisposition` — before receipt only Pending and Repair (`salesReturnPreReceiptDispositions`; Repair needs a Serial-tracked item); after receipt a change to or from Repair is refused (`REPAIR_DISPOSITION_LOCKED_MESSAGE`) under the RMA's row lock. Use As Is releases returned entities; Scrap/Rework escalate to a quality Issue via the line's issue route (which refuses a Repair line)
 - `createOpportunityDocumentUploadUrl` / `createOpportunityLineDocumentUploadUrl` — MCP file upload (step 1): presigned URLs for opportunity (`opportunity/{opportunityId}`) and opportunity-line documents; pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"
 
 ## Key Exports

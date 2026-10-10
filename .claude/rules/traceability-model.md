@@ -76,6 +76,14 @@ and MES services — NOT a single `post-production`:
   document Service Order) with the part as its input and the asset's serial as its output.
   Its `attributes` hold `{ "Project Issue": <itemLedger id> }`, so a return deletes exactly
   the activity its issue wrote (`uninstallServicePart`). See `field-service.md`.
+- RMA **Repair** lines (depot repair, `field-service.md`): the unit stays the customer's,
+  so its serial stays `Consumed` through the whole repair; no receipt or shipment flips
+  it to `On Hold` or back. `post-receipt` (`post-receipt/repair.ts`) writes a
+  `Return Receipt` activity per serial with `{ "Sales Return Order", Receipt, Employee,
+  "At Depot": true, "Service Order": <id> }` and the serial as its output. `post-shipment`
+  (`post-shipment/repair.ts`) writes one `Return Shipment` activity with
+  `"At Depot": false` and the units as inputs. Neither writes an `itemLedger` row, and
+  both voids leave the serial `Consumed`.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
   entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`

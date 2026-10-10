@@ -177,6 +177,11 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 - **The auto-generated MCP reference (`.claude/rules/mcp-tools-reference.md`) is stale** for storage units —
   it still lists `getShelf`/`getDefaultShelfForJob`. The real service exports `getStorageUnit*` /
   `getDefaultStorageUnitForJob`. Trust the service file.
+- **An RMA Repair line moves no stock.** `post-receipt` and `post-shipment` branch on
+  `salesReturnOrderLine.disposition = 'Repair'`: no `itemLedger` row, no cost layer, no
+  journal, and the serial stays `Consumed`. The receipt still counts `quantityReceived`;
+  the shipment ships only units whose Depot Repair order is Completed or Closed. Every
+  other RMA line posts as before. See `field-service.md` → Depot repair.
 - On-hand math comes from `itemLedger` (and the `get_inventory_quantities` RPC), not from summing
   `trackedEntity` directly. The old `itemInventory` table is orphaned (trigger dropped
   `20250209170952`) — never read or write it.

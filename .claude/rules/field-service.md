@@ -11,16 +11,19 @@ paths:
   - "packages/server-functions/src/reclass-project-coverage/**"
   - "packages/server-functions/src/post-project-issue/service.ts"
   - "packages/server-functions/src/post-shipment/customer-assets.ts"
+  - "packages/server-functions/src/post-receipt/repair.ts"
+  - "packages/server-functions/src/post-shipment/repair.ts"
+  - "packages/server-functions/src/lib/service-orders.ts"
   - "packages/documents/src/pdf/ServiceEstimatePDF.tsx"
 ---
 
 # Field Service
 
-Phase A of `.ai/specs/2026-10-08-field-service.md`: customer assets, Field Visit
-service orders, visits, the work tree, coverage, invoicing, the estimate, templates and
-the technician's phone pages. Plan: `.ai/plans/2026-10-09-field-service-phase-a.md`
-(its *Execution notes* record every deviation). Module guide:
-`apps/erp/app/modules/service/AGENTS.md`.
+Phases A and B of `.ai/specs/2026-10-08-field-service.md`. Phase A: customer assets,
+Field Visit service orders, visits, the work tree, coverage, invoicing, the estimate,
+templates and the technician's phone pages. Phase B: depot repair through the RMA. Plans:
+`.ai/plans/2026-10-09-field-service-phase-a.md` and `…-phase-b.md` (their *Execution
+notes* record every deviation). Module guide: `apps/erp/app/modules/service/AGENTS.md`.
 
 ## The shape
 
@@ -41,8 +44,10 @@ the technician's phone pages. Plan: `.ai/plans/2026-10-09-field-service-phase-a.
 - **Billable item** (`projectBillableItem`): what a charge will bill. Status Unbilled →
   On Hold / Billed / Written Off.
 
-At most one open order per subject serial (`serviceOrder_open_subject_key`). Phase A
-creates Field Visit orders only (`serviceOrderTypes`).
+At most one open order per subject serial (`serviceOrder_open_subject_key`). The New
+form creates Field Visit orders only (`serviceOrderTypes`). A Depot Repair order comes
+only from an RMA receipt (below); the list filters both (`listedServiceOrderTypes`).
+Refurbishment is never created.
 
 A Service user never sees the word "project". The Projects module, the charge number
 pickers (ERP and MES `getChargeNumbers`), the dimension picker (`getEntityValues`) and the
@@ -132,6 +137,49 @@ their own visit that is not Completed or Cancelled (`requireOwnServiceVisit`, th
 carries their own open visit (`reverseServiceCharge`'s `onlyVisitId`). A part also needs
 `update: "inventory"`.
 
+## Depot repair through the RMA
+
+A customer returns a unit for repair; the company repairs it and ships the same serial
+back. The unit never enters company stock or stock value. Every branch keys on
+`salesReturnOrderLine.disposition = 'Repair'`; every other RMA line posts as before.
+
+- **The link** is `serviceOrder.salesReturnOrderLineId` (composite FK to the RMA line, NO
+  ACTION; CHECK `serviceOrder_depot_check`: a Depot Repair order needs it). One RMA line
+  returns several serials, each with its own order, so the link is on the order.
+- **Disposition** (`setSalesReturnOrderLineDisposition`): before receipt only Pending and
+  Repair (`salesReturnPreReceiptDispositions`); Repair needs a Serial-tracked item; a change
+  to or from Repair after receipt is refused (`REPAIR_DISPOSITION_LOCKED_MESSAGE`) under the
+  RMA's row lock, the lock `post-receipt` takes. The line's Issue route refuses a Repair line.
+- **Receipt** (`post-receipt`, case Sales Return Order): a Repair line writes no
+  `itemLedger`, no cost layer and no journal, and its serials stay Consumed. It needs one
+  serial per received unit. Under the RMA lock the posting re-reads the dispositions and
+  refuses one that changed. `createDepotRepairOrders` (`post-receipt/repair.ts`) refuses a
+  serial with an open order, finds or creates its asset (`ensureCustomerAssets`, source
+  Manual) and sets it At Depot, inserts one Draft Depot Repair order per serial
+  (`insertServiceOrder`, `lib/service-orders.ts`: the RMA's customer, site and contact, the
+  receiving location, the customer's only Active contract), and writes a `Return Receipt`
+  activity with `At Depot` and the order's id.
+- **Receipt void**: `voidDepotRepairOrders` cancels the orders of this receipt's serials
+  (and their open visits), closes their projects and sets the assets In Service. It refuses
+  an order with a charge that stands (`openChargeIds`) and a unit already shipped back.
+- **Return shipment** (`create`, `post-shipment`): a Repair line ships the units whose order
+  is Completed or Closed and whose asset is At Depot. `shipRepairedUnits`
+  (`post-shipment/repair.ts`) re-checks that under the posting lock, writes no ledger, no
+  cost and no journal, keeps the serial Consumed, writes a `Return Shipment` activity with
+  `At Depot: false`, and sets the asset In Service at the RMA's site with the ship date and
+  shipment. The void (`unshipRepairedUnits`) sets the asset At Depot again.
+- **Guards** (`sales.service.ts`, MCP tools): `getCreditableQuantities` leaves Repair lines
+  out, `createSalesReturnOrderCredit` refuses one (`REPAIR_LINE_CREDIT_MESSAGE`),
+  `createReplacementSalesOrder` skips them and refuses an RMA of Repair lines only
+  (`REPAIR_ONLY_REPLACEMENT_MESSAGE`).
+- **UI**: the RMA line links its orders, the explorer shows their count and
+  `worstServiceOrderStatus`, and the header's Ship shows for an order that
+  `isReadyToShipBack`. A Depot Repair order's header links the RMA, shows the At Depot pill,
+  makes Complete the next step (no visit) and offers Ship Back.
+
+Pinned by `post-receipt/sales-return-repair.test.ts` and
+`post-shipment/sales-return-repair.test.ts` (fixture `lib/sales-return-test-fixture.ts`).
+
 ## Customer assets
 
 - **At shipment:** `upsertShippedCustomerAssets` (`post-shipment/customer-assets.ts`) is
@@ -139,6 +187,7 @@ carries their own open visit (`reverseServiceCharge`'s `onlyVisitId`). A part al
   date plus the item's `itemUnitSalePrice.laborWarrantyMonths` / `partsWarrantyMonths`.
   A reshipped serial moves to the new customer and starts its warranty again; its
   `source` stays. A voided shipment sets the asset Returned.
+- **At an RMA repair:** At Depot at the receipt, In Service at the return shipment (above).
 - **By hand:** `registerCustomerAsset` (`service.server.ts`) inserts a Consumed
   `trackedEntity` for the typed serial (source document Item) and the asset with source
   Manual. It refuses an item that is not serial-tracked and a serial the item already
@@ -203,7 +252,9 @@ employee), a Service project `service_<action>`. See `authz-manifest.md`.
 Each dataset registers 3 customer assets (tier 04: In warranty, Labor ended, Expired on
 the anchor day), one service template with plan lines, a Scheduled order with the
 template's tree and a visit tomorrow, and a Draft order (tier 09, `seedServiceWork`).
-No charges are seeded. The wipe deletes `customerAssetComponent`, `serviceVisit` and
+No charges are seeded. Satellite also has a To Receive RMA (`bus-repair`) whose one line
+returns SAT-1000-S013 with disposition Repair (`SalesReturnLineSpec.disposition`); the
+validator keeps a Repair line out of on-hand and refuses one on a Completed return. The wipe deletes `customerAssetComponent`, `serviceVisit` and
 `serviceOrder` before its FK-nulling pass (`serviceOrder_customer_check`).
 
 ## Known gaps
@@ -213,4 +264,9 @@ No charges are seeded. The wipe deletes `customerAssetComponent`, `serviceVisit`
   `document` row.
 - A component the factory built in has no `customerAssetComponent` row, so a part issued
   in its place does not remove it.
-- No browser verification of Phase A yet (plan Task 31).
+- No browser verification of Phase A (plan Task 31) or Phase B (plan Task 13) yet.
+- Repair needs a Serial-tracked item. A Batch or untracked unit cannot come back for
+  repair through an RMA.
+- A repair the company cannot complete has no credit path: reverse the order's charges,
+  void the receipt, then change the disposition.
+- No precheck decides repair or return at receipt; the disposition is set before it.
