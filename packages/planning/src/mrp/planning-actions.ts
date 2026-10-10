@@ -40,6 +40,7 @@ import { getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { COMMON_SEGMENT, KEY_SEP } from "@carbon/database/mrp-engine";
+import type { GroupPegInput, PegPriorityRule } from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
 import {
   computePlanningOrders,
@@ -1085,6 +1086,63 @@ export async function writePlanningActionDiff(
   }
 }
 
+/**
+ * Projects Phase 3: adds each planned Order / Make of a planning group
+ * segment to its peg input, as a `Planning Action` supply named by the
+ * action's id. A candidate maps to the stored action with its natural key;
+ * one with no stored action (not written) is left out.
+ */
+export function withPlannedPegSupplies(args: {
+  inputs: GroupPegInput[];
+  candidates: PlanningActionCandidate[];
+  /** `naturalKey` (with this run's `keyPeriod`) -> the stored action id. */
+  actionIdByKey: ReadonlyMap<string, string>;
+  keyPeriod: (periodId: string) => string;
+  groupIds: ReadonlySet<string>;
+}): GroupPegInput[] {
+  const byKey = new Map<string, GroupPegInput>();
+  const inputs = args.inputs.map((input) => {
+    const copy = { ...input, supplies: [...input.supplies] };
+    byKey.set(
+      [input.planningGroupId, input.itemId, input.locationId].join(KEY_SEP),
+      copy
+    );
+    return copy;
+  });
+  const placed = new Set<string>();
+  for (const candidate of args.candidates) {
+    if (candidate.type !== "Order" && candidate.type !== "Make") continue;
+    const groupId = candidate.planningSegmentId ?? COMMON_SEGMENT;
+    if (!args.groupIds.has(groupId)) continue;
+    const actionId = args.actionIdByKey.get(
+      naturalKey(candidate, args.keyPeriod)
+    );
+    if (!actionId || placed.has(actionId)) continue;
+    placed.add(actionId);
+    const key = [groupId, candidate.itemId, candidate.locationId].join(KEY_SEP);
+    let input = byKey.get(key);
+    if (!input) {
+      input = {
+        planningGroupId: groupId,
+        itemId: candidate.itemId,
+        locationId: candidate.locationId,
+        demands: [],
+        supplies: []
+      };
+      byKey.set(key, input);
+      inputs.push(input);
+    }
+    input.supplies.push({
+      supplyType: "Planning Action",
+      supplyId: actionId,
+      ownerProjectId: null,
+      availableDate: candidate.suggestedDate,
+      quantity: candidate.suggestedQuantity
+    });
+  }
+  return inputs;
+}
+
 // ──────────────────────────────────────────────────────────────
 // Orchestrator
 // ──────────────────────────────────────────────────────────────
@@ -1472,6 +1530,17 @@ export async function generatePlanningActions(
      * `runMrp` passed them to `planCompany` (empty without PLANNING_GROUPS).
      */
     planningGroups?: { id: string; memberProjectIds: string[] }[];
+    /**
+     * Projects Phase 3: the peg writer's inputs, passed only when the company
+     * has PLANNING_GROUPS. The pegs are diff-written in this function's
+     * transaction, after the actions, so a planned supply has its action id.
+     */
+    pegging?: {
+      runId: string;
+      inputs: GroupPegInput[];
+      priorityRuleByGroup: Record<string, PegPriorityRule>;
+      priorityByProject: Record<string, number>;
+    };
   }
 ): Promise<{ inserted: number; updated: number; deleted: number }> {
   const { companyId, userId } = args;
@@ -1940,6 +2009,17 @@ export async function generatePlanningActions(
       updatedAt: datetime.timestamp()
     });
 
+    if (args.pegging) {
+      const pegs = await writePegs(trx, {
+        companyId,
+        userId,
+        pegging: args.pegging,
+        candidates,
+        keyPeriod: keyPeriodFor(periods)
+      });
+      logger.info("project pegs written", { companyId, ...pegs });
+    }
+
     return diff;
   });
 
@@ -1955,4 +2035,65 @@ export async function generatePlanningActions(
     updated: diff.updates.length,
     deleted: diff.deleteIds.length
   };
+}
+
+/**
+ * Reads the stored Order / Make actions of the planning groups, adds them to
+ * the peg inputs as planned supply, and runs the commercial peg writer. Runs
+ * in the planning-action transaction, which holds the company's lock.
+ */
+async function writePegs(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    pegging: NonNullable<
+      Parameters<typeof generatePlanningActions>[2]["pegging"]
+    >;
+    candidates: PlanningActionCandidate[];
+    keyPeriod: (periodId: string) => string;
+  }
+) {
+  const { companyId, userId, pegging } = args;
+  const groupIds = new Set(Object.keys(pegging.priorityRuleByGroup));
+  const actionRows =
+    groupIds.size > 0
+      ? await trx
+          .selectFrom("planningAction")
+          .select([
+            "id",
+            "itemId",
+            "locationId",
+            "periodId",
+            "type",
+            "purchaseOrderLineId",
+            "jobId",
+            "planningSegmentId",
+            "fromProjectId",
+            "toProjectId"
+          ])
+          .where("companyId", "=", companyId)
+          .where("status", "!=", "Actioned")
+          .where("type", "in", ["Order", "Make"])
+          .where("planningSegmentId", "in", [...groupIds])
+          .execute()
+      : [];
+  const actionIdByKey = new Map(
+    actionRows.map((row) => [naturalKey(row, args.keyPeriod), row.id])
+  );
+  const { writeGroupPegs } = await import("@carbon/ee/pegging.server");
+  return writeGroupPegs(trx, {
+    companyId,
+    userId,
+    runId: pegging.runId,
+    inputs: withPlannedPegSupplies({
+      inputs: pegging.inputs,
+      candidates: args.candidates,
+      actionIdByKey,
+      keyPeriod: args.keyPeriod,
+      groupIds
+    }),
+    priorityRuleByGroup: pegging.priorityRuleByGroup,
+    priorityByProject: pegging.priorityByProject
+  });
 }

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { randomUUID } from "node:crypto";
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
@@ -288,12 +289,12 @@ export async function runMrp(
       // has project stock (project_planningGroup_stock_check).
       db
         .selectFrom("planningGroup")
-        .select(["id", "active"])
+        .select(["id", "active", "priorityRule"])
         .where("companyId", "=", companyId)
         .execute(),
       db
         .selectFrom("project")
-        .select(["id", "planningGroupId"])
+        .select(["id", "planningGroupId", "planningPriority"])
         .where("companyId", "=", companyId)
         .where("planningGroupId", "is not", null)
         .where("projectStock", "=", true)
@@ -416,7 +417,8 @@ export async function runMrp(
       supplyActualUpserts,
       consumptionUpdates,
       cycleItemIds,
-      commonSurplusDraws
+      commonSurplusDraws,
+      groupPegInputs
     } = planCompany({
       companyId,
       userId,
@@ -438,6 +440,10 @@ export async function runMrp(
       stockedProjectIds: stockedProjects.map((project) => project.id),
       planningGroups,
       ungroupedPlanningGroupIds,
+      projectPriorities: groupMemberRows.map((project) => ({
+        projectId: project.id,
+        priority: project.planningPriority
+      })),
       commonSupplyBlocked,
       items: allItems,
       replenishments: allReplenishments,
@@ -615,11 +621,29 @@ export async function runMrp(
       // not report success with stale actions (forecasts are committed and
       // correct; actions self-heal on the next successful run).
       // The common stock each project segment draws becomes a Transfer.
+      // With PLANNING_GROUPS the planning-action transaction also
+      // diff-writes the pegs. It runs even with no active group, so the Soft
+      // pegs of a group that turned inactive are superseded.
       await generatePlanningActions(client, db, {
         companyId,
         userId,
         commonSurplusDraws,
-        planningGroups
+        planningGroups,
+        pegging: planningGroupsEnabled
+          ? {
+              runId: randomUUID(),
+              inputs: groupPegInputs,
+              priorityRuleByGroup: Object.fromEntries(
+                planningGroupRows.map((group) => [group.id, group.priorityRule])
+              ),
+              priorityByProject: Object.fromEntries(
+                groupMemberRows.map((project) => [
+                  project.id,
+                  project.planningPriority
+                ])
+              )
+            }
+          : undefined
       });
 
       return { success: true };

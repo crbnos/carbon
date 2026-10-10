@@ -81,6 +81,15 @@ export type PegExcess = {
   quantity: number;
 };
 
+/** One planning group's demand and supply of one item at one location. */
+export type GroupPegInput = {
+  planningGroupId: string;
+  itemId: string;
+  locationId: string;
+  demands: PegDemand[];
+  supplies: PegSupply[];
+};
+
 export type PegGroupSegmentResult = {
   pegs: ComputedPeg[];
   shortages: PegShortage[];

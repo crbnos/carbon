@@ -54,6 +54,8 @@ describe("planCompany", () => {
   it("plans the satellite dataset company as before (golden)", () => {
     const outputs = planCompany(loadFixture("plan-company.basic.json"));
     expect(sorted(outputs)).toMatchSnapshot();
+    // No planning group, so nothing to peg.
+    expect(outputs.groupPegInputs).toEqual([]);
   });
 
   // The spec case: project P-101 needs 20 and holds 5. Common holds 10 and
@@ -131,6 +133,37 @@ describe("planCompany", () => {
         quantity: 8
       }
     ]);
+    // The peg input: each member's demand with its element and need date,
+    // and P-101's own stock of 5.
+    expect(outputs.groupPegInputs).toHaveLength(1);
+    const [input] = outputs.groupPegInputs;
+    expect(input).toMatchObject({
+      planningGroupId: "plg_1",
+      itemId: "item_p",
+      locationId: "loc_plant"
+    });
+    expect(
+      input!.demands.map((demand) => [
+        demand.projectId,
+        demand.projectElementId,
+        demand.sourceType,
+        demand.sourceId,
+        demand.needDate,
+        demand.quantity
+      ])
+    ).toEqual([
+      ["prj_p101", "el_p101", "Project Material", "pem_p101", "2026-10-14", 20],
+      ["prj_p102", null, "Project Material", "pem_p102", "2026-10-14", 10]
+    ]);
+    expect(input!.supplies).toEqual([
+      {
+        supplyType: "Stock",
+        supplyId: "prj_p101",
+        ownerProjectId: "prj_p101",
+        availableDate: "2026-10-10",
+        quantity: 5
+      }
+    ]);
   });
 
   it("nets each member on its own without the planning groups feature", () => {
@@ -142,6 +175,7 @@ describe("planCompany", () => {
       ["prj_p101", 20],
       ["prj_p102", 10]
     ]);
+    expect(outputs.groupPegInputs).toEqual([]);
   });
 
   it("writes one actual row per segment for the same item, location and week", () => {

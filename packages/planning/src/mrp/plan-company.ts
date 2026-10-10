@@ -13,6 +13,7 @@ import {
   COMMON_SEGMENT,
   type DemandContributor,
   explodeBom,
+  KEY_SEP,
   type MethodType,
   makeActualKey,
   makeKey,
@@ -27,6 +28,12 @@ import {
   buildSupersessionRedirectMap,
   type Redirect
 } from "@carbon/database/supersession-pick";
+import type {
+  GroupPegInput,
+  PegDemand,
+  PegDemandSourceType,
+  PegSupply
+} from "@carbon/ee/pegging";
 import { round } from "@carbon/utils";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import {
@@ -91,7 +98,9 @@ export type PlanCompanyInputs = {
     Views["openProductionOrders"]["Row"],
     "deadlineType" | "dueDate" | "itemId" | "locationId" | "quantityToReceive"
   > &
-    Partial<Pick<Views["openProductionOrders"]["Row"], "ownerProjectId">> &
+    Partial<
+      Pick<Views["openProductionOrders"]["Row"], "id" | "ownerProjectId">
+    > &
     Segmented)[];
   purchaseOrderLines: (Pick<
     Views["openPurchaseOrderLines"]["Row"],
@@ -103,7 +112,9 @@ export type PlanCompanyInputs = {
     | "promisedDate"
     | "quantityToReceive"
   > &
-    Partial<Pick<Views["openPurchaseOrderLines"]["Row"], "ownerProjectId">> &
+    Partial<
+      Pick<Views["openPurchaseOrderLines"]["Row"], "id" | "ownerProjectId">
+    > &
     Segmented)[];
   /** Open plan-line materials (`openProjectMaterialLines`). */
   projectMaterialLines?: (Pick<
@@ -152,6 +163,8 @@ export type PlanCompanyInputs = {
    * grouped supply (no owner project) nets as common supply.
    */
   ungroupedPlanningGroupIds?: string[];
+  /** Each group member's `planningPriority` (default 100), for the pegging. */
+  projectPriorities?: { projectId: string; priority: number }[];
   /**
    * The items and locations whose `itemPlanning` turns
    * `allowCommonSupplyForProjects` off: their project segments never draw
@@ -270,6 +283,12 @@ export type PlanCompanyOutputs = {
     planningSegmentId: string;
     quantity: number;
   }>;
+  /**
+   * Projects Phase 3: the demand and the open supply of each planning group
+   * segment, per item and location, for the peg writer. The planning actions
+   * add the planned Order and Make supply. Empty when no group segment exists.
+   */
+  groupPegInputs: GroupPegInput[];
 };
 
 export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
@@ -1046,6 +1065,41 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     groupSegments
   });
 
+  const groupPegInputs =
+    groupSegments.size > 0
+      ? groupPegInputsOf({
+          groupSegments,
+          groupByProject,
+          priorityByProject: new Map(
+            (input.projectPriorities ?? []).map((row) => [
+              row.projectId,
+              row.priority
+            ])
+          ),
+          today: today.toString(),
+          contributorsByKey: [topLevelContributors, demandContributors],
+          onHand: input.onHand,
+          purchaseOrderLines: input.purchaseOrderLines.map((line) => ({
+            id: line.id,
+            itemId: line.itemId,
+            locationId: line.locationId,
+            segmentId: segmentOf(line.planningSegmentId, line.ownerProjectId),
+            ownerProjectId: line.ownerProjectId ?? null,
+            availableDate: purchaseOrderLineArrivalDate(line, today.toString()),
+            quantity: line.quantityToReceive
+          })),
+          productionLines: input.productionLines.map((line) => ({
+            id: line.id,
+            itemId: line.itemId,
+            locationId: line.locationId,
+            segmentId: segmentOf(line.planningSegmentId, line.ownerProjectId),
+            ownerProjectId: line.ownerProjectId ?? null,
+            availableDate: jobCompletionDate(line, today.toString()),
+            quantity: line.quantityToReceive
+          }))
+        })
+      : [];
+
   // demandForecast output, keyed by makeKey(location, period, item, segment)
   const demandForecastMap = new Map<
     string,
@@ -1275,8 +1329,146 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
     commonSurplusDraws: [...commonSurplusDraws].map(([key, quantity]) => {
       const [locationId, periodId, itemId, planningSegmentId] = splitKey(key);
       return { itemId, locationId, periodId, planningSegmentId, quantity };
-    })
+    }),
+    groupPegInputs
   };
+}
+
+/** The peg demand source of a contributor; a projection is never pegged. */
+function pegSourceOf(
+  contributor: DemandContributor
+): { sourceType: PegDemandSourceType; sourceId: string } | null {
+  switch (contributor.sourceType) {
+    case "Job Material":
+      return { sourceType: "Job Material", sourceId: contributor.jobId };
+    case "Project Material":
+      return {
+        sourceType: "Project Material",
+        sourceId: contributor.projectElementMaterialId
+      };
+    case "Project Borrow":
+      return {
+        sourceType: "Project Borrow",
+        sourceId: contributor.projectBorrowId
+      };
+    case "Sales Order":
+      return {
+        sourceType: "Sales Order",
+        sourceId: contributor.salesOrderLineId
+      };
+    default:
+      return null;
+  }
+}
+
+type PegSupplyRow = {
+  id?: string | null;
+  itemId: string | null;
+  locationId: string | null;
+  segmentId: string;
+  ownerProjectId: string | null;
+  availableDate: string;
+  quantity: number | null;
+};
+
+/**
+ * The demand and the open supply of each planning group segment, per item and
+ * location:
+ * - demand: every contributor of a group segment key, top-level and
+ *   BOM-derived. A grouped job's material has no project; the peg writer
+ *   splits it by the job's pegs (`parentSupply`).
+ * - supply: each member's own stock, and the open PO lines and jobs of the
+ *   segment, grouped (no owner) or owned by a member.
+ */
+function groupPegInputsOf(args: {
+  groupSegments: ReadonlySet<string>;
+  groupByProject: ReadonlyMap<string, string>;
+  priorityByProject: ReadonlyMap<string, number>;
+  today: string;
+  contributorsByKey: Map<string, DemandContributor[]>[];
+  onHand: PlanCompanyInputs["onHand"];
+  purchaseOrderLines: PegSupplyRow[];
+  productionLines: PegSupplyRow[];
+}): GroupPegInput[] {
+  const inputs = new Map<string, GroupPegInput>();
+  const inputFor = (groupId: string, itemId: string, locationId: string) => {
+    const key = [groupId, itemId, locationId].join(KEY_SEP);
+    let input = inputs.get(key);
+    if (!input) {
+      input = {
+        planningGroupId: groupId,
+        itemId,
+        locationId,
+        demands: [],
+        supplies: []
+      };
+      inputs.set(key, input);
+    }
+    return input;
+  };
+
+  for (const contributorsByKey of args.contributorsByKey) {
+    for (const [key, contributors] of contributorsByKey) {
+      const [locationId, , itemId, segmentId] = splitKey(key);
+      if (!args.groupSegments.has(segmentId)) continue;
+      for (const contributor of contributors) {
+        const source = pegSourceOf(contributor);
+        if (!source || contributor.quantity <= 0) continue;
+        const projectId = contributor.projectId ?? "";
+        const demand: PegDemand = {
+          projectId,
+          projectElementId: contributor.projectElementId ?? null,
+          priority: args.priorityByProject.get(projectId) ?? 100,
+          ...source,
+          needDate: contributor.needDate ?? args.today,
+          quantity: contributor.quantity
+        };
+        if (!projectId && contributor.sourceType === "Job Material") {
+          demand.parentSupply = {
+            supplyType: "Job",
+            supplyId: contributor.jobId
+          };
+        }
+        inputFor(segmentId, itemId, locationId).demands.push(demand);
+      }
+    }
+  }
+
+  for (const row of args.onHand) {
+    const groupId = row.projectId
+      ? args.groupByProject.get(row.projectId)
+      : undefined;
+    const quantity = Number(row.quantityOnHand) || 0;
+    if (!groupId || !row.itemId || !row.locationId || quantity <= 0) continue;
+    inputFor(groupId, row.itemId, row.locationId).supplies.push({
+      supplyType: "Stock",
+      supplyId: row.projectId!,
+      ownerProjectId: row.projectId!,
+      availableDate: args.today,
+      quantity
+    });
+  }
+
+  for (const [rows, supplyType] of [
+    [args.purchaseOrderLines, "Purchase Order Line"],
+    [args.productionLines, "Job"]
+  ] as const) {
+    for (const row of rows) {
+      const quantity = Number(row.quantity) || 0;
+      if (!row.id || !row.itemId || !row.locationId || quantity <= 0) continue;
+      if (!args.groupSegments.has(row.segmentId)) continue;
+      const supply: PegSupply = {
+        supplyType,
+        supplyId: row.id,
+        ownerProjectId: row.ownerProjectId,
+        availableDate: row.availableDate,
+        quantity
+      };
+      inputFor(row.segmentId, row.itemId, row.locationId).supplies.push(supply);
+    }
+  }
+
+  return [...inputs.values()];
 }
 
 /** The active make method of each item (one per item, the last row wins). */

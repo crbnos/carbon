@@ -154211,12 +154211,12 @@ export default {
         },
         demandSourceType: {
           enum: [
-            "Job Material",
             "Sales Order",
-            "Demand Projection",
-            "Project Material"
+            "Job Material",
+            "Project Material",
+            "Project Borrow"
           ],
-          format: 'public."demandForecastSourceType"',
+          format: 'public."demandSourceType"',
           type: "string"
         },
         demandSourceId: {

@@ -49851,7 +49851,7 @@ export type Database = {
           createdBy: string
           createdByRunId: string | null
           demandSourceId: string
-          demandSourceType: Database["public"]["Enums"]["demandForecastSourceType"]
+          demandSourceType: Database["public"]["Enums"]["demandSourceType"]
           exception: string | null
           hardenedAt: string | null
           id: string
@@ -49877,7 +49877,7 @@ export type Database = {
           createdBy: string
           createdByRunId?: string | null
           demandSourceId: string
-          demandSourceType: Database["public"]["Enums"]["demandForecastSourceType"]
+          demandSourceType: Database["public"]["Enums"]["demandSourceType"]
           exception?: string | null
           hardenedAt?: string | null
           id?: string
@@ -49903,7 +49903,7 @@ export type Database = {
           createdBy?: string
           createdByRunId?: string | null
           demandSourceId?: string
-          demandSourceType?: Database["public"]["Enums"]["demandForecastSourceType"]
+          demandSourceType?: Database["public"]["Enums"]["demandSourceType"]
           exception?: string | null
           hardenedAt?: string | null
           id?: string
