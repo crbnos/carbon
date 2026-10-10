@@ -37,7 +37,7 @@ Phase 2b plans MRP. Until 2b ships, every MRP and planning reader filters to com
 
 - [x] Task 1: Create the Phase 2a enum and table migration
 - [x] Task 2: Change the `itemStockQuantities` primary key and the reconcile function
-- [ ] Task 3: Change the stock handler and ship it with the authz migration
+- [x] Task 3: Change the stock handler and ship it with the authz migration
 - [ ] Task 4: Regenerate types and add the RLS rules
 - [ ] Task 5: Make the planning readers read common stock only
 - [ ] Task 6: Add the stripe to `calculateCOGS` and the SQL FIFO
