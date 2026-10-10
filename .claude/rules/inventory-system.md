@@ -52,7 +52,10 @@ Key service functions (verified):
   write-down) are applied with their parent. On an unstamped layer the children cover
   its units in turn (`createdAt` order, each only up to the quantity taken). On a layer
   stamped for one serial every child belongs to that unit and is applied in full. The SQL
-  backflush (`backflush_job_materials`) still applies children in turn on every layer.
+  backflush (`backflush_job_materials`, migration `20261010012609`) follows the same rules:
+  it issues only untracked material, so it takes unstamped layers first and a stamped
+  layer last, and it applies every open child of a stamped layer in full. Pinned by
+  `supabase/tests/backflush-layer-children.test.sql`.
   **Refurbishment** (`complete-service-order`, Field Service Phase C): a serial with no
   layer of its own gets one by a **split** of the layer `calculateCOGS` takes next
   (oldest unstamped under FIFO, newest under LIFO): 1 unit of quantity, remaining

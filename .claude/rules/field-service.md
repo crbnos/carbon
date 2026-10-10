@@ -321,8 +321,6 @@ Hold. The wipe deletes `customerAssetComponent`, `serviceVisit` and
   in its place does not remove it.
 - No browser verification of Phase A (plan Task 31), Phase B (plan Task 13) or Phase C
   (plan Task 11) yet.
-- The SQL backflush (`backflush_job_materials`) applies a layer's children in turn, so a
-  refurbished serial consumed by a backflush takes only its first child.
 - A completed refurbishment cannot be reopened, and a refurbishment never changes the
   serial's item.
 - Repair needs a Serial-tracked item. A Batch or untracked unit cannot come back for
