@@ -302,8 +302,8 @@ function ModuleFinder({
  * panel lists the modules on Home and the current module's sections inside
  * a module — the same sidebar the desktop shows — then the account and
  * notifications. Picking a row navigates; any navigation closes the menu.
- * A switcher's name links to its scope and its ⇕ opens a full-screen finder;
- * Esc returns from the finder to the menu.
+ * A tap on a switcher opens its full-screen finder; Esc returns from the
+ * finder to the menu.
  */
 export function MobileMenu({
   open,
@@ -394,7 +394,6 @@ export function MobileMenu({
                 />
               }
               label={user.company.name}
-              to={path.to.authenticatedRoot}
               switchLabel={t`Switch company`}
               onSwitch={
                 canSwitchCompany ? () => setFinder("companies") : undefined
@@ -403,7 +402,6 @@ export function MobileMenu({
             <DockSwitcher
               icon={current ? <current.icon /> : <LuLayoutGrid />}
               label={current?.name ?? <Trans>All modules</Trans>}
-              to={current?.to ?? path.to.authenticatedRoot}
               switchLabel={t`Switch module`}
               onSwitch={() => setFinder("modules")}
               // Module names are short; the company name truncates instead.

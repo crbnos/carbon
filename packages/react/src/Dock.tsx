@@ -26,7 +26,6 @@ import {
   CommandSeparator
 } from "./Command";
 import { DialogRoot } from "./Modal";
-import { PrefetchLink } from "./PrefetchLink";
 import { cn } from "./utils/cn";
 import { usePhoneOpenAutoFocus } from "./Viewport";
 
@@ -215,61 +214,48 @@ const dockMenuRowClassName =
   "relative flex min-h-11 w-full select-none items-center gap-3 rounded-lg px-3 text-left text-[15px] text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:bg-accent focus-visible:text-foreground active:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-foreground aria-[current=true]:bg-accent aria-[current=true]:text-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0";
 
 /**
- * A switcher above the panel, in two parts: the name links to its scope
- * (the company's home, the module's landing page) and the ⇕ after the
- * hairline opens its `DockFinder`. Without `onSwitch` there is nothing to
- * switch to and the ⇕ is left out.
+ * A switcher above the panel: icon, name, and ⇕ after a hairline. A tap
+ * anywhere on it opens its `DockFinder`. Without `onSwitch` there is nothing
+ * to switch to: it stays as a label, disabled, with no ⇕.
  */
 function DockSwitcher({
   icon,
   label,
-  to,
   onSwitch,
   switchLabel,
   className
 }: {
   icon: ReactNode;
   label: ReactNode;
-  to: string;
   onSwitch?: () => void;
-  /** Names the ⇕ button, e.g. "Switch company". */
+  /** Names the button, e.g. "Switch company". */
   switchLabel: string;
   className?: string;
 }) {
   return (
-    <div
+    <button
+      type="button"
+      aria-label={switchLabel}
+      aria-haspopup="listbox"
+      disabled={!onSwitch}
+      onClick={onSwitch}
       className={cn(
-        "flex h-10 min-w-0 shrink items-center rounded-full border border-border bg-popover text-[15px] font-medium text-foreground shadow-lg",
+        "flex h-10 min-w-0 shrink items-center gap-2 rounded-full border border-border bg-popover pl-2 text-[15px] font-medium text-foreground shadow-lg outline-none transition-colors active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-100",
+        onSwitch ? "pr-3" : "pr-3.5",
         className
       )}
     >
-      <PrefetchLink
-        to={to}
-        className={cn(
-          "flex h-full min-w-0 items-center gap-2 rounded-l-full pl-2 outline-none transition-colors active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50",
-          onSwitch ? "pr-2.5" : "rounded-r-full pr-3.5"
-        )}
-      >
-        <span className="flex size-6 shrink-0 items-center justify-center [&_svg]:size-[18px]">
-          {icon}
-        </span>
-        <span className="min-w-0 truncate">{label}</span>
-      </PrefetchLink>
+      <span className="flex size-6 shrink-0 items-center justify-center [&_svg]:size-[18px]">
+        {icon}
+      </span>
+      <span className="min-w-0 truncate">{label}</span>
       {onSwitch ? (
         <>
           <span aria-hidden className="h-5 w-px shrink-0 bg-border" />
-          <button
-            type="button"
-            aria-label={switchLabel}
-            aria-haspopup="listbox"
-            onClick={onSwitch}
-            className="flex h-full w-10 shrink-0 items-center justify-center rounded-r-full text-muted-foreground outline-none transition-colors active:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          >
-            <LuChevronsUpDown className="size-4" />
-          </button>
+          <LuChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
         </>
       ) : null}
-    </div>
+    </button>
   );
 }
 
