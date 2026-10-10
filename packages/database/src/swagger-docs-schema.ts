@@ -17233,6 +17233,9 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -17349,6 +17352,9 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -17417,6 +17423,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
           },
           {
             $ref: "#/parameters/body.inventoryCountLine"
@@ -25294,6 +25303,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.scrapReasonId"
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedger.projectId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -25416,6 +25428,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.scrapReasonId"
           },
           {
+            $ref: "#/parameters/rowFilter.itemLedger.projectId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -25490,6 +25505,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemLedger.scrapReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedger.projectId"
           },
           {
             $ref: "#/parameters/body.itemLedger"
@@ -26296,6 +26314,204 @@ export default {
           }
         },
         tags: ["agentMessage"]
+      }
+    },
+    "/projectStockTransferLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.unitCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectStockTransferLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectStockTransferLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectStockTransferLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectStockTransferLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.unitCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectStockTransferLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.unitCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransferLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.projectStockTransferLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectStockTransferLine"]
       }
     },
     "/customers": {
@@ -35226,6 +35442,240 @@ export default {
         tags: ["openJobMaterialLines"]
       }
     },
+    "/projectBorrow": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.borrowerProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.lenderProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.quantityPaidBack"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.borrowedUnitCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.paybackDueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.projectStockTransferLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectBorrow"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectBorrow"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectBorrow"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectBorrow"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.borrowerProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.lenderProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.quantityPaidBack"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.borrowedUnitCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.paybackDueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.projectStockTransferLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectBorrow"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.borrowerProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.lenderProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.quantityPaidBack"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.borrowedUnitCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.paybackDueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.projectStockTransferLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBorrow.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.projectBorrow"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectBorrow"]
+      }
+    },
     "/workflowTriggerEvent": {
       get: {
         parameters: [
@@ -39457,6 +39907,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.consumeToProject"
           },
           {
+            $ref: "#/parameters/rowFilter.job.receiveToProjectStock"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -39654,6 +40107,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.consumeToProject"
           },
           {
+            $ref: "#/parameters/rowFilter.job.receiveToProjectStock"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -39803,6 +40259,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.consumeToProject"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.receiveToProjectStock"
           },
           {
             $ref: "#/parameters/body.job"
@@ -57874,6 +58333,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingListLine.projectId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -57990,6 +58452,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingListLine.projectId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -58058,6 +58523,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingListLine.outstandingQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pickingListLine.projectId"
           },
           {
             $ref: "#/parameters/body.pickingListLine"
@@ -72328,6 +72796,12 @@ export default {
             $ref: "#/parameters/rowFilter.costLedger.trackedEntityId"
           },
           {
+            $ref: "#/parameters/rowFilter.costLedger.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.costLedger.projectBorrowId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -72444,6 +72918,12 @@ export default {
             $ref: "#/parameters/rowFilter.costLedger.trackedEntityId"
           },
           {
+            $ref: "#/parameters/rowFilter.costLedger.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.costLedger.projectBorrowId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -72512,6 +72992,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.costLedger.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.costLedger.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.costLedger.projectBorrowId"
           },
           {
             $ref: "#/parameters/body.costLedger"
@@ -86194,6 +86680,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -86322,6 +86811,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -86402,6 +86894,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
           },
           {
             $ref: "#/parameters/body.itemPlanning"
@@ -87961,6 +88456,267 @@ export default {
           }
         },
         tags: ["customerBankAccount"]
+      }
+    },
+    "/projectStockTransfer": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.fromProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.toProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.paybackDueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.settlesBorrowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.planningActionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectStockTransfer"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectStockTransfer"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectStockTransfer"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectStockTransfer"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.fromProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.toProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.paybackDueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.settlesBorrowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.planningActionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectStockTransfer"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.projectStockTransferId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.fromProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.toProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.paybackDueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.settlesBorrowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.planningActionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectStockTransfer.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.projectStockTransfer"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectStockTransfer"]
       }
     },
     "/nonConformanceSupplier": {
@@ -99865,6 +100621,15 @@ export default {
             $ref: "#/parameters/rowFilter.project.parentProjectId"
           },
           {
+            $ref: "#/parameters/rowFilter.project.projectStock"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.chargeAtReceipt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.governmentFurnished"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -100011,6 +100776,15 @@ export default {
             $ref: "#/parameters/rowFilter.project.parentProjectId"
           },
           {
+            $ref: "#/parameters/rowFilter.project.projectStock"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.chargeAtReceipt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.governmentFurnished"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -100109,6 +100883,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.project.parentProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.projectStock"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.chargeAtReceipt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.governmentFurnished"
           },
           {
             $ref: "#/parameters/body.project"
@@ -126664,7 +127447,8 @@ export default {
             "Project Issue",
             "Timesheet",
             "Project Expense",
-            "Service Order"
+            "Service Order",
+            "Project Transfer"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -129669,6 +130453,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -133638,7 +134426,8 @@ export default {
             "Batch Merge",
             "Asset Transfer",
             "Rental Agreement",
-            "Project Issue"
+            "Project Issue",
+            "Project Transfer"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -133730,6 +134519,10 @@ export default {
         scrapReasonId: {
           description:
             "Note:\nThis is a Foreign Key to `scrapReason.id`.<fk table='scrapReason' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectId: {
           format: "text",
           type: "string"
         }
@@ -134001,6 +134794,83 @@ export default {
         outputTokens: {
           format: "integer",
           type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    projectStockTransferLine: {
+      required: [
+        "id",
+        "companyId",
+        "projectStockTransferId",
+        "itemId",
+        "quantity",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('psl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectStockTransferId: {
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        storageUnitId: {
+          description:
+            "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        trackedEntityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        unitCost: {
+          format: "numeric",
+          type: "number"
         },
         createdBy: {
           description:
@@ -138355,6 +139225,107 @@ export default {
       },
       type: "object"
     },
+    projectBorrow: {
+      required: [
+        "id",
+        "companyId",
+        "borrowerProjectId",
+        "lenderProjectId",
+        "itemId",
+        "locationId",
+        "quantity",
+        "quantityPaidBack",
+        "borrowedUnitCost",
+        "paybackDueDate",
+        "status",
+        "projectStockTransferLineId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pbw'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        borrowerProjectId: {
+          format: "text",
+          type: "string"
+        },
+        lenderProjectId: {
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityPaidBack: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        borrowedUnitCost: {
+          format: "numeric",
+          type: "number"
+        },
+        paybackDueDate: {
+          format: "date",
+          type: "string"
+        },
+        status: {
+          default: "Open",
+          enum: ["Open", "Paid Back"],
+          format: 'public."projectBorrowStatus"',
+          type: "string"
+        },
+        projectStockTransferLineId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     workflowTriggerEvent: {
       required: [
         "id",
@@ -139421,7 +140392,8 @@ export default {
             "Batch Merge",
             "Asset Transfer",
             "Rental Agreement",
-            "Project Issue"
+            "Project Issue",
+            "Project Transfer"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -140048,7 +141020,8 @@ export default {
             "Project Issue",
             "Timesheet",
             "Project Expense",
-            "Service Order"
+            "Service Order",
+            "Project Transfer"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -140170,7 +141143,8 @@ export default {
         "createdAt",
         "createdBy",
         "priority",
-        "consumeToProject"
+        "consumeToProject",
+        "receiveToProjectStock"
       ],
       properties: {
         id: {
@@ -140406,6 +141380,11 @@ export default {
           type: "string"
         },
         consumeToProject: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        receiveToProjectStock: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -140918,7 +141897,8 @@ export default {
             "Project Issue",
             "Timesheet",
             "Project Expense",
-            "Service Order"
+            "Service Order",
+            "Project Transfer"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -149071,6 +150051,10 @@ export default {
         outstandingQuantity: {
           format: "numeric",
           type: "number"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -155432,7 +156416,8 @@ export default {
             "Batch Merge",
             "Asset Transfer",
             "Rental Agreement",
-            "Project Issue"
+            "Project Issue",
+            "Project Transfer"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -155493,6 +156478,14 @@ export default {
         trackedEntityId: {
           description:
             "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectBorrowId: {
           format: "text",
           type: "string"
         }
@@ -155658,7 +156651,8 @@ export default {
             "Project Issue",
             "Timesheet",
             "Project Expense",
-            "Service Order"
+            "Service Order",
+            "Project Transfer"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -155780,7 +156774,8 @@ export default {
             "Project Issue",
             "Timesheet",
             "Project Expense",
-            "Service Order"
+            "Service Order",
+            "Project Transfer"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -155863,7 +156858,8 @@ export default {
             "Project Issue",
             "Timesheet",
             "Project Expense",
-            "Service Order"
+            "Service Order",
+            "Project Transfer"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -161990,7 +162986,8 @@ export default {
         "createdAt",
         "maximumInventoryQuantity",
         "demandAccumulationSafetyStock",
-        "minimumReserveQuantity"
+        "minimumReserveQuantity",
+        "allowCommonSupplyForProjects"
       ],
       properties: {
         itemId: {
@@ -162117,6 +163114,11 @@ export default {
         planningHorizonDays: {
           format: "integer",
           type: "integer"
+        },
+        allowCommonSupplyForProjects: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -162790,6 +163792,114 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    projectStockTransfer: {
+      required: [
+        "id",
+        "companyId",
+        "projectStockTransferId",
+        "type",
+        "status",
+        "locationId",
+        "reason",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pst'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectStockTransferId: {
+          format: "text",
+          type: "string"
+        },
+        type: {
+          enum: ["Transfer", "Borrow", "Payback"],
+          format: 'public."projectStockTransferType"',
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Approved", "Posted", "Cancelled"],
+          format: 'public."projectStockTransferStatus"',
+          type: "string"
+        },
+        fromProjectId: {
+          format: "text",
+          type: "string"
+        },
+        toProjectId: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        reason: {
+          format: "text",
+          type: "string"
+        },
+        paybackDueDate: {
+          format: "date",
+          type: "string"
+        },
+        settlesBorrowId: {
+          format: "text",
+          type: "string"
+        },
+        planningActionId: {
+          format: "text",
+          type: "string"
+        },
+        approvedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        approvedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -168920,7 +170030,10 @@ export default {
         "isTemplate",
         "nextChangeRequestSequence",
         "nextBaselineSequence",
-        "projectType"
+        "projectType",
+        "projectStock",
+        "chargeAtReceipt",
+        "governmentFurnished"
       ],
       properties: {
         id: {
@@ -169083,6 +170196,21 @@ export default {
         parentProjectId: {
           format: "text",
           type: "string"
+        },
+        projectStock: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        chargeAtReceipt: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        governmentFurnished: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -181813,6 +182941,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inventoryCountLine.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.gauges": {
       name: "gauges",
       description: "gauges",
@@ -186431,6 +187565,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemLedger.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.shippingTerm": {
       name: "shippingTerm",
       description: "shippingTerm",
@@ -186750,6 +187890,87 @@ export default {
       type: "string"
     },
     "rowFilter.agentMessage.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.projectStockTransferLine": {
+      name: "projectStockTransferLine",
+      description: "projectStockTransferLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectStockTransferLine"
+      }
+    },
+    "rowFilter.projectStockTransferLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.projectStockTransferId": {
+      name: "projectStockTransferId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.storageUnitId": {
+      name: "storageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.trackedEntityId": {
+      name: "trackedEntityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.unitCost": {
+      name: "unitCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransferLine.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",
@@ -191655,6 +192876,111 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.projectBorrow": {
+      name: "projectBorrow",
+      description: "projectBorrow",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectBorrow"
+      }
+    },
+    "rowFilter.projectBorrow.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.borrowerProjectId": {
+      name: "borrowerProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.lenderProjectId": {
+      name: "lenderProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.quantityPaidBack": {
+      name: "quantityPaidBack",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.borrowedUnitCost": {
+      name: "borrowedUnitCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.paybackDueDate": {
+      name: "paybackDueDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.projectStockTransferLineId": {
+      name: "projectStockTransferLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBorrow.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.workflowTriggerEvent": {
       name: "workflowTriggerEvent",
       description: "workflowTriggerEvent",
@@ -193902,6 +195228,12 @@ export default {
     },
     "rowFilter.job.consumeToProject": {
       name: "consumeToProject",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.receiveToProjectStock": {
+      name: "receiveToProjectStock",
       required: false,
       in: "query",
       type: "string"
@@ -203504,6 +204836,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.pickingListLine.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.projectState": {
       name: "projectState",
       description: "projectState",
@@ -210651,6 +211989,18 @@ export default {
     },
     "rowFilter.costLedger.trackedEntityId": {
       name: "trackedEntityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.costLedger.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.costLedger.projectBorrowId": {
+      name: "projectBorrowId",
       required: false,
       in: "query",
       type: "string"
@@ -217950,6 +219300,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemPlanning.allowCommonSupplyForProjects": {
+      name: "allowCommonSupplyForProjects",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.nonConformanceTrackedEntity": {
       name: "nonConformanceTrackedEntity",
       description: "nonConformanceTrackedEntity",
@@ -218738,6 +220094,129 @@ export default {
     },
     "rowFilter.customerBankAccount.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.projectStockTransfer": {
+      name: "projectStockTransfer",
+      description: "projectStockTransfer",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectStockTransfer"
+      }
+    },
+    "rowFilter.projectStockTransfer.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.projectStockTransferId": {
+      name: "projectStockTransferId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.fromProjectId": {
+      name: "fromProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.toProjectId": {
+      name: "toProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.reason": {
+      name: "reason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.paybackDueDate": {
+      name: "paybackDueDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.settlesBorrowId": {
+      name: "settlesBorrowId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.planningActionId": {
+      name: "planningActionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.approvedBy": {
+      name: "approvedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.approvedAt": {
+      name: "approvedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectStockTransfer.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -225775,6 +227254,24 @@ export default {
     },
     "rowFilter.project.parentProjectId": {
       name: "parentProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.projectStock": {
+      name: "projectStock",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.chargeAtReceipt": {
+      name: "chargeAtReceipt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.governmentFurnished": {
+      name: "governmentFurnished",
       required: false,
       in: "query",
       type: "string"

@@ -9668,6 +9668,8 @@ export type Database = {
           itemLedgerType: Database["public"]["Enums"]["itemLedgerType"]
           nominalCost: number
           postingDate: string
+          projectBorrowId: string | null
+          projectId: string | null
           quantity: number
           remainingQuantity: number
           supplierId: string | null
@@ -9691,6 +9693,8 @@ export type Database = {
           itemLedgerType: Database["public"]["Enums"]["itemLedgerType"]
           nominalCost?: number
           postingDate?: string
+          projectBorrowId?: string | null
+          projectId?: string | null
           quantity?: number
           remainingQuantity?: number
           supplierId?: string | null
@@ -9714,6 +9718,8 @@ export type Database = {
           itemLedgerType?: Database["public"]["Enums"]["itemLedgerType"]
           nominalCost?: number
           postingDate?: string
+          projectBorrowId?: string | null
+          projectId?: string | null
           quantity?: number
           remainingQuantity?: number
           supplierId?: string | null
@@ -9789,6 +9795,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costLedger_projectBorrow_fkey"
+            columns: ["projectBorrowId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectBorrow"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "costLedger_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "costLedger_supplierId_fkey"
@@ -24131,6 +24151,7 @@ export type Database = {
           itemId: string
           locationId: string | null
           postedItemLedgerId: string | null
+          projectId: string | null
           readableId: string | null
           storageUnitId: string | null
           systemQuantity: number
@@ -24152,6 +24173,7 @@ export type Database = {
           itemId: string
           locationId?: string | null
           postedItemLedgerId?: string | null
+          projectId?: string | null
           readableId?: string | null
           storageUnitId?: string | null
           systemQuantity?: number
@@ -24173,6 +24195,7 @@ export type Database = {
           itemId?: string
           locationId?: string | null
           postedItemLedgerId?: string | null
+          projectId?: string | null
           readableId?: string | null
           storageUnitId?: string | null
           systemQuantity?: number
@@ -24328,6 +24351,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventoryCountLine_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "inventoryCountLine_updatedBy_fkey"
@@ -25659,6 +25689,7 @@ export type Database = {
           itemId: string
           locationId: string | null
           postingDate: string
+          projectId: string | null
           quantity: number
           scrapReasonId: string | null
           storageUnitId: string | null
@@ -25686,6 +25717,7 @@ export type Database = {
           itemId: string
           locationId?: string | null
           postingDate?: string
+          projectId?: string | null
           quantity: number
           scrapReasonId?: string | null
           storageUnitId?: string | null
@@ -25713,6 +25745,7 @@ export type Database = {
           itemId?: string
           locationId?: string | null
           postingDate?: string
+          projectId?: string | null
           quantity?: number
           scrapReasonId?: string | null
           storageUnitId?: string | null
@@ -25808,6 +25841,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "itemLedger_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "itemLedger_scrapReasonId_fkey"
             columns: ["scrapReasonId"]
             isOneToOne: false
@@ -25895,6 +25935,7 @@ export type Database = {
       }
       itemPlanning: {
         Row: {
+          allowCommonSupplyForProjects: boolean
           companyId: string
           createdAt: string
           createdBy: string
@@ -25920,6 +25961,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          allowCommonSupplyForProjects?: boolean
           companyId: string
           createdAt?: string
           createdBy: string
@@ -25945,6 +25987,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          allowCommonSupplyForProjects?: boolean
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -27769,6 +27812,7 @@ export type Database = {
           quantityShipped: number
           quoteId: string | null
           quoteLineId: string | null
+          receiveToProjectStock: boolean
           releasedDate: string | null
           salesOrderId: string | null
           salesOrderLineId: string | null
@@ -27817,6 +27861,7 @@ export type Database = {
           quantityShipped?: number
           quoteId?: string | null
           quoteLineId?: string | null
+          receiveToProjectStock?: boolean
           releasedDate?: string | null
           salesOrderId?: string | null
           salesOrderLineId?: string | null
@@ -27865,6 +27910,7 @@ export type Database = {
           quantityShipped?: number
           quoteId?: string | null
           quoteLineId?: string | null
+          receiveToProjectStock?: boolean
           releasedDate?: string | null
           salesOrderId?: string | null
           salesOrderLineId?: string | null
@@ -43400,6 +43446,7 @@ export type Database = {
           jobOperationId: string | null
           outstandingQuantity: number | null
           pickingListId: string
+          projectId: string | null
           quantityPicked: number
           quantityReturned: number
           quantityToPick: number
@@ -43421,6 +43468,7 @@ export type Database = {
           jobOperationId?: string | null
           outstandingQuantity?: number | null
           pickingListId: string
+          projectId?: string | null
           quantityPicked?: number
           quantityReturned?: number
           quantityToPick: number
@@ -43442,6 +43490,7 @@ export type Database = {
           jobOperationId?: string | null
           outstandingQuantity?: number | null
           pickingListId?: string
+          projectId?: string | null
           quantityPicked?: number
           quantityReturned?: number
           quantityToPick?: number
@@ -43640,6 +43689,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pickingLists"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickingListLine_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "pickingListLine_storageUnitId_fkey"
@@ -45798,6 +45854,7 @@ export type Database = {
       project: {
         Row: {
           active: boolean
+          chargeAtReceipt: boolean
           companyId: string
           costAccountId: string | null
           costTreatment: Database["public"]["Enums"]["projectCostTreatment"]
@@ -45809,6 +45866,7 @@ export type Database = {
           endDate: string | null
           fixedAssetClassId: string | null
           fixedAssetId: string | null
+          governmentFurnished: boolean
           id: string
           identifier: string | null
           isTemplate: boolean
@@ -45821,6 +45879,7 @@ export type Database = {
           ownerId: string | null
           parentProjectId: string | null
           priority: Database["public"]["Enums"]["projectElementPriority"]
+          projectStock: boolean
           projectType: Database["public"]["Enums"]["projectType"]
           startDate: string | null
           status: Database["public"]["Enums"]["projectStatus"]
@@ -45829,6 +45888,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          chargeAtReceipt?: boolean
           companyId: string
           costAccountId?: string | null
           costTreatment?: Database["public"]["Enums"]["projectCostTreatment"]
@@ -45840,6 +45900,7 @@ export type Database = {
           endDate?: string | null
           fixedAssetClassId?: string | null
           fixedAssetId?: string | null
+          governmentFurnished?: boolean
           id?: string
           identifier?: string | null
           isTemplate?: boolean
@@ -45852,6 +45913,7 @@ export type Database = {
           ownerId?: string | null
           parentProjectId?: string | null
           priority?: Database["public"]["Enums"]["projectElementPriority"]
+          projectStock?: boolean
           projectType?: Database["public"]["Enums"]["projectType"]
           startDate?: string | null
           status?: Database["public"]["Enums"]["projectStatus"]
@@ -45860,6 +45922,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          chargeAtReceipt?: boolean
           companyId?: string
           costAccountId?: string | null
           costTreatment?: Database["public"]["Enums"]["projectCostTreatment"]
@@ -45871,6 +45934,7 @@ export type Database = {
           endDate?: string | null
           fixedAssetClassId?: string | null
           fixedAssetId?: string | null
+          governmentFurnished?: boolean
           id?: string
           identifier?: string | null
           isTemplate?: boolean
@@ -45883,6 +45947,7 @@ export type Database = {
           ownerId?: string | null
           parentProjectId?: string | null
           priority?: Database["public"]["Enums"]["projectElementPriority"]
+          projectStock?: boolean
           projectType?: Database["public"]["Enums"]["projectType"]
           startDate?: string | null
           status?: Database["public"]["Enums"]["projectStatus"]
@@ -46490,6 +46555,232 @@ export type Database = {
           },
           {
             foreignKeyName: "projectBillableItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectBorrow: {
+        Row: {
+          borrowedUnitCost: number
+          borrowerProjectId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          itemId: string
+          lenderProjectId: string
+          locationId: string
+          paybackDueDate: string
+          projectStockTransferLineId: string
+          quantity: number
+          quantityPaidBack: number
+          status: Database["public"]["Enums"]["projectBorrowStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          borrowedUnitCost: number
+          borrowerProjectId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          itemId: string
+          lenderProjectId: string
+          locationId: string
+          paybackDueDate: string
+          projectStockTransferLineId: string
+          quantity: number
+          quantityPaidBack?: number
+          status?: Database["public"]["Enums"]["projectBorrowStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          borrowedUnitCost?: number
+          borrowerProjectId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          itemId?: string
+          lenderProjectId?: string
+          locationId?: string
+          paybackDueDate?: string
+          projectStockTransferLineId?: string
+          quantity?: number
+          quantityPaidBack?: number
+          status?: Database["public"]["Enums"]["projectBorrowStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectBorrow_borrower_fkey"
+            columns: ["borrowerProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_lender_fkey"
+            columns: ["lenderProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_transferLine_fkey"
+            columns: ["projectStockTransferLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectStockTransferLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -49482,6 +49773,441 @@ export type Database = {
           },
           {
             foreignKeyName: "projectState_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectStockTransfer: {
+        Row: {
+          approvedAt: string | null
+          approvedBy: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          fromProjectId: string | null
+          id: string
+          locationId: string
+          paybackDueDate: string | null
+          planningActionId: string | null
+          postedAt: string | null
+          projectStockTransferId: string
+          reason: string
+          settlesBorrowId: string | null
+          status: Database["public"]["Enums"]["projectStockTransferStatus"]
+          toProjectId: string | null
+          type: Database["public"]["Enums"]["projectStockTransferType"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          approvedAt?: string | null
+          approvedBy?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          fromProjectId?: string | null
+          id?: string
+          locationId: string
+          paybackDueDate?: string | null
+          planningActionId?: string | null
+          postedAt?: string | null
+          projectStockTransferId: string
+          reason: string
+          settlesBorrowId?: string | null
+          status?: Database["public"]["Enums"]["projectStockTransferStatus"]
+          toProjectId?: string | null
+          type: Database["public"]["Enums"]["projectStockTransferType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          approvedAt?: string | null
+          approvedBy?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          fromProjectId?: string | null
+          id?: string
+          locationId?: string
+          paybackDueDate?: string | null
+          planningActionId?: string | null
+          postedAt?: string | null
+          projectStockTransferId?: string
+          reason?: string
+          settlesBorrowId?: string | null
+          status?: Database["public"]["Enums"]["projectStockTransferStatus"]
+          toProjectId?: string | null
+          type?: Database["public"]["Enums"]["projectStockTransferType"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectStockTransfer_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_approvedBy_fkey"
+            columns: ["approvedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_from_fkey"
+            columns: ["fromProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_settlesBorrow_fkey"
+            columns: ["settlesBorrowId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectBorrow"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_to_fkey"
+            columns: ["toProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectStockTransferLine: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          itemId: string
+          projectStockTransferId: string
+          quantity: number
+          storageUnitId: string | null
+          trackedEntityId: string | null
+          unitCost: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          itemId: string
+          projectStockTransferId: string
+          quantity: number
+          storageUnitId?: string | null
+          trackedEntityId?: string | null
+          unitCost?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          itemId?: string
+          projectStockTransferId?: string
+          quantity?: number
+          storageUnitId?: string | null
+          trackedEntityId?: string | null
+          unitCost?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectStockTransferLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_header_fkey"
+            columns: ["projectStockTransferId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectStockTransfer"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_storageUnitId_fkey"
+            columns: ["storageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectStockTransferLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -98375,6 +99101,7 @@ export type Database = {
         | "Asset Transfer"
         | "Rental Agreement"
         | "Project Issue"
+        | "Project Transfer"
       itemLedgerType:
         | "Purchase"
         | "Sale"
@@ -98461,6 +99188,7 @@ export type Database = {
         | "Timesheet"
         | "Project Expense"
         | "Service Order"
+        | "Project Transfer"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -98496,6 +99224,7 @@ export type Database = {
         | "Timesheet"
         | "Project Expense"
         | "Service Order"
+        | "Project Transfer"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       lessorClassification: "Rental" | "Sale" | "Financing"
@@ -98645,6 +99374,7 @@ export type Database = {
         | "On Hold"
         | "Billed"
         | "Written Off"
+      projectBorrowStatus: "Open" | "Paid Back"
       projectChangeOperation: "Add" | "Update" | "Delete"
       projectChangeRequestStatus:
         | "Draft"
@@ -98707,6 +99437,8 @@ export type Database = {
         | "On Hold"
         | "Technically Complete"
         | "Closed"
+      projectStockTransferStatus: "Draft" | "Approved" | "Posted" | "Cancelled"
+      projectStockTransferType: "Transfer" | "Borrow" | "Payback"
       projectType: "Standard" | "Service"
       purchaseInvoiceStatus:
         | "Draft"
@@ -99998,6 +100730,7 @@ export const Constants = {
         "Asset Transfer",
         "Rental Agreement",
         "Project Issue",
+        "Project Transfer",
       ],
       itemLedgerType: [
         "Purchase",
@@ -100091,6 +100824,7 @@ export const Constants = {
         "Timesheet",
         "Project Expense",
         "Service Order",
+        "Project Transfer",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
@@ -100127,6 +100861,7 @@ export const Constants = {
         "Timesheet",
         "Project Expense",
         "Service Order",
+        "Project Transfer",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
@@ -100292,6 +101027,7 @@ export const Constants = {
         "Billed",
         "Written Off",
       ],
+      projectBorrowStatus: ["Open", "Paid Back"],
       projectChangeOperation: ["Add", "Update", "Delete"],
       projectChangeRequestStatus: [
         "Draft",
@@ -100362,6 +101098,8 @@ export const Constants = {
         "Technically Complete",
         "Closed",
       ],
+      projectStockTransferStatus: ["Draft", "Approved", "Posted", "Cancelled"],
+      projectStockTransferType: ["Transfer", "Borrow", "Payback"],
       projectType: ["Standard", "Service"],
       purchaseInvoiceStatus: [
         "Draft",

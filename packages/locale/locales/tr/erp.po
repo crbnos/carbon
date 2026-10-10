@@ -17820,6 +17820,9 @@ msgstr "Ödeme Al · {0} fatura"
 msgid "Receive to Inventory"
 msgstr "Envantere Al"
 
+msgid "Receive to project stock"
+msgstr ""
+
 msgid "Received"
 msgstr "Alındı"
 

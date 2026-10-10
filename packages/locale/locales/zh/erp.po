@@ -17820,6 +17820,9 @@ msgstr "收取付款 · {0}份发票"
 msgid "Receive to Inventory"
 msgstr "收货至库存管理"
 
+msgid "Receive to project stock"
+msgstr ""
+
 msgid "Received"
 msgstr "已接收"
 

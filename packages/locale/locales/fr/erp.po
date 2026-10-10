@@ -17820,6 +17820,9 @@ msgstr "Recevoir le paiement · {0} factures"
 msgid "Receive to Inventory"
 msgstr "Recevoir en inventaire"
 
+msgid "Receive to project stock"
+msgstr ""
+
 msgid "Received"
 msgstr "Reçu"
 

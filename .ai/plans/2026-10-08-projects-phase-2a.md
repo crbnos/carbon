@@ -35,7 +35,7 @@ Phase 2b plans MRP. Until 2b ships, every MRP and planning reader filters to com
 
 ## Progress
 
-- [ ] Task 1: Create the Phase 2a enum and table migration
+- [x] Task 1: Create the Phase 2a enum and table migration
 - [ ] Task 2: Change the `itemStockQuantities` primary key and the reconcile function
 - [ ] Task 3: Change the stock handler and ship it with the authz migration
 - [ ] Task 4: Regenerate types and add the RLS rules
@@ -824,3 +824,8 @@ ls .ai/playbooks/projects-phase-2a.md
 ```
 
 **Out of scope:** the Segmented MRP criterion (Phase 2b).
+
+## Execution notes
+
+- Task 1: the migration adds foreign keys the plan's SQL left out, so a backup restore into another company remaps them: `pickingListLine.projectId` and `inventoryCountLine.projectId` → `project`, `projectStockTransferLine.storageUnitId` → `storageUnit`, `projectBorrow.projectStockTransferLineId` → `projectStockTransferLine`, `projectStockTransfer.settlesBorrowId` and `costLedger.projectBorrowId` → `projectBorrow`. Every FK column has an index. `planningActionId` stays without an FK, because MRP replaces its planning actions on every run; Task 4 lists it in `ID_REF_COLUMNS`. The sequence insert uses `WHERE NOT EXISTS`, as `20261009153156_field-service-module.sql` does; the effect equals `ON CONFLICT DO NOTHING`.
+- Task 1: `pnpm db:migrate` applied both migrations and regenerated the types and swagger. Then `authz sync` failed on the 3 new tables, which have no rule until Task 4 (as in Field Service Phase A Task 4). The commit carries the regenerated MCP digest and workflow catalog (`job.receiveToProjectStock` gains a label).

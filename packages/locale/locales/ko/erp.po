@@ -17820,6 +17820,9 @@ msgstr "지불 수령 · {0} 송장"
 msgid "Receive to Inventory"
 msgstr "재고로 입고"
 
+msgid "Receive to project stock"
+msgstr ""
+
 msgid "Received"
 msgstr "수령됨"
 

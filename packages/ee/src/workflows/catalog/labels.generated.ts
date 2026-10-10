@@ -171,6 +171,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.job.quantityShipped": msg`Quantity shipped`,
   "entity.job.quoteId": msg`Quote`,
   "entity.job.quoteLineId": msg`Quote line`,
+  "entity.job.receiveToProjectStock": msg`Receive to project stock`,
   "entity.job.releasedDate": msg`Released date`,
   "entity.job.salesOrderId": msg`Sales order`,
   "entity.job.salesOrderLineId": msg`Sales order line`,

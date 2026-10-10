@@ -17820,6 +17820,9 @@ msgstr "支払いを受け取る · {0} 件の請求書"
 msgid "Receive to Inventory"
 msgstr "在庫に受け取る"
 
+msgid "Receive to project stock"
+msgstr ""
+
 msgid "Received"
 msgstr "受信済み"
 

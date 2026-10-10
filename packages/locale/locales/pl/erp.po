@@ -17820,6 +17820,9 @@ msgstr "Otrzymaj płatność · {0} faktury"
 msgid "Receive to Inventory"
 msgstr "Odbierz do Magazynu"
 
+msgid "Receive to project stock"
+msgstr ""
+
 msgid "Received"
 msgstr "Otrzymane"
 

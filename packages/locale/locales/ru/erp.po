@@ -17820,6 +17820,9 @@ msgstr "Получить платеж · {0} счета-фактуры"
 msgid "Receive to Inventory"
 msgstr "Получить в инвентарь"
 
+msgid "Receive to project stock"
+msgstr ""
+
 msgid "Received"
 msgstr "Получено"
 

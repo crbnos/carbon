@@ -17820,6 +17820,9 @@ msgstr "भुगतान प्राप्त करें · {0} चाल�
 msgid "Receive to Inventory"
 msgstr "इन्वेंटरी में प्राप्त करें"
 
+msgid "Receive to project stock"
+msgstr ""
+
 msgid "Received"
 msgstr "प्राप्त"
 
