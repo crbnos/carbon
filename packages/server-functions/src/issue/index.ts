@@ -48,7 +48,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
 import {
   getCurrentAccountingPeriod,
@@ -68,6 +68,15 @@ import {
   type JobProjectCharge,
   loadJobProjectCharge
 } from "../lib/project-posting";
+import {
+  assertEntitiesInStripes,
+  drawFromStripes,
+  itemLedgerInStripes,
+  loadDemandStripes,
+  type StockStripe,
+  type StripeQuantity,
+  trackedEntityStripe
+} from "../lib/stock-stripes";
 import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded
@@ -115,6 +124,60 @@ function checkExpiredEntities(
         reason: `Cannot consume expired tracked ${noun}: ${ids}`
       };
   }
+}
+
+// The untracked on-hand of each stripe at one bin, in stripe order.
+async function stripeOnHandAtBin(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    storageUnitId: string | null | undefined;
+    stripes: readonly StockStripe[];
+  }
+): Promise<StripeQuantity[]> {
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .select(["projectId", (eb) => eb.fn.sum("quantity").as("quantity")])
+    .where("companyId", "=", args.companyId)
+    .where("itemId", "=", args.itemId)
+    .where("locationId", "=", args.locationId)
+    .where((eb) =>
+      args.storageUnitId
+        ? eb("storageUnitId", "=", args.storageUnitId)
+        : eb("storageUnitId", "is", null)
+    )
+    .where("trackedEntityId", "is", null)
+    .where((eb) => itemLedgerInStripes(eb, args.stripes))
+    .groupBy("projectId")
+    .execute();
+  return args.stripes.map((stripe) => ({
+    stripe,
+    quantity: Number(
+      rows.find((row) => (row.projectId ?? null) === stripe)?.quantity ?? 0
+    )
+  }));
+}
+
+// What an untracked draw of `quantity` takes from each stripe at one bin:
+// the demand's stripes in order, the rest from the last (common) stripe. A
+// demand of common stock only takes one row and reads no on-hand.
+async function drawUntrackedAtBin(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    storageUnitId: string | null | undefined;
+    stripes: readonly StockStripe[];
+    quantity: number;
+  }
+): Promise<StripeQuantity[]> {
+  if (args.stripes.length <= 1) {
+    return [{ stripe: args.stripes[0] ?? null, quantity: args.quantity }];
+  }
+  return drawFromStripes(args.quantity, await stripeOnHandAtBin(trx, args));
 }
 
 async function issueJobOperationMaterials(
@@ -188,7 +251,7 @@ async function issueJobOperationMaterials(
     trx
       .selectFrom("job")
       .where("id", "=", jobId)
-      .select(["locationId", "jobId"])
+      .select(["locationId", "jobId", "projectId"])
       .executeTakeFirst(),
     trx
       .selectFrom("item")
@@ -204,6 +267,9 @@ async function issueJobOperationMaterials(
   if (!job?.locationId) {
     throw new Error("Job location is required");
   }
+
+  // The stock stripes this job's demand may draw (Projects Phase 2a).
+  const stripes = await loadDemandStripes(trx, companyId, job.projectId);
 
   const itemIdIsTracked = new Map(
     items.map((item) => [item.id, item.itemTrackingType === "Inventory"])
@@ -269,6 +335,8 @@ async function issueJobOperationMaterials(
           quantity: -row.quantity,
           locationId: job.locationId,
           storageUnitId: row.storageUnitId,
+          // Picked stock is common until picking carries the stripe (Task 12).
+          projectId: null,
           postingDate: today,
           createdBy: userId
         });
@@ -297,7 +365,7 @@ async function issueJobOperationMaterials(
                   companyId,
                   itemId: material.itemId,
                   locationId: job.locationId!,
-                  stripes: [null]
+                  stripes
                 })
               )?.storageUnitId ?? null;
           }
@@ -308,7 +376,7 @@ async function issueJobOperationMaterials(
                 companyId,
                 itemId: material.itemId,
                 locationId: job.locationId!,
-                stripes: [null]
+                stripes
               })
             )?.storageUnitId ?? null;
         }
@@ -320,6 +388,7 @@ async function issueJobOperationMaterials(
         .where("itemId", "=", material.itemId)
         .where("locationId", "=", job.locationId!)
         .where("storageUnitId", "=", proposedStorageUnitId ?? "")
+        .where((eb) => itemLedgerInStripes(eb, stripes))
         .executeTakeFirst();
 
       const allStorageUnitQuantities = await trx
@@ -327,6 +396,7 @@ async function issueJobOperationMaterials(
         .select(["storageUnitId", (eb) => eb.fn.sum("quantity").as("quantity")])
         .where("itemId", "=", material.itemId)
         .where("locationId", "=", job.locationId!)
+        .where((eb) => itemLedgerInStripes(eb, stripes))
         .groupBy("storageUnitId")
         .having((eb) => eb.fn.sum("quantity"), ">", 0)
         .execute();
@@ -345,19 +415,32 @@ async function issueJobOperationMaterials(
       const isTracked = itemIdIsTracked.get(material.itemId);
 
       if (isTracked) {
-        itemLedgerInserts.push({
-          entryType: "Consumption",
-          documentType: "Job Consumption",
-          documentId: jobId,
-          documentLineId: jobOperationId,
+        // One row per stripe drawn: the job's project stock first, then
+        // common stock (stock-stripes.ts).
+        const draws = await drawUntrackedAtBin(trx, {
           companyId,
           itemId: material.itemId,
-          quantity: -remaining,
           locationId: job.locationId,
           storageUnitId: finalStorageUnitId,
-          postingDate: today,
-          createdBy: userId
+          stripes,
+          quantity: remaining
         });
+        for (const draw of draws) {
+          itemLedgerInserts.push({
+            entryType: "Consumption",
+            documentType: "Job Consumption",
+            documentId: jobId,
+            documentLineId: jobOperationId,
+            companyId,
+            itemId: material.itemId,
+            quantity: -draw.quantity,
+            locationId: job.locationId,
+            storageUnitId: finalStorageUnitId,
+            projectId: draw.stripe,
+            postingDate: today,
+            createdBy: userId
+          });
+        }
       }
     }
 
@@ -468,7 +551,8 @@ async function issueJobOperationMaterials(
       const cogsResult = await calculateCOGS(trx, {
         itemId: ledger.itemId,
         quantity: materialQuantity,
-        companyId
+        companyId,
+        projectId: ledger.projectId ?? null
       });
       totalMaterialCost += cogsResult.totalCost;
 
@@ -531,6 +615,7 @@ async function issueJobOperationMaterials(
           cost: -cogsResult.totalCost,
           remainingQuantity: 0,
           postingDate: today,
+          projectId: ledger.projectId ?? null,
           companyId
         })
         .execute();
@@ -725,6 +810,8 @@ async function createMaterialWipEntries(
       itemId: string;
       quantity: number;
       trackedEntityId?: string | null;
+      // The stock stripe the movement draws or returns to; null is common.
+      projectId?: string | null;
     }>;
     jobId: string;
     operationId: string;
@@ -827,7 +914,10 @@ async function createMaterialWipEntries(
         itemId: ledger.itemId,
         quantity: absQty,
         companyId,
-        trackedEntityIds: ledger.trackedEntityId ? [ledger.trackedEntityId] : []
+        trackedEntityIds: ledger.trackedEntityId
+          ? [ledger.trackedEntityId]
+          : [],
+        projectId: ledger.projectId ?? null
       });
       cost = cogsResult.totalCost;
     } else {
@@ -927,6 +1017,7 @@ async function createMaterialWipEntries(
         cost: isConsumption ? -cost : cost,
         remainingQuantity: 0,
         postingDate: today,
+        projectId: ledger.projectId ?? null,
         companyId
       })
       .execute();
@@ -1788,9 +1879,27 @@ async function consumeTrackedEntitiesIntoOperation(
   // Get job location
   const job = await trx
     .selectFrom("job")
-    .select(["id", "locationId"])
+    .select(["id", "locationId", "projectId"])
     .where("id", "=", jobMaterial?.jobId!)
     .executeTakeFirst();
+
+  // Each consumed entity stays in the stripe that holds it, and only the
+  // job's stripes may be drawn (Projects Phase 2a).
+  const entityStripes = new Map(
+    trackedEntities.map((entity) => [
+      entity.id,
+      trackedEntityStripe(itemLedgers, entity.id)
+    ])
+  );
+  await assertEntitiesInStripes(
+    trx,
+    companyId,
+    trackedEntities.map((entity) => ({
+      readableId: entity.readableId,
+      stripe: entityStripes.get(entity.id) ?? null
+    })),
+    await loadDemandStripes(trx, companyId, job?.projectId)
+  );
 
   // Get parent tracked entity details
   const parentTrackedEntity = await trx
@@ -1966,7 +2075,12 @@ async function consumeTrackedEntitiesIntoOperation(
       // MTO skips ONLY the ledger inserts; entity/activity writes
       // above still happen.
       if (jobMaterial?.methodType !== "Make to Order") {
-        itemLedgerInserts.push(...(split.ledgerInserts as ItemLedgerInsert[]));
+        itemLedgerInserts.push(
+          ...(split.ledgerInserts as ItemLedgerInsert[]).map((row) => ({
+            ...row,
+            projectId: entityStripes.get(trackedEntityId) ?? null
+          }))
+        );
       }
     }
 
@@ -2002,6 +2116,7 @@ async function consumeTrackedEntitiesIntoOperation(
         // snapshot — it sits at the parent's resolved bin.
         storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
         trackedEntityId: consumedEntityId,
+        projectId: entityStripes.get(trackedEntityId) ?? null,
         createdBy: userId
       });
     }
@@ -2040,7 +2155,8 @@ async function consumeTrackedEntitiesIntoOperation(
       .map((l) => ({
         itemId: l.itemId as string,
         quantity: Number(l.quantity),
-        trackedEntityId: l.trackedEntityId
+        trackedEntityId: l.trackedEntityId,
+        projectId: l.projectId ?? null
       }));
 
     if (consumptionEntries.length > 0) {
@@ -3338,7 +3454,7 @@ const issue = defineServerFn({
             trx
               .selectFrom("job")
               .where("id", "=", jobOperation?.jobId!)
-              .select("locationId")
+              .select(["locationId", "projectId"])
               .executeTakeFirst(),
             trx
               .selectFrom("item")
@@ -3353,6 +3469,33 @@ const issue = defineServerFn({
               ])
               .executeTakeFirst()
           ]);
+
+          // The stock stripes this job's demand may draw: a return goes back
+          // to the first of them (Projects Phase 2a).
+          const stripes = await loadDemandStripes(
+            trx,
+            companyId,
+            job?.projectId
+          );
+          // A quantity of untracked stock at one bin: a return goes to the
+          // job's first stripe, a draw takes the stripes in order.
+          const untrackedRows = async (
+            rowItemId: string,
+            storageUnitId: string | null | undefined,
+            signedQuantity: number
+          ): Promise<StripeQuantity[]> =>
+            signedQuantity > 0
+              ? [{ stripe: stripes[0] ?? null, quantity: signedQuantity }]
+              : (
+                  await drawUntrackedAtBin(trx, {
+                    companyId,
+                    itemId: rowItemId,
+                    locationId: job?.locationId!,
+                    storageUnitId,
+                    stripes,
+                    quantity: -signedQuantity
+                  })
+                ).map((draw) => ({ ...draw, quantity: -draw.quantity }));
 
           if (materialId) {
             const material = await trx
@@ -3382,7 +3525,7 @@ const issue = defineServerFn({
                     companyId,
                     itemId: itemId,
                     locationId: job?.locationId!,
-                    stripes: [null]
+                    stripes
                   })
                 )?.storageUnitId ?? null;
             }
@@ -3432,27 +3575,37 @@ const issue = defineServerFn({
                       locationId: job?.locationId,
                       storageUnitId: row.storageUnitId,
                       quantity: -row.quantity,
+                      // Picked stock is common until picking carries the
+                      // stripe (Task 12).
+                      projectId: null,
                       createdBy: userId
                     });
                   }
                 }
               }
               if (item?.itemTrackingType === "Inventory" && remaining !== 0) {
-                itemLedgerInserts.push({
-                  entryType: "Consumption",
-                  documentType: "Job Consumption",
-                  documentId: material.jobId,
-                  documentLineId: id,
-                  companyId,
-                  itemId: material.itemId,
-                  locationId: job?.locationId,
+                const rows = await untrackedRows(
+                  material.itemId,
                   storageUnitId,
-                  quantity:
-                    adjustmentType === "Positive Adjmt."
-                      ? Number(remaining)
-                      : -Number(remaining),
-                  createdBy: userId
-                });
+                  adjustmentType === "Positive Adjmt."
+                    ? Number(remaining)
+                    : -Number(remaining)
+                );
+                for (const row of rows) {
+                  itemLedgerInserts.push({
+                    entryType: "Consumption",
+                    documentType: "Job Consumption",
+                    documentId: material.jobId,
+                    documentLineId: id,
+                    companyId,
+                    itemId: material.itemId,
+                    locationId: job?.locationId,
+                    storageUnitId,
+                    quantity: row.quantity,
+                    projectId: row.stripe,
+                    createdBy: userId
+                  });
+                }
               }
             }
 
@@ -3508,26 +3661,33 @@ const issue = defineServerFn({
                     companyId,
                     itemId: itemId,
                     locationId: job?.locationId!,
-                    stripes: [null]
+                    stripes
                   })
                 )?.storageUnitId ??
                 null;
 
-              itemLedgerInserts.push({
-                entryType: "Consumption",
-                documentType: "Job Consumption",
-                documentId: jobOperation?.jobId,
-                documentLineId: id,
-                companyId,
-                itemId: itemId!,
-                quantity:
-                  adjustmentType === "Positive Adjmt."
-                    ? Number(quantity)
-                    : -Number(quantity),
-                locationId: job?.locationId,
+              const rows = await untrackedRows(
+                itemId!,
                 storageUnitId,
-                createdBy: userId
-              });
+                adjustmentType === "Positive Adjmt."
+                  ? Number(quantity)
+                  : -Number(quantity)
+              );
+              for (const row of rows) {
+                itemLedgerInserts.push({
+                  entryType: "Consumption",
+                  documentType: "Job Consumption",
+                  documentId: jobOperation?.jobId,
+                  documentLineId: id,
+                  companyId,
+                  itemId: itemId!,
+                  quantity: row.quantity,
+                  locationId: job?.locationId,
+                  storageUnitId,
+                  projectId: row.stripe,
+                  createdBy: userId
+                });
+              }
             }
 
             const itemCost = await trx
@@ -3618,7 +3778,8 @@ const issue = defineServerFn({
               consumptionLedgers: itemLedgerInserts.map((l) => ({
                 itemId: l.itemId as string,
                 quantity: Number(l.quantity),
-                trackedEntityId: l.trackedEntityId
+                trackedEntityId: l.trackedEntityId,
+                projectId: l.projectId ?? null
               })),
               jobId: jobOperation?.jobId!,
               operationId: id,
@@ -3882,7 +4043,12 @@ const issue = defineServerFn({
             // quantityIssued is untouched — it was never consumed.
             const ledgerRows = await trx
               .selectFrom("itemLedger")
-              .select(["trackedEntityId", "storageUnitId", "quantity"])
+              .select([
+                "trackedEntityId",
+                "storageUnitId",
+                "quantity",
+                "projectId"
+              ])
               .where("trackedEntityId", "=", trackedEntityId)
               .execute();
             const bin = resolveTrackedEntityBin(ledgerRows, trackedEntityId);
@@ -3899,6 +4065,8 @@ const issue = defineServerFn({
                 documentType: "Scrap",
                 documentId: job?.id ?? null,
                 scrapReasonId,
+                // The scrap draws the stripe that holds the entity.
+                projectId: trackedEntityStripe(ledgerRows, trackedEntityId),
                 companyId,
                 createdBy: userId
               },
@@ -4531,12 +4699,28 @@ const issue = defineServerFn({
               "storageUnitId",
               "locationId",
               "quantity",
+              "projectId",
               "createdAt"
             ])
             .where("trackedEntityId", "in", trackedEntityIds)
             .where("companyId", "=", companyId)
             .orderBy("createdAt", "desc")
             .execute();
+
+          // A merged lot has one stock owner: lots of different stripes
+          // (projects, or a project and common stock) cannot merge.
+          const parentStripes = new Set(
+            trackedEntityIds.map((entityId) =>
+              trackedEntityStripe(parentLedgers, entityId)
+            )
+          );
+          if (parentStripes.size > 1) {
+            throw new InvalidInputError(
+              "These lots belong to different stock owners and cannot be merged. Transfer them to one owner first."
+            );
+          }
+          const mergeStripe: StockStripe =
+            parentStripes.values().next().value ?? null;
 
           // The parent's on-ledger balance: what its job receipt has put into
           // stock so far. The merge only moves this — unreceived quantity
@@ -4622,7 +4806,8 @@ const issue = defineServerFn({
             .values(
               records.ledgerInserts.map((l) => ({
                 ...l,
-                itemId: l.itemId as string
+                itemId: l.itemId as string,
+                projectId: mergeStripe
               }))
             )
             .execute();
@@ -4875,6 +5060,14 @@ const issue = defineServerFn({
                   (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
                 )?.storageUnitId,
                 trackedEntityId,
+                // Back to the stripe its consumption drew.
+                projectId:
+                  itemLedgers.find(
+                    (itemLedger) =>
+                      itemLedger.trackedEntityId === trackedEntityId &&
+                      itemLedger.entryType === "Consumption" &&
+                      Number(itemLedger.quantity) < 0
+                  )?.projectId ?? null,
                 createdBy: userId
               });
             }
@@ -4907,7 +5100,8 @@ const issue = defineServerFn({
             if (accountingEnabledUnconsume && accountDefaultsUnconsume?.data) {
               const returnEntries = itemLedgerInserts.map((l) => ({
                 itemId: l.itemId as string,
-                quantity: Number(l.quantity)
+                quantity: Number(l.quantity),
+                projectId: l.projectId ?? null
               }));
 
               const projectCharge = await loadJobProjectCharge(
@@ -5134,7 +5328,7 @@ const issue = defineServerFn({
           const existingLedger = await trx
             .selectFrom("itemLedger")
             .where("trackedEntityId", "=", trackedEntityId)
-            .select(["locationId", "storageUnitId"])
+            .select(["locationId", "storageUnitId", "projectId"])
             .orderBy("createdAt", "desc")
             .executeTakeFirst();
 
@@ -5154,6 +5348,8 @@ const issue = defineServerFn({
                   locationId: existingLedger?.locationId,
                   storageUnitId: existingLedger?.storageUnitId,
                   trackedEntityId,
+                  // the conversion keeps the entity's stripe
+                  projectId: existingLedger?.projectId ?? null,
                   createdBy: userId
                 },
                 // Add new revision quantity
@@ -5167,6 +5363,7 @@ const issue = defineServerFn({
                   locationId: existingLedger?.locationId,
                   storageUnitId: existingLedger?.storageUnitId,
                   trackedEntityId,
+                  projectId: existingLedger?.projectId ?? null,
                   createdBy: userId
                 }
               ];
@@ -5421,6 +5618,17 @@ const issue = defineServerFn({
           if (expiredCheck.warning) {
             expiredWarning = expiredCheck.warning;
           }
+
+          // Maintenance is common demand: it never draws project stock.
+          await assertEntitiesInStripes(
+            trx,
+            companyId,
+            trackedEntities.map((entity) => ({
+              readableId: entity.readableId,
+              stripe: trackedEntityStripe(itemLedgers, entity.id)
+            })),
+            [null]
+          );
 
           // Get item details
           const item = await trx

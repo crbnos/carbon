@@ -815,3 +815,201 @@ databaseTest(
     }
   }
 );
+
+// Project stock (Projects Phase 2a): a job of a project with project stock
+// draws the project's stock first, then common stock, one row per stripe.
+databaseTest(
+  "a backflush for a project job draws the project's stock, then common stock",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.enableProjectStock();
+      // 10 in common stock at 10.00, 4 in the project's stock at 12.00.
+      const { itemId, locationId } = await f.addStockedItem("bolt", {
+        quantity: 10,
+        unitCost: 10
+      });
+      await f.addStripeStock({
+        itemId,
+        locationId,
+        projectId: f.projectId,
+        quantity: 4,
+        unitCost: 12
+      });
+      const job = await f.addConsumeToProjectJob("draw", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 6,
+        jobQuantity: 1,
+        consumeToProject: false
+      });
+      await f.db
+        .updateTable("job")
+        .set({ projectId: f.projectId, projectElementId: f.elementId })
+        .where("id", "=", job.jobId)
+        .execute();
+
+      const backflush = await issue(f.ctx, {
+        type: "jobOperation",
+        id: job.operationId,
+        quantity: 1
+      });
+      expect(backflush.error).toBeNull();
+
+      const rows = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .orderBy("quantity")
+        .execute();
+      expect(rows.map((row) => [Number(row.quantity), row.projectId])).toEqual([
+        [-4, f.projectId],
+        [-2, null]
+      ]);
+
+      // Each row relieves its own stripe's layer: 4 x 12.00 and 2 x 10.00.
+      const relief = await f.db
+        .selectFrom("costLedger")
+        .select(["cost", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .orderBy("cost")
+        .execute();
+      expect(relief.map((row) => [Number(row.cost), row.projectId])).toEqual([
+        [-48, f.projectId],
+        [-20, null]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+// A batch in a project's stock is refused for common demand, and consumed in
+// its stripe by a job of that project.
+databaseTest(
+  "a lot in project stock is issued only to that project's demand",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.enableProjectStock();
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const lotItemId = `${f.prefix}-item-lot`;
+      const lotId = `${f.prefix}-lot`;
+      const parentId = `${f.prefix}-parent`;
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("item")
+          .values({
+            id: lotItemId,
+            readableId: `${f.prefix}-LOT`,
+            name: "Resin",
+            type: "Material",
+            itemTrackingType: "Batch",
+            replenishmentSystem: "Buy",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .insertInto("trackedEntity")
+          .values([
+            {
+              id: lotId,
+              readableId: "LOT-1",
+              itemId: lotItemId,
+              quantity: 5,
+              status: "Available",
+              sourceDocument: "Item",
+              sourceDocumentId: lotItemId,
+              companyId: f.companyId,
+              createdBy: "system"
+            },
+            {
+              id: parentId,
+              readableId: "ASSY-1",
+              itemId: lotItemId,
+              quantity: 1,
+              status: "Available",
+              sourceDocument: "Item",
+              sourceDocumentId: lotItemId,
+              companyId: f.companyId,
+              createdBy: "system"
+            }
+          ])
+          .execute();
+      });
+      await f.addStripeStock({
+        itemId: lotItemId,
+        locationId,
+        projectId: f.projectId,
+        quantity: 5,
+        unitCost: 3
+      });
+      await f.db
+        .updateTable("itemLedger")
+        .set({ trackedEntityId: lotId })
+        .where("itemId", "=", lotItemId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      // A job with no project: common demand.
+      const common = await f.addConsumeToProjectJob("common", {
+        locationId,
+        materialItemId: lotItemId,
+        quantityPerParent: 5,
+        jobQuantity: 1,
+        consumeToProject: false
+      });
+      const refused = await issue(f.ctx, {
+        type: "trackedEntitiesToOperation",
+        materialId: common.materialId,
+        parentTrackedEntityId: parentId,
+        children: [{ trackedEntityId: lotId, quantity: 5 }]
+      });
+      expect(refused.error?.message).toContain(
+        "LOT-1 is in the stock of project TP"
+      );
+
+      // A job of the project draws it, in the project's stripe.
+      const owned = await f.addConsumeToProjectJob("owned", {
+        locationId,
+        materialItemId: lotItemId,
+        quantityPerParent: 5,
+        jobQuantity: 1,
+        consumeToProject: false
+      });
+      await f.db
+        .updateTable("job")
+        .set({ projectId: f.projectId, projectElementId: f.elementId })
+        .where("id", "=", owned.jobId)
+        .execute();
+      const consumed = await issue(f.ctx, {
+        type: "trackedEntitiesToOperation",
+        materialId: owned.materialId,
+        parentTrackedEntityId: parentId,
+        children: [{ trackedEntityId: lotId, quantity: 5 }]
+      });
+      expect(consumed.error).toBeNull();
+      const consumption = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("trackedEntityId", "=", lotId)
+        .execute();
+      expect(
+        consumption.map((row) => [Number(row.quantity), row.projectId])
+      ).toEqual([[-5, f.projectId]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
