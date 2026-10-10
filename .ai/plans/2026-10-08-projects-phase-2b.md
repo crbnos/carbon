@@ -36,7 +36,7 @@ The plan covers:
 - [x] Task 2: Create the Phase 2b enum and segment migration
 - [x] Task 3: Add the segment to the engine keys
 - [x] Task 4: Add the netting sequence as a pure module
-- [ ] Task 5: Segment the demand and supply views
+- [x] Task 5: Segment the demand and supply views
 - [ ] Task 6: Segment the inputs of `runMrp`
 - [ ] Task 7: Net segments and draw common surplus in `explodeBom`
 - [ ] Task 8: Segment the actuals and the Phase 7 writes
@@ -666,4 +666,7 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 3: the 3 existing key tests in `mrp-engine.test.ts` now expect the extra `''` part, because the split helpers return one more element. The 2 new tests pass: the round trip, and a parent in `prj_1` that explodes into `prj_1` only and ignores common on-hand. The database suite passes (416) and the planning suite passes (314) with the golden snapshot unchanged. `@carbon/database`, `@carbon/planning`, `@carbon/server-functions` and `@carbon/jobs` typecheck.
 - Task 4 (deviation): a draw in `allocateCommonSurplus` lowers the surplus of its own period and of every LATER period by the amount taken. An earlier period keeps at most what the draw period has left. Step 2 says "that period and every earlier period". But the draw leaves common stock from its period on, and test case 3 needs a later need to see less (5 for week 1, then 1 for week 2). The rule is exact: it equals `trueSurplusByPeriod` recomputed with the draw taken out of on-hand at its period.
 - Task 4: `mrp-netting-sequence.ts` is exported as `@carbon/database/mrp-netting-sequence`. Its 5 tests failed before the module existed and pass now. The database suite passes (421, with `SUPABASE_DB_URL` exported), and `@carbon/database` typechecks.
-
+- Task 5: `20261010133214_mrp-segment-views.sql` recreates the 4 open views from their newest definitions with `planningSegmentId` as the last column, so `CREATE OR REPLACE` keeps every column and filter. All 6 views run `WITH (security_invoker = true)`.
+- Task 5: `openPurchaseOrderLines` leaves out a line that the receipt consumes to its project. The condition mirrors `consumedByProject` in `post-receipt/index.ts`: not outside processing, an inventory item, a project without project stock, and `project_cost_treatment(…, company_today(companyId))` not Statistical. `IS DISTINCT FROM` keeps a NULL treatment from hiding the line.
+- Task 5 (deviation): the `projectState` join also matches on `companyId`, because its primary key is `("id", "companyId")`. `openProjectBorrows` also carries `borrowerProjectId`, `lenderProjectId` and `id`.
+- Task 5: on Carbon Development the 4 views give the same row counts and sums before and after (sales 7, job materials 101, production 2, PO lines 7), and 0 rows have a segment. A rolled-back smoke test proved the 4 rules: a consumed PO line leaves the view, a stocked line and a receive-to-project-stock job carry the project segment, and a consume-to-project job leaves `openProductionOrders`.

@@ -9800,6 +9800,13 @@ export type Database = {
             foreignKeyName: "costLedger_projectBorrow_fkey"
             columns: ["projectBorrowId", "companyId"]
             isOneToOne: false
+            referencedRelation: "openProjectBorrows"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "costLedger_projectBorrow_fkey"
+            columns: ["projectBorrowId", "companyId"]
+            isOneToOne: false
             referencedRelation: "projectBorrow"
             referencedColumns: ["id", "companyId"]
           },
@@ -49988,6 +49995,13 @@ export type Database = {
             foreignKeyName: "projectStockTransfer_settlesBorrow_fkey"
             columns: ["settlesBorrowId", "companyId"]
             isOneToOne: false
+            referencedRelation: "openProjectBorrows"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectStockTransfer_settlesBorrow_fkey"
+            columns: ["settlesBorrowId", "companyId"]
+            isOneToOne: false
             referencedRelation: "projectBorrow"
             referencedColumns: ["id", "companyId"]
           },
@@ -85252,6 +85266,7 @@ export type Database = {
           leadTime: number | null
           locationId: string | null
           parentMaterialId: string | null
+          planningSegmentId: string | null
           quantityPerParent: number | null
           quantityToIssue: number | null
           replenishmentSystem:
@@ -85422,6 +85437,7 @@ export type Database = {
           jobId: string | null
           leadTime: number | null
           locationId: string | null
+          planningSegmentId: string | null
           quantityToReceive: number | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
@@ -85515,6 +85531,236 @@ export type Database = {
           }
         ]
       }
+      openProjectBorrows: {
+        Row: {
+          borrowerProjectId: string | null
+          borrowerSegmentId: string | null
+          companyId: string | null
+          id: string | null
+          itemId: string | null
+          lenderProjectId: string | null
+          lenderSegmentId: string | null
+          locationId: string | null
+          paybackDueDate: string | null
+          quantity: number | null
+        }
+        Insert: {
+          borrowerProjectId?: string | null
+          borrowerSegmentId?: never
+          companyId?: string | null
+          id?: string | null
+          itemId?: string | null
+          lenderProjectId?: string | null
+          lenderSegmentId?: never
+          locationId?: string | null
+          paybackDueDate?: string | null
+          quantity?: never
+        }
+        Update: {
+          borrowerProjectId?: string | null
+          borrowerSegmentId?: never
+          companyId?: string | null
+          id?: string | null
+          itemId?: string | null
+          lenderProjectId?: string | null
+          lenderSegmentId?: never
+          locationId?: string | null
+          paybackDueDate?: string | null
+          quantity?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectBorrow_borrower_fkey"
+            columns: ["borrowerProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectBorrow_lender_fkey"
+            columns: ["lenderProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectBorrow_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      openProjectMaterialLines: {
+        Row: {
+          companyId: string | null
+          id: string | null
+          itemId: string | null
+          locationId: string | null
+          planningSegmentId: string | null
+          projectElementId: string | null
+          projectId: string | null
+          quantity: number | null
+          requiredDate: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectElementMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_element_fkey"
+            columns: ["projectElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElementMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_location_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       openPurchaseOrderLines: {
         Row: {
           companyId: string | null
@@ -85527,6 +85773,7 @@ export type Database = {
           leadTime: number | null
           locationId: string | null
           orderDate: string | null
+          planningSegmentId: string | null
           promisedDate: string | null
           purchaseOrderId: string | null
           purchaseOrderLineType:
@@ -85618,6 +85865,7 @@ export type Database = {
           leadTime: number | null
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
+          planningSegmentId: string | null
           promisedDate: string | null
           quantityToConsume: number | null
           quantityToSend: number | null
