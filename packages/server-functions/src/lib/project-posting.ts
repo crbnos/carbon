@@ -164,7 +164,8 @@ export function resolveProjectTreatment(
 /**
  * By Coverage (a Service project): the charge's coverage decides the account.
  * Warranty → Warranty Expense; Contract → the parent (contract) project's
- * posting account, else Cost of Goods Sold; Billable → Cost of Goods Sold;
+ * posting account (refused while that project is Closed), else Cost of Goods
+ * Sold; Billable → Cost of Goods Sold;
  * Capitalized → Work in Progress (a Refurbishment's completion sweeps it).
  */
 function coverageAccount(
@@ -189,6 +190,18 @@ function coverageAccount(
         if (!ctx.parent) {
           throw new ProjectChargeError(
             "The service order's contract project does not exist"
+          );
+        }
+        // A Closed contract project takes no more cost. On Hold and
+        // Technically Complete still do, as assertChargeable's 'commitment'
+        // mode allows.
+        if (ctx.parent.project.status === "Closed") {
+          const contractProject =
+            ctx.parent.project.identifier ??
+            ctx.parent.project.name ??
+            ctx.parent.project.id;
+          throw new ProjectChargeError(
+            `The contract project ${contractProject} is closed. Change the coverage to Billable, or reopen the contract project.`
           );
         }
         // A Statistical contract project keeps the natural account.

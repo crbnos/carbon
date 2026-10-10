@@ -24,7 +24,7 @@ A contract project (for example *Acme maintenance 2027*) must see the cost of th
 - [x] Task 1: Add `get_child_service_project_costs`
 - [x] Task 2: Show service orders on the Costs tab
 - [x] Task 3: Keep the parent link in step with the coverage contract
-- [ ] Task 4: Refuse Contract coverage on a closed parent
+- [x] Task 4: Refuse Contract coverage on a closed parent
 - [ ] Task 5: List service orders on the contract page
 - [ ] Task 6: Extend the demo datasets
 - [ ] Task 7: Update the rules, docs and specs
@@ -269,3 +269,4 @@ ls .ai/playbooks/field-service-phase-d.md
 - Task 3: the refusal counts only Contract charges that stand (`openChargeIds` over the order's Contract ledger rows). A reclass reverses the old row, so after an override the change goes through. The message tells the user to override the coverage (the node drawer's **Override**, which posts through `reclass-project-coverage`). The function also refuses a Closed or Cancelled order, a Refurbishment (it has no contract) and a contract of another customer. It writes nothing when the contract does not change.
 - Task 3 (deviation): the coverage contract was a Draft-only field. It is now editable on any open order, because the spec's Phase D criterion changes the contract of an order that already has charges. `updateServiceOrder` no longer saves `customerContractId` at all, so the parent link cannot drift through it. Contact and site stay Draft-only.
 - Task 3: the local database has no open order of a customer with a contract, so the function was checked by typecheck only. Task 8 covers it in the browser.
+- Task 4: the parent's status needed no new query: `loadProjectPostingContexts` already loads the parent's project row into `ctx.parent`. The message names the parent's identifier, else its name. A reversal at Contract coverage is refused too while the parent is Closed. The new test also checks that a Billable or Warranty charge on the same order still posts. `pnpm --filter @carbon/server-functions test -- project-posting` runs the whole suite: the first run had one shared-database race, and a second run passed all 483.

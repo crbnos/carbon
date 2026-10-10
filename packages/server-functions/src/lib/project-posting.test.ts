@@ -270,6 +270,39 @@ describe("resolveProjectPostingAccount: By Coverage", () => {
     expect(accountOf(statistical, "Contract")).toBe("acct-cogs");
   });
 
+  it("refuses a Contract charge on a Closed contract project, and posts on an On Hold one", () => {
+    const withParent = (status: ProjectPostingProject["status"]) =>
+      service({
+        project: project({
+          identifier: "SVC000123",
+          costTreatment: "By Coverage",
+          parentProjectId: "prj-contract"
+        }),
+        parent: context({
+          project: project({
+            id: "prj-contract",
+            identifier: "ACME27",
+            costTreatment: "Expense",
+            status
+          })
+        })
+      });
+
+    expect(() => accountOf(withParent("Closed"), "Contract")).toThrow(
+      ProjectChargeError
+    );
+    expect(() => accountOf(withParent("Closed"), "Contract")).toThrow(
+      "The contract project ACME27 is closed. Change the coverage to Billable, or reopen the contract project."
+    );
+    expect(accountOf(withParent("On Hold"), "Contract")).toBe("acct-expense");
+    expect(accountOf(withParent("Technically Complete"), "Contract")).toBe(
+      "acct-expense"
+    );
+    // Only a Contract charge reaches the parent.
+    expect(accountOf(withParent("Closed"), "Billable")).toBe("acct-cogs");
+    expect(accountOf(withParent("Closed"), "Warranty")).toBe("acct-warranty");
+  });
+
   it("refuses a charge with no coverage, and a missing default by name", () => {
     expect(() => accountOf(service(), null)).toThrow(ProjectChargeError);
     expect(() =>
