@@ -414,6 +414,7 @@ const PlanningTable = memo(
 
               return {
                 id: row.id,
+                planningSegmentId: row.planningSegmentId ?? "",
                 orders: ordersWithPeriods
               };
             }),

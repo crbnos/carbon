@@ -42,7 +42,7 @@ The plan covers:
 - [x] Task 8: Segment the actuals and the Phase 7 writes
 - [x] Task 9: Segment the planning RPCs and grids
 - [x] Task 10: Generate segmented and Transfer planning actions
-- [ ] Task 11: Apply segmented Order, Make and Transfer actions
+- [x] Task 11: Apply segmented Order, Make and Transfer actions
 - [ ] Task 12: Add the project-manager rung and the company sweep
 - [ ] Task 13: Add the Segment column to the planning worklists
 - [ ] Task 14: Show borrow exceptions
@@ -697,4 +697,8 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 10: `loadSegmentOnHand` replaces `loadCommonOnHand`. It reads every stripe and the projects with project stock, and sums each stripe into its segment with `planningSegmentOf`.
 - Task 10 (beyond the plan's steps): `getPlanningActions` and `inPlanningWorklist` list Transfer and Borrow on both worklists. Each page reads the actions of its own items only, so an action shows on its item's page. `settleNewSupplyPlanningActions` matches the segment of each ordered pair (default `''`); Task 11 sends it.
 - Task 10: two `runMrp` runs on Carbon Development, before and after, wrote no insert, update or delete. The existing common actions keep matching with the new natural key. The planning suite passes (321) with the golden snapshot unchanged. `@carbon/planning`, `erp` and `@carbon/jobs` typecheck, and the ERP planning tests pass (31).
+- Task 11: an Order or Make action is not applied; the grid's Order or Make button places it through the `order` intent. So both `order` cases read the row's `planningSegmentId` (sent by both grids and both drawers) and check it names a project of the company with project stock. A purchasing segment order writes `projectId` on the new PO line, and adds to an existing line only when the line has the same project. A production segment order creates the job with `projectId` and `receiveToProjectStock = true`. `settleNewSupplyPlanningActions` settles the segment's action.
+- Task 11 (deviation): the Transfer apply is set-based and lives in `projects.server.ts`, not `projects.service.ts`, because a `*.service.ts` function becomes an MCP tool. `createProjectStockTransfersFromActions(db, …)` runs one transaction: the claim (`claimPlanningActions`), one statement for the readable ids (`get_next_sequence('projectStockTransfer', …)` over `generate_series`), one insert of the Draft headers (type `Transfer`, owners, location, reason, `planningActionId`), one insert of the lines, and one UPDATE that sets `projectStockTransferId` on the actions. `applyTransferPlanningActions` wraps it for both routes and requires `update: projects`, the permission of the transfer pages.
+- Task 11: both `apply` cases take the Transfer actions out of the batch before the change actions. The response carries `transfers`, and the flash message counts the Draft transfers it created. `planned-orders-from-actions.ts` needed no change: Task 13 keys each row's actions by item and segment upstream.
+- Task 11: a new test (`transfer-planning-actions.test.ts`) pins the transfer statements and the claim lock. A rolled-back call proved that one statement draws distinct readable ids (`PST000001`, `PST000002`, `PST000003`). `erp` typechecks, and the ERP suite passes (2,065).
 

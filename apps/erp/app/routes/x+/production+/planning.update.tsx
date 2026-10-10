@@ -28,6 +28,7 @@ import {
   upsertJobMethod
 } from "~/modules/production";
 import { cancelJob } from "~/modules/production/production.server";
+import { applyTransferPlanningActions } from "~/modules/projects/projects.server";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -206,6 +207,38 @@ export async function action({ request }: ActionFunctionArgs) {
         return data({ success: false, message: "Not found" }, { status: 404 });
       }
 
+      // A job in a project segment is charged to that project and receives
+      // its output into the project's stock. The segment must be a project
+      // of this company with project stock.
+      const segmentIds = [
+        ...new Set(
+          itemsToOrder.map((item) => item.planningSegmentId).filter(Boolean)
+        )
+      ];
+      if (segmentIds.length > 0) {
+        const segmentProjects = await client
+          .from("project")
+          .select("id")
+          .in("id", segmentIds)
+          .eq("companyId", companyId)
+          .eq("projectStock", true);
+        if (
+          segmentProjects.error ||
+          (segmentProjects.data?.length ?? 0) !== segmentIds.length
+        ) {
+          logger.error("Planning order names an unknown project segment", {
+            companyId,
+            locationId,
+            segmentIds,
+            error: segmentProjects.error
+          });
+          return data(
+            { success: false, message: "Project not found" },
+            { status: 404 }
+          );
+        }
+      }
+
       try {
         const allJobIds: string[] = [];
         const createdJobs: { id: string; readableId: string }[] = [];
@@ -226,7 +259,11 @@ export async function action({ request }: ActionFunctionArgs) {
         let errors: string[] = [];
         // The (item, week) of every order that became a job, so the Make
         // suggestions it answers leave the worklist now, not at the next run.
-        const ordered: { itemId: string; periodId: string }[] = [];
+        const ordered: {
+          itemId: string;
+          periodId: string;
+          planningSegmentId: string;
+        }[] = [];
 
         // Manufacturing data for every item being ordered, in one read
         const manufacturingRows = await client
@@ -303,7 +340,13 @@ export async function action({ request }: ActionFunctionArgs) {
                 locationId,
                 companyId,
                 createdBy: userId,
-                unitOfMeasureCode: "EA"
+                unitOfMeasureCode: "EA",
+                ...(item.planningSegmentId
+                  ? {
+                      projectId: item.planningSegmentId,
+                      receiveToProjectStock: true
+                    }
+                  : {})
               },
               { skipMethod: true, skipRecalculate: true, source: "mrp" }
             );
@@ -349,7 +392,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
             // Track supply forecast by period
             const periodId = order.periodId;
-            ordered.push({ itemId: item.id, periodId });
+            ordered.push({
+              itemId: item.id,
+              periodId,
+              planningSegmentId: item.planningSegmentId
+            });
             supplyForecastByPeriod[periodId] =
               (supplyForecastByPeriod[periodId] || 0) + order.quantity;
           }
@@ -741,9 +788,28 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
 
+      // A Transfer creates a Draft project stock transfer (approved and posted
+      // on the transfer pages); it is never one of the change actions below.
+      const transferIds =
+        action === "apply"
+          ? parsedIds.data.filter((id) => {
+              const row = rowById.get(id);
+              return row?.type === "Transfer" && row.status === "Open";
+            })
+          : [];
+      const transferOutcome = await applyTransferPlanningActions({
+        companyId,
+        userId,
+        planningActionIds: transferIds
+      });
+      applied.push(...transferOutcome.applied);
+      errors.push(...transferOutcome.errors);
+      const transferIdSet = new Set(transferIds);
+
       const eligible: { planningActionId: string; row: PlanningActionRow }[] =
         [];
       for (const planningActionId of parsedIds.data) {
+        if (transferIdSet.has(planningActionId)) continue;
         const row = rowById.get(planningActionId);
         if (!row) {
           errors.push(`Planning action ${planningActionId} not found`);
@@ -1030,6 +1096,12 @@ export async function action({ request }: ActionFunctionArgs) {
       const messageParts = [
         `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
       ];
+      const transferCount = transferOutcome.transfers.length;
+      if (transferCount > 0) {
+        messageParts.push(
+          `created ${transferCount} Draft project stock transfer${transferCount === 1 ? "" : "s"}`
+        );
+      }
       if (manualCount > 0) {
         messageParts.push(
           `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
@@ -1048,6 +1120,7 @@ export async function action({ request }: ActionFunctionArgs) {
           !(applied.length === 0 && manualCount > 0),
         message: messageParts.join("; "),
         applied,
+        transfers: transferOutcome.transfers,
         requiresManualAction,
         warnings: warnings.length > 0 ? warnings : undefined,
         errors: errors.length > 0 ? errors : undefined

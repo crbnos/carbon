@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
+import { error, hasPermission } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
@@ -16,6 +17,7 @@ import { customAlphabet } from "nanoid";
 import { data } from "react-router";
 import type { z } from "zod";
 import { getMethodTree } from "~/modules/items/items.service";
+import { claimPlanningActions } from "~/modules/production/planning-action-claims";
 import { getDatabaseClient } from "~/services/database.server";
 import type {
   BuildSourceNode,
@@ -4030,4 +4032,202 @@ export async function chargeNumberError(
     };
   }
   return null;
+}
+
+/**
+ * The Transfer half of a planning Apply, shared by the purchasing and the
+ * production planning routes. Creating a project stock transfer needs
+ * `update: projects`, the permission of the transfer pages, on top of the
+ * route's own. Returns what the route reports: the applied action ids, the
+ * transfers created, and one message per action it could not apply.
+ */
+export async function applyTransferPlanningActions(args: {
+  companyId: string;
+  userId: string;
+  planningActionIds: string[];
+}): Promise<{
+  applied: string[];
+  transfers: { id: string; projectStockTransferId: string }[];
+  errors: string[];
+}> {
+  const { companyId, userId, planningActionIds } = args;
+  if (planningActionIds.length === 0) {
+    return { applied: [], transfers: [], errors: [] };
+  }
+  const claims = await getUserClaims(userId, companyId);
+  if (!hasPermission(claims?.permissions, "projects", "update", companyId)) {
+    return {
+      applied: [],
+      transfers: [],
+      errors: planningActionIds.map(
+        (id) =>
+          `Planning action ${id} creates a project stock transfer, which needs projects permission`
+      )
+    };
+  }
+  const result = await createProjectStockTransfersFromActions(
+    getDatabaseClient(),
+    { companyId, userId, planningActionIds }
+  );
+  if (result.error) {
+    logger.error("Failed to create project stock transfers from planning", {
+      companyId,
+      userId,
+      planningActionIds,
+      error: result.error
+    });
+    return {
+      applied: [],
+      transfers: [],
+      errors: [`Failed to create project stock transfers: ${result.error}`]
+    };
+  }
+  return {
+    applied: result.created.map((c) => c.planningActionId),
+    transfers: result.created.map(({ id, projectStockTransferId }) => ({
+      id,
+      projectStockTransferId
+    })),
+    errors: result.alreadyApplied.map(
+      (id) => `Planning action ${id} was already applied`
+    )
+  };
+}
+
+/**
+ * Applies Transfer planning actions, set-based in one transaction:
+ * 1. claim the actions (Open → Actioned; the claim is the lock),
+ * 2. create one Draft project stock transfer per claimed action, with one
+ *    line for the action's item and quantity,
+ * 3. record each transfer on its action (`projectStockTransferId`).
+ *
+ * An action someone else applied first is returned in `alreadyApplied` and
+ * gets no transfer. A failure rolls the whole batch back. Approving and
+ * posting the transfers stay with the transfer pages.
+ */
+export async function createProjectStockTransfersFromActions(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; planningActionIds: string[] }
+): Promise<{
+  created: {
+    planningActionId: string;
+    id: string;
+    projectStockTransferId: string;
+  }[];
+  alreadyApplied: string[];
+  error: string | null;
+}> {
+  const { companyId, userId, planningActionIds } = args;
+  if (planningActionIds.length === 0) {
+    return { created: [], alreadyApplied: [], error: null };
+  }
+  try {
+    return await db.transaction().execute(async (trx) => {
+      const claimed = await claimPlanningActions(trx, {
+        ids: planningActionIds,
+        companyId,
+        userId,
+        now: datetime.timestamp()
+      });
+      const alreadyApplied = planningActionIds.filter((id) => !claimed.has(id));
+      const ids = planningActionIds.filter((id) => claimed.has(id));
+      if (ids.length === 0) return { created: [], alreadyApplied, error: null };
+
+      const actions = await trx
+        .selectFrom("planningAction")
+        .select([
+          "id",
+          "type",
+          "itemId",
+          "locationId",
+          "fromProjectId",
+          "toProjectId",
+          "reason"
+        ])
+        .where("id", "in", ids)
+        .where("companyId", "=", companyId)
+        .orderBy("id")
+        .execute();
+      const rows = actions.map((action) => {
+        if (action.type !== "Transfer") {
+          throw new Error(`Planning action ${action.id} is not a Transfer`);
+        }
+        // the quantity as it is at the claim, not as the page read it
+        const quantity = Number(claimed.get(action.id)?.suggestedQuantity);
+        if (!(quantity > 0)) {
+          throw new Error(`Planning action ${action.id} has no quantity`);
+        }
+        return { ...action, quantity };
+      });
+
+      // One readable id per transfer, from the projectStockTransfer sequence.
+      const sequence = await sql<{ id: string }>`
+        SELECT get_next_sequence('projectStockTransfer', ${companyId}) AS id
+        FROM generate_series(1, ${rows.length}::int)
+      `.execute(trx);
+      const readableIds = sequence.rows.map((row) => row.id);
+      if (readableIds.length !== rows.length || readableIds.some((id) => !id)) {
+        throw new Error("Failed to get the next transfer ids");
+      }
+
+      const headers = await trx
+        .insertInto("projectStockTransfer")
+        .values(
+          rows.map((action, i) => ({
+            companyId,
+            projectStockTransferId: readableIds[i]!,
+            type: "Transfer" as const,
+            fromProjectId: action.fromProjectId,
+            toProjectId: action.toProjectId,
+            locationId: action.locationId,
+            reason: action.reason ?? "Planning action",
+            planningActionId: action.id,
+            createdBy: userId
+          }))
+        )
+        .returning(["id", "planningActionId", "projectStockTransferId"])
+        .execute();
+      const headerByAction = new Map(
+        headers.map((header) => [header.planningActionId, header])
+      );
+
+      await trx
+        .insertInto("projectStockTransferLine")
+        .values(
+          rows.map((action) => ({
+            companyId,
+            projectStockTransferId: headerByAction.get(action.id)!.id,
+            itemId: action.itemId,
+            quantity: action.quantity,
+            createdBy: userId
+          }))
+        )
+        .execute();
+
+      await sql`
+        UPDATE "planningAction" AS a
+        SET "projectStockTransferId" = v."transferId"
+        FROM (VALUES ${sql.join(
+          headers.map((h) => sql`(${h.planningActionId}, ${h.id})`)
+        )}) AS v("actionId", "transferId")
+        WHERE a."id" = v."actionId" AND a."companyId" = ${companyId}
+      `.execute(trx);
+
+      return {
+        created: headers.map((header) => ({
+          planningActionId: header.planningActionId!,
+          id: header.id,
+          projectStockTransferId: header.projectStockTransferId
+        })),
+        alreadyApplied,
+        error: null
+      };
+    });
+  } catch (err) {
+    return {
+      created: [],
+      alreadyApplied: [],
+      error: err instanceof Error ? err.message : String(err)
+    };
+  }
 }

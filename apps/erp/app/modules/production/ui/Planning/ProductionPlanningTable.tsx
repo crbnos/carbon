@@ -350,6 +350,7 @@ const ProductionPlanningTable = ({
 
             return {
               id: row.id,
+              planningSegmentId: row.planningSegmentId ?? "",
               orders: ordersWithPeriods
             };
           }),

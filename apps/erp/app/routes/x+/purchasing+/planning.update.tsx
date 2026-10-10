@@ -18,6 +18,7 @@ import {
   reopenDismissedPlanningActions,
   settleNewSupplyPlanningActions
 } from "~/modules/production";
+import { applyTransferPlanningActions } from "~/modules/projects/projects.server";
 import {
   applyPurchasingPlanningActions,
   findPlanningPurchaseOrder,
@@ -242,9 +243,14 @@ export async function action({ request }: ActionFunctionArgs) {
         };
         const ordersBySupplier = new Map<string, OrderEntry[]>();
         const errors: string[] = [];
-        // The (item, week) of every order that became a PO line, so the Order
-        // suggestions it answers leave the worklist now, not at the next run.
-        const ordered: { itemId: string; periodId: string }[] = [];
+        // The (item, week, segment) of every order that became a PO line, so
+        // the Order suggestions it answers leave the worklist now, not at the
+        // next run.
+        const ordered: {
+          itemId: string;
+          periodId: string;
+          planningSegmentId: string;
+        }[] = [];
 
         for (const item of itemsToOrder) {
           itemIds.add(item.id);
@@ -311,6 +317,40 @@ export async function action({ request }: ActionFunctionArgs) {
             { success: false, message: "Item not found" },
             { status: 404 }
           );
+        }
+
+        // An order in a project segment is charged to that project: the PO
+        // line carries the project, and the receipt puts the stock in the
+        // project's stock. The segment must be a project of this company
+        // with project stock.
+        const segmentIds = [
+          ...new Set(
+            itemsToOrder.map((item) => item.planningSegmentId).filter(Boolean)
+          )
+        ];
+        if (segmentIds.length > 0) {
+          const segmentProjects = await client
+            .from("project")
+            .select("id")
+            .in("id", segmentIds)
+            .eq("companyId", companyId)
+            .eq("projectStock", true);
+          if (
+            segmentProjects.error ||
+            (segmentProjects.data?.length ?? 0) !== segmentIds.length
+          ) {
+            logger.error("Planning order names an unknown project segment", {
+              companyId,
+              userId,
+              locationId,
+              segmentIds,
+              error: segmentProjects.error
+            });
+            return data(
+              { success: false, message: "Project not found" },
+              { status: 404 }
+            );
+          }
         }
 
         const [suppliers, supplierParts, company, currencies] =
@@ -413,7 +453,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const openPurchaseOrders = await client
           .from("purchaseOrder")
           .select(
-            "id, purchaseOrderId, supplierId, currencyCode, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine(id, itemId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+            "id, purchaseOrderId, supplierId, currencyCode, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine(id, itemId, projectId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
           )
           .eq("companyId", companyId)
           .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -611,13 +651,16 @@ export async function action({ request }: ActionFunctionArgs) {
                 adjustedQuantity = minimumOrderQuantity;
               }
 
-              // An order for an item the PO already has on the same date adds
-              // to that line. Orders for different dates stay on separate
-              // lines so each keeps its own required date.
+              // An order for an item the PO already has on the same date, for
+              // the same project (or none), adds to that line. Orders for
+              // different dates or projects stay on separate lines so each
+              // keeps its own required date and its own stock owner.
               const requiredDate = order.dueDate ?? null;
               const existing = purchaseOrder.purchaseOrderLine.find(
                 (line) =>
-                  line.itemId === itemId && line.requiredDate === requiredDate
+                  line.itemId === itemId &&
+                  line.requiredDate === requiredDate &&
+                  (line.projectId ?? "") === planningSegmentId
               );
 
               if (existing) {
@@ -697,6 +740,8 @@ export async function action({ request }: ActionFunctionArgs) {
                   supplierTaxAmount,
                   supplierShippingCost: 0,
                   requiredDate: order.dueDate ?? undefined,
+                  // a project segment's order is the project's stock
+                  projectId: planningSegmentId || undefined,
                   locationId,
                   companyId,
                   createdBy: userId
@@ -730,6 +775,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 purchaseOrder.purchaseOrderLine.push({
                   id: createLine.data.id,
                   itemId,
+                  projectId: planningSegmentId || null,
                   requiredDate,
                   purchaseQuantity: adjustedQuantity,
                   supplierUnitPrice,
@@ -740,7 +786,11 @@ export async function action({ request }: ActionFunctionArgs) {
               }
 
               processedItems++;
-              ordered.push({ itemId, periodId: order.periodId });
+              ordered.push({
+                itemId,
+                periodId: order.periodId,
+                planningSegmentId
+              });
 
               const conversionFactor = supplierPart?.conversionFactor ?? 1;
               allSupplyForecasts.push({
@@ -1103,9 +1153,28 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
 
+      // A Transfer creates a Draft project stock transfer (approved and posted
+      // on the transfer pages); it is never one of the change actions below.
+      const transferIds =
+        action === "apply"
+          ? parsedIds.data.filter((id) => {
+              const row = rowById.get(id);
+              return row?.type === "Transfer" && row.status === "Open";
+            })
+          : [];
+      const transferOutcome = await applyTransferPlanningActions({
+        companyId,
+        userId,
+        planningActionIds: transferIds
+      });
+      applied.push(...transferOutcome.applied);
+      errors.push(...transferOutcome.errors);
+      const transferIdSet = new Set(transferIds);
+
       const eligible: { planningActionId: string; row: PlanningActionRow }[] =
         [];
       for (const planningActionId of parsedIds.data) {
+        if (transferIdSet.has(planningActionId)) continue;
         const row = rowById.get(planningActionId);
         if (!row) {
           errors.push(`Planning action ${planningActionId} not found`);
@@ -1285,6 +1354,12 @@ export async function action({ request }: ActionFunctionArgs) {
       const messageParts = [
         `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
       ];
+      const transferCount = transferOutcome.transfers.length;
+      if (transferCount > 0) {
+        messageParts.push(
+          `created ${transferCount} Draft project stock transfer${transferCount === 1 ? "" : "s"}`
+        );
+      }
       if (manualCount > 0) {
         messageParts.push(
           `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
@@ -1298,6 +1373,7 @@ export async function action({ request }: ActionFunctionArgs) {
           errors.length === 0 && !(applied.length === 0 && manualCount > 0),
         message: messageParts.join("; "),
         applied,
+        transfers: transferOutcome.transfers,
         requiresManualAction,
         errors: errors.length > 0 ? errors : undefined
       };
