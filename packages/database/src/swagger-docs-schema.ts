@@ -78013,6 +78013,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.timezone"
           },
           {
+            $ref: "#/parameters/rowFilter.company.dimensions"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -78180,6 +78183,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.timezone"
           },
           {
+            $ref: "#/parameters/rowFilter.company.dimensions"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -78299,6 +78305,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.timezone"
+          },
+          {
+            $ref: "#/parameters/rowFilter.company.dimensions"
           },
           {
             $ref: "#/parameters/body.company"
@@ -151758,7 +151767,8 @@ export default {
         "auditLogEnabled",
         "isEliminationEntity",
         "active",
-        "timezone"
+        "timezone",
+        "dimensions"
       ],
       properties: {
         id: {
@@ -151927,6 +151937,9 @@ export default {
           default: "UTC",
           format: "text",
           type: "string"
+        },
+        dimensions: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -204733,6 +204746,12 @@ export default {
     },
     "rowFilter.company.timezone": {
       name: "timezone",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.company.dimensions": {
+      name: "dimensions",
       required: false,
       in: "query",
       type: "string"

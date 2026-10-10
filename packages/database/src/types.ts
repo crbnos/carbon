@@ -7423,6 +7423,7 @@ export type Database = {
           countryCode: string | null
           createdAt: string
           customIndustryDescription: string | null
+          dimensions: Json
           email: string | null
           eori: string | null
           fax: string | null
@@ -7461,6 +7462,7 @@ export type Database = {
           countryCode?: string | null
           createdAt?: string
           customIndustryDescription?: string | null
+          dimensions?: Json
           email?: string | null
           eori?: string | null
           fax?: string | null
@@ -7499,6 +7501,7 @@ export type Database = {
           countryCode?: string | null
           createdAt?: string
           customIndustryDescription?: string | null
+          dimensions?: Json
           email?: string | null
           eori?: string | null
           fax?: string | null
