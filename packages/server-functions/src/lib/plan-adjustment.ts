@@ -45,7 +45,8 @@ export const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
   "Inbound Inspection",
   "Scrap",
   "Asset Transfer",
-  "Project Issue"
+  "Project Issue",
+  "Project Transfer"
 ]);
 
 export function toJournalLineDocumentType(
