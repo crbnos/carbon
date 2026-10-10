@@ -967,6 +967,8 @@ export type ServicePostingContext = {
   customerAssetId: string | null;
   /** The asset's serial: the output of an installed part's genealogy. */
   assetTrackedEntityId: string | null;
+  /** The order's subject serial (a Refurbishment's unit in stock). */
+  subjectTrackedEntityId: string;
   laborWarrantyEndDate: string | null;
   partsWarrantyEndDate: string | null;
   /** The node's installed component: the open component holding its serial. */
@@ -1010,6 +1012,7 @@ export async function loadServicePostingContexts(
           "serviceOrder.customerId",
           "serviceOrder.customerContractId",
           "serviceOrder.customerAssetId",
+          "serviceOrder.trackedEntityId as subjectTrackedEntityId",
           "customerAsset.trackedEntityId as assetTrackedEntityId",
           "customerAsset.laborWarrantyEndDate",
           "customerAsset.partsWarrantyEndDate"
@@ -1119,6 +1122,7 @@ export async function loadServicePostingContexts(
       customerContractId: order.customerContractId,
       customerAssetId: order.customerAssetId,
       assetTrackedEntityId: order.assetTrackedEntityId ?? null,
+      subjectTrackedEntityId: order.subjectTrackedEntityId,
       // DATE columns arrive as YYYY-MM-DD strings from node-postgres.
       laborWarrantyEndDate: order.laborWarrantyEndDate ?? null,
       partsWarrantyEndDate: order.partsWarrantyEndDate ?? null,

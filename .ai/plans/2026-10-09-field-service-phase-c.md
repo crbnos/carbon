@@ -39,7 +39,7 @@ These correct or add to the spec. Task 10 records them there.
 - [x] Task 2: Fix the layer count in `get_inventory_valuation`
 - [x] Task 3: Add the pure completion planner
 - [x] Task 4: Add `complete-service-order`
-- [ ] Task 5: Record refurbishment parts in the serial's build history
+- [x] Task 5: Record refurbishment parts in the serial's build history
 - [ ] Task 6: Guard shipping and picking
 - [ ] Task 7: Add refurbishment orders and the completion preview to the UI
 - [ ] Task 8: Add the database tests
@@ -401,3 +401,6 @@ ls .ai/playbooks/field-service-phase-c.md
   3. It refuses to reopen a completed refurbishment: its cost is already in the serial, and a second completion would capitalize the WIP again.
 - Task 4: Task 8's completion test came early (`complete-service-order.test.ts`, 4 database cases). They cover the spec's criteria 1–5: the FIFO capitalization with its journal, tags, order columns and a refused second completion; relief at 300.00 and 100.00; the caps of 50.00 and 20.00 with relief at 250.00; abnormal rework; and Average at 120.00. The FIFO case also reads `get_inventory_valuation`: 10 units, unit cost 120.00, value 1,200.00. The permissions snapshot gains `complete-service-order` (`update: service`), reviewed. The full server-functions suite passes (477). The posting policy tests (30) and the ERP service tests (22) pass. `@carbon/database`, `@carbon/server-functions`, `@carbon/ee`, `erp`, `@carbon/jobs` and `mes` typecheck green.
 - Gap: the SQL backflush (`backflush_job_materials`) still applies a layer's children in turn and has no serial order (the research's table). A refurbished serial consumed by a backflush would take only its first child.
+- Task 5 step 1 holds without change: `serviceChargeCoverage` passes the order type to `resolveCoverage`, so a Refurbishment issue is Capitalized. `resolveProjectPostingAccount` gives Work in Progress, so the issue posts Dr WIP / Cr inventory, and `buildBillableItem` returns null for Capitalized, so it writes no billable item.
+- Task 5: `installServicePart` returned before the activity when the order had no asset, so a Refurbishment issue wrote no `Service` activity. A Refurbishment now writes only the activity: the issued serial or batch in (any tracked issue, as Phase A Task 9 does), the order's subject serial out. The service context gains `subjectTrackedEntityId` (`serviceOrder.trackedEntityId`, same query), and the insert moved into `insertServiceActivity`, shared with the customer-unit path. A return deletes the whole activity, as Phase A does: the activity's attribute names the issue, and it holds only that input.
+- Task 5: the new database case issues TR-200 to a Refurbishment node. It posts Dr WIP 40.00 / Cr inventory 40.00 at Capitalized, with no billable item and no component row. TR-100's row is untouched, and the activity runs TR-200 → the subject serial. The return credits WIP back and deletes the activity. With the Refurbishment branch disabled, the case fails. The post-project-issue tests pass (4), as do the project and service suites around them (50).

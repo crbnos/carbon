@@ -514,3 +514,132 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "issuing TR-200 to a Refurbishment node capitalizes it to WIP, bills and installs nothing, and records it in the unit's build",
+  async () => {
+    const { f, order, partId, locationId, replacementId } =
+      await serviceReplacementFixture();
+    try {
+      // The same order as a Refurbishment of a unit the company owns: no
+      // customer, no asset.
+      await f.db
+        .updateTable("serviceOrder")
+        .set({ type: "Refurbishment", customerId: null, customerAssetId: null })
+        .where("id", "=", order.serviceOrderId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const issued = await postProjectIssue(f.ctx, {
+        projectId: f.projectId,
+        projectElementId: f.elementId,
+        itemId: partId,
+        locationId,
+        trackedEntityId: replacementId,
+        quantity: 1,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("journalId", "=", issued.data!.journalId!)
+        .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        lines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("wip"), 40],
+        [f.account("inventory"), -40]
+      ]);
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select("coverage")
+        .where("id", "=", issued.data!.projectLedgerId!)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(ledger.coverage).toEqual("Capitalized");
+
+      const items = await f.db
+        .selectFrom("projectBillableItem")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(items).toEqual([]);
+      // TR-100's component row is untouched and no new one is written.
+      const components = await f.db
+        .selectFrom("customerAssetComponent")
+        .select(["trackedEntityId", "removedDate"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(components).toEqual([
+        { trackedEntityId: `${f.prefix}-tr-100`, removedDate: null }
+      ]);
+
+      const activity = await f.db
+        .selectFrom("trackedActivity")
+        .innerJoin(
+          "trackedActivityInput",
+          "trackedActivityInput.trackedActivityId",
+          "trackedActivity.id"
+        )
+        .innerJoin(
+          "trackedActivityOutput",
+          "trackedActivityOutput.trackedActivityId",
+          "trackedActivity.id"
+        )
+        .select([
+          "trackedActivity.type",
+          "trackedActivity.sourceDocumentId",
+          "trackedActivityInput.trackedEntityId as input",
+          "trackedActivityOutput.trackedEntityId as output"
+        ])
+        .where("trackedActivity.companyId", "=", f.companyId)
+        .execute();
+      expect(activity).toEqual([
+        {
+          type: "Service",
+          sourceDocumentId: order.serviceOrderId,
+          input: replacementId,
+          output: order.subjectSerialId
+        }
+      ]);
+
+      // The return removes the activity and credits WIP back.
+      const returned = await postProjectIssue(f.ctx, {
+        projectId: f.projectId,
+        projectElementId: f.elementId,
+        itemId: partId,
+        locationId,
+        trackedEntityId: replacementId,
+        quantity: 1,
+        direction: "Return"
+      });
+      expect(returned.error).toBeNull();
+      const returnLines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("journalId", "=", returned.data!.journalId!)
+        .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        returnLines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("inventory"), 40],
+        [f.account("wip"), -40]
+      ]);
+      const activities = await f.db
+        .selectFrom("trackedActivity")
+        .select("id")
+        .where("type", "=", "Service")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(activities).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

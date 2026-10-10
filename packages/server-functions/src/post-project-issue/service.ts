@@ -99,6 +99,10 @@ export async function findServiceIssueToReturn(
  * Depot Repair order with an asset) the install: one component row for the
  * issued part, the removal of the node's installed component, and a
  * `Service` activity from the issued serial or batch to the asset's serial.
+ * On a Refurbishment (the company's own unit, no asset) the issue is
+ * Capitalized, so it bills nothing and installs no component; only the
+ * `Service` activity is written, to the order's subject serial, so the
+ * unit's build history shows the new part.
  */
 export async function installServicePart(
   trx: Transaction<DB>,
@@ -148,6 +152,21 @@ export async function installServicePart(
     await trx.insertInto("projectBillableItem").values(item).execute();
   }
 
+  if (service.orderType === "Refurbishment") {
+    if (args.trackedEntityId) {
+      await insertServiceActivity(trx, {
+        companyId,
+        userId,
+        service,
+        itemLedgerId: args.itemLedgerId,
+        input: args.trackedEntityId,
+        quantity: args.quantity,
+        output: service.subjectTrackedEntityId
+      });
+    }
+    return;
+  }
+
   if (
     !service.customerAssetId ||
     (service.orderType !== "Field Visit" &&
@@ -193,40 +212,69 @@ export async function installServicePart(
   }
 
   if (args.trackedEntityId && service.assetTrackedEntityId) {
-    const activity = await trx
-      .insertInto("trackedActivity")
-      .values({
-        type: "Service",
-        sourceDocument: "Service Order",
-        sourceDocumentId: service.serviceOrderId,
-        sourceDocumentReadableId: service.serviceOrderReadableId,
-        attributes: { [ISSUE_ATTRIBUTE]: args.itemLedgerId },
-        companyId,
-        createdBy: userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    await trx
-      .insertInto("trackedActivityInput")
-      .values({
-        trackedActivityId: activity.id,
-        trackedEntityId: args.trackedEntityId,
-        quantity: args.quantity,
-        companyId,
-        createdBy: userId
-      })
-      .execute();
-    await trx
-      .insertInto("trackedActivityOutput")
-      .values({
-        trackedActivityId: activity.id,
-        trackedEntityId: service.assetTrackedEntityId,
-        quantity: 1,
-        companyId,
-        createdBy: userId
-      })
-      .execute();
+    await insertServiceActivity(trx, {
+      companyId,
+      userId,
+      service,
+      itemLedgerId: args.itemLedgerId,
+      input: args.trackedEntityId,
+      quantity: args.quantity,
+      output: service.assetTrackedEntityId
+    });
   }
+}
+
+/**
+ * The `Service` activity of one issue: the issued serial or batch in, the
+ * serviced unit out. Its attribute names the issue's item ledger row, so a
+ * return deletes exactly this activity.
+ */
+async function insertServiceActivity(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    service: ServicePostingContext;
+    itemLedgerId: string;
+    input: string;
+    quantity: number;
+    output: string;
+  }
+): Promise<void> {
+  const { companyId, userId, service } = args;
+  const activity = await trx
+    .insertInto("trackedActivity")
+    .values({
+      type: "Service",
+      sourceDocument: "Service Order",
+      sourceDocumentId: service.serviceOrderId,
+      sourceDocumentReadableId: service.serviceOrderReadableId,
+      attributes: { [ISSUE_ATTRIBUTE]: args.itemLedgerId },
+      companyId,
+      createdBy: userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  await trx
+    .insertInto("trackedActivityInput")
+    .values({
+      trackedActivityId: activity.id,
+      trackedEntityId: args.input,
+      quantity: args.quantity,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+  await trx
+    .insertInto("trackedActivityOutput")
+    .values({
+      trackedActivityId: activity.id,
+      trackedEntityId: args.output,
+      quantity: 1,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
 }
 
 /**
