@@ -49,6 +49,13 @@ import {
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
 import { assertNoOpenRefurbishment } from "../lib/service-orders";
+import {
+  assertEntitiesInCommonStock,
+  loadProjectStock,
+  loadTrackedEntityStripes,
+  type StockStripe,
+  withStripe
+} from "../lib/stock-stripes";
 import { upsertShippedCustomerAssets } from "./customer-assets";
 import {
   loadRepairLineIds,
@@ -194,6 +201,12 @@ const postShipment = defineServerFn({
                   (tracking) => tracking.id
                 )
               });
+              // A sales order ships common stock only (Projects Phase 2a).
+              await assertEntitiesInCommonStock(
+                db,
+                companyId,
+                shipmentLineTracking.data ?? []
+              );
 
               const [salesOrder, salesOrderLines, salesOrderDelivery] =
                 await inOrder([
@@ -1210,9 +1223,10 @@ const postShipment = defineServerFn({
                 }
 
                 if (itemLedgerInserts.length > 0) {
+                  // Every row draws common stock.
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .returning(["id"])
                     .execute();
                 }
@@ -1279,6 +1293,7 @@ const postShipment = defineServerFn({
                       itemId,
                       quantity: info.totalQuantity,
                       companyId,
+                      projectId: null,
                       trackedEntityIds: leavingTrackedEntityIds(
                         itemLedgerInserts,
                         itemId
@@ -1316,6 +1331,7 @@ const postShipment = defineServerFn({
                         quantity: round(-info.totalQuantity),
                         cost: round(-cogsResult.totalCost),
                         remainingQuantity: 0,
+                        projectId: null,
                         companyId,
                         postingDate: today
                       })
@@ -1993,11 +2009,12 @@ const postShipment = defineServerFn({
                   .where("companyId", "=", companyId)
                   .execute();
 
-                // Create item ledger entries
+                // A warehouse transfer line names no stripe: it moves common
+                // stock, on both legs (post-receipt writes the inbound one).
                 if (itemLedgerInserts.length > 0) {
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .returning(["id"])
                     .execute();
                 }
@@ -2042,6 +2059,13 @@ const postShipment = defineServerFn({
                 throw new Error(
                   `Cannot ship against a return order in ${salesReturnOrder.data.status} status`
                 );
+              // Goods shipped to a customer leave common stock only (Projects
+              // Phase 2a): the returned stock came in as common stock.
+              await assertEntitiesInCommonStock(
+                db,
+                companyId,
+                shipmentLineTracking.data ?? []
+              );
 
               const accountingSettings = await single(
                 db,
@@ -2277,6 +2301,7 @@ const postShipment = defineServerFn({
                     itemId,
                     quantity,
                     companyId,
+                    projectId: null,
                     trackedEntityIds: leavingTrackedEntityIds(
                       itemLedgerInserts,
                       itemId
@@ -2289,6 +2314,7 @@ const postShipment = defineServerFn({
                       itemLedgerType: "Sale",
                       costLedgerType: "Direct Cost",
                       adjustment: false,
+                      projectId: null,
                       documentType: "Sales Return Shipment",
                       documentId: shipmentHeader.id ?? undefined,
                       externalDocumentId:
@@ -2415,7 +2441,7 @@ const postShipment = defineServerFn({
                 if (itemLedgerInserts.length > 0) {
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .execute();
                 }
 
@@ -2613,7 +2639,66 @@ const postShipment = defineServerFn({
                   quantity: number;
                 }
               > = {};
-              const itemShipmentQuantities: Record<string, number> = {};
+              // Quantity shipped per (item, stripe): each stripe relieves its
+              // own layers (Projects Phase 2a).
+              const itemShipmentQuantities = new Map<
+                string,
+                { itemId: string; stripe: StockStripe; quantity: number }
+              >();
+              const addShipped = (
+                itemId: string,
+                stripe: StockStripe,
+                quantity: number
+              ) => {
+                const key = `${itemId}\u0000${stripe ?? ""}`;
+                const existing = itemShipmentQuantities.get(key);
+                if (existing) existing.quantity += quantity;
+                else
+                  itemShipmentQuantities.set(key, { itemId, stripe, quantity });
+              };
+              // A return draws the stripe its stock came in on: a tracked
+              // entity's own stripe, else the stripe the purchase order line
+              // received into (its project's stock when the project has
+              // project stock, as post-receipt decides).
+              const entityStripes = await loadTrackedEntityStripes(
+                db,
+                companyId,
+                (shipmentLineTracking.data ?? []).map((tracking) => tracking.id)
+              );
+              const returnPoLineIds = [
+                ...new Set(
+                  (purchaseReturnOrderLines.data ?? [])
+                    .map((line) => line.purchaseOrderLineId)
+                    .filter((id): id is string => Boolean(id))
+                )
+              ];
+              const returnPoLines =
+                returnPoLineIds.length > 0
+                  ? await many(
+                      db,
+                      "purchaseOrderLine",
+                      { id: returnPoLineIds, companyId },
+                      { columns: ["id", "projectId"] }
+                    )
+                  : { data: [], error: null };
+              if (returnPoLines.error)
+                throw new Error("Failed to fetch purchase order lines");
+              const returnProjectStock = await loadProjectStock(
+                db,
+                companyId,
+                (returnPoLines.data ?? []).map((line) => line.projectId)
+              );
+              const untrackedStripe = (returnLine: {
+                purchaseOrderLineId: string | null;
+              }): StockStripe => {
+                const projectId =
+                  (returnPoLines.data ?? []).find(
+                    (line) => line.id === returnLine.purchaseOrderLineId
+                  )?.projectId ?? null;
+                return projectId && returnProjectStock.has(projectId)
+                  ? projectId
+                  : null;
+              };
               const returnLineUpdates: Record<
                 string,
                 { quantityShipped: number; updatedBy: string }
@@ -2672,9 +2757,8 @@ const postShipment = defineServerFn({
                 );
 
                 if (itemTrackingType === "Inventory") {
-                  itemShipmentQuantities[shipmentLine.itemId] =
-                    (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
-                    shippedQuantity;
+                  const stripe = untrackedStripe(returnLine);
+                  addShipped(shipmentLine.itemId, stripe, shippedQuantity);
                   itemLedgerInserts.push({
                     postingDate: today,
                     itemId: shipmentLine.itemId,
@@ -2686,6 +2770,7 @@ const postShipment = defineServerFn({
                     documentId: shipmentHeader.id ?? undefined,
                     externalDocumentId:
                       shipmentHeader.externalDocumentId ?? undefined,
+                    projectId: stripe,
                     createdBy: userId,
                     companyId
                   });
@@ -2709,8 +2794,8 @@ const postShipment = defineServerFn({
                     const entityQty = Number(entity.quantity ?? 0);
                     const draw = Math.min(entityQty, remaining);
                     remaining -= draw;
-                    itemShipmentQuantities[shipmentLine.itemId] =
-                      (itemShipmentQuantities[shipmentLine.itemId] ?? 0) + draw;
+                    const stripe = entityStripes.get(entity.id) ?? null;
+                    addShipped(shipmentLine.itemId, stripe, draw);
                     const ledgerIndex = itemLedgerInserts.length;
                     itemLedgerInserts.push({
                       postingDate: today,
@@ -2724,6 +2809,7 @@ const postShipment = defineServerFn({
                       trackedEntityId: entity.id,
                       externalDocumentId:
                         shipmentHeader.externalDocumentId ?? undefined,
+                      projectId: stripe,
                       createdBy: userId,
                       companyId
                     });
@@ -2863,10 +2949,12 @@ const postShipment = defineServerFn({
                     .where("companyId", "=", companyId)
                     .execute();
 
+                  // The split stays in the parent's stripe.
                   itemLedgerInserts.push(
                     ...(built.ledgerInserts.map((ledger) => ({
                       ...ledger,
-                      quantity: round(ledger.quantity)
+                      quantity: round(ledger.quantity),
+                      projectId: entityStripes.get(parent.id) ?? null
                     })) as typeof itemLedgerInserts)
                   );
                   itemLedgerInserts[split.ledgerIndex]!.trackedEntityId =
@@ -2885,15 +2973,20 @@ const postShipment = defineServerFn({
                 // journal line #i.
                 const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
 
-                for (const [itemId, quantity] of Object.entries(
-                  itemShipmentQuantities
-                )) {
+                for (const {
+                  itemId,
+                  stripe,
+                  quantity
+                } of itemShipmentQuantities.values()) {
                   const cogsResult = await calculateCOGS(trx, {
                     itemId,
                     quantity,
                     companyId,
+                    projectId: stripe,
                     trackedEntityIds: leavingTrackedEntityIds(
-                      itemLedgerInserts,
+                      itemLedgerInserts.filter(
+                        (row) => (row.projectId ?? null) === stripe
+                      ),
                       itemId
                     )
                   });
@@ -2904,6 +2997,7 @@ const postShipment = defineServerFn({
                       itemLedgerType: "Purchase",
                       costLedgerType: "Direct Cost",
                       adjustment: false,
+                      projectId: stripe,
                       documentType: "Purchase Return Shipment",
                       documentId: shipmentHeader.id ?? undefined,
                       externalDocumentId:
@@ -3656,11 +3750,11 @@ const postShipment = defineServerFn({
                   }
                 }
 
-                // Create reversing item ledger entries
+                // Reversing rows: a sales shipment drew common stock.
                 if (itemLedgerInserts.length > 0) {
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .returning(["id"])
                     .execute();
                 }
@@ -4179,11 +4273,11 @@ const postShipment = defineServerFn({
                   .where("companyId", "=", companyId)
                   .execute();
 
-                // Create reversing item ledger entries
+                // Reversing rows: the transfer moved common stock.
                 if (itemLedgerInserts.length > 0) {
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .returning(["id"])
                     .execute();
                 }
@@ -4272,6 +4366,8 @@ const postShipment = defineServerFn({
                     documentId: entry.documentId,
                     externalDocumentId: entry.externalDocumentId,
                     trackedEntityId: entry.trackedEntityId,
+                    // A reversal copies the row it reverses.
+                    projectId: entry.projectId,
                     createdBy: userId,
                     companyId
                   })
@@ -4299,6 +4395,7 @@ const postShipment = defineServerFn({
                       documentType: "Sales Return Shipment",
                       documentId: row.documentId,
                       externalDocumentId: row.externalDocumentId ?? undefined,
+                      projectId: row.projectId,
                       itemId: row.itemId,
                       quantity: round(-Number(row.quantity)),
                       cost: round(-Number(row.cost)),
@@ -4610,6 +4707,8 @@ const postShipment = defineServerFn({
                     documentId: entry.documentId,
                     externalDocumentId: entry.externalDocumentId,
                     trackedEntityId: entry.trackedEntityId,
+                    // A reversal copies the row it reverses.
+                    projectId: entry.projectId,
                     createdBy: userId,
                     companyId
                   })
@@ -4637,6 +4736,7 @@ const postShipment = defineServerFn({
                       documentType: "Purchase Return Shipment",
                       documentId: row.documentId,
                       externalDocumentId: row.externalDocumentId ?? undefined,
+                      projectId: row.projectId,
                       itemId: row.itemId,
                       quantity: round(-Number(row.quantity)),
                       cost: round(-Number(row.cost)),

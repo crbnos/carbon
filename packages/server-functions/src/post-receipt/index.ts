@@ -59,7 +59,7 @@ import {
   buildProjectLedgerRow,
   reverseProjectLedgerRows
 } from "../lib/project-posting";
-import { loadProjectStock } from "../lib/stock-stripes";
+import { loadProjectStock, withStripe } from "../lib/stock-stripes";
 import { loadReceiptProjectRoutes } from "./project-routes";
 import { createDepotRepairOrders, voidDepotRepairOrders } from "./repair";
 
@@ -3411,10 +3411,12 @@ const postReceipt = defineServerFn({
               });
             }
 
+            // A customer return copies the sales shipment it reverses, which
+            // drew common stock (Projects Phase 2a): its layers are common.
             if (costLedgerInserts.length > 0) {
               await trx
                 .insertInto("costLedger")
-                .values(costLedgerInserts)
+                .values(withStripe(costLedgerInserts, null))
                 .execute();
             }
 
@@ -3508,10 +3510,11 @@ const postReceipt = defineServerFn({
               }
             }
 
+            // Returned stock enters common stock, as its shipment left it.
             if (itemLedgerInserts.length > 0) {
               await trx
                 .insertInto("itemLedger")
-                .values(itemLedgerInserts)
+                .values(withStripe(itemLedgerInserts, null))
                 .execute();
             }
 
@@ -3908,11 +3911,12 @@ const postReceipt = defineServerFn({
               }
             }
 
-            // Create item ledger entries
+            // A warehouse transfer moves common stock: the inbound leg copies
+            // the outbound one (post-shipment).
             if (itemLedgerInserts.length > 0) {
               await trx
                 .insertInto("itemLedger")
-                .values(itemLedgerInserts)
+                .values(withStripe(itemLedgerInserts, null))
                 .returning(["id"])
                 .execute();
             }

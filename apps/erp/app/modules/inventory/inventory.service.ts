@@ -2147,7 +2147,10 @@ export async function generateInventoryCountLines(
       .select([
         "itemLedger.itemId as itemId",
         "itemLedger.storageUnitId as storageUnitId",
-        "itemLedger.trackedEntityId as trackedEntityId"
+        "itemLedger.trackedEntityId as trackedEntityId",
+        // One line per stock stripe (Projects Phase 2a): a variance books to
+        // the stripe it counted.
+        "itemLedger.projectId as projectId"
       ])
       .select((eb) => eb.fn.sum<number>("itemLedger.quantity").as("quantity"))
       .where("itemLedger.companyId", "=", companyId)
@@ -2167,7 +2170,8 @@ export async function generateInventoryCountLines(
       .groupBy([
         "itemLedger.itemId",
         "itemLedger.storageUnitId",
-        "itemLedger.trackedEntityId"
+        "itemLedger.trackedEntityId",
+        "itemLedger.projectId"
       ]);
     // Drop blank entries — an unselected storage-unit field submits [""], which
     // would otherwise filter to `storageUnitId IN ('')` and match no stock.
@@ -2226,6 +2230,7 @@ export async function generateInventoryCountLines(
             locationId,
             storageUnitId: bucket.storageUnitId,
             trackedEntityId: bucket.trackedEntityId,
+            projectId: bucket.projectId,
             readableId: bucket.trackedEntityId
               ? (readableIdByEntity.get(bucket.trackedEntityId) ?? null)
               : null,

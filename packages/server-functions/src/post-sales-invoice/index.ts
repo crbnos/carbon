@@ -61,6 +61,7 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import { withStripe } from "../lib/stock-stripes";
 import {
   type ContractPostingAccounts,
   planContractInvoiceLine
@@ -1848,10 +1849,12 @@ const postSalesInvoice = defineServerFn({
 
               if (itemTrackingType !== "Inventory") continue;
 
+              // A direct invoice ships common stock only (Projects Phase 2a).
               const cogsResult = await calculateCOGS(trx, {
                 itemId: directLine.itemId,
                 quantity: directLine.quantity,
-                companyId
+                companyId,
+                projectId: null
               });
 
               for (let i = 0; i < journalLineInserts.length; i++) {
@@ -1882,6 +1885,7 @@ const postSalesInvoice = defineServerFn({
                       quantity: round(-directLine.quantity),
                       cost: round(-cogsResult.totalCost),
                       remainingQuantity: 0,
+                      projectId: null,
                       companyId,
                       postingDate: today
                     })
@@ -2140,9 +2144,10 @@ const postSalesInvoice = defineServerFn({
             }
 
             if (itemLedgerInserts.length > 0) {
+              // Every row draws common stock.
               await trx
                 .insertInto("itemLedger")
-                .values(itemLedgerInserts)
+                .values(withStripe(itemLedgerInserts, null))
                 .returning(["id"])
                 .execute();
             }
@@ -2577,6 +2582,8 @@ const postSalesInvoice = defineServerFn({
                 documentType: "Sales Shipment",
                 documentId: invoiceHeader.id ?? undefined,
                 externalDocumentId: entry.externalDocumentId,
+                // A reversal copies the row it reverses.
+                projectId: entry.projectId ?? null,
                 createdBy: userId,
                 companyId
               });

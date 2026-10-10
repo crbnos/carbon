@@ -246,3 +246,52 @@ export function withStripe<T extends object>(
 ): (T & { projectId: string | null })[] {
   return rows.map((row) => ({ ...row, projectId: stripe }));
 }
+
+/**
+ * The stripe of each tracked entity (`trackedEntityStripe`), keyed by id.
+ * One query for any number of entities.
+ */
+export async function loadTrackedEntityStripes(
+  db: Kysely<DB> | Transaction<DB>,
+  companyId: string,
+  trackedEntityIds: readonly string[]
+): Promise<Map<string, StockStripe>> {
+  const ids = [...new Set(trackedEntityIds)];
+  const stripes = new Map<string, StockStripe>();
+  if (ids.length === 0) return stripes;
+  const rows = await db
+    .selectFrom("itemLedger")
+    .select(["trackedEntityId", "projectId", "quantity"])
+    .where("trackedEntityId", "in", ids)
+    .where("companyId", "=", companyId)
+    .execute();
+  for (const id of ids) stripes.set(id, trackedEntityStripe(rows, id));
+  return stripes;
+}
+
+/**
+ * Refuses tracked entities outside common stock for a document that ships to
+ * a customer: a project's stock reaches a customer only through a Transfer to
+ * common stock first. One query, plus one only when an entity is refused.
+ */
+export async function assertEntitiesInCommonStock(
+  db: Kysely<DB> | Transaction<DB>,
+  companyId: string,
+  entities: readonly { id: string; readableId: string | null }[]
+): Promise<void> {
+  if (entities.length === 0) return;
+  const stripes = await loadTrackedEntityStripes(
+    db,
+    companyId,
+    entities.map((entity) => entity.id)
+  );
+  await assertEntitiesInStripes(
+    db,
+    companyId,
+    entities.map((entity) => ({
+      readableId: entity.readableId,
+      stripe: stripes.get(entity.id) ?? null
+    })),
+    [null]
+  );
+}
