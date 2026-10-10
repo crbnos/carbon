@@ -53,7 +53,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 - [x] Task 10: Distribute grouped PO receipts and their reversals
 - [x] Task 11: Distribute grouped job output
 - [x] Task 12: Charge price variance to member projects
-- [ ] Task 13: Add soft-peg commitments to the cost summary
+- [x] Task 13: Add soft-peg commitments to the cost summary
 - [ ] Task 14: Propose member Transfers and Borrows
 - [ ] Task 15: Add the Pegging tab and manual pegs
 - [ ] Task 16: Extend the demo datasets
@@ -805,3 +805,6 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 12: per member, the consumed share posts to the member's project account on the project root (`stripeVarianceCharge`, `project-charges.ts`, resolved like `forLine`, with the `commitment` gate), with a `Material Variance` `projectLedger` row and the Project dimension. A Statistical member keeps its share in PPV. The rest of the consumed share stays on the PPV line.
 - Task 12 (beyond the plan's file list): `loadInvoiceProjectCharges` reads the distinct stripes of the grouped lines' receipt layers in 1 query and loads their posting contexts in the same `loadProjectPostingContexts` call. An invoice with no grouped line runs no extra query.
 - Task 12: the new `project-invoice.test.ts` case receives 60 into 3 stripes, empties P-101's layer (its 20 units issued), and posts an invoice at +1.00 per unit. It checks 20.00 to the project account with P-101's ledger row and tag, 40.00 to inventory, adjustment children of 30.00 (P-102) and 10.00 (P-103), and no PPV line. The utils case pins the same split. `post-purchase-invoice` passes (24), utils passes (621), the full server-functions suite passes (515), and the pgTAP scripts exit 0. `@carbon/server-functions` and `@carbon/utils` typecheck.
+- Task 13: `20261010161720_project-commitments-pegs.sql` redefines `get_project_cost_summary` from `20261009055331`, its only definition (`20261010013108` added the separate `get_child_service_project_costs`). The direct lines' commitment is unchanged. `committed` adds a `peg_commitments` CTE: the project's current Soft and Manual pegs on a `Purchase Order Line`, on a PO in the same open statuses as the direct lines, by the peg's element (a null element is the project root).
+- Task 13 (deviation): the peg value is `quantity / conversionFactor × unitPrice`, not `quantity × unitPrice`. A peg is in inventory units and `purchaseOrderLine.unitPrice` is per purchase unit (`supplierUnitPrice / exchangeRate`), as the direct commitment's `purchaseQuantity × unitPrice` shows.
+- Task 13: the plan's verify command names the arguments in the wrong order; the signature is `(p_project_id, p_company_id)`. `SELECT count(*), sum("committed") FROM get_project_cost_summary('prj_VqzgC8vrUZpTPZg9E6UfwD', 'db47qcsgq0g02bpief00')` runs (1 row, 0). A rolled-back smoke test on that project gave the root 14 (a Soft peg of 4 at 7.00 per purchase unit of 2) and a new element 35 (a Soft peg of 10); a Hard peg of 6 added nothing. The signature did not change, so `generate:types` gave no diff.
