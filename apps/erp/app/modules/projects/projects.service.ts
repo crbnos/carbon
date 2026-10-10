@@ -2966,6 +2966,20 @@ export async function getProjectCostSummary(
   });
 }
 
+// One row per service order whose Service project has this project as its
+// parent (the coverage contract's project): its actual cost, posted hours, and
+// billed and unbilled amounts.
+export async function getChildServiceProjectCosts(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client.rpc("get_child_service_project_costs", {
+    p_project_id: projectId,
+    p_company_id: companyId
+  });
+}
+
 // --- Views and preferences ---------------------------------------------------
 
 /**

@@ -21,7 +21,7 @@ A contract project (for example *Acme maintenance 2027*) must see the cost of th
 
 ## Progress
 
-- [ ] Task 1: Add `get_child_service_project_costs`
+- [x] Task 1: Add `get_child_service_project_costs`
 - [ ] Task 2: Show service orders on the Costs tab
 - [ ] Task 3: Keep the parent link in step with the coverage contract
 - [ ] Task 4: Refuse Contract coverage on a closed parent
@@ -258,3 +258,8 @@ ls .ai/playbooks/field-service-phase-d.md
 ```
 
 **Out of scope:** Phase 4 contract billing.
+
+## Execution notes
+
+- Prerequisite check: the Phase A artifacts this plan names exist (`project.parentProjectId` set from the coverage contract by `insertServiceOrder`, and the Contract branch of `resolveProjectPostingAccount`).
+- Task 1: Phase A already added `project_parentProjectId_idx` on `("parentProjectId", "companyId")`, so step 3 adds no index. The function is `plpgsql` with `ORDER BY so."serviceOrderId"`, so its order reaches PostgREST (the `LANGUAGE sql` inlining lesson). The local database has no contract project with a child. A rolled-back check set one service order's project parent to a Standard project, and the function returned that order with zeros. `pnpm db:migrate` regenerated the types and swagger; the MCP digest did not change.

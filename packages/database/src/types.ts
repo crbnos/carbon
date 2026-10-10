@@ -95417,6 +95417,20 @@ export type Database = {
           workCenterId: string
         }[]
       }
+      get_child_service_project_costs: {
+        Args: { p_company_id: string; p_project_id: string }
+        Returns: {
+          actual: number
+          actualHours: number
+          billed: number
+          customerAssetId: string
+          projectId: string
+          serviceOrderId: string
+          serviceOrderReadableId: string
+          status: Database["public"]["Enums"]["serviceOrderStatus"]
+          unbilled: number
+        }[]
+      }
       get_claims: { Args: { company: string; uid: string }; Returns: Json }
       get_companies_with_any_role: { Args: never; Returns: string[] }
       get_companies_with_employee_permission: {
