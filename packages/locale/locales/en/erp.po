@@ -1729,6 +1729,9 @@ msgstr "Actual End"
 msgid "Actual Failure Mode"
 msgstr "Actual Failure Mode"
 
+msgid "Actual includes service orders: {serviceAmount}"
+msgstr "Actual includes service orders: {serviceAmount}"
+
 msgid "Actual parameter"
 msgstr "Actual parameter"
 
@@ -20110,6 +20113,9 @@ msgstr "Service order"
 
 msgid "Service Order"
 msgstr "Service Order"
+
+msgid "Service orders"
+msgstr "Service orders"
 
 msgid "Service Orders"
 msgstr "Service Orders"

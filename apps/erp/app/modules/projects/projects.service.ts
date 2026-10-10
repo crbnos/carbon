@@ -2969,15 +2969,47 @@ export async function getProjectCostSummary(
 // One row per service order whose Service project has this project as its
 // parent (the coverage contract's project): its actual cost, posted hours, and
 // billed and unbilled amounts.
+// Each row also carries the order's subject serial (one more query for every
+// order, never one per row).
 export async function getChildServiceProjectCosts(
   client: Client,
   projectId: string,
   companyId: string
 ) {
-  return client.rpc("get_child_service_project_costs", {
+  const costs = await client.rpc("get_child_service_project_costs", {
     p_project_id: projectId,
     p_company_id: companyId
   });
+  if (costs.error) return { data: null, error: costs.error };
+
+  const rows = costs.data ?? [];
+  if (rows.length === 0) return { data: [], error: null };
+
+  const serials = await client
+    .from("serviceOrder")
+    .select(
+      "id, trackedEntity:trackedEntity!serviceOrder_trackedEntityId_fkey(readableId)"
+    )
+    .in(
+      "id",
+      rows.map((row) => row.serviceOrderId)
+    )
+    .eq("companyId", companyId);
+  if (serials.error) return { data: null, error: serials.error };
+
+  const serialByOrder = new Map(
+    (serials.data ?? []).map((order) => [
+      order.id,
+      order.trackedEntity?.readableId ?? null
+    ])
+  );
+  return {
+    data: rows.map((row) => ({
+      ...row,
+      serial: serialByOrder.get(row.serviceOrderId) ?? null
+    })),
+    error: null
+  };
 }
 
 // --- Views and preferences ---------------------------------------------------

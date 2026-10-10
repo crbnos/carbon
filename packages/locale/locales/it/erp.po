@@ -1729,6 +1729,9 @@ msgstr "Fine effettivo"
 msgid "Actual Failure Mode"
 msgstr "Modalità di guasto effettiva"
 
+msgid "Actual includes service orders: {serviceAmount}"
+msgstr ""
+
 msgid "Actual parameter"
 msgstr ""
 
@@ -20109,6 +20112,9 @@ msgid "Service order"
 msgstr ""
 
 msgid "Service Order"
+msgstr ""
+
+msgid "Service orders"
 msgstr ""
 
 msgid "Service Orders"

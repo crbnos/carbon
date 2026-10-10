@@ -17,6 +17,8 @@ import type {
 } from "../../projects.models";
 import { buildElementTree } from "../../projects.models";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
+import type { ServiceOrderCostRow } from "./ServiceOrderCosts";
+import ServiceOrderCosts from "./ServiceOrderCosts";
 
 export type ProjectCostRow = {
   id: string;
@@ -31,7 +33,10 @@ export type ProjectCostRow = {
 type ProjectCostsTreeProps = {
   projectId: string;
   rows: ProjectCostRow[];
+  /** The project total; its actual includes `serviceActual`. */
   project: ProjectCostFigures;
+  serviceOrders: ServiceOrderCostRow[];
+  serviceActual: number;
 };
 
 const ROW_HEIGHT = 36;
@@ -44,7 +49,9 @@ const FIGURE_CELL = "w-28 shrink-0 px-2 text-right tabular-nums";
 export default function ProjectCostsTree({
   projectId,
   rows,
-  project
+  project,
+  serviceOrders,
+  serviceActual
 }: ProjectCostsTreeProps) {
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -63,6 +70,7 @@ export default function ProjectCostsTree({
 
   const money = (value: number | null) =>
     value === null ? "—" : formatMoney.format(value);
+  const serviceAmount = money(serviceActual);
 
   const figureCells = (figures: ProjectCostFigures) => (
     <>
@@ -109,8 +117,15 @@ export default function ProjectCostsTree({
           </span>
         </div>
         <div className="flex h-9 shrink-0 items-center border-b border-border bg-muted/40 pr-4 text-sm font-medium">
-          <div className="min-w-0 flex-1 truncate px-4">
-            <Trans>Project total</Trans>
+          <div className="flex min-w-0 flex-1 items-baseline gap-2 px-4">
+            <span className="shrink-0">
+              <Trans>Project total</Trans>
+            </span>
+            {serviceOrders.length > 0 && (
+              <span className="truncate text-xs font-normal text-muted-foreground">
+                <Trans>Actual includes service orders: {serviceAmount}</Trans>
+              </span>
+            )}
           </div>
           {figureCells(project)}
         </div>
@@ -181,6 +196,7 @@ export default function ProjectCostsTree({
             }}
           />
         )}
+        <ServiceOrderCosts rows={serviceOrders} />
       </div>
     </div>
   );

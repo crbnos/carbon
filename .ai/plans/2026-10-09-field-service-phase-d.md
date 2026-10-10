@@ -22,7 +22,7 @@ A contract project (for example *Acme maintenance 2027*) must see the cost of th
 ## Progress
 
 - [x] Task 1: Add `get_child_service_project_costs`
-- [ ] Task 2: Show service orders on the Costs tab
+- [x] Task 2: Show service orders on the Costs tab
 - [ ] Task 3: Keep the parent link in step with the coverage contract
 - [ ] Task 4: Refuse Contract coverage on a closed parent
 - [ ] Task 5: List service orders on the contract page
@@ -263,3 +263,6 @@ ls .ai/playbooks/field-service-phase-d.md
 
 - Prerequisite check: the Phase A artifacts this plan names exist (`project.parentProjectId` set from the coverage contract by `insertServiceOrder`, and the Contract branch of `resolveProjectPostingAccount`).
 - Task 1: Phase A already added `project_parentProjectId_idx` on `("parentProjectId", "companyId")`, so step 3 adds no index. The function is `plpgsql` with `ORDER BY so."serviceOrderId"`, so its order reaches PostgREST (the `LANGUAGE sql` inlining lesson). The local database has no contract project with a child. A rolled-back check set one service order's project parent to a Standard project, and the function returned that order with zeros. `pnpm db:migrate` regenerated the types and swagger; the MCP digest did not change.
+- Task 2: `getChildServiceProjectCosts` also reads each order's subject serial, with one `.in()` query over the orders (the function returns the asset id, not the serial). The route calls it once, beside `getProjectCostSummary`.
+- Task 2: `buildProjectCostFigures` takes the service orders' actual as an optional third argument. It adds to the project total only, so the total's remaining and estimate follow it, and no element changes. A new case in `projects-cost-figures.test.ts` pins it. The total row shows the full actual, and its label says "Actual includes service orders: <amount>".
+- Task 2 (🛑 behavior note): a user without `service_view` sees no service orders, because RLS hides Service projects from them and the function is SECURITY INVOKER. Their total leaves the service cost out. So step 4's plain-text id never shows today; the link check stays in case that RLS changes.

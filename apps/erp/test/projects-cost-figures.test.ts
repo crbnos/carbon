@@ -102,4 +102,19 @@ describe("buildProjectCostFigures", () => {
       estimateAtCompletion: 210
     });
   });
+
+  it("adds the child service orders' actual to the project total only", () => {
+    const { byElement, project } = buildProjectCostFigures(
+      [{ id: "a", parentId: null, budget: 500, estimateAtCompletion: null }],
+      [row("a", 200, 0, 100)],
+      300
+    );
+
+    expect(byElement.get("a")).toMatchObject({ actual: 100, remaining: 400 });
+    expect(project).toMatchObject({
+      actual: 400,
+      remaining: 100,
+      estimateAtCompletion: 400
+    });
+  });
 });
