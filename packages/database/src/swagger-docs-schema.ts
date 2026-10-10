@@ -20605,6 +20605,12 @@ export default {
             $ref: "#/parameters/rowFilter.openPurchaseOrderLines.planningSegmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.ownerProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.planningGroupId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -35464,6 +35470,18 @@ export default {
             $ref: "#/parameters/rowFilter.openJobMaterialLines.planningSegmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.ownerProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.projectPriority"
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.projectElementId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43414,6 +43432,9 @@ export default {
             $ref: "#/parameters/rowFilter.openProjectBorrows.lenderSegmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.openProjectBorrows.projectPriority"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43447,114 +43468,6 @@ export default {
           },
           "206": {
             description: "Partial Content"
-          }
-        },
-        tags: ["openProjectBorrows"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.openProjectBorrows"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["openProjectBorrows"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.borrowerProjectId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.lenderProjectId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.locationId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.quantity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.paybackDueDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.borrowerSegmentId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.lenderSegmentId"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["openProjectBorrows"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.borrowerProjectId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.lenderProjectId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.locationId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.quantity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.paybackDueDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.borrowerSegmentId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.openProjectBorrows.lenderSegmentId"
-          },
-          {
-            $ref: "#/parameters/body.openProjectBorrows"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
           }
         },
         tags: ["openProjectBorrows"]
@@ -43850,6 +43763,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.openProjectMaterialLines.planningSegmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProjectMaterialLines.projectPriority"
           },
           {
             $ref: "#/parameters/select"
@@ -45767,6 +45683,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.openProductionOrders.planningSegmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.ownerProjectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.planningGroupId"
           },
           {
             $ref: "#/parameters/select"
@@ -133003,6 +132925,14 @@ export default {
         planningSegmentId: {
           format: "text",
           type: "string"
+        },
+        ownerProjectId: {
+          format: "text",
+          type: "string"
+        },
+        planningGroupId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -140274,6 +140204,22 @@ export default {
         planningSegmentId: {
           format: "text",
           type: "string"
+        },
+        ownerProjectId: {
+          format: "text",
+          type: "string"
+        },
+        planningGroupId: {
+          format: "text",
+          type: "string"
+        },
+        projectPriority: {
+          format: "integer",
+          type: "integer"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -143792,6 +143738,10 @@ export default {
         lenderSegmentId: {
           format: "text",
           type: "string"
+        },
+        projectPriority: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -143937,6 +143887,10 @@ export default {
         planningSegmentId: {
           format: "text",
           type: "string"
+        },
+        projectPriority: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -144764,6 +144718,14 @@ export default {
           type: "string"
         },
         planningSegmentId: {
+          format: "text",
+          type: "string"
+        },
+        ownerProjectId: {
+          format: "text",
+          type: "string"
+        },
+        planningGroupId: {
           format: "text",
           type: "string"
         }
@@ -186191,6 +186153,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.openPurchaseOrderLines.ownerProjectId": {
+      name: "ownerProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openPurchaseOrderLines.planningGroupId": {
+      name: "planningGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.jobOperationBatch": {
       name: "jobOperationBatch",
       description: "jobOperationBatch",
@@ -194363,6 +194337,30 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.openJobMaterialLines.ownerProjectId": {
+      name: "ownerProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openJobMaterialLines.planningGroupId": {
+      name: "planningGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openJobMaterialLines.projectPriority": {
+      name: "projectPriority",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openJobMaterialLines.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.projectBorrow": {
       name: "projectBorrow",
       description: "projectBorrow",
@@ -198193,6 +198191,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.openProjectBorrows.projectPriority": {
+      name: "projectPriority",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.workflowStepRun": {
       name: "workflowStepRun",
       description: "workflowStepRun",
@@ -198377,6 +198381,12 @@ export default {
     },
     "rowFilter.openProjectMaterialLines.planningSegmentId": {
       name: "planningSegmentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openProjectMaterialLines.projectPriority": {
+      name: "projectPriority",
       required: false,
       in: "query",
       type: "string"
@@ -199297,6 +199307,18 @@ export default {
     },
     "rowFilter.openProductionOrders.planningSegmentId": {
       name: "planningSegmentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openProductionOrders.ownerProjectId": {
+      name: "ownerProjectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openProductionOrders.planningGroupId": {
+      name: "planningGroupId",
       required: false,
       in: "query",
       type: "string"

@@ -85664,8 +85664,12 @@ export type Database = {
           jobReadableId: string | null
           leadTime: number | null
           locationId: string | null
+          ownerProjectId: string | null
           parentMaterialId: string | null
+          planningGroupId: string | null
           planningSegmentId: string | null
+          projectElementId: string | null
+          projectPriority: number | null
           quantityPerParent: number | null
           quantityToIssue: number | null
           replenishmentSystem:
@@ -85836,6 +85840,8 @@ export type Database = {
           jobId: string | null
           leadTime: number | null
           locationId: string | null
+          ownerProjectId: string | null
+          planningGroupId: string | null
           planningSegmentId: string | null
           quantityToReceive: number | null
           replenishmentSystem:
@@ -85922,6 +85928,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "job_planningGroup_fkey"
+            columns: ["planningGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "planningGroup"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "job_project_fkey"
+            columns: ["ownerProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "job_unitOfMeasureCode_fkey"
             columns: ["unitOfMeasureCode", "companyId"]
             isOneToOne: false
@@ -85941,31 +85961,8 @@ export type Database = {
           lenderSegmentId: string | null
           locationId: string | null
           paybackDueDate: string | null
+          projectPriority: number | null
           quantity: number | null
-        }
-        Insert: {
-          borrowerProjectId?: string | null
-          borrowerSegmentId?: never
-          companyId?: string | null
-          id?: string | null
-          itemId?: string | null
-          lenderProjectId?: string | null
-          lenderSegmentId?: never
-          locationId?: string | null
-          paybackDueDate?: string | null
-          quantity?: never
-        }
-        Update: {
-          borrowerProjectId?: string | null
-          borrowerSegmentId?: never
-          companyId?: string | null
-          id?: string | null
-          itemId?: string | null
-          lenderProjectId?: string | null
-          lenderSegmentId?: never
-          locationId?: string | null
-          paybackDueDate?: string | null
-          quantity?: never
         }
         Relationships: [
           {
@@ -86070,6 +86067,7 @@ export type Database = {
           planningSegmentId: string | null
           projectElementId: string | null
           projectId: string | null
+          projectPriority: number | null
           quantity: number | null
           requiredDate: string | null
         }
@@ -86172,6 +86170,8 @@ export type Database = {
           leadTime: number | null
           locationId: string | null
           orderDate: string | null
+          ownerProjectId: string | null
+          planningGroupId: string | null
           planningSegmentId: string | null
           promisedDate: string | null
           purchaseOrderId: string | null
@@ -86229,6 +86229,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_planningGroup_fkey"
+            columns: ["planningGroupId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "planningGroup"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_project_fkey"
+            columns: ["ownerProjectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"

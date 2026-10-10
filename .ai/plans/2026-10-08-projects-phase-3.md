@@ -42,7 +42,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 ## Progress
 
 - [x] Task 1: Create the Phase 3 enum and table migration
-- [ ] Task 2: Redefine the segment rule and the views for groups
+- [x] Task 2: Redefine the segment rule and the views for groups
 - [ ] Task 3: Regenerate types and add the RLS rules
 - [ ] Task 4: Add the planning group services and pages
 - [ ] Task 5: Carry member attribution through the explosion
@@ -742,3 +742,9 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 1: `pnpm db:migrate` applied both files and regenerated the types and swagger. Then `authz sync` failed on the 2 new tables, which have no rule until Task 3, as in Phase 2a Task 1. The commit carries the regenerated MCP digest and workflow catalog (`job.planningGroupId` gains a label).
 - Task 1 (beyond the plan's file list): the new FK on `purchaseOrderLine` made 2 bare embeds in `purchasing+/planning.update.tsx` fail with TS2589. Both now name `purchaseOrderLine_purchaseOrderId_fkey`, as the lesson on new FKs says. `erp`, `mes`, `@carbon/jobs`, `@carbon/server-functions`, `@carbon/planning` and `@carbon/ee` typecheck.
 - Task 1 (open point for Task 6): `projectPeg.demandSourceType` uses `demandForecastSourceType`, which has no `Project Borrow` value. `PegDemand.sourceType` allows `Project Borrow`. So the peg writer cannot store a peg for a borrow demand. Task 6 or 7 must add the value or skip borrow demand.
+- Task 2: `20261010145821_planning-group-segments.sql` redefines `project_planning_segment` as written and recreates the 5 views from `20261010133214`. Each new column is last, and every view keeps `WITH (security_invoker = true)`. The anon role reads 0 rows of `openJobMaterialLines`.
+- Task 2 (deviation): `openJobMaterialLines` also carries the job's `projectElementId`. Task 5 needs the element of a member's job, and the view had no project columns. `openProjectBorrows` carries the borrower's priority as `projectPriority`; it joins `project` with a LEFT JOIN on `id` and `companyId`.
+- Task 2: `ownerProjectId` is the row's `projectId` as the plan says, also on a job that does not receive to project stock. Such a job is supply in segment `''`, so it never reaches a group's pegging.
+- Task 2: a grouped PO line or job stays in its group's segment when the group is inactive. Only the members leave the group then, through `project_planning_segment`.
+- Task 2: on Carbon Development the 5 views give the same row counts and the same md5 over the old columns, before and after (PO lines 7, production 2, job materials 101, project materials 0, borrows 0). `SELECT project_planning_segment('does-not-exist')` returns an empty string. A rolled-back smoke test gave the project id for a stocked project, the group id once it joined a group, and the project id again when the group turned inactive.
+- Task 2: the TS twin `planningSegmentOf` (`plan-company.ts`) changes in Task 5, with the other `plan-company.ts` work. No company has a group before Task 4, so MRP output does not change between the 2 commits.
