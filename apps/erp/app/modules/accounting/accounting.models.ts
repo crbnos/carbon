@@ -768,6 +768,7 @@ export const journalEntrySourceTypes = [
   "Timesheet",
   "Project Issue",
   "Project Expense",
+  "Project Transfer",
   "Service Order",
   "Asset Depreciation",
   "Asset Disposal",
