@@ -65217,9 +65217,14 @@ export type Database = {
         Row: {
           abnormalRework: boolean
           assignee: string | null
+          capitalizedAmount: number | null
           companyId: string
           completedAt: string | null
           completedBy: string | null
+          completionCostingMethod:
+            | Database["public"]["Enums"]["itemCostingMethod"]
+            | null
+          completionJournalId: string | null
           createdAt: string
           createdBy: string
           customerAssetId: string | null
@@ -65246,13 +65251,19 @@ export type Database = {
           type: Database["public"]["Enums"]["serviceOrderType"]
           updatedAt: string | null
           updatedBy: string | null
+          writeDownAmount: number | null
         }
         Insert: {
           abnormalRework?: boolean
           assignee?: string | null
+          capitalizedAmount?: number | null
           companyId: string
           completedAt?: string | null
           completedBy?: string | null
+          completionCostingMethod?:
+            | Database["public"]["Enums"]["itemCostingMethod"]
+            | null
+          completionJournalId?: string | null
           createdAt?: string
           createdBy: string
           customerAssetId?: string | null
@@ -65279,13 +65290,19 @@ export type Database = {
           type: Database["public"]["Enums"]["serviceOrderType"]
           updatedAt?: string | null
           updatedBy?: string | null
+          writeDownAmount?: number | null
         }
         Update: {
           abnormalRework?: boolean
           assignee?: string | null
+          capitalizedAmount?: number | null
           companyId?: string
           completedAt?: string | null
           completedBy?: string | null
+          completionCostingMethod?:
+            | Database["public"]["Enums"]["itemCostingMethod"]
+            | null
+          completionJournalId?: string | null
           createdAt?: string
           createdBy?: string
           customerAssetId?: string | null
@@ -65312,6 +65329,7 @@ export type Database = {
           type?: Database["public"]["Enums"]["serviceOrderType"]
           updatedAt?: string | null
           updatedBy?: string | null
+          writeDownAmount?: number | null
         }
         Relationships: [
           {
@@ -65418,6 +65436,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceOrder_completionJournalId_fkey"
+            columns: ["completionJournalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceOrder_completionJournalId_fkey"
+            columns: ["completionJournalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "serviceOrder_contract_fkey"

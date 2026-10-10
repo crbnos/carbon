@@ -76870,6 +76870,18 @@ export default {
             $ref: "#/parameters/rowFilter.serviceOrder.salesReturnOrderLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.serviceOrder.capitalizedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.writeDownAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.completionJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.completionCostingMethod"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -77022,6 +77034,18 @@ export default {
             $ref: "#/parameters/rowFilter.serviceOrder.salesReturnOrderLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.serviceOrder.capitalizedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.writeDownAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.completionJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.completionCostingMethod"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -77126,6 +77150,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serviceOrder.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.capitalizedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.writeDownAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.completionJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.serviceOrder.completionCostingMethod"
           },
           {
             $ref: "#/parameters/body.serviceOrder"
@@ -157675,6 +157711,25 @@ export default {
         salesReturnOrderLineId: {
           format: "text",
           type: "string"
+        },
+        capitalizedAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        writeDownAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        completionJournalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        completionCostingMethod: {
+          enum: ["Standard", "Average", "LIFO", "FIFO"],
+          format: 'public."itemCostingMethod"',
+          type: "string"
         }
       },
       type: "object"
@@ -213022,6 +213077,30 @@ export default {
     },
     "rowFilter.serviceOrder.salesReturnOrderLineId": {
       name: "salesReturnOrderLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.serviceOrder.capitalizedAmount": {
+      name: "capitalizedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.serviceOrder.writeDownAmount": {
+      name: "writeDownAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.serviceOrder.completionJournalId": {
+      name: "completionJournalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.serviceOrder.completionCostingMethod": {
+      name: "completionCostingMethod",
       required: false,
       in: "query",
       type: "string"

@@ -35,7 +35,7 @@ These correct or add to the spec. Task 10 records them there.
 
 ## Progress
 
-- [ ] Task 1: Add the completion columns
+- [x] Task 1: Add the completion columns
 - [ ] Task 2: Fix the layer count in `get_inventory_valuation`
 - [ ] Task 3: Add the pure completion planner
 - [ ] Task 4: Add `complete-service-order`
