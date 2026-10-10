@@ -15950,6 +15950,12 @@ msgstr "Genel sonuç"
 msgid "Overdue"
 msgstr "Gecikmiş"
 
+msgid "Overdue borrows"
+msgstr ""
+
+msgid "Overdue borrows: {overdueBorrowCount}"
+msgstr ""
+
 msgid "Overhead"
 msgstr ""
 
@@ -16021,6 +16027,9 @@ msgstr "Teklif yöntemini kaynak yöntemle üzerine yaz"
 
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "Hedef üretim yöntemini teklif yöntemiyle üzerine yaz"
+
+msgid "owes"
+msgstr ""
 
 msgid "Owner"
 msgstr "Sahip"

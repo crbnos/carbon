@@ -1199,6 +1199,12 @@ export type DeriveRowActionsInput = {
  * A project segment is lot-for-lot: no reorder point, safety stock or Stock
  * Only reserve. A draw counts as the segment's own stock from its period on,
  * so the segment's Order or Make covers only the remainder.
+ *
+ * An open Project Borrow is firm: MRP books it as demand on the borrower and
+ * supply on the lender, in the row's projection, but it is never one of
+ * `openOrders`, so no change action (Expedite, Defer, Cancel, Increase,
+ * Decrease) ever targets it. An overdue borrow is an exception the planning
+ * worklist and the project header show instead.
  */
 export function deriveRowActions(
   input: DeriveRowActionsInput

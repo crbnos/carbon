@@ -15950,6 +15950,12 @@ msgstr "समग्र परिणाम"
 msgid "Overdue"
 msgstr "अतिदेय"
 
+msgid "Overdue borrows"
+msgstr ""
+
+msgid "Overdue borrows: {overdueBorrowCount}"
+msgstr ""
+
 msgid "Overhead"
 msgstr ""
 
@@ -16021,6 +16027,9 @@ msgstr "उद्धरण विधि को स्रोत विधि स�
 
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "उद्धरण विधि के साथ लक्ष्य विनिर्माण विधि को अधिलेखित करें"
+
+msgid "owes"
+msgstr ""
 
 msgid "Owner"
 msgstr "स्वामी"

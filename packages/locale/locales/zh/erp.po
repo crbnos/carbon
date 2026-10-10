@@ -15950,6 +15950,12 @@ msgstr "总体结果"
 msgid "Overdue"
 msgstr "已逾期"
 
+msgid "Overdue borrows"
+msgstr ""
+
+msgid "Overdue borrows: {overdueBorrowCount}"
+msgstr ""
+
 msgid "Overhead"
 msgstr ""
 
@@ -16021,6 +16027,9 @@ msgstr "用源方法覆盖报价方法"
 
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "用报价方法覆盖目标制造方法"
+
+msgid "owes"
+msgstr ""
 
 msgid "Owner"
 msgstr "负责人"

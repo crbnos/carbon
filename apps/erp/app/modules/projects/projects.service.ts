@@ -3493,7 +3493,15 @@ export async function updateProjectStockTransferStatus(
 export async function getProjectBorrows(
   client: Client,
   companyId: string,
-  args: { projectId?: string | null; status?: ProjectBorrowStatus[] | null }
+  args: {
+    projectId?: string | null;
+    status?: ProjectBorrowStatus[] | null;
+    /** Only the borrows at this location. */
+    locationId?: string | null;
+    /** Only the borrows due before this date (`YYYY-MM-DD`): the overdue
+     *  ones, when it is today. */
+    dueBefore?: string | null;
+  }
 ) {
   let query = client
     .from("projectBorrow")
@@ -3510,6 +3518,14 @@ export async function getProjectBorrows(
 
   if (args.status && args.status.length > 0) {
     query = query.in("status", args.status);
+  }
+
+  if (args.locationId) {
+    query = query.eq("locationId", args.locationId);
+  }
+
+  if (args.dueBefore) {
+    query = query.lt("paybackDueDate", args.dueBefore);
   }
 
   return query.order("paybackDueDate").order("createdAt");

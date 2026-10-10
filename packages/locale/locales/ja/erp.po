@@ -15950,6 +15950,12 @@ msgstr "総合結果"
 msgid "Overdue"
 msgstr "期限超過"
 
+msgid "Overdue borrows"
+msgstr ""
+
+msgid "Overdue borrows: {overdueBorrowCount}"
+msgstr ""
+
 msgid "Overhead"
 msgstr ""
 
@@ -16021,6 +16027,9 @@ msgstr "見積方法をソース方法で上書きします"
 
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "見積方法でターゲット製造方法を上書きします"
+
+msgid "owes"
+msgstr ""
 
 msgid "Owner"
 msgstr "責任者"

@@ -45,7 +45,7 @@ The plan covers:
 - [x] Task 11: Apply segmented Order, Make and Transfer actions
 - [x] Task 12: Add the project-manager rung and the company sweep
 - [x] Task 13: Add the Segment column to the planning worklists
-- [ ] Task 14: Show borrow exceptions
+- [x] Task 14: Show borrow exceptions
 - [ ] Task 15: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 16: Verify in the browser
 
@@ -708,4 +708,8 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 13 (deviation): the loaders read the names with one query of the company's Standard projects with project stock, not `.in("id", segmentIds)`. The same list fills the filter, which must also offer projects that are not on the page.
 - Task 13: a Transfer line reads "Transfer 8 from common stock" and its button is **Create transfer** (`onApply`). The applied action leaves the worklist, so the toast links each created transfer to `path.to.projectStockTransfer(id)`. The new strings wait for the run's final `/translate` pass.
 - Task 13: the helper tests pass (16), the ERP suite passes (2,069), and `erp` typechecks. The commit carries the regenerated MCP digest: both planning reads gain `segments`. Browser verification waits for Task 16.
+- Task 14: MRP already emits no change action against a borrow, because a borrow is never one of a row's open orders. `deriveRowActions` now says so in its comment.
+- Task 14: `getProjectBorrows` gains the `locationId` and `dueBefore` filters. The `$projectId.tsx` loader reads the project's Open borrows due before today on the company's calendar, owed or lent, with that one query. `ProjectHeader` shows a red **Overdue borrows: N** badge that links to the Stock tab.
+- Task 14 (deviation): `ProjectStock.tsx` needed no change. Since Phase 2a its borrow tables list the item, the quantity still owed and the payback due date, with an overdue date in red.
+- Task 14: both planning loaders read the Open borrows at the location due before the location's today. A borrow passes the Segment filter when its borrower or its lender is a selected segment. `PlanningOverdueBorrows` shows them as a read-only group above the grid: item, quantity owed, borrower and lender, and the due date in red. The item links to the borrower's Stock tab, where the Payback starts. `erp` typechecks, and the planning suite passes (324).
 

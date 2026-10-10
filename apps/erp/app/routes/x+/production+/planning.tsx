@@ -24,7 +24,9 @@ import {
   resolvePlanningActionScope,
   resolvePlanningSegmentScope
 } from "~/modules/production";
+import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
+import { getProjectBorrows } from "~/modules/projects";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
@@ -170,7 +172,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw new Response("Failed to load planning actions", { status: 500 });
   }
 
-  const segmentProjects = await segmentProjectsRead;
+  // Open borrows at the location past their payback date: the worklist's
+  // read-only Overdue borrows group, under the Segment filter (a borrow is in
+  // the segments of its borrower and its lender; common holds none).
+  const [segmentProjects, overdueBorrowsRead] = await Promise.all([
+    segmentProjectsRead,
+    getProjectBorrows(client, companyId, {
+      status: ["Open"],
+      locationId,
+      dueBefore: asOf
+    })
+  ]);
+  if (overdueBorrowsRead.error) {
+    logger.error("Failed to load overdue project borrows", {
+      companyId,
+      locationId,
+      error: overdueBorrowsRead.error
+    });
+  }
+  const overdueBorrows = (overdueBorrowsRead.data ?? []).filter(
+    (borrow) =>
+      !segments ||
+      segments.includes(borrow.borrowerProjectId) ||
+      segments.includes(borrow.lenderProjectId)
+  );
   if (segmentProjects.error) {
     logger.error("Failed to load the planning segment projects", {
       companyId,
@@ -190,6 +215,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     actionTypes: actionTypes ?? null,
     // The projects that net in their own segment ('' is common).
     segmentProjects: segmentProjects.data ?? [],
+    overdueBorrows,
     periods,
     locationId,
     // Planned-order date defaults are business dates on the plant's calendar —
@@ -208,6 +234,7 @@ export default function ProductionPlanningRoute() {
     planningActions,
     actionTypes,
     segmentProjects,
+    overdueBorrows,
     locationToday
   } = useLoaderData<typeof loader>();
 
@@ -220,17 +247,22 @@ export default function ProductionPlanningRoute() {
           minSize={25}
           className="bg-background"
         >
-          <ProductionPlanningTable
-            data={items}
-            drawerItem={drawerItem}
-            count={count}
-            locationId={locationId}
-            periods={periods}
-            planningActions={planningActions}
-            actionTypes={actionTypes}
-            segmentProjects={segmentProjects}
-            locationToday={locationToday}
-          />
+          <div className="flex h-full flex-col">
+            <PlanningOverdueBorrows borrows={overdueBorrows} />
+            <div className="min-h-0 flex-1">
+              <ProductionPlanningTable
+                data={items}
+                drawerItem={drawerItem}
+                count={count}
+                locationId={locationId}
+                periods={periods}
+                planningActions={planningActions}
+                actionTypes={actionTypes}
+                segmentProjects={segmentProjects}
+                locationToday={locationToday}
+              />
+            </div>
+          </div>
         </ResizablePanel>
         <RecordOutlet />
       </ResizablePanelGroup>

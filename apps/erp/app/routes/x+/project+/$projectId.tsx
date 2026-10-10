@@ -5,14 +5,16 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getCompanyTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import {
   getProject,
+  getProjectBorrows,
   getProjectLabels,
   getProjectMilestones,
   getProjectStates
@@ -42,12 +44,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const [project, states, labels, milestones] = await Promise.all([
-    getProject(client, companyId, projectId),
-    getProjectStates(client, projectId, companyId),
-    getProjectLabels(client, projectId, companyId),
-    getProjectMilestones(client, projectId, companyId)
-  ]);
+  // Overdue is against today on the company's calendar.
+  const today = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
+
+  const [project, states, labels, milestones, overdueBorrows] =
+    await Promise.all([
+      getProject(client, companyId, projectId),
+      getProjectStates(client, projectId, companyId),
+      getProjectLabels(client, projectId, companyId),
+      getProjectMilestones(client, projectId, companyId),
+      // The Open borrows the project owes or has lent, past their payback
+      // date: the header's exception badge.
+      getProjectBorrows(client, companyId, {
+        projectId,
+        status: ["Open"],
+        dueBefore: today
+      })
+    ]);
 
   if (project.error || project.data?.companyId !== companyId) {
     logger.error("Failed to load project", {
@@ -73,9 +88,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ).filter((asset) => asset.status === "Under Construction").length
       : 0;
 
+  if (overdueBorrows.error) {
+    logger.error("Failed to load the project's overdue borrows", {
+      companyId,
+      projectId,
+      error: overdueBorrows.error
+    });
+  }
+
   return {
     project: project.data,
     underConstructionAssets,
+    overdueBorrowCount: overdueBorrows.data?.length ?? 0,
     states: states.data ?? [],
     labels: labels.data ?? [],
     milestones: milestones.data ?? []

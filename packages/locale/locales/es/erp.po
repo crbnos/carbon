@@ -15950,6 +15950,12 @@ msgstr "Resultado general"
 msgid "Overdue"
 msgstr "Atrasado"
 
+msgid "Overdue borrows"
+msgstr ""
+
+msgid "Overdue borrows: {overdueBorrowCount}"
+msgstr ""
+
 msgid "Overhead"
 msgstr ""
 
@@ -16021,6 +16027,9 @@ msgstr "Sobrescribir el método de cotización con el método de origen"
 
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "Sobrescribir el método de manufactura objetivo con el método de cotización"
+
+msgid "owes"
+msgstr ""
 
 msgid "Owner"
 msgstr "Propietario"

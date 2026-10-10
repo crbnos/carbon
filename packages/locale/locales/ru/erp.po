@@ -15950,6 +15950,12 @@ msgstr "Общий результат"
 msgid "Overdue"
 msgstr "Просрочено"
 
+msgid "Overdue borrows"
+msgstr ""
+
+msgid "Overdue borrows: {overdueBorrowCount}"
+msgstr ""
+
 msgid "Overhead"
 msgstr ""
 
@@ -16021,6 +16027,9 @@ msgstr "Перезаписать метод предложения исходн�
 
 msgid "Overwrite the target manufacturing method with the quote method"
 msgstr "Перезаписать целевой производственный метод методом предложения"
+
+msgid "owes"
+msgstr ""
 
 msgid "Owner"
 msgstr "Ответственный"

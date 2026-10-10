@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Badge,
   Button,
   Copy,
   DropdownMenu,
@@ -25,6 +26,7 @@ import {
   LuCirclePlay,
   LuCopy,
   LuEllipsisVertical,
+  LuHandCoins,
   LuLock,
   LuRocket,
   LuRotateCcw
@@ -52,7 +54,9 @@ const ProjectHeader = () => {
   const routeData = useRouteData<{
     project: Project;
     underConstructionAssets: number;
+    overdueBorrowCount: number;
   }>(path.to.project(projectId));
+  const overdueBorrowCount = routeData?.overdueBorrowCount ?? 0;
   const project = routeData?.project;
   const [placing, setPlacing] = useState(false);
 
@@ -92,6 +96,15 @@ const ProjectHeader = () => {
           <Enumerable value={project.costTreatment} />
           {project.ownerId && (
             <EmployeeAvatar employeeId={project.ownerId} size="xs" />
+          )}
+          {overdueBorrowCount > 0 && (
+            // an exception, not a status: an Open borrow past its payback date
+            <Link to={path.to.projectStock(projectId)} className="shrink-0">
+              <Badge variant="red" className="gap-1 whitespace-nowrap">
+                <LuHandCoins />
+                <Trans>Overdue borrows: {overdueBorrowCount}</Trans>
+              </Badge>
+            </Link>
           )}
         </HStack>
         <HStack className="shrink-0">
