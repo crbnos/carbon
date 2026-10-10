@@ -211,7 +211,7 @@ const itemStripeKey = (itemId: string, projectId: string | null | undefined) =>
 /** A Kysely filter: the row's projectId is one of `stripes`. */
 function inStripes(eb: Trx, column: string, stripes: readonly Stripe[]) {
   const projectIds = stripes.filter((s): s is string => s !== null);
-  const filters = [];
+  const filters: unknown[] = [];
   if (stripes.includes(null)) filters.push(eb(column, "is", null));
   if (projectIds.length > 0) filters.push(eb(column, "in", projectIds));
   if (filters.length === 0) return eb.val(false);

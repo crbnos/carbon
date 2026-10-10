@@ -11,7 +11,13 @@
 // Another project's stock needs a Transfer or a Borrow first.
 
 import type { KyselyDatabase as DB } from "@carbon/database/client";
-import type { ExpressionBuilder, Kysely, Transaction } from "kysely";
+import type {
+  Expression,
+  ExpressionBuilder,
+  Kysely,
+  SqlBool,
+  Transaction
+} from "kysely";
 import { InvalidInputError } from "../errors";
 
 /** A stock stripe: a project id, or null for common stock. */
@@ -155,7 +161,7 @@ export function itemLedgerInStripes(
   const projectIds = stripes.filter(
     (stripe): stripe is string => stripe !== null
   );
-  const filters = [];
+  const filters: Expression<SqlBool>[] = [];
   if (stripes.includes(null)) filters.push(eb("projectId", "is", null));
   if (projectIds.length > 0) filters.push(eb("projectId", "in", projectIds));
   // An empty set matches nothing.
