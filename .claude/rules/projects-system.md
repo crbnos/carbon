@@ -71,7 +71,8 @@ Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
 `journalLineId` when a journal exists. Build rows with `buildProjectLedgerRow`.
 
 - Only server functions and the job-completion SQL write it. The ERP only reads it
-  (`getProjectLedger`, `getElementTimeAndMaterials`, `get_project_cost_summary`).
+  (`getProjectLedger`, `getElementTimeAndMaterials`, `get_project_cost_summary`,
+  `get_child_service_project_costs`).
 - A Statistical charge writes no row. Neither does a Statistical timesheet: the entry is
   only stamped Posted, with no journal (`post-timesheet/plan.ts`).
 - A void or repost writes negative rows with `reversalOfId`
@@ -148,6 +149,12 @@ and `parentProjectId` names a coverage contract's project. Field service owns th
 - **Billable items.** `projectBillableItem` is what a charge will bill. Only Service
   projects write them today (`buildBillableItem`, `reverseBillableItem`).
   `projectElement.fixedPrice` bills a node's whole subtree as one line.
+- **Parent roll-up** (field service Phase D). The Costs tab lists a project's child
+  Service projects, one row per order, from `get_child_service_project_costs`; their
+  actual adds to the project total only (`buildProjectCostFigures`, third argument). A
+  Contract charge on a Closed parent is refused. `updateServiceOrderCoverageContract`
+  keeps `parentProjectId` in step with the order's coverage contract. Details:
+  `field-service.md` → *The contract project*.
 - **Hidden outside Service.** The Projects lists, Copy from, Build from part's template
   list, the charge number pickers, the dimension picker and the Ramp sync filter
   `projectType = 'Standard'`. Never list a Service project in Projects.

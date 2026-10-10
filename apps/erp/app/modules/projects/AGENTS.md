@@ -105,7 +105,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 
 ## Key Service Functions
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
-- `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs tab.
+- `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs tab. `getChildServiceProjectCosts` (`get_child_service_project_costs`) adds the service orders of a contract project; their actual goes to the project total through `buildProjectCostFigures`'s third argument.
 - `getProjectElementPage` (`.server`) — everything the element page loads, in parallel.
 - `logTimesheetEntry` (`.server`) — Log time: one Submitted row; the route posts it when approval is off.
 - `upsertTimesheetCell`, `submitTimesheetEntries`, `approveTimesheetEntries`,

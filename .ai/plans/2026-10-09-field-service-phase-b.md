@@ -1,6 +1,6 @@
 # Field Service Phase B — depot repair through the RMA — implementation plan
 
-**Spec:** .ai/specs/2026-10-08-field-service.md (*Depot Repair through the RMA*, decision 14, Phase B acceptance criteria, Risks)
+**Spec:** .ai/specs/implemented/2026-10-08-field-service.md (*Depot Repair through the RMA*, decision 14, Phase B acceptance criteria, Risks)
 **Branch:** projects-wbs-research-spec
 **Prerequisite:** `.ai/plans/2026-10-09-field-service-phase-a.md` is done and committed. This plan uses `serviceOrder`, `customerAsset`, `createServiceProject`, `resolveCoverage` and the Service module. If one of them is missing, STOP and report.
 
@@ -377,7 +377,7 @@ pnpm db:check:datasets
 - Modify: `.claude/rules/field-service.md`, `.claude/rules/inventory-system.md`, `.claude/rules/traceability-model.md`
 - Modify: `apps/erp/app/modules/sales/AGENTS.md` — the `Repair` disposition, and the RMA status list. It says "Draft → Confirmed → Partially Received → Received". The code has Draft, To Receive, Completed and Cancelled.
 - Modify: `docs/content/docs/reference/service-orders.mdx`, and the RMA reference page
-- Modify: `.ai/specs/2026-10-08-field-service.md`
+- Modify: `.ai/specs/implemented/2026-10-08-field-service.md`
 
 **Steps:**
 1. Document the `Repair` branches of `post-receipt` and `post-shipment`, the disposition rules, and the voids.

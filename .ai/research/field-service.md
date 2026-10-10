@@ -1,6 +1,6 @@
 # Field Service Research: Best Practices Survey
 
-> Research date: 2026-10-08. Input to `.ai/specs/2026-10-08-field-service.md`. Companion: `.ai/research/serial-service-cost-treatment.md` (capitalize or expense, decided by the unit's owner).
+> Research date: 2026-10-08. Input to `.ai/specs/implemented/2026-10-08-field-service.md`. Companion: `.ai/research/serial-service-cost-treatment.md` (capitalize or expense, decided by the unit's owner).
 
 ## Summary
 
@@ -108,7 +108,7 @@ Carbon already has serial tracking, returns (RMA), maintenance dispatch, contrac
    - contracts.
 
    Source: every product surveyed.
-2. **How does the order status move?** From its visits: scheduled when a visit exists, in progress when a technician travels or arrives, completed when the work is complete (D365).
+2. **How does the order status move?** From its visits (D365). It is scheduled when a visit exists, and in progress when a technician travels or arrives. It is completed when the work is complete.
 3. **How is coverage decided?**
    - Per line, from the unit's labor and parts warranty dates, then the customer's contract.
    - Covered lines stay at zero price.

@@ -1,6 +1,6 @@
 # Field Service: service orders on serials in stock and in the field
 
-> Status: Phases A, B and C implemented (2026-10-09, plans `.ai/plans/2026-10-09-field-service-phase-a.md`, `…-phase-b.md` and `…-phase-c.md`); browser verification of all 3 is still due. Phase D is planned. Every open question is resolved (Q1 answered 2026-10-08).
+> Status: Implemented. Phases A, B, C and D implemented (2026-10-09, plans `.ai/plans/2026-10-09-field-service-phase-a.md`, `…-phase-b.md`, `…-phase-c.md` and `…-phase-d.md`); browser verification of all 4 is still due. Every open question is resolved (Q1 answered 2026-10-08).
 > Author: Brad (with Claude)
 > Date: 2026-10-08
 > Research: `.ai/research/field-service.md` (SAP S/4HANA Service and FSM, D365 Field Service, Business Central, IFS, Salesforce Field Service, Epicor) and `.ai/research/serial-service-cost-treatment.md` (capitalize or expense)
@@ -268,6 +268,9 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 - When the coverage contract has a project, the order's Service project names it as `parentProjectId`.
 - Contract-covered charges post to that project's account.
 - The contract project's Costs tab lists its service orders, one row each. So the contract shows its service cost beside its revenue.
+- The contract page lists the service orders the contract covers, with their cost.
+- A change of the coverage contract moves the parent. It is refused while a Contract charge stands, because that cost has posted to the old contract's account (decision 55).
+- A Closed contract project takes no more Contract charges. On Hold and Technically Complete still take them.
 
 ### Technician experience (ERP on a phone)
 
@@ -341,6 +344,8 @@ Every charge's journal carries the Customer, Project and Project Element dimensi
 | 51 | Sale price unit for the cap (C4) | The item's sale price caps the cost only when its sales unit is empty or the inventory unit, and its currency is the base currency. Else the cap is skipped with a warning. | Carbon has no sales unit conversion factor. A price per box must not cap a cost per each. Plan decision, 2026-10-09; the currency rule is an execution change. |
 | 52 | Child rows in the valuation report (C5) | `get_inventory_valuation` counts only parent rows as layers and adds each open child's remaining cost to its parent. | The report counted an open child as a layer of its own. Purchase price variance children already caused the error; refurbishment children would make it larger. Plan decision, 2026-10-09. |
 | 53 | Guard on shipping and picking (C6) | `post-shipment` (Sales Order) and `post-picking` (serial) refuse a serial with an open Refurbishment order. | Only the selection RPCs and routes skip On Hold serials. A guard keyed on the open order changes no other On Hold flow. Plan decision, 2026-10-09. |
+| 54 | Separate roll-up function (D1) | The child costs come from their own function, `get_child_service_project_costs`. | `get_project_cost_summary` stays as Projects Phase 1a and Phase 3 define it, so the two phases do not merge one function. Plan decision, 2026-10-09. |
+| 55 | Contract change (D2) | A change of the coverage contract is refused after a Contract charge posts, until the charge is reclassed (**Override**). | The charge already posted to the old contract project's account. Moving the parent alone would leave that cost on the old contract. Plan decision, 2026-10-09. |
 | 42 | RLS of the project tables | The `projectModule` rule piece decides between `projects_*` and `service_*` by `projectType`. Reads of a Standard project stay open to every employee. | One rule for every project table. MES operators and the PO line picker read Standard projects without `projects_view`, as before. Plan decision, 2026-10-09; the employee read is an execution change. |
 | 26 | Multi-tenancy (H1) | Every new table has `companyId`, `PRIMARY KEY ("id","companyId")` and `id('prefix')`. | conventions-database. |
 | 27 | Service shape (H2) | Client first, `{data, error}`, never throws. Posting and completion run in server functions (Kysely transactions). | conventions-services; `packages/server-functions/AGENTS.md`. |
@@ -658,7 +663,7 @@ Each phase gets its own plan with `/plan`:
 1. **Phase A: customer assets, field visits, the work tree, components, coverage, invoicing, the phone pages.** It needs projects Phases 1a and 1b. It ships the projects spec's Service projects. **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-a.md`, Tasks 1–30); browser verification (Task 31) is deferred.
 2. **Phase B: depot repair through the RMA.** **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-b.md`, Tasks 1–12); browser verification (Task 13) is deferred.
 3. **Phase C: refurbishment of a serial in stock.** **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-c.md`, Tasks 1–10); browser verification (Task 11) is deferred.
-4. **Phase D: the contract project roll-up.**
+4. **Phase D: the contract project roll-up.** **Implemented 2026-10-09** (plan `.ai/plans/2026-10-09-field-service-phase-d.md`, Tasks 1–7); browser verification (Task 8) is deferred.
 
 ## Implementation notes (Phase A)
 
@@ -679,7 +684,7 @@ The plan's *Execution notes* record each deviation. These change the design abov
 - **Estimate PDF.** `ServiceEstimatePDF` is hand-built, like the project Reader. A template-engine document needs a new document type, which `packages/documents/AGENTS.md` puts under Ask First.
 - **Settings.** `upsertItemUnitSalePrice` now filters by `companyId`. The van must be a storage unit at the employee job's location.
 - **Demo datasets.** The templates and orders are seeded in tier 09, after the labor categories. The dataset wipe deletes the service order tables first, because nulling `customerId` breaks `serviceOrder_customer_check`.
-- **Not built.** The contract project roll-up on the Costs tab (Phase D). Search excludes Service projects by default, because no search source lists projects.
+- **Not built in Phase A.** The contract project roll-up on the Costs tab came with Phase D. Search excludes Service projects by default, because no search source lists projects.
 
 ## Implementation notes (Phase B)
 
@@ -706,6 +711,16 @@ The plan's *Execution notes* record each deviation. These change the design abov
 - **Build history.** A part issued to a Refurbishment node writes a `Service` activity from the part to the subject serial. It writes no installed component, because the unit has no customer asset.
 - **Demo datasets.** Satellite seeds one Draft Refurbishment on RW010-SN-0054, with the serial On Hold. A completed refurbishment is not seeded.
 - **SQL backflush.** The SQL backflush (`backflush_job_materials`, migration `20261010012609`) now relieves layers as `calculateCOGS` does. It takes unstamped layers first and a stamped layer last. It applies every open child of a stamped layer in full.
+
+## Implementation notes (Phase D)
+
+The plan's *Execution notes* record each deviation. These change the design above.
+
+- **Users without `service_view`.** RLS hides Service projects from them, and the function is SECURITY INVOKER. So their Costs tab shows no service orders, and its total leaves the service cost out.
+- **Costs tab.** The service orders' actual cost adds to the project total only, so the total's remaining and estimate follow it. No element changes.
+- **Contract change.** The coverage contract is editable on any open order, not only a Draft one. `updateServiceOrder` never saves it; `updateServiceOrderCoverageContract` changes it with the parent.
+- **Contract page.** The contract header shows route tabs, **Details** and **Service Orders**, only for a user with `service_view`. The tab is a card with a plain table, as the other cards of the page are. A contract with no project shows the posted cost of each order and no billed amount.
+- **Demo datasets.** Satellite gives contract `novasat-ops` an Expense project, `NSOPS`, seeded in tier 09. It is the coverage contract of the Draft order on the in-warranty unit.
 
 ## Out of scope
 
@@ -757,3 +772,4 @@ Resolved autonomously (2026-10-08), open to veto:
 - 2026-10-09: Phase A implemented (`.ai/plans/2026-10-09-field-service-phase-a.md`, Tasks 1–30). Browser verification (Task 31) is deferred. Decisions 37–42 record the plan's choices, and *Implementation notes (Phase A)* records the main changes found during the run.
 - 2026-10-09: Phase C implemented (`.ai/plans/2026-10-09-field-service-phase-c.md`, Tasks 1–10). Browser verification (Task 11) is deferred. Decisions 48–53 record the plan's decisions C1–C6. Step 2 of *Refurbishment completion* and decision 16 now name the layer `calculateCOGS` takes next, not "the oldest layer". *Implementation notes (Phase C)* records the main changes found during the run.
 - 2026-10-09: Phase B implemented (`.ai/plans/2026-10-09-field-service-phase-b.md`, Tasks 1–12). Browser verification (Task 13) is deferred. Decisions 43–47 record the plan's decisions B1–B5. The link is `serviceOrder.salesReturnOrderLineId`, not `salesReturnOrderLine.serviceOrderId`. *Implementation notes (Phase B)* records the main changes found during the run.
+- 2026-10-09: Phase D implemented (`.ai/plans/2026-10-09-field-service-phase-d.md`, Tasks 1–7). Browser verification (Task 8) is deferred. Decisions 54–55 record the plan's decisions. *Implementation notes (Phase D)* records the main changes found during the run. All 4 phases are implemented, so the spec moved to `.ai/specs/implemented/`.

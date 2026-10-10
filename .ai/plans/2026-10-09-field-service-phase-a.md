@@ -1,6 +1,6 @@
 # Field Service Phase A — implementation plan
 
-**Spec:** .ai/specs/2026-10-08-field-service.md (Phase A), and .ai/specs/2026-10-03-projects.md (*Service projects*, which ships with this phase)
+**Spec:** .ai/specs/implemented/2026-10-08-field-service.md (Phase A), and .ai/specs/2026-10-03-projects.md (*Service projects*, which ships with this phase)
 **Research:** .ai/research/field-service.md, .ai/research/serial-service-cost-treatment.md
 **Branch:** projects-wbs-research-spec
 **Prerequisite:** every task of `.ai/plans/2026-10-07-projects-phase-1a.md` and `.ai/plans/2026-10-08-projects-phase-1b.md` is done and committed. This plan uses `projectElement`, `projectLedger`, `timesheetEntry`, `post-timesheet`, `post-project-issue`, `project-posting.ts`, part links and `buildElementsFromPart`. If one of them does not exist, STOP and report.
@@ -1128,7 +1128,7 @@ pnpm db:check:datasets
 - Create: `apps/erp/app/modules/service/AGENTS.md` (use the `create-agents-md` skill)
 - Modify: `AGENTS.md` (the Task Router: a Field service row)
 - Create: `docs/content/docs/reference/service-orders.mdx`, `customer-assets.mdx`
-- Modify: `.ai/specs/2026-10-08-field-service.md`, `.ai/specs/2026-10-03-projects.md`
+- Modify: `.ai/specs/implemented/2026-10-08-field-service.md`, `.ai/specs/2026-10-03-projects.md`
 
 **Steps:**
 1. Document only committed code. Ground every claim in a file.

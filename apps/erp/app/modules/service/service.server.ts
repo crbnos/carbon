@@ -5,7 +5,7 @@
 // Transactional writes of field service: creating an order with its work
 // tree, registering a unit sold before Carbon, rolling an order's status up
 // from its visits, and cancelling an order.
-// Spec: .ai/specs/2026-10-08-field-service.md (Lifecycle, Customer assets)
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md (Lifecycle, Customer assets)
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
@@ -829,7 +829,7 @@ export async function updateServiceOrderCoverageContract(
           open === 1
             ? "1 charge of this order is covered by the contract and has posted to its account."
             : `${open} charges of this order are covered by the contract and have posted to its account.`
-        } Override their coverage to Billable or Warranty first, then change the contract.`
+        } Override the coverage of each Contract charge to Billable or Warranty first, then change the contract.`
       );
     }
 

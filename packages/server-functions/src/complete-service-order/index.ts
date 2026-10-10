@@ -5,7 +5,7 @@
 // Completes a service order. A Field Visit or Depot Repair order is only
 // stamped Completed. A Refurbishment moves its WIP into the serial's cost
 // (`planRefurbishmentCompletion`) and releases the serial.
-// Spec: .ai/specs/2026-10-08-field-service.md (Accounting → Refurbishment
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md (Accounting → Refurbishment
 // completion); plan .ai/plans/2026-10-09-field-service-phase-c.md, Task 4.
 
 import {

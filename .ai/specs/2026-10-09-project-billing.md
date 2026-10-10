@@ -7,7 +7,7 @@
 > Builds on:
 > - `.ai/specs/2026-10-03-projects.md` (the project ledger, the billing flag, Phase 4 outline, decisions 25–26)
 > - `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` (contracts, the recurring invoicing layer, the revenue recognition run; on main)
-> - `.ai/specs/2026-10-08-field-service.md` (`projectBillableItem`, which ships with field service Phase A)
+> - `.ai/specs/implemented/2026-10-08-field-service.md` (`projectBillableItem`, which ships with field service Phase A)
 
 ## TLDR
 

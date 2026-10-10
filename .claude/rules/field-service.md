@@ -16,15 +16,18 @@ paths:
   - "packages/server-functions/src/lib/service-orders.ts"
   - "packages/server-functions/src/complete-service-order/**"
   - "packages/documents/src/pdf/ServiceEstimatePDF.tsx"
+  - "apps/erp/app/routes/x+/contract+/$id.service-orders.tsx"
+  - "apps/erp/app/modules/projects/ui/Costs/ServiceOrderCosts.tsx"
 ---
 
 # Field Service
 
-Phases A, B and C of `.ai/specs/2026-10-08-field-service.md`. Phase A: customer assets,
-Field Visit service orders, visits, the work tree, coverage, invoicing, the estimate,
-templates and the technician's phone pages. Phase B: depot repair through the RMA. Phase
-C: refurbishment of a serial in stock. Plans: `.ai/plans/2026-10-09-field-service-phase-a.md`,
-`…-phase-b.md` and `…-phase-c.md` (their *Execution notes* record every deviation).
+Phases A–D of `.ai/specs/implemented/2026-10-08-field-service.md`. Phase A: customer
+assets, Field Visit service orders, visits, the work tree, coverage, invoicing, the
+estimate, templates and the technician's phone pages. Phase B: depot repair through the
+RMA. Phase C: refurbishment of a serial in stock. Phase D: the contract project roll-up.
+Plans: `.ai/plans/2026-10-09-field-service-phase-a.md`, `…-phase-b.md`, `…-phase-c.md`
+and `…-phase-d.md` (their *Execution notes* record every deviation).
 Module guide: `apps/erp/app/modules/service/AGENTS.md`.
 
 ## The shape
@@ -102,11 +105,45 @@ the old ledger row reversed by a later row.
 
 `resolveProjectPostingAccount` takes the coverage for a By Coverage project:
 Warranty → `warrantyExpenseAccount`, Contract → the parent contract project's account
-(a Statistical one falls back to Cost of Goods Sold), Billable → Cost of Goods Sold,
+(a Statistical one falls back to Cost of Goods Sold; a Closed one refuses the charge,
+see below), Billable → Cost of Goods Sold,
 Capitalized → Work in Progress. A
 By Coverage charge without a coverage is refused. The SQL mirror
 `project_posting_account` raises for By Coverage: job completion never charges a
 Service project.
+
+## The contract project (Phase D)
+
+A coverage contract with a project (`customerContract.projectId`) is the parent of the
+Service project of every order it covers (`project.parentProjectId`).
+
+- **Set at creation** by `insertServiceOrder` (`contractProjectId`).
+- **Kept in step** by `updateServiceOrderCoverageContract` (`service.server.ts`, one
+  transaction): the order's `customerContractId` and its project's `parentProjectId`
+  change together. It refuses while a Contract charge stands (`openChargeIds` over the
+  order's Contract ledger rows): that cost already posted to the old contract's account,
+  so the user overrides it first (`reclass-project-coverage`). It also refuses a Closed or
+  Cancelled order, a Refurbishment and another customer's contract. The details route
+  sends the Properties field there, and `updateServiceOrder` never saves
+  `customerContractId`. The field is editable on any open order.
+- **Closed parent**: `resolveProjectPostingAccount` refuses a Contract charge whose parent
+  project is Closed ("The contract project … is closed. …"). On Hold and Technically
+  Complete still take it, as `assertChargeable`'s `commitment` mode does. The parent's
+  status comes from `ctx.parent`, which `loadProjectPostingContexts` already loads.
+- **Roll-up**: `get_child_service_project_costs(p_project_id, p_company_id)` (plpgsql,
+  SECURITY INVOKER, migration `20261010013108`) returns one row per order whose Service
+  project names the project as parent: actual (Σ `projectLedger.amount`), posted hours,
+  billed and unbilled. It is separate from `get_project_cost_summary`, so Projects Phase 3
+  can redefine that one alone. `getChildServiceProjectCosts` (`projects.service.ts`) adds
+  each order's serial with one `.in()` query.
+- **Costs tab** (`$projectId.costs.tsx`): `ServiceOrderCosts` lists the orders under the
+  tree, and `buildProjectCostFigures`'s third argument adds their actual to the project
+  total only. RLS hides Service projects without `service_view`, so such a user sees no
+  rows and a total without service cost.
+- **Contract page**: the header shows route tabs **Details** and **Service Orders**
+  (`DetailTopbar`, only with `service_view`); `contract+/$id.service-orders.tsx` lists
+  `getContractServiceOrders` with the roll-up's actual and billed. A contract with no
+  project shows the posted cost only (`getServiceOrderCosts`).
 
 ## Charges post through server functions
 
@@ -309,7 +346,10 @@ returns SAT-1000-S013 with disposition Repair (`SalesReturnLineSpec.disposition`
 validator keeps a Repair line out of on-hand and refuses one on a Completed return.
 Satellite also seeds a Draft Refurbishment on stock serial RW010-SN-0054
 (`ServiceOrderSpec` with `type: "Refurbishment"` and `serial`), which the seed puts On
-Hold. The wipe deletes `customerAssetComponent`, `serviceVisit` and
+Hold. Satellite gives contract `novasat-ops` a project (`ContractSpec.project`,
+identifier `NSOPS`, Expense, Released, seeded in tier 09 before the orders) and makes it
+the coverage contract of the Draft order (`ServiceOrderSpec.contract`), so the order's
+Service project is its child. The wipe deletes `customerAssetComponent`, `serviceVisit` and
 `serviceOrder` before its FK-nulling pass (`serviceOrder_customer_check`).
 
 ## Known gaps
@@ -319,8 +359,10 @@ Hold. The wipe deletes `customerAssetComponent`, `serviceVisit` and
   `document` row.
 - A component the factory built in has no `customerAssetComponent` row, so a part issued
   in its place does not remove it.
-- No browser verification of Phase A (plan Task 31), Phase B (plan Task 13) or Phase C
-  (plan Task 11) yet.
+- No browser verification of Phase A (plan Task 31), Phase B (plan Task 13), Phase C
+  (plan Task 11) or Phase D (plan Task 8) yet.
+- An order whose project names a parent other than its contract's current project (the
+  contract's project changed after the order was created) drops out of the roll-up.
 - A completed refurbishment cannot be reopened, and a refurbishment never changes the
   serial's item.
 - Repair needs a Serial-tracked item. A Batch or untracked unit cannot come back for

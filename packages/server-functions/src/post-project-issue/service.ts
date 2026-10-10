@@ -5,7 +5,7 @@
 // A part issued to a node of a service order: its billable item, the
 // component it installs in the customer asset, the component it replaces, and
 // the `Service` genealogy activity. A return undoes all of them.
-// Spec: .ai/specs/2026-10-08-field-service.md (Components, Parts).
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md (Components, Parts).
 
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { datetime, round, type ServiceCoverage } from "@carbon/utils";

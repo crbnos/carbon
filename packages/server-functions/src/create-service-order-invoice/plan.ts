@@ -5,7 +5,7 @@
 // Pure layout of a service order's invoice: the work tree in order, each
 // top-level node a heading, each Unbilled billable item a Service line, a
 // fixed-price node one line at its price, and "By Node" one line per
-// top-level node. Spec: .ai/specs/2026-10-08-field-service.md (Invoicing).
+// top-level node. Spec: .ai/specs/implemented/2026-10-08-field-service.md (Invoicing).
 
 import type { Database } from "@carbon/database";
 import { round } from "@carbon/utils";

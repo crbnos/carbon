@@ -7,7 +7,7 @@
 // follows create-contract-invoices (sequence, opportunity, header,
 // salesInvoiceShipment, then lines). Posting stays with post-sales-invoice,
 // which posts revenue only for these lines: their parts already left stock.
-// Spec: .ai/specs/2026-10-08-field-service.md (Invoicing).
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md (Invoicing).
 
 import { getCompanyTimeZone } from "@carbon/database";
 import { inOrder, maybeSingle, rpcValue } from "@carbon/database/rows";

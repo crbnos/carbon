@@ -6,7 +6,7 @@
 // Service project (the work tree) and the project's default states. Shared by
 // the ERP's New Service Order and by `post-receipt`, which creates one Depot
 // Repair order per serial a repair receipt brings in.
-// Spec: .ai/specs/2026-10-08-field-service.md (Lifecycle, Depot Repair).
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md (Lifecycle, Depot Repair).
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";

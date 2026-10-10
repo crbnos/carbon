@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Field service: customer assets, service orders and visits.
-// Spec: .ai/specs/2026-10-08-field-service.md
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md
 
 import type { Database } from "@carbon/database";
 import { equals, round } from "@carbon/utils";

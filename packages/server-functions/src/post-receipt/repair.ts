@@ -6,7 +6,7 @@
 // instead of stock. The unit stays the customer's: no stock ledger, no cost
 // layer, no journal, and its serial stays Consumed. Each received serial gets
 // its customer asset (At Depot) and one Depot Repair service order.
-// Spec: .ai/specs/2026-10-08-field-service.md (Depot Repair through the RMA).
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md (Depot Repair through the RMA).
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";

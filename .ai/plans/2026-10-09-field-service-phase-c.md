@@ -1,6 +1,6 @@
 # Field Service Phase C — refurbishment of a serial in stock — implementation plan
 
-**Spec:** .ai/specs/2026-10-08-field-service.md (*Accounting → Refurbishment completion*, decisions 1, 5, 15–18, Phase C acceptance criteria, Risks)
+**Spec:** .ai/specs/implemented/2026-10-08-field-service.md (*Accounting → Refurbishment completion*, decisions 1, 5, 15–18, Phase C acceptance criteria, Risks)
 **Research:** .ai/research/serial-service-cost-treatment.md
 **Branch:** projects-wbs-research-spec
 **Prerequisite:** `.ai/plans/2026-10-09-field-service-phase-a.md` and `.ai/plans/2026-10-09-field-service-phase-b.md` are done and committed. This plan uses `insertServiceOrder` (Phase B), `resolveCoverage` (Capitalized for a Refurbishment) and the By Coverage posting. If one of them is missing, STOP and report.
@@ -332,7 +332,7 @@ pnpm db:check:datasets
 **Files:**
 - Modify: `.claude/rules/field-service.md`, `.claude/rules/inventory-system.md` (the split, the child moves, the valuation fix)
 - Modify: `docs/content/docs/reference/service-orders.mdx`
-- Modify: `.ai/specs/2026-10-08-field-service.md`
+- Modify: `.ai/specs/implemented/2026-10-08-field-service.md`
 
 **Steps:**
 1. In the spec, record decisions C1–C6. Correct *Refurbishment completion* step 2 and decision 16. The source layer is the one `calculateCOGS` takes next: the oldest under FIFO, the newest under LIFO. Its open children move with the unit. Mark Phase C done.

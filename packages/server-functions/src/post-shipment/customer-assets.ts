@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // A shipped serial is a customer asset: whose it is, where it is, and its
-// warranty. Spec: .ai/specs/2026-10-08-field-service.md (Customer assets).
+// warranty. Spec: .ai/specs/implemented/2026-10-08-field-service.md (Customer assets).
 
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { sql, type Transaction } from "kysely";

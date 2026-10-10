@@ -6,7 +6,7 @@
 // the customer's own unit: it never entered stock, so the line writes no stock
 // ledger, no cost layer and no journal, and its serial stays Consumed. The
 // asset goes back In Service at the RMA's site.
-// Spec: .ai/specs/2026-10-08-field-service.md (Depot Repair through the RMA).
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md (Depot Repair through the RMA).
 
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";

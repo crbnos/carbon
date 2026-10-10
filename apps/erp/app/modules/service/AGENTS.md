@@ -1,6 +1,6 @@
 # Service Module
 
-Field service (Phases A, B and C): customer assets, Field Visit service orders, their visits, the work tree, coverage, billable items, invoicing, the estimate PDF, service templates, the technician phone pages, Depot Repair orders opened by the receipt of an RMA `Repair` line, and Refurbishment orders on a serial in stock. Spec: `.ai/specs/2026-10-08-field-service.md`.
+Field service (Phases A–D): customer assets, Field Visit service orders, their visits, the work tree, coverage, billable items, invoicing, the estimate PDF, service templates, the technician phone pages, Depot Repair orders opened by the receipt of an RMA `Repair` line, Refurbishment orders on a serial in stock, and the contract project roll-up. Spec: `.ai/specs/implemented/2026-10-08-field-service.md`.
 
 ## Key Domain Concepts
 - **Customer asset** — one shipped serial at a customer (`customerAsset` → `trackedEntity`), with site and labor/parts warranty end dates. `post-shipment` creates it (`upsertShippedCustomerAssets`); `registerCustomerAsset` registers a unit sold before Carbon. Status: In Service → At Depot / Returned. `warrantyStatus(asset, today)` gives In warranty / Labor ended / Expired.
@@ -48,6 +48,8 @@ pnpm --filter @carbon/server-functions test   # posting + invoice functions
 ## Key Service Functions
 - `createServiceOrder(client, db, args)` (`service.server.ts`) — one transaction. A Field Visit: checks the asset is In Service and uses the customer's only Active contract. A Refurbishment: checks the serial is serial-tracked, Available or On Hold, with no open order, and sets it On Hold. Both create the project and the order, then build the tree (`buildServiceOrderTree` → `insertElementsFromPart`, with `includePlanLines: true`).
 - `completeServiceOrder(db, args)` (`service.server.ts`) — invokes `complete-service-order` for every order type; `previewRefurbishmentCompletion(db, args)` runs its reads and planner without writing.
+- `updateServiceOrderCoverageContract(db, args)` (`service.server.ts`) — the only way to change an order's coverage contract: it moves the Service project's `parentProjectId` with it and refuses while a Contract charge stands. `updateServiceOrder` never saves `customerContractId`.
+- `getContractServiceOrders` (`service.service.ts`) — the orders a contract covers, for the contract page's **Service Orders** tab; costs come from `getChildServiceProjectCosts` (projects module).
 - `getDepotRepairOrdersByReturnOrder` (`service.service.ts`) — an RMA's Depot Repair orders with their unit's status; read by the RMA layout for Ship and the explorer.
 - `getServiceOrder`, `getServiceWork`, `getServiceNode`, `getServiceVisits`, `getCustomerAssets`, `getServiceBillableItems`, `getServiceEstimateInputs` (`service.service.ts`).
 - Pure, tested helpers in `service.models.ts` (`apps/erp/test/service-models.test.ts`): `summarizeWork`, `buildServiceEstimate` (also used by the estimate PDF, `ServiceEstimatePDF` in `@carbon/documents`), `inTreeOrder`, `canOverrideCoverage`, `canReverseCharge`, `buildExpenseReversal`, `isReadyToShipBack`, `worstServiceOrderStatus`.
@@ -55,6 +57,7 @@ pnpm --filter @carbon/server-functions test   # posting + invoice functions
 ## Routes
 - `x+/service-orders+/` — module pages: list, `new`, `assets`, `my-visits`, `schedule`, `templates`, and `templates_.$id.tsx`. The trailing `_` renders the template page in the module layout, not under the list.
 - `x+/service-order+/$id.tsx` — the order workspace, with tabs `details`, `work`, `visits` and `billing`. `$id.complete.tsx` is the Refurbishment completion preview (loader only). `$id_.visits.$visitId.tsx` is the phone visit page; the trailing `_` keeps it out of the workspace.
+- `x+/contract+/$id.service-orders.tsx` — the contract's Service Orders tab (needs `view: "service"`); the contract header shows the tab only with `service_view`.
 - `x+/customer-asset+/$assetId.tsx` — the asset page. `file+/service-estimate+/$id[.]pdf.tsx` — Print Estimate.
 
 ## Related Modules

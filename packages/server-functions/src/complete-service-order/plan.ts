@@ -4,7 +4,7 @@
 
 // The completion of a Refurbishment order, kept pure so the server function
 // and the ERP preview compute the same answer and it can be tested without a
-// database. Spec: .ai/specs/2026-10-08-field-service.md (Accounting →
+// database. Spec: .ai/specs/implemented/2026-10-08-field-service.md (Accounting →
 // Refurbishment completion); plan decisions C1–C4.
 //
 // The order's WIP moves into one serial's cost:

@@ -4,7 +4,7 @@
 
 // Who pays for a charge on a service order. Shared by the ERP service module and
 // the posting server functions, so the order page and the journal agree.
-// Spec: .ai/specs/2026-10-08-field-service.md (Coverage).
+// Spec: .ai/specs/implemented/2026-10-08-field-service.md (Coverage).
 
 import type { Database } from "@carbon/database";
 

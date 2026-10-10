@@ -24,7 +24,7 @@ Click **Add Service Order** on the list, **Service Order** in the Create menu, o
   <Field name="Start Work From" type="enum">Where the first work tree comes from: **Empty**, **Service template**, **The unit's build history** or **The item's bill of materials**. See [the work tree](#the-work-tree).</Field>
 </FieldTable>
 
-A Field Visit also takes a **Contact**, and every order takes the **Problem**. The order has the tabs **Details**, **Work**, **Visits** and **Billing**. Its contact, site and coverage contract can change only while it is "Draft".
+A Field Visit also takes a **Contact**, and every order takes the **Problem**. The order has the tabs **Details**, **Work**, **Visits** and **Billing**. Its contact and site can change only while it is "Draft". Its coverage contract can change while the order is open, until a Contract charge has posted (see [Contract project](#contract-project)).
 
 ## Status lifecycle
 
@@ -91,6 +91,16 @@ Every charge on a Refurbishment is **Capitalized**: it posts to Work in Progress
 | **Billable** | Cost of Goods Sold | the sale price |
 
 To change a coverage, click **Override** on a charge in the node drawer. The **Override Coverage** dialog needs a new coverage and a **Reason**. The cost moves to the new coverage's account. You cannot override a billed charge or a reversal.
+
+### Contract project
+
+When the coverage contract has a project, the order's work counts toward it:
+
+- Contract charges post to the contract project's account.
+- The project's **Costs** tab lists the order under its elements, with hours, actual cost, billed and unbilled amounts. Its actual cost adds to the project total.
+- The contract's page has a **Service Orders** tab that lists every order the contract covers, with its cost.
+
+Changing the coverage contract moves the order to the new contract's project. Carbon refuses the change while a Contract charge stands, because that cost has already posted to the old contract's account. Override those charges to Billable or Warranty first. A Closed contract project takes no more Contract charges; On Hold and Technically Complete still do.
 
 <Callout type="warn" title="Set Warranty Expense before the first warranty charge.">
 A warranty charge posts to the **Warranty Expense** account in **Accounting → Default Accounts**. Without it, the charge fails with "Set Warranty Expense in Account Defaults before you charge a service order".
@@ -223,6 +233,12 @@ The chosen customer asset is not In Service (for example, Returned after its shi
 ### A unit cannot get a second service order
 A serial can have only one open service order (any status other than Closed or Cancelled). Close or cancel the open one first.
 
+### "1 charge of this order is covered by the contract and has posted to its account. Override the coverage of each Contract charge to Billable or Warranty first, then change the contract."
+A Contract charge has posted to the old contract project's account. Click **Override** on each Contract charge in the node drawer, then change the coverage contract.
+
+### "The contract project … is closed. Change the coverage to Billable, or reopen the contract project."
+The coverage contract's project is Closed, so it takes no more cost. Override the charge to Billable, or reopen the contract project in Projects.
+
 ### "The coverage contract is not one of this customer's contracts"
 The Coverage Contract belongs to another customer. Pick one of the unit's customer's contracts, or leave it empty.
 
@@ -306,5 +322,6 @@ The user lacks inventory_update.
 - The Start Work clock is stored in the browser's localStorage (key `carbon:service-work:<visitId>`); clearing storage or switching devices loses a running clock.
 - Visit photos: private bucket `${companyId}/service/${orderId}/${visitId}/`; signature `signature.png` in the same folder (PNG, at most 2 MB).
 - Estimate PDF: `/file/service-estimate/<id>.pdf` (ServiceEstimatePDF); not in the document template customizer.
+- Contract project (Phase D): `project.parentProjectId` of the order's Service project is the coverage contract's `customerContract.projectId`, kept in step by updateServiceOrderCoverageContract (service.server.ts; refused while a Contract ledger row stands, `openChargeIds`). RPC `get_child_service_project_costs(p_project_id, p_company_id)` returns one row per child Service project's order (actual, posted hours, billed, unbilled); the project Costs tab and the contract's Service Orders tab (`/x/contract/<id>/service-orders`) read it. `resolveProjectPostingAccount` refuses a Contract charge on a Closed parent.
 - Routes: list `/x/service-orders`, order `/x/service-order/<id>`, visit `/x/service-order/<id>/visits/<visitId>`, My Visits `/x/service-orders/my-visits`, Schedule `/x/service-orders/schedule`, templates `/x/service-orders/templates`.
 </AgentContext>

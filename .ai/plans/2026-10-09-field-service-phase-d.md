@@ -1,6 +1,6 @@
 # Field Service Phase D — the contract project roll-up — implementation plan
 
-**Spec:** .ai/specs/2026-10-08-field-service.md (*Contract project*, Phase D acceptance criteria), and .ai/specs/2026-10-03-projects.md (*Service projects → Parent roll-up*)
+**Spec:** .ai/specs/implemented/2026-10-08-field-service.md (*Contract project*, Phase D acceptance criteria), and .ai/specs/2026-10-03-projects.md (*Service projects → Parent roll-up*)
 **Branch:** projects-wbs-research-spec
 **Prerequisite:** `.ai/plans/2026-10-09-field-service-phase-a.md` is done and committed. Phase A sets `project.parentProjectId` from the coverage contract and posts Contract coverage to the parent project's account. If either is missing, STOP and report.
 
@@ -27,7 +27,7 @@ A contract project (for example *Acme maintenance 2027*) must see the cost of th
 - [x] Task 4: Refuse Contract coverage on a closed parent
 - [x] Task 5: List service orders on the contract page
 - [x] Task 6: Extend the demo datasets
-- [ ] Task 7: Update the rules, docs and specs
+- [x] Task 7: Update the rules, docs and specs
 - [ ] Task 8: Verify in the browser
 
 ## Dependencies
@@ -217,7 +217,7 @@ pnpm db:check:datasets
 **Files:**
 - Modify: `.claude/rules/field-service.md`, `.claude/rules/projects-system.md`
 - Modify: `docs/content/docs/reference/service-orders.mdx`, `docs/content/docs/reference/projects.mdx`
-- Modify: `.ai/specs/2026-10-08-field-service.md`, `.ai/specs/2026-10-03-projects.md`
+- Modify: `.ai/specs/implemented/2026-10-08-field-service.md`, `.ai/specs/2026-10-03-projects.md`
 
 **Steps:**
 1. Document `get_child_service_project_costs`, the coverage contract change rule and the closed-parent refusal.
@@ -265,7 +265,7 @@ ls .ai/playbooks/field-service-phase-d.md
 - Task 1: Phase A already added `project_parentProjectId_idx` on `("parentProjectId", "companyId")`, so step 3 adds no index. The function is `plpgsql` with `ORDER BY so."serviceOrderId"`, so its order reaches PostgREST (the `LANGUAGE sql` inlining lesson). The local database has no contract project with a child. A rolled-back check set one service order's project parent to a Standard project, and the function returned that order with zeros. `pnpm db:migrate` regenerated the types and swagger; the MCP digest did not change.
 - Task 2: `getChildServiceProjectCosts` also reads each order's subject serial, with one `.in()` query over the orders (the function returns the asset id, not the serial). The route calls it once, beside `getProjectCostSummary`.
 - Task 2: `buildProjectCostFigures` takes the service orders' actual as an optional third argument. It adds to the project total only, so the total's remaining and estimate follow it, and no element changes. A new case in `projects-cost-figures.test.ts` pins it. The total row shows the full actual, and its label says "Actual includes service orders: <amount>".
-- Task 2 (🛑 behavior note): a user without `service_view` sees no service orders, because RLS hides Service projects from them and the function is SECURITY INVOKER. Their total leaves the service cost out. So step 4's plain-text id never shows today; the link check stays in case that RLS changes.
+- Task 2 (🛑 behavior note): a user without `service_view` sees no service orders. RLS hides Service projects from them, and the function is SECURITY INVOKER. Their total leaves the service cost out. So step 4's plain-text id never shows today; the link check stays in case that RLS changes.
 - Task 3: the refusal counts only Contract charges that stand (`openChargeIds` over the order's Contract ledger rows). A reclass reverses the old row, so after an override the change goes through. The message tells the user to override the coverage (the node drawer's **Override**, which posts through `reclass-project-coverage`). The function also refuses a Closed or Cancelled order, a Refurbishment (it has no contract) and a contract of another customer. It writes nothing when the contract does not change.
 - Task 3 (deviation): the coverage contract was a Draft-only field. It is now editable on any open order, because the spec's Phase D criterion changes the contract of an order that already has charges. `updateServiceOrder` no longer saves `customerContractId` at all, so the parent link cannot drift through it. Contact and site stay Draft-only.
 - Task 3: the local database has no open order of a customer with a contract, so the function was checked by typecheck only. Task 8 covers it in the browser.
@@ -275,3 +275,7 @@ ls .ai/playbooks/field-service-phase-d.md
 - Task 5: the loader reads the contract's `projectId` and the orders (`getContractServiceOrders`, `service.service.ts`) together, then calls `get_child_service_project_costs` once on the contract's project. A contract with no project has no roll-up, so the loader reads only the posted cost (`getServiceOrderCosts`, one ledger query), and Billed shows "—". An order whose project names another parent (the contract's project changed after the order was created) shows "—" for both.
 - Task 6 (deviation): the contract's project is seeded in tier 09 (`seedServiceWork`), not tier 04. The default project states (`PROJECT_STATES`) live in tier 09, and tier 04 runs before the projects. `ContractSpec` gains `project?: { identifier }`: an Expense, Released project named after the contract, with the 6 default states and no elements, linked through `customerContract.projectId`. It is not an `accounting.projects` entry, because those need 2 milestones and 8 elements. The state loop moved into `insertProjectStates`, shared by `seedProjects` and `insertServiceTree`.
 - Task 6: the Field Visit branch of `ServiceOrderSpec` gains `contract?` (a `ContractSpec` key). The seed sets the order's `customerContractId` and its Service project's `parentProjectId`. Satellite gives `novasat-ops` the project `NSOPS` and makes it the coverage contract of the Draft order on the in-warranty unit (NovaSat Networks). The validator refuses a contract project whose identifier or name repeats a project of the dataset, an unknown contract, and a contract of another customer. A throwaway apply of satellite (rolled back) gave CON000001 → NSOPS with 6 states, and `get_child_service_project_costs` returned SVC000002. `pnpm db:check:datasets` passes for all four.
+- Task 7: `field-service.md` gains *The contract project (Phase D)*, 2 watched paths, the satellite contract project and a Phase D gap. `projects-system.md` gains the parent roll-up. The service and projects `AGENTS.md` name the new functions and the contract route. `service-orders.mdx` gains a *Contract project* section and 2 troubleshooting entries; `projects.mdx` describes the service orders on the Costs tab. The field service spec records D1 and D2 as decisions 54–55, adds *Implementation notes (Phase D)*, and marks Phase D implemented. The projects spec marks the parent roll-up delivered.
+- Task 7: all 4 phases are implemented, so the spec moved to `.ai/specs/implemented/` (`git mv`). Every link to it outside `supabase/migrations/` was rewritten. The links in committed migration comments were left alone, because a migration file is not edited after it is committed.
+- Task 7 (deviation): the coverage contract refusal now says "Override the coverage of each Contract charge …". That text reads right for 1 charge and for several. It is a text change in `service.server.ts` (Task 3).
+- Task 8: browser verification deferred (overnight run). The box stays unticked.

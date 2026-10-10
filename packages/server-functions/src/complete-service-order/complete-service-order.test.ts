@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The spec's Phase C criteria for a refurbishment completion
-// (.ai/specs/2026-10-08-field-service.md): serial SN-0050 sits in an
+// (.ai/specs/implemented/2026-10-08-field-service.md): serial SN-0050 sits in an
 // unstamped layer of 10 at 100.00; labor 150.00 and parts 50.00 were charged
 // to the order's WIP.
 
