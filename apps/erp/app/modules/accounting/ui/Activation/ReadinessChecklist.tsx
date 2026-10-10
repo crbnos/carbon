@@ -198,7 +198,7 @@ function ReadinessCheckRow({
       case "pending-documents":
         return t`No unposted documents dated before the cutover`;
       case "legacy-jobs":
-        return t`No open jobs from before Carbon recorded their costs`;
+        return t`No open jobs with costs from before Carbon recorded them`;
       case "opening-balance":
         return t`No posted opening balance`;
     }
@@ -316,9 +316,9 @@ function useCheckDetail(check: ActivationCheck): string | null {
       })}`;
     case "legacy-jobs":
       return t`${plural(check.count, {
-        one: "Complete or cancel the # job created before Carbon recorded its costs.",
+        one: "Complete or cancel the # job that took costs before Carbon recorded them.",
         other:
-          "Complete or cancel the # jobs created before Carbon recorded their costs."
+          "Complete or cancel the # jobs that took costs before Carbon recorded them."
       })}`;
     case "opening-balance":
       return t`The company already has a posted opening balance journal.`;

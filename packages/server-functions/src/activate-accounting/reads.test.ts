@@ -1026,3 +1026,127 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "readiness blocks only the open jobs that took cost before Carbon recorded it",
+  async () => {
+    const f = await cutoverReadsFixture();
+    try {
+      const assemblyId = `${f.prefix}-assembly`;
+      const processId = `${f.prefix}-process`;
+      const job = (name: string) => `${f.prefix}-${name}`;
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("item")
+          .values({
+            id: assemblyId,
+            readableId: `${f.prefix}-ASSY`,
+            name: "Assembly",
+            type: "Part",
+            itemTrackingType: "Inventory",
+            replenishmentSystem: "Make",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("process")
+          .values({
+            id: processId,
+            name: "Assemble",
+            defaultStandardFactor: "Hours/Piece",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("job")
+          .values(
+            (
+              [
+                ["draft", "J-DRAFT", "Draft"],
+                ["planned", "J-PLANNED", "Planned"],
+                ["issued", "J-ISSUED", "In Progress"],
+                ["timed", "J-TIMED", "In Progress"],
+                ["done", "J-DONE", "Completed"]
+              ] as const
+            ).map(([name, jobId, status]) => ({
+              id: job(name),
+              jobId,
+              status,
+              itemId: assemblyId,
+              quantity: 1,
+              unitOfMeasureCode: "EA",
+              locationId: f.locationId,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+
+      // A material issue to J-ISSUED and to the completed J-DONE, and a time
+      // entry on J-TIMED, all before the company's first journal.
+      await f.db
+        .insertInto("itemLedger")
+        .values(
+          [job("issued"), job("done")].map((documentId) => ({
+            entryType: "Consumption" as const,
+            documentType: "Job Consumption" as const,
+            documentId,
+            itemId: f.partId,
+            quantity: -1,
+            locationId: f.locationId,
+            postingDate: f.today,
+            companyId: f.companyId,
+            createdBy: USER
+          }))
+        )
+        .execute();
+      const timedMethod = await f.db
+        .selectFrom("jobMakeMethod")
+        .select("id")
+        .where("jobId", "=", job("timed"))
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const operation = await f.db
+        .insertInto("jobOperation")
+        .values({
+          jobId: job("timed"),
+          jobMakeMethodId: timedMethod.id,
+          processId,
+          description: "Assemble",
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("productionEvent")
+        .values({
+          jobOperationId: operation.id,
+          type: "Labor",
+          startTime: datetime.timestamp(),
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+
+      const { checks } = await getActivationReadiness(f.db, {
+        companyId: f.companyId,
+        cutoverDate: f.cutoverDate
+      });
+      const legacyJobs = checks.find((c) => c.key === "legacy-jobs")!;
+
+      // The Draft and Planned jobs took no cost, and J-DONE is closed.
+      expect(legacyJobs).toMatchObject({ passed: false, count: 2 });
+      expect(legacyJobs.items.map((item) => item.readableId)).toEqual([
+        "J-ISSUED",
+        "J-TIMED"
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

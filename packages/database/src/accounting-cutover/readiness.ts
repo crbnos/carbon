@@ -233,11 +233,11 @@ export async function getActivationReadiness(
 
   const legacyJobsCheck: ActivationCheck = {
     key: "legacy-jobs",
-    label: "No open jobs from before Carbon recorded their costs",
+    label: "No open jobs with costs from before Carbon recorded them",
     passed: legacyJobs.count === 0,
     detail:
       legacyJobs.count > 0
-        ? `Complete or cancel ${legacyJobs.count} job(s) created before Carbon recorded their costs.`
+        ? `Complete or cancel ${legacyJobs.count} job(s) that took costs before Carbon recorded them.`
         : null,
     reasons: [],
     items: legacyJobs.items,
@@ -411,35 +411,87 @@ async function getPendingDocumentsBeforeCutover(
 const CLOSED_JOB_STATUSES = ["Completed", "Cancelled", "Closed"] as const;
 
 /**
- * Open jobs created before L, the creation time of the company's first
- * Provisional or Superseded journal (now when it has none). Carbon did not
- * record the cost of such a job from its start.
+ * Open jobs that took cost before L, the creation time of the company's first
+ * Provisional or Superseded journal (now when it has none). A material issue,
+ * a completion, a time entry or a reported quantity before L wrote no journal,
+ * so the job's WIP lines are short of its cost, and `close-job` would relieve
+ * WIP that was never debited. A job with no such activity, a Draft or Planned
+ * job for example, has nothing missing: every cost it takes from now on posts.
  */
 async function getLegacyOpenJobs(
   db: CutoverDb,
   companyId: string
 ): Promise<{ items: ActivationCheckItem[]; count: number }> {
-  const firstPreCutoverJournal = db
+  const legacyCutoff = sql<string>`coalesce(${db
     .selectFrom("journal")
     .select((eb) => eb.fn.min("createdAt").as("createdAt"))
     .where("companyId", "=", companyId)
-    .where("status", "in", [...PRE_CUTOVER_JOURNAL_STATUSES]);
+    .where("status", "in", [...PRE_CUTOVER_JOURNAL_STATUSES])}, now())`;
   const rows = await db
     .selectFrom("job")
     .select([
-      "id",
-      "jobId as readableId",
-      "status",
+      "job.id",
+      "job.jobId as readableId",
+      "job.status",
       sql<number>`count(*) over ()`.as("total")
     ])
-    .where("companyId", "=", companyId)
-    .where("status", "not in", [...CLOSED_JOB_STATUSES])
-    .where(
-      "createdAt",
-      "<",
-      sql<string>`coalesce(${firstPreCutoverJournal}, now())`
+    .where("job.companyId", "=", companyId)
+    .where("job.status", "not in", [...CLOSED_JOB_STATUSES])
+    .where((eb) =>
+      eb.or([
+        eb.exists(
+          eb
+            .selectFrom("itemLedger")
+            .select(sql`1`.as("one"))
+            .whereRef("itemLedger.companyId", "=", "job.companyId")
+            .whereRef("itemLedger.documentId", "=", "job.id")
+            .where("itemLedger.documentType", "in", [
+              "Job Consumption",
+              "Job Receipt"
+            ])
+            .where("itemLedger.createdAt", "<", legacyCutoff)
+        ),
+        eb.exists(
+          eb
+            .selectFrom("productionEvent")
+            .innerJoin("jobOperation", (join) =>
+              join
+                .onRef("jobOperation.id", "=", "productionEvent.jobOperationId")
+                .onRef(
+                  "jobOperation.companyId",
+                  "=",
+                  "productionEvent.companyId"
+                )
+            )
+            .select(sql`1`.as("one"))
+            .whereRef("jobOperation.jobId", "=", "job.id")
+            .whereRef("productionEvent.companyId", "=", "job.companyId")
+            .where("productionEvent.createdAt", "<", legacyCutoff)
+        ),
+        eb.exists(
+          eb
+            .selectFrom("productionQuantity")
+            .innerJoin("jobOperation", (join) =>
+              join
+                .onRef(
+                  "jobOperation.id",
+                  "=",
+                  "productionQuantity.jobOperationId"
+                )
+                .onRef(
+                  "jobOperation.companyId",
+                  "=",
+                  "productionQuantity.companyId"
+                )
+            )
+            .select(sql`1`.as("one"))
+            .whereRef("jobOperation.jobId", "=", "job.id")
+            .whereRef("productionQuantity.companyId", "=", "job.companyId")
+            .where("productionQuantity.createdAt", "<", legacyCutoff)
+        )
+      ])
     )
-    .orderBy("jobId")
+    .orderBy("job.jobId")
     .limit(READINESS_ITEM_LIMIT)
     .execute();
   return {
