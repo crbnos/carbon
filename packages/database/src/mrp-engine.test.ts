@@ -12,7 +12,8 @@ import {
   makeLocationItemKey,
   netConsumeFirstContributors,
   splitActualKey,
-  splitKey
+  splitKey,
+  splitLocationItemKey
 } from "./mrp-engine.ts";
 
 // Ids are caller-supplied TEXT: bulk imports mint UUIDs, so every id position
@@ -26,7 +27,7 @@ const UUID_LOCATION = "b81f0b70-9d05-4c1e-8339-000000000001";
 
 it("makeKey/splitKey round-trip hyphenated ids in every position", () => {
   const key = makeKey(UUID_LOCATION, "period-1", UUID_ITEM);
-  expect(splitKey(key)).toEqual([UUID_LOCATION, "period-1", UUID_ITEM]);
+  expect(splitKey(key)).toEqual([UUID_LOCATION, "period-1", UUID_ITEM, ""]);
 });
 
 it("keys for distinct items never collide on shared id prefixes", () => {
@@ -41,7 +42,8 @@ it("makeActualKey/splitActualKey round-trip with source types containing spaces"
     UUID_ITEM,
     UUID_LOCATION,
     "p1",
-    "Sales Order"
+    "Sales Order",
+    ""
   ]);
 });
 
@@ -84,7 +86,53 @@ it("explodeBom nets and explodes demand for UUID-id items", () => {
   const childKey = makeKey(location, "p1", child);
   expect(bomDerivedDemand.get(childKey)).toEqual(12);
   // The key parses back to the full hyphenated ids, not truncated segments.
-  expect(splitKey(childKey)).toEqual([location, "p1", child]);
+  expect(splitKey(childKey)).toEqual([location, "p1", child, ""]);
+});
+
+it("splitKey(makeKey(l, p, i)) is in the common segment", () => {
+  expect(splitKey(makeKey("l", "p", "i"))).toEqual(["l", "p", "i", ""]);
+  expect(splitKey(makeKey("l", "p", "i", "prj_1"))).toEqual([
+    "l",
+    "p",
+    "i",
+    "prj_1"
+  ]);
+  expect(splitLocationItemKey(makeLocationItemKey("l", "i"))).toEqual([
+    "l",
+    "i",
+    ""
+  ]);
+});
+
+it("explodeBom explodes a parent's demand in segment prj_1 into prj_1 only", () => {
+  const periods = [{ id: "p1" }, { id: "p2" }];
+  const { bomDerivedDemand, grossDemand } = explodeBom({
+    grossDemand: new Map([[makeKey("loc", "p2", "parent", "prj_1"), 10]]),
+    bomByItem: new Map<string, BomChild[]>([
+      [
+        "parent",
+        [{ itemId: "child", quantity: 2, methodType: "Pull from Inventory" }]
+      ]
+    ]),
+    replenishmentSystemByItem: new Map([
+      ["parent", "Make"],
+      ["child", "Buy"]
+    ]),
+    leadTimeByItem: new Map([["child", 7]]),
+    periods,
+    // Common on-hand of the parent does not net segment prj_1's demand.
+    onHandByLocationItem: new Map([
+      [makeLocationItemKey("loc", "parent"), 100],
+      [makeLocationItemKey("loc", "parent", "prj_1"), 4]
+    ]),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map()
+  });
+
+  // 10 demanded − 4 in prj_1's stock = 6 to make; 2 per parent = 12.
+  expect(bomDerivedDemand.get(makeKey("loc", "p1", "child", "prj_1"))).toBe(12);
+  expect(bomDerivedDemand.has(makeKey("loc", "p1", "child"))).toBe(false);
+  expect(grossDemand.has(makeKey("loc", "p1", "child"))).toBe(false);
 });
 
 it("computeLowLevelCodes handles hyphenated ids and shared subassemblies", () => {

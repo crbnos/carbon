@@ -34,7 +34,7 @@ The plan covers:
 
 - [x] Task 1: Extract the planning core and pin a golden test
 - [x] Task 2: Create the Phase 2b enum and segment migration
-- [ ] Task 3: Add the segment to the engine keys
+- [x] Task 3: Add the segment to the engine keys
 - [ ] Task 4: Add the netting sequence as a pure module
 - [ ] Task 5: Segment the demand and supply views
 - [ ] Task 6: Segment the inputs of `runMrp`
@@ -662,4 +662,6 @@ ls .ai/playbooks/projects-phase-2b.md
 - Task 2 (deviation): `id-refs.ts` lists none of the 5 tables' key columns. But `planningSegmentId`, `fromProjectId`, `toProjectId`, `projectStockTransferId` and `projectBorrowId` hold row ids with no foreign key. The id-refs rule needs every such column, so `demandForecast` and `planningAction` gain entries. A backup carries both tables; the 4 other tables are transient and are not backed up.
 - Task 2 (beyond the plan's file list): the ERP's hand-written `planningActionType` list (`production.models.ts`) gains `Transfer` and `Borrow`, or the `erp` typecheck fails. `PlanningActionLines` gives them an icon (`LuArrowLeftRight`, `LuHandCoins`), a label and a plain sentence ("Transfer 8 for Oct 4"). Task 13 replaces the sentence. The new strings wait for the run's final `/translate` pass. The commit carries the regenerated MCP digest. The workflow catalog check is clean.
 - Task 2: `@carbon/jobs` fails to typecheck before and after this task, in `picked-consumption.ts` and `stock-stripes.ts` (Phase 2a). A separate `fix(projects)` commit after Task 2 fixes it.
+- Task 3: `makeKey`, `makeLocationItemKey` and `makeActualKey` take the segment as their last part (default `COMMON_SEGMENT`, `''`), and the split helpers return it. `explodeBom` reads the segment from each key with `splitLocationItemKey`. The on-hand key, the period key, the child key and the Consume First successor key all carry the parent's segment. `DemandContributorBase` gains an optional `segmentId`, which no caller sets yet.
+- Task 3: the 3 existing key tests in `mrp-engine.test.ts` now expect the extra `''` part, because the split helpers return one more element. The 2 new tests pass: the round trip, and a parent in `prj_1` that explodes into `prj_1` only and ignores common on-hand. The database suite passes (416) and the planning suite passes (314) with the golden snapshot unchanged. `@carbon/database`, `@carbon/planning`, `@carbon/server-functions` and `@carbon/jobs` typecheck.
 

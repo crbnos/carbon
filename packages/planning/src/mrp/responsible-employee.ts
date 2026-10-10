@@ -13,9 +13,8 @@
 // table — the same group can have a different owner at each location.
 
 import type { DB } from "@carbon/database/client";
+import { KEY_SEP } from "@carbon/database/mrp-engine";
 import type { Kysely } from "kysely";
-
-const KEY_SEP = "\x1f";
 
 export type ResponsibleEmployeeRungs = {
   /** itemPlanning.responsibleEmployee for (itemId, locationId) — leaf override */

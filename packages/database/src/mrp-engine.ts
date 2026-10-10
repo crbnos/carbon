@@ -28,6 +28,8 @@ export type BomChild = {
 type DemandContributorBase = {
   parentItemId: string;
   quantity: number;
+  // The netting segment of the demand ('' is common, the default).
+  segmentId?: string;
   // The discontinued part this demand was redirected from, if any.
   redirectedFromItemId?: string;
   perAssemblyQuantity?: number;
@@ -75,40 +77,71 @@ export type BomExplosionOutput = {
 // (Postgres 21000 on the batched upsert).
 export const KEY_SEP = "\x1f";
 
-export function splitKey(key: string): [string, string, string] {
-  const parts = key.split(KEY_SEP);
-  return [parts[0]!, parts[1]!, parts[2]!];
-}
+// The netting segment is the last part of every key (Projects Phase 2b): ''
+// is common, a project id is a project with project stock. A key built
+// without a segment is in the common segment.
+export const COMMON_SEGMENT = "";
 
 export function makeKey(
   locationId: string,
   periodId: string,
-  itemId: string
+  itemId: string,
+  segmentId: string = COMMON_SEGMENT
 ): string {
-  return locationId + KEY_SEP + periodId + KEY_SEP + itemId;
+  return (
+    locationId + KEY_SEP + periodId + KEY_SEP + itemId + KEY_SEP + segmentId
+  );
+}
+
+export function splitKey(key: string): [string, string, string, string] {
+  const parts = key.split(KEY_SEP);
+  return [parts[0]!, parts[1]!, parts[2]!, parts[3] ?? COMMON_SEGMENT];
 }
 
 export function makeLocationItemKey(
   locationId: string,
-  itemId: string
+  itemId: string,
+  segmentId: string = COMMON_SEGMENT
 ): string {
-  return locationId + KEY_SEP + itemId;
+  return locationId + KEY_SEP + itemId + KEY_SEP + segmentId;
+}
+
+export function splitLocationItemKey(key: string): [string, string, string] {
+  const parts = key.split(KEY_SEP);
+  return [parts[0]!, parts[1]!, parts[2] ?? COMMON_SEGMENT];
 }
 
 export function makeActualKey(
   itemId: string,
   locationId: string,
   periodId: string,
-  sourceType: string
+  sourceType: string,
+  segmentId: string = COMMON_SEGMENT
 ): string {
   return (
-    itemId + KEY_SEP + locationId + KEY_SEP + periodId + KEY_SEP + sourceType
+    itemId +
+    KEY_SEP +
+    locationId +
+    KEY_SEP +
+    periodId +
+    KEY_SEP +
+    sourceType +
+    KEY_SEP +
+    segmentId
   );
 }
 
-export function splitActualKey(key: string): [string, string, string, string] {
+export function splitActualKey(
+  key: string
+): [string, string, string, string, string] {
   const parts = key.split(KEY_SEP);
-  return [parts[0]!, parts[1]!, parts[2]!, parts[3]!];
+  return [
+    parts[0]!,
+    parts[1]!,
+    parts[2]!,
+    parts[3]!,
+    parts[4] ?? COMMON_SEGMENT
+  ];
 }
 
 export function effectiveReplenishment(
@@ -247,21 +280,21 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
     const locItemsAtLevel = new Set<string>();
     for (const [key, qty] of grossDemand) {
       if (qty <= 0) continue;
-      const [locationId, , itemId] = splitKey(key);
+      const [locationId, , itemId, segmentId] = splitKey(key);
       if ((llc.get(itemId) ?? 0) === level) {
-        locItemsAtLevel.add(makeLocationItemKey(locationId, itemId));
+        locItemsAtLevel.add(makeLocationItemKey(locationId, itemId, segmentId));
       }
     }
 
     for (const locItem of locItemsAtLevel) {
-      const sepIdx = locItem.indexOf(KEY_SEP);
-      const locationId = locItem.slice(0, sepIdx);
-      const itemId = locItem.slice(sepIdx + 1);
+      // A parent's segment is its children's: demand in segment S explodes
+      // into segment S.
+      const [locationId, itemId, segmentId] = splitLocationItemKey(locItem);
 
       const effRepSys = effectiveReplenishment(
         replenishmentSystemByItem.get(itemId)
       );
-      const invKey = makeLocationItemKey(locationId, itemId);
+      const invKey = makeLocationItemKey(locationId, itemId, segmentId);
       // Running balance for this (location, item) across the planning
       // horizon: starts at on-hand, +supply as each period passes,
       // −demand as we hit it. Floored at 0 because any shortfall is
@@ -269,7 +302,7 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
       let running = onHandByLocationItem.get(invKey) ?? 0;
 
       for (const period of periods) {
-        const periodKey = makeKey(locationId, period.id, itemId);
+        const periodKey = makeKey(locationId, period.id, itemId, segmentId);
         running += jobSupply.get(periodKey) ?? 0;
 
         const grossQty = grossDemand.get(periodKey) ?? 0;
@@ -291,7 +324,12 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
           running = redirectConsumeFirstShortfall({
             itemId,
             periodKey,
-            successorKey: makeKey(locationId, successorPeriod.id, redirect.to),
+            successorKey: makeKey(
+              locationId,
+              successorPeriod.id,
+              redirect.to,
+              segmentId
+            ),
             factor: redirect.factor,
             grossQty,
             running,
@@ -339,7 +377,12 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
           const targetPeriod = periods[targetPeriodIndex];
           if (!targetPeriod) continue;
 
-          const childKey = makeKey(locationId, targetPeriod.id, child.itemId);
+          const childKey = makeKey(
+            locationId,
+            targetPeriod.id,
+            child.itemId,
+            segmentId
+          );
           grossDemand.set(
             childKey,
             (grossDemand.get(childKey) ?? 0) + childQty

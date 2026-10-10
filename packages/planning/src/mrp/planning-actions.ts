@@ -32,6 +32,7 @@ import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
+import { KEY_SEP } from "@carbon/database/mrp-engine";
 import { getLogger } from "@carbon/logger";
 import {
   computePlanningOrders,
@@ -52,7 +53,6 @@ import {
 
 const logger = getLogger("planning", "planning-actions");
 
-const KEY_SEP = "\x1f";
 const WEEKS_TO_PLAN = 48;
 /** Planning periods are weeks. */
 const DAYS_PER_PERIOD = 7;
