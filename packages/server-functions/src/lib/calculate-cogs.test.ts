@@ -284,3 +284,120 @@ databaseTest(
     }
   }
 );
+
+// Project stock (Projects Phase 2a): a quantity drawn for a project relieves
+// that project's layers only; a quantity with no project relieves common
+// layers only.
+databaseTest(
+  "the stripe decides which layers a quantity relieves",
+  async () => {
+    const f = await chargeFixture();
+    try {
+      await f.db
+        .transaction()
+        .execute(async (trx) => {
+          const item = await trx
+            .insertInto("item")
+            .values({
+              readableId: `${f.companyId}-STRIPE`,
+              name: "Striped part",
+              type: "Part",
+              itemTrackingType: "Inventory",
+              companyId: f.companyId,
+              createdBy: "system"
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          await trx
+            .deleteFrom("itemCost")
+            .where("itemId", "=", item.id)
+            .execute();
+          await trx
+            .insertInto("itemCost")
+            .values({
+              itemId: item.id,
+              costingMethod: "FIFO",
+              unitCost: 10,
+              companyId: f.companyId,
+              createdBy: "system"
+            })
+            .execute();
+          const project = await trx
+            .insertInto("project")
+            .values({
+              name: "Striped project",
+              identifier: "STRP",
+              status: "Released",
+              costTreatment: "Expense",
+              projectStock: true,
+              companyId: f.companyId,
+              createdBy: "system"
+            })
+            .returning("id")
+            .executeTakeFirstOrThrow();
+
+          const layer = (
+            postingDate: string,
+            cost: number,
+            projectId: string | null
+          ) =>
+            trx
+              .insertInto("costLedger")
+              .values({
+                itemLedgerType: "Purchase",
+                costLedgerType: "Direct Cost",
+                adjustment: false,
+                itemId: item.id,
+                quantity: 5,
+                cost,
+                remainingQuantity: 5,
+                postingDate,
+                projectId,
+                companyId: f.companyId
+              })
+              .returning("id")
+              .executeTakeFirstOrThrow();
+          // The project layer is the older one, so plain FIFO would take it.
+          const projectLayer = await layer("2026-01-01", 60, project.id);
+          const commonLayer = await layer("2026-02-01", 50, null);
+
+          const remaining = async (id: string) =>
+            Number(
+              (
+                await trx
+                  .selectFrom("costLedger")
+                  .select("remainingQuantity")
+                  .where("id", "=", id)
+                  .executeTakeFirstOrThrow()
+              ).remainingQuantity
+            );
+
+          const forProject = await calculateCOGS(trx, {
+            itemId: item.id,
+            quantity: 1,
+            companyId: f.companyId,
+            projectId: project.id
+          });
+          expect(forProject.totalCost).toEqual(12);
+          expect(await remaining(projectLayer.id)).toEqual(4);
+          expect(await remaining(commonLayer.id)).toEqual(5);
+
+          const common = await calculateCOGS(trx, {
+            itemId: item.id,
+            quantity: 1,
+            companyId: f.companyId
+          });
+          expect(common.totalCost).toEqual(10);
+          expect(await remaining(projectLayer.id)).toEqual(4);
+          expect(await remaining(commonLayer.id)).toEqual(4);
+
+          throw new Rollback();
+        })
+        .catch((error) => {
+          if (!(error instanceof Rollback)) throw error;
+        });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

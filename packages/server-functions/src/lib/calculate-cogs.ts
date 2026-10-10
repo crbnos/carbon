@@ -24,11 +24,16 @@ export async function calculateCOGS(
     itemId,
     quantity,
     companyId,
-    trackedEntityIds
+    trackedEntityIds,
+    projectId
   }: {
     itemId: string;
     quantity: number;
     companyId: string;
+    // The stock stripe the quantity is drawn from: a project id for that
+    // project's stock, or null / undefined for common stock. Layers of any
+    // other stripe are never relieved.
+    projectId?: string | null;
     // The serial units leaving, when the caller knows them: each is relieved
     // from the layer booked for it (specific identification) before the
     // FIFO / LIFO layers. See cost-layer-order.ts.
@@ -76,6 +81,12 @@ export async function calculateCOGS(
         // adjustment child rows are consumed with their parent, not as layers
         .where("adjustment", "=", false)
         .where("appliesToCostLedgerId", "is", null)
+        // only the stripe the quantity leaves from
+        .where((eb) =>
+          projectId
+            ? eb("projectId", "=", projectId)
+            : eb("projectId", "is", null)
+        )
         // 'Purchase Order' rows are planning/cost-history artifacts, not layers
         .where((eb) =>
           eb.or([
