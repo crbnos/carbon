@@ -435,3 +435,35 @@
     white-space: nowrap;
   }
 }
+
+/*
+ * Stacked dialogs. Every dialog backdrop carries `data-backdrop`, and only the
+ * top-most OPEN one paints: a modal opened over a modal or a drawer dims and
+ * blurs the page and the dialog beneath it once, instead of once per layer.
+ * DOM order is stacking order — Radix portals append to <body> as they open.
+ * The covered backdrop fades out while the new one fades in, and back again
+ * as it closes (a closing backdrop is `data-state=closed` and stops covering).
+ * Unlayered, so it outranks the overlays' own background/blur utilities.
+ */
+[data-backdrop] {
+  transition:
+    background-color 150ms,
+    -webkit-backdrop-filter 150ms,
+    backdrop-filter 150ms;
+}
+
+body
+  > [data-backdrop]:has(
+    ~ [data-backdrop][data-state="open"],
+    ~ * [data-backdrop][data-state="open"]
+  ),
+body
+  > :has(
+    ~ [data-backdrop][data-state="open"],
+    ~ * [data-backdrop][data-state="open"]
+  )
+  [data-backdrop] {
+  background-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

@@ -140,7 +140,10 @@ const DockMenuContent = forwardRef<
     <ClientOnly fallback={null}>
       {() => (
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-[70] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Overlay
+            data-backdrop=""
+            className="fixed inset-0 z-[70] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          />
           {/* The content spans the screen's width, but only its parts take
               touches: a tap in the gaps between them lands on the overlay,
               which closes the menu like any tap outside. */}
