@@ -9,7 +9,6 @@ import {
 } from "@carbon/auth";
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import { OperatingSystemContextProvider } from "@carbon/react";
-import { I18nProvider } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import { startTransition, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
@@ -42,11 +41,7 @@ preloadCatalog(document.documentElement.lang).then(() => {
           window.navigator.userAgent.includes("Mac") ? "mac" : "windows"
         }
       >
-        <I18nProvider
-          locale={navigator.language ?? navigator.languages?.[0] ?? "en-US"}
-        >
-          <HydratedRouter />
-        </I18nProvider>
+        <HydratedRouter />
         <PosthogInit />
       </OperatingSystemContextProvider>
     );

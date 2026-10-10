@@ -26,6 +26,7 @@ import {
   themes
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
+import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
@@ -95,7 +96,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   // The starter shares the ERP's catalog: the account settings modal and the
   // @carbon/react components it renders are extracted into it.
-  const appLanguage = resolveLanguage(getPreferenceHeaders(request).locale);
+  const { locale } = getPreferenceHeaders(request);
+  const appLanguage = resolveLanguage(locale);
   await preloadCatalog(appLanguage);
 
   return data(
@@ -110,6 +112,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         SUPABASE_ANON_KEY
       },
       appLanguage,
+      // React Aria formats dates and numbers in the full locale (en-GB).
+      locale,
       ...getMode(request),
       theme: getTheme(request),
       result: context.get(flashResultContext)
@@ -226,6 +230,7 @@ export default function App() {
   const env = loaderData?.env ?? {};
   const theme = loaderData?.theme ?? "zinc";
   const appLanguage = loaderData?.appLanguage ?? "en";
+  const locale = loaderData?.locale ?? appLanguage;
   const catalog = useCatalog(appLanguage);
 
   /* Dark/Light Mode */
@@ -249,17 +254,21 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <LocaleProvider locale={appLanguage} catalog={catalog}>
-        <Document mode={mode} theme={theme} lang={appLanguage}>
-          <Outlet />
-          <script
-            // Server render only: on the client the nonce is undefined (and browsers hide it).
-            nonce={nonce}
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{
-              __html: `window.env = ${JSON.stringify(env)}`
-            }}
-          />
-        </Document>
+        {/* Inside the root, so a language change re-renders it with the
+            new locale, as in the ERP and MES. */}
+        <I18nProvider locale={locale}>
+          <Document mode={mode} theme={theme} lang={appLanguage}>
+            <Outlet />
+            <script
+              // Server render only: on the client the nonce is undefined (and browsers hide it).
+              nonce={nonce}
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{
+                __html: `window.env = ${JSON.stringify(env)}`
+              }}
+            />
+          </Document>
+        </I18nProvider>
       </LocaleProvider>
     </QueryClientProvider>
   );
