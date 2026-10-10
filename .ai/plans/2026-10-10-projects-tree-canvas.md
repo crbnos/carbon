@@ -58,7 +58,7 @@ Make the Tree layout of the project Elements page look and work like Flow's tree
 
 ## Progress
 
-- [ ] Task 1: Add the pure tree layout and trace-link helpers with tests
+- [x] Task 1: Add the pure tree layout and trace-link helpers with tests
 - [ ] Task 2: Define the type colours once
 - [ ] Task 3: Load the full list, the comment counts and the open change requests
 - [ ] Task 4: Add the card node and the box node
@@ -781,3 +781,7 @@ ls .ai/playbooks/ | grep -i tree
 ```
 
 **Out of scope:** the List, Board, Table, Timeline and Reader layouts, except a check that the new type colours look right.
+
+## Execution notes
+
+- Task 1: `layoutElementTree` also keeps a set of visited boxes, so a bad `parentId` cycle under a `?root=` cannot recurse forever (the plan named the guard for `matchingDescendants` only). The 13 cases pass. The license fixer only sees git-tracked files, so each new file is staged with `git add -N` before the fixer runs.
