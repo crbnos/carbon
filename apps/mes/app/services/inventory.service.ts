@@ -6,18 +6,24 @@ import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { fetchAll } from "@carbon/database/fetch-all";
 import type {
   DocumentTemplate,
   DocumentTemplateType
 } from "@carbon/documents/template";
 import { toDocumentTemplate } from "@carbon/documents/template";
 import { serverFns } from "@carbon/server-functions";
+import { trackedEntityStripe } from "@carbon/server-functions/lib/stock-stripes";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import type { SuggestedAllocationLot } from "./allocation";
-import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
+import {
+  greedyFillAllocation,
+  keepEntitiesInStripes,
+  sortLotsByPickMethod
+} from "./allocation";
 
 export type { SuggestedAllocationLot };
 export { greedyFillAllocation, sortLotsByPickMethod };
@@ -55,6 +61,9 @@ export async function getBatchNumbersForItem(
     itemId: string;
     companyId: string;
     isReadOnly?: boolean;
+    // The job's stock stripes, in draw order (getJobOperationStockStripes).
+    // Every lot when omitted.
+    stripes?: (string | null)[];
   }
 ) {
   let itemIds = [args.itemId];
@@ -77,7 +86,7 @@ export async function getBatchNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
+  const entities = await client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
@@ -86,6 +95,13 @@ export async function getBatchNumbersForItem(
     .gt("quantity", 0)
     .order("expirationDate", { ascending: true, nullsFirst: false })
     .order("createdAt", { ascending: true });
+
+  return keepEntitiesOfStripes(client, {
+    companyId: args.companyId,
+    itemIds,
+    entities,
+    stripes: args.stripes
+  });
 }
 
 export async function getCompanySettings(
@@ -132,6 +148,9 @@ export async function getSerialNumbersForItem(
   args: {
     itemId: string;
     companyId: string;
+    // The job's stock stripes, in draw order (getJobOperationStockStripes).
+    // Every serial when omitted.
+    stripes?: (string | null)[];
   }
 ) {
   let itemIds = [args.itemId];
@@ -154,7 +173,7 @@ export async function getSerialNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
+  const entities = await client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
@@ -164,6 +183,101 @@ export async function getSerialNumbersForItem(
     .gt("quantity", 0)
     .order("expirationDate", { ascending: true, nullsFirst: false })
     .order("createdAt", { ascending: true });
+
+  return keepEntitiesOfStripes(client, {
+    companyId: args.companyId,
+    itemIds,
+    entities,
+    stripes: args.stripes
+  });
+}
+
+/**
+ * Keeps the tracked entities in the stock stripes a job may draw (Projects
+ * Phase 2a), project stock first, then common stock. `issue` refuses a lot
+ * outside the job's stripes, so the picker does not offer one. Every entity
+ * is kept when `stripes` is omitted.
+ *
+ * An entity's stripe is the stripe of its rows with the most net on-hand, as
+ * `issue` decides it (`trackedEntityStripe`). Two reads: the item's ledger
+ * rows in project stock, then every row of the entities they name. With no
+ * project stock of the item, the first read finds nothing and every entity
+ * is common stock.
+ */
+async function keepEntitiesOfStripes<
+  T extends { id: string },
+  R extends { data: T[] | null; error: unknown }
+>(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    itemIds: string[];
+    entities: R;
+    stripes?: (string | null)[];
+  }
+): Promise<R> {
+  const { entities, stripes } = args;
+  if (!stripes || entities.error || !entities.data?.length) return entities;
+
+  const striped = await fetchAll<{ trackedEntityId: string | null }>(() =>
+    client
+      .from("itemLedger")
+      .select("trackedEntityId")
+      .in("itemId", args.itemIds)
+      .eq("companyId", args.companyId)
+      .not("trackedEntityId", "is", null)
+      .not("projectId", "is", null)
+      .order("id")
+  );
+  if (striped.error) return { ...entities, data: null, error: striped.error };
+
+  const stripedEntityIds = [
+    ...new Set(
+      (striped.data ?? [])
+        .map((row) => row.trackedEntityId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+
+  const stripeById = new Map<string, string | null>();
+  if (stripedEntityIds.length > 0) {
+    const rows = await fetchAll<{
+      trackedEntityId: string | null;
+      projectId: string | null;
+      quantity: number | null;
+    }>(() =>
+      client
+        .from("itemLedger")
+        .select("trackedEntityId, projectId, quantity")
+        .in("trackedEntityId", stripedEntityIds)
+        .eq("companyId", args.companyId)
+        .order("id")
+    );
+    if (rows.error) return { ...entities, data: null, error: rows.error };
+
+    const rowsByEntity = new Map<string, NonNullable<typeof rows.data>>();
+    for (const row of rows.data ?? []) {
+      if (!row.trackedEntityId) continue;
+      const list = rowsByEntity.get(row.trackedEntityId) ?? [];
+      list.push(row);
+      rowsByEntity.set(row.trackedEntityId, list);
+    }
+    for (const [trackedEntityId, entityRows] of rowsByEntity) {
+      stripeById.set(
+        trackedEntityId,
+        trackedEntityStripe(entityRows, trackedEntityId)
+      );
+    }
+  }
+
+  return {
+    ...entities,
+    data: keepEntitiesInStripes(
+      entities.data,
+      (trackedEntityId) => stripeById.get(trackedEntityId) ?? null,
+      stripes
+    )
+  };
 }
 
 /**

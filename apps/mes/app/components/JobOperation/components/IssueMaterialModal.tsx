@@ -181,8 +181,10 @@ export function IssueMaterialModal({
   }, [items]);
 
   // Serial number state and options
+  // Only the lots of the job's stock stripes: `issue` refuses any other.
   const { data: serialNumbers } = useSerialNumbers(
-    trackingType === "Serial" ? selectedItemId : undefined
+    trackingType === "Serial" ? selectedItemId : undefined,
+    operationId
   );
   // Today in the local timezone — used for "is this entity expired"
   // comparisons throughout the modal. Memoized so we re-derive option
@@ -251,7 +253,8 @@ export function IssueMaterialModal({
 
   // Batch number state and options
   const { data: batchNumbers } = useBatchNumbers(
-    trackingType === "Batch" ? selectedItemId : undefined
+    trackingType === "Batch" ? selectedItemId : undefined,
+    operationId
   );
   const batchOptions = useMemo(() => {
     return (
@@ -2102,19 +2105,19 @@ export function IssueMaterialModal({
   );
 }
 
-function useSerialNumbers(itemId?: string) {
+function useSerialNumbers(itemId?: string, operationId?: string) {
   const serialNumbersFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getSerialNumbersForItem>>
-  >(itemId ? path.to.api.serialNumbers(itemId) : null);
+  >(itemId ? path.to.api.serialNumbers(itemId, operationId) : null);
 
   return { data: serialNumbersFetcher.data };
 }
 
 // Hook for fetching batch numbers
-function useBatchNumbers(itemId?: string) {
+function useBatchNumbers(itemId?: string, operationId?: string) {
   const batchNumbersFetcher = useLoaderQuery<
     Awaited<ReturnType<typeof getBatchNumbersForItem>>
-  >(itemId ? path.to.api.batchNumbers(itemId) : null);
+  >(itemId ? path.to.api.batchNumbers(itemId, operationId) : null);
 
   return { data: batchNumbersFetcher.data };
 }
