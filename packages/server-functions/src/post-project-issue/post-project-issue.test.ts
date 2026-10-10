@@ -643,3 +643,97 @@ databaseTest(
     }
   }
 );
+
+// Project stock (Projects Phase 2a): a project with project stock draws its
+// own stock first, then common stock, and is charged the sum.
+databaseTest(
+  "issuing to a project with project stock draws its stock, then common stock, and charges the sum",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.enableProjectStock();
+      // 10 in common stock at 10.00, 4 in the project's stock at 12.00.
+      const { itemId, locationId } = await f.addStockedItem("stripe", {
+        quantity: 10,
+        unitCost: 10
+      });
+      await f.addStripeStock({
+        itemId,
+        locationId,
+        projectId: f.projectId,
+        quantity: 4,
+        unitCost: 12
+      });
+
+      const issued = await postProjectIssue(f.ctx, {
+        projectId: f.projectId,
+        projectElementId: f.elementId,
+        itemId,
+        locationId,
+        quantity: 6,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+      // 4 x 12.00 + 2 x 10.00
+      expect(issued.data?.cost).toEqual(68);
+
+      const rows = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Project Issue")
+        .orderBy("quantity")
+        .execute();
+      expect(rows.map((row) => [Number(row.quantity), row.projectId])).toEqual([
+        [-4, f.projectId],
+        [-2, null]
+      ]);
+
+      const charges = await f.db
+        .selectFrom("projectLedger")
+        .select(["quantity", "amount"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        charges.map((row) => [Number(row.quantity), Number(row.amount)])
+      ).toEqual([[6, 68]]);
+
+      // One journal for both stripes.
+      const journals = await f.db
+        .selectFrom("journalLine")
+        .select(["journalId", "accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Project Issue")
+        .execute();
+      expect(new Set(journals.map((line) => line.journalId)).size).toEqual(1);
+      expect(
+        journals
+          .filter((line) => line.accountId === f.account("project-expense"))
+          .reduce((sum, line) => sum + Number(line.amount), 0)
+      ).toEqual(68);
+
+      // A Return goes back to the project's stock.
+      const returned = await postProjectIssue(f.ctx, {
+        projectId: f.projectId,
+        projectElementId: f.elementId,
+        itemId,
+        locationId,
+        quantity: 1,
+        direction: "Return"
+      });
+      expect(returned.error).toBeNull();
+      const back = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Project Issue")
+        .where("quantity", ">", 0)
+        .execute();
+      expect(back.map((row) => [Number(row.quantity), row.projectId])).toEqual([
+        [1, f.projectId]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

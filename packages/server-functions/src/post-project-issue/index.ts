@@ -16,7 +16,10 @@ import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
-import { bookAdjustment } from "../lib/post-adjustment";
+import {
+  bookAdjustment,
+  createAdjustmentJournal
+} from "../lib/post-adjustment";
 import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   assertChargeable,
@@ -29,6 +32,13 @@ import {
   serviceChargeCoverage,
   startElementsOnFirstCharge
 } from "../lib/project-posting";
+import {
+  assertEntitiesInStripes,
+  loadDemandStripes,
+  type StripeQuantity,
+  splitAcrossStripes,
+  trackedEntityStripe
+} from "../lib/stock-stripes";
 import {
   findServiceIssueToReturn,
   installServicePart,
@@ -234,20 +244,71 @@ const postProjectIssue = defineServerFn({
       projectId: string | null;
     };
     const trackingRows = (quantities.data ?? []) as TrackingQuantityRow[];
-    if (isIssue) {
-      // null == undefined — loose equality, as the adjustment path matches.
-      const source = trackedEntityId
-        ? trackingRows.find((row) => row.trackedEntityId === trackedEntityId)
-        : trackingRows.find(
-            (row) =>
-              row.trackedEntityId == null &&
-              row.storageUnitId == storageUnitId &&
-              // common stock: the issue books no stripe
-              row.projectId == null
-          );
+
+    // The stripes the project's demand may draw (Projects Phase 2a): its own
+    // stock first when it has project stock, then common stock. A Return goes
+    // back to the first: the project's stock, else common stock.
+    const stripes = await loadDemandStripes(db, companyId, projectId);
+    let draws: StripeQuantity[];
+    if (!isIssue) {
+      draws = [{ stripe: stripes[0] ?? null, quantity }];
+    } else if (trackedEntityId) {
+      // A tracked entity is drawn from its own stripe, which the project's
+      // demand must be allowed to draw.
+      const stripe = trackedEntityStripe(
+        trackingRows.map((row) => ({
+          trackedEntityId: row.trackedEntityId,
+          projectId: row.projectId,
+          quantity: row.quantity
+        })),
+        trackedEntityId
+      );
+      const source = trackingRows.find(
+        (row) =>
+          row.trackedEntityId === trackedEntityId &&
+          (row.projectId ?? null) === stripe
+      );
       if (round(quantity) > round(source?.quantity ?? 0)) {
         throw new InvalidInputError("Insufficient quantity to issue");
       }
+      if (!stripes.includes(stripe)) {
+        const entity = await single(
+          db,
+          "trackedEntity",
+          { id: trackedEntityId, companyId },
+          { columns: ["readableId"] }
+        );
+        await assertEntitiesInStripes(
+          db,
+          companyId,
+          [{ readableId: entity.data?.readableId ?? null, stripe }],
+          stripes
+        );
+      }
+      draws = [{ stripe, quantity }];
+    } else {
+      // Untracked stock at the bin, stripe by stripe in draw order.
+      // null == undefined — loose equality, as the adjustment path matches.
+      const available = stripes.map((stripe) => ({
+        stripe,
+        quantity: trackingRows
+          .filter(
+            (row) =>
+              row.trackedEntityId == null &&
+              row.storageUnitId == storageUnitId &&
+              (row.projectId ?? null) === stripe
+          )
+          .reduce((sum, row) => sum + Number(row.quantity ?? 0), 0)
+      }));
+      const split = splitAcrossStripes(quantity, available);
+      if (round(split.remaining) > 0) {
+        throw new InvalidInputError("Insufficient quantity to issue");
+      }
+      // One stripe (no project stock) books the quantity as given.
+      draws =
+        stripes.length === 1
+          ? [{ stripe: stripes[0] ?? null, quantity }]
+          : split.draws;
     }
 
     const accountingEnabled = settings.data?.accountingEnabled ?? false;
@@ -359,64 +420,94 @@ const postProjectIssue = defineServerFn({
           ).id
         : null;
 
-      const booked = await bookAdjustment(trx, {
-        ledger: {
-          postingDate,
-          itemId,
-          quantity: isIssue ? -quantity : quantity,
-          locationId,
-          storageUnitId,
-          trackedEntityId,
-          entryType: isIssue ? "Negative Adjmt." : "Positive Adjmt.",
-          documentType: "Project Issue",
-          documentId: projectId,
-          companyId,
-          createdBy: userId
-        },
-        item: {
-          itemTrackingType: itemResult.data.itemTrackingType,
-          replenishmentSystem: itemResult.data.replenishmentSystem,
-          itemPostingGroupId: itemCostResult.data.itemPostingGroupId
-        },
-        itemCost: itemCostResult.data,
-        accounting: accountingPeriodId
-          ? {
-              accountingPeriodId,
-              accountDefaults: {
-                rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
-                finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
-                inventoryAdjustmentVarianceAccount:
-                  accountDefaults.inventoryAdjustmentVarianceAccount
-              },
-              offsetAccount,
-              offsetDescription: isStatistical
-                ? "Indirect Cost"
-                : service
-                  ? "Service Material"
-                  : "Project Material",
-              sourceType: "Project Issue",
-              description: `${isIssue ? "Issue to" : "Return from"} Project ${
-                context.project.identifier || context.project.name || projectId
-              }`,
-              userId,
-              dimensions: dimensionMap,
-              extraDimensions: [
-                { entityType: "Project", valueId: projectId },
-                ...(projectElementId
-                  ? [
-                      {
-                        entityType: "ProjectElement",
-                        valueId: projectElementId
-                      }
-                    ]
-                  : []),
-                ...(service?.customerId
-                  ? [{ entityType: "Customer", valueId: service.customerId }]
-                  : [])
-              ]
-            }
-          : null
-      });
+      // One journal for every stripe drawn, created on the first movement
+      // that carries value.
+      let sharedJournalId: string | null = null;
+      const getJournalId = async () => {
+        if (!sharedJournalId) {
+          sharedJournalId = await createAdjustmentJournal(trx, {
+            companyId,
+            accountingPeriodId: accountingPeriodId!,
+            description: journalDescription,
+            postingDate,
+            userId,
+            sourceType: "Project Issue"
+          });
+        }
+        return sharedJournalId;
+      };
+      const journalDescription = `${isIssue ? "Issue to" : "Return from"} Project ${
+        context.project.identifier || context.project.name || projectId
+      }`;
+
+      // One adjustment per stripe drawn; the project is charged their sum.
+      const bookedRows: { itemLedgerId: string; cost: number }[] = [];
+      for (const draw of draws) {
+        const bookedRow = await bookAdjustment(trx, {
+          ledger: {
+            postingDate,
+            itemId,
+            quantity: isIssue ? -draw.quantity : draw.quantity,
+            locationId,
+            storageUnitId,
+            trackedEntityId,
+            projectId: draw.stripe,
+            entryType: isIssue ? "Negative Adjmt." : "Positive Adjmt.",
+            documentType: "Project Issue",
+            documentId: projectId,
+            companyId,
+            createdBy: userId
+          },
+          item: {
+            itemTrackingType: itemResult.data.itemTrackingType,
+            replenishmentSystem: itemResult.data.replenishmentSystem,
+            itemPostingGroupId: itemCostResult.data.itemPostingGroupId
+          },
+          itemCost: itemCostResult.data,
+          accounting: accountingPeriodId
+            ? {
+                accountingPeriodId,
+                accountDefaults: {
+                  rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
+                  finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
+                  inventoryAdjustmentVarianceAccount:
+                    accountDefaults.inventoryAdjustmentVarianceAccount
+                },
+                offsetAccount,
+                offsetDescription: isStatistical
+                  ? "Indirect Cost"
+                  : service
+                    ? "Service Material"
+                    : "Project Material",
+                sourceType: "Project Issue",
+                description: journalDescription,
+                getJournalId,
+                userId,
+                dimensions: dimensionMap,
+                extraDimensions: [
+                  { entityType: "Project", valueId: projectId },
+                  ...(projectElementId
+                    ? [
+                        {
+                          entityType: "ProjectElement",
+                          valueId: projectElementId
+                        }
+                      ]
+                    : []),
+                  ...(service?.customerId
+                    ? [{ entityType: "Customer", valueId: service.customerId }]
+                    : [])
+                ]
+              }
+            : null
+        });
+        bookedRows.push(bookedRow);
+      }
+      const booked = {
+        itemLedgerId: bookedRows[0]!.itemLedgerId,
+        journalId: sharedJournalId as string | null,
+        cost: round(bookedRows.reduce((sum, row) => sum + row.cost, 0))
+      };
 
       let projectLedgerId: string | null = null;
       if (!isStatistical) {
