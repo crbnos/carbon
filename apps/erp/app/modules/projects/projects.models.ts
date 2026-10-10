@@ -580,6 +580,170 @@ export const projectIssueValidator = z.object({
   })
 });
 
+// --- Project stock transfers ---------------------------------------------------
+
+export const projectStockTransferTypes = [
+  "Transfer",
+  "Borrow",
+  "Payback"
+] as const satisfies readonly Database["public"]["Enums"]["projectStockTransferType"][];
+
+export type ProjectStockTransferType =
+  Database["public"]["Enums"]["projectStockTransferType"];
+
+export const projectStockTransferStatuses = [
+  "Draft",
+  "Approved",
+  "Posted",
+  "Cancelled"
+] as const satisfies readonly Database["public"]["Enums"]["projectStockTransferStatus"][];
+
+export type ProjectStockTransferStatus =
+  Database["public"]["Enums"]["projectStockTransferStatus"];
+
+export const projectBorrowStatuses = [
+  "Open",
+  "Paid Back"
+] as const satisfies readonly Database["public"]["Enums"]["projectBorrowStatus"][];
+
+export type ProjectBorrowStatus =
+  Database["public"]["Enums"]["projectBorrowStatus"];
+
+/**
+ * The owner-picker value for common stock. A transfer stores common stock as
+ * a null project; a form field cannot carry null, so it carries this.
+ */
+export const COMMON_STOCK_OWNER = "common";
+
+/** A stock owner field's value as the project id to store (null: common). */
+export function toStockOwner(value: string | null | undefined) {
+  if (!value || value === COMMON_STOCK_OWNER) return null;
+  return value;
+}
+
+/** A stored owner (null: common) as the owner field's value. */
+export function fromStockOwner(projectId: string | null | undefined) {
+  return projectId ?? COMMON_STOCK_OWNER;
+}
+
+/**
+ * A project stock transfer header. A Payback names the borrow it settles,
+ * and its owners come from that borrow. A Transfer or Borrow names both
+ * owners; a Borrow runs between two projects and needs a payback due date.
+ */
+export const projectStockTransferValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    type: z.enum(projectStockTransferTypes, { error: "Type is required" }),
+    fromProjectId: zfd.text(z.string().optional()),
+    toProjectId: zfd.text(z.string().optional()),
+    locationId: zfd.text(z.string().optional()),
+    reason: z.string().trim().min(1, { message: "Reason is required" }),
+    paybackDueDate: zfd.text(z.string().optional()),
+    settlesBorrowId: zfd.text(z.string().optional())
+  })
+  .refine((v) => v.type === "Payback" || Boolean(v.fromProjectId), {
+    message: "From is required",
+    path: ["fromProjectId"]
+  })
+  .refine((v) => v.type === "Payback" || Boolean(v.toProjectId), {
+    message: "To is required",
+    path: ["toProjectId"]
+  })
+  .refine((v) => v.type === "Payback" || Boolean(v.locationId), {
+    message: "Location is required",
+    path: ["locationId"]
+  })
+  .refine(
+    (v) =>
+      v.type === "Payback" ||
+      toStockOwner(v.fromProjectId) !== toStockOwner(v.toProjectId),
+    { message: "From and To must be different owners", path: ["toProjectId"] }
+  )
+  .refine(
+    (v) =>
+      v.type !== "Borrow" ||
+      (toStockOwner(v.fromProjectId) !== null &&
+        toStockOwner(v.toProjectId) !== null),
+    {
+      message: "A borrow runs between two projects",
+      path: ["fromProjectId"]
+    }
+  )
+  .refine((v) => v.type !== "Borrow" || Boolean(v.paybackDueDate), {
+    message: "Payback due date is required",
+    path: ["paybackDueDate"]
+  })
+  .refine((v) => v.type !== "Payback" || Boolean(v.settlesBorrowId), {
+    message: "Select the borrow to pay back",
+    path: ["settlesBorrowId"]
+  });
+
+export const projectStockTransferLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  storageUnitId: zfd.text(z.string().optional()),
+  trackedEntityId: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be greater than 0" })
+  )
+});
+
+/** The status actions of a project stock transfer. */
+export const projectStockTransferActions = [
+  "approve",
+  "post",
+  "cancel"
+] as const;
+
+export type ProjectStockTransferAction =
+  (typeof projectStockTransferActions)[number];
+
+/** The statuses each status action starts from. */
+export const projectStockTransferActionFrom: Record<
+  ProjectStockTransferAction,
+  ProjectStockTransferStatus[]
+> = {
+  approve: ["Draft"],
+  post: ["Approved"],
+  cancel: ["Draft", "Approved"]
+};
+
+type StockOwnerProject = {
+  id: string;
+  identifier: string | null;
+  name: string;
+  customerId: string | null;
+  governmentFurnished: boolean;
+};
+
+/**
+ * The government-furnished refusal for a transfer, or null. Stock of a
+ * government-furnished project moves only to a project of the same customer
+ * (the rule `post-project-stock-transfer` enforces at posting).
+ */
+export function governmentFurnishedRefusal(
+  from: StockOwnerProject | null | undefined,
+  to: StockOwnerProject | null | undefined
+): string | null {
+  if (!from?.governmentFurnished) return null;
+  if (to && from.customerId && to.customerId === from.customerId) return null;
+  return `Government-furnished stock of project ${
+    from.identifier || from.name
+  } can only move to a project of the same customer`;
+}
+
+/**
+ * True when an open borrow is past its payback due date. Dates are
+ * `YYYY-MM-DD` strings, so string order is date order.
+ */
+export function isBorrowOverdue(
+  borrow: { status: ProjectBorrowStatus; paybackDueDate: string },
+  today: string
+) {
+  return borrow.status === "Open" && borrow.paybackDueDate < today;
+}
+
 /** The `FlatTreeItem` shape of `~/components/TreeView`. */
 export type ElementTreeItem<T> = {
   id: string;

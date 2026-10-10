@@ -16,6 +16,7 @@ import type {
   ItemValues,
   laborCategoryRateValidator,
   laborCategoryValidator,
+  ProjectBorrowStatus,
   ProjectCostTreatment,
   ProjectCostType,
   ProjectDisplayOptions,
@@ -25,6 +26,8 @@ import type {
   ProjectLayout,
   ProjectStateGroup,
   ProjectStatus,
+  ProjectStockTransferAction,
+  ProjectStockTransferType,
   projectElementCostValidator,
   projectElementLaborValidator,
   projectElementLinkValidator,
@@ -32,13 +35,16 @@ import type {
   projectLabelValidator,
   projectMilestoneValidator,
   projectStateValidator,
+  projectStockTransferLineValidator,
   projectValidator,
   timesheetCellValidator
 } from "./projects.models";
 import {
   canLink,
+  governmentFurnishedRefusal,
   PARAMETER_ITEM_UNIT_COST,
   parameterSources,
+  projectStockTransferActionFrom,
   requirementCategories,
   requirementTargetOperators,
   requirementVerificationMethods,
@@ -3146,4 +3152,380 @@ export async function upsertProjectUserPreference(
     },
     { onConflict: "projectId,userId,companyId" }
   );
+}
+
+// --- Project stock transfers ---------------------------------------------------
+
+const PROJECT_STOCK_TRANSFER_COLUMNS =
+  "*, fromProject:project!projectStockTransfer_from_fkey(id, identifier, name), toProject:project!projectStockTransfer_to_fkey(id, identifier, name)";
+
+/**
+ * Lists the project stock transfers of the company, newest first. With a
+ * project, only the transfers from or to it.
+ * @mcp read
+ */
+export async function getProjectStockTransfers(
+  client: Client,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    projectId?: string | null;
+  }
+) {
+  let query = client
+    .from("projectStockTransfer")
+    .select(PROJECT_STOCK_TRANSFER_COLUMNS, { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `projectStockTransferId.ilike.%${args.search}%,reason.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.projectId) {
+    query = query.or(
+      `fromProjectId.eq.${args.projectId},toProjectId.eq.${args.projectId}`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+
+  return query;
+}
+
+/**
+ * Loads one project stock transfer with its owners.
+ * @mcp read
+ */
+export async function getProjectStockTransfer(
+  client: Client,
+  companyId: string,
+  id: string
+) {
+  return client
+    .from("projectStockTransfer")
+    .select(PROJECT_STOCK_TRANSFER_COLUMNS)
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/**
+ * Lists the lines of a project stock transfer, oldest first.
+ * @mcp read
+ */
+export async function getProjectStockTransferLines(
+  client: Client,
+  companyId: string,
+  projectStockTransferId: string
+) {
+  return client
+    .from("projectStockTransferLine")
+    .select("*, storageUnit(id, name), trackedEntity(id, readableId)")
+    .eq("projectStockTransferId", projectStockTransferId)
+    .eq("companyId", companyId)
+    .order("createdAt")
+    .order("id");
+}
+
+type ProjectStockTransferFields = {
+  type: ProjectStockTransferType;
+  fromProjectId: string | null;
+  toProjectId: string | null;
+  locationId: string;
+  reason: string;
+  paybackDueDate: string | null;
+  settlesBorrowId: string | null;
+};
+
+/**
+ * Creates a Draft project stock transfer with the next readable id, or
+ * updates a Draft one. A transfer past Draft is not changed.
+ * @mcp upsert
+ */
+export async function upsertProjectStockTransfer(
+  client: Client,
+  transfer:
+    | (ProjectStockTransferFields & { companyId: string; createdBy: string })
+    | (Omit<ProjectStockTransferFields, "type"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in transfer) {
+    const sequence = await client.rpc("get_next_sequence", {
+      sequence_name: "projectStockTransfer",
+      company_id: transfer.companyId
+    });
+    if (sequence.error || !sequence.data) {
+      return refusal("Failed to get the next transfer id");
+    }
+    return client
+      .from("projectStockTransfer")
+      .insert({ ...transfer, projectStockTransferId: sequence.data })
+      .select("id")
+      .single();
+  }
+
+  const { id, companyId, ...update } = transfer;
+  const updated = await client
+    .from("projectStockTransfer")
+    .update({ ...update, updatedAt: datetime.timestamp() })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id")
+    .maybeSingle();
+  if (updated.error) return updated;
+  if (!updated.data) return refusal("Only a Draft transfer can be changed");
+  return { data: updated.data, error: null };
+}
+
+/** Refuses a line change on a transfer past Draft. */
+async function requireDraftProjectStockTransfer(
+  client: Client,
+  companyId: string,
+  projectStockTransferId: string
+) {
+  const header = await client
+    .from("projectStockTransfer")
+    .select("status")
+    .eq("id", projectStockTransferId)
+    .eq("companyId", companyId)
+    .single();
+  if (header.error) return header.error.message;
+  if (header.data.status !== "Draft") {
+    return "Only a Draft transfer can be changed";
+  }
+  return null;
+}
+
+/**
+ * Adds or changes a line of a Draft project stock transfer.
+ * @mcp upsert
+ */
+export async function upsertProjectStockTransferLine(
+  client: Client,
+  line: Omit<z.infer<typeof projectStockTransferLineValidator>, "id"> & {
+    id?: string;
+    projectStockTransferId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const draftError = await requireDraftProjectStockTransfer(
+    client,
+    line.companyId,
+    line.projectStockTransferId
+  );
+  if (draftError) return refusal(draftError);
+
+  const fields = {
+    itemId: line.itemId,
+    quantity: line.quantity,
+    storageUnitId: line.storageUnitId ?? null,
+    trackedEntityId: line.trackedEntityId ?? null
+  };
+
+  if (line.id) {
+    return client
+      .from("projectStockTransferLine")
+      .update({
+        ...fields,
+        updatedBy: line.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", line.id)
+      .eq("projectStockTransferId", line.projectStockTransferId)
+      .eq("companyId", line.companyId)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("projectStockTransferLine")
+    .insert({
+      ...fields,
+      projectStockTransferId: line.projectStockTransferId,
+      companyId: line.companyId,
+      createdBy: line.userId
+    })
+    .select("id")
+    .single();
+}
+
+/**
+ * Removes a line from a Draft project stock transfer.
+ * @mcp delete
+ */
+export async function deleteProjectStockTransferLine(
+  client: Client,
+  args: { id: string; projectStockTransferId: string; companyId: string }
+) {
+  const draftError = await requireDraftProjectStockTransfer(
+    client,
+    args.companyId,
+    args.projectStockTransferId
+  );
+  if (draftError) return refusal(draftError);
+
+  return client
+    .from("projectStockTransferLine")
+    .delete()
+    .eq("id", args.id)
+    .eq("projectStockTransferId", args.projectStockTransferId)
+    .eq("companyId", args.companyId);
+}
+
+/**
+ * Approves a Draft project stock transfer, or cancels a Draft or Approved
+ * one. Approval refuses a transfer without lines, and moves the
+ * government-furnished refusal of posting up to approval.
+ * @mcp action
+ */
+export async function updateProjectStockTransferStatus(
+  client: Client,
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    action: Exclude<ProjectStockTransferAction, "post">;
+  }
+) {
+  const transfer = await getProjectStockTransfer(
+    client,
+    args.companyId,
+    args.id
+  );
+  if (transfer.error) return transfer;
+  if (
+    !projectStockTransferActionFrom[args.action].includes(transfer.data.status)
+  ) {
+    return refusal(`This transfer is ${transfer.data.status}`);
+  }
+
+  if (args.action === "cancel") {
+    return client
+      .from("projectStockTransfer")
+      .update({
+        status: "Cancelled",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .in("status", projectStockTransferActionFrom.cancel)
+      .select("id")
+      .single();
+  }
+
+  // A Payback's owners come from the borrow it settles.
+  let fromProjectId = transfer.data.fromProjectId;
+  let toProjectId = transfer.data.toProjectId;
+  if (transfer.data.type === "Payback" && transfer.data.settlesBorrowId) {
+    const borrow = await client
+      .from("projectBorrow")
+      .select("borrowerProjectId, lenderProjectId, status")
+      .eq("id", transfer.data.settlesBorrowId)
+      .eq("companyId", args.companyId)
+      .single();
+    if (borrow.error) return borrow;
+    if (borrow.data.status !== "Open") {
+      return refusal("The borrow is already paid back");
+    }
+    fromProjectId = borrow.data.borrowerProjectId;
+    toProjectId = borrow.data.lenderProjectId;
+  }
+
+  const ownerIds = [fromProjectId, toProjectId].filter((id): id is string =>
+    Boolean(id)
+  );
+  const [lines, owners] = await Promise.all([
+    client
+      .from("projectStockTransferLine")
+      .select("id", { count: "exact", head: true })
+      .eq("projectStockTransferId", args.id)
+      .eq("companyId", args.companyId),
+    ownerIds.length > 0
+      ? client
+          .from("project")
+          .select("id, identifier, name, customerId, governmentFurnished")
+          .in("id", ownerIds)
+          .eq("companyId", args.companyId)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (lines.error) return refusal(lines.error.message);
+  if (owners.error) return refusal(owners.error.message);
+  if (!lines.count) return refusal("Add a line before you approve");
+
+  const governmentFurnished = governmentFurnishedRefusal(
+    owners.data?.find((p) => p.id === fromProjectId),
+    owners.data?.find((p) => p.id === toProjectId)
+  );
+  if (governmentFurnished) return refusal(governmentFurnished);
+
+  const now = datetime.timestamp();
+  return client
+    .from("projectStockTransfer")
+    .update({
+      status: "Approved",
+      approvedBy: args.userId,
+      approvedAt: now,
+      updatedBy: args.userId,
+      updatedAt: now
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .eq("status", "Draft")
+    .select("id")
+    .single();
+}
+
+/**
+ * Lists the borrows of the company, oldest due first. With a project, the
+ * borrows it owes or lent; with statuses, only those.
+ * @mcp read
+ */
+export async function getProjectBorrows(
+  client: Client,
+  companyId: string,
+  args: { projectId?: string | null; status?: ProjectBorrowStatus[] | null }
+) {
+  let query = client
+    .from("projectBorrow")
+    .select(
+      "*, borrower:project!projectBorrow_borrower_fkey(id, identifier, name), lender:project!projectBorrow_lender_fkey(id, identifier, name)"
+    )
+    .eq("companyId", companyId);
+
+  if (args.projectId) {
+    query = query.or(
+      `borrowerProjectId.eq.${args.projectId},lenderProjectId.eq.${args.projectId}`
+    );
+  }
+
+  if (args.status && args.status.length > 0) {
+    query = query.in("status", args.status);
+  }
+
+  return query.order("paybackDueDate").order("createdAt");
+}
+
+/**
+ * The Standard projects that keep project stock: the stock owners the
+ * transfer pickers and the inventory owner filter offer, beside common stock.
+ */
+export async function getStockOwnerProjects(client: Client, companyId: string) {
+  return client
+    .from("project")
+    .select("id, identifier, name, status, customerId, governmentFurnished")
+    .eq("companyId", companyId)
+    .eq("projectType", "Standard")
+    .eq("projectStock", true)
+    .eq("active", true)
+    .order("identifier");
 }

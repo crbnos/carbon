@@ -212,6 +212,21 @@ export const PROJECT_CHANGE_REQUEST_STATUS_COLOR_MAP = {
   Cancelled: "gray"
 } as const satisfies Record<string, StatusColor>;
 
+// A project stock transfer: Draft is open, Approved waits on posting, Posted
+// is done and Cancelled is closed without a move.
+export const PROJECT_STOCK_TRANSFER_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Approved: "blue",
+  Posted: "green",
+  Cancelled: "gray"
+} as const satisfies Record<string, StatusColor>;
+
+// A project borrow: Open is owed to the lender, Paid Back is settled.
+export const PROJECT_BORROW_STATUS_COLOR_MAP = {
+  Open: "orange",
+  "Paid Back": "green"
+} as const satisfies Record<string, StatusColor>;
+
 // A service order (serviceOrderStatus). Scheduled waits on a visit like a
 // released project, In Progress is work under way, On Hold pauses, Completed
 // is done and waits on its invoice, Closed is gray like a closed project.
@@ -478,6 +493,8 @@ export const statusColorMaps = {
   jobOperation: JOB_OPERATION_STATUS_COLOR_MAP,
   jobOperationBatch: BATCH_STATUS_COLOR_MAP,
   project: PROJECT_STATUS_COLOR_MAP,
+  projectStockTransfer: PROJECT_STOCK_TRANSFER_STATUS_COLOR_MAP,
+  projectBorrow: PROJECT_BORROW_STATUS_COLOR_MAP,
   serviceOrder: SERVICE_ORDER_STATUS_COLOR_MAP,
   serviceVisit: SERVICE_VISIT_STATUS_COLOR_MAP,
   customerAsset: CUSTOMER_ASSET_STATUS_COLOR_MAP,

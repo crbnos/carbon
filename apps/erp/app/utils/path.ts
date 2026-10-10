@@ -1767,6 +1767,7 @@ export const path = {
       generatePath(`${x}/project/${id}/change-requests/new`),
     newProjectElement: (id: string) =>
       generatePath(`${x}/project/${id}/elements/new`),
+    newProjectStockTransfer: `${x}/projects/transfers/new`,
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
     newPurchaseInvoiceLine: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/new`),
@@ -2036,6 +2037,14 @@ export const path = {
     projectSettings: (id: string) =>
       generatePath(`${x}/project/${id}/settings`),
     projectStatus: (id: string) => generatePath(`${x}/project/${id}/status`),
+    projectStock: (id: string) => generatePath(`${x}/project/${id}/stock`),
+    projectStockTransfer: (id: string) =>
+      generatePath(`${x}/project-stock-transfer/${id}`),
+    projectStockTransferLines: (id: string) =>
+      generatePath(`${x}/project-stock-transfer/${id}/lines`),
+    projectStockTransferStatus: (id: string) =>
+      generatePath(`${x}/project-stock-transfer/${id}/status`),
+    projectStockTransfers: `${x}/projects/transfers`,
     projects: `${x}/projects`,
     projectsSettings: `${x}/settings/projects`,
     projectTemplate: (id: string) =>

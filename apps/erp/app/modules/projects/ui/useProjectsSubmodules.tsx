@@ -4,6 +4,7 @@
 
 import { useLingui } from "@lingui/react/macro";
 import {
+  LuArrowLeftRight,
   LuBriefcaseBusiness,
   LuClipboardCheck,
   LuFolderKanban,
@@ -19,6 +20,7 @@ import { path } from "~/utils/path";
 // other submodules, plus the project workspace under /x/project.
 const otherProjectsRoutes = [
   path.to.projectTimesheetApprovals,
+  path.to.projectStockTransfers,
   path.to.laborCategories
 ];
 
@@ -53,6 +55,14 @@ export default function useProjectsSubmodules() {
           to: path.to.timesheet,
           icon: <LuTimer />,
           isActive: (pathname: string) => pathname.startsWith(path.to.timesheet)
+        },
+        {
+          name: t`Transfers`,
+          to: path.to.projectStockTransfers,
+          icon: <LuArrowLeftRight />,
+          isActive: (pathname: string) =>
+            pathname.startsWith(path.to.projectStockTransfers) ||
+            pathname.startsWith(path.to.projectStockTransfer(""))
         },
         {
           name: t`Approvals`,

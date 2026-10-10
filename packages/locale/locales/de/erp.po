@@ -143,6 +143,10 @@ msgstr "{0} bereits gestartet"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} Anlagen zur Abschreibung · {amount}"
 
+#. placeholder {0}: formatQuantity(available)
+msgid "{0} available in {owner} here"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} kann nicht gelöscht werden, da es noch verwendet wird von: {where}. Ändern Sie diese Datensätze zuerst auf eine andere Mengeneinheit."
@@ -559,6 +563,9 @@ msgstr "{off} Rabatt bis {0}"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} wird zur Bearbeitung erneut geöffnet als Revision {0}. Das bereits an den Lieferanten gesendete Dokument bleibt unverändert, bis Sie die Bestellung abschließen und erneut senden."
+
+msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
+msgstr ""
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# Teil} other {# Teile}}"
@@ -2075,6 +2082,9 @@ msgstr "Lieferant hinzufügen"
 msgid "Add the first milestone"
 msgstr ""
 
+msgid "Add the items to move."
+msgstr ""
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Fügen Sie die nächste Funktionalität auf demselben System hinzu, anstatt ein weiteres System zu kaufen."
 
@@ -2738,6 +2748,9 @@ msgid "Approve all"
 msgstr ""
 
 msgid "Approved"
+msgstr ""
+
+msgid "Approved <0/> by <1/>"
 msgstr ""
 
 msgid "Approved By"
@@ -3998,6 +4011,15 @@ msgstr "Abschreibung buchen"
 msgid "Books lock date (manual)"
 msgstr "Büchersperrungsdatum (manuell)"
 
+msgid "Borrow"
+msgstr ""
+
+msgid "Borrow Status"
+msgstr ""
+
+msgid "Borrowed"
+msgstr ""
+
 msgid "Both"
 msgstr "Beide"
 
@@ -4274,6 +4296,9 @@ msgstr "SO stornieren + {0} ausgewählt"
 
 msgid "Cancel SO only"
 msgstr "Nur SO stornieren"
+
+msgid "Cancel Transfer"
+msgstr ""
 
 msgid "Cancel Visit"
 msgstr ""
@@ -5012,6 +5037,12 @@ msgstr ""
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Bestätigung eines Wareneingangs, einer Lieferung oder einer Rechnung: Mengen bewegen sich, Buchungszeilen treffen das Ledger, und der Status wird Gebucht."
+
+msgid "common stock"
+msgstr ""
+
+msgid "Common stock"
+msgstr ""
 
 msgid "Community support"
 msgstr "Community-Unterstützung"
@@ -10244,6 +10275,9 @@ msgstr "von"
 msgid "From"
 msgstr "Von"
 
+msgid "From (borrower)"
+msgstr ""
+
 #. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
@@ -10255,6 +10289,9 @@ msgstr "Von / An"
 
 msgid "From <0/>"
 msgstr "Von <0/>"
+
+msgid "From <0/> to <1/>"
+msgstr ""
 
 msgid "From customer"
 msgstr "Vom Kunden"
@@ -12700,6 +12737,9 @@ msgstr "Charge"
 msgid "Lot number"
 msgstr "Chargennummer"
 
+msgid "Lot or Serial"
+msgstr ""
+
 msgid "Lot size"
 msgstr "Losgröße"
 
@@ -13904,6 +13944,9 @@ msgstr "Neuer Prozess"
 
 msgid "New Project"
 msgstr "Neues Projekt"
+
+msgid "New Project Stock Transfer"
+msgstr ""
 
 msgid "New purchase order"
 msgstr ""
@@ -15971,6 +16014,9 @@ msgstr "Seite {pdfViewPage} von {documentPageCount}"
 msgid "Paid Amount:"
 msgstr "Bezahlter Betrag:"
 
+msgid "Paid Back"
+msgstr ""
+
 msgid "Paid Date"
 msgstr "Bezahlt am"
 
@@ -16153,6 +16199,15 @@ msgstr "Verbindlichkeiten (Standard)"
 
 msgid "Payables aging"
 msgstr "Verbindlichkeiten nach Fälligkeit"
+
+msgid "Payback"
+msgstr ""
+
+msgid "Payback Due"
+msgstr ""
+
+msgid "Payback Due Date"
+msgstr ""
 
 msgid "Payback Variance"
 msgstr ""
@@ -17040,6 +17095,9 @@ msgstr "Projektplan"
 
 msgid "Project start"
 msgstr "Projektstart"
+
+msgid "Project Stock Transfers"
+msgstr ""
 
 msgid "Project Time"
 msgstr ""
@@ -21091,6 +21149,9 @@ msgstr "Schritte werden eigenständig erstellt und dann als ein Stück zusammeng
 msgid "Still dark out on the floor."
 msgstr "Es ist noch dunkel auf der Werkstatt."
 
+msgid "Still owed"
+msgstr ""
+
 msgid "Stock Availability"
 msgstr "Bestandsverfügbarkeit"
 
@@ -22795,6 +22856,9 @@ msgstr "die Stunden des Schichtkalenders der Station aus ihren Schichten. Besetz
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Die Einstellungen des Schritts — diese Ausführung stammt von vor dem Aufzeichnen der verwendeten Werte."
 
+msgid "The stock goes back from the borrower to the lender"
+msgstr ""
+
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "Die Bestandsgrößen, in denen dieser Werkstoff gekauft und gelagert wird; jede Größe wird zu einer separaten wählbaren Variante auf Fertigungsaufträgen und Bestellungen."
 
@@ -23532,6 +23596,9 @@ msgstr ""
 
 msgid "To"
 msgstr "An"
+
+msgid "To (lender)"
+msgstr ""
 
 msgid "To {sentTo} on {sentDate}"
 msgstr "An {sentTo} am {sentDate}"

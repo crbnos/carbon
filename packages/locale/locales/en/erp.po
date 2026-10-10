@@ -143,6 +143,10 @@ msgstr "{0} already started"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} assets to depreciate · {amount}"
 
+#. placeholder {0}: formatQuantity(available)
+msgid "{0} available in {owner} here"
+msgstr "{0} available in {owner} here"
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -559,6 +563,9 @@ msgstr "{off} off until {0}"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+
+msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
+msgstr "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# part} other {# parts}}"
@@ -2075,6 +2082,9 @@ msgstr "Add Supplier"
 msgid "Add the first milestone"
 msgstr "Add the first milestone"
 
+msgid "Add the items to move."
+msgstr "Add the items to move."
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Add the next capability on the same system instead of buying another tool."
 
@@ -2739,6 +2749,9 @@ msgstr "Approve all"
 
 msgid "Approved"
 msgstr "Approved"
+
+msgid "Approved <0/> by <1/>"
+msgstr "Approved <0/> by <1/>"
 
 msgid "Approved By"
 msgstr "Approved By"
@@ -3998,6 +4011,15 @@ msgstr "Book Depreciation"
 msgid "Books lock date (manual)"
 msgstr "Books lock date (manual)"
 
+msgid "Borrow"
+msgstr "Borrow"
+
+msgid "Borrow Status"
+msgstr "Borrow Status"
+
+msgid "Borrowed"
+msgstr "Borrowed"
+
 msgid "Both"
 msgstr "Both"
 
@@ -4274,6 +4296,9 @@ msgstr "Cancel SO + {0} selected"
 
 msgid "Cancel SO only"
 msgstr "Cancel SO only"
+
+msgid "Cancel Transfer"
+msgstr "Cancel Transfer"
 
 msgid "Cancel Visit"
 msgstr "Cancel Visit"
@@ -5012,6 +5037,12 @@ msgstr "Committed"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
+
+msgid "common stock"
+msgstr "common stock"
+
+msgid "Common stock"
+msgstr "Common stock"
 
 msgid "Community support"
 msgstr "Community support"
@@ -10244,6 +10275,9 @@ msgstr "from"
 msgid "From"
 msgstr "From"
 
+msgid "From (borrower)"
+msgstr "From (borrower)"
+
 #. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
@@ -10255,6 +10289,9 @@ msgstr "From / To"
 
 msgid "From <0/>"
 msgstr "From <0/>"
+
+msgid "From <0/> to <1/>"
+msgstr "From <0/> to <1/>"
 
 msgid "From customer"
 msgstr "From customer"
@@ -12700,6 +12737,9 @@ msgstr "Lot"
 msgid "Lot number"
 msgstr "Lot number"
 
+msgid "Lot or Serial"
+msgstr "Lot or Serial"
+
 msgid "Lot size"
 msgstr "Lot size"
 
@@ -13904,6 +13944,9 @@ msgstr "New Process"
 
 msgid "New Project"
 msgstr "New Project"
+
+msgid "New Project Stock Transfer"
+msgstr "New Project Stock Transfer"
 
 msgid "New purchase order"
 msgstr "New purchase order"
@@ -15971,6 +16014,9 @@ msgstr "Page {pdfViewPage} of {documentPageCount}"
 msgid "Paid Amount:"
 msgstr "Paid Amount:"
 
+msgid "Paid Back"
+msgstr "Paid Back"
+
 msgid "Paid Date"
 msgstr "Paid Date"
 
@@ -16153,6 +16199,15 @@ msgstr "Payables (default)"
 
 msgid "Payables aging"
 msgstr "Payables aging"
+
+msgid "Payback"
+msgstr "Payback"
+
+msgid "Payback Due"
+msgstr "Payback Due"
+
+msgid "Payback Due Date"
+msgstr "Payback Due Date"
 
 msgid "Payback Variance"
 msgstr "Payback Variance"
@@ -17040,6 +17095,9 @@ msgstr "Project Plan"
 
 msgid "Project start"
 msgstr "Project start"
+
+msgid "Project Stock Transfers"
+msgstr "Project Stock Transfers"
 
 msgid "Project Time"
 msgstr "Project Time"
@@ -21091,6 +21149,9 @@ msgstr "Steps built on their own, then fitted as one piece: in the step that use
 msgid "Still dark out on the floor."
 msgstr "Still dark out on the floor."
 
+msgid "Still owed"
+msgstr "Still owed"
+
 msgid "Stock Availability"
 msgstr "Stock Availability"
 
@@ -22795,6 +22856,9 @@ msgstr "the station's calendar hours from its shifts. Staffed hours (the people 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "The step's settings — this run predates recording the values it used."
 
+msgid "The stock goes back from the borrower to the lender"
+msgstr "The stock goes back from the borrower to the lender"
+
 msgid "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 msgstr "The stock sizes this material is purchased and held in; each size becomes a separate selectable variant on jobs and POs."
 
@@ -23532,6 +23596,9 @@ msgstr "to"
 
 msgid "To"
 msgstr "To"
+
+msgid "To (lender)"
+msgstr "To (lender)"
 
 msgid "To {sentTo} on {sentDate}"
 msgstr "To {sentTo} on {sentDate}"

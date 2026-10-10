@@ -5,8 +5,12 @@
 import type { Database } from "@carbon/database";
 import type {
   getProjectBaselines,
+  getProjectBorrows,
   getProjectChangeRequests,
-  getProjects
+  getProjectStockTransfer,
+  getProjectStockTransferLines,
+  getProjects,
+  getStockOwnerProjects
 } from "./projects.service";
 
 type Tables = Database["public"]["Tables"];
@@ -39,3 +43,15 @@ export type ProjectChangeRequestListItem = NonNullable<
 >[number];
 export type ProjectChangeRequestComment =
   Tables["projectChangeRequestComment"]["Row"];
+export type ProjectStockTransfer = NonNullable<
+  Awaited<ReturnType<typeof getProjectStockTransfer>>["data"]
+>;
+export type ProjectStockTransferLine = NonNullable<
+  Awaited<ReturnType<typeof getProjectStockTransferLines>>["data"]
+>[number];
+export type ProjectBorrow = NonNullable<
+  Awaited<ReturnType<typeof getProjectBorrows>>["data"]
+>[number];
+export type StockOwnerProject = NonNullable<
+  Awaited<ReturnType<typeof getStockOwnerProjects>>["data"]
+>[number];

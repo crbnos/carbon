@@ -3687,6 +3687,33 @@ export async function postProjectIssue(
 }
 
 /**
+ * Posts an Approved project stock transfer through the
+ * `post-project-stock-transfer` server function. Returns an error message
+ * (a refusal reads as its own message, such as the government-furnished
+ * guard or too little stock), or null. System: the route has already
+ * checked `update: projects`.
+ */
+export async function postProjectStockTransfer(args: {
+  projectStockTransferId: string;
+  companyId: string;
+  userId: string;
+}): Promise<string | null> {
+  const { projectStockTransferId, companyId, userId } = args;
+  const posting = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-project-stock-transfer", { projectStockTransferId });
+  if (posting.error) {
+    logger.error("Failed to post project stock transfer", {
+      companyId,
+      projectStockTransferId,
+      error: posting.error
+    });
+    return posting.error.message || "Failed to post the transfer";
+  }
+  return null;
+}
+
+/**
  * Logs time for one employee as a new timesheet entry: Submitted when it
  * goes straight to posting or waits for approval. A Kysely write, because
  * the employee's own RLS branch accepts only Draft rows.
