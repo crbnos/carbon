@@ -230,8 +230,8 @@ p.is-editor-empty:first-child:before {
 /*
  * ERP phone chrome (< 768px).
  * - The app bar is 52px, so frames sized from --topbar-height still fit.
- * - Toasts sit above the bottom chrome at every phone width; Sonner's own
- *   mobileOffset only applies up to 600px.
+ * - Toasts sit above the bottom chrome (bottom bar or floating dock) at
+ *   every phone width; Sonner's own mobileOffset only applies up to 600px.
  */
 @media (width < 48rem) {
   :root {
@@ -239,6 +239,6 @@ p.is-editor-empty:first-child:before {
   }
 
   [data-sonner-toaster][data-y-position="bottom"] {
-    bottom: calc(var(--content-inset, 0px) + 16px);
+    bottom: calc(var(--content-inset, 0px) + var(--dock-height, 0px) + 16px);
   }
 }

@@ -48,7 +48,7 @@ function DockBar({
   return (
     <nav
       className={cn(
-        "flex h-12 items-center gap-0.5 rounded-full border border-border bg-popover/95 p-1 shadow-lg backdrop-blur",
+        "pointer-events-auto flex h-12 items-center gap-0.5 rounded-full border border-border bg-popover/95 p-1 shadow-lg backdrop-blur",
         className
       )}
       {...props}
@@ -59,12 +59,19 @@ function DockBar({
 }
 
 /**
- * The pill in the shell's bottom band, in flow so pages end above it.
+ * The pill in the shell's bottom band. The band is transparent and lets
+ * touches through around the pill, so the shell can float it over the page.
  * `className` styles the band (e.g. `hidden`); the rest go to the pill.
  */
 function Dock({ className, ...props }: HTMLAttributes<HTMLElement>) {
   return (
-    <div className={cn("md:hidden", dockPositionClassName, className)}>
+    <div
+      className={cn(
+        "pointer-events-none md:hidden",
+        dockPositionClassName,
+        className
+      )}
+    >
       <DockBar {...props} />
     </div>
   );

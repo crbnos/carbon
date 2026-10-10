@@ -538,10 +538,10 @@ export default function AuthenticatedRoute() {
                 >
                   <PrimaryNavigation />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
-                    {/* Phones: app bar on top, the dock or a page's bottom
-                        bar below <main>, in flow. Mounted only on phones so
-                        their hooks (notifications, sheets) never run on
-                        desktop. */}
+                    {/* Phones: app bar on top; below <main>, a page's
+                        bottom bar in flow or the dock floating over it.
+                        Mounted only on phones so their hooks
+                        (notifications, sheets) never run on desktop. */}
                     {isPhone && <MobileAppBar />}
                     <Topbar />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
@@ -551,6 +551,15 @@ export default function AuthenticatedRoute() {
                             values and saving wrote them to the new one. */}
                         <Outlet key={companyId} />
                       </ModuleSidebarLayout>
+                      {/* Room to scroll a page's end out from under the
+                          floating dock. A spacer, not padding: padding would
+                          shrink h-full pages and end them above the dock. */}
+                      {isPhone && (
+                        <div
+                          aria-hidden
+                          className="h-[var(--dock-height,0px)] md:hidden"
+                        />
+                      )}
                     </main>
                     {isPhone && (
                       <MobileBottomChrome>
