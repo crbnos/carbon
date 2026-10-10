@@ -7,10 +7,12 @@ import { Img, Section } from "@react-email/components";
 
 const baseUrl = getAppUrl();
 
-// A <picture> swaps to the light wordmark where the client honours
-// prefers-color-scheme (Apple Mail, iOS Mail); everywhere else the <source> is
-// ignored and the dark wordmark renders. Never two <img>s toggled by
-// display:none — clients that drop the toggle (Outlook desktop) show both.
+// A <picture> swaps to the white wordmark where the client honours
+// prefers-color-scheme (Apple Mail, iOS Mail). Everywhere else the <source> is
+// ignored and the outlined wordmark renders — Gmail darkens the card without
+// swapping the source, and the outline reads on light and dark. Never two
+// <img>s toggled by display:none — clients that drop the toggle (Outlook
+// desktop) show both.
 export function Logo() {
   return (
     <Section className="mt-[32px]">
@@ -20,7 +22,7 @@ export function Logo() {
           srcSet={`${baseUrl}/carbon-word-dark.png`}
         />
         <Img
-          src={`${baseUrl}/carbon-word-light.png`}
+          src={`${baseUrl}/carbon-word-dark-outline.png`}
           width="auto"
           height="45"
           alt="Carbon"
