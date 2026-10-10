@@ -274,7 +274,11 @@ const baseJobValidator = z.object({
   // project at completion instead of into inventory (projects Phase 1a).
   projectId: zfd.text(z.string().optional()),
   projectElementId: zfd.text(z.string().optional()),
-  consumeToProject: zfd.checkbox()
+  consumeToProject: zfd.checkbox(),
+  // Receive to project stock: the output enters the stock of the charge
+  // number's project (projects Phase 2a). The project must have project
+  // stock; the route action checks that (chargeNumberError).
+  receiveToProjectStock: zfd.checkbox()
 });
 
 export const bulkJobValidator = z
@@ -370,6 +374,24 @@ export const jobValidator = baseJobValidator
       message: "A job completes to a project or to a fixed asset, not both",
       path: ["consumeToProject"]
     }
+  )
+  .refine((data) => !data.receiveToProjectStock || !!data.projectId, {
+    message: "Pick a charge number to receive the job into project stock",
+    path: ["receiveToProjectStock"]
+  })
+  .refine((data) => !(data.receiveToProjectStock && data.consumeToProject), {
+    message:
+      "A job consumes to its project or receives into its stock, not both",
+    path: ["receiveToProjectStock"]
+  })
+  .refine(
+    (data) =>
+      !data.receiveToProjectStock ||
+      !(data.fixedAssetClassId || data.fixedAssetId),
+    {
+      message: "A job completes to project stock or to a fixed asset, not both",
+      path: ["receiveToProjectStock"]
+    }
   );
 
 /**
@@ -422,6 +444,11 @@ export const salesOrderToJobValidator = baseJobValidator
     message:
       "A job for a sales order line ships to the customer and cannot consume to a project",
     path: ["consumeToProject"]
+  })
+  .refine((data) => !data.receiveToProjectStock, {
+    message:
+      "A job for a sales order line ships from common stock and cannot receive into project stock",
+    path: ["receiveToProjectStock"]
   })
   .refine(
     (data) => {

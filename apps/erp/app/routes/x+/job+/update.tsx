@@ -40,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const jobs = await client
     .from("job")
     .select(
-      "id, status, quantity, fixedAssetClassId, fixedAssetId, consumeToProject"
+      "id, status, quantity, fixedAssetClassId, fixedAssetId, consumeToProject, receiveToProjectStock"
     )
     .in("id", ids as string[]);
 
@@ -305,6 +305,15 @@ export async function action({ request }: ActionFunctionArgs) {
           data: null
         };
       }
+      if ((jobs.data ?? []).some((job) => job.receiveToProjectStock)) {
+        return {
+          error: {
+            message:
+              "A job that receives into project stock cannot be linked to a sales order line"
+          },
+          data: null
+        };
+      }
 
       // Linking is done via the line — resolve its order + customer from it.
       if (field !== "salesOrderLineId") {
@@ -374,13 +383,14 @@ export async function action({ request }: ActionFunctionArgs) {
       const project = projectId
         ? await client
             .from("project")
-            .select("costTreatment")
+            .select("costTreatment, projectStock")
             .eq("id", projectId)
             .eq("companyId", companyId)
             .single()
         : null;
       const keepsConsume =
         !!project?.data && project.data.costTreatment !== "Statistical";
+      const keepsProjectStock = !!project?.data?.projectStock;
       return await client
         .from("job")
         .update({
@@ -388,6 +398,8 @@ export async function action({ request }: ActionFunctionArgs) {
           projectElementId: projectElementId || null,
           // No project, or one with no account: nothing to consume to.
           ...(keepsConsume ? {} : { consumeToProject: false }),
+          // No project, or one without project stock: nothing to receive into.
+          ...(keepsProjectStock ? {} : { receiveToProjectStock: false }),
           updatedBy: userId,
           updatedAt: new Date().toISOString()
         })

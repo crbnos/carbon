@@ -17849,6 +17849,9 @@ msgstr "Quantidade recebida ainda não creditada. A nota de crédito é criada c
 msgid "Receives the invoice email"
 msgstr "Recebe o email da fatura"
 
+msgid "Receives to project stock"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "Local de Recebimento"
 
@@ -22364,6 +22367,9 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "O trabalho cuja operação cobre essa linha de processamento externo; o recebimento da linha fecha a operação contra esse trabalho."
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
+
+msgid "The job's output enters the project's stock instead of common stock"
 msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."

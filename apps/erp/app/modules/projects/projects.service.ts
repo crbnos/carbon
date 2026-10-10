@@ -323,6 +323,8 @@ export type ChargeNumber = {
   projectName: string;
   /** The project's cost treatment: Statistical cannot consume a job. */
   costTreatment: ProjectCostTreatment;
+  /** The project keeps its own stock: a job can receive into it. */
+  projectStock: boolean;
   /**
    * Capitalize only: the asset under construction a job of this charge
    * number builds (the element's own asset when it is a final asset, else
@@ -369,10 +371,13 @@ export async function getChargeNumbers(client: Client, companyId: string) {
       name: string;
       costTreatment: ProjectCostTreatment;
       fixedAssetId: string | null;
+      projectStock: boolean;
     }>(() =>
       client
         .from("project")
-        .select("id, identifier, name, costTreatment, fixedAssetId")
+        .select(
+          "id, identifier, name, costTreatment, fixedAssetId, projectStock"
+        )
         .eq("companyId", companyId)
         .eq("projectType", "Standard")
         .eq("status", "Released")
@@ -384,12 +389,16 @@ export async function getChargeNumbers(client: Client, companyId: string) {
       projectId: string;
       readableId: string;
       name: string;
-      project: { name: string; costTreatment: ProjectCostTreatment } | null;
+      project: {
+        name: string;
+        costTreatment: ProjectCostTreatment;
+        projectStock: boolean;
+      } | null;
     }>(() =>
       client
         .from("projectElement")
         .select(
-          "id, projectId, readableId, name, project:project!projectElement_project_fkey!inner(name, costTreatment), state:projectState!projectElement_state_fkey!inner(group)"
+          "id, projectId, readableId, name, project:project!projectElement_project_fkey!inner(name, costTreatment, projectStock), state:projectState!projectElement_state_fkey!inner(group)"
         )
         .eq("companyId", companyId)
         .eq("isChargeable", true)
@@ -463,6 +472,7 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         name: project.name,
         projectName: project.name,
         costTreatment: project.costTreatment,
+        projectStock: project.projectStock,
         targetFixedAssetId: targetFixedAssetId(project.id, null),
         targetFixedAssetLabel: null
       }));
@@ -475,6 +485,7 @@ export async function getChargeNumbers(client: Client, companyId: string) {
     name: element.name,
     projectName: element.project?.name ?? "",
     costTreatment: element.project?.costTreatment ?? "Statistical",
+    projectStock: element.project?.projectStock ?? false,
     targetFixedAssetId: targetFixedAssetId(element.projectId, element.id),
     targetFixedAssetLabel: null
   }));

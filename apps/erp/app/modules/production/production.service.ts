@@ -1035,7 +1035,7 @@ export async function getJobProjectCharge(
   return client
     .from("job")
     .select(
-      "projectId, projectElementId, consumeToProject, project:project!job_project_fkey(id, identifier, name, costTreatment), element:projectElement!job_projectElement_fkey(id, readableId, name)"
+      "projectId, projectElementId, consumeToProject, receiveToProjectStock, project:project!job_project_fkey(id, identifier, name, costTreatment, projectStock), element:projectElement!job_projectElement_fkey(id, readableId, name)"
     )
     .eq("id", jobId)
     .eq("companyId", companyId)
@@ -3647,6 +3647,7 @@ export async function insertJob(
     projectId?: string | null;
     projectElementId?: string | null;
     consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
   },
   options?: {
     skipMethod?: boolean;
@@ -3772,6 +3773,7 @@ export async function insertJob(
       projectId: input.projectId ?? null,
       projectElementId: input.projectElementId ?? null,
       consumeToProject: input.consumeToProject ?? false,
+      receiveToProjectStock: input.receiveToProjectStock ?? false,
       configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -3922,6 +3924,7 @@ export async function updateJob(
     projectId?: string | null;
     projectElementId?: string | null;
     consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const { id, companyId, updatedBy, ...updates } = input;

@@ -17849,6 +17849,9 @@ msgstr "Alınan Miktar henüz Alacak dekontusunda muhasebeleştirilmedi. Alacak 
 msgid "Receives the invoice email"
 msgstr "Fatura e-postasını alır"
 
+msgid "Receives to project stock"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "Mal kabul lokasyonu"
 
@@ -22364,6 +22367,9 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "Bu dış işleme satırının kapsadığı işlem, işi; satırın alındığı bu işi karşı operasyonu kapatır."
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
+
+msgid "The job's output enters the project's stock instead of common stock"
 msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."

@@ -247,6 +247,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     projectId: validation.data.projectId || null,
     projectElementId: validation.data.projectElementId || null,
     consumeToProject: validation.data.consumeToProject,
+    receiveToProjectStock: validation.data.receiveToProjectStock,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });

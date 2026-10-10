@@ -717,3 +717,101 @@ databaseTest(
     }
   }
 );
+
+// Project stock (Projects Phase 2a): a job of a project with project stock
+// draws the project's stock first in the backflush, and with Receive to
+// project stock its output enters the project's stock.
+databaseTest(
+  "completing a job with Receive to project stock receives into the project's stripe",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.enableProjectStock();
+      // 10 bolts in common stock at 10.00, 2 in the project's stock at 12.00.
+      const { itemId, locationId } = await f.addStockedItem("bolt", {
+        quantity: 10,
+        unitCost: 10
+      });
+      await f.addStripeStock({
+        itemId,
+        locationId,
+        projectId: f.projectId,
+        quantity: 2,
+        unitCost: 12
+      });
+      const job = await f.addConsumeToProjectJob("stock", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 3,
+        jobQuantity: 1,
+        consumeToProject: false
+      });
+      await f.db
+        .updateTable("job")
+        .set({
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          receiveToProjectStock: true
+        })
+        .where("id", "=", job.jobId)
+        .execute();
+
+      await completeJob(f, job.jobId, 1, locationId);
+
+      // The backflush draws the project's 2, then 1 from common stock.
+      const consumption = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Consumption")
+        .where("documentId", "=", job.jobId)
+        .orderBy("quantity")
+        .execute();
+      expect(
+        consumption.map((row) => [Number(row.quantity), row.projectId])
+      ).toEqual([
+        [-2, f.projectId],
+        [-1, null]
+      ]);
+
+      // The output enters the project's stock at the material cost,
+      // 2 x 12.00 + 1 x 10.00.
+      const receipt = await f.db
+        .selectFrom("itemLedger")
+        .select(["entryType", "quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Receipt")
+        .where("documentId", "=", job.jobId)
+        .execute();
+      expect(
+        receipt.map((row) => [
+          row.entryType,
+          Number(row.quantity),
+          row.projectId
+        ])
+      ).toEqual([["Assembly Output", 1, f.projectId]]);
+      const output = await f.db
+        .selectFrom("costLedger")
+        .select(["cost", "remainingQuantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Job Receipt")
+        .where("documentId", "=", job.jobId)
+        .executeTakeFirstOrThrow();
+      expect(Number(output.cost)).toEqual(34);
+      expect(Number(output.remainingQuantity)).toEqual(1);
+      expect(output.projectId).toEqual(f.projectId);
+
+      const stock = await f.db
+        .selectFrom("itemStockQuantities")
+        .select(["projectId", "quantityOnHand"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", job.finishedItemId)
+        .execute();
+      expect(
+        stock.map((row) => [row.projectId, Number(row.quantityOnHand)])
+      ).toEqual([[f.projectId, 1]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

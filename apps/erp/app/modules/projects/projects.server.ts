@@ -3892,6 +3892,7 @@ export async function chargeNumberError(
     projectId?: string | null;
     projectElementId?: string | null;
     consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
   }
 ): Promise<{ field: string; message: string } | null> {
   if (!args.projectId) {
@@ -3907,7 +3908,7 @@ export async function chargeNumberError(
   const [project, element] = await Promise.all([
     client
       .from("project")
-      .select("id, costTreatment")
+      .select("id, costTreatment, projectStock")
       .eq("id", args.projectId)
       .eq("companyId", companyId)
       .maybeSingle(),
@@ -3946,6 +3947,13 @@ export async function chargeNumberError(
       field: "consumeToProject",
       message:
         "A capital project's job builds its asset under construction, so it cannot consume to the project"
+    };
+  }
+  if (args.receiveToProjectStock && !project.data.projectStock) {
+    return {
+      field: "receiveToProjectStock",
+      message:
+        "The project has no project stock, so a job cannot receive into it"
     };
   }
   return null;

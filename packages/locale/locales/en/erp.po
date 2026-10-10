@@ -17849,6 +17849,9 @@ msgstr "Received quantity not yet credited. The credit memo is created as a draf
 msgid "Receives the invoice email"
 msgstr "Receives the invoice email"
 
+msgid "Receives to project stock"
+msgstr "Receives to project stock"
+
 msgid "Receiving Location"
 msgstr "Receiving Location"
 
@@ -22365,6 +22368,9 @@ msgstr "The job whose operation this outside-processing line covers; the line's 
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
 msgstr "The job's cost goes to the project when it completes, instead of into stock"
+
+msgid "The job's output enters the project's stock instead of common stock"
+msgstr "The job's output enters the project's stock instead of common stock"
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."

@@ -325,6 +325,11 @@ const JobHeader = () => {
               <Trans>Consumes to project</Trans>
             </Badge>
           )}
+          {projectCharge?.receiveToProjectStock && (
+            <Badge variant="secondary">
+              <Trans>Receives to project stock</Trans>
+            </Badge>
+          )}
           {unbatchedBatchableOperations > 0 && (
             <Status
               color="gray"

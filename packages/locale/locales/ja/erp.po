@@ -17849,6 +17849,9 @@ msgstr "入荷数量がまだクレジットされていません。クレジッ
 msgid "Receives the invoice email"
 msgstr "請求書メールを受け取ります"
 
+msgid "Receives to project stock"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "入荷拠点"
 
@@ -22364,6 +22367,9 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "この外部加工明細が対象とする作業。行の受領はこの作業に対して操作を閉じます。"
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
+msgstr ""
+
+msgid "The job's output enters the project's stock instead of common stock"
 msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."

@@ -225,6 +225,21 @@ const JobForm = ({
     chargeTreatment !== null &&
     chargeTreatment !== "Statistical" &&
     !isCapitalCharge;
+  // Receive to project stock: only when the charge number's project keeps
+  // its own stock. Undefined until the user picks, as for the treatment.
+  const [pickedProjectStock, setPickedProjectStock] = useState<
+    boolean | undefined
+  >(undefined);
+  const chargeProjectStock =
+    pickedProjectStock !== undefined
+      ? pickedProjectStock
+      : (chargeNumbers.find((row) => row.projectId === initialValues.projectId)
+          ?.projectStock ?? false);
+  const [receiveToProjectStock, setReceiveToProjectStock] = useState<boolean>(
+    initialValues.receiveToProjectStock ?? false
+  );
+  const canReceiveToProjectStock =
+    completeTo === "inventory" && chargeProjectStock && !isCapitalCharge;
 
   const onTypeChange = (t: MethodItemType | "Item") => {
     setType(t as MethodItemType);
@@ -528,6 +543,10 @@ const JobForm = ({
                         onChange={(row) => {
                           const treatment = row?.costTreatment ?? null;
                           setPickedTreatment(treatment);
+                          setPickedProjectStock(row?.projectStock ?? false);
+                          if (!row?.projectStock) {
+                            setReceiveToProjectStock(false);
+                          }
                           if (treatment === "Capitalize") {
                             setConsumeToProject(false);
                             setCompleteTo("asset");
@@ -556,9 +575,25 @@ const JobForm = ({
                         label={t`Consume to project`}
                         description={t`The job's cost goes to the project when it completes, instead of into stock`}
                         value={consumeToProject && canConsumeToProject}
-                        onChange={setConsumeToProject}
+                        onChange={(value) => {
+                          setConsumeToProject(value);
+                          if (value) setReceiveToProjectStock(false);
+                        }}
                         isDisabled={!canConsumeToProject || !canEditCompleteTo}
                       />
+                      {canReceiveToProjectStock && (
+                        <Boolean
+                          name="receiveToProjectStock"
+                          label={t`Receive to project stock`}
+                          description={t`The job's output enters the project's stock instead of common stock`}
+                          value={receiveToProjectStock && !consumeToProject}
+                          onChange={(value) => {
+                            setReceiveToProjectStock(value);
+                            if (value) setConsumeToProject(false);
+                          }}
+                          isDisabled={!canEditCompleteTo}
+                        />
+                      )}
 
                       {showDueDate && (
                         <DatePicker
