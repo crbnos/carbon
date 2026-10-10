@@ -3659,6 +3659,8 @@ export async function insertJob(
     projectElementId?: string | null;
     consumeToProject?: boolean;
     receiveToProjectStock?: boolean;
+    /** Projects Phase 3: a job made for a planning group (no project). */
+    planningGroupId?: string | null;
   },
   options?: {
     skipMethod?: boolean;
@@ -3785,6 +3787,7 @@ export async function insertJob(
       projectElementId: input.projectElementId ?? null,
       consumeToProject: input.consumeToProject ?? false,
       receiveToProjectStock: input.receiveToProjectStock ?? false,
+      planningGroupId: input.planningGroupId ?? null,
       configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -11039,7 +11042,9 @@ export async function settleNewSupplyPlanningActions(
           )
         )
       )
-      .returning("id")
+      // The key fields let a grouped order move the action's pegs to the
+      // supply it created (Projects Phase 3).
+      .returning(["id", "itemId", "periodId", "planningSegmentId"])
       .execute()
   );
 }

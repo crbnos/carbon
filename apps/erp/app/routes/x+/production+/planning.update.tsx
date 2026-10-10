@@ -28,7 +28,11 @@ import {
   upsertJobMethod
 } from "~/modules/production";
 import { cancelJob } from "~/modules/production/production.server";
-import { applyTransferPlanningActions } from "~/modules/projects/projects.server";
+import {
+  applyTransferPlanningActions,
+  getPlanningSegmentOwners,
+  moveActionPegsToSupply
+} from "~/modules/projects/projects.server";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -208,35 +212,26 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       // A job in a project segment is charged to that project and receives
-      // its output into the project's stock. The segment must be a project
-      // of this company with project stock.
-      const segmentIds = [
-        ...new Set(
-          itemsToOrder.map((item) => item.planningSegmentId).filter(Boolean)
-        )
-      ];
-      if (segmentIds.length > 0) {
-        const segmentProjects = await client
-          .from("project")
-          .select("id")
-          .in("id", segmentIds)
-          .eq("companyId", companyId)
-          .eq("projectStock", true);
-        if (
-          segmentProjects.error ||
-          (segmentProjects.data?.length ?? 0) !== segmentIds.length
-        ) {
-          logger.error("Planning order names an unknown project segment", {
-            companyId,
-            locationId,
-            segmentIds,
-            error: segmentProjects.error
-          });
-          return data(
-            { success: false, message: "Project not found" },
-            { status: 404 }
-          );
-        }
+      // its output into the project's stock. A job in a planning group
+      // segment is the group's: it carries the group and no project, and its
+      // output splits by the pegs. The segment must be a project of this
+      // company with project stock, or a planning group of this company.
+      const segments = await getPlanningSegmentOwners(
+        client,
+        companyId,
+        itemsToOrder.map((item) => item.planningSegmentId)
+      );
+      if (segments.error || segments.unknownIds.length > 0) {
+        logger.error("Planning order names an unknown segment", {
+          companyId,
+          locationId,
+          segmentIds: segments.unknownIds,
+          error: segments.error
+        });
+        return data(
+          { success: false, message: "Project not found" },
+          { status: 404 }
+        );
       }
 
       try {
@@ -263,6 +258,7 @@ export async function action({ request }: ActionFunctionArgs) {
           itemId: string;
           periodId: string;
           planningSegmentId: string;
+          jobId: string;
         }[] = [];
 
         // Manufacturing data for every item being ordered, in one read
@@ -341,12 +337,14 @@ export async function action({ request }: ActionFunctionArgs) {
                 companyId,
                 createdBy: userId,
                 unitOfMeasureCode: "EA",
-                ...(item.planningSegmentId
-                  ? {
-                      projectId: item.planningSegmentId,
-                      receiveToProjectStock: true
-                    }
-                  : {})
+                ...(segments.planningGroupIds.has(item.planningSegmentId)
+                  ? { planningGroupId: item.planningSegmentId }
+                  : item.planningSegmentId
+                    ? {
+                        projectId: item.planningSegmentId,
+                        receiveToProjectStock: true
+                      }
+                    : {})
               },
               { skipMethod: true, skipRecalculate: true, source: "mrp" }
             );
@@ -395,7 +393,8 @@ export async function action({ request }: ActionFunctionArgs) {
             ordered.push({
               itemId: item.id,
               periodId,
-              planningSegmentId: item.planningSegmentId
+              planningSegmentId: item.planningSegmentId,
+              jobId: id
             });
             supplyForecastByPeriod[periodId] =
               (supplyForecastByPeriod[periodId] || 0) + order.quantity;
@@ -436,6 +435,42 @@ export async function action({ request }: ActionFunctionArgs) {
             userId,
             locationId,
             error: settled.error
+          });
+        } else if (segments.planningGroupIds.size > 0) {
+          // A grouped Make's pegs move to the job it created. A failure
+          // leaves them on the action; the next MRP run re-pegs.
+          const jobByOrder = new Map<string, string>();
+          for (const entry of ordered) {
+            const key = [
+              entry.itemId,
+              entry.periodId,
+              entry.planningSegmentId
+            ].join("\u0000");
+            if (!jobByOrder.has(key)) jobByOrder.set(key, entry.jobId);
+          }
+          const moves = (settled.data ?? []).flatMap((action) => {
+            if (!segments.planningGroupIds.has(action.planningSegmentId)) {
+              return [];
+            }
+            const supplyId = jobByOrder.get(
+              [action.itemId, action.periodId, action.planningSegmentId].join(
+                "\u0000"
+              )
+            );
+            return supplyId
+              ? [
+                  {
+                    planningActionId: action.id,
+                    supplyType: "Job" as const,
+                    supplyId
+                  }
+                ]
+              : [];
+          });
+          await moveActionPegsToSupply(getDatabaseClient(), {
+            companyId,
+            userId,
+            moves
           });
         }
 

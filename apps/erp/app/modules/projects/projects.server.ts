@@ -4231,3 +4231,143 @@ export async function createProjectStockTransfersFromActions(
     };
   }
 }
+
+/**
+ * Projects Phase 3: the owners of the netting segments a planning order
+ * names. A segment is a project with project stock or a planning group of the
+ * company; '' (common) is left out. Returns the segments it found of each
+ * kind, and the ones it did not find.
+ */
+export async function getPlanningSegmentOwners(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  segmentIds: string[]
+): Promise<{
+  projectIds: Set<string>;
+  planningGroupIds: Set<string>;
+  unknownIds: string[];
+  error: string | null;
+}> {
+  const ids = [...new Set(segmentIds.filter(Boolean))];
+  if (ids.length === 0) {
+    return {
+      projectIds: new Set(),
+      planningGroupIds: new Set(),
+      unknownIds: [],
+      error: null
+    };
+  }
+  const [projects, groups] = await Promise.all([
+    client
+      .from("project")
+      .select("id")
+      .in("id", ids)
+      .eq("companyId", companyId)
+      .eq("projectStock", true),
+    client
+      .from("planningGroup")
+      .select("id")
+      .in("id", ids)
+      .eq("companyId", companyId)
+  ]);
+  const projectIds = new Set((projects.data ?? []).map((row) => row.id));
+  const planningGroupIds = new Set((groups.data ?? []).map((row) => row.id));
+  return {
+    projectIds,
+    planningGroupIds,
+    unknownIds: ids.filter(
+      (id) => !projectIds.has(id) && !planningGroupIds.has(id)
+    ),
+    error: projects.error?.message ?? groups.error?.message ?? null
+  };
+}
+
+/**
+ * Projects Phase 3: an applied grouped Order or Make moves the pegs of its
+ * planning action to the PO line or job it created, so the project costs
+ * show the commitment at once instead of at the next MRP run. One
+ * transaction for the whole batch:
+ * 1. supersede the actions' current pegs,
+ * 2. insert copies on the new supply.
+ * A peg is never updated in place; the history keeps the planned peg.
+ */
+export async function moveActionPegsToSupply(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    moves: {
+      planningActionId: string;
+      supplyType: "Purchase Order Line" | "Job";
+      supplyId: string;
+    }[];
+  }
+): Promise<{ moved: number; error: string | null }> {
+  const { companyId, userId } = args;
+  const supplyByAction = new Map(
+    args.moves.map((move) => [move.planningActionId, move])
+  );
+  if (supplyByAction.size === 0) return { moved: 0, error: null };
+  try {
+    const moved = await db.transaction().execute(async (trx) => {
+      const superseded = await trx
+        .updateTable("projectPeg")
+        .set({ supersededAt: sql<string>`now()` })
+        .where("companyId", "=", companyId)
+        .where("supplyType", "=", "Planning Action")
+        .where("supplyId", "in", [...supplyByAction.keys()])
+        .where("supersededAt", "is", null)
+        .returning([
+          "planningGroupId",
+          "itemId",
+          "locationId",
+          "supplyId",
+          "projectId",
+          "projectElementId",
+          "demandSourceType",
+          "demandSourceId",
+          "parentPegId",
+          "quantity",
+          "needDate",
+          "state"
+        ])
+        .execute();
+      if (superseded.length === 0) return 0;
+      await trx
+        .insertInto("projectPeg")
+        .values(
+          superseded.map((peg) => {
+            const move = supplyByAction.get(peg.supplyId)!;
+            return {
+              companyId,
+              planningGroupId: peg.planningGroupId,
+              itemId: peg.itemId,
+              locationId: peg.locationId,
+              supplyType: move.supplyType,
+              supplyId: move.supplyId,
+              projectId: peg.projectId,
+              projectElementId: peg.projectElementId,
+              demandSourceType: peg.demandSourceType,
+              demandSourceId: peg.demandSourceId,
+              parentPegId: peg.parentPegId,
+              quantity: peg.quantity,
+              needDate: peg.needDate,
+              state: peg.state,
+              createdBy: userId
+            };
+          })
+        )
+        .execute();
+      return superseded.length;
+    });
+    return { moved, error: null };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error("Failed to move planning action pegs to their supply", {
+      companyId,
+      planningActionIds: [...supplyByAction.keys()],
+      error: message
+    });
+    return { moved: 0, error: message };
+  }
+}
