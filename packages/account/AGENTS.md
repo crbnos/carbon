@@ -1,6 +1,6 @@
 # @carbon/account
 
-The account settings modal — Profile, Notifications, Security — shared by the ERP, the MES
+The account settings modal — Profile, Appearance, Notifications, Security — shared by the ERP, the MES
 and the starter. Each app mounts it once in its shell; it opens over any page.
 
 ## Always
@@ -21,7 +21,13 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
 - **Mount with the app's config** (`AccountSettingsConfig`, `src/ui/context.tsx`): `api`
   (`/api` in the ERP, `/x/proxy/api` elsewhere), `user`, `companyId`. Only the ERP passes
   `renderBrowserNotifications` (the push service worker is on its origin) and `twoFactor`
-  (the plan gate + upgrade dialog) — see `apps/erp/app/modules/account/ui/AccountSettings.tsx`.
+  (the plan gate + upgrade dialog) and `transitionMode` (the view-transition mode wipe, whose
+  CSS is in the ERP's stylesheet) — see `apps/erp/app/modules/account/ui/AccountSettings.tsx`.
+- **Appearance is the one pane that does not call the ERP.** Mode and theme color are
+  per-browser cookies on the HOST app, so the pane posts `mode` / `theme` to the host's own
+  root action (`/`), which every app's `root.tsx` handles (`modeValidator` /
+  `themeColorValidator` from `@carbon/utils`). `useOptimisticMode` only counts a `/`
+  submission carrying `mode`, so the two never read each other's in-flight value.
 - Panes read with `useLoaderQuery` (`@carbon/query`), so the host app needs a
   `QueryClientProvider`, `window.clientCache` and `createInvalidationMiddleware` in its root.
   Strings use Lingui macros, so it also needs a `LocaleProvider`; the package is in the erp

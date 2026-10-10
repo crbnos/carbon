@@ -796,6 +796,9 @@ msgstr "Intestazione {level}"
 msgid "Hide description"
 msgstr "Nascondi descrizione"
 
+msgid "How Carbon looks in this browser."
+msgstr "Come appare Carbon in questo browser."
+
 msgid "How many were actually picked?"
 msgstr "Quanti sono stati effettivamente prelevati?"
 
@@ -941,6 +944,9 @@ msgstr "Costruiamo qualcosa"
 msgid "Light"
 msgstr "Chiaro"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Chiaro, scuro, o segui le impostazioni di sistema."
+
 msgid "lines"
 msgstr "righe"
 
@@ -1058,6 +1064,9 @@ msgstr "Numero massimo di registrazioni raggiunto"
 
 msgid "Metric"
 msgstr "Metrico"
+
+msgid "Mode"
+msgstr "Modalità"
 
 msgid "Model"
 msgstr "Modello"
@@ -1944,6 +1953,9 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etichetta"
 
+msgid "The accent color used across Carbon."
+msgstr "Il colore di accento utilizzato in Carbon."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La quantità completata per questa operazione è inferiore alla quantità richiesta di {targetQuantity}."
 
@@ -1962,6 +1974,9 @@ msgstr "Il lotto sarà comunque disposizionato, ma non è possibile creare un NC
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Il timer e il completamento sono condivisi da tutti gli {0} ordini di produzione. I passi, i materiali e i file qui sono di questo ordine di produzione."
+
+msgid "Theme color"
+msgstr "Colore del tema"
 
 msgid "then"
 msgstr "poi"

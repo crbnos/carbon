@@ -796,6 +796,9 @@ msgstr "{level} 제목"
 msgid "Hide description"
 msgstr "설명 숨기기"
 
+msgid "How Carbon looks in this browser."
+msgstr "이 브라우저에서 Carbon이 표시되는 방식입니다."
+
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
 
@@ -941,6 +944,9 @@ msgstr "무언가를 만들어봅시다"
 msgid "Light"
 msgstr "라이트"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "밝음, 어두움 또는 시스템 설정 따르기"
+
 msgid "lines"
 msgstr "라인"
 
@@ -1058,6 +1064,9 @@ msgstr "최대 레코드 수에 도달했습니다"
 
 msgid "Metric"
 msgstr "미터법"
+
+msgid "Mode"
+msgstr "모드"
 
 msgid "Model"
 msgstr "모델"
@@ -1944,6 +1953,9 @@ msgstr "시스템"
 msgid "Tag"
 msgstr "태그"
 
+msgid "The accent color used across Carbon."
+msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
 
@@ -1962,6 +1974,9 @@ msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 �
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "타이머와 완료는 모든 {0} 작업 지시에 공유됩니다. 여기의 단계, 자재 및 파일은 이 작업 지시의 것입니다."
+
+msgid "Theme color"
+msgstr "테마 색상"
 
 msgid "then"
 msgstr "그 다음"

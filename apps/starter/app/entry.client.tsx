@@ -8,7 +8,6 @@ import {
   VERCEL_URL
 } from "@carbon/auth";
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
-import { OperatingSystemContextProvider } from "@carbon/react";
 import posthog from "posthog-js";
 import { startTransition, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
@@ -36,14 +35,10 @@ preloadCatalog(document.documentElement.lang).then(() => {
   startTransition(() => {
     hydrateRoot(
       document,
-      <OperatingSystemContextProvider
-        platform={
-          window.navigator.userAgent.includes("Mac") ? "mac" : "windows"
-        }
-      >
+      <>
         <HydratedRouter />
         <PosthogInit />
-      </OperatingSystemContextProvider>
+      </>
     );
   });
 });

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { z } from "zod";
+import { themes } from "./themes";
 
 export enum Edition {
   Cloud = "cloud",
@@ -18,6 +19,13 @@ export type ModePreference = Mode | "system";
 
 export const modeValidator = z.object({
   mode: z.enum(["light", "dark", "system"])
+});
+
+/** A theme color by name — one of `themes`. Stored per browser, like the mode. */
+export const themeColorValidator = z.object({
+  theme: z.string().refine((name) => themes.some((t) => t.name === name), {
+    message: "Invalid theme"
+  })
 });
 
 export enum Plan {

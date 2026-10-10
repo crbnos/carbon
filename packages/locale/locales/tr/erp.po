@@ -10413,6 +10413,9 @@ msgstr "Bir öğenin birim maliyeti nasıl değerlendirilir: Standart, Ortalama,
 msgid "How are these hours calculated?"
 msgstr "Bu saatler nasıl hesaplanır?"
 
+msgid "How Carbon looks in this browser."
+msgstr "Carbon'un bu tarayıcıda nasıl göründüğü."
+
 msgid "How coverage is worked out"
 msgstr "Kapasite nasıl hesaplanır"
 
@@ -11852,6 +11855,9 @@ msgstr "LIFO"
 msgid "Light"
 msgstr "Aydınlık"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Açık, Koyu veya sistem ayarınız."
+
 msgid "Lights Out (24×7)"
 msgstr "Işıklar Kapalı (24×7)"
 
@@ -12789,6 +12795,9 @@ msgstr "Malzemeleri karıştırma: {0}{1}. Bu çalıştırmada birbirine uygun o
 
 msgid "Mobile Phone"
 msgstr "Cep Telefonu"
+
+msgid "Mode"
+msgstr "Mod"
 
 msgid "Model Number"
 msgstr "Model Numarası"
@@ -20948,6 +20957,9 @@ msgstr "\"{0}\" aşaması tamamlandı — \"{1}\" denetim noktası geçti."
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "{0} aşamayı canlı yayına almak için, her biri bir kontrol noktasında sona eriyor. Her görevi tamamladıkça işaretleyin."
 
+msgid "The accent color used across Carbon."
+msgstr "Carbon'da kullanılan vurgu rengi."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Raporlama ve analiz için öğeleri kategorize eden muhasebe boyutu."
 
@@ -21942,6 +21954,9 @@ msgstr "Tarihleri ve bölünüşleri satırlardan yeniden planlanır."
 
 msgid "Theme"
 msgstr "Tema"
+
+msgid "Theme color"
+msgstr "Tema Rengi"
 
 msgid "Theme Color"
 msgstr "Tema Rengi"

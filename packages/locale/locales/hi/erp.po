@@ -10413,6 +10413,9 @@ msgstr "किसी वस्तु की इकाई लागत का म
 msgid "How are these hours calculated?"
 msgstr "इन घंटों की गणना कैसे की जाती है?"
 
+msgid "How Carbon looks in this browser."
+msgstr "यह Carbon इस ब्राउज़र में कैसा दिखता है।"
+
 msgid "How coverage is worked out"
 msgstr "कवरेज कैसे काम किया जाता है"
 
@@ -11852,6 +11855,9 @@ msgstr "LIFO"
 msgid "Light"
 msgstr "हल्का"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "हल्का, गहरा, या अपनी सिस्टम सेटिंग का पालन करें।"
+
 msgid "Lights Out (24×7)"
 msgstr "लाइट्स आउट (24×7)"
 
@@ -12789,6 +12795,9 @@ msgstr "सामग्री मिलाना: {0}{1}। पुष्टि �
 
 msgid "Mobile Phone"
 msgstr "मोबाइल फोन"
+
+msgid "Mode"
+msgstr "मोड"
 
 msgid "Model Number"
 msgstr "मॉडल नंबर"
@@ -20948,6 +20957,9 @@ msgstr "यह \"{0}\" चरण पूर्ण हो गया — इसक�
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "{0} चरणों को लाइव करने के लिए, प्रत्येक एक चेकपॉइंट पर समाप्त होता है। जैसे ही आप प्रत्येक कार्य को पूरा करते हैं, उसे टिक करें।"
 
+msgid "The accent color used across Carbon."
+msgstr "Carbon में उपयोग किए जाने वाले हाइलाइट रंग।"
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "लेखांकन आयाम जो रिपोर्टिंग और विश्लेषण के लिए आइटम को वर्गीकृत करता है।"
 
@@ -21942,6 +21954,9 @@ msgstr "उनकी तारीखें और विभाजन पंक�
 
 msgid "Theme"
 msgstr "थीम"
+
+msgid "Theme color"
+msgstr "थीम रंग"
 
 msgid "Theme Color"
 msgstr "थीम रंग"

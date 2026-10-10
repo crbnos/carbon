@@ -10413,6 +10413,9 @@ msgstr "品目の単位原価がどのように評価されるかについて：
 msgid "How are these hours calculated?"
 msgstr "これらの時間はどのように計算されますか？"
 
+msgid "How Carbon looks in this browser."
+msgstr "このブラウザにおけるCarbonの表示方法。"
+
 msgid "How coverage is worked out"
 msgstr "カバレッジの計算方法"
 
@@ -11852,6 +11855,9 @@ msgstr "後入先出"
 msgid "Light"
 msgstr "ライト"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "ライト、ダーク、またはシステム設定に従う。"
+
 msgid "Lights Out (24×7)"
 msgstr "ライツアウト（24×7）"
 
@@ -12789,6 +12795,9 @@ msgstr "混合材料: {0}{1}。これらがこの実行で一緒にネストさ�
 
 msgid "Mobile Phone"
 msgstr "携帯電話"
+
+msgid "Mode"
+msgstr "モード"
 
 msgid "Model Number"
 msgstr "型番"
@@ -20948,6 +20957,9 @@ msgstr "「{0}」フェーズが完了しました — その「{1}」チェッ�
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "{0}個のフェーズをリリースするまで進め、各フェーズはチェックポイントで終了します。完了したタスクをチェックオフしてください。"
 
+msgid "The accent color used across Carbon."
+msgstr "Carbon全体で使用するアクセントカラー。"
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "レポートと分析のためにアイテムを分類する会計ディメンション。"
 
@@ -21942,6 +21954,9 @@ msgstr "日付と分割は明細から再度計画されます。"
 
 msgid "Theme"
 msgstr "テーマ"
+
+msgid "Theme color"
+msgstr "テーマカラー"
 
 msgid "Theme Color"
 msgstr "テーマカラー"

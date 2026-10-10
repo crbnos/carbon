@@ -796,6 +796,9 @@ msgstr "Heading {level}"
 msgid "Hide description"
 msgstr "Hide description"
 
+msgid "How Carbon looks in this browser."
+msgstr "How Carbon looks in this browser."
+
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
 
@@ -941,6 +944,9 @@ msgstr "Let's build something"
 msgid "Light"
 msgstr "Light"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Light, dark, or follow your system setting."
+
 msgid "lines"
 msgstr "lines"
 
@@ -1058,6 +1064,9 @@ msgstr "Maximum number of records reached"
 
 msgid "Metric"
 msgstr "Metric"
+
+msgid "Mode"
+msgstr "Mode"
 
 msgid "Model"
 msgstr "Model"
@@ -1944,6 +1953,9 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
+msgid "The accent color used across Carbon."
+msgstr "The accent color used across Carbon."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 
@@ -1962,6 +1974,9 @@ msgstr "The lot will still be dispositioned, but an NCR cannot be created until 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
+
+msgid "Theme color"
+msgstr "Theme color"
 
 msgid "then"
 msgstr "then"

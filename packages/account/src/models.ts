@@ -9,6 +9,7 @@ import { zfd } from "zod-form-data";
 // app that mounts the modal opens it there.
 export const accountSettingsTabs = [
   "profile",
+  "appearance",
   "notifications",
   "security"
 ] as const;

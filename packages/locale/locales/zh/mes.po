@@ -796,6 +796,9 @@ msgstr "标题 {level}"
 msgid "Hide description"
 msgstr "隐藏描述"
 
+msgid "How Carbon looks in this browser."
+msgstr "Carbon 在此浏览器中的外观。"
+
 msgid "How many were actually picked?"
 msgstr "实际拣了多少？"
 
@@ -941,6 +944,9 @@ msgstr "让我们开始构建"
 msgid "Light"
 msgstr "浅色"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "浅色、深色或跟随系统设置。"
+
 msgid "lines"
 msgstr "行"
 
@@ -1058,6 +1064,9 @@ msgstr "已达到最大记录数"
 
 msgid "Metric"
 msgstr "公制"
+
+msgid "Mode"
+msgstr "模式"
 
 msgid "Model"
 msgstr "模型"
@@ -1944,6 +1953,9 @@ msgstr "系统"
 msgid "Tag"
 msgstr "标签"
 
+msgid "The accent color used across Carbon."
+msgstr "整个 Carbon 中使用的强调色。"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
 
@@ -1962,6 +1974,9 @@ msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "计时器和完成状态由所有 {0} 个工单共享。此处的步骤、物料和文件属于此工单。"
+
+msgid "Theme color"
+msgstr "主题颜色"
 
 msgid "then"
 msgstr "然后"

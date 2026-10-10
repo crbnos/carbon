@@ -796,6 +796,9 @@ msgstr "Encabezado {level}"
 msgid "Hide description"
 msgstr "Ocultar descripción"
 
+msgid "How Carbon looks in this browser."
+msgstr "Cómo se ve Carbon en este navegador."
+
 msgid "How many were actually picked?"
 msgstr "¿Cuántos se recogieron realmente?"
 
@@ -941,6 +944,9 @@ msgstr "Construyamos algo"
 msgid "Light"
 msgstr "Claro"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Claro, oscuro, o seguir la configuración del sistema."
+
 msgid "lines"
 msgstr "líneas"
 
@@ -1058,6 +1064,9 @@ msgstr "Se alcanzó el número máximo de registros"
 
 msgid "Metric"
 msgstr "Métrico"
+
+msgid "Mode"
+msgstr "Modo"
 
 msgid "Model"
 msgstr "Modelo"
@@ -1944,6 +1953,9 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etiqueta"
 
+msgid "The accent color used across Carbon."
+msgstr "El color de acento utilizado en toda Carbon."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La cantidad completada para esta operación es menor que la cantidad requerida de {targetQuantity}."
 
@@ -1962,6 +1974,9 @@ msgstr "El lote seguirá siendo disposicionado, pero no se puede crear un NCR ha
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "El temporizador y la finalización se comparten entre todas las {0} órdenes de trabajo. Los pasos, materiales y archivos aquí son propios de esta orden de trabajo."
+
+msgid "Theme color"
+msgstr "Color del tema"
 
 msgid "then"
 msgstr "luego"

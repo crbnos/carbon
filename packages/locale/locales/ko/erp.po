@@ -10413,6 +10413,9 @@ msgstr "품목의 단위 원가를 평가하는 방법입니다: 표준, 이동�
 msgid "How are these hours calculated?"
 msgstr "이 시간들은 어떻게 계산되나요?"
 
+msgid "How Carbon looks in this browser."
+msgstr "이 브라우저에서 Carbon이 표시되는 방식"
+
 msgid "How coverage is worked out"
 msgstr "배치가 어떻게 계산되는지"
 
@@ -11852,6 +11855,9 @@ msgstr "후입선출"
 msgid "Light"
 msgstr "라이트"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "밝음, 어두움 또는 시스템 설정 따르기"
+
 msgid "Lights Out (24×7)"
 msgstr "조명 꺼짐 (24×7)"
 
@@ -12789,6 +12795,9 @@ msgstr "혼합 재료: {0}{1}. 이 실행에서 함께 중첩되는지 확인하
 
 msgid "Mobile Phone"
 msgstr "휴대전화"
+
+msgid "Mode"
+msgstr "모드"
 
 msgid "Model Number"
 msgstr "모델 번호"
@@ -20948,6 +20957,9 @@ msgstr "\"{0}\" 단계가 완료되었습니다 — \"{1}\" 체크포인트를 �
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "도입까지 {0}단계이며, 각 단계는 체크포인트로 마무리됩니다. 완료한 작업은 체크 표시하세요."
 
+msgid "The accent color used across Carbon."
+msgstr "Carbon 전체에서 사용하는 강조 색상"
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "보고 및 분석을 위해 항목을 분류하는 회계 차원입니다."
 
@@ -21942,6 +21954,9 @@ msgstr "그들의 날짜와 분할이 라인에서 다시 계획됩니다."
 
 msgid "Theme"
 msgstr "테마"
+
+msgid "Theme color"
+msgstr "테마 색상"
 
 msgid "Theme Color"
 msgstr "테마 색상"

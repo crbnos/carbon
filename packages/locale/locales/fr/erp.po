@@ -10413,6 +10413,9 @@ msgstr "Comment le coût unitaire d'un article est évalué : Standard, Moyenne,
 msgid "How are these hours calculated?"
 msgstr "Comment ces heures sont-elles calculées ?"
 
+msgid "How Carbon looks in this browser."
+msgstr "Comment Carbon s'affiche dans ce navigateur."
+
 msgid "How coverage is worked out"
 msgstr "Comment la couverture est calculée"
 
@@ -11852,6 +11855,9 @@ msgstr "LIFO"
 msgid "Light"
 msgstr "Clair"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Clair, sombre, ou suivre le paramètre de votre système."
+
 msgid "Lights Out (24×7)"
 msgstr "Lumières éteintes (24×7)"
 
@@ -12789,6 +12795,9 @@ msgstr "Mélange de matériaux : {0}{1}. Confirmez qu'ils s'imbriquent ensemble 
 
 msgid "Mobile Phone"
 msgstr "Téléphone Mobile"
+
+msgid "Mode"
+msgstr "Mode"
 
 msgid "Model Number"
 msgstr "Numéro de modèle"
@@ -20948,6 +20957,9 @@ msgstr "La phase « {0} » est faite — son point de contrôle « {1} » a ét�
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "Les {0} phases pour le lancement, chacune se terminant à un point de contrôle. Cochez chaque tâche au fur et à mesure que vous la terminez."
 
+msgid "The accent color used across Carbon."
+msgstr "La couleur d'accent utilisée dans Carbon."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "L'axe analytique de comptabilité qui catégorise les articles pour le rapport et l'analyse."
 
@@ -21942,6 +21954,9 @@ msgstr "Leurs dates et fractions sont recalculées à partir des lignes."
 
 msgid "Theme"
 msgstr "Thème"
+
+msgid "Theme color"
+msgstr "Couleur du thème"
 
 msgid "Theme Color"
 msgstr "Couleur du thème"

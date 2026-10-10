@@ -10413,6 +10413,9 @@ msgstr "Wie der Stückkosten eines Elements bewertet wird: Standard, Durchschnit
 msgid "How are these hours calculated?"
 msgstr "Wie werden diese Stunden berechnet?"
 
+msgid "How Carbon looks in this browser."
+msgstr "So sieht Carbon in diesem Browser aus."
+
 msgid "How coverage is worked out"
 msgstr "Wie die Abdeckung berechnet wird"
 
@@ -11852,6 +11855,9 @@ msgstr "LIFO"
 msgid "Light"
 msgstr "Hell"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Hell, dunkel oder Systemeinstellung folgen."
+
 msgid "Lights Out (24×7)"
 msgstr "Lichter aus (24×7)"
 
@@ -12789,6 +12795,9 @@ msgstr "Materialien mischen: {0}{1}. Bestätigen Sie, dass sie bei diesem Lauf z
 
 msgid "Mobile Phone"
 msgstr "Mobiltelefon"
+
+msgid "Mode"
+msgstr "Modus"
 
 msgid "Model Number"
 msgstr "Modellnummer"
@@ -20948,6 +20957,9 @@ msgstr "Die Phase „{0}\" ist abgeschlossen – ihr Kontrollpunkt „{1}\" wurd
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "Die {0} Phasen bis zur Live-Schaltung, jede endet an einem Checkpoint. Markieren Sie jede Aufgabe, wenn Sie sie abgeschlossen haben."
 
+msgid "The accent color used across Carbon."
+msgstr "Die in Carbon verwendete Akzentfarbe."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Die Buchhaltungsdimension, die Artikel zur Berichterstattung und Analyse kategorisiert."
 
@@ -21942,6 +21954,9 @@ msgstr "Ihre Termine und Aufteilungen werden erneut aus den Positionen geplant."
 
 msgid "Theme"
 msgstr "Design"
+
+msgid "Theme color"
+msgstr "Designfarbe"
 
 msgid "Theme Color"
 msgstr "Designfarbe"

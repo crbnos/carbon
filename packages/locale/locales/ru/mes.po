@@ -796,6 +796,9 @@ msgstr "Заголовок {level}"
 msgid "Hide description"
 msgstr "Скрыть описание"
 
+msgid "How Carbon looks in this browser."
+msgstr "Внешний вид Carbon в этом браузере."
+
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически собрано?"
 
@@ -941,6 +944,9 @@ msgstr "Давайте создадим что-то"
 msgid "Light"
 msgstr "Светлый"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Светлая, тёмная или согласно параметрам системы."
+
 msgid "lines"
 msgstr "строки"
 
@@ -1058,6 +1064,9 @@ msgstr "Достигнуто максимальное количество за�
 
 msgid "Metric"
 msgstr "Метрическая"
+
+msgid "Mode"
+msgstr "Режим"
 
 msgid "Model"
 msgstr "Модель"
@@ -1944,6 +1953,9 @@ msgstr "Система"
 msgid "Tag"
 msgstr "Тег"
 
+msgid "The accent color used across Carbon."
+msgstr "Цвет акцента, используемый во всём Carbon."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
 
@@ -1962,6 +1974,9 @@ msgstr "Партия все еще будет распределена, но NCR
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Таймер и завершение общие для всех {0} производственных заказов. Шаги, материалы и файлы здесь — собственность этого производственного заказа."
+
+msgid "Theme color"
+msgstr "Цвет темы"
 
 msgid "then"
 msgstr "затем"
