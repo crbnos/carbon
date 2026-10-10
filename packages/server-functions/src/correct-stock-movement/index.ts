@@ -55,7 +55,8 @@ const correctStockMovement = defineServerFn({
       "entryType",
       "documentType",
       "documentId",
-      "correctionOfItemLedgerId"
+      "correctionOfItemLedgerId",
+      "projectId"
     ] as const;
 
     const originalResult = await maybeSingle(
@@ -372,6 +373,8 @@ const correctStockMovement = defineServerFn({
           documentId: root.documentId,
           correctionOfItemLedgerId: root.id,
           comment: resolvedComment,
+          // A correction stays in the stripe of the movement it corrects.
+          projectId: root.projectId,
           companyId,
           createdBy: userId
         },

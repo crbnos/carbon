@@ -47,6 +47,9 @@ export interface BookAdjustmentArgs {
     // every other adjustment. MES production scrap keeps its reason on
     // productionQuantity.scrapReasonId.
     scrapReasonId?: string | null;
+    // The stock stripe the movement creates or draws: a project id, or
+    // null / undefined for common stock. Its cost layers use the same stripe.
+    projectId?: string | null;
     companyId: string;
     createdBy: string;
   };
@@ -250,6 +253,7 @@ export async function bookAdjustment(
         quantity: ledger.quantity,
         comment: ledger.comment,
         scrapReasonId: ledger.scrapReasonId,
+        projectId: ledger.projectId,
         companyId: ledger.companyId,
         createdBy: ledger.createdBy
       })
@@ -271,6 +275,7 @@ export async function bookAdjustment(
       documentType: ledger.documentType,
       documentId: ledger.documentId ?? inserted.id,
       trackedEntityId: ledger.trackedEntityId,
+      projectId: ledger.projectId,
       companyId: ledger.companyId
     },
     item,
@@ -295,6 +300,8 @@ export interface ValueMovementArgs {
     documentId: string;
     // The moved unit or batch; only a serial unit's is used for costing.
     trackedEntityId?: string | null;
+    // The stock stripe: a project id, or null / undefined for common stock.
+    projectId?: string | null;
     companyId: string;
   };
   item: BookAdjustmentArgs["item"];
@@ -339,7 +346,8 @@ export async function valueMovement(
       itemId: movement.itemId,
       quantity: absQuantity,
       companyId,
-      trackedEntityIds: serialId ? [serialId] : []
+      trackedEntityIds: serialId ? [serialId] : [],
+      projectId: movement.projectId ?? null
     });
     cost = cogs.totalCost;
 
@@ -355,6 +363,7 @@ export async function valueMovement(
           cost: -cogs.totalCost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )
@@ -376,6 +385,7 @@ export async function valueMovement(
           cost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )
@@ -404,6 +414,7 @@ export async function valueMovement(
           cost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )

@@ -464,6 +464,64 @@ export async function projectPostingFixture(
       });
       return { locationId, itemId };
     },
+    /** Turns on project stock for the fixture's project (Projects Phase 2a). */
+    async enableProjectStock() {
+      await db
+        .updateTable("project")
+        .set({ projectStock: true })
+        .where("id", "=", projectId)
+        .where("companyId", "=", companyId)
+        .execute();
+    },
+    /** `quantity` units of an item in one stock stripe: a Positive Adjmt.
+     *  item ledger row and a cost layer at `unitCost`, both with `projectId`
+     *  (null = common), in `storageUnitId` (null = no bin). Returns both ids. */
+    async addStripeStock(args: {
+      itemId: string;
+      locationId: string;
+      projectId: string | null;
+      quantity: number;
+      unitCost: number;
+      storageUnitId?: string | null;
+      postingDate?: string;
+    }) {
+      const postingDate = args.postingDate ?? "2026-01-01";
+      return db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        const ledger = await trx
+          .insertInto("itemLedger")
+          .values({
+            postingDate,
+            entryType: "Positive Adjmt.",
+            itemId: args.itemId,
+            locationId: args.locationId,
+            storageUnitId: args.storageUnitId ?? null,
+            projectId: args.projectId,
+            quantity: args.quantity,
+            companyId,
+            createdBy: USER
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        const layer = await trx
+          .insertInto("costLedger")
+          .values({
+            itemLedgerType: "Positive Adjmt.",
+            costLedgerType: "Direct Cost",
+            adjustment: false,
+            itemId: args.itemId,
+            quantity: args.quantity,
+            cost: args.quantity * args.unitCost,
+            remainingQuantity: args.quantity,
+            postingDate,
+            projectId: args.projectId,
+            companyId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        return { itemLedgerId: ledger.id, costLedgerId: layer.id };
+      });
+    },
     /** A consume-to-project job on the fixture's project and element: one
      *  make method, one operation at a work center (labor 50.00 per hour),
      *  and one Pull from Inventory material of `materialItemId` needing

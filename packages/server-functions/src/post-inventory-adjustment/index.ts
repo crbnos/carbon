@@ -700,7 +700,13 @@ const postInventoryAdjustment = defineServerFn({
           let scrapMovement = unscrapOfItemLedgerId
             ? await trx
                 .selectFrom("itemLedger")
-                .select(["id", "storageUnitId", "locationId", "scrapReasonId"])
+                .select([
+                  "id",
+                  "storageUnitId",
+                  "locationId",
+                  "scrapReasonId",
+                  "projectId"
+                ])
                 .where("id", "=", unscrapOfItemLedgerId)
                 .where("companyId", "=", companyId)
                 // Constrain a caller-supplied id to THIS entity's own negative
@@ -714,7 +720,13 @@ const postInventoryAdjustment = defineServerFn({
           if (!scrapMovement) {
             scrapMovement = await trx
               .selectFrom("itemLedger")
-              .select(["id", "storageUnitId", "locationId", "scrapReasonId"])
+              .select([
+                "id",
+                "storageUnitId",
+                "locationId",
+                "scrapReasonId",
+                "projectId"
+              ])
               .where("trackedEntityId", "=", trackedEntityId)
               .where("companyId", "=", companyId)
               .where("documentType", "=", "Scrap")
@@ -811,6 +823,8 @@ const postInventoryAdjustment = defineServerFn({
               storageUnitId:
                 scrapMovement?.storageUnitId ?? storageUnitId ?? null,
               correctionOfItemLedgerId: scrapMovement?.id ?? null,
+              // The unscrap returns the stock to the stripe it was scrapped from.
+              projectId: scrapMovement?.projectId ?? null,
               quantity: entityQuantity
             },
             item,
