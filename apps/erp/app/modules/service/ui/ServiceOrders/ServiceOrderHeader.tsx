@@ -45,6 +45,7 @@ import {
   ServiceOrderStatus,
   WarrantyBadge
 } from "../ServiceStatus";
+import CompleteRefurbishmentModal from "./CompleteRefurbishmentModal";
 import { useServiceOrderNavigation } from "./useServiceOrderNavigation";
 
 /**
@@ -95,6 +96,9 @@ const ServiceOrderHeader = () => {
   // A Depot Repair order is worked in the shop: it needs no visit to
   // complete, and its unit ships back from the RMA it came in on.
   const isDepotRepair = order.type === "Depot Repair";
+  // A refurbishment is worked in the shop too; its Complete moves the cost
+  // into the serial, so it shows a preview first and never reopens.
+  const isRefurbishment = order.type === "Refurbishment";
   const returnOrder = order.salesReturnOrderLine?.salesReturnOrder ?? null;
   const canShipBack = isDepotRepair && isReadyToShipBack(order);
 
@@ -146,7 +150,9 @@ const ServiceOrderHeader = () => {
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  disabled={status !== "Completed" || !can("Draft")}
+                  disabled={
+                    status !== "Completed" || isRefurbishment || !can("Draft")
+                  }
                   onClick={() => move("Draft")}
                 >
                   <DropdownMenuIcon icon={<LuRotateCcw />} />
@@ -203,7 +209,7 @@ const ServiceOrderHeader = () => {
             {isOpen && (
               <Button
                 variant={
-                  status === "In Progress" || isDepotRepair
+                  status === "In Progress" || isDepotRepair || isRefurbishment
                     ? "primary"
                     : "secondary"
                 }
@@ -266,7 +272,15 @@ const ServiceOrderHeader = () => {
         </HStack>
       </div>
 
-      {completeDisclosure.isOpen && (
+      {completeDisclosure.isOpen && isRefurbishment && (
+        <CompleteRefurbishmentModal
+          serviceOrderId={id}
+          readableId={order.serviceOrderId}
+          onClose={completeDisclosure.onClose}
+        />
+      )}
+
+      {completeDisclosure.isOpen && !isRefurbishment && (
         <Confirm
           action={path.to.serviceOrderStatus(id)}
           title={t`Complete ${order.serviceOrderId}`}

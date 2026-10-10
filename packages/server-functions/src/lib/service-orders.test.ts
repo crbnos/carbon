@@ -119,6 +119,50 @@ describe.skipIf(!hasLocalDatabase)("insertServiceOrder", () => {
   );
 
   databaseTest(
+    "creates a Refurbishment with no customer, named by its order and serial",
+    async () => {
+      const created = await f.db.transaction().execute((trx) =>
+        insertServiceOrder(trx, {
+          ...args(),
+          type: "Refurbishment",
+          customerAssetId: null,
+          customerId: null,
+          customerName: null
+        })
+      );
+
+      const order = await f.db
+        .selectFrom("serviceOrder")
+        .select(["type", "customerId", "customerAssetId"])
+        .where("id", "=", created.id)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(order).toEqual({
+        type: "Refurbishment",
+        customerId: null,
+        customerAssetId: null
+      });
+      const project = await f.db
+        .selectFrom("project")
+        .select(["name", "customerId"])
+        .where("id", "=", created.projectId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(project).toEqual({
+        name: `${created.serviceOrderId} — SN-orders`,
+        customerId: null
+      });
+
+      await f.db
+        .updateTable("serviceOrder")
+        .set({ status: "Closed" })
+        .where("id", "=", created.id)
+        .where("companyId", "=", f.companyId)
+        .execute();
+    }
+  );
+
+  databaseTest(
     "a forced error rolls back the order, project and states",
     async () => {
       const counts = async () => {

@@ -72,9 +72,13 @@ export const serviceInvoiceDetails = [
   "By Node"
 ] as const satisfies readonly ServiceInvoiceDetail[];
 
-/** Phase A creates Field Visit orders only. */
+/**
+ * The types the New form creates: a field visit to a unit at a customer, or
+ * the refurbishment of a serial the company holds in stock.
+ */
 export const serviceOrderTypes = [
-  "Field Visit"
+  "Field Visit",
+  "Refurbishment"
 ] as const satisfies readonly ServiceOrderType[];
 
 /**
@@ -83,7 +87,8 @@ export const serviceOrderTypes = [
  */
 export const listedServiceOrderTypes = [
   "Field Visit",
-  "Depot Repair"
+  "Depot Repair",
+  "Refurbishment"
 ] as const satisfies readonly ServiceOrderType[];
 
 /**
@@ -318,7 +323,11 @@ export const customerAssetUpdateValidator = z.object({
 export const serviceOrderValidator = z
   .object({
     type: z.enum(serviceOrderTypes, { error: "Type is required" }),
-    customerAssetId: z.string().min(1, { message: "Asset is required" }),
+    // A field visit's subject is a customer asset; a refurbishment's is a
+    // stock serial of the chosen item.
+    customerAssetId: zfd.text(z.string().optional()),
+    itemId: zfd.text(z.string().optional()),
+    trackedEntityId: zfd.text(z.string().optional()),
     customerContactId: zfd.text(z.string().optional()),
     locationId: z.string().min(1, { message: "Location is required" }),
     customerContractId: zfd.text(z.string().optional()),
@@ -330,6 +339,15 @@ export const serviceOrderValidator = z
   .refine((data) => data.startFrom !== "Template" || !!data.serviceTemplateId, {
     message: "Template is required",
     path: ["serviceTemplateId"]
+  })
+  .refine((data) => data.type !== "Field Visit" || !!data.customerAssetId, {
+    message: "Unit is required",
+    path: ["customerAssetId"]
+  })
+  .refine((data) => data.type !== "Refurbishment" || !!data.trackedEntityId, {
+    message: "Serial is required",
+    // The serial picker sits under the item; its error shows there.
+    path: ["itemId"]
   });
 
 /** The Draft fields of an order and its texts, saved from the order page. */
@@ -341,6 +359,10 @@ export const serviceOrderUpdateValidator = z.object({
   priority: zfd.text(z.enum(projectElementPriorities).optional()),
   assignee: zfd.text(z.string().optional()),
   invoiceDetail: zfd.text(z.enum(serviceInvoiceDetails).optional()),
+  // Refurbishment only: the cap on the serial's cost, and whether the work
+  // is abnormal rework (material variance, never the unit's cost).
+  expectedSellingPrice: zfd.numeric(z.number().min(0).optional()),
+  abnormalRework: zfd.text(z.enum(["true", "false"]).optional()),
   problem: optionalTiptapDoc,
   resolution: optionalTiptapDoc
 });

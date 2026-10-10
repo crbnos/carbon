@@ -1455,6 +1455,12 @@ msgstr "スキル"
 msgid "Ability"
 msgstr "スキル"
 
+msgid "Abnormal Rework"
+msgstr ""
+
+msgid "Abnormal rework posts this cost to material variance. The serial keeps its cost."
+msgstr ""
+
 msgid "About"
 msgstr "について"
 
@@ -3611,6 +3617,9 @@ msgstr "ビジネスプランで利用可能"
 msgid "Avatar url"
 msgstr "アバターURL"
 
+msgid "Average spreads this cost over every unit of the item."
+msgstr ""
+
 msgid "Avg Days to Close"
 msgstr "平均クローズ日数"
 
@@ -4734,6 +4743,9 @@ msgstr "この返品に明細を追加する方法を選択してください。
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "このアグリーメントでレンタルするフリート個を選択してください。各個の初期レートはファイルに設定されています。グリッドで変更してください。"
 
+msgid "Choose the item to see its serials."
+msgstr ""
+
 msgid "Choose the new parent"
 msgstr ""
 
@@ -5057,6 +5069,9 @@ msgstr "完了"
 
 #. placeholder {0}: order.serviceOrderId
 msgid "Complete {0}"
+msgstr ""
+
+msgid "Complete {readableId}"
 msgstr ""
 
 msgid "Complete All"
@@ -9279,6 +9294,9 @@ msgstr "予想受取日"
 msgid "Expected Receipt Date"
 msgstr "予想受取日"
 
+msgid "Expected Selling Price"
+msgstr ""
+
 msgid "Expedite"
 msgstr "前倒し"
 
@@ -11908,6 +11926,9 @@ msgstr "品目タイプ（オプション）"
 msgid "Item types"
 msgstr "品目タイプ"
 
+msgid "Item's unit cost"
+msgstr ""
+
 msgid "Itemized"
 msgstr ""
 
@@ -14000,6 +14021,9 @@ msgstr "新しい転送"
 
 msgid "New Transfer Line"
 msgstr "新規転送明細"
+
+msgid "New unit cost"
+msgstr ""
 
 msgid "New Unit of Measure"
 msgstr "新しい測定単位"
@@ -16753,6 +16777,9 @@ msgstr "修正をプレビュー中…"
 msgid "Previewing the cancellation…"
 msgstr "キャンセルをプレビュー中…"
 
+msgid "Previewing the completion…"
+msgstr ""
+
 msgid "Previous"
 msgstr "前へ"
 
@@ -19176,6 +19203,9 @@ msgstr "販売"
 msgid "Sale Price"
 msgstr "販売価格"
 
+msgid "Sale price cap"
+msgstr ""
+
 msgid "Sale Proceeds"
 msgstr "売上高"
 
@@ -20024,6 +20054,9 @@ msgstr "シリアル追跡"
 msgid "Serial-tracked jobs must be completed in whole units."
 msgstr "シリアル番号で管理される製造指図は、整数単位で完了する必要があります。"
 
+msgid "Serial's unit cost"
+msgstr ""
+
 msgid "Serial/Batch #"
 msgstr "シリアル/バッチ #"
 
@@ -20871,6 +20904,9 @@ msgstr "標準係数"
 
 msgid "Standard Lead Time"
 msgstr "標準リードタイム"
+
+msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
+msgstr ""
 
 msgid "Start"
 msgstr "開始"
@@ -22065,6 +22101,9 @@ msgstr "このロット/シリアル番号の修正された有効期限。変�
 msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
 msgstr ""
 
+msgid "The cost is not capped"
+msgstr ""
+
 msgid "The currencies you trade in and their rates"
 msgstr "あなたが取引する通貨とそのレート"
 
@@ -22602,6 +22641,9 @@ msgstr "追跡対象エンティティの記録された系譜 — どのイン�
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参照データはすべての基盤となります。最初に読み込まれます。"
 
+msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes, and the work's cost moves into the serial's cost."
+msgstr ""
+
 #. placeholder {0}: line.quantityToReceive
 #. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
 msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
@@ -22662,6 +22704,9 @@ msgstr "販売ではなくレンタルアウトするために構築または資
 
 msgid "the selected class"
 msgstr "選択されたクラス"
+
+msgid "The serial gets its own cost layer and leaves stock at its new unit cost."
+msgstr ""
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr ""
@@ -22885,6 +22930,9 @@ msgstr "設備障害の形式（保全および品質追跡用）"
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "作業区が持つ自身のビンで、ピッキング済の材料が生産で引き出されるようにステージングされる場所です。倉庫の仕入元の棚とは異なります。"
+
+msgid "The work's cost is posted as the preview shows, and the serial goes back to stock. A completed refurbishment cannot be reopened."
+msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "スケジューリングを駆動する勤務時間とカレンダー"
@@ -23170,6 +23218,9 @@ msgstr "この発注書"
 
 msgid "This Quarter"
 msgstr "今四半期"
+
+msgid "This refurbishment cannot be completed"
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "これにより認証器アプリが削除されるため、次回のサインインはマジックリンクのみが必要になります。認証器へのアクセスを失った場合にこれを使用してください。彼らが属するすべての会社のサインインに影響します。"
@@ -25644,6 +25695,12 @@ msgid "Worst Performing Machines"
 msgstr "最も性能が低い機械"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write-down"
+msgstr ""
+
+msgid "Write-Down"
 msgstr ""
 
 msgid "Write-Down Account"

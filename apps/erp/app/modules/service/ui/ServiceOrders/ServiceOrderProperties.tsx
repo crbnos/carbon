@@ -5,6 +5,7 @@
 import { Combobox, Select, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import { Copy, HStack, Subheading, toast, VStack } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare } from "react-icons/lu";
 import { useParams } from "react-router";
@@ -18,8 +19,18 @@ import {
   Hyperlink,
   useOptimisticAssignment
 } from "~/components";
-import { CustomerContact, CustomerLocation } from "~/components/Form";
-import { usePermissions, useRouteData } from "~/hooks";
+import {
+  Boolean,
+  CustomerContact,
+  CustomerLocation,
+  NumberControlled
+} from "~/components/Form";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { projectElementPriorities } from "~/modules/projects/projects.models";
 import { path } from "~/utils/path";
 import type { ServiceInvoiceDetail } from "../../service.models";
@@ -37,12 +48,17 @@ const optionalText = z.object({ value: zfd.text(z.string().optional()) });
 /**
  * The order's facts, each saved as it changes. The unit decides the
  * customer. Site, contact and coverage contract change only while the order
- * is Draft; the rest change until it is closed or cancelled.
+ * is Draft; the rest change until it is closed or cancelled. A Refurbishment
+ * has no customer: it shows its serial, the expected selling price that caps
+ * the serial's cost and whether the work is abnormal rework, both editable
+ * until it completes.
  */
 const ServiceOrderProperties = () => {
   const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("id not found");
+  const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(company.baseCurrencyCode);
 
   const routeData = useRouteData<{
     serviceOrder: ServiceOrder;
@@ -70,6 +86,9 @@ const ServiceOrderProperties = () => {
   const isFinal = order.status === "Closed" || order.status === "Cancelled";
   const isDisabled = !canUpdate || isFinal;
   const isDraftOnlyDisabled = isDisabled || order.status !== "Draft";
+  const isRefurbishment = order.type === "Refurbishment";
+  // A completed refurbishment's cost is already in the serial.
+  const isCompletionDisabled = isDisabled || order.status === "Completed";
 
   const onUpdate = (field: string, value: string | null) => {
     if (value === ((order as Record<string, unknown>)[field] ?? null)) return;
@@ -134,12 +153,23 @@ const ServiceOrderProperties = () => {
         <span className="text-sm">{order.serviceOrderId}</span>
       </VStack>
 
-      <VStack spacing={2}>
-        <span className="text-xs text-muted-foreground">
-          <Trans>Customer</Trans>
-        </span>
-        <CustomerAvatar customerId={order.customerId} />
-      </VStack>
+      {isRefurbishment ? (
+        <VStack spacing={2}>
+          <span className="text-xs text-muted-foreground">
+            <Trans>Serial</Trans>
+          </span>
+          <span className="whitespace-nowrap">
+            {order.trackedEntity?.readableId ?? "—"}
+          </span>
+        </VStack>
+      ) : (
+        <VStack spacing={2}>
+          <span className="text-xs text-muted-foreground">
+            <Trans>Customer</Trans>
+          </span>
+          <CustomerAvatar customerId={order.customerId} />
+        </VStack>
+      )}
 
       {order.customerAssetId && (
         <VStack spacing={2}>
@@ -160,65 +190,120 @@ const ServiceOrderProperties = () => {
         isReadOnly={isDisabled}
       />
 
-      <ValidatedForm
-        defaultValues={{ customerLocationId: order.customerLocationId ?? "" }}
-        validator={z.object({
-          customerLocationId: zfd.text(z.string().optional())
-        })}
-        className="w-full"
-      >
-        <CustomerLocation
-          name="customerLocationId"
-          label={t`Site`}
-          customer={order.customerId ?? ""}
-          inline
-          isReadOnly={isDraftOnlyDisabled}
-          onChange={(location) => {
-            if (location?.id) onUpdate("customerLocationId", location.id);
-          }}
-        />
-      </ValidatedForm>
+      {isRefurbishment ? (
+        <>
+          <ValidatedForm
+            defaultValues={{
+              expectedSellingPrice: order.expectedSellingPrice ?? undefined
+            }}
+            validator={z.object({
+              expectedSellingPrice: zfd.numeric(z.number().min(0).optional())
+            })}
+            className="w-full"
+          >
+            <NumberControlled
+              name="expectedSellingPrice"
+              label={t`Expected Selling Price`}
+              inline
+              isReadOnly={isCompletionDisabled}
+              value={order.expectedSellingPrice ?? Number.NaN}
+              minValue={0}
+              formatOptions={INPUT_FORMAT.rate(
+                company.baseCurrencyCode,
+                currencyDecimals
+              )}
+              step={INPUT_STEP.rate}
+              onChange={(value) =>
+                onUpdate(
+                  "expectedSellingPrice",
+                  Number.isNaN(value) ? null : String(value)
+                )
+              }
+            />
+          </ValidatedForm>
+          <ValidatedForm
+            defaultValues={{ abnormalRework: order.abnormalRework }}
+            validator={z.object({ abnormalRework: zfd.checkbox() })}
+            className="w-full"
+            isReadOnly={isCompletionDisabled}
+          >
+            <Boolean
+              name="abnormalRework"
+              label={t`Abnormal Rework`}
+              variant="small"
+              isDisabled={isCompletionDisabled}
+              onChange={(value) =>
+                onUpdate("abnormalRework", value ? "true" : "false")
+              }
+            />
+          </ValidatedForm>
+        </>
+      ) : (
+        <>
+          <ValidatedForm
+            defaultValues={{
+              customerLocationId: order.customerLocationId ?? ""
+            }}
+            validator={z.object({
+              customerLocationId: zfd.text(z.string().optional())
+            })}
+            className="w-full"
+          >
+            <CustomerLocation
+              name="customerLocationId"
+              label={t`Site`}
+              customer={order.customerId ?? ""}
+              inline
+              isReadOnly={isDraftOnlyDisabled}
+              onChange={(location) => {
+                if (location?.id) onUpdate("customerLocationId", location.id);
+              }}
+            />
+          </ValidatedForm>
 
-      <ValidatedForm
-        defaultValues={{ customerContactId: order.customerContactId ?? "" }}
-        validator={z.object({
-          customerContactId: zfd.text(z.string().optional())
-        })}
-        className="w-full"
-      >
-        <CustomerContact
-          name="customerContactId"
-          label={t`Contact`}
-          customer={order.customerId ?? ""}
-          inline
-          isReadOnly={isDraftOnlyDisabled}
-          onChange={(contact) => {
-            if (contact?.id) onUpdate("customerContactId", contact.id);
-          }}
-        />
-      </ValidatedForm>
+          <ValidatedForm
+            defaultValues={{ customerContactId: order.customerContactId ?? "" }}
+            validator={z.object({
+              customerContactId: zfd.text(z.string().optional())
+            })}
+            className="w-full"
+          >
+            <CustomerContact
+              name="customerContactId"
+              label={t`Contact`}
+              customer={order.customerId ?? ""}
+              inline
+              isReadOnly={isDraftOnlyDisabled}
+              onChange={(contact) => {
+                if (contact?.id) onUpdate("customerContactId", contact.id);
+              }}
+            />
+          </ValidatedForm>
 
-      <ValidatedForm
-        defaultValues={{ value: order.customerContractId ?? "" }}
-        validator={optionalText}
-        className="w-full"
-      >
-        <Combobox
-          name="value"
-          label={t`Coverage Contract`}
-          options={contractOptions}
-          isOptional
-          isReadOnly={isDraftOnlyDisabled}
-          inline={(value, options) => (
-            <span>
-              {options.find((option) => option.value === value)?.label ?? "—"}
-            </span>
-          )}
-          onChange={(value) =>
-            onUpdate("customerContractId", value?.value ?? null)
-          }
-        />
-      </ValidatedForm>
+          <ValidatedForm
+            defaultValues={{ value: order.customerContractId ?? "" }}
+            validator={optionalText}
+            className="w-full"
+          >
+            <Combobox
+              name="value"
+              label={t`Coverage Contract`}
+              options={contractOptions}
+              isOptional
+              isReadOnly={isDraftOnlyDisabled}
+              inline={(value, options) => (
+                <span>
+                  {options.find((option) => option.value === value)?.label ??
+                    "—"}
+                </span>
+              )}
+              onChange={(value) =>
+                onUpdate("customerContractId", value?.value ?? null)
+              }
+            />
+          </ValidatedForm>
+        </>
+      )}
 
       <ValidatedForm
         defaultValues={{ value: order.priority }}
@@ -244,29 +329,31 @@ const ServiceOrderProperties = () => {
         />
       </ValidatedForm>
 
-      <ValidatedForm
-        defaultValues={{ value: order.invoiceDetail }}
-        validator={optionalText}
-        className="w-full"
-      >
-        <Select
-          name="value"
-          label={t`Invoice Detail`}
-          options={serviceInvoiceDetails.map((detail) => ({
-            value: detail,
-            label: invoiceDetailLabels[detail]
-          }))}
-          isReadOnly={isDisabled}
-          inline={(value) => (
-            <span>
-              {invoiceDetailLabels[value as ServiceInvoiceDetail] ?? value}
-            </span>
-          )}
-          onChange={(value) => {
-            if (value?.value) onUpdate("invoiceDetail", value.value);
-          }}
-        />
-      </ValidatedForm>
+      {!isRefurbishment && (
+        <ValidatedForm
+          defaultValues={{ value: order.invoiceDetail }}
+          validator={optionalText}
+          className="w-full"
+        >
+          <Select
+            name="value"
+            label={t`Invoice Detail`}
+            options={serviceInvoiceDetails.map((detail) => ({
+              value: detail,
+              label: invoiceDetailLabels[detail]
+            }))}
+            isReadOnly={isDisabled}
+            inline={(value) => (
+              <span>
+                {invoiceDetailLabels[value as ServiceInvoiceDetail] ?? value}
+              </span>
+            )}
+            onChange={(value) => {
+              if (value?.value) onUpdate("invoiceDetail", value.value);
+            }}
+          />
+        </ValidatedForm>
+      )}
 
       <VStack spacing={2}>
         <span className="text-xs text-muted-foreground">

@@ -76,8 +76,14 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   } catch (err) {
     if (err instanceof ServiceOrderError) {
+      // A refusal is about the subject: the unit, or the refurbished serial
+      // (its picker sits under the item).
       return validationError({
-        fieldErrors: { customerAssetId: err.message }
+        fieldErrors: {
+          [validation.data.type === "Refurbishment"
+            ? "itemId"
+            : "customerAssetId"]: err.message
+        }
       });
     }
     logger.error("Failed to create the service order", {

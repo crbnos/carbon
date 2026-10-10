@@ -1455,6 +1455,12 @@ msgstr "ability"
 msgid "Ability"
 msgstr "Ability"
 
+msgid "Abnormal Rework"
+msgstr "Abnormal Rework"
+
+msgid "Abnormal rework posts this cost to material variance. The serial keeps its cost."
+msgstr "Abnormal rework posts this cost to material variance. The serial keeps its cost."
+
 msgid "About"
 msgstr "About"
 
@@ -3611,6 +3617,9 @@ msgstr "Available on the Business plan"
 msgid "Avatar url"
 msgstr "Avatar url"
 
+msgid "Average spreads this cost over every unit of the item."
+msgstr "Average spreads this cost over every unit of the item."
+
 msgid "Avg Days to Close"
 msgstr "Avg Days to Close"
 
@@ -4734,6 +4743,9 @@ msgstr "Choose how to add lines to this return."
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 
+msgid "Choose the item to see its serials."
+msgstr "Choose the item to see its serials."
+
 msgid "Choose the new parent"
 msgstr "Choose the new parent"
 
@@ -5058,6 +5070,9 @@ msgstr "Complete"
 #. placeholder {0}: order.serviceOrderId
 msgid "Complete {0}"
 msgstr "Complete {0}"
+
+msgid "Complete {readableId}"
+msgstr "Complete {readableId}"
 
 msgid "Complete All"
 msgstr "Complete All"
@@ -9279,6 +9294,9 @@ msgstr "Expected Receipt"
 msgid "Expected Receipt Date"
 msgstr "Expected Receipt Date"
 
+msgid "Expected Selling Price"
+msgstr "Expected Selling Price"
+
 msgid "Expedite"
 msgstr "Expedite"
 
@@ -11908,6 +11926,9 @@ msgstr "Item Type (optional)"
 msgid "Item types"
 msgstr "Item types"
 
+msgid "Item's unit cost"
+msgstr "Item's unit cost"
+
 msgid "Itemized"
 msgstr "Itemized"
 
@@ -14000,6 +14021,9 @@ msgstr "New Transfer"
 
 msgid "New Transfer Line"
 msgstr "New Transfer Line"
+
+msgid "New unit cost"
+msgstr "New unit cost"
 
 msgid "New Unit of Measure"
 msgstr "New Unit of Measure"
@@ -16753,6 +16777,9 @@ msgstr "Previewing the amendment…"
 msgid "Previewing the cancellation…"
 msgstr "Previewing the cancellation…"
 
+msgid "Previewing the completion…"
+msgstr "Previewing the completion…"
+
 msgid "Previous"
 msgstr "Previous"
 
@@ -19176,6 +19203,9 @@ msgstr "Sale"
 msgid "Sale Price"
 msgstr "Sale Price"
 
+msgid "Sale price cap"
+msgstr "Sale price cap"
+
 msgid "Sale Proceeds"
 msgstr "Sale Proceeds"
 
@@ -20024,6 +20054,9 @@ msgstr "Serial Tracking"
 msgid "Serial-tracked jobs must be completed in whole units."
 msgstr "Serial-tracked jobs must be completed in whole units."
 
+msgid "Serial's unit cost"
+msgstr "Serial's unit cost"
+
 msgid "Serial/Batch #"
 msgstr "Serial/Batch #"
 
@@ -20871,6 +20904,9 @@ msgstr "Standard factor"
 
 msgid "Standard Lead Time"
 msgstr "Standard Lead Time"
+
+msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
+msgstr "Standard posts this cost to material variance. The serial stays at its standard cost."
 
 msgid "Start"
 msgstr "Start"
@@ -22065,6 +22101,9 @@ msgstr "The corrected expiration for this lot/serial; existing on-hand stock is 
 msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
 msgstr "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
 
+msgid "The cost is not capped"
+msgstr "The cost is not capped"
+
 msgid "The currencies you trade in and their rates"
 msgstr "The currencies you trade in and their rates"
 
@@ -22602,6 +22641,9 @@ msgstr "The recorded genealogy of tracked entities — which inputs were consume
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "The reference data everything else hangs off. Loads first."
 
+msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes, and the work's cost moves into the serial's cost."
+msgstr "The refurbishment of a serial in stock. The serial is on hold until the order completes, and the work's cost moves into the serial's cost."
+
 #. placeholder {0}: line.quantityToReceive
 #. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
 msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
@@ -22662,6 +22704,9 @@ msgstr "The seeded asset class for units you build or capitalize to rent out rat
 
 msgid "the selected class"
 msgstr "the selected class"
+
+msgid "The serial gets its own cost layer and leaves stock at its new unit cost."
+msgstr "The serial gets its own cost layer and leaves stock at its new unit cost."
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
@@ -22885,6 +22930,9 @@ msgstr "The ways equipment fails, for maintenance and quality tracking"
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
+
+msgid "The work's cost is posted as the preview shows, and the serial goes back to stock. A completed refurbishment cannot be reopened."
+msgstr "The work's cost is posted as the preview shows, and the serial goes back to stock. A completed refurbishment cannot be reopened."
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "The working hours and calendars that drive scheduling"
@@ -23170,6 +23218,9 @@ msgstr "this purchase order"
 
 msgid "This Quarter"
 msgstr "This Quarter"
+
+msgid "This refurbishment cannot be completed"
+msgstr "This refurbishment cannot be completed"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
@@ -25645,6 +25696,12 @@ msgstr "Worst Performing Machines"
 
 msgid "Write Off"
 msgstr "Write Off"
+
+msgid "Write-down"
+msgstr "Write-down"
+
+msgid "Write-Down"
+msgstr "Write-Down"
 
 msgid "Write-Down Account"
 msgstr "Write-Down Account"

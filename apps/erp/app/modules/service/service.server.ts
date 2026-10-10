@@ -11,8 +11,14 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
+import {
+  loadRefurbishmentCompletion,
+  planRefurbishmentCompletion,
+  RefurbishmentCompletionError,
+  type RefurbishmentCompletionPlan
+} from "@carbon/server-functions/complete-service-order";
 import { insertServiceOrder } from "@carbon/server-functions/lib/service-orders";
-import { datetime, openChargeIds } from "@carbon/utils";
+import { datetime, openChargeIds, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import {
@@ -58,11 +64,16 @@ const SERVICE_BUILD_DEPTH = 2;
 
 /**
  * Creates a Draft service order in one transaction: reads the next
- * `serviceOrder` id, checks the subject is an In Service customer asset,
- * proposes the customer's only Active contract when none was chosen,
- * creates the order's Service project (the work tree), inserts the order,
- * and, when asked, builds the tree from a service template, the unit's
- * build history or the item's bill of materials. Returns the order's id.
+ * `serviceOrder` id, checks the subject, creates the order's Service project
+ * (the work tree), inserts the order, and, when asked, builds the tree from a
+ * service template, the unit's build history or the item's bill of
+ * materials. Returns the order's id.
+ *
+ * A Field Visit's subject is an In Service customer asset; the customer's
+ * only Active contract is proposed when none was chosen. A Refurbishment's
+ * subject is a serial in stock (Available or On Hold) with no open order; it
+ * has no customer, site or contract, and its serial goes On Hold until the
+ * order completes or is cancelled.
  */
 export async function createServiceOrder(
   client: SupabaseClient<Database>,
@@ -74,6 +85,92 @@ export async function createServiceOrder(
 ): Promise<{ id: string; serviceOrderId: string }> {
   const { companyId, userId } = args;
   return db.transaction().execute(async (trx) => {
+    if (args.type === "Refurbishment") {
+      const serial = await trx
+        .selectFrom("trackedEntity as te")
+        .innerJoin("item as i", (join) =>
+          join.onRef("i.id", "=", "te.itemId").on("i.companyId", "=", companyId)
+        )
+        .select([
+          "te.id",
+          "te.readableId",
+          "te.status",
+          "te.itemId",
+          "i.itemTrackingType"
+        ])
+        .where("te.id", "=", args.trackedEntityId ?? "")
+        .where("te.companyId", "=", companyId)
+        .forUpdate("te")
+        .executeTakeFirst();
+      if (!serial?.itemId) {
+        throw new ServiceOrderError("The serial was not found");
+      }
+      const serialName = serial.readableId ?? serial.id;
+      if (serial.itemTrackingType !== "Serial") {
+        throw new ServiceOrderError(
+          "A refurbishment needs a serial-tracked item"
+        );
+      }
+      if (serial.status !== "Available" && serial.status !== "On Hold") {
+        throw new ServiceOrderError(
+          `A refurbishment needs a serial in stock. Serial ${serialName} is ${serial.status}.`
+        );
+      }
+      const open = await trx
+        .selectFrom("serviceOrder")
+        .select("serviceOrderId")
+        .where("trackedEntityId", "=", serial.id)
+        .where("companyId", "=", companyId)
+        .where("status", "not in", ["Closed", "Cancelled"])
+        .executeTakeFirst();
+      if (open) {
+        throw new ServiceOrderError(
+          `Serial ${serialName} already has an open service order, ${open.serviceOrderId}`
+        );
+      }
+
+      const order = await insertServiceOrder(trx, {
+        companyId,
+        userId,
+        type: "Refurbishment",
+        trackedEntityId: serial.id,
+        serial: serialName,
+        itemId: serial.itemId,
+        customerAssetId: null,
+        customerId: null,
+        customerName: null,
+        customerLocationId: null,
+        locationId: args.locationId,
+        customerContractId: null,
+        contractProjectId: null,
+        serviceTemplateId:
+          args.startFrom === "Template"
+            ? (args.serviceTemplateId ?? null)
+            : null,
+        priority: args.priority ?? "None",
+        problem: args.problem ?? null
+      });
+      // On Hold keeps the serial out of picking and shipping while the work
+      // runs (complete-service-order sets it Available again).
+      await trx
+        .updateTable("trackedEntity")
+        .set({ status: "On Hold", updatedBy: userId })
+        .where("id", "=", serial.id)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      await buildServiceOrderTree(client, trx, {
+        companyId,
+        userId,
+        projectId: order.projectId,
+        startFrom: args.startFrom,
+        serviceTemplateId: args.serviceTemplateId,
+        trackedEntityId: serial.id,
+        itemId: serial.itemId
+      });
+      return { id: order.id, serviceOrderId: order.serviceOrderId };
+    }
+
     const asset = await trx
       .selectFrom("customerAsset as ca")
       .innerJoin("trackedEntity as te", (join) =>
@@ -92,7 +189,7 @@ export async function createServiceOrder(
         "te.readableId as serial",
         "c.name as customerName"
       ])
-      .where("ca.id", "=", args.customerAssetId)
+      .where("ca.id", "=", args.customerAssetId ?? "")
       .where("ca.companyId", "=", companyId)
       .executeTakeFirst();
     if (!asset) throw new ServiceOrderError("The customer asset was not found");
@@ -147,36 +244,63 @@ export async function createServiceOrder(
     });
     const { projectId, serviceOrderId } = order;
 
-    const source =
-      args.startFrom === "Template" && args.serviceTemplateId
-        ? { templateProjectId: args.serviceTemplateId }
-        : args.startFrom === "Serial"
-          ? { trackedEntityId: asset.trackedEntityId }
-          : args.startFrom === "Item"
-            ? { itemId: asset.itemId }
-            : null;
-    if (source) {
-      await insertElementsFromPart(client, trx, {
-        companyId,
-        projectId,
-        parentId: null,
-        source,
-        depth:
-          "templateProjectId" in source
-            ? BUILD_FROM_PART_MAX_DEPTH
-            : SERVICE_BUILD_DEPTH,
-        // A unit's tracked components are what a service replaces, bought or
-        // made; a bill of materials lists every bought screw, so it keeps
-        // only the made lines.
-        includeBought: "trackedEntityId" in source,
-        // A template's plan lines come with its nodes, so the estimate has
-        // prices.
-        includePlanLines: true,
-        userId
-      });
-    }
+    await buildServiceOrderTree(client, trx, {
+      companyId,
+      userId,
+      projectId,
+      startFrom: args.startFrom,
+      serviceTemplateId: args.serviceTemplateId,
+      trackedEntityId: asset.trackedEntityId,
+      itemId: asset.itemId
+    });
 
     return { id: order.id, serviceOrderId };
+  });
+}
+
+/**
+ * Builds a new order's work tree from a service template, the unit's build
+ * history (its serial) or the item's bill of materials. Nothing for Empty.
+ */
+async function buildServiceOrderTree(
+  client: SupabaseClient<Database>,
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    startFrom: z.infer<typeof serviceOrderValidator>["startFrom"];
+    serviceTemplateId?: string;
+    trackedEntityId: string;
+    itemId: string;
+  }
+): Promise<void> {
+  const source =
+    args.startFrom === "Template" && args.serviceTemplateId
+      ? { templateProjectId: args.serviceTemplateId }
+      : args.startFrom === "Serial"
+        ? { trackedEntityId: args.trackedEntityId }
+        : args.startFrom === "Item"
+          ? { itemId: args.itemId }
+          : null;
+  if (!source) return;
+  await insertElementsFromPart(client, trx, {
+    companyId: args.companyId,
+    projectId: args.projectId,
+    parentId: null,
+    source,
+    depth:
+      "templateProjectId" in source
+        ? BUILD_FROM_PART_MAX_DEPTH
+        : SERVICE_BUILD_DEPTH,
+    // A unit's tracked components are what a service replaces, bought or
+    // made; a bill of materials lists every bought screw, so it keeps only
+    // the made lines.
+    includeBought: "trackedEntityId" in source,
+    // A template's plan lines come with its nodes, so the estimate has
+    // prices.
+    includePlanLines: true,
+    userId: args.userId
   });
 }
 
@@ -462,12 +586,111 @@ export async function completeServiceOrder(
   return { error: null, warnings: result.data.warnings };
 }
 
+export type RefurbishmentCompletionPreview = {
+  costingMethod: Database["public"]["Enums"]["itemCostingMethod"];
+  /** Capitalize into the serial (or the average), or material variance. */
+  treatment: RefurbishmentCompletionPlan["treatment"];
+  abnormalRework: boolean;
+  wipTotal: number;
+  /** The serial's unit cost (FIFO, LIFO), else the item's unit cost. */
+  currentUnitCost: number;
+  /** The unit cost after completion: the serial's, the new average, or
+   *  unchanged under material variance. */
+  newUnitCost: number;
+  cap: number | null;
+  writeDown: number;
+  warnings: string[];
+};
+
+/**
+ * What completing a Refurbishment would do, written nowhere: the same reads
+ * as `complete-service-order` (`loadRefurbishmentCompletion`, without row
+ * locks) and the same planner. Returns the planner's refusal as `error`.
+ */
+export async function previewRefurbishmentCompletion(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; serviceOrderId: string }
+): Promise<
+  | { preview: RefurbishmentCompletionPreview; error: null }
+  | { preview: null; error: string }
+> {
+  const order = await db
+    .selectFrom("serviceOrder")
+    .select([
+      "id",
+      "serviceOrderId",
+      "type",
+      "status",
+      "projectId",
+      "trackedEntityId",
+      "itemId",
+      "expectedSellingPrice",
+      "abnormalRework"
+    ])
+    .where("id", "=", args.serviceOrderId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (!order)
+    return { preview: null, error: "The service order was not found" };
+  if (order.type !== "Refurbishment") {
+    return { preview: null, error: "Only a refurbishment has a cost preview" };
+  }
+
+  try {
+    const context = await loadRefurbishmentCompletion(db, {
+      companyId: args.companyId,
+      order: {
+        ...order,
+        expectedSellingPrice:
+          order.expectedSellingPrice === null
+            ? null
+            : Number(order.expectedSellingPrice)
+      },
+      lock: false
+    });
+    const plan = planRefurbishmentCompletion(context.input);
+    const { input } = context;
+    const currentUnitCost =
+      plan.currentSerialUnitCost ?? round(input.currentUnitCost);
+    return {
+      preview: {
+        costingMethod: input.costingMethod,
+        treatment: plan.treatment,
+        abnormalRework: input.abnormalRework,
+        wipTotal: input.wipTotal,
+        currentUnitCost,
+        newUnitCost:
+          plan.newSerialUnitCost ?? plan.averageUnitCost ?? currentUnitCost,
+        cap: input.cap,
+        writeDown: plan.writeDown,
+        warnings: [...context.warnings, ...plan.warnings]
+      },
+      error: null
+    };
+  } catch (err) {
+    if (err instanceof RefurbishmentCompletionError) {
+      return { preview: null, error: err.message };
+    }
+    logger.error("Failed to preview a refurbishment completion", {
+      companyId: args.companyId,
+      serviceOrderId: args.serviceOrderId,
+      error: err
+    });
+    return {
+      preview: null,
+      error:
+        err instanceof Error ? err.message : "Failed to preview the completion"
+    };
+  }
+}
+
 /**
  * Cancels an order with no charge that stands: the order goes to Cancelled,
  * its open visits to Cancelled and its project to Closed. An order is refused
  * while one of its ledger rows is not reversed (`openChargeIds`); an order
  * whose every charge is reversed (a timesheet correction, a part return, an
- * expense reversal) can be cancelled.
+ * expense reversal) can be cancelled. A cancelled Refurbishment releases its
+ * serial: On Hold goes back to Available.
  */
 export async function cancelServiceOrder(
   db: Kysely<KyselyDatabase>,
@@ -476,7 +699,7 @@ export async function cancelServiceOrder(
   await db.transaction().execute(async (trx) => {
     const order = await trx
       .selectFrom("serviceOrder")
-      .select(["id", "status", "projectId"])
+      .select(["id", "type", "status", "projectId", "trackedEntityId"])
       .where("id", "=", args.serviceOrderId)
       .where("companyId", "=", args.companyId)
       .forUpdate()
@@ -519,6 +742,16 @@ export async function cancelServiceOrder(
       userId: args.userId,
       status: "Cancelled"
     });
+    // A refurbishment held its serial out of stock; it goes back.
+    if (order.type === "Refurbishment") {
+      await trx
+        .updateTable("trackedEntity")
+        .set({ status: "Available", updatedBy: args.userId })
+        .where("id", "=", order.trackedEntityId)
+        .where("companyId", "=", args.companyId)
+        .where("status", "=", "On Hold")
+        .execute();
+    }
   });
 }
 

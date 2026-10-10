@@ -1455,6 +1455,12 @@ msgstr "habilidade"
 msgid "Ability"
 msgstr "Habilidade"
 
+msgid "Abnormal Rework"
+msgstr ""
+
+msgid "Abnormal rework posts this cost to material variance. The serial keeps its cost."
+msgstr ""
+
 msgid "About"
 msgstr "Sobre"
 
@@ -3611,6 +3617,9 @@ msgstr "Disponível no plano Business"
 msgid "Avatar url"
 msgstr "URL do avatar"
 
+msgid "Average spreads this cost over every unit of the item."
+msgstr ""
+
 msgid "Avg Days to Close"
 msgstr "Dias Médios para Fechar"
 
@@ -4734,6 +4743,9 @@ msgstr "Escolha como adicionar linhas a esta devolução."
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Escolha as unidades da frota que este contrato aluga. Cada uma começa em sua taxa registrada para a frequência; altere-a na grade."
 
+msgid "Choose the item to see its serials."
+msgstr ""
+
 msgid "Choose the new parent"
 msgstr ""
 
@@ -5057,6 +5069,9 @@ msgstr "Concluir"
 
 #. placeholder {0}: order.serviceOrderId
 msgid "Complete {0}"
+msgstr ""
+
+msgid "Complete {readableId}"
 msgstr ""
 
 msgid "Complete All"
@@ -9279,6 +9294,9 @@ msgstr "Recebimento Esperado"
 msgid "Expected Receipt Date"
 msgstr "Data de Recebimento Esperada"
 
+msgid "Expected Selling Price"
+msgstr ""
+
 msgid "Expedite"
 msgstr "Antecipar"
 
@@ -11908,6 +11926,9 @@ msgstr "Tipo de Item (opcional)"
 msgid "Item types"
 msgstr "Tipos de item"
 
+msgid "Item's unit cost"
+msgstr ""
+
 msgid "Itemized"
 msgstr ""
 
@@ -14000,6 +14021,9 @@ msgstr "Nova Transferência"
 
 msgid "New Transfer Line"
 msgstr "Nova Linha de Transferência"
+
+msgid "New unit cost"
+msgstr ""
 
 msgid "New Unit of Measure"
 msgstr "Nova Unidade de Medida"
@@ -16753,6 +16777,9 @@ msgstr "Visualizando a alteração…"
 msgid "Previewing the cancellation…"
 msgstr "Visualizando o cancelamento…"
 
+msgid "Previewing the completion…"
+msgstr ""
+
 msgid "Previous"
 msgstr "Anterior"
 
@@ -19176,6 +19203,9 @@ msgstr "Venda"
 msgid "Sale Price"
 msgstr "Preço de Venda"
 
+msgid "Sale price cap"
+msgstr ""
+
 msgid "Sale Proceeds"
 msgstr "Receita da Venda"
 
@@ -20024,6 +20054,9 @@ msgstr "Rastreamento em Série"
 msgid "Serial-tracked jobs must be completed in whole units."
 msgstr "Ordens de produção rastreadas por número de série devem ser concluídas em unidades inteiras."
 
+msgid "Serial's unit cost"
+msgstr ""
+
 msgid "Serial/Batch #"
 msgstr "Série/Lote #"
 
@@ -20871,6 +20904,9 @@ msgstr "Fator padrão"
 
 msgid "Standard Lead Time"
 msgstr "Lead time padrão"
+
+msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
+msgstr ""
 
 msgid "Start"
 msgstr "Iniciar"
@@ -22065,6 +22101,9 @@ msgstr "A data de validade corrigida para este lote/número de série; o estoque
 msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
 msgstr ""
 
+msgid "The cost is not capped"
+msgstr ""
+
 msgid "The currencies you trade in and their rates"
 msgstr "As moedas em que você negocia e suas taxas"
 
@@ -22602,6 +22641,9 @@ msgstr "A genealogia registrada de entidades rastreadas - quais entradas foram c
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Os dados de referência dos quais tudo o mais depende. Carrega primeiro."
 
+msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes, and the work's cost moves into the serial's cost."
+msgstr ""
+
 #. placeholder {0}: line.quantityToReceive
 #. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
 msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
@@ -22662,6 +22704,9 @@ msgstr "A classe de ativo pré-configurada para unidades que você constrói ou 
 
 msgid "the selected class"
 msgstr "a classe selecionada"
+
+msgid "The serial gets its own cost layer and leaves stock at its new unit cost."
+msgstr ""
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr ""
@@ -22885,6 +22930,9 @@ msgstr "As maneiras pelas quais o equipamento falha, para rastreamento de manute
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "O compartimento próprio do centro de trabalho onde o material separado aguarda para ser consumido pela produção, em oposição à sua prateleira de origem no armazém."
+
+msgid "The work's cost is posted as the preview shows, and the serial goes back to stock. A completed refurbishment cannot be reopened."
+msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Os horários de trabalho e calendários que orientam o agendamento"
@@ -23170,6 +23218,9 @@ msgstr "este pedido de compra"
 
 msgid "This Quarter"
 msgstr "Este Trimestre"
+
+msgid "This refurbishment cannot be completed"
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Isso remove seu aplicativo autenticador, portanto seu próximo login só precisa de um link mágico. Use isso quando eles tiverem perdido acesso ao seu autenticador. Afeta seu login para cada empresa a que pertencem."
@@ -25644,6 +25695,12 @@ msgid "Worst Performing Machines"
 msgstr "Máquinas com Pior Desempenho"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write-down"
+msgstr ""
+
+msgid "Write-Down"
 msgstr ""
 
 msgid "Write-Down Account"

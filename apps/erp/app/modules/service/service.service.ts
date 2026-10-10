@@ -446,10 +446,18 @@ const DRAFT_ONLY_FIELDS = [
   "customerContractId"
 ] as const;
 
+/** The fields only a Refurbishment has; they decide its completion. */
+const REFURBISHMENT_FIELDS = [
+  "expectedSellingPrice",
+  "abnormalRework"
+] as const;
+
 /**
  * Saves an order's fields. Contact, site and coverage contract change only
  * while the order is Draft; priority, assignee, invoice detail, problem and
- * resolution change until it is Closed or Cancelled.
+ * resolution change until it is Closed or Cancelled. The expected selling
+ * price and abnormal rework belong to a Refurbishment and change until it is
+ * completed: after that its cost is in the serial.
  */
 export async function updateServiceOrder(
   client: Client,
@@ -460,7 +468,7 @@ export async function updateServiceOrder(
 ) {
   const current = await client
     .from("serviceOrder")
-    .select("status")
+    .select("status, type")
     .eq("id", order.id)
     .eq("companyId", order.companyId)
     .single();
@@ -473,10 +481,23 @@ export async function updateServiceOrder(
     return refusal("A closed or cancelled service order cannot change");
   }
 
-  const { id, companyId, updatedBy, ...fields } = order;
+  const { id, companyId, updatedBy, abnormalRework, ...fields } = order;
   const changes: Record<string, unknown> = { ...fields };
+  if (abnormalRework !== undefined) {
+    changes.abnormalRework = abnormalRework === "true";
+  }
   if (current.data.status !== "Draft") {
     for (const field of DRAFT_ONLY_FIELDS) delete changes[field];
+  }
+  if (REFURBISHMENT_FIELDS.some((field) => field in changes)) {
+    if (current.data.type !== "Refurbishment") {
+      return refusal("Only a refurbishment has this field");
+    }
+    if (current.data.status === "Completed") {
+      return refusal(
+        "A completed refurbishment cannot change: its cost is already in the serial"
+      );
+    }
   }
 
   return client

@@ -1455,6 +1455,12 @@ msgstr "навык"
 msgid "Ability"
 msgstr "Навык"
 
+msgid "Abnormal Rework"
+msgstr ""
+
+msgid "Abnormal rework posts this cost to material variance. The serial keeps its cost."
+msgstr ""
+
 msgid "About"
 msgstr "О программе"
 
@@ -3611,6 +3617,9 @@ msgstr "Доступно в плане Business"
 msgid "Avatar url"
 msgstr "URL аватара"
 
+msgid "Average spreads this cost over every unit of the item."
+msgstr ""
+
 msgid "Avg Days to Close"
 msgstr "Среднее количество дней до закрытия"
 
@@ -4734,6 +4743,9 @@ msgstr "Выберите, как добавить строки в этот во�
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "Выберите единицы флота, которые арендует это соглашение. Каждая начинается со своей ставки по файлу для частоты; измените ее в сетке."
 
+msgid "Choose the item to see its serials."
+msgstr ""
+
 msgid "Choose the new parent"
 msgstr ""
 
@@ -5057,6 +5069,9 @@ msgstr "Завершить"
 
 #. placeholder {0}: order.serviceOrderId
 msgid "Complete {0}"
+msgstr ""
+
+msgid "Complete {readableId}"
 msgstr ""
 
 msgid "Complete All"
@@ -9279,6 +9294,9 @@ msgstr "Ожидаемое получение"
 msgid "Expected Receipt Date"
 msgstr "Ожидаемая дата получения"
 
+msgid "Expected Selling Price"
+msgstr ""
+
 msgid "Expedite"
 msgstr "Ускорить"
 
@@ -11908,6 +11926,9 @@ msgstr "Тип номенклатуры (опционально)"
 msgid "Item types"
 msgstr "Типы номенклатуры"
 
+msgid "Item's unit cost"
+msgstr ""
+
 msgid "Itemized"
 msgstr ""
 
@@ -14000,6 +14021,9 @@ msgstr "Новый трансфер"
 
 msgid "New Transfer Line"
 msgstr "Новая Строка перемещения"
+
+msgid "New unit cost"
+msgstr ""
 
 msgid "New Unit of Measure"
 msgstr "Новая единица измерения"
@@ -16753,6 +16777,9 @@ msgstr "Предпросмотр поправки…"
 msgid "Previewing the cancellation…"
 msgstr "Предпросмотр отмены…"
 
+msgid "Previewing the completion…"
+msgstr ""
+
 msgid "Previous"
 msgstr "Назад"
 
@@ -19176,6 +19203,9 @@ msgstr "Продажа"
 msgid "Sale Price"
 msgstr "Цена продажи"
 
+msgid "Sale price cap"
+msgstr ""
+
 msgid "Sale Proceeds"
 msgstr "Выручка от продажи"
 
@@ -20024,6 +20054,9 @@ msgstr "Отслеживание по серийным номерам"
 msgid "Serial-tracked jobs must be completed in whole units."
 msgstr "Производственные заказы с учётом по серийным номерам должны завершаться целыми единицами."
 
+msgid "Serial's unit cost"
+msgstr ""
+
 msgid "Serial/Batch #"
 msgstr "Серийный номер/Партия №"
 
@@ -20871,6 +20904,9 @@ msgstr "Стандартный коэффициент"
 
 msgid "Standard Lead Time"
 msgstr "Стандартный срок поставки"
+
+msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
+msgstr ""
 
 msgid "Start"
 msgstr "Начать"
@@ -22065,6 +22101,9 @@ msgstr "Исправленная дата истечения для этой п�
 msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
 msgstr ""
 
+msgid "The cost is not capped"
+msgstr ""
+
 msgid "The currencies you trade in and their rates"
 msgstr "Валюты, в которых вы торгуете, и их курсы"
 
@@ -22602,6 +22641,9 @@ msgstr "Записанная генеалогия отслеживаемых о�
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Справочные данные, на которые опирается всё остальное. Загружаются первыми."
 
+msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes, and the work's cost moves into the serial's cost."
+msgstr ""
+
 #. placeholder {0}: line.quantityToReceive
 #. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
 msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
@@ -22662,6 +22704,9 @@ msgstr "Класс основных средств, заранее создан�
 
 msgid "the selected class"
 msgstr "выбранный класс"
+
+msgid "The serial gets its own cost layer and leaves stock at its new unit cost."
+msgstr ""
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr ""
@@ -22885,6 +22930,9 @@ msgstr "Способы отказа оборудования для отслеж
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "Собственная ячейка рабочего центра, где отобранный материал подготавливается для производства, в отличие от исходной полки его склада."
+
+msgid "The work's cost is posted as the preview shows, and the serial goes back to stock. A completed refurbishment cannot be reopened."
+msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Рабочие часы и календари, которые управляют планированием"
@@ -23170,6 +23218,9 @@ msgstr "этот заказ поставщику"
 
 msgid "This Quarter"
 msgstr "Этот квартал"
+
+msgid "This refurbishment cannot be completed"
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Это удаляет их приложение аутентификатора, поэтому их следующий вход требует только волшебной ссылки. Используйте это, когда они потеряли доступ к своему аутентификатору. Это влияет на их вход для каждой организации, которой они принадлежат."
@@ -25644,6 +25695,12 @@ msgid "Worst Performing Machines"
 msgstr "Худшие станки"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write-down"
+msgstr ""
+
+msgid "Write-Down"
 msgstr ""
 
 msgid "Write-Down Account"

@@ -2423,6 +2423,8 @@ export const path = {
       generatePath(`${x}/service-order/${id}/billing`),
     serviceOrderCharge: (id: string) =>
       generatePath(`${x}/service-order/${id}/charge`),
+    serviceOrderComplete: (id: string) =>
+      generatePath(`${x}/service-order/${id}/complete`),
     serviceOrderDetails: (id: string) =>
       generatePath(`${x}/service-order/${id}/details`),
     serviceOrderEstimate: (id: string) =>

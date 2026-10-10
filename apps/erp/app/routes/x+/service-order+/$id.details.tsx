@@ -13,7 +13,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
 import RecordDocuments from "~/components/RecordDocuments";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
 import type { ServiceOrder } from "~/modules/service";
 import {
   serviceOrderUpdateValidator,
@@ -29,7 +29,9 @@ const PROPERTY_FIELDS = [
   "customerContactId",
   "customerContractId",
   "priority",
-  "invoiceDetail"
+  "invoiceDetail",
+  "expectedSellingPrice",
+  "abnormalRework"
 ] as const;
 
 /** The rich-text fields the editors on this page save. */
@@ -120,6 +122,7 @@ export default function ServiceOrderDetailsRoute() {
     path.to.serviceOrder(id)
   );
   const permissions = usePermissions();
+  const formatter = useCurrencyFormatter();
   const order = routeData?.serviceOrder;
   if (!order) return null;
 
@@ -161,48 +164,79 @@ export default function ServiceOrderDetailsRoute() {
                   .join(" · ")}
               </dd>
             </div>
-            <div className="flex flex-col gap-1 min-w-0">
-              <dt className="text-xs text-muted-foreground">
-                <Trans>Warranty</Trans>
-              </dt>
-              <dd className="flex flex-wrap items-center gap-2">
-                {order.customerAsset && (
-                  <WarrantyBadge asset={order.customerAsset} />
-                )}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1 min-w-0">
-              <dt className="text-xs text-muted-foreground">
-                <Trans>Labor Warranty Ends</Trans>
-              </dt>
-              <dd>
-                <DateTime
-                  value={order.customerAsset?.laborWarrantyEndDate}
-                  variant="date"
-                  fallback="—"
-                />
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1 min-w-0">
-              <dt className="text-xs text-muted-foreground">
-                <Trans>Parts Warranty Ends</Trans>
-              </dt>
-              <dd>
-                <DateTime
-                  value={order.customerAsset?.partsWarrantyEndDate}
-                  variant="date"
-                  fallback="—"
-                />
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1 min-w-0">
-              <dt className="text-xs text-muted-foreground">
-                <Trans>Site</Trans>
-              </dt>
-              <dd className="truncate">
-                {order.customerLocation?.name ?? "—"}
-              </dd>
-            </div>
+            {order.type === "Refurbishment" ? (
+              order.status === "Completed" || order.status === "Closed" ? (
+                <>
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <dt className="text-xs text-muted-foreground">
+                      <Trans>Capitalized</Trans>
+                    </dt>
+                    <dd className="tabular-nums">
+                      {formatter.format(order.capitalizedAmount ?? 0)}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <dt className="text-xs text-muted-foreground">
+                      <Trans>Write-Down</Trans>
+                    </dt>
+                    <dd className="tabular-nums">
+                      {formatter.format(order.writeDownAmount ?? 0)}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <dt className="text-xs text-muted-foreground">
+                      <Trans>Costing Method</Trans>
+                    </dt>
+                    <dd>{order.completionCostingMethod ?? "—"}</dd>
+                  </div>
+                </>
+              ) : null
+            ) : (
+              <>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <dt className="text-xs text-muted-foreground">
+                    <Trans>Warranty</Trans>
+                  </dt>
+                  <dd className="flex flex-wrap items-center gap-2">
+                    {order.customerAsset && (
+                      <WarrantyBadge asset={order.customerAsset} />
+                    )}
+                  </dd>
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <dt className="text-xs text-muted-foreground">
+                    <Trans>Labor Warranty Ends</Trans>
+                  </dt>
+                  <dd>
+                    <DateTime
+                      value={order.customerAsset?.laborWarrantyEndDate}
+                      variant="date"
+                      fallback="—"
+                    />
+                  </dd>
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <dt className="text-xs text-muted-foreground">
+                    <Trans>Parts Warranty Ends</Trans>
+                  </dt>
+                  <dd>
+                    <DateTime
+                      value={order.customerAsset?.partsWarrantyEndDate}
+                      variant="date"
+                      fallback="—"
+                    />
+                  </dd>
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <dt className="text-xs text-muted-foreground">
+                    <Trans>Site</Trans>
+                  </dt>
+                  <dd className="truncate">
+                    {order.customerLocation?.name ?? "—"}
+                  </dd>
+                </div>
+              </>
+            )}
           </dl>
         </CardContent>
       </Card>

@@ -21,7 +21,8 @@ type Json = Database["public"]["Tables"]["serviceOrder"]["Insert"]["problem"];
 
 /**
  * Inserts a service order's Service project and its default states: Released,
- * By Coverage, named "<order id> — <serial> — <customer>", identified by the
+ * By Coverage, named "<order id> — <serial> — <customer>" ("<order id> —
+ * <serial>" for a refurbishment, which has no customer), identified by the
  * order's readable id, under the coverage
  * contract's project when the order names one. Returns the project's id.
  */
@@ -33,8 +34,8 @@ export async function insertServiceProject(
     serviceOrder: {
       serviceOrderId: string;
       serial: string;
-      customerName: string;
-      customerId: string;
+      customerName: string | null;
+      customerId: string | null;
       locationId: string;
       contractProjectId: string | null;
     };
@@ -46,7 +47,13 @@ export async function insertServiceProject(
     .values({
       // The order's id makes the name unique: a project's name is unique in
       // its company, and one unit gets many orders over its life.
-      name: `${serviceOrder.serviceOrderId} — ${serviceOrder.serial} — ${serviceOrder.customerName}`,
+      name: [
+        serviceOrder.serviceOrderId,
+        serviceOrder.serial,
+        serviceOrder.customerName
+      ]
+        .filter(Boolean)
+        .join(" — "),
       identifier: serviceOrder.serviceOrderId,
       projectType: "Service",
       status: "Released",
@@ -89,9 +96,10 @@ export type InsertServiceOrderArgs = {
   trackedEntityId: string;
   serial: string;
   itemId: string;
-  customerAssetId: string;
-  customerId: string;
-  customerName: string;
+  /** Null for a Refurbishment: a stock serial has no customer. */
+  customerAssetId: string | null;
+  customerId: string | null;
+  customerName: string | null;
   customerLocationId: string | null;
   customerContactId?: string | null;
   /** The company location that does the work. */
