@@ -259,3 +259,148 @@ databaseTest(
     }
   }
 );
+
+// A negative receipt on a grouped PO line takes the units back in the
+// reverse of the distribution: the excess first, then the Hard pegs latest
+// first. The pegs it takes turn Soft again, as on a void.
+databaseTest(
+  "a negative receipt on a grouped line takes the excess, then the latest Hard pegs, and re-softens them",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const part = await f.addItem("part", { itemTrackingType: "Inventory" });
+      const group = await f.addPlanningGroup({
+        locationId,
+        members: [
+          { key: "101", identifier: "PA" },
+          { key: "102", identifier: "PB" },
+          { key: "103", identifier: "PC" }
+        ]
+      });
+      const po = await f.addPurchaseOrder("grouped", {
+        locationId,
+        lines: [
+          {
+            itemId: part.itemId,
+            quantity: 65,
+            unitPrice: 10,
+            planningGroupId: group.planningGroupId
+          }
+        ]
+      });
+      const pegs = [
+        ["101", 20, "2026-11-01"],
+        ["102", 30, "2026-11-02"],
+        ["103", 10, "2026-11-03"]
+      ] as const;
+      for (const [member, quantity, needDate] of pegs) {
+        await f.addPeg({
+          planningGroupId: group.planningGroupId,
+          itemId: part.itemId,
+          locationId,
+          supplyType: "Purchase Order Line",
+          supplyId: po.lineIds[0]!,
+          projectId: group.projectIds[member]!,
+          quantity,
+          needDate
+        });
+      }
+      const line = (quantity: number) => ({
+        locationId,
+        purchaseOrderId: po.purchaseOrderId,
+        supplierId: po.supplierId,
+        lines: [
+          {
+            lineId: po.lineIds[0]!,
+            itemId: part.itemId,
+            quantity,
+            unitPrice: 10
+          }
+        ]
+      });
+
+      // Receive 65: 20, 30 and 10 to the members, 5 of excess to common stock.
+      const receipt = await f.addReceipt("in", line(65));
+      expect(
+        (await postReceipt(f.ctx, { receiptId: receipt.receiptId })).error
+      ).toBeNull();
+
+      // Return 18: the 5 of excess, P-103's 10, then 3 of P-102's 30.
+      const giveBack = await f.addReceipt("back", line(-18));
+      expect(
+        (await postReceipt(f.ctx, { receiptId: giveBack.receiptId })).error
+      ).toBeNull();
+
+      const member = (key: string) => group.projectIds[key]!;
+      const returned = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .where("documentId", "=", giveBack.receiptId)
+        .orderBy("quantity")
+        .execute();
+      expect(
+        returned.map((row) => [Number(row.quantity), row.projectId])
+      ).toEqual([
+        [-10, member("103")],
+        [-5, null],
+        [-3, member("102")]
+      ]);
+
+      // Each stripe's layer gives up the returned units at the layer cost.
+      const consumed = await f.db
+        .selectFrom("costLedger")
+        .select(["quantity", "cost", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .where("documentId", "=", giveBack.receiptId)
+        .orderBy("quantity")
+        .execute();
+      expect(
+        consumed.map((row) => [
+          Number(row.quantity),
+          Number(row.cost),
+          row.projectId
+        ])
+      ).toEqual([
+        [-10, -100, member("103")],
+        [-5, -50, null],
+        [-3, -30, member("102")]
+      ]);
+      const credits = await f.db
+        .selectFrom("journalLine")
+        .select(["amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Receipt")
+        .where("documentId", "=", giveBack.receiptId)
+        .where("accountId", "=", f.account("inventory"))
+        .execute();
+      expect(credits.map((row) => Number(row.amount))).toEqual([-180]);
+
+      const current = await f.db
+        .selectFrom("projectPeg")
+        .select(["projectId", "quantity", "state"])
+        .where("companyId", "=", f.companyId)
+        .where("supersededAt", "is", null)
+        .orderBy("state")
+        .orderBy("quantity")
+        .execute();
+      expect(
+        current.map((peg) => [peg.projectId, Number(peg.quantity), peg.state])
+      ).toEqual([
+        // the enum order: Soft, then Hard
+        [member("102"), 3, "Soft"],
+        [member("103"), 10, "Soft"],
+        [member("101"), 20, "Hard"],
+        [member("102"), 27, "Hard"]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

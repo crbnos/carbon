@@ -115889,6 +115889,68 @@ export default {
         tags: ["(rpc) get_active_job_count"]
       }
     },
+    "/rpc/soften_pegs_for_return": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_quantity: {
+                  format: "numeric",
+                  type: "number"
+                },
+                p_received_quantity: {
+                  format: "numeric",
+                  type: "number"
+                },
+                p_supply_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_supply_type: {
+                  format: '"projectPegSupplyType"',
+                  type: "string"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_id",
+                "p_user_id",
+                "p_supply_type",
+                "p_supply_id",
+                "p_quantity",
+                "p_received_quantity"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) soften_pegs_for_return"]
+      }
+    },
     "/rpc/get_user_select_groups": {
       get: {
         parameters: [

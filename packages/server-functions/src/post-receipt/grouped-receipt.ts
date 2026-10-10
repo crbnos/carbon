@@ -52,6 +52,41 @@ export async function hardenPegsForSupply(
   }));
 }
 
+/**
+ * The reverse of `hardenPegsForSupply`, for a negative receipt on a grouped
+ * PO line. `soften_pegs_for_return` takes the units back from the excess
+ * first (what the line received beyond its Hard pegs), then from the Hard
+ * pegs latest first, and turns the pegs it takes Soft again. One row per
+ * stripe, with positive quantities.
+ */
+export async function softenPegsForReturn(
+  trx: Db,
+  args: {
+    companyId: string;
+    userId: string;
+    supplyType: Database["public"]["Enums"]["projectPegSupplyType"];
+    supplyId: string;
+    quantity: number;
+    /** What the supply received before this return, in inventory units. */
+    receivedQuantity: number;
+  }
+): Promise<PegStripe[]> {
+  const { rows } = await sql<{
+    projectId: string | null;
+    quantity: string | number;
+    pegId: string | null;
+  }>`SELECT "projectId", "quantity", "pegId" FROM soften_pegs_for_return(
+      ${args.companyId}, ${args.userId},
+      ${args.supplyType}::"projectPegSupplyType", ${args.supplyId},
+      ${args.quantity}::numeric, ${args.receivedQuantity}::numeric
+    )`.execute(trx);
+  return rows.map((row) => ({
+    projectId: row.projectId,
+    quantity: Number(row.quantity),
+    pegId: row.pegId
+  }));
+}
+
 export interface StripePiece {
   /** The index of the row the piece comes from. */
   rowIndex: number;

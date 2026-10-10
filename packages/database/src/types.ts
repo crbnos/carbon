@@ -99120,6 +99120,21 @@ export type Database = {
         Args: { p_company_id: string; p_period_id: string; p_user_id: string }
         Returns: undefined
       }
+      soften_pegs_for_return: {
+        Args: {
+          p_company_id: string
+          p_quantity: number
+          p_received_quantity: number
+          p_supply_id: string
+          p_supply_type: Database["public"]["Enums"]["projectPegSupplyType"]
+          p_user_id: string
+        }
+        Returns: {
+          pegId: string
+          projectId: string
+          quantity: number
+        }[]
+      }
       storage_unit_block_location_change_with_children: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
