@@ -2,8 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { round } from "@carbon/utils";
 import { sql } from "kysely";
 import { expect } from "vitest";
+import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { buildAdjustmentJournalLines } from "../lib/plan-adjustment";
+import { createAdjustmentJournal } from "../lib/post-adjustment";
 import { projectPostingFixture } from "../lib/project-posting-test-fixture";
 import { databaseTest } from "../local-database-test-fixture";
 import postProjectStockTransfer from "./index";
@@ -323,6 +327,316 @@ databaseTest(
     } finally {
       await f.cleanup();
     }
+  }
+);
+
+/** Posts an opening entry, Dr inventory / Cr misc, so the GL inventory
+ *  balance starts equal to the fixture's unjournaled seed layers. */
+async function postOpeningBalance(f: Fixture, value: number) {
+  await f.db.transaction().execute(async (trx) => {
+    const period = await resolveAccountingPeriod(
+      trx,
+      f.companyId,
+      "2026-01-01",
+      "current"
+    );
+    const journalId = await createAdjustmentJournal(trx, {
+      companyId: f.companyId,
+      accountingPeriodId: period.id,
+      description: "Opening stock",
+      postingDate: "2026-01-01",
+      userId: "system",
+      sourceType: "Opening Balance"
+    });
+    await trx
+      .insertInto("journalLine")
+      .values(
+        buildAdjustmentJournalLines({
+          journalId,
+          documentId: `${f.prefix}-opening`,
+          journalLineReference: `${f.prefix}-opening`,
+          isGain: true,
+          cost: value,
+          quantity: 0,
+          replenishmentSystem: "Buy",
+          accountDefaults: {
+            rawMaterialsAccount: f.account("inventory"),
+            finishedGoodsAccount: f.account("inventory"),
+            inventoryAdjustmentVarianceAccount: f.account("adjustment-variance")
+          },
+          offsetAccount: f.account("misc"),
+          offsetDescription: "Opening stock",
+          companyId: f.companyId
+        })
+      )
+      .execute();
+  });
+}
+
+/** The GL inventory balance, the open layer value and the valuation report
+ *  total of the company, and the out-of-balance journals. */
+async function tieOut(f: Fixture, itemId: string) {
+  const gl = await f.db
+    .selectFrom("journalLine")
+    .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+    .where("companyId", "=", f.companyId)
+    .where("accountId", "=", f.account("inventory"))
+    .executeTakeFirstOrThrow();
+  const layers = [...(await layerValue(f, itemId)).values()].reduce(
+    (sum, value) => sum + value,
+    0
+  );
+  const valuation = await sql<{ totalValue: number }>`
+    SELECT COALESCE(SUM("totalValue"), 0) AS "totalValue"
+    FROM get_inventory_valuation(${f.companyId})
+    WHERE "itemId" = ${itemId}
+  `.execute(f.db);
+  const unbalanced = await f.db
+    .selectFrom("journalLine")
+    .select(["journalId", (eb) => eb.fn.sum<number>("amount").as("amount")])
+    .where("companyId", "=", f.companyId)
+    .groupBy("journalId")
+    .having((eb) => eb.fn.sum("amount"), "<>", 0)
+    .execute();
+  return {
+    gl: round(Number(gl.amount ?? 0)),
+    layers: round(layers),
+    valuation: round(Number(valuation.rows[0]?.totalValue ?? 0)),
+    unbalanced: unbalanced.length
+  };
+}
+
+/**
+ * A Borrow of 5 at 10.00, then a Payback of `paybackQuantity` from the
+ * borrower's older own stock at `paybackUnitCost`. Returns what the checks
+ * read.
+ */
+async function borrowThenPayback(
+  key: string,
+  paybackUnitCost: number,
+  paybackQuantity: number,
+  check: (r: {
+    f: Fixture;
+    itemId: string;
+    borrowerId: string;
+    borrowId: string;
+    paybackId: string;
+    journalId: string | null;
+  }) => Promise<void>
+) {
+  const f = await projectPostingFixture({ costTreatment: "Expense" });
+  try {
+    await f.enableProjectStock();
+    const { itemId, locationId } = await f.addStockedItem(key, {
+      quantity: 1,
+      unitCost: 1
+    });
+    const borrowerId = `${f.prefix}-project-borrower`;
+    await f.db
+      .insertInto("project")
+      .values({
+        id: borrowerId,
+        name: "Borrower",
+        identifier: "BR",
+        status: "Released",
+        costTreatment: "Expense",
+        projectStock: true,
+        companyId: f.companyId,
+        createdBy: "system"
+      })
+      .execute();
+    // The lender holds 5 at 10.00; the borrower 5 of its own, older, at the
+    // payback cost. FIFO pays back from the borrower's own stock.
+    await f.addStripeStock({
+      itemId,
+      locationId,
+      projectId: f.projectId,
+      quantity: 5,
+      unitCost: 10
+    });
+    await f.addStripeStock({
+      itemId,
+      locationId,
+      projectId: borrowerId,
+      quantity: 5,
+      unitCost: paybackUnitCost,
+      postingDate: "2025-01-01"
+    });
+    await postOpeningBalance(f, 1 + 50 + 5 * paybackUnitCost);
+    const opening = await tieOut(f, itemId);
+    expect(opening.gl).toEqual(opening.layers);
+
+    const borrowTransferId = await addTransfer(
+      f,
+      `${key}-borrow`,
+      {
+        type: "Borrow",
+        locationId,
+        fromProjectId: f.projectId,
+        toProjectId: borrowerId,
+        paybackDueDate: "2026-12-31"
+      },
+      { itemId, quantity: 5 }
+    );
+    const borrowed = await postProjectStockTransfer(f.ctx, {
+      projectStockTransferId: borrowTransferId
+    });
+    expect(borrowed.error).toBeNull();
+    // A Borrow posts no journal and changes no value.
+    expect(borrowed.data?.journalId).toBeNull();
+    expect(await tieOut(f, itemId)).toEqual(opening);
+    const borrow = await f.db
+      .selectFrom("projectBorrow")
+      .select(["id", "borrowedUnitCost"])
+      .where("companyId", "=", f.companyId)
+      .executeTakeFirstOrThrow();
+    expect(Number(borrow.borrowedUnitCost)).toEqual(10);
+
+    const paybackId = await addTransfer(
+      f,
+      `${key}-payback`,
+      {
+        type: "Payback",
+        locationId,
+        fromProjectId: borrowerId,
+        toProjectId: f.projectId,
+        settlesBorrowId: borrow.id
+      },
+      { itemId, quantity: paybackQuantity }
+    );
+    const paid = await postProjectStockTransfer(f.ctx, {
+      projectStockTransferId: paybackId
+    });
+    expect(paid.error).toBeNull();
+
+    await check({
+      f,
+      itemId,
+      borrowerId,
+      borrowId: borrow.id,
+      paybackId,
+      journalId: paid.data?.journalId ?? null
+    });
+
+    // The tie-out holds after both steps: the GL inventory balance equals
+    // the open layers and the valuation report, and every journal balances.
+    const closing = await tieOut(f, itemId);
+    expect(closing.gl).toEqual(closing.layers);
+    expect(closing.valuation).toEqual(closing.layers);
+    expect(closing.unbalanced).toEqual(0);
+  } finally {
+    await f.cleanup();
+  }
+}
+
+/** The payback's layers in the lender's stripe, as [quantity, cost]. */
+async function lenderPaybackLayers(
+  f: Fixture,
+  itemId: string,
+  paybackId: string
+) {
+  const rows = await f.db
+    .selectFrom("costLedger")
+    .select(["quantity", "cost"])
+    .where("companyId", "=", f.companyId)
+    .where("itemId", "=", itemId)
+    .where("documentId", "=", paybackId)
+    .where("projectId", "=", f.projectId)
+    .execute();
+  return rows.map((row) => [Number(row.quantity), Number(row.cost)]);
+}
+
+async function paybackVariances(f: Fixture) {
+  const rows = await f.db
+    .selectFrom("projectLedger")
+    .select(["projectId", "costType", "amount"])
+    .where("companyId", "=", f.companyId)
+    .execute();
+  return rows.map((row) => [row.projectId, row.costType, Number(row.amount)]);
+}
+
+databaseTest(
+  "a Payback dearer than the Borrow (12.00 vs 10.00) charges the borrower and ties out",
+  async () => {
+    await borrowThenPayback(
+      "dear",
+      12,
+      5,
+      async ({ f, itemId, borrowerId, borrowId, paybackId, journalId }) => {
+        // The lender is made whole at the borrowed 10.00.
+        expect(await lenderPaybackLayers(f, itemId, paybackId)).toEqual([
+          [5, 50]
+        ]);
+        // The borrower takes +10.00 (5 × 2.00).
+        expect(await paybackVariances(f)).toEqual([
+          [borrowerId, "Payback Variance", 10]
+        ]);
+        const lines = await f.db
+          .selectFrom("journalLine")
+          .select(["accountId", "amount"])
+          .where("journalId", "=", journalId!)
+          .orderBy("amount", "desc")
+          .execute();
+        expect(
+          lines.map((line) => [line.accountId, Number(line.amount)])
+        ).toEqual([
+          [f.account("adjustment-variance"), 10],
+          [f.account("inventory"), -10]
+        ]);
+        const settled = await f.db
+          .selectFrom("projectBorrow")
+          .select(["quantityPaidBack", "status"])
+          .where("id", "=", borrowId)
+          .executeTakeFirstOrThrow();
+        expect([Number(settled.quantityPaidBack), settled.status]).toEqual([
+          5,
+          "Paid Back"
+        ]);
+      }
+    );
+  }
+);
+
+databaseTest(
+  "a partial Payback cheaper than the Borrow (8.00 vs 10.00) credits the borrower and ties out",
+  async () => {
+    await borrowThenPayback(
+      "cheap",
+      8,
+      3,
+      async ({ f, itemId, borrowerId, borrowId, paybackId, journalId }) => {
+        // The lender gets 3 back at the borrowed 10.00.
+        expect(await lenderPaybackLayers(f, itemId, paybackId)).toEqual([
+          [3, 30]
+        ]);
+        // The borrower takes −6.00 (3 × −2.00).
+        expect(await paybackVariances(f)).toEqual([
+          [borrowerId, "Payback Variance", -6]
+        ]);
+        const lines = await f.db
+          .selectFrom("journalLine")
+          .select(["accountId", "amount"])
+          .where("journalId", "=", journalId!)
+          .orderBy("amount", "desc")
+          .execute();
+        expect(
+          lines.map((line) => [line.accountId, Number(line.amount)])
+        ).toEqual([
+          [f.account("inventory"), 6],
+          [f.account("adjustment-variance"), -6]
+        ]);
+        // A partial payback reduces the borrow; it stays Open.
+        const settled = await f.db
+          .selectFrom("projectBorrow")
+          .select(["quantityPaidBack", "status"])
+          .where("id", "=", borrowId)
+          .executeTakeFirstOrThrow();
+        expect([Number(settled.quantityPaidBack), settled.status]).toEqual([
+          3,
+          "Open"
+        ]);
+      }
+    );
   }
 );
 

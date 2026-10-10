@@ -199,13 +199,20 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   the line's `unitCost`.
   - **Transfer** opens a layer in the to-stripe at the drawn cost. No journal.
   - **Borrow** opens the borrower's layer at the lender's cost (`costLedger.projectBorrowId`)
-    and an Open `projectBorrow` with the due date. No journal.
+    and an Open `projectBorrow` with `borrowedUnitCost` and the due date. No journal.
   - **Payback** relieves the borrower at its current FIFO cost and gives the lender back the
     **borrowed** cost, one layer per borrow settled (`planBorrowMatching`: the borrow the
     payback names first, then the oldest). The difference is the borrower's
-    `Payback Variance` `projectLedger` row and a journal against
-    `inventoryAdjustmentVarianceAccount`, tagged with the borrower's project
-    (`paybackVariance`). A Payback header names both owners, filled from its borrow.
+    `Payback Variance` `projectLedger` row (payback cost − borrowed cost) and a journal of
+    `inventoryAdjustmentVarianceAccount` against inventory (Dr variance / Cr inventory when
+    dearer, the mirror when cheaper), tagged with the borrower's project
+    (`paybackVariance`). A partial payback reduces the borrow; it stays Open. A Payback
+    header names both owners, filled from its borrow.
+  - **Tie-out.** The variance journal equals the change in layer value, so the GL inventory
+    balance stays equal to the layer valuation. Never put the lender's layer at the
+    borrower's cost: the layers then do not change while the journal moves inventory.
+    Pinned at 12.00 and 8.00 against a borrow at 10.00 in
+    `post-project-stock-transfer.test.ts`.
 - **Stock tab** (`$projectId.stock.tsx`, `ProjectStock`, shown when `projectStock` is on): the
   project's on-hand by item, location, bin and lot (`getProjectStockOnHand`), its open
   borrows owed and lent (overdue in red, `isBorrowOverdue`), and **Transfer**, **Borrow** and
