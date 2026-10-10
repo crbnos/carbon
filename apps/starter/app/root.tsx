@@ -16,7 +16,13 @@ import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import { createInvalidationMiddleware } from "@carbon/query/cache";
-import { Button, Heading, Toaster, useMode } from "@carbon/react";
+import {
+  Button,
+  Heading,
+  OperatingSystemContextProvider,
+  Toaster,
+  useMode
+} from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
@@ -47,7 +53,8 @@ import {
   Scripts,
   ScrollRestoration,
   UNSAFE_FrameworkContext,
-  useLoaderData
+  useLoaderData,
+  useRouteLoaderData
 } from "react-router";
 import { preloadCatalog, useCatalog } from "~/services/lingui";
 import { getMode, setMode } from "~/services/mode.server";
@@ -97,7 +104,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   // The starter shares the ERP's catalog: the account settings modal and the
   // @carbon/react components it renders are extracted into it.
-  const { locale } = getPreferenceHeaders(request);
+  const { locale, platform } = getPreferenceHeaders(request);
   const appLanguage = resolveLanguage(locale);
   await preloadCatalog(appLanguage);
 
@@ -115,6 +122,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       appLanguage,
       // React Aria formats dates and numbers in the full locale (en-GB).
       locale,
+      // Shortcut hints (every Button) read it, on the server render too.
+      platform,
       ...getMode(request),
       theme: getTheme(request),
       result: context.get(flashResultContext)
@@ -271,23 +280,27 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LocaleProvider locale={appLanguage} catalog={catalog}>
-        {/* Inside the root, so a language change re-renders it with the
-            new locale, as in the ERP and MES. */}
-        <I18nProvider locale={locale}>
-          <Document mode={mode} theme={theme} lang={appLanguage}>
-            <Outlet />
-            <script
-              // Server render only: on the client the nonce is undefined (and browsers hide it).
-              nonce={nonce}
-              suppressHydrationWarning
-              dangerouslySetInnerHTML={{
-                __html: `window.env = ${JSON.stringify(env)}`
-              }}
-            />
-          </Document>
-        </I18nProvider>
-      </LocaleProvider>
+      <OperatingSystemContextProvider
+        platform={loaderData?.platform ?? "windows"}
+      >
+        <LocaleProvider locale={appLanguage} catalog={catalog}>
+          {/* Inside the root, so a language change re-renders it with the
+              new locale, as in the ERP and MES. */}
+          <I18nProvider locale={locale}>
+            <Document mode={mode} theme={theme} lang={appLanguage}>
+              <Outlet />
+              <script
+                // Server render only: on the client the nonce is undefined (and browsers hide it).
+                nonce={nonce}
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{
+                  __html: `window.env = ${JSON.stringify(env)}`
+                }}
+              />
+            </Document>
+          </I18nProvider>
+        </LocaleProvider>
+      </OperatingSystemContextProvider>
     </QueryClientProvider>
   );
 }
@@ -298,28 +311,33 @@ export function ErrorBoundary({ error }: { error: unknown }) {
     : error instanceof Error
       ? error.message
       : String(error);
+  // Undefined when the root loader itself failed or no route matched.
+  const platform =
+    useRouteLoaderData<typeof loader>("root")?.platform ?? "windows";
 
   return (
-    <Document title="Error!">
-      <div className="light">
-        <div className="flex flex-col w-full h-screen  items-center justify-center space-y-4 ">
-          <img
-            src="/carbon-mark-light.svg"
-            alt="Carbon Logo"
-            className="block max-w-[60px] dark:hidden"
-          />
-          <img
-            src="/carbon-mark-dark.svg"
-            alt="Carbon Logo"
-            className="max-w-[60px] hidden dark:block"
-          />
-          <Heading size="h1">Something went wrong</Heading>
-          <p className="text-muted-foreground max-w-2xl">{message}</p>
-          <Button onClick={() => (window.location.href = "/")}>
-            Back Home
-          </Button>
+    <OperatingSystemContextProvider platform={platform}>
+      <Document title="Error!">
+        <div className="light">
+          <div className="flex flex-col w-full h-screen  items-center justify-center space-y-4 ">
+            <img
+              src="/carbon-mark-light.svg"
+              alt="Carbon Logo"
+              className="block max-w-[60px] dark:hidden"
+            />
+            <img
+              src="/carbon-mark-dark.svg"
+              alt="Carbon Logo"
+              className="max-w-[60px] hidden dark:block"
+            />
+            <Heading size="h1">Something went wrong</Heading>
+            <p className="text-muted-foreground max-w-2xl">{message}</p>
+            <Button onClick={() => (window.location.href = "/")}>
+              Back Home
+            </Button>
+          </div>
         </div>
-      </div>
-    </Document>
+      </Document>
+    </OperatingSystemContextProvider>
   );
 }
