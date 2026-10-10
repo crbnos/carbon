@@ -23,6 +23,7 @@ import {
   getPreferenceHeaders,
   modeValidator,
   prefetchCacheMiddleware,
+  themeColorValidator,
   themes
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
@@ -53,7 +54,7 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
-import { getTheme } from "./services/theme.server";
+import { getTheme, setTheme } from "./services/theme.server";
 
 export const middleware = [
   requestIdMiddleware,
@@ -133,9 +134,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid content type" }, { status: 400 });
   }
 
-  const validation = await validator(modeValidator).validate(
-    await request.formData()
-  );
+  const formData = await request.formData();
+
+  // The account settings Appearance pane posts its theme color here too.
+  if (formData.has("theme")) {
+    const themeValidation =
+      await validator(themeColorValidator).validate(formData);
+    if (themeValidation.error) {
+      return data(error(themeValidation.error, "Invalid theme"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: { "Set-Cookie": setTheme(themeValidation.data.theme) }
+      }
+    );
+  }
+
+  const validation = await validator(modeValidator).validate(formData);
 
   if (validation.error) {
     return data(error(validation.error, "Invalid mode"), {

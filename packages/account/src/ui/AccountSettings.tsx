@@ -14,12 +14,13 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { CgProfile } from "react-icons/cg";
-import { LuBell, LuShieldCheck } from "react-icons/lu";
+import { LuBell, LuShieldCheck, LuSunMoon } from "react-icons/lu";
 import { useSearchParams } from "react-router";
 import type { AccountSettingsTab } from "../models";
 import { isAccountSettingsTab } from "../models";
 import { useAccountSettings } from "../store";
 import AccountAvatar from "./AccountAvatar";
+import AppearanceSettings from "./AppearanceSettings";
 import type { AccountSettingsConfig } from "./context";
 import { AccountSettingsProvider, useAccountSettingsConfig } from "./context";
 import NotificationSettings from "./NotificationSettings";
@@ -28,6 +29,7 @@ import SecuritySettings from "./SecuritySettings";
 
 const PANES: Record<AccountSettingsTab, () => ReactElement> = {
   profile: ProfileSettings,
+  appearance: AppearanceSettings,
   notifications: NotificationSettings,
   security: SecuritySettings
 };
@@ -74,6 +76,7 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
 
   const tabs: { id: AccountSettingsTab; name: string; icon: ReactElement }[] = [
     { id: "profile", name: t`Profile`, icon: <CgProfile /> },
+    { id: "appearance", name: t`Appearance`, icon: <LuSunMoon /> },
     { id: "notifications", name: t`Notifications`, icon: <LuBell /> },
     { id: "security", name: t`Security`, icon: <LuShieldCheck /> }
   ];

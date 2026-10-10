@@ -10413,6 +10413,9 @@ msgstr "Как оценивается себестоимость за едини
 msgid "How are these hours calculated?"
 msgstr "Как рассчитываются эти часы?"
 
+msgid "How Carbon looks in this browser."
+msgstr "Внешний вид Carbon в этом браузере."
+
 msgid "How coverage is worked out"
 msgstr "Как рассчитывается покрытие"
 
@@ -11852,6 +11855,9 @@ msgstr "ЛИФО"
 msgid "Light"
 msgstr "Светлая"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Светлая, тёмная или следовать системным параметрам."
+
 msgid "Lights Out (24×7)"
 msgstr "Темное производство (24×7)"
 
@@ -12789,6 +12795,9 @@ msgstr "Смешивание материалов: {0}{1}. Подтвердит�
 
 msgid "Mobile Phone"
 msgstr "Мобильный телефон"
+
+msgid "Mode"
+msgstr "Режим"
 
 msgid "Model Number"
 msgstr "Номер модели"
@@ -20948,6 +20957,9 @@ msgstr "Фаза «{0}» завершена — её контрольная то
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "Фазы {0} до запуска, каждая заканчивается контрольной точкой. Отмечайте каждую задачу по мере её выполнения."
 
+msgid "The accent color used across Carbon."
+msgstr "Цвет акцента, используемый во всём Carbon."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "Измерение бухгалтерии, которое категоризирует номенклатуру для отчетности и анализа."
 
@@ -21942,6 +21954,9 @@ msgstr "Их даты и разделения снова планируются 
 
 msgid "Theme"
 msgstr "Тема"
+
+msgid "Theme color"
+msgstr "Цвет темы"
 
 msgid "Theme Color"
 msgstr "Цвет темы"

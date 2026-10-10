@@ -10413,6 +10413,9 @@ msgstr "物料的单位成本估价方法：标准成本、平均成本、先进
 msgid "How are these hours calculated?"
 msgstr "这些小时数是如何计算的？"
 
+msgid "How Carbon looks in this browser."
+msgstr "Carbon 在此浏览器中的外观"
+
 msgid "How coverage is worked out"
 msgstr "如何计算覆盖范围"
 
@@ -11852,6 +11855,9 @@ msgstr "后进先出"
 msgid "Light"
 msgstr "浅色"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "浅色、深色或跟随系统设置"
+
 msgid "Lights Out (24×7)"
 msgstr "熄灯（24×7）"
 
@@ -12789,6 +12795,9 @@ msgstr "混合材料：{0}{1}。确认它们在此运行中可以相互嵌套。
 
 msgid "Mobile Phone"
 msgstr "手机"
+
+msgid "Mode"
+msgstr "模式"
 
 msgid "Model Number"
 msgstr "型号"
@@ -20948,6 +20957,9 @@ msgstr "\"{0}\"阶段已完成——其\"{1}\"检查点已通过。"
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "达成上线的{0}个阶段，每个阶段以检查点结束。当您完成每个任务时，将其勾选。"
 
+msgid "The accent color used across Carbon."
+msgstr "整个 Carbon 中使用的强调色"
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "对物料进行分类以用于报告和分析的会计维度。"
 
@@ -21942,6 +21954,9 @@ msgstr "其日期和拆分从行中重新计划。"
 
 msgid "Theme"
 msgstr "主题"
+
+msgid "Theme color"
+msgstr "主题色"
 
 msgid "Theme Color"
 msgstr "主题颜色"

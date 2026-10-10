@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Mode } from "@carbon/utils";
 import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
 import type { AccountSettingsUser } from "../types";
@@ -20,6 +21,11 @@ export type AccountSettingsConfig = {
    * it: the push service worker is registered on the ERP's origin.
    */
   renderBrowserNotifications?: (publicKey: string) => ReactNode;
+  /**
+   * Animates a mode change, then calls `persist`. Only the ERP passes it (its
+   * stylesheet carries the transition); elsewhere the mode switches at once.
+   */
+  transitionMode?: (nextMode: Mode, persist: () => void) => void;
   /**
    * The two-factor plan gate. Only the ERP knows the plan; elsewhere the
    * button always starts enrollment.

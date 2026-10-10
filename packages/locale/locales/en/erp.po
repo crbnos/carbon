@@ -10413,6 +10413,9 @@ msgstr "How an item's unit cost is valued: Standard, Average, FIFO, or LIFO. Set
 msgid "How are these hours calculated?"
 msgstr "How are these hours calculated?"
 
+msgid "How Carbon looks in this browser."
+msgstr "How Carbon looks in this browser."
+
 msgid "How coverage is worked out"
 msgstr "How coverage is worked out"
 
@@ -11852,6 +11855,9 @@ msgstr "LIFO"
 msgid "Light"
 msgstr "Light"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Light, dark, or follow your system setting."
+
 msgid "Lights Out (24×7)"
 msgstr "Lights Out (24×7)"
 
@@ -12789,6 +12795,9 @@ msgstr "Mixing materials: {0}{1}. Confirm they nest together on this run."
 
 msgid "Mobile Phone"
 msgstr "Mobile Phone"
+
+msgid "Mode"
+msgstr "Mode"
 
 msgid "Model Number"
 msgstr "Model Number"
@@ -20948,6 +20957,9 @@ msgstr "The \"{0}\" phase is done — its \"{1}\" checkpoint has been passed."
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 
+msgid "The accent color used across Carbon."
+msgstr "The accent color used across Carbon."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "The accounting dimension that categorizes items for reporting and analysis."
 
@@ -21942,6 +21954,9 @@ msgstr "Their dates and splits are planned again from the lines."
 
 msgid "Theme"
 msgstr "Theme"
+
+msgid "Theme color"
+msgstr "Theme color"
 
 msgid "Theme Color"
 msgstr "Theme Color"

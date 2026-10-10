@@ -796,6 +796,9 @@ msgstr "Başlık {level}"
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
 
+msgid "How Carbon looks in this browser."
+msgstr "Bu tarayıcıda Carbon'un görünüşü."
+
 msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane alındı?"
 
@@ -941,6 +944,9 @@ msgstr "Bir şeyler inşa edelim"
 msgid "Light"
 msgstr "Açık"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "Açık, koyu veya sistem ayarınızı takip edin."
+
 msgid "lines"
 msgstr "satırlar"
 
@@ -1058,6 +1064,9 @@ msgstr "Maksimum kayıt sayısına ulaşıldı"
 
 msgid "Metric"
 msgstr "Metrik"
+
+msgid "Mode"
+msgstr "Mod"
 
 msgid "Model"
 msgstr "Model"
@@ -1944,6 +1953,9 @@ msgstr "Sistem"
 msgid "Tag"
 msgstr "Etiket"
 
+msgid "The accent color used across Carbon."
+msgstr "Carbon'da kullanılan vurgu rengi."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
 
@@ -1962,6 +1974,9 @@ msgstr "Lot yine de işleme tabi tutulacak, ancak en az bir Sorun Türü yapıla
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Zamanlayıcı ve tamamlama tüm {0} iş emirleri tarafından paylaşılır. Buradaki adımlar, malzemeler ve dosyalar bu iş emrinin kendisinindir."
+
+msgid "Theme color"
+msgstr "Tema rengi"
 
 msgid "then"
 msgstr "sonra"

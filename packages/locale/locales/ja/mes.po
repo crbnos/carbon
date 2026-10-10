@@ -796,6 +796,9 @@ msgstr "見出し {level}"
 msgid "Hide description"
 msgstr "説明を非表示"
 
+msgid "How Carbon looks in this browser."
+msgstr "このブラウザでのCarbonの表示方法。"
+
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
 
@@ -941,6 +944,9 @@ msgstr "さあ、何かを作りましょう"
 msgid "Light"
 msgstr "ライト"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "ライト、ダーク、またはシステム設定に従う。"
+
 msgid "lines"
 msgstr "行"
 
@@ -1058,6 +1064,9 @@ msgstr "レコードの最大数に達しました"
 
 msgid "Metric"
 msgstr "メートル法"
+
+msgid "Mode"
+msgstr "モード"
 
 msgid "Model"
 msgstr "モデル"
@@ -1944,6 +1953,9 @@ msgstr "システム"
 msgid "Tag"
 msgstr "タグ"
 
+msgid "The accent color used across Carbon."
+msgstr "Carbon全体で使用されるアクセントカラー。"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
 
@@ -1962,6 +1974,9 @@ msgstr "ロットは引き続き処分されますが、少なくとも1つの�
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "タイマーと完了はすべての{0}製造指図で共有されます。ステップ、材料、ファイルはこの製造指図専用です。"
+
+msgid "Theme color"
+msgstr "テーマカラー"
 
 msgid "then"
 msgstr "その後"

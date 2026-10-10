@@ -12,13 +12,14 @@ import { useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { usePushSubscription } from "~/hooks/usePushSubscription";
 import { TwoFactorUpgradeDialog } from "~/modules/settings";
+import { startModeTransition } from "~/utils/dom";
 import { path } from "~/utils/path";
 import { dismissBrowserNotificationsPrompt } from "~/utils/push";
 
 /**
- * The shared account settings modal, with the two pieces only the ERP has:
- * browser push (its service worker lives on this origin) and the two-factor
- * plan gate.
+ * The shared account settings modal, with the pieces only the ERP has:
+ * browser push (its service worker lives on this origin), the two-factor
+ * plan gate, and the animated mode change.
  */
 export default function AccountSettings() {
   const user = useUser();
@@ -29,6 +30,7 @@ export default function AccountSettings() {
       api={path.to.api.root}
       user={user}
       companyId={user.company.id}
+      transitionMode={startModeTransition}
       renderBrowserNotifications={(publicKey) => (
         <BrowserNotificationsSection publicKey={publicKey} />
       )}

@@ -796,6 +796,9 @@ msgstr "शीर्षक {level}"
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
 
+msgid "How Carbon looks in this browser."
+msgstr "इस ब्राउज़र में Carbon कैसा दिखता है।"
+
 msgid "How many were actually picked?"
 msgstr "वास्तव में कितने चुने गए?"
 
@@ -941,6 +944,9 @@ msgstr "चलिए कुछ बनाते हैं"
 msgid "Light"
 msgstr "हल्का"
 
+msgid "Light, dark, or follow your system setting."
+msgstr "हल्का, गहरा, या अपनी सिस्टम सेटिंग का पालन करें।"
+
 msgid "lines"
 msgstr "लाइनें"
 
@@ -1058,6 +1064,9 @@ msgstr "रिकॉर्ड की अधिकतम संख्या त�
 
 msgid "Metric"
 msgstr "मीट्रिक"
+
+msgid "Mode"
+msgstr "मोड"
 
 msgid "Model"
 msgstr "मॉडल"
@@ -1944,6 +1953,9 @@ msgstr "सिस्टम"
 msgid "Tag"
 msgstr "टैग"
 
+msgid "The accent color used across Carbon."
+msgstr "Carbon में उपयोग किया जाने वाला उच्चारण रंग।"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
 
@@ -1962,6 +1974,9 @@ msgstr "लॉट को अभी भी डिस्पोज़ किया 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "टाइमर और पूर्णता सभी {0} जॉब्स द्वारा साझा की जाती है। यहां चरण, सामग्री और फाइलें इस जॉब की अपनी हैं।"
+
+msgid "Theme color"
+msgstr "थीम रंग"
 
 msgid "then"
 msgstr "फिर"
