@@ -97433,6 +97433,7 @@ export type Database = {
           minimumReserveQuantity: number
           name: string
           orderMultiple: number
+          planningSegmentId: string
           quantityOnHand: number
           quantityToOrder: number
           readableIdWithRevision: string
@@ -97527,6 +97528,7 @@ export type Database = {
           orderMultiple: number
           orderQuantity: number
           planningHorizonDays: number
+          planningSegmentId: string
           quantityOnHand: number
           quantityToOrder: number
           readableIdWithRevision: string
@@ -97701,6 +97703,7 @@ export type Database = {
           minimumReserveQuantity: number
           name: string
           orderMultiple: number
+          planningSegmentId: string
           preferredSupplierId: string
           purchasingBlocked: boolean
           purchasingUnitOfMeasureCode: string
@@ -97799,6 +97802,7 @@ export type Database = {
           orderMultiple: number
           orderQuantity: number
           planningHorizonDays: number
+          planningSegmentId: string
           preferredSupplierId: string
           purchasingBlocked: boolean
           purchasingUnitOfMeasureCode: string

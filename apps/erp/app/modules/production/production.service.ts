@@ -2376,6 +2376,9 @@ export async function getProductionPlanning(
     { column: "orderQuantity", ascending: false },
     { column: "readableIdWithRevision", ascending: true }
   ]);
+  // An item has one row per netting segment ('' is common, then each project
+  // with project stock), so the segment breaks the tie between its rows.
+  query = query.order("planningSegmentId");
 
   return query;
 }
