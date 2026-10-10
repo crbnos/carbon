@@ -807,6 +807,25 @@ const PROJECT_STATES: {
   { name: "Cancelled", group: "Cancelled", color: "#9AA4BC", isDefault: true }
 ];
 
+/** The default states every project has (`PROJECT_STATES`), by name. */
+async function insertProjectStates(
+  ctx: Ctx,
+  projectId: string
+): Promise<Record<string, string>> {
+  const stateIds: Record<string, string> = {};
+  for (const [index, state] of PROJECT_STATES.entries()) {
+    stateIds[state.name] = await insertId(ctx, "projectState", {
+      projectId,
+      name: state.name,
+      group: state.group,
+      color: state.color,
+      sortOrder: index + 1,
+      isDefault: state.isDefault
+    });
+  }
+  return stateIds;
+}
+
 /**
  * A Service project's work tree: the default states, the nodes in list order
  * (`<identifier>-<n>`, Todo, by sibling order) and, with `planLines`, each
@@ -823,17 +842,7 @@ async function insertServiceTree(
   }
 ): Promise<Record<string, string>> {
   const { projectId, identifier, nodes } = args;
-  const stateIds: Record<string, string> = {};
-  for (const [index, state] of PROJECT_STATES.entries()) {
-    stateIds[state.name] = await insertId(ctx, "projectState", {
-      projectId,
-      name: state.name,
-      group: state.group,
-      color: state.color,
-      sortOrder: index + 1,
-      isDefault: state.isDefault
-    });
-  }
+  const stateIds = await insertProjectStates(ctx, projectId);
 
   const nodeIds: Record<string, string> = {};
   const siblingCount: Record<string, number> = {};
@@ -906,6 +915,37 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
   const sales = ctx.dataset.sales;
   const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
 
+  // A contract's project: the parent of the Service projects of the orders
+  // the contract covers (Field Service Phase D).
+  const contractProjectIds: Record<string, string> = {};
+  for (const spec of sales.contracts) {
+    if (!spec.project) continue;
+    ctx.log(`contract project ${spec.name}`);
+    const projectId = await insertId(ctx, "project", {
+      name: spec.name,
+      identifier: spec.project.identifier,
+      costTreatment: "Expense",
+      status: "Released",
+      customerId: need(ctx.refs.customers, spec.customer, "customer"),
+      ownerId: userId,
+      locationId: ctx.locationId,
+      priority: "None",
+      active: true,
+      nextElementSequence: 1
+    });
+    await insertProjectStates(ctx, projectId);
+    await ctx.client.query(
+      `UPDATE "customerContract" SET "projectId" = $1
+       WHERE id = $2 AND "companyId" = $3`,
+      [
+        projectId,
+        need(ctx.refs.documents, `con:${spec.key}`, "contract"),
+        ctx.companyId
+      ]
+    );
+    contractProjectIds[spec.key] = projectId;
+  }
+
   const templateIds: Record<string, string> = {};
   for (const spec of sales.serviceTemplates) {
     ctx.log(`service template ${spec.name}`);
@@ -950,6 +990,7 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
     let subject: {
       projectName: string;
       customerId: string | null;
+      parentProjectId: string | null;
       columns: Record<string, unknown>;
     };
     if (spec.type === "Refurbishment") {
@@ -964,6 +1005,7 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
       subject = {
         projectName: `${spec.serial} — Refurbishment`,
         customerId: null,
+        parentProjectId: null,
         columns: {
           type: "Refurbishment",
           trackedEntityId: need(ctx.refs.misc, `te:${spec.serial}`, "serial"),
@@ -985,8 +1027,14 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
       subject = {
         projectName: `${asset.serial} — ${asset.customer}`,
         customerId,
+        parentProjectId: spec.contract
+          ? (contractProjectIds[spec.contract] ?? null)
+          : null,
         columns: {
           type: "Field Visit",
+          customerContractId: spec.contract
+            ? need(ctx.refs.documents, `con:${spec.contract}`, "contract")
+            : null,
           trackedEntityId: need(
             ctx.refs.misc,
             `asset-serial:${asset.key}`,
@@ -1013,6 +1061,7 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
       status: "Released",
       costTreatment: "By Coverage",
       customerId: subject.customerId,
+      parentProjectId: subject.parentProjectId,
       locationId: plantId,
       priority: "None",
       active: true,
@@ -1150,17 +1199,7 @@ async function seedProjects(ctx: Ctx): Promise<void> {
     });
     ctx.refs.misc[`project:${spec.key}`] = projectId;
 
-    const stateIds: Record<string, string> = {};
-    for (const [index, state] of PROJECT_STATES.entries()) {
-      stateIds[state.name] = await insertId(ctx, "projectState", {
-        projectId,
-        name: state.name,
-        group: state.group,
-        color: state.color,
-        sortOrder: index + 1,
-        isDefault: state.isDefault
-      });
-    }
+    const stateIds = await insertProjectStates(ctx, projectId);
 
     const milestoneIds: Record<string, string> = {};
     for (const [index, milestone] of spec.milestones.entries()) {

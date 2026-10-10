@@ -996,6 +996,7 @@ export const CONTRACTS: ContractSpec[] = [
     billingFrequency: "Month",
     billingAlignment: "Calendar",
     billingTiming: "Advance",
+    project: { identifier: "NSOPS" },
     lines: [
       {
         revenueType: "One-time",
@@ -1111,6 +1112,7 @@ export const SERVICE_ORDERS: ServiceOrderSpec[] = [
   {
     key: "draft",
     asset: "in-warranty",
+    contract: "novasat-ops",
     status: "Draft",
     priority: "Medium",
     problem:

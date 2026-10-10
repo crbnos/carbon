@@ -895,6 +895,14 @@ export type ContractSpec = {
   billingFrequency: "Week" | "Month" | "Quarter" | "Year";
   billingAlignment: "Anniversary" | "Calendar";
   billingTiming: "Advance" | "Arrears";
+  /**
+   * The contract's project: an Expense project named after the contract, with
+   * the default states and no elements. The Service project of an order this
+   * contract covers is its child, and the project's Costs tab rolls the orders
+   * up. Tier 09 seeds it, before the service orders. `^[A-Z][A-Z0-9]{1,5}$`,
+   * unique among the dataset's project identifiers.
+   */
+  project?: { identifier: string };
   lines: {
     revenueType: "One-time" | "Recurring";
     /** A Service item of this dataset. */
@@ -970,6 +978,12 @@ export type ServiceOrderSpec = (
       type?: "Field Visit";
       /** A `CustomerAssetSpec` key; one open order per asset. */
       asset: string;
+      /**
+       * A `ContractSpec` key of the asset's customer: the order's coverage
+       * contract. When the contract has a project, the order's Service project
+       * is its child.
+       */
+      contract?: string;
     }
   | {
       type: "Refurbishment";

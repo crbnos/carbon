@@ -26,7 +26,7 @@ A contract project (for example *Acme maintenance 2027*) must see the cost of th
 - [x] Task 3: Keep the parent link in step with the coverage contract
 - [x] Task 4: Refuse Contract coverage on a closed parent
 - [x] Task 5: List service orders on the contract page
-- [ ] Task 6: Extend the demo datasets
+- [x] Task 6: Extend the demo datasets
 - [ ] Task 7: Update the rules, docs and specs
 - [ ] Task 8: Verify in the browser
 
@@ -273,3 +273,5 @@ ls .ai/playbooks/field-service-phase-d.md
 - Task 5 (deviation): the contract page had no tabs. The header now shows route tabs (`DetailTopbar`, as the service order header does): **Details** and **Service Orders**, only for a user with `service_view`. The new route is `contract+/$id.service-orders.tsx` (`path.to.contractServiceOrders`), and its loader needs `view: "service"`.
 - Task 5 (deviation): `ContractServiceOrders` is a card with the `Table` primitive, like the other cards of the contract page, not `ServiceOrdersTable`. That table is a full-page list: saved views on the `serviceOrder` table, URL filters and pages, and a New button. It has no cost columns either.
 - Task 5: the loader reads the contract's `projectId` and the orders (`getContractServiceOrders`, `service.service.ts`) together, then calls `get_child_service_project_costs` once on the contract's project. A contract with no project has no roll-up, so the loader reads only the posted cost (`getServiceOrderCosts`, one ledger query), and Billed shows "—". An order whose project names another parent (the contract's project changed after the order was created) shows "—" for both.
+- Task 6 (deviation): the contract's project is seeded in tier 09 (`seedServiceWork`), not tier 04. The default project states (`PROJECT_STATES`) live in tier 09, and tier 04 runs before the projects. `ContractSpec` gains `project?: { identifier }`: an Expense, Released project named after the contract, with the 6 default states and no elements, linked through `customerContract.projectId`. It is not an `accounting.projects` entry, because those need 2 milestones and 8 elements. The state loop moved into `insertProjectStates`, shared by `seedProjects` and `insertServiceTree`.
+- Task 6: the Field Visit branch of `ServiceOrderSpec` gains `contract?` (a `ContractSpec` key). The seed sets the order's `customerContractId` and its Service project's `parentProjectId`. Satellite gives `novasat-ops` the project `NSOPS` and makes it the coverage contract of the Draft order on the in-warranty unit (NovaSat Networks). The validator refuses a contract project whose identifier or name repeats a project of the dataset, an unknown contract, and a contract of another customer. A throwaway apply of satellite (rolled back) gave CON000001 → NSOPS with 6 states, and `get_child_service_project_costs` returned SVC000002. `pnpm db:check:datasets` passes for all four.

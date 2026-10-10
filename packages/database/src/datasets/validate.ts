@@ -2209,6 +2209,31 @@ export function fieldService(ctx: ValidationCtx): void {
       });
     }
   }
+  // A contract's project is seeded beside the dataset's projects: its name
+  // and identifier share their uniqueness.
+  const projectIdentifiers = new Set(
+    dataset.accounting.projects.map((project) => project.identifier)
+  );
+  const projectNames = new Set(
+    dataset.accounting.projects.map((project) => project.name)
+  );
+  for (const contract of sales.contracts) {
+    if (!contract.project) continue;
+    const where = `sales.contracts "${contract.key}" project`;
+    const { identifier } = contract.project;
+    if (!/^[A-Z][A-Z0-9]{1,5}$/.test(identifier)) {
+      fail(`${where}: identifier "${identifier}" is not 2–6 capitals`);
+    }
+    if (projectIdentifiers.has(identifier)) {
+      fail(`${where}: duplicate identifier "${identifier}"`);
+    }
+    projectIdentifiers.add(identifier);
+    if (projectNames.has(contract.name)) {
+      fail(`${where}: duplicate project name "${contract.name}"`);
+    }
+    projectNames.add(contract.name);
+  }
+
   const refurbishedSerials = new Set<string>();
   for (const order of sales.serviceOrders) {
     const where = `sales.serviceOrders "${order.key}"`;
@@ -2239,6 +2264,17 @@ export function fieldService(ctx: ValidationCtx): void {
         fail(`${where}: asset "${order.asset}" already has an open order`);
       }
       openAssets.add(order.asset);
+      if (order.contract) {
+        const contract = sales.contracts.find((c) => c.key === order.contract);
+        const asset = sales.customerAssets.find((a) => a.key === order.asset);
+        if (!contract) {
+          fail(`${where}: unknown contract "${order.contract}"`);
+        } else if (asset && contract.customer !== asset.customer) {
+          fail(
+            `${where}: contract "${order.contract}" is not the asset's customer's`
+          );
+        }
+      }
     }
     if (order.template && !templateKeys.has(order.template)) {
       fail(`${where}: unknown template "${order.template}"`);
