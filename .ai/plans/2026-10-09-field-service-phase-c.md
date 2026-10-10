@@ -37,7 +37,7 @@ These correct or add to the spec. Task 10 records them there.
 
 - [x] Task 1: Add the completion columns
 - [x] Task 2: Fix the layer count in `get_inventory_valuation`
-- [ ] Task 3: Add the pure completion planner
+- [x] Task 3: Add the pure completion planner
 - [ ] Task 4: Add `complete-service-order`
 - [ ] Task 5: Record refurbishment parts in the serial's build history
 - [ ] Task 6: Guard shipping and picking
@@ -378,3 +378,11 @@ ls .ai/playbooks/field-service-phase-c.md
 - Task 1: the migration also indexes `completionJournalId` (partial, `IS NOT NULL`); every FK column has an index. `journal` has a single-column primary key, so the FK is single-column. `pnpm db:migrate` applied it and regenerated the types and swagger; the workflow catalog did not change. `pnpm db:check:backups` fails only on `supplierPartPrice.unitPrice` (GitHub `main` changed that column after this branch was cut), so the commit skips that check with `CARBON_SKIP_BACKUP_CHECK=1`. The new columns are nullable, so they block no restore.
 - Task 2: the plan's line numbers had drifted; the open-layer CTE is the `layers` lateral of `carrying`. No later redefinition exists (Projects Phase 2a has not run). The new function adds `SET search_path = public, extensions`: `20261003224019` set it on every function with `ALTER FUNCTION`, and a `CREATE OR REPLACE` without it would drop it. The only writer of `adjustment = true` rows is `post-purchase-invoice`, and each of its rows names a parent, so the filter is the one `calculateCOGS` uses. The Projects Phase 2a plan now points its `get_inventory_valuation` step at this migration, so its fork keeps the fix.
 - Task 2 Verify (rolled-back transaction against the local database): a FIFO item with one layer of 10 at 1,000.00 and one open child of 10 units at 20.00. The new function gives a unit cost of 102.00. The old formula over the same rows gives 52.00 (it averaged over 20 units). With the parent and the child half consumed, the unit cost stays 102.00. With no child it is 100.00, as before. `rpc-privileges.test.sql` passes.
+- Task 3: the planner sorts `openLayers` itself (FIFO ascending, LIFO descending, by `postingDate` then `createdAt`), then applies `orderLayersForConsumption`. So the LIFO test proves the order. `createdAt` arrives as fixed-width UTC text, which sorts as a string.
+- Task 3 (deviation): the split moves one unit's quantity **and** cost off the source layer, not only one unit of `remainingQuantity`. The source keeps its unit cost, and the cost ledger's totals do not change. With only `remainingQuantity` moved, 3 readers would see one unit too many:
+  1. `update-purchased-prices` averages Σ cost over Σ quantity.
+  2. The sales return receipt void refuses a layer whose remaining quantity is below its quantity ("already consumed").
+  3. The purchase price variance allocation reads the receipt's layers.
+- Task 3 (C2 made exact): the unit takes the child cost that `calculateCOGS` would apply to it: the source's open children in `createdAt` order, one unit in total. With one child, this is the plan's rule. `calculateCOGS` treats several children of one layer as covering different units, so moving one unit of each child would change the relief cost.
+- Task 3: a FIFO / LIFO serial with no layer of its own and no unstamped layer with a whole unit is refused (`NO_SOURCE_LAYER_MESSAGE`). Taking another serial's stamped layer would move that serial's value.
+- Task 3: the plan also returns `treatment`, `serialLayerId` (the serial's own open layer, when it has one), `currentSerialUnitCost`, `newSerialUnitCost` and `capitalizedAmount`, for the preview (Task 7) and the order columns (Task 4). `capitalizedAmount` is the WIP total when it is capitalized (FIFO, LIFO, Average), and 0 when it goes to material variance. A zero WIP gives no child and no journal line.
