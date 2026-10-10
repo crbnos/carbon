@@ -14,6 +14,7 @@ import {
 import { modeValidator, themeColorValidator, themes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { CSSProperties } from "react";
+import { useEffect, useRef } from "react";
 import { LuCheck, LuLaptop, LuMoon, LuSun } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -25,6 +26,29 @@ import { useAccountSettingsConfig } from "./context";
 // Every app's root action stores both as cookies, so the choice is per browser.
 const ROOT_ACTION = "/";
 
+function linearChannel(value: number) {
+  return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+}
+
+/**
+ * True when black reads better than white on a theme swatch (WCAG contrast).
+ * Swatches are `"H S% L%"` strings, so yellow at 53% lightness still needs
+ * dark ink.
+ */
+function isLightSwatch(hsl: string) {
+  const [h = 0, s = 0, l = 0] = hsl
+    .split(" ")
+    .map((part, index) => Number.parseFloat(part) / (index === 0 ? 1 : 100));
+  const a = s * Math.min(l, 1 - l);
+  const channel = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return linearChannel(l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)));
+  };
+  const luminance =
+    0.2126 * channel(0) + 0.7152 * channel(8) + 0.0722 * channel(4);
+  return (luminance + 0.05) / 0.05 > 1.05 / (luminance + 0.05);
+}
+
 export default function AppearanceSettings() {
   const { t } = useLingui();
   const { transitionMode } = useAccountSettingsConfig();
@@ -33,6 +57,18 @@ export default function AppearanceSettings() {
   const modeFetcher = useFetcher();
   const themeFetcher = useFetcher();
   const routeData = useRouteData<{ theme?: string }>(ROOT_ACTION);
+  const previewedVariables = useRef<string[]>([]);
+
+  // The preview lives on <body> and outranks the theme the root document puts
+  // on <html>. Once the save settles, the root loader has revalidated: drop
+  // the preview so <html> shows the saved theme — or the old one if it failed.
+  useEffect(() => {
+    if (themeFetcher.state !== "idle") return;
+    for (const key of previewedVariables.current) {
+      document.body.style.removeProperty(`--${key}`);
+    }
+    previewedVariables.current = [];
+  }, [themeFetcher.state]);
 
   // The in-flight choice wins until the root loader revalidates with it.
   const pendingTheme = themeColorValidator.safeParse({
@@ -66,12 +102,12 @@ export default function AppearanceSettings() {
   const onThemeChange = (value: string) => {
     const next = themes.find((candidate) => candidate.name === value);
     if (!next || next.name === theme) return;
-    // Preview at once; the root loader applies it from the cookie on the
-    // next render.
+    // Preview at once, until the root loader applies it from the cookie.
     const variables = mode === "dark" ? next.cssVars.dark : next.cssVars.light;
     Object.entries(variables).forEach(([key, color]) => {
       document.body.style.setProperty(`--${key}`, color);
     });
+    previewedVariables.current = Object.keys(variables);
     themeFetcher.submit(
       { theme: next.name },
       { method: "post", action: ROOT_ACTION }
@@ -133,13 +169,14 @@ export default function AppearanceSettings() {
         >
           {themes.map((option) => {
             const active = option.name === theme;
+            const swatch = option.activeColor[mode];
             return (
               <ToggleGroupItem
                 key={option.name}
                 value={option.name}
                 style={
                   {
-                    "--theme-primary": `hsl(${option.activeColor[mode]})`
+                    "--theme-primary": `hsl(${swatch})`
                   } as CSSProperties
                 }
                 className={cn(
@@ -150,7 +187,14 @@ export default function AppearanceSettings() {
                 )}
               >
                 <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[var(--theme-primary)]">
-                  {active && <LuCheck className="size-3 text-white" />}
+                  {active && (
+                    <LuCheck
+                      className={cn(
+                        "size-3",
+                        isLightSwatch(swatch) ? "text-black" : "text-white"
+                      )}
+                    />
+                  )}
                 </span>
                 <span className="truncate">{option.label}</span>
               </ToggleGroupItem>
