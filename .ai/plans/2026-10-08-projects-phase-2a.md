@@ -43,7 +43,7 @@ Phase 2b plans MRP. Until 2b ships, every MRP and planning reader filters to com
 - [x] Task 6: Add the stripe to `calculateCOGS` and the SQL FIFO
 - [x] Task 7: Add the stripe to `bookAdjustment` and corrections
 - [x] Task 8: Make the bin and lot pickers stripe-aware
-- [ ] Task 9: Stripe PO receipts and their voids
+- [x] Task 9: Stripe PO receipts and their voids
 - [ ] Task 10: Stripe job output and the backflush
 - [ ] Task 11: Record the drawn stripe in `issue`
 - [ ] Task 12: Carry the stripe through picking and stock transfers
@@ -860,3 +860,13 @@ ls .ai/playbooks/projects-phase-2a.md
   3. `post-project-issue` reads common rows for an untracked issue until Task 14.
 - Task 8: the ERP and MES `getAvailableTrackedEntities` take optional `projectIds`. No caller passes them yet, so the pickers list common stock. The MES issue picker for a job of a stocked project needs its job's stripes (follow-up, with Task 12).
 - Task 8 Verify: `stock-stripes.test.ts` passes (3). `@carbon/server-functions`, `erp` and `mes` typecheck green. The server-functions suite passes (488), and the backflush and job completion scripts pass.
+- Task 9: the receipt reads the project stock of its PO lines' projects with one query (`loadProjectStock`, `lib/stock-stripes.ts`). Outside processing orders never stock. A stocked item on a line charged to a project with project stock takes the project as its stripe:
+  1. Its `Purchase Receipt` item ledger rows (untracked, batch and serial) and its cost layers carry the project. A negative receipt relieves the project's layers through `calculateCOGS`.
+  2. It debits inventory, not the project account, and its debit carries no Project tag.
+  3. It writes no Project Issue rows (the Phase 1a consume-at-receipt branch now needs a project without project stock).
+  4. It writes a `projectLedger` row only when the project has `chargeAtReceipt`. That row has no asset (`fixedAssetId` null), because stock builds no CIP until it is issued.
+- Task 9 (deviation): the stripe does not depend on the project's cost treatment. A Statistical project with project stock receives into its stock too, but it has no route, so it never gets a `projectLedger` row. The route check (`assertChargeable("commitment")`) still runs for the other treatments.
+- Task 9: both receipt voids (Purchase Order and Sales Return Order) copy `projectId` from the rows they reverse.
+- Task 9: `loadInvoiceProjectCharges` reads project stock for the invoice's charge numbers and gains `stockStripe(invoiceLineId)`. `chargedAtReceipt` returns null for a receipt into project stock (Charge at receipt), so its invoice adjusts the project's layers like any stocked receipt. Its variance writes up inventory and adds no Material Variance row. A direct invoice (no PO line) of a stocked item charged to a stocked project stripes its item ledger row and layer. A variance child takes its parent layer's stripe, and the legacy self-heal layer takes the line's stripe. The invoice void copies `projectId` on its item ledger, cost ledger, counter-child and self-heal mirror rows.
+- Task 9 (known gap): with Charge at receipt, the project's `projectLedger` row keeps the receipt cost. The invoice's price variance reaches the layer but not the project. Phase 4 billing reads this row.
+- Task 9: 2 new database cases. `project-receipt.test.ts` receives 10 into project stock (the 3 results of step 5, an inventory debit of 100.00, no `projectLedger` row) and voids it (−10 in the stripe, on-hand 0). `project-invoice.test.ts` invoices a Charge at receipt line at 12.00 against a receipt at 10.00: inventory +8.00 and a child of 8.00 in the project's stripe. The server-functions suite passes (490; the known `rows` race passed alone).

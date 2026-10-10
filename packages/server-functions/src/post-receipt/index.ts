@@ -59,6 +59,7 @@ import {
   buildProjectLedgerRow,
   reverseProjectLedgerRows
 } from "../lib/project-posting";
+import { loadProjectStock } from "../lib/stock-stripes";
 import { loadReceiptProjectRoutes } from "./project-routes";
 import { createDepotRepairOrders, voidDepotRepairOrders } from "./repair";
 
@@ -370,6 +371,8 @@ const postReceipt = defineServerFn({
               documentId: entry.documentId,
               externalDocumentId: entry.externalDocumentId,
               trackedEntityId: entry.trackedEntityId,
+              // a reversal copies the stripe of the row it reverses
+              projectId: entry.projectId,
               createdBy: userId,
               companyId
             })
@@ -645,6 +648,8 @@ const postReceipt = defineServerFn({
             documentType: entry.documentType,
             documentId: entry.documentId,
             externalDocumentId: entry.externalDocumentId,
+            // a reversal copies the stripe of the row it reverses
+            projectId: entry.projectId,
             createdBy: userId,
             companyId
           }));
@@ -1173,6 +1178,8 @@ const postReceipt = defineServerFn({
           // fallbackCost (PO cost) is used when no layers yield a cost.
           const negativeReceiptConsumptions: {
             itemId: string;
+            // the stock stripe the returned units leave
+            projectId: string | null;
             quantity: number;
             fallbackCost: number;
             grIrLineIndex: number | null;
@@ -1207,6 +1214,17 @@ const postReceipt = defineServerFn({
               postingDate: today
             }
           );
+          // Lines charged to a project with project stock receive into that
+          // project's stock (Projects Phase 2a): striped item ledger rows and
+          // cost layers, an inventory debit, and no project charge unless the
+          // project charges at receipt. Outside processing never stocks.
+          const projectStockByProjectId = isOutsideProcessing
+            ? new Map<string, { chargeAtReceipt: boolean }>()
+            : await loadProjectStock(
+                db,
+                companyId,
+                purchaseOrderLines.data.map((line) => line.projectId)
+              );
           // One projectLedger row per routed receipt line, written in the
           // transaction once the journal line ids exist.
           const projectLedgerDrafts: {
@@ -1638,13 +1656,32 @@ const postReceipt = defineServerFn({
             const projectRoute = receiptLine.lineId
               ? projectRouteByPoLineId.get(receiptLine.lineId)
               : undefined;
-            // An inventory item charged to a project is consumed by the
-            // project at receipt: it is received and issued at once, so
-            // on-hand does not change and no cost layer stays in stock.
+            // An inventory item charged to a project with project stock
+            // enters that project's stock: the stripe of every row below.
+            const poLineProjectId = receiptLine.lineId
+              ? (purchaseOrderLines.data.find(
+                  (line) => line.id === receiptLine.lineId
+                )?.projectId ?? null)
+              : null;
+            const projectStock =
+              !isOutsideProcessing &&
+              itemTrackingType !== "Non-Inventory" &&
+              poLineProjectId
+                ? projectStockByProjectId.get(poLineProjectId)
+                : undefined;
+            const stockStripe = projectStock ? poLineProjectId : null;
+            // An inventory item charged to a project without project stock is
+            // consumed by the project at receipt: it is received and issued
+            // at once, so on-hand does not change and no cost layer stays in
+            // stock.
             const consumedByProject =
               !!projectRoute &&
               !isOutsideProcessing &&
-              itemTrackingType !== "Non-Inventory";
+              itemTrackingType !== "Non-Inventory" &&
+              !projectStock;
+            // The receipt debits the project account only when the project
+            // consumes the goods; project stock is inventory.
+            const debitsProject = !!projectRoute && !projectStock;
             let projectDebitLineIndex: number | null = null;
 
             const createsLayers =
@@ -1701,7 +1738,7 @@ const postReceipt = defineServerFn({
               let debitAccount: string;
               let debitDescription: string;
 
-              if (projectRoute) {
+              if (projectRoute && debitsProject) {
                 debitAccount = projectRoute.accountId;
                 debitDescription = "Project Account";
               } else if (
@@ -1765,6 +1802,7 @@ const postReceipt = defineServerFn({
                 if (createsLayers) {
                   negativeReceiptConsumptions.push({
                     itemId: receiptLine.itemId!,
+                    projectId: stockStripe,
                     quantity: absReceivedQuantity,
                     fallbackCost: cost,
                     grIrLineIndex,
@@ -1812,6 +1850,7 @@ const postReceipt = defineServerFn({
               // Accounting disabled: still consume layers in the subledger
               negativeReceiptConsumptions.push({
                 itemId: receiptLine.itemId!,
+                projectId: stockStripe,
                 quantity: absReceivedQuantity,
                 fallbackCost: cost,
                 grIrLineIndex: null,
@@ -1839,6 +1878,7 @@ const postReceipt = defineServerFn({
                   cost: round(invoiceFirstPortionCost),
                   remainingQuantity: round(invoiceFirstQty),
                   supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                  projectId: stockStripe,
                   companyId,
                   postingDate: today,
                   isInvoiceFirst: true,
@@ -1860,6 +1900,7 @@ const postReceipt = defineServerFn({
                   cost: round(normalPortionCost),
                   remainingQuantity: round(normalQty),
                   supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                  projectId: stockStripe,
                   companyId,
                   postingDate: today
                 });
@@ -1884,6 +1925,7 @@ const postReceipt = defineServerFn({
                 documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
                   receiptHeader.externalDocumentId ?? undefined,
+                projectId: stockStripe,
                 createdBy: userId,
                 companyId
               });
@@ -1910,6 +1952,7 @@ const postReceipt = defineServerFn({
                 )?.id,
                 externalDocumentId:
                   receiptHeader.externalDocumentId ?? undefined,
+                projectId: stockStripe,
                 createdBy: userId,
                 companyId
               });
@@ -1953,6 +1996,7 @@ const postReceipt = defineServerFn({
                   trackedEntityId: trackingWithIndex?.id,
                   externalDocumentId:
                     receiptHeader.externalDocumentId ?? undefined,
+                  projectId: stockStripe,
                   createdBy: userId,
                   companyId
                 });
@@ -1985,7 +2029,13 @@ const postReceipt = defineServerFn({
               }
             }
 
-            if (projectRoute && absReceivedQuantity > 0) {
+            // Project stock is the project's inventory, not its cost: only a
+            // project that charges at receipt gets a row here.
+            if (
+              projectRoute &&
+              absReceivedQuantity > 0 &&
+              (!projectStock || projectStock.chargeAtReceipt)
+            ) {
               projectLedgerDrafts.push({
                 receiptLineId: receiptLine.id,
                 projectId: projectRoute.projectId,
@@ -2000,8 +2050,11 @@ const postReceipt = defineServerFn({
                 quantity: receivedQuantity,
                 amount: isNegativeReceipt ? -cost : glCost,
                 journalLineIndex: projectDebitLineIndex,
-                fixedAssetId: projectRoute.fixedAssetId,
-                postCapitalization: projectRoute.postCapitalization
+                // Stock builds no asset: it is capitalized when it is issued.
+                fixedAssetId: projectStock ? null : projectRoute.fixedAssetId,
+                postCapitalization: projectStock
+                  ? false
+                  : projectRoute.postCapitalization
               });
             }
 
@@ -2021,7 +2074,9 @@ const postReceipt = defineServerFn({
               for (let i = 0; i < jlCount; i++) {
                 // The project tags go on the project debit only.
                 const isProjectDebit =
-                  !!projectRoute && projectDebitLineIndex === jlStartIdx + i;
+                  !!projectRoute &&
+                  debitsProject &&
+                  projectDebitLineIndex === jlStartIdx + i;
                 journalLineDimensionsMeta.push({
                   supplierTypeId: supplier.data.supplierTypeId ?? null,
                   itemPostingGroupId: lineItemPostingGroupId,
@@ -2253,7 +2308,8 @@ const postReceipt = defineServerFn({
               const cogsResult = await calculateCOGS(trx, {
                 itemId: consumption.itemId,
                 quantity: consumption.quantity,
-                companyId
+                companyId,
+                projectId: consumption.projectId
               });
               // A consumed layer's total is authoritative even at zero or
               // negative (free goods, credit-adjusted layers): the GL credit
@@ -2284,6 +2340,7 @@ const postReceipt = defineServerFn({
                 cost: round(-consumedCost),
                 remainingQuantity: 0,
                 supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                projectId: consumption.projectId,
                 companyId,
                 postingDate: today
               });

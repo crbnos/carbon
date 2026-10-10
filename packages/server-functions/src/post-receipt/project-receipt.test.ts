@@ -274,3 +274,125 @@ databaseTest(
     }
   }
 );
+
+// Project stock (Projects Phase 2a): a stocked item charged to a project with
+// project stock enters that project's stock. The receipt debits inventory,
+// opens a striped cost layer and charges nothing to the project. Its void
+// takes the units back out of the project's stock.
+databaseTest(
+  "a receipt into project stock stripes the stock and its layer, and the void reverses it",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.enableProjectStock();
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const part = await f.addItem("part", { itemTrackingType: "Inventory" });
+      const po = await f.addPurchaseOrder("stock", {
+        locationId,
+        lines: [
+          { itemId: part.itemId, quantity: 10, unitPrice: 10, charged: true }
+        ]
+      });
+      const receipt = await f.addReceipt("stock", {
+        locationId,
+        purchaseOrderId: po.purchaseOrderId,
+        supplierId: po.supplierId,
+        lines: [
+          {
+            lineId: po.lineIds[0]!,
+            itemId: part.itemId,
+            quantity: 10,
+            unitPrice: 10
+          }
+        ]
+      });
+
+      const posted = await postReceipt(f.ctx, { receiptId: receipt.receiptId });
+      expect(posted.error).toBeNull();
+
+      // 1. One receipt row of +10 in the project's stripe, no Project Issue.
+      const ledger = await f.db
+        .selectFrom("itemLedger")
+        .select(["documentType", "quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.documentType,
+          Number(row.quantity),
+          row.projectId
+        ])
+      ).toEqual([["Purchase Receipt", 10, f.projectId]]);
+
+      // 2. The cost layer is the project's.
+      const layers = await f.db
+        .selectFrom("costLedger")
+        .select(["quantity", "cost", "remainingQuantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .execute();
+      expect(
+        layers.map((layer) => [
+          Number(layer.quantity),
+          Number(layer.cost),
+          Number(layer.remainingQuantity),
+          layer.projectId
+        ])
+      ).toEqual([[10, 100, 10, f.projectId]]);
+
+      // 3. On-hand +10 under the project.
+      const stock = async () =>
+        (
+          await f.db
+            .selectFrom("itemStockQuantities")
+            .select(["projectId", "quantityOnHand"])
+            .where("companyId", "=", f.companyId)
+            .where("itemId", "=", part.itemId)
+            .execute()
+        ).map((row) => [row.projectId, Number(row.quantityOnHand)]);
+      expect(await stock()).toEqual([[f.projectId, 10]]);
+
+      // Inventory is debited, as for a common receipt, and nothing is charged
+      // to the project.
+      const debits = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Receipt")
+        .where("documentId", "=", receipt.receiptId)
+        .where("accountId", "!=", f.account("grni"))
+        .execute();
+      expect(
+        debits.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([[f.account("inventory"), 100]]);
+      const charges = await f.db
+        .selectFrom("projectLedger")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(charges).toHaveLength(0);
+
+      const voided = await postReceipt(f.ctx, {
+        type: "void",
+        receiptId: receipt.receiptId
+      });
+      expect(voided.error).toBeNull();
+      const reversal = await f.db
+        .selectFrom("itemLedger")
+        .select(["quantity", "projectId"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .where("quantity", "<", 0)
+        .executeTakeFirstOrThrow();
+      expect(Number(reversal.quantity)).toEqual(-10);
+      expect(reversal.projectId).toEqual(f.projectId);
+      expect(await stock()).toEqual([[f.projectId, 0]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

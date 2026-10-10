@@ -95,3 +95,35 @@ export async function loadDemandStripes(
     projectStock: project?.projectStock ?? false
   });
 }
+
+export type ProjectStockFlags = {
+  /** The receipt also charges the project (projectLedger), Phase 4 billing. */
+  chargeAtReceipt: boolean;
+};
+
+/**
+ * The projects among `projectIds` that have project stock, with their flags,
+ * keyed by project id. One query for any number of projects.
+ */
+export async function loadProjectStock(
+  db: Kysely<DB> | Transaction<DB>,
+  companyId: string,
+  projectIds: readonly (string | null | undefined)[]
+): Promise<Map<string, ProjectStockFlags>> {
+  const ids = [
+    ...new Set(projectIds.filter((id): id is string => Boolean(id)))
+  ];
+  const stock = new Map<string, ProjectStockFlags>();
+  if (ids.length === 0) return stock;
+  const projects = await db
+    .selectFrom("project")
+    .select(["id", "chargeAtReceipt"])
+    .where("id", "in", ids)
+    .where("companyId", "=", companyId)
+    .where("projectStock", "=", true)
+    .execute();
+  for (const project of projects) {
+    stock.set(project.id, { chargeAtReceipt: project.chargeAtReceipt });
+  }
+  return stock;
+}

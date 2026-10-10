@@ -17,6 +17,7 @@ import {
   resolveProjectPostingAccount,
   resolveProjectTreatment
 } from "../lib/project-posting";
+import { loadProjectStock } from "../lib/stock-stripes";
 
 export type InvoiceProjectCharge = {
   projectId: string;
@@ -54,6 +55,11 @@ export type InvoiceProjectCharges = {
    * to the account the receipt debited.
    */
   chargedAtReceipt(purchaseOrderLineId: string): InvoiceProjectCharge | null;
+  /**
+   * The stock stripe an invoice line's goods enter: its charge number's
+   * project when that project has project stock, else null (common stock).
+   */
+  stockStripe(invoiceLineId: string): string | null;
 };
 
 /**
@@ -148,6 +154,14 @@ export async function loadInvoiceProjectCharges(
     }))
   ];
   const contexts = await loadProjectPostingContexts(db, companyId, refs);
+  // Projects with project stock (Projects Phase 2a). A receipt into project
+  // stock is the project's inventory, not a charge: its invoice adjusts the
+  // receipt's cost layers like any stocked receipt.
+  const projectStock = await loadProjectStock(
+    db,
+    companyId,
+    refs.map((ref) => ref.projectId)
+  );
 
   const contextOf = (ref: {
     projectId: string;
@@ -185,9 +199,16 @@ export async function loadInvoiceProjectCharges(
       lineCharges.set(invoiceLineId, charge);
       return charge;
     },
+    stockStripe(invoiceLineId) {
+      const ref = refByInvoiceLineId.get(invoiceLineId);
+      return ref && projectStock.has(ref.projectId) ? ref.projectId : null;
+    },
     chargedAtReceipt(purchaseOrderLineId) {
       const row = receiptRowByLineId.get(purchaseOrderLineId);
       if (!row) return null;
+      // Charge at receipt on a project with project stock: the goods are in
+      // the project's stock, so the invoice adjusts their layers.
+      if (projectStock.has(row.projectId)) return null;
       const ref = {
         projectId: row.projectId,
         projectElementId: row.projectElementId

@@ -378,3 +378,123 @@ databaseTest(
     }
   }
 );
+
+// Project stock (Projects Phase 2a), with Charge at receipt: the receipt
+// charges the project and puts the goods in its stock. The invoice adjusts the
+// project's cost layer like any stocked receipt: the variance writes up
+// inventory and becomes a child row in the project's stripe.
+databaseTest(
+  "the invoice of a receipt into project stock adjusts the project's cost layer",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.enableProjectStock();
+      await f.db
+        .updateTable("project")
+        .set({ chargeAtReceipt: true })
+        .where("id", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const { locationId } = await f.addStockedItem("filler", {
+        quantity: 1,
+        unitCost: 1
+      });
+      const part = await f.addItem("part", { itemTrackingType: "Inventory" });
+      const po = await f.addPurchaseOrder("stock", {
+        locationId,
+        lines: [
+          { itemId: part.itemId, quantity: 4, unitPrice: 10, charged: true }
+        ]
+      });
+      const receipt = await f.addReceipt("stock", {
+        locationId,
+        purchaseOrderId: po.purchaseOrderId,
+        supplierId: po.supplierId,
+        lines: [
+          {
+            lineId: po.lineIds[0]!,
+            itemId: part.itemId,
+            quantity: 4,
+            unitPrice: 10
+          }
+        ]
+      });
+      const received = await postReceipt(f.ctx, {
+        receiptId: receipt.receiptId
+      });
+      expect(received.error).toBeNull();
+
+      const invoice = await f.addPurchaseInvoice("stock", {
+        supplierId: po.supplierId,
+        lines: [
+          {
+            invoiceLineType: "Part",
+            itemId: part.itemId,
+            locationId,
+            quantity: 4,
+            unitPrice: 12,
+            purchaseOrderId: po.purchaseOrderId,
+            purchaseOrderLineId: po.lineIds[0],
+            charged: true
+          }
+        ]
+      });
+      const posted = await postPurchaseInvoice(f.ctx, {
+        invoiceId: invoice.invoiceId
+      });
+      expect(posted.error).toBeNull();
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Invoice")
+        .where("documentId", "=", invoice.invoiceId)
+        .orderBy("accountId")
+        .execute();
+      expect(
+        Object.fromEntries(
+          lines.map((line) => [line.accountId, Number(line.amount)])
+        )
+      ).toEqual({
+        [f.account("grni")]: -40,
+        [f.account("inventory")]: 8,
+        [f.account("payables")]: 48
+      });
+
+      const layers = await f.db
+        .selectFrom("costLedger")
+        .select(["adjustment", "cost", "projectId", "appliesToCostLedgerId"])
+        .where("companyId", "=", f.companyId)
+        .where("itemId", "=", part.itemId)
+        .orderBy("adjustment")
+        .execute();
+      expect(
+        layers.map((layer) => [
+          layer.adjustment,
+          Number(layer.cost),
+          layer.projectId
+        ])
+      ).toEqual([
+        [false, 40, f.projectId],
+        [true, 8, f.projectId]
+      ]);
+
+      // The receipt charged the project; the invoice adds no variance row.
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "documentType", "amount"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.documentType,
+          Number(row.amount)
+        ])
+      ).toEqual([["Material", "Purchase Receipt", 40]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

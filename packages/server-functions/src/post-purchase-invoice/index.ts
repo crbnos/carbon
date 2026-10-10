@@ -416,6 +416,8 @@ const postPurchaseInvoice = defineServerFn({
             documentType: entry.documentType,
             documentId: entry.documentId,
             externalDocumentId: entry.externalDocumentId,
+            // a reversal copies the stripe of the row it reverses
+            projectId: entry.projectId,
             createdBy: userId,
             companyId
           }));
@@ -452,6 +454,7 @@ const postPurchaseInvoice = defineServerFn({
             nominalCost: -entry.nominalCost,
             cost: -entry.cost,
             supplierId: entry.supplierId,
+            projectId: entry.projectId,
             companyId,
             postingDate: today
           }));
@@ -598,6 +601,7 @@ const postPurchaseInvoice = defineServerFn({
                   cost: round(-child.cost),
                   remainingQuantity: round(child.remainingQuantity),
                   supplierId: child.supplierId,
+                  projectId: child.projectId,
                   companyId,
                   postingDate: today
                 })
@@ -634,6 +638,7 @@ const postPurchaseInvoice = defineServerFn({
                   cost: round(-layer.cost),
                   remainingQuantity: 0,
                   supplierId: layer.supplierId,
+                  projectId: layer.projectId,
                   companyId,
                   postingDate: today
                 })
@@ -1053,6 +1058,12 @@ const postPurchaseInvoice = defineServerFn({
 
               // if the purchase order line is null, we receive the part, do the normal entries and do not use accrual/reversing
               if (invoiceLine.purchaseOrderLineId === null) {
+                // A stocked item charged to a project with project stock
+                // enters that project's stock (Projects Phase 2a).
+                const directStockStripe =
+                  itemTrackingType === "Non-Inventory"
+                    ? null
+                    : projectCharges.stockStripe(invoiceLine.id);
                 // Services are never received, so they must not materialize a
                 // receipt document — only the expense + AP entries below.
                 if (invoiceLine.invoiceLineType !== "Service") {
@@ -1090,6 +1101,7 @@ const postPurchaseInvoice = defineServerFn({
                     documentId: purchaseInvoice.data?.id ?? undefined,
                     externalDocumentId:
                       purchaseInvoice.data?.supplierReference ?? undefined,
+                    projectId: directStockStripe,
                     createdBy: userId,
                     companyId
                   });
@@ -1115,6 +1127,7 @@ const postPurchaseInvoice = defineServerFn({
                       invoiceLineQuantityInInventoryUnit
                     ),
                     supplierId: purchaseInvoice.data?.supplierId,
+                    projectId: directStockStripe,
                     companyId,
                     postingDate: today
                   });
@@ -1423,7 +1436,12 @@ const postPurchaseInvoice = defineServerFn({
                               companyId
                             },
                             {
-                              columns: ["id", "quantity", "remainingQuantity"],
+                              columns: [
+                                "id",
+                                "quantity",
+                                "remainingQuantity",
+                                "projectId"
+                              ],
                               orderBy: ["postingDate", "createdAt"]
                             }
                           )
@@ -1452,7 +1470,16 @@ const postPurchaseInvoice = defineServerFn({
                       );
 
                       // Subledger: adjustment child rows on the covered layers,
-                      // consumed alongside their parent by calculateCOGS.
+                      // consumed alongside their parent by calculateCOGS. A
+                      // child carries its parent layer's stock stripe.
+                      const layerStripe = new Map(
+                        (receiptLayers.data ?? []).map(
+                          (layer: { id: string; projectId: string | null }) => [
+                            layer.id,
+                            layer.projectId
+                          ]
+                        )
+                      );
                       for (const entry of allocation.perLayer) {
                         costLedgerInserts.push({
                           itemLedgerType: "Purchase",
@@ -1470,6 +1497,8 @@ const postPurchaseInvoice = defineServerFn({
                           cost: round(entry.adjustmentCost),
                           remainingQuantity: round(entry.appliedQuantity),
                           supplierId: purchaseInvoice.data?.supplierId,
+                          projectId:
+                            layerStripe.get(entry.costLedgerId) ?? null,
                           companyId,
                           postingDate: today
                         });
@@ -1533,6 +1562,7 @@ const postPurchaseInvoice = defineServerFn({
                           ),
                           remainingQuantity: round(coveredQuantity),
                           supplierId: purchaseInvoice.data?.supplierId,
+                          projectId: projectCharges.stockStripe(invoiceLine.id),
                           companyId,
                           postingDate: today
                         });
