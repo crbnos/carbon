@@ -2110,8 +2110,9 @@ const WARRANTY_STATES = ["In warranty", "Labor ended", "Expired"] as const;
  * with a contact, with a warranty that ends after the ship date and the three
  * warranty states on the anchor day; the template nodes name earlier parents,
  * known labor categories and items; each order names a known asset (one open
- * order per asset) and template; a Scheduled order has a visit and a Draft
- * order none.
+ * order per asset) and template; a Refurbishment names an Available stock
+ * serial of a serial-tracked item (one open order per serial); a Scheduled
+ * order has a visit and a Draft order none.
  */
 export function fieldService(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need, needCustomer } = ctx;
@@ -2199,16 +2200,46 @@ export function fieldService(ctx: ValidationCtx): void {
 
   const statuses = new Set<string>();
   const openAssets = new Set<string>();
+  const stockSerials = new Map<string, { item: string; status: string }>();
+  for (const stock of dataset.inventory.onHandTracked) {
+    for (const entity of stock.entities) {
+      stockSerials.set(entity.readableId, {
+        item: stock.item,
+        status: entity.status ?? "Available"
+      });
+    }
+  }
+  const refurbishedSerials = new Set<string>();
   for (const order of sales.serviceOrders) {
     const where = `sales.serviceOrders "${order.key}"`;
     statuses.add(order.status);
-    if (!assetKeys.has(order.asset)) {
-      fail(`${where}: unknown asset "${order.asset}"`);
+    if (order.type === "Refurbishment") {
+      // A refurbishment is on a serial in stock, one open order per serial;
+      // the seed puts it On Hold, as createServiceOrder does.
+      const stock = stockSerials.get(order.serial);
+      if (!stock) {
+        fail(`${where}: "${order.serial}" is not in inventory.onHandTracked`);
+      } else {
+        if (ix.trackingByItem.get(stock.item) !== "Serial") {
+          fail(`${where}: item "${stock.item}" is not serial-tracked`);
+        }
+        if (stock.status !== "Available") {
+          fail(`${where}: serial "${order.serial}" is ${stock.status}`);
+        }
+      }
+      if (refurbishedSerials.has(order.serial)) {
+        fail(`${where}: serial "${order.serial}" already has an open order`);
+      }
+      refurbishedSerials.add(order.serial);
+    } else {
+      if (!assetKeys.has(order.asset)) {
+        fail(`${where}: unknown asset "${order.asset}"`);
+      }
+      if (openAssets.has(order.asset)) {
+        fail(`${where}: asset "${order.asset}" already has an open order`);
+      }
+      openAssets.add(order.asset);
     }
-    if (openAssets.has(order.asset)) {
-      fail(`${where}: asset "${order.asset}" already has an open order`);
-    }
-    openAssets.add(order.asset);
     if (order.template && !templateKeys.has(order.template)) {
       fail(`${where}: unknown template "${order.template}"`);
     }

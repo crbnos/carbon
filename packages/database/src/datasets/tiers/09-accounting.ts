@@ -898,7 +898,8 @@ async function insertServiceTree(
  * first 6 characters of its id, as `createServiceTemplate` names it), then
  * each service order with its Service project (identifier = the order's
  * readable id, as `createServiceOrder` makes it). A Scheduled order copies its
- * template's nodes and plan lines and gets one visit for the applying user.
+ * template's nodes and plan lines and gets one visit for the applying user. A
+ * Refurbishment has no customer and puts its stock serial On Hold.
  */
 async function seedServiceWork(ctx: Ctx): Promise<void> {
   const { anchor, userId } = ctx;
@@ -935,12 +936,6 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
   }
 
   for (const spec of sales.serviceOrders) {
-    const asset = sales.customerAssets.find((a) => a.key === spec.asset);
-    if (!asset) {
-      throw new Error(
-        `Seed: service order "${spec.key}" names unknown asset "${spec.asset}"`
-      );
-    }
     const template = spec.template
       ? sales.serviceTemplates.find((t) => t.key === spec.template)
       : undefined;
@@ -949,16 +944,75 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
         `Seed: service order "${spec.key}" names unknown template "${spec.template}"`
       );
     }
+
+    // The order's subject: a customer asset (Field Visit), or a serial in
+    // stock with no customer (Refurbishment).
+    let subject: {
+      projectName: string;
+      customerId: string | null;
+      columns: Record<string, unknown>;
+    };
+    if (spec.type === "Refurbishment") {
+      const stock = ctx.dataset.inventory.onHandTracked.find((s) =>
+        s.entities.some((e) => e.readableId === spec.serial)
+      );
+      if (!stock) {
+        throw new Error(
+          `Seed: service order "${spec.key}" names unknown serial "${spec.serial}"`
+        );
+      }
+      subject = {
+        projectName: `${spec.serial} — Refurbishment`,
+        customerId: null,
+        columns: {
+          type: "Refurbishment",
+          trackedEntityId: need(ctx.refs.misc, `te:${spec.serial}`, "serial"),
+          itemId: need(ctx.refs.items, stock.item, "item").id,
+          customerAssetId: null,
+          customerId: null,
+          customerLocationId: null,
+          expectedSellingPrice: spec.expectedSellingPrice ?? null
+        }
+      };
+    } else {
+      const asset = sales.customerAssets.find((a) => a.key === spec.asset);
+      if (!asset) {
+        throw new Error(
+          `Seed: service order "${spec.key}" names unknown asset "${spec.asset}"`
+        );
+      }
+      const customerId = need(ctx.refs.customers, asset.customer, "customer");
+      subject = {
+        projectName: `${asset.serial} — ${asset.customer}`,
+        customerId,
+        columns: {
+          type: "Field Visit",
+          trackedEntityId: need(
+            ctx.refs.misc,
+            `asset-serial:${asset.key}`,
+            "asset serial"
+          ),
+          itemId: need(ctx.refs.items, asset.item, "item").id,
+          customerAssetId: need(ctx.refs.misc, `asset:${asset.key}`, "asset"),
+          customerId,
+          customerLocationId: need(
+            ctx.refs.misc,
+            `cloc:${asset.customer}`,
+            "customer location"
+          )
+        }
+      };
+    }
+
     const serviceOrderId = await nextSequence(ctx, "serviceOrder");
     ctx.log(`service order ${serviceOrderId}`);
-    const customerId = need(ctx.refs.customers, asset.customer, "customer");
     const projectId = await insertId(ctx, "project", {
-      name: `${asset.serial} — ${asset.customer}`,
+      name: subject.projectName,
       identifier: serviceOrderId,
       projectType: "Service",
       status: "Released",
       costTreatment: "By Coverage",
-      customerId,
+      customerId: subject.customerId,
       locationId: plantId,
       priority: "None",
       active: true,
@@ -974,27 +1028,22 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
 
     const orderId = await insertId(ctx, "serviceOrder", {
       serviceOrderId,
-      type: "Field Visit",
+      ...subject.columns,
       status: spec.status,
-      trackedEntityId: need(
-        ctx.refs.misc,
-        `asset-serial:${asset.key}`,
-        "asset serial"
-      ),
-      itemId: need(ctx.refs.items, asset.item, "item").id,
-      customerAssetId: need(ctx.refs.misc, `asset:${asset.key}`, "asset"),
-      customerId,
-      customerLocationId: need(
-        ctx.refs.misc,
-        `cloc:${asset.customer}`,
-        "customer location"
-      ),
       locationId: plantId,
       projectId,
       serviceTemplateId: template ? need(templateIds, template.key) : null,
       priority: spec.priority ?? "None",
       problem: RICH(spec.problem)
     });
+    // A refurbishment holds its serial out of picking and shipping.
+    if (spec.type === "Refurbishment") {
+      await ctx.client.query(
+        `UPDATE "trackedEntity" SET status = 'On Hold'
+         WHERE id = $1 AND "companyId" = $2`,
+        [subject.columns.trackedEntityId, ctx.companyId]
+      );
+    }
     ctx.refs.documents[`svc:${spec.key}`] = orderId;
 
     if (spec.visit) {

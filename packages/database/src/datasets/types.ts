@@ -957,16 +957,29 @@ export type ServiceTemplateSpec = {
 };
 
 /**
- * A Field Visit service order on one customer asset, with its Service
- * project. A Scheduled order copies its template's nodes and plan lines and
- * has one visit for the applying user; a Draft order has neither. Posted
- * charges are not seeded (they would need journals, ledger rows and
- * billable items). Tier 09 seeds it, after the templates.
+ * A service order with its Service project. A Field Visit order is on one
+ * customer asset. A Refurbishment order is on a serial the company holds in
+ * stock (an `inventory.onHandTracked` entity), has no customer, and puts the
+ * serial On Hold. A Scheduled order copies its template's nodes and plan
+ * lines and has one visit for the applying user; a Draft order has neither.
+ * Posted charges and completions are not seeded (they would need journals,
+ * ledger rows and billable items). Tier 09 seeds it, after the templates.
  */
-export type ServiceOrderSpec = {
+export type ServiceOrderSpec = (
+  | {
+      type?: "Field Visit";
+      /** A `CustomerAssetSpec` key; one open order per asset. */
+      asset: string;
+    }
+  | {
+      type: "Refurbishment";
+      /** The readable id of an Available serial in `inventory.onHandTracked`. */
+      serial: string;
+      /** Caps the serial's cost at completion; else the item's sale price. */
+      expectedSellingPrice?: number;
+    }
+) & {
   key: string;
-  /** A `CustomerAssetSpec` key; one open order per asset. */
-  asset: string;
   status: "Draft" | "Scheduled";
   /** A `ServiceTemplateSpec` key the work tree is copied from. */
   template?: string;

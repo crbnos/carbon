@@ -43,7 +43,7 @@ These correct or add to the spec. Task 10 records them there.
 - [x] Task 6: Guard shipping and picking
 - [x] Task 7: Add refurbishment orders and the completion preview to the UI
 - [x] Task 8: Add the database tests
-- [ ] Task 9: Extend the demo datasets
+- [x] Task 9: Extend the demo datasets
 - [ ] Task 10: Update the rules, docs and spec
 - [ ] Task 11: Verify in the browser
 
@@ -415,4 +415,6 @@ ls .ai/playbooks/field-service-phase-c.md
 - Task 7: the list's type filter now offers Refurbishment (`listedServiceOrderTypes`). The UI is not browser-verified (Task 11).
 - Task 8: Task 4 had written the completion cases early (capitalize, relief, cap, abnormal rework, Average), and the FIFO case already reads `get_inventory_valuation` (10 units, not 11). Task 6 had written the guard cases: a Sales Order shipment refused while a Refurbishment order is open (`post-shipment/customer-assets.test.ts`) and a serial pick refused (`post-picking/refurbishment-guard.test.ts`).
 - Task 8 (deviation): the C2 split case is in `complete-service-order.test.ts`, not `calculate-cogs.test.ts`, because the completion writes the split. The source layer has an open child of 10 units at 20.00. After the completion the child keeps 9 units at 18.00, and the serial's layer has a moved child of 1 unit at 2.00. The serial relieves 302.00 (100.00 + 2.00 + 200.00) and the other 9 units relieve 918.00, as before the split. `calculate-cogs.test.ts` keeps the stamped-layer case Task 4 added. The completion and `calculate-cogs` tests pass (15).
+- Task 9: the service orders are seeded in tier 09 (`seedServiceWork`), not tier 04, so the change is there. `ServiceOrderSpec` is now a union: a Field Visit names an `asset`, and a Refurbishment names a `serial` from `inventory.onHandTracked` and an optional `expectedSellingPrice`. The other 3 datasets need no change.
+- Task 9: satellite seeds one Draft Refurbishment on RW010-SN-0054 (opening stock, referenced nowhere else), with an expected selling price of 15,500.00. Its project has no customer, and the seed sets the serial On Hold. The validator refuses a serial that is not in `onHandTracked`, not Available, not serial-tracked, or already has an open order. `pnpm db:check:datasets` passes for all 4 datasets.
 

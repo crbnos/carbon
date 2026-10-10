@@ -1115,6 +1115,16 @@ export const SERVICE_ORDERS: ServiceOrderSpec[] = [
     priority: "Medium",
     problem:
       "Customer reports intermittent telemetry dropouts on the S-band link."
+  },
+  {
+    key: "refurbishment",
+    type: "Refurbishment",
+    serial: "RW010-SN-0054",
+    status: "Draft",
+    priority: "Low",
+    expectedSellingPrice: 15500,
+    problem:
+      "Returned from a cancelled integration; replace the bearing cartridge and requalify before it goes back to stock."
   }
 ];
 
