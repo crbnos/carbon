@@ -77,13 +77,10 @@ describe("POSTING_POLICY", () => {
         "Charge",
         // Added post-v2 with maintenance labor: time on a maintenance dispatch
         // posts Dr maintenance / Cr labor absorption, like Production Event.
-        "Maintenance Event",
-        // Added with Projects: project time and project material issues post
-        // like maintenance labor.
-        "Timesheet",
-        "Project Issue",
-        // Added with Service projects: expense entries post like project time.
-        "Project Expense"
+        "Maintenance Event"
+        // Project and service journal types (Timesheet, Project Issue,
+        // Project Expense, Project Transfer, Service Order) are off by
+        // default, like every journal type added after the returns types.
       ].sort()
     );
 

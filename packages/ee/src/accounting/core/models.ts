@@ -525,24 +525,26 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
-  // Project time and project material issues post like maintenance labor:
-  // often, in small amounts, Dr the project account / Cr absorption or
-  // inventory. Spec: .ai/specs/2026-10-03-projects.md.
+  // Project and service journal types follow one rule: like every journal
+  // type added after the returns types, they never start pushing to a
+  // customer's external ledger unasked (see 'Revenue Recognition' below).
+  // A customer turns each one on in the integration's posting settings.
+  // Spec: .ai/specs/2026-10-03-projects.md.
   Timesheet: {
     representation: "journal",
-    defaultEnabled: true,
+    defaultEnabled: false,
     defaultGranularity: "individual"
   },
   "Project Issue": {
     representation: "journal",
-    defaultEnabled: true,
+    defaultEnabled: false,
     defaultGranularity: "individual"
   },
   // A project expense entry (mileage, a cost with no card charge or invoice)
   // posts Dr the project account / Cr GRNI, alongside project time and issues.
   "Project Expense": {
     representation: "journal",
-    defaultEnabled: true,
+    defaultEnabled: false,
     defaultGranularity: "individual"
   },
   // A project stock transfer, borrow or payback moves inventory value between

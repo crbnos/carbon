@@ -417,8 +417,10 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
   line.
 - The `jobs`, `purchaseOrderLines` and `purchaseInvoiceLines` views predate the charge
   columns, so screens load them with `getJobProjectCharge` / `getLineChargeNumber`.
-- `POSTING_POLICY` syncs `Timesheet` and `Project Issue` journals to external ledgers by
-  default.
+- `POSTING_POLICY` keeps every project and service journal type off external ledgers by
+  default: `Timesheet`, `Project Issue`, `Project Expense`, `Project Transfer` and
+  `Service Order`. One rule, as for every journal type added after the returns types
+  (Brad 2026-10-10); a customer turns each one on in the integration's settings.
 - Ids inside the JSONB of `projectBaseline.snapshot` and `projectChangeRequestItem`
   (`payload`, `baseRow`) are not rewritten by a restore into another company.
 - With the plan locked, the Elements page turns off only create and delete; the other
@@ -426,9 +428,6 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
 - The demo datasets seed no baseline, change request, item, comment or view.
 - The demo datasets seed project stock and one Posted Transfer per Contract project
   (`seedProjectStock`, tier 09), but no borrow.
-- `POSTING_POLICY` keeps `Project Transfer` journals (paybacks) off external ledgers by
-  default; Brad to confirm.
-- The MES issue picker lists every lot; `issue` refuses a lot outside the job's stripes.
 - A Posted project stock transfer has no void; a Transfer back is the correction.
 - Planning: a Project Material demand writes no `demandForecastSource` lineage row,
   so the item planning chart cannot name the plan line. The order drawer's Open

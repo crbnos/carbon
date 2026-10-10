@@ -16368,6 +16368,9 @@ msgstr "Aperçu PDF"
 msgid "PDF Watermark"
 msgstr "Filigrane PDF"
 
+msgid "Pegging"
+msgstr ""
+
 msgid "Pending"
 msgstr "En attente"
 

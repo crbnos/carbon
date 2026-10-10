@@ -16368,6 +16368,9 @@ msgstr "PDF 预览"
 msgid "PDF Watermark"
 msgstr "PDF 水印"
 
+msgid "Pegging"
+msgstr ""
+
 msgid "Pending"
 msgstr "待处理"
 

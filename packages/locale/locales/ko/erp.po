@@ -16368,6 +16368,9 @@ msgstr "PDF 미리보기"
 msgid "PDF Watermark"
 msgstr "PDF 워터마크"
 
+msgid "Pegging"
+msgstr ""
+
 msgid "Pending"
 msgstr "대기 중"
 

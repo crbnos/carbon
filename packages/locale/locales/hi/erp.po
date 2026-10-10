@@ -16368,6 +16368,9 @@ msgstr "PDF पूर्वावलोकन"
 msgid "PDF Watermark"
 msgstr "PDF वॉटरमार्क"
 
+msgid "Pegging"
+msgstr ""
+
 msgid "Pending"
 msgstr "लंबित"
 

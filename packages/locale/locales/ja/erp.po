@@ -16368,6 +16368,9 @@ msgstr "PDFプレビュー"
 msgid "PDF Watermark"
 msgstr "PDF透かし"
 
+msgid "Pegging"
+msgstr ""
+
 msgid "Pending"
 msgstr "待機中"
 

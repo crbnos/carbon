@@ -16368,6 +16368,9 @@ msgstr "PDF-Vorschau"
 msgid "PDF Watermark"
 msgstr "PDF-Wasserzeichen"
 
+msgid "Pegging"
+msgstr ""
+
 msgid "Pending"
 msgstr "Ausstehend"
 
