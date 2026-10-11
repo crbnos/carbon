@@ -58,7 +58,7 @@ either sync connection.
   an expired token) and read `/companies`. A revoked grant or dead refresh token
   reads unhealthy on the card. `getIntegrationHealth` caches a healthy answer
   for five hours.
-- Migration `20261007050300_onshape-v2-integration.sql` seeds the `integration`
+- Migration `20261011050300_onshape-v2-integration.sql` seeds the `integration`
   row; `…501_onshape-v2-vault-secrets.sql` puts `onshape-v2` in `SECRET_KEYS`,
   so its tokens live in Supabase Vault.
 - The five push defaults live on the panel's Fields page beside the property
