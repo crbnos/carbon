@@ -36,12 +36,18 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { ServerFnError } from "../errors";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows
+} from "../lib/project-posting";
 import { ROWS_PER_STATEMENT, readByIds } from "./legacy/write";
 
 const RECOST_DESCRIPTION = "Cutover recost";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 type JournalLineInsert = Database["public"]["Tables"]["journalLine"]["Insert"];
+type ProjectLedgerRow = Database["public"]["Tables"]["projectLedger"]["Row"];
 
 /** Sets each row's `column` to its value, one statement per chunk. */
 async function setCostLedger(
@@ -453,7 +459,7 @@ export async function resetAndRecostInventory(
     (movement) => !movesAtCost(ledgerById.get(movement.costLedgerId)!)
   );
   if (journaled.length === 0) return;
-  await postRecostJournals(trx, {
+  const posted = await postRecostJournals(trx, {
     companyId,
     companyGroupId,
     userId,
@@ -462,6 +468,7 @@ export async function resetAndRecostInventory(
     deltas: journaled.map((movement) => {
       const row = ledgerById.get(movement.costLedgerId)!;
       return {
+        costLedgerId: row.id,
         itemId: row.itemId!,
         documentId: row.documentId,
         documentType: row.documentType,
@@ -471,15 +478,159 @@ export async function resetAndRecostInventory(
       };
     })
   });
+  await recostProjectIssues(trx, {
+    companyId,
+    userId,
+    recosted: posted.filter(
+      (entry) => entry.delta.documentType === "Project Issue"
+    )
+  });
+}
+
+/**
+ * A re-costed Project Issue changes the project's cost too: one
+ * `projectLedger` adjustment row per issue (quantity 0, the cost difference,
+ * the issue's project, element and cost type, `journalLineId` the re-cost's
+ * project account line), written through `insertProjectLedgerRows` so a
+ * Time & Materials line bills it like any row, and for a Capitalize project
+ * the matching `fixedAssetCipCost` row. The issue's cost rows and its ledger
+ * row are written in one transaction, so they share `createdAt`: that and
+ * the project, item and date find the ledger row of each cost row. A
+ * Statistical issue has no ledger row and gets none.
+ */
+async function recostProjectIssues(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    recosted
+  }: { companyId: string; userId: string; recosted: PostedRecost[] }
+) {
+  if (recosted.length === 0) return;
+  const recostByCostLedger = new Map(
+    recosted.map((entry) => [entry.delta.costLedgerId, entry])
+  );
+  const issues: (ProjectLedgerRow & { costLedgerId: string })[] = [];
+  for (const ids of chunkArray(
+    [...recostByCostLedger.keys()],
+    ROWS_PER_STATEMENT
+  )) {
+    const { rows } = await sql<ProjectLedgerRow & { costLedgerId: string }>`
+      SELECT c."id" AS "costLedgerId", pl.*
+      FROM "costLedger" c
+      JOIN "projectLedger" pl
+        ON pl."companyId" = c."companyId"
+       AND pl."documentType" = 'Project Issue'
+       AND pl."reversalOfId" IS NULL
+       AND pl."projectId" = c."documentId"
+       AND pl."itemId" = c."itemId"
+       AND pl."postingDate" = c."postingDate"
+       AND pl."createdAt" = c."createdAt"
+      WHERE c."companyId" = ${companyId}
+        AND c."id" = ANY(${ids}::text[])
+    `.execute(trx);
+    issues.push(...rows);
+  }
+  if (issues.length === 0) return;
+
+  // One adjustment per issue: an issue split across stock stripes has one
+  // cost row per stripe and one ledger row.
+  const byIssue = Map.groupBy(issues, (issue) => issue.id);
+  const adjustments = [...byIssue.values()].flatMap((rows) => {
+    const issue = rows[0]!;
+    const entries = rows.map(
+      (row) => recostByCostLedger.get(row.costLedgerId)!
+    );
+    const amount = round(
+      entries.reduce((sum, entry) => sum + entry.delta.delta, 0)
+    );
+    if (Math.abs(amount) <= EPSILON) return [];
+    return [{ issue, amount, recost: entries[0]! }];
+  });
+  if (adjustments.length === 0) return;
+
+  await insertProjectLedgerRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) =>
+      buildProjectLedgerRow({
+        companyId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        postingDate: String(issue.postingDate),
+        costType: issue.costType,
+        documentType: issue.documentType,
+        documentId: issue.documentId,
+        documentLineId: issue.documentLineId,
+        itemId: issue.itemId,
+        quantity: 0,
+        unitOfMeasureCode: issue.unitOfMeasureCode,
+        amount,
+        journalLineId: recost.offsetJournalLineId,
+        coverage: issue.coverage,
+        coverageReason: issue.coverageReason,
+        unallowable: issue.unallowable,
+        createdBy: userId
+      })
+    )
+  });
+
+  // A Capitalize project's issue raised its asset's cost: the difference
+  // goes on the same asset.
+  const cipRows = await readByIds(
+    adjustments.map(({ issue }) => issue.documentId),
+    (ids) =>
+      trx
+        .selectFrom("fixedAssetCipCost")
+        .select(["sourceDocumentId", "fixedAssetId", "postCapitalization"])
+        .where("companyId", "=", companyId)
+        .where("sourceType", "=", "Project Issue")
+        .where("projectId", "is not", null)
+        .where("sourceDocumentId", "in", ids)
+        .execute()
+  );
+  const cipByIssue = new Map(cipRows.map((row) => [row.sourceDocumentId, row]));
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) => {
+      const cip = cipByIssue.get(issue.documentId);
+      if (!cip) return null;
+      return buildProjectCipRow({
+        resolved: {
+          fixedAssetId: cip.fixedAssetId,
+          postCapitalization: cip.postCapitalization
+        },
+        companyId,
+        userId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        sourceType: "Project Issue",
+        sourceDocumentId: issue.documentId,
+        amount,
+        costDate: String(issue.postingDate),
+        journalId: recost.journalId
+      });
+    })
+  });
 }
 
 type RecostDelta = {
+  costLedgerId: string;
   itemId: string;
   documentId: string | null;
   documentType: string | null;
   postingDate: string;
   quantity: number;
   delta: number;
+};
+
+/** A re-costed movement and the journal line its difference posted to on
+ *  the account its document charged (the inventory line's pair). */
+type PostedRecost = {
+  delta: RecostDelta;
+  journalId: string;
+  offsetJournalLineId: string;
 };
 
 /**
@@ -511,7 +662,7 @@ async function postRecostJournals(
     defaults: AccountDefaults;
     deltas: RecostDelta[];
   }
-) {
+): Promise<PostedRecost[]> {
   const label = (delta: RecostDelta) =>
     `${delta.documentType ?? "document"} ${delta.documentId ?? "(none)"}`;
   const missingDocument = deltas.find((delta) => !delta.documentId);
@@ -693,6 +844,12 @@ async function postRecostJournals(
     journals.map((journal) => [journal.journalEntryId, journal.id])
   );
 
+  // Each movement's pair of lines shares one reference; the offset is the
+  // line on its pair's offset account.
+  const offsetByReference = new Map<
+    string,
+    { delta: RecostDelta; journalId: string; accountId: string | null }
+  >();
   const lineInserts: JournalLineInsert[] = groups.flatMap((entries, index) => {
     const journalId = journalIdByEntry.get(entryIds[index]!)!;
     return entries.flatMap(({ delta, pair }) => {
@@ -708,6 +865,11 @@ async function postRecostJournals(
       }
       const inventoryAmount = round(credit("asset", delta.delta));
       const journalLineReference = nanoid();
+      offsetByReference.set(journalLineReference, {
+        delta,
+        journalId,
+        accountId: pair.offset.accountId
+      });
       const keys = (line: Line) => ({
         documentType: line.documentType,
         documentId: line.documentId,
@@ -740,7 +902,23 @@ async function postRecostJournals(
       ];
     });
   });
+  const posted: PostedRecost[] = [];
   for (const rows of chunkArray(lineInserts, ROWS_PER_STATEMENT)) {
-    await trx.insertInto("journalLine").values(rows).execute();
+    const inserted = await trx
+      .insertInto("journalLine")
+      .values(rows)
+      .returning(["id", "journalLineReference", "accountId"])
+      .execute();
+    for (const line of inserted) {
+      const offset = offsetByReference.get(line.journalLineReference);
+      if (offset && line.accountId === offset.accountId) {
+        posted.push({
+          delta: offset.delta,
+          journalId: offset.journalId,
+          offsetJournalLineId: line.id
+        });
+      }
+    }
   }
+  return posted;
 }
