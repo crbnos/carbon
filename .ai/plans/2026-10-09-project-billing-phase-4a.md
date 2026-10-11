@@ -72,7 +72,7 @@ These correct or add to the spec. Task 20 records them there.
 - [x] Task 10: Add `create-project-billing-invoices`
 - [x] Task 11: Release billable items on Draft delete and on VOID
 - [x] Task 12: Add the `ContractFundingThreshold` notification
-- [ ] Task 13: Wire project billing into the recurring billing job
+- [x] Task 13: Wire project billing into the recurring billing job
 - [ ] Task 14: Add the contract and project services
 - [ ] Task 15: Add the billing fields to the contract line form
 - [ ] Task 16: Add the contract line billing drawer
@@ -1098,3 +1098,8 @@ ls .ai/playbooks/project-billing-phase-4a.md
 - Task 10: test case 1 also checks that a March item stays Unbilled on 2026-03-05 (the period end is 2026-02-28).
 - Task 11: step 1 needed no change. `releaseRecurringInvoiceStamps` calls `releaseServiceOrderStamps`, which returns every stamped item to Unbilled, and `deleteSalesInvoiceReleasingRentals` selects the lines that a billable item stamps. Test case 1 (Draft delete) is not written: the delete lives in the ERP (`sales.server.ts`), which has no database test harness. Test case 2 extends the existing service order test in `post-sales-invoice.test.ts`: after the post, a VOID leaves the item Unbilled with `voidedSalesInvoiceId` set.
 - Task 12: the event also gets default destinations In-app and Email in `notify.ts` (`defaultDestinations`). Without an entry the notice reaches the topbar only. A FAR 52.232-20/-22 notice is a written notice, so it goes by email too. The email CTA reaches the contract through `/api/link`, which Task 12 already updates.
+- Task 13: the Cost Plus and project billing steps run BEFORE the contract step, not after it. The contract step ends a contract whose end date has passed and that has no Planned invoice, and a contract with only billing lines never has one. Run after it, the last period of project work on such a contract would never be invoiced. The funding step runs after the contract step, as planned.
+- Task 13: the discovery query finds an Active contract with any billing line (not one live on a day), because the job does not know each company's today before the per-company steps. A company with a billing line always has an Active contract, so the flag rides on the contract list.
+- Task 13: `remainingPlan` for the notice is `max(EAC − incurred, 0)` when the subtree has a plan or the billing element has its own estimate at completion, else null (P14). With no override, EAC − incurred is the committed cost plus the plan not yet spent or committed.
+- Task 13: the line number in the title is the line's position on its contract (`ROW_NUMBER()` by `sortOrder`, `createdAt`, `id`). Recipients are not checked against `userToCompany`. A notice with no recipient is not stamped, so it goes out once someone can receive it. `checkContractFunding` reads `get_project_cost_summary` once per distinct project, as the plan says: the function takes one project.
+- Task 13: `packages/jobs/AGENTS.md` (the `recurring-billing` row) waits for Task 20.
