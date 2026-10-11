@@ -380,7 +380,9 @@ for `upsertPlanningGroup`, `createManualPeg` and `writeGroupPegs`). The MRP side
 Rejected entry is editable and returns to Draft on save. A Posted entry changes only by
 `createTimesheetCorrection`: a negative reversal (`reversalOfId`, `correctionReason`)
 plus a replacement entry. With `companySettings.timesheetApprovalRequired` off, submit
-posts at once.
+posts at once. Log time (`save-timesheet-entry`, `add` mode) submits its entry in Standard
+mode. In DCAA mode it saves a Draft, which waits for the weekly certification
+(`submit-timesheet-week`), and the route posts nothing (Brad, 2026-10-11).
 
 **My Timesheet** is personal and lives at `x+/timesheet` (`path.to.timesheet`), outside
 the Projects layout; `x+/projects+/timesheet.tsx` redirects there. A Service row is

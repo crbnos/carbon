@@ -1586,3 +1586,8 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   3. `ElementSidebar` takes the project's `costObjective` from `ElementView`, to show **Leave** only on an Indirect project.
   4. The List layout reads elements through `PROJECT_ELEMENT_LIST_COLUMNS`, which now selects `isUnallowable` for the badge. `pnpm run generate:mcp` changes the response digest of that list read. The badge is a red `Badge` after the element name.
   5. Browser verification deferred.
+- Brad's decision on the open point of Task 16 step 3 (point 8), 2026-10-11: in DCAA mode, Log time saves the entry as Draft, so it goes through the weekly certification and approval. Standard mode keeps Phase 1a: Log time submits at once.
+  1. `save-timesheet-entry` decides it, so the rule lives in one place: in DCAA mode, `add` mode saves the owner's entry as Draft, whatever status the caller asks for. Another user's entry stays Pending Employee Review.
+  2. The Log time route (`projects+/log-time.tsx`) posts nothing when the saved status is not Submitted. Its flash reads "Time saved. Submit your week on My Timesheet to certify it."
+  3. Service time asks for Draft and posts from Draft, as before. The decision does not change it.
+  4. Test: "DCAA, add: Log time saves the owner's entry as Draft for the weekly certification". The existing DCAA `add` test now expects Draft.

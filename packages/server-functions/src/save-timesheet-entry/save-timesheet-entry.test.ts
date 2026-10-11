@@ -398,7 +398,8 @@ databaseTest(
         lateReason: "On site with no network"
       });
       expect(first.error).toBeNull();
-      expect(first.data?.status).toEqual("Submitted");
+      // DCAA mode saves the owner's entry as Draft (see the next test).
+      expect(first.data?.status).toEqual("Draft");
       expect((await f.entry(first.data!.entryId!)).lateReason).toEqual(
         "On site with no network"
       );
@@ -513,6 +514,30 @@ databaseTest(
       } finally {
         await f.cleanup();
       }
+    }
+  }
+);
+
+databaseTest(
+  "DCAA, add: Log time saves the owner's entry as Draft for the weekly certification",
+  async () => {
+    const f = await timesheetFixture("DCAA");
+    try {
+      // Log time asks for Submitted, as it does in Standard mode.
+      const logged = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        mode: "add",
+        status: "Submitted",
+        entryDate: day(0),
+        hours: 2
+      });
+      expect(logged.error).toBeNull();
+      expect(logged.data?.status).toEqual("Draft");
+      const entry = await f.entry(logged.data!.entryId!);
+      expect(entry.status).toEqual("Draft");
+      expect(entry.submittedAt).toBeNull();
+    } finally {
+      await f.cleanup();
     }
   }
 );

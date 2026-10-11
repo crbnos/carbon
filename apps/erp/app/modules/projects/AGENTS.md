@@ -143,7 +143,9 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   submits a week through the `save-timesheet-entry` and `submit-timesheet-week` server
   functions, which hold the DCAA rules for the ERP and the MES. Log time and service
   time call `saveTimesheetEntry` with `mode: "add"`: one new entry each time (Log time
-  Submitted, service time Draft with its visit); the route posts it.
+  Submitted in Standard mode, service time Draft with its visit); the route posts it.
+  In DCAA mode the server function saves the owner's Log time entry as Draft, so it
+  waits for the weekly certification, and the route does not post it.
 - `approveTimesheetEntries`, `rejectTimesheetEntries`, `createTimesheetCorrection` — the
   rest of the timesheet flow. A correction on another charge number is a labor transfer
   (`correctionOfId`); `assertCanApprove` refuses its requester as approver in DCAA mode.

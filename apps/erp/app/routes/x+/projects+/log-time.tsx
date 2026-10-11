@@ -21,9 +21,10 @@ const logger = getLogger("erp", "project-log-time");
 /**
  * Logs time for the signed-in user from the element page, as a new entry
  * through `save-timesheet-entry` (`add` mode, so DCAA mode applies its
- * controls). The entry is Submitted. With approvals off it posts at once; with approvals on it
- * waits in Approvals. A posting refusal is returned as fetcher data, so the
- * modal shows it and stays open.
+ * controls). In Standard mode the entry is Submitted: with approvals off it
+ * posts at once, with approvals on it waits in Approvals. In DCAA mode the
+ * entry is Draft and waits for the weekly certification on My Timesheet. A
+ * refusal is returned as fetcher data, so the modal shows it and stays open.
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -65,6 +66,17 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
   const entryId = saved.data.entryId;
+
+  // DCAA mode: the entry is Draft until the employee certifies the week.
+  if (saved.data.status !== "Submitted") {
+    return data(
+      { success: true, error: null },
+      await flash(
+        request,
+        success("Time saved. Submit your week on My Timesheet to certify it.")
+      )
+    );
+  }
 
   if (settings.data.timesheetApprovalRequired) {
     return data(

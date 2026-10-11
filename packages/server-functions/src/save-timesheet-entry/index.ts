@@ -43,7 +43,8 @@ export const saveTimesheetEntryInput = z.object({
    * service time) always inserts a new entry, as Phase 1a did.
    */
   mode: z.enum(["cell", "add"]).default("cell"),
-  /** `add` only: the status of the new entry. Log time submits it. */
+  /** `add` only: the status of the new entry. Log time submits it in
+   *  Standard mode; DCAA mode saves the owner's entry as Draft. */
   status: z.enum(["Draft", "Submitted"]).optional(),
   /** `add` only: the service visit the time belongs to. */
   serviceVisitId: z.string().min(1).nullable().optional()
@@ -391,9 +392,11 @@ async function checkDcaaEntry(
  * did. It never replaces the hours of an entry already in the cell.
  * - Standard mode: the owner adds the entry with the requested status.
  * - DCAA mode: the cell's controls apply (entry window, late reason, charge
- *   restrictions). Another user adds an entry only on the employee's recorded
- *   absence, with a reason; it is Pending Employee Review and writes a
- *   revision. The owner's entry is not a change, so it writes no revision.
+ *   restrictions). The owner's entry is Draft whatever status was asked for,
+ *   so it goes through the weekly certification and approval; it is not a
+ *   change, so it writes no revision. Another user adds an entry only on the
+ *   employee's recorded absence, with a reason; it is Pending Employee
+ *   Review and writes a revision.
  */
 async function addEntry(
   trx: Transaction<DB>,
@@ -418,6 +421,11 @@ async function addEntry(
     if (!actorIsOwner) {
       await assertSupervisorEntry(trx, input, reason);
       status = "Pending Employee Review";
+    } else {
+      // An added entry waits for the weekly certification and approval
+      // (`submit-timesheet-week`), as a cell save does. Log time asks for
+      // Submitted; DCAA mode never submits one entry on its own.
+      status = "Draft";
     }
   }
 
