@@ -103,7 +103,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 16: Build the Indirect Rates, Statement and ICE pages
 - [x] Task 17: Add rate ceilings to the contract line
 - [x] Task 18: Add burden by pool to the project Costs tab
-- [ ] Task 19: Extend the demo datasets
+- [x] Task 19: Extend the demo datasets
 - [ ] Task 20: Run the scoped gates
 - [ ] Task 21: Update the rules, docs and spec
 - [ ] Task 22: Verify in the browser
@@ -1413,3 +1413,10 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   2. `ProjectBurdenByPool.ee.tsx` is a strip under the tree, styled as `ServiceOrderCosts`: one row per pool with Allowable, Unallowable and Total, summed over the whole project. The tree renders it, so it scrolls with the tree's own layout.
   3. The page shows burden whatever the plan, because it reads ledger rows the company already has. No gate: a company that lost the feature still sees the burden it posted.
   4. `pnpm run generate:mcp` changed only `tool-manifest.digest.json`.
+- Task 19:
+  1. The satellite chart is the bootstrap chart, which has no fringe or indirect labor account. The pools map to its nearest accounts: Fringe collects 6100 Insurance with 6060 Salaries - Administrative as its one Base mapping (the indirect labor); Overhead collects 5050 Indirect Materials & Services and 6010 Maintenance Expense; G&A collects 6060, 6070 Rent & Utilities (Non-Factory) and 6080 Professional Fees. 6060 is G&A cost and Fringe base, so the fringe on it carries into G&A (B3). Applied accounts: 5060 Labor & Machine Absorption (Fringe), 5070 Overhead Absorption (Overhead, G&A).
+  2. The spec has one `rate`, written as both the Provisional and the Target rate from period 1 (12 rows each), as `setIndirectRate` writes a rate.
+  3. Step 4 does not apply: the satellite dataset has no Cost Plus contract line, so no ceiling is seeded.
+  4. The floors go in `DATASET_COVERAGE_FLOORS.satellite` (3 pools, 7 mappings, 72 rates), not `COVERAGE_FLOORS`: the shared floors take the smallest count of any dataset, which is 0 for the other 3.
+  5. The validator rule `indirectPools` also checks unique names and sequences, the rate is a fraction, and one account is Cost of at most one pool (B4).
+  6. `pnpm db:check:datasets` passes all four datasets with the database layer (3.0 s for satellite).

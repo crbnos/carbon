@@ -866,6 +866,7 @@ export const roboticsAccounting: AccountingData = {
   payments: PAYMENTS,
   memos: MEMOS,
   projects: PROJECTS,
+  indirectPools: [],
   laborCategories: LABOR_CATEGORIES,
   timesheetEntries: TIMESHEET_ENTRIES,
   customDimension: {

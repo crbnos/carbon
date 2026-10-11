@@ -290,9 +290,15 @@ export const COVERAGE_FLOORS: Record<string, number> = {
  * table only satellite seeds would floor at 0 there. Satellite's planning
  * group (Projects Phase 3): 1 group, 4 plan-line materials, and 8 pegs (3
  * Soft rows the receipt superseded, 3 Hard, 2 Soft on the open line).
+ * Satellite's indirect pools (Government contracting Phase 5b) likewise.
  */
 export const DATASET_COVERAGE_FLOORS: Record<string, Record<string, number>> = {
   satellite: {
+    // Government contracting Phase 5b: 3 pools, 7 mappings, and a Provisional
+    // and a Target rate for each of the 12 periods of the current year.
+    indirectPool: 3,
+    indirectPoolAccount: 7,
+    indirectRate: 72,
     planningGroup: 1,
     projectElementMaterial: 4,
     projectPeg: 8

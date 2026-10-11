@@ -1985,6 +1985,59 @@ const OPEN_SUPPLY_PO_STATUSES = new Set([
 ]);
 
 /**
+ * Government contracting Phase 5b: every pool account number is a posting
+ * account of the chart, names and sequences are unique, and one account is
+ * Cost of at most one pool (decision B4, the unique index the tier would hit).
+ */
+export function indirectPools(ctx: ValidationCtx): void {
+  const { dataset, fail } = ctx;
+  const names = new Set<string>();
+  const sequences = new Set<number>();
+  const costAccounts = new Map<string, string>();
+  for (const pool of dataset.accounting.indirectPools) {
+    const where = `accounting.indirectPools "${pool.name}"`;
+    if (names.has(pool.name)) fail(`${where}: duplicate name`);
+    names.add(pool.name);
+    if (!Number.isInteger(pool.sequence) || pool.sequence < 1) {
+      fail(`${where}: sequence must be a whole number from 1`);
+    }
+    if (sequences.has(pool.sequence)) {
+      fail(`${where}: sequence ${pool.sequence} is taken`);
+    }
+    sequences.add(pool.sequence);
+    if (!(pool.rate >= 0 && pool.rate < 10)) {
+      fail(`${where}: rate ${pool.rate} must be a fraction (0.32 is 32 %)`);
+    }
+    if (
+      pool.appliedAccount !== undefined &&
+      !ACCOUNT_CLASS_BY_NUMBER.has(pool.appliedAccount)
+    ) {
+      fail(`${where}: unknown GL account "${pool.appliedAccount}"`);
+    }
+    if (pool.accounts.length === 0) fail(`${where}: no accounts`);
+    const seen = new Set<string>();
+    for (const mapping of pool.accounts) {
+      if (!ACCOUNT_CLASS_BY_NUMBER.has(mapping.account)) {
+        fail(`${where}: unknown GL account "${mapping.account}"`);
+      }
+      const key = `${mapping.account}:${mapping.role}`;
+      if (seen.has(key)) {
+        fail(`${where}: ${mapping.account} is listed twice as ${mapping.role}`);
+      }
+      seen.add(key);
+      if (mapping.role !== "Cost") continue;
+      const other = costAccounts.get(mapping.account);
+      if (other !== undefined) {
+        fail(
+          `${where}: ${mapping.account} is already a Cost account of "${other}"`
+        );
+      }
+      costAccounts.set(mapping.account, pool.name);
+    }
+  }
+}
+
+/**
  * Planning groups (Projects Phase 3): the members are distinct Released
  * projects; the item is untracked; the received line has a Posted receipt of
  * exactly its Hard pegs; the open line is open supply that covers its Soft
@@ -7491,6 +7544,7 @@ const RULES: Rule[] = [
   openingStock,
   projectStock,
   planningGroups,
+  indirectPools,
   batchProperties,
   trackedStockAndMovements,
   uniqueDocumentRefs,

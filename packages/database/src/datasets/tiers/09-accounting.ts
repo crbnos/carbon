@@ -237,6 +237,7 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   await postInventoryDocuments(ctx, posting);
   // After the receipt cost layers exist: a grouped receipt splits them.
   await seedPlanningGroups(ctx);
+  await seedIndirectPools(ctx, accountIdByNumber);
   await postSalesInvoices(ctx, posting);
   await postPurchaseInvoices(ctx, posting);
 
@@ -1284,6 +1285,66 @@ async function seedProjectStock(ctx: Ctx): Promise<void> {
  * A seeded peg has no run id. The first MRP run keeps the Hard pegs and
  * re-pegs the open supply.
  */
+/**
+ * Government contracting Phase 5b: the pools, their account mappings and a
+ * Provisional and a Target rate per period of the current fiscal year (B12:
+ * a rate from period 1 is one row per period, period rate = YTD rate).
+ */
+async function seedIndirectPools(
+  ctx: Ctx,
+  accountIdByNumber: Record<string, string>
+): Promise<void> {
+  const pools = ctx.dataset.accounting.indirectPools;
+  if (pools.length === 0) return;
+  const fiscal = await maybeOne<{ startMonth: string | null }>(
+    ctx.client,
+    `SELECT "startMonth" FROM "fiscalYearSettings" WHERE "companyId" = $1`,
+    [ctx.companyId]
+  );
+  const startMonth = fiscal?.startMonth
+    ? (MONTH_NUMBER[fiscal.startMonth] ?? 1)
+    : 1;
+  // The fiscal year is named by its ending calendar year, as in
+  // seedAccountingPeriods.
+  const fiscalYear =
+    startMonth === 1 || ctx.anchor.month < startMonth
+      ? ctx.anchor.year
+      : ctx.anchor.year + 1;
+
+  for (const spec of pools) {
+    ctx.log(`indirect pool ${spec.name}`);
+    const poolId = await insertId(ctx, "indirectPool", {
+      name: spec.name,
+      poolType: spec.poolType,
+      sequence: spec.sequence,
+      baseType: spec.baseType,
+      appliedAccountId: spec.appliedAccount
+        ? need(accountIdByNumber, spec.appliedAccount, "GL account")
+        : undefined
+    });
+    for (const mapping of spec.accounts) {
+      await insertRow(ctx, "indirectPoolAccount", {
+        indirectPoolId: poolId,
+        accountId: need(accountIdByNumber, mapping.account, "GL account"),
+        role: mapping.role
+      });
+    }
+    // Rates are fractions in the dataset and in the column alike.
+    for (const rateType of ["Provisional", "Target"] as const) {
+      for (let periodNumber = 1; periodNumber <= 12; periodNumber++) {
+        await insertRow(ctx, "indirectRate", {
+          indirectPoolId: poolId,
+          fiscalYear,
+          periodNumber,
+          rateType,
+          periodRate: spec.rate,
+          ytdRate: spec.rate
+        });
+      }
+    }
+  }
+}
+
 async function seedPlanningGroups(ctx: Ctx): Promise<void> {
   const { companyId, userId, anchor } = ctx;
   const plantId = ctx.refs.locations.Plant ?? ctx.locationId;

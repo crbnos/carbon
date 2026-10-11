@@ -2116,6 +2116,27 @@ export type ProjectPegSpec = {
   quantity: number;
 };
 
+/**
+ * Government contracting Phase 5b: one indirect pool, its GL account mappings
+ * and its rate for the current fiscal year. Burden rows and Actual rates come
+ * from the period run, which cannot run inside the seed transaction.
+ */
+export type IndirectPoolSpec = {
+  /** Unique per company. */
+  name: string;
+  poolType: Database["public"]["Enums"]["indirectPoolType"];
+  /** Cascade order, unique per company. */
+  sequence: number;
+  baseType: Database["public"]["Enums"]["indirectBaseType"];
+  /** A posting account number of the chart; credited by applied burden. */
+  appliedAccount?: string;
+  /** Posting account numbers of the chart. One account is Cost of at most one pool. */
+  accounts: { account: string; role: "Cost" | "Base" }[];
+  /** A fraction (0.32 is 32 %), written as the Provisional and the Target rate
+   *  from period 1 of the current fiscal year. */
+  rate: number;
+};
+
 /** One rate per category, effective from `LABOR_RATE_EFFECTIVE_OFFSET`. */
 export type LaborCategorySpec = {
   name: string;
@@ -2184,6 +2205,8 @@ export type AccountingData = {
   projects: ProjectSpec[];
   /** Projects Phase 3; the satellite dataset only. */
   planningGroups?: PlanningGroupSpec[];
+  /** Government contracting Phase 5b; empty outside the satellite dataset. */
+  indirectPools: IndirectPoolSpec[];
   /** The first is the applying user's `employeeJob.laborCategoryId`. */
   laborCategories: LaborCategorySpec[];
   timesheetEntries: TimesheetEntrySpec[];

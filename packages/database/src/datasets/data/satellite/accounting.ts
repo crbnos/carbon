@@ -5,6 +5,7 @@
 import type {
   AccountingData,
   FixedAssetSpec,
+  IndirectPoolSpec,
   JournalEntrySpec,
   LaborCategorySpec,
   MemoSpec,
@@ -991,6 +992,53 @@ export const PLANNING_GROUPS: PlanningGroupSpec[] = [
   }
 ];
 
+/**
+ * Government contracting Phase 5b: the A&D cost structure. Fringe on total
+ * labor, overhead on direct labor and G&A on total cost input. Administrative
+ * salaries are G&A cost and part of the fringe base, so the fringe on them
+ * carries into G&A (decision B3). Burden and Actual rates come from the
+ * period run, which the seed does not run.
+ */
+export const INDIRECT_POOLS: IndirectPoolSpec[] = [
+  {
+    name: "Fringe",
+    poolType: "Fringe",
+    sequence: 1,
+    baseType: "Total Labor Dollars",
+    appliedAccount: "5060",
+    accounts: [
+      { account: "6100", role: "Cost" },
+      { account: "6060", role: "Base" }
+    ],
+    rate: 0.32
+  },
+  {
+    name: "Overhead",
+    poolType: "Overhead",
+    sequence: 2,
+    baseType: "Direct Labor Dollars",
+    appliedAccount: "5070",
+    accounts: [
+      { account: "5050", role: "Cost" },
+      { account: "6010", role: "Cost" }
+    ],
+    rate: 0.85
+  },
+  {
+    name: "G&A",
+    poolType: "G&A",
+    sequence: 3,
+    baseType: "Total Cost Input",
+    appliedAccount: "5070",
+    accounts: [
+      { account: "6060", role: "Cost" },
+      { account: "6070", role: "Cost" },
+      { account: "6080", role: "Cost" }
+    ],
+    rate: 0.12
+  }
+];
+
 export const LABOR_CATEGORIES: LaborCategorySpec[] = [
   {
     name: "Systems Engineer",
@@ -1107,6 +1155,7 @@ export const satelliteAccounting: AccountingData = {
   memos: MEMOS,
   projects: PROJECTS,
   planningGroups: PLANNING_GROUPS,
+  indirectPools: INDIRECT_POOLS,
   laborCategories: LABOR_CATEGORIES,
   timesheetEntries: TIMESHEET_ENTRIES,
   customDimension: {
