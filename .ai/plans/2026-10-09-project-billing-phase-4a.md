@@ -61,7 +61,7 @@ These correct or add to the spec. Task 20 records them there.
 ## Progress
 
 - [x] Task 1: Create the enum migration
-- [ ] Task 2: Create the project billing migration
+- [x] Task 2: Create the project billing migration
 - [ ] Task 3: Apply migrations, regenerate types, ship RLS and the enum mirrors
 - [ ] Task 4: Add the pure billing helpers
 - [ ] Task 5: Add the commercial project revenue module and Cost Plus pricing
