@@ -2,7 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge, cn } from "@carbon/react";
+import {
+  Badge,
+  cn,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useRef } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
@@ -17,6 +23,8 @@ import type {
 } from "../../projects.models";
 import { buildElementTree } from "../../projects.models";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
+import type { ProjectBurdenPoolRow } from "./ProjectBurdenByPool.ee";
+import ProjectBurdenByPool from "./ProjectBurdenByPool.ee";
 import type { ServiceOrderCostRow } from "./ServiceOrderCosts";
 import ServiceOrderCosts from "./ServiceOrderCosts";
 
@@ -40,6 +48,12 @@ type ProjectCostsTreeProps = {
   serviceActual: number;
   /** The actual cost of the preproduction elements, or null with none. */
   preproduction: number | null;
+  /** Allowable burden per element, each row its subtree (Phase 5b). */
+  burdenByElement: Record<string, number>;
+  /** Allowable burden of the whole project. */
+  projectBurden: number;
+  /** The project's burden per indirect pool; empty with no burden. */
+  burdenByPool: ProjectBurdenPoolRow[];
 };
 
 const ROW_HEIGHT = 36;
@@ -56,7 +70,10 @@ export default function ProjectCostsTree({
   project,
   serviceOrders,
   serviceActual,
-  preproduction
+  preproduction,
+  burdenByElement,
+  projectBurden,
+  burdenByPool
 }: ProjectCostsTreeProps) {
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -78,14 +95,27 @@ export default function ProjectCostsTree({
   const serviceAmount = money(serviceActual);
   const preproductionAmount = money(preproduction);
 
-  const figureCells = (figures: ProjectCostFigures) => (
+  const figureCells = (figures: ProjectCostFigures, burden = 0) => (
     <>
       <span className={FIGURE_CELL}>{money(figures.plan)}</span>
       <span className={FIGURE_CELL}>{money(figures.budget)}</span>
       <span className={FIGURE_CELL}>{money(figures.committed)}</span>
-      <span className={FIGURE_CELL}>
-        {money(figures.actual - figures.unallowable)}
-      </span>
+      {burden !== 0 ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className={cn(FIGURE_CELL, "underline decoration-dotted")}>
+              {money(figures.actual - figures.unallowable)}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            {t`of which burden: ${money(burden)}`}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <span className={FIGURE_CELL}>
+          {money(figures.actual - figures.unallowable)}
+        </span>
+      )}
       <span className={FIGURE_CELL}>{money(figures.unallowable)}</span>
       <span
         className={cn(
@@ -144,7 +174,7 @@ export default function ProjectCostsTree({
               </span>
             )}
           </div>
-          {figureCells(project)}
+          {figureCells(project, projectBurden)}
         </div>
         {tree.length === 0 ? (
           <div className="flex-1">
@@ -212,13 +242,14 @@ export default function ProjectCostsTree({
                       </Badge>
                     )}
                   </div>
-                  {figureCells(row.figures)}
+                  {figureCells(row.figures, burdenByElement[row.id] ?? 0)}
                 </div>
               );
             }}
           />
         )}
         <ServiceOrderCosts rows={serviceOrders} />
+        <ProjectBurdenByPool rows={burdenByPool} />
       </div>
     </div>
   );

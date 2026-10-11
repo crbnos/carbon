@@ -102,7 +102,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 15: Build the Indirect Pools pages
 - [x] Task 16: Build the Indirect Rates, Statement and ICE pages
 - [x] Task 17: Add rate ceilings to the contract line
-- [ ] Task 18: Add burden by pool to the project Costs tab
+- [x] Task 18: Add burden by pool to the project Costs tab
 - [ ] Task 19: Extend the demo datasets
 - [ ] Task 20: Run the scoped gates
 - [ ] Task 21: Update the rules, docs and spec
@@ -1408,3 +1408,8 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   2. The Add modal offers the active pools that apply to projects and have no ceiling on the line yet (`customerContractRateCeiling_key` is unique per line and pool), so the plan's edit is a delete and an add. A unique-key refusal still answers "This line already has a ceiling for the pool".
   3. A Direct Labor Hours pool's ceiling is an amount per hour in the company currency, like its rate. Every other ceiling is a percent.
   4. A gated company sees the section with no rows behind `UpgradeOverlaySection`. The intents call `requireFeature` and answer an `EntitlementError` with "Upgrade to use rate ceilings".
+- Task 18:
+  1. `ProjectCostsTree` had no tooltip. The Allowable cell of a row (and of the project total) gets one when its subtree carries allowable burden: "of which burden: <amount>". The loader rolls each burden row up its element's ancestors (`parentId`), in memory.
+  2. `ProjectBurdenByPool.ee.tsx` is a strip under the tree, styled as `ServiceOrderCosts`: one row per pool with Allowable, Unallowable and Total, summed over the whole project. The tree renders it, so it scrolls with the tree's own layout.
+  3. The page shows burden whatever the plan, because it reads ledger rows the company already has. No gate: a company that lost the feature still sees the burden it posted.
+  4. `pnpm run generate:mcp` changed only `tool-manifest.digest.json`.

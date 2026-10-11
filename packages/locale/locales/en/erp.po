@@ -4434,6 +4434,9 @@ msgstr "Burden"
 msgid "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
 msgstr "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
 
+msgid "Burden by pool"
+msgstr "Burden by pool"
+
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 
@@ -16394,6 +16397,10 @@ msgstr "of {0}h"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Of the funded cost, from 75% to 85%"
+
+#. placeholder {0}: money(burden)
+msgid "of which burden: {0}"
+msgstr "of which burden: {0}"
 
 msgid "Off"
 msgstr "Off"

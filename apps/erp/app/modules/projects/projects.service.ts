@@ -3825,6 +3825,23 @@ export async function getProjectCostSummary(
   });
 }
 
+/**
+ * Gets the burden of a project per element and indirect pool, with its
+ * unallowable part (government contracting Phase 5b). Empty for a project
+ * the burden run never burdened.
+ * @mcp read
+ */
+export async function getProjectBurdenSummary(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client.rpc("get_project_burden_summary", {
+    p_project_id: projectId,
+    p_company_id: companyId
+  });
+}
+
 // One row per service order whose Service project has this project as its
 // parent (the coverage contract's project): its actual cost, posted hours, and
 // billed and unbilled amounts.

@@ -5,15 +5,18 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
+import { round } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import {
   buildProjectCostFigures,
   getChildServiceProjectCosts,
+  getProjectBurdenSummary,
   getProjectCostSummary,
   getProjectElementCosts,
   preproductionActual
 } from "~/modules/projects";
+import type { ProjectBurdenPoolRow } from "~/modules/projects/ui/Costs/ProjectBurdenByPool.ee";
 import type { ProjectCostRow } from "~/modules/projects/ui/Costs/ProjectCostsTree";
 import ProjectCostsTree from "~/modules/projects/ui/Costs/ProjectCostsTree";
 import type { ServiceOrderCostRow } from "~/modules/projects/ui/Costs/ServiceOrderCosts";
@@ -28,11 +31,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const [elements, costSummary, serviceCosts] = await Promise.all([
-    getProjectElementCosts(client, projectId, companyId),
-    getProjectCostSummary(client, projectId, companyId),
-    getChildServiceProjectCosts(client, projectId, companyId)
-  ]);
+  const [elements, costSummary, serviceCosts, burdenSummary] =
+    await Promise.all([
+      getProjectElementCosts(client, projectId, companyId),
+      getProjectCostSummary(client, projectId, companyId),
+      getChildServiceProjectCosts(client, projectId, companyId),
+      getProjectBurdenSummary(client, projectId, companyId)
+    ]);
 
   if (elements.error) {
     logger.error("Failed to load project elements", {
@@ -46,6 +51,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId,
       projectId,
       error: costSummary.error
+    });
+  }
+
+  if (burdenSummary.error) {
+    logger.error("Failed to load the project's burden", {
+      companyId,
+      projectId,
+      error: burdenSummary.error
     });
   }
 
@@ -96,14 +109,74 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? preproductionActual(elementRows, byElement)
     : null;
 
-  return { rows, project, serviceOrders, serviceActual, preproduction };
+  // Burden (Phase 5b): per pool for the project, and the allowable burden of
+  // each element's subtree for the tree's "of which burden" tooltip. A row
+  // with no element is the project's own and counts only in the total.
+  const parentOf = new Map(
+    elementRows.map((element) => [element.id, element.parentId])
+  );
+  const subtreeBurden = new Map<string, number>();
+  const byPool = new Map<string, ProjectBurdenPoolRow>();
+  let projectBurden = 0;
+  for (const row of burdenSummary.data ?? []) {
+    const amount = Number(row.amount);
+    const unallowable = Number(row.unallowableAmount);
+    const allowable = amount - unallowable;
+    const pool = byPool.get(row.indirectPoolId) ?? {
+      indirectPoolId: row.indirectPoolId,
+      poolName: row.poolName,
+      allowable: 0,
+      unallowable: 0
+    };
+    pool.allowable += allowable;
+    pool.unallowable += unallowable;
+    byPool.set(row.indirectPoolId, pool);
+    projectBurden += allowable;
+    let elementId: string | null = row.projectElementId;
+    while (elementId) {
+      subtreeBurden.set(
+        elementId,
+        (subtreeBurden.get(elementId) ?? 0) + allowable
+      );
+      elementId = parentOf.get(elementId) ?? null;
+    }
+  }
+  const burdenByPool = [...byPool.values()]
+    .map((pool) => ({
+      ...pool,
+      allowable: round(pool.allowable),
+      unallowable: round(pool.unallowable)
+    }))
+    .sort((a, b) => a.poolName.localeCompare(b.poolName));
+  const burdenByElement = Object.fromEntries(
+    [...subtreeBurden].map(([id, amount]) => [id, round(amount)])
+  );
+
+  return {
+    rows,
+    project,
+    serviceOrders,
+    serviceActual,
+    preproduction,
+    burdenByElement,
+    projectBurden: round(projectBurden),
+    burdenByPool
+  };
 }
 
 export default function ProjectCostsRoute() {
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
-  const { rows, project, serviceOrders, serviceActual, preproduction } =
-    useLoaderData<typeof loader>();
+  const {
+    rows,
+    project,
+    serviceOrders,
+    serviceActual,
+    preproduction,
+    burdenByElement,
+    projectBurden,
+    burdenByPool
+  } = useLoaderData<typeof loader>();
 
   return (
     <div className="h-full w-full">
@@ -114,6 +187,9 @@ export default function ProjectCostsRoute() {
         serviceOrders={serviceOrders}
         serviceActual={serviceActual}
         preproduction={preproduction}
+        burdenByElement={burdenByElement}
+        projectBurden={projectBurden}
+        burdenByPool={burdenByPool}
       />
       <RecordOutlet />
     </div>
