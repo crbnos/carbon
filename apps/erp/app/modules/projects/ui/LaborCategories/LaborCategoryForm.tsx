@@ -71,6 +71,7 @@ type EditingRate = {
   id?: string;
   effectiveFrom: string;
   costRate?: number;
+  billRate?: number;
 };
 
 /**
@@ -140,7 +141,7 @@ const LaborCategoryForm = ({
                     <div className="flex w-full flex-col gap-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-muted-foreground">
-                          <Trans>Cost rates</Trans>
+                          <Trans>Rates</Trans>
                         </span>
                         <Button
                           variant="secondary"
@@ -172,6 +173,9 @@ const LaborCategoryForm = ({
                                 <Th className="text-right">
                                   <Trans>Cost Rate</Trans>
                                 </Th>
+                                <Th className="text-right">
+                                  <Trans>Bill Rate</Trans>
+                                </Th>
                                 <Th className="w-12">
                                   <span className="sr-only">
                                     <Trans>Actions</Trans>
@@ -188,6 +192,15 @@ const LaborCategoryForm = ({
                                   <Td className="text-right tabular-nums">
                                     {formatMoney.format(Number(rate.costRate))}
                                   </Td>
+                                  <Td className="text-right tabular-nums">
+                                    {rate.billRate === null ? (
+                                      <span className="text-muted-foreground">
+                                        —
+                                      </span>
+                                    ) : (
+                                      formatMoney.format(Number(rate.billRate))
+                                    )}
+                                  </Td>
                                   <Td>
                                     <IconButton
                                       aria-label={t`Edit rate`}
@@ -199,7 +212,11 @@ const LaborCategoryForm = ({
                                         setEditingRate({
                                           id: rate.id,
                                           effectiveFrom: rate.effectiveFrom,
-                                          costRate: Number(rate.costRate)
+                                          costRate: Number(rate.costRate),
+                                          billRate:
+                                            rate.billRate === null
+                                              ? undefined
+                                              : Number(rate.billRate)
                                         })
                                       }
                                     />
@@ -282,6 +299,17 @@ function RateModal({
               <NumberField
                 name="costRate"
                 label={t`Cost Rate per Hour`}
+                minValue={0}
+                formatOptions={INPUT_FORMAT.rate(
+                  currencyCode,
+                  currencyDecimals
+                )}
+                step={INPUT_STEP.rate}
+              />
+              <NumberField
+                name="billRate"
+                label={t`Bill Rate per Hour`}
+                helperText={t`The default price of an hour on a Time & Materials contract line`}
                 minValue={0}
                 formatOptions={INPUT_FORMAT.rate(
                   currencyCode,

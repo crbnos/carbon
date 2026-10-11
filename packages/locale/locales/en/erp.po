@@ -3916,6 +3916,9 @@ msgstr "Bill of Process"
 msgid "Bill Rate"
 msgstr "Bill Rate"
 
+msgid "Bill Rate per Hour"
+msgstr "Bill Rate per Hour"
+
 msgid "Bill To"
 msgstr "Bill To"
 
@@ -6087,9 +6090,6 @@ msgstr "Cost Rate"
 
 msgid "Cost Rate per Hour"
 msgstr "Cost Rate per Hour"
-
-msgid "Cost rates"
-msgstr "Cost rates"
 
 msgid "Cost Relief"
 msgstr "Cost Relief"
@@ -18057,6 +18057,9 @@ msgstr "Rate Limit"
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 
+msgid "Rates"
+msgstr "Rates"
+
 msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 
@@ -22658,6 +22661,9 @@ msgstr "The default for time this person logs on projects"
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
+
+msgid "The default price of an hour on a Time & Materials contract line"
+msgstr "The default price of an hour on a Time & Materials contract line"
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."

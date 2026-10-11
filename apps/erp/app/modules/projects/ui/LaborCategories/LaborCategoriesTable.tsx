@@ -11,25 +11,51 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuBriefcaseBusiness, LuCheck, LuPencil, LuText } from "react-icons/lu";
+import {
+  LuBriefcaseBusiness,
+  LuCheck,
+  LuCoins,
+  LuPencil,
+  LuText
+} from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
-import { usePermissions } from "~/hooks";
+import { useCompanyToday, useCurrencyFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { LaborCategory } from "../../types";
 
+type LaborCategoryRow = LaborCategory & {
+  rates?: {
+    costRate: number;
+    billRate: number | null;
+    effectiveFrom: string;
+  }[];
+};
+
 type LaborCategoriesTableProps = {
-  data: LaborCategory[];
+  data: LaborCategoryRow[];
   count: number;
 };
+
+/** The rate in effect on a day: the latest one that started on or before it. */
+function currentRate(row: LaborCategoryRow, today: string) {
+  let current: NonNullable<LaborCategoryRow["rates"]>[number] | null = null;
+  for (const rate of row.rates ?? []) {
+    if (rate.effectiveFrom > today) continue;
+    if (!current || rate.effectiveFrom > current.effectiveFrom) current = rate;
+  }
+  return current;
+}
 
 const LaborCategoriesTable = memo(
   ({ data, count }: LaborCategoriesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const today = useCompanyToday();
+    const formatRate = useCurrencyFormatter({ rate: true });
 
-    const columns = useMemo<ColumnDef<LaborCategory>[]>(
+    const columns = useMemo<ColumnDef<LaborCategoryRow>[]>(
       () => [
         {
           accessorKey: "name",
@@ -52,17 +78,53 @@ const LaborCategoriesTable = memo(
           meta: { icon: <LuText /> }
         },
         {
+          id: "costRate",
+          header: t`Cost Rate`,
+          cell: ({ row }) => {
+            const rate = currentRate(row.original, today);
+            return rate ? (
+              <span className="tabular-nums">
+                {formatRate.format(Number(rate.costRate))}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            );
+          },
+          meta: {
+            icon: <LuCoins />,
+            exportValue: (row) => currentRate(row, today)?.costRate ?? null
+          }
+        },
+        {
+          id: "billRate",
+          header: t`Bill Rate`,
+          cell: ({ row }) => {
+            const billRate = currentRate(row.original, today)?.billRate;
+            return billRate === null || billRate === undefined ? (
+              <span className="text-muted-foreground">—</span>
+            ) : (
+              <span className="tabular-nums">
+                {formatRate.format(Number(billRate))}
+              </span>
+            );
+          },
+          meta: {
+            icon: <LuCoins />,
+            exportValue: (row) => currentRate(row, today)?.billRate ?? null
+          }
+        },
+        {
           accessorKey: "active",
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: { icon: <LuCheck /> }
         }
       ],
-      [t]
+      [t, today, formatRate]
     );
 
     const renderContextMenu = useCallback(
-      (row: LaborCategory) => (
+      (row: LaborCategoryRow) => (
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.edit}
           disabled={!permissions.can("update", "projects")}
@@ -76,7 +138,7 @@ const LaborCategoriesTable = memo(
     );
 
     return (
-      <Table<LaborCategory>
+      <Table<LaborCategoryRow>
         data={data}
         columns={columns}
         count={count}

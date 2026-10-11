@@ -3916,6 +3916,9 @@ msgstr "Operasyon listesi"
 msgid "Bill Rate"
 msgstr ""
 
+msgid "Bill Rate per Hour"
+msgstr ""
+
 msgid "Bill To"
 msgstr "Fatura Adresi"
 
@@ -6086,9 +6089,6 @@ msgid "Cost Rate"
 msgstr ""
 
 msgid "Cost Rate per Hour"
-msgstr ""
-
-msgid "Cost rates"
 msgstr ""
 
 msgid "Cost Relief"
@@ -18057,6 +18057,9 @@ msgstr "Hız Sınırı"
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur (IAS 21). Güncel döviz kurunu kullanmak için boş bırakın."
 
+msgid "Rates"
+msgstr ""
+
 msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr "Bir müşteri veya bir müşteri türünün tümü ile kararlaştırılan oranlar. Bunlar bu parça kendilerine kiralanırken başlangıç oranıdır."
 
@@ -22658,6 +22661,9 @@ msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "Siparişin toplama işleminde sunacağı takip edilen varlıkları seçin: FEFO (en yakında sona erecek ilk), FIFO (en eski ilk), veya LIFO (en yeni ilk)."
+
+msgid "The default price of an hour on a Time & Materials contract line"
+msgstr ""
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "Bu parça yapıldığında varsayılan çalıştırma miktarı; planlama turları bunun katlarına kadar yenileme yapar."

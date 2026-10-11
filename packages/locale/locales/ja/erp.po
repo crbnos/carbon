@@ -3916,6 +3916,9 @@ msgstr "工程表"
 msgid "Bill Rate"
 msgstr ""
 
+msgid "Bill Rate per Hour"
+msgstr ""
+
 msgid "Bill To"
 msgstr "請求先"
 
@@ -6086,9 +6089,6 @@ msgid "Cost Rate"
 msgstr ""
 
 msgid "Cost Rate per Hour"
-msgstr ""
-
-msgid "Cost rates"
 msgstr ""
 
 msgid "Cost Relief"
@@ -18057,6 +18057,9 @@ msgstr "レート制限"
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "連結における純資産勘定の換算に使用されるレート（IAS 21）。空欄の場合は現在の為替レートが使用されます。"
 
+msgid "Rates"
+msgstr ""
+
 msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr "顧客または特定タイプのすべての顧客と合意されたレート。この部品がレンタルされるときの開始レートです。"
 
@@ -22658,6 +22661,9 @@ msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "ピッキングが追跡対象エンティティを提供するデフォルト。FEFO（最短有効期限ファースト）、先入先出（古いものファースト）、または後入先出（新しいものファースト）。"
+
+msgid "The default price of an hour on a Time & Materials contract line"
+msgstr ""
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "このパーツが製造される場合のデフォルト実行数量。計画ラウンドはこれの倍数まで補充を行います。"

@@ -3916,6 +3916,9 @@ msgstr "工序清单"
 msgid "Bill Rate"
 msgstr ""
 
+msgid "Bill Rate per Hour"
+msgstr ""
+
 msgid "Bill To"
 msgstr "账单收款人"
 
@@ -6086,9 +6089,6 @@ msgid "Cost Rate"
 msgstr ""
 
 msgid "Cost Rate per Hour"
-msgstr ""
-
-msgid "Cost rates"
 msgstr ""
 
 msgid "Cost Relief"
@@ -18057,6 +18057,9 @@ msgstr "速率限制"
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空则使用当前汇率。"
 
+msgid "Rates"
+msgstr ""
+
 msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr "与某个客户或同类所有客户达成的费率。这是将此零件租赁给他们时的起始费率。"
 
@@ -22658,6 +22661,9 @@ msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "订单拣货使用的默认方式，用于提供被跟踪实体：先到期先出（最早过期优先）、先进先出（最旧优先）或后进先出（最新优先）。"
+
+msgid "The default price of an hour on a Time & Materials contract line"
+msgstr ""
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "制造此零件时的默认运行数量；计划轮次为此补充的倍数。"

@@ -3916,6 +3916,9 @@ msgstr "Lista de operações"
 msgid "Bill Rate"
 msgstr ""
 
+msgid "Bill Rate per Hour"
+msgstr ""
+
 msgid "Bill To"
 msgstr "Faturar Para"
 
@@ -6086,9 +6089,6 @@ msgid "Cost Rate"
 msgstr ""
 
 msgid "Cost Rate per Hour"
-msgstr ""
-
-msgid "Cost rates"
 msgstr ""
 
 msgid "Cost Relief"
@@ -18057,6 +18057,9 @@ msgstr "Limite de Taxa"
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Taxa usada para a conversão de contas de patrimônio líquido na consolidação (IAS 21). Deixe em branco para usar a taxa de câmbio atual."
 
+msgid "Rates"
+msgstr ""
+
 msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr "Taxas acordadas com um cliente, ou com todos os clientes de um tipo. Elas são a taxa inicial quando esta peça é alugada para eles."
 
@@ -22658,6 +22661,9 @@ msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "A ordem padrão que a separação usa para oferecer entidades rastreadas: FEFO (expiração mais próxima primeiro), FIFO (mais antigo primeiro) ou LIFO (mais novo primeiro)."
+
+msgid "The default price of an hour on a Time & Materials contract line"
+msgstr ""
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "A quantidade padrão de execução quando esta peça é fabricada; os ciclos de planejamento reabastecem até múltiplos disso."

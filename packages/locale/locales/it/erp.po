@@ -3916,6 +3916,9 @@ msgstr "Lista delle operazioni"
 msgid "Bill Rate"
 msgstr ""
 
+msgid "Bill Rate per Hour"
+msgstr ""
+
 msgid "Bill To"
 msgstr "Fattura a"
 
@@ -6086,9 +6089,6 @@ msgid "Cost Rate"
 msgstr ""
 
 msgid "Cost Rate per Hour"
-msgstr ""
-
-msgid "Cost rates"
 msgstr ""
 
 msgid "Cost Relief"
@@ -18057,6 +18057,9 @@ msgstr "Limite di Velocità"
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Tasso utilizzato per la conversione dei conti di patrimonio netto nel consolidamento (IAS 21). Lasciare vuoto per usare il tasso di cambio corrente."
 
+msgid "Rates"
+msgstr ""
+
 msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr "Tariffe concordate con un cliente o con ogni cliente di un tipo. Sono la tariffa iniziale quando questo componente viene loro affittato."
 
@@ -22658,6 +22661,9 @@ msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "L'ordine di prelievo predefinito utilizza per offrire entità monitorate: FEFO (scadenza più precoce per prima), FIFO (la più antica per prima) o LIFO (la più nuova per prima)."
+
+msgid "The default price of an hour on a Time & Materials contract line"
+msgstr ""
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "La quantità di esecuzione predefinita quando questa parte viene realizzata; i cicli di pianificazione integrano il rifornimento fino a multipli di questo."

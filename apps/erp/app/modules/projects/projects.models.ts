@@ -522,6 +522,10 @@ export const laborCategoryRateValidator = z.object({
   costRate: zfd.numeric(
     z.number().min(0, { message: "Rate cannot be negative" })
   ),
+  /** The default price of an hour (contract billing); empty is none. */
+  billRate: zfd.numeric(
+    z.number().min(0, { message: "Rate cannot be negative" }).optional()
+  ),
   effectiveFrom: z.string().min(1, { message: "Effective date is required" })
 });
 

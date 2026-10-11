@@ -3916,6 +3916,9 @@ msgstr "प्रक्रिया सूची"
 msgid "Bill Rate"
 msgstr ""
 
+msgid "Bill Rate per Hour"
+msgstr ""
+
 msgid "Bill To"
 msgstr "बिल प्राप्तकर्ता"
 
@@ -6086,9 +6089,6 @@ msgid "Cost Rate"
 msgstr ""
 
 msgid "Cost Rate per Hour"
-msgstr ""
-
-msgid "Cost rates"
 msgstr ""
 
 msgid "Cost Relief"
@@ -18057,6 +18057,9 @@ msgstr "दर सीमा"
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "समेकन में इक्विटी खातों के रूपांतरण के लिए उपयोग की जाने वाली दर (IAS 21)। वर्तमान विनिमय दर का उपयोग करने के लिए खाली छोड़ें।"
 
+msgid "Rates"
+msgstr ""
+
 msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr "एक ग्राहक के साथ या किसी प्रकार के प्रत्येक ग्राहक के साथ सहमत दरें। वे शुरुआती दर हैं जब यह पार्ट उन्हें किराए पर दिया जाता है।"
 
@@ -22658,6 +22661,9 @@ msgstr ""
 
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "डिफ़ॉल्ट ऑर्डर पिकिंग ट्रैक की गई संस्थाओं की पेशकश करने के लिए उपयोग करता है: FEFO (सबसे पहले समाप्ति), FIFO (सबसे पहले सबसे पुराना) या LIFO (सबसे पहले सबसे नया)।"
+
+msgid "The default price of an hour on a Time & Materials contract line"
+msgstr ""
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "डिफ़ॉल्ट रन मात्रा जब यह भाग बनाया जाता है; योजना राउंड इसके गुणज तक पुनः भरण करते हैं।"

@@ -78,7 +78,7 @@ These correct or add to the spec. Task 20 records them there.
 - [x] Task 16: Add the contract line billing drawer
 - [x] Task 17: Add the Project billing section and the backup report
 - [x] Task 18: Add Projects → Billing and the project Billing tab
-- [ ] Task 19: Add the bill rate to labor categories
+- [x] Task 19: Add the bill rate to labor categories
 - [ ] Task 20: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 21: Verify in the browser
 
@@ -1125,3 +1125,5 @@ ls .ai/playbooks/project-billing-phase-4a.md
 - Task 18: the default filter (Unbilled and On Hold) applies in the loader when the URL has no `status` filter; the status chip is not shown for it. The project filter's options are the projects on the loaded page. Bulk actions are the table's selection menu; each row also has the same actions in its context menu. **Edit Price** needs exactly one open, non-reversal item. `billing.update.tsx` returns `{ success, error }` with a flash, as the service order billing route does.
 - Task 18: the project **Billing** tab shows only for a Contract-treatment project (`costTreatment = 'Contract'`), as the Stock tab shows only with project stock. Its shortcut is `mod+shift+i` (`PROJECT_TAB_SHORTCUTS.billing`; B is Baselines). The tab lists the contract lines above the project's items, as the Time & materials tab lists open time above its ledger.
 - Task 18: the line billing page's items card (Task 16) now links to Projects → Billing (**Review Items**).
+- Task 19: the rates are a table plus a rate modal, not a grid: the modal gains **Bill Rate per Hour** and the table a **Bill Rate** column ("—" when empty). The section heading is now "Rates".
+- Task 19: `LaborCategoriesTable` had no cost rate column. It now shows both the current **Cost Rate** and the current **Bill Rate**, the rate whose `effectiveFrom` is the latest on or before the company's today. `getLaborCategories` embeds the category's rates for it (`laborCategoryRate_category_fkey`).

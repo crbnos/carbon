@@ -2378,7 +2378,10 @@ export async function getLaborCategories(
 ) {
   let query = client
     .from("laborCategory")
-    .select("*", { count: LIST_COUNT })
+    .select(
+      "*, rates:laborCategoryRate!laborCategoryRate_category_fkey(costRate, billRate, effectiveFrom)",
+      { count: LIST_COUNT }
+    )
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -2494,7 +2497,9 @@ type LaborCategoryRateFields = Omit<
 >;
 
 /**
- * Creates or updates an effective-dated cost rate of a labor category.
+ * Creates or updates an effective-dated cost rate of a labor category, with
+ * its default bill rate (the price of an hour on a Time & Materials contract
+ * line with no contract rate).
  * @mcp upsert
  */
 export async function upsertLaborCategoryRate(
@@ -2515,6 +2520,7 @@ export async function upsertLaborCategoryRate(
           laborCategoryId: rate.laborCategoryId,
           effectiveFrom: rate.effectiveFrom,
           costRate: rate.costRate,
+          billRate: rate.billRate ?? null,
           companyId: rate.companyId,
           createdBy: rate.createdBy
         }
@@ -2527,6 +2533,7 @@ export async function upsertLaborCategoryRate(
     .update({
       effectiveFrom: rate.effectiveFrom,
       costRate: rate.costRate,
+      billRate: rate.billRate ?? null,
       updatedBy: rate.updatedBy,
       updatedAt: datetime.timestamp()
     })
