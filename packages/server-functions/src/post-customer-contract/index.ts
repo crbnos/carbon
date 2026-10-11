@@ -126,6 +126,11 @@ const contractRevenueMethods = [
   "Right to Invoice",
   "Percent Complete"
 ] as const satisfies readonly Enums["contractRevenueMethod"][];
+const contractBillingMethods = [
+  "Fixed",
+  "Time & Materials",
+  "Cost Plus"
+] as const satisfies readonly Enums["contractBillingMethod"][];
 const contractAmendmentEffects = [
   "Change Date",
   "Next Period"
@@ -260,7 +265,17 @@ const amendmentLine = z
     revenueMethod: z.enum(contractRevenueMethods),
     revenueStartDate: isoDate.optional(),
     revenueEndDate: isoDate.optional(),
-    projectId: z.string().optional()
+    projectId: z.string().optional(),
+    // Project billing (Phase 4a). Absent means a Fixed line.
+    billingMethod: z.enum(contractBillingMethods).optional(),
+    projectElementId: z.string().optional(),
+    materialHandlingPercent: percentPoints.optional(),
+    feePercent: percentPoints.optional(),
+    fundedAmount: z.number().min(0).optional(),
+    fundedCost: z.number().min(0).optional(),
+    noticePercent: z.number().min(75).max(85).optional(),
+    noticeWindowDays: z.number().int().min(30).max(90).optional(),
+    ceilingAmount: z.number().min(0).optional()
   })
   .refine((line) => (line.revenueType === "Recurring") === !!line.rateUnit, {
     message: "A recurring line needs a rate unit; a one-time line has none",
@@ -340,6 +355,195 @@ function refuseUnless(
 }
 
 // ---------------------------------------------------------------------------
+// project billing lines
+
+type BillingLineCheck = {
+  label: string;
+  billingMethod: Enums["contractBillingMethod"];
+  revenueMethod: Enums["contractRevenueMethod"];
+  projectId: string | null;
+  projectElementId: string | null;
+  startDate: string;
+  endDate: string | null;
+};
+
+/** Whether two line date ranges share a day. A line that ends before it
+ *  starts (an amendment replaced it from its first day) covers no days. */
+function rangesOverlap(
+  a: { startDate: string; endDate: string | null },
+  b: { startDate: string; endDate: string | null }
+): boolean {
+  if (a.endDate !== null && a.endDate < a.startDate) return false;
+  if (b.endDate !== null && b.endDate < b.startDate) return false;
+  return (
+    (a.endDate === null || a.endDate >= b.startDate) &&
+    (b.endDate === null || b.endDate >= a.startDate)
+  );
+}
+
+/**
+ * The problems of the project billing lines among `lines` (Time & Materials,
+ * Cost Plus, and Percent Complete lines), for confirm and amend:
+ * 1. the contract must be in the company's base currency (plan P5);
+ * 2. a billing line needs a billing element of a Contract-treatment project;
+ * 3. its element must not be the same as, above or below the element of
+ *    another billing line of an Active contract whose dates overlap (P7);
+ * 4. a Time & Materials line recognizes revenue by Right to Invoice (P6).
+ * Other lines are read with their stored end dates, so an amendment checks
+ * after it writes the end dates of the lines it ends.
+ */
+async function checkBillingLines(
+  trx: KyselyTx,
+  scope: Scope,
+  args: {
+    contract: Pick<ContractRow, "id" | "currencyCode">;
+    lines: BillingLineCheck[];
+  }
+): Promise<string[]> {
+  const { companyId } = scope;
+  const progress = args.lines.filter(
+    (line) =>
+      line.billingMethod !== "Fixed" ||
+      line.revenueMethod === "Percent Complete"
+  );
+  if (progress.length === 0) return [];
+  const problems: string[] = [];
+
+  const company = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (company && company.baseCurrencyCode !== args.contract.currencyCode) {
+    problems.push(
+      `Project billing needs the contract in the company's base currency (${company.baseCurrencyCode}); this contract is in ${args.contract.currencyCode}`
+    );
+  }
+
+  const billing = progress.filter((line) => line.billingMethod !== "Fixed");
+  for (const line of billing) {
+    if (
+      line.billingMethod === "Time & Materials" &&
+      line.revenueMethod === "Percent Complete"
+    ) {
+      problems.push(
+        `${line.label}: a Time & Materials line recognizes revenue by Right to Invoice`
+      );
+    }
+    if (!line.projectId || !line.projectElementId) {
+      problems.push(`${line.label}: choose the billing element`);
+    }
+  }
+
+  const placed = billing.filter(
+    (
+      line
+    ): line is BillingLineCheck & {
+      projectId: string;
+      projectElementId: string;
+    } => !!line.projectId && !!line.projectElementId
+  );
+  if (placed.length === 0) return problems;
+  const projectIds = [...new Set(placed.map((line) => line.projectId))];
+
+  const projects = await trx
+    .selectFrom("project")
+    .select(["id", "costTreatment"])
+    .where("id", "in", projectIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const elements = await trx
+    .selectFrom("projectElement")
+    .select(["id", "parentId", "isBilling", "readableId", "name"])
+    .where("projectId", "in", projectIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const others = await trx
+    .selectFrom("customerContractLine as l")
+    .innerJoin("customerContract as c", (join) =>
+      join
+        .onRef("c.id", "=", "l.customerContractId")
+        .onRef("c.companyId", "=", "l.companyId")
+    )
+    .select([
+      "l.id",
+      "l.description",
+      "l.projectElementId",
+      "l.startDate",
+      "l.endDate",
+      "c.customerContractId as contractReadableId"
+    ])
+    .where("l.companyId", "=", companyId)
+    .where("l.billingMethod", "<>", "Fixed")
+    .where("c.status", "=", "Active")
+    .where("l.projectId", "in", projectIds)
+    .execute();
+
+  const treatmentById = new Map(projects.map((p) => [p.id, p.costTreatment]));
+  const elementById = new Map(elements.map((e) => [e.id, e]));
+  const elementLabel = (id: string) => {
+    const element = elementById.get(id);
+    return element?.readableId || element?.name || id;
+  };
+  /** Whether `id` is `ancestorId` or sits under it. */
+  const within = (id: string, ancestorId: string) => {
+    const seen = new Set<string>();
+    let current: string | null = id;
+    while (current && !seen.has(current)) {
+      if (current === ancestorId) return true;
+      seen.add(current);
+      current = elementById.get(current)?.parentId ?? null;
+    }
+    return false;
+  };
+  const related = (a: string, b: string) => within(a, b) || within(b, a);
+
+  const otherLines = others.flatMap((other) =>
+    other.projectElementId
+      ? [
+          {
+            label: `${other.description ?? "a line"} on ${other.contractReadableId}`,
+            projectElementId: other.projectElementId,
+            startDate: other.startDate,
+            endDate: other.endDate
+          }
+        ]
+      : []
+  );
+
+  placed.forEach((line, index) => {
+    if (treatmentById.get(line.projectId) !== "Contract") {
+      problems.push(
+        `${line.label}: the project's cost treatment must be Contract`
+      );
+    }
+    const element = elementById.get(line.projectElementId);
+    if (!element) {
+      problems.push(`${line.label}: the billing element is not on the project`);
+      return;
+    }
+    if (!element.isBilling) {
+      problems.push(
+        `${line.label}: ${elementLabel(element.id)} is not a billing element`
+      );
+    }
+    // Stored lines, then the later lines of this set (each pair once).
+    const clash = [...otherLines, ...placed.slice(index + 1)].find(
+      (other) =>
+        related(line.projectElementId, other.projectElementId) &&
+        rangesOverlap(line, other)
+    );
+    if (clash) {
+      problems.push(
+        `${line.label}: ${elementLabel(line.projectElementId)} overlaps the billing element of ${clash.label}; one cost can be billed by one line only`
+      );
+    }
+  });
+
+  return problems;
+}
+
+// ---------------------------------------------------------------------------
 // confirm
 
 async function confirm(
@@ -378,6 +582,18 @@ async function confirm(
         problems.push(`${label}: a recurring line needs a rate unit`);
       }
     }
+    problems.push(
+      ...(await checkBillingLines(trx, scope, {
+        contract,
+        lines: lines.map((line) => ({
+          ...line,
+          label:
+            line.description ??
+            itemById.get(line.itemId)?.readableIdWithRevision ??
+            "Line"
+        }))
+      }))
+    );
     if (problems.length > 0) throw new InvalidInputError(problems.join("; "));
 
     const terms = toTerms(contract);
@@ -1331,6 +1547,13 @@ async function amend(
       for (const change of payload.changes) {
         if (change.op === "change") {
           const line = openLine(change.lineId);
+          // A change replaces the line with a new id; billable items point at
+          // the old one (plan decision P9).
+          if (line.billingMethod !== "Fixed") {
+            throw new InvalidInputError(
+              "Edit a project billing line's rates and funding on the line itself"
+            );
+          }
           if (
             line.revenueType === "One-time" &&
             change.rateUnit !== undefined
@@ -1421,15 +1644,24 @@ async function amend(
               projectId: line.projectId || null,
               sortOrder: null,
               customFields: null,
-              billingMethod: "Fixed",
-              projectElementId: null,
-              materialHandlingPercent: null,
-              feePercent: null,
-              fundedAmount: null,
-              fundedCost: null,
-              noticePercent: 0.75,
-              noticeWindowDays: 60,
-              ceilingAmount: null,
+              billingMethod: line.billingMethod ?? "Fixed",
+              projectElementId: line.projectElementId || null,
+              materialHandlingPercent:
+                line.materialHandlingPercent === undefined
+                  ? null
+                  : fraction(line.materialHandlingPercent),
+              feePercent:
+                line.feePercent === undefined
+                  ? null
+                  : fraction(line.feePercent),
+              fundedAmount: line.fundedAmount ?? null,
+              fundedCost: line.fundedCost ?? null,
+              noticePercent:
+                line.noticePercent === undefined
+                  ? 0.75
+                  : fraction(line.noticePercent),
+              noticeWindowDays: line.noticeWindowDays ?? 60,
+              ceilingAmount: line.ceilingAmount ?? null,
               thresholdNoticeFundedCost: null,
               runOutNoticeFundedCost: null
             },
@@ -1482,6 +1714,16 @@ async function amend(
         .returning(["id"])
         .executeTakeFirstOrThrow();
       await setLineEndDates(trx, scope, contract.id, ends);
+      const billingProblems = await checkBillingLines(trx, scope, {
+        contract,
+        lines: inserts.map(({ fields, overrides }) => {
+          const line = { ...fields, ...overrides };
+          return { ...line, label: line.description ?? "The added line" };
+        })
+      });
+      if (billingProblems.length > 0) {
+        throw new InvalidInputError(billingProblems.join("; "));
+      }
       if (inserts.length > 0) {
         await trx
           .insertInto("customerContractLine")
