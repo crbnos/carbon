@@ -20,6 +20,7 @@ import {
   LuFileSpreadsheet,
   LuHandCoins,
   LuLayers,
+  LuPercent,
   LuScale,
   LuSheet,
   LuTruck
@@ -96,6 +97,12 @@ export default function useAccountingSubmodules() {
             to: path.to.depreciationRuns,
             role: "employee",
             icon: <LuClock />
+          },
+          {
+            name: t`Indirect Rates`,
+            to: path.to.indirectRates,
+            role: "employee",
+            icon: <LuPercent />
           }
         ]
       },

@@ -240,6 +240,7 @@ msgstr "{0}件の下書き仕訳"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}件の認識対象明細 · {amount}"
 
+#. placeholder {0}: formatQuantity(rate.baseAmount, locale)
 #. placeholder {0}: formatQuantity(value)
 msgid "{0} h"
 msgstr ""
@@ -431,6 +432,11 @@ msgstr "{0} 年"
 #. placeholder {0}: viewed.size
 #. placeholder {1}: groups.length
 msgid "{0}/{1} viewed"
+msgstr ""
+
+#. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHourFormatter.format(value)
+msgid "{0}/h"
 msgstr ""
 
 #. placeholder {0}: item.days
@@ -1588,6 +1594,9 @@ msgstr ""
 msgid "Absent"
 msgstr "不在"
 
+msgid "Absorbed Overhead"
+msgstr ""
+
 msgid "Absorption"
 msgstr "吸収"
 
@@ -2517,6 +2526,9 @@ msgstr "配置済み"
 msgid "Allocation"
 msgstr ""
 
+msgid "Allocation bases by element of cost"
+msgstr ""
+
 msgid "Allowability"
 msgstr ""
 
@@ -2856,6 +2868,9 @@ msgstr ""
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "適用金額は会社基本通貨（{baseCurrency}）です。"
+
+msgid "Applied by work centers"
+msgstr ""
 
 msgid "Applied To"
 msgstr "適用先"
@@ -4301,6 +4316,9 @@ msgstr "減価償却の計上"
 msgid "Books lock date (manual)"
 msgstr "帳簿ロック日 (手動)"
 
+msgid "Books reconciled to claimed direct cost"
+msgstr ""
+
 msgid "Borrow"
 msgstr ""
 
@@ -4404,6 +4422,25 @@ msgid "Bulk Jobs"
 msgstr "一括製造指図"
 
 msgid "Burden"
+msgstr ""
+
+msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
+msgstr ""
+
+#. placeholder {0}: line.sourcePoolName ?? ""
+msgid "Burden from {0}"
+msgstr ""
+
+msgid "Burden Rate Type"
+msgstr ""
+
+msgid "Burden Rows"
+msgstr ""
+
+msgid "Burden rows are memo rows unless applied burden posts them to the general ledger."
+msgstr ""
+
+msgid "Burden Settings"
 msgstr ""
 
 msgid "Burn chart"
@@ -5173,6 +5210,12 @@ msgstr ""
 msgid "City"
 msgstr "市区町村"
 
+msgid "Claimed"
+msgstr ""
+
+msgid "Claimed indirect rates: pool, base, rate"
+msgstr ""
+
 msgid "Class"
 msgstr "クラス"
 
@@ -5576,6 +5619,9 @@ msgid "Compute Burden"
 msgstr ""
 
 msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
+msgid "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
 msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
@@ -6969,6 +7015,9 @@ msgstr "累積"
 msgid "Cumulative %"
 msgstr "累積%"
 
+msgid "Cumulative cost claimed and billed, by contract"
+msgstr ""
+
 msgid "Currencies"
 msgstr "通貨"
 
@@ -7410,6 +7459,9 @@ msgstr "{0}の借方"
 
 msgid "Debit Memo"
 msgstr "借方メモ"
+
+msgid "Debit Project WIP and credit each pool's applied account"
+msgstr ""
 
 msgid "Debits"
 msgstr "借方"
@@ -8260,6 +8312,9 @@ msgstr "ディメンション"
 msgid "Direct"
 msgstr "直接"
 
+msgid "Direct cost by contract, with indirect cost at claimed rates"
+msgstr ""
+
 msgid "Direct financing lease"
 msgstr "直接融資リース"
 
@@ -8801,6 +8856,9 @@ msgstr "各物理的な個が独自の追跡対象と一意番号を取得しま
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
+
+msgid "Each run computes the Actual rates, burdens the projects and bills the burden on Cost Plus lines."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "各仕入先の全製造指図からの外注工程は、1つの新規発注書、または選択した既存の下書きに計上されます。"
@@ -10966,6 +11024,9 @@ msgstr "出発地"
 msgid "from on-account credit"
 msgstr "オンアカウントクレジットから"
 
+msgid "From Period"
+msgstr ""
+
 msgid "From previous week"
 msgstr "前の週から"
 
@@ -11037,6 +11098,20 @@ msgstr "為替差益/差損"
 
 msgid "FY {year}"
 msgstr "FY {year}"
+
+#. placeholder {0}: run.fiscalYear
+#. placeholder {1}: run.periodNumber
+msgid "FY{0} P{1}"
+msgstr ""
+
+msgid "FY{fiscalYear} P{period}"
+msgstr ""
+
+msgid "FY{year}"
+msgstr ""
+
+msgid "G&A pool by account, unallowable shown"
+msgstr ""
 
 msgid "Gain on Disposal"
 msgstr "除却益"
@@ -11564,6 +11639,9 @@ msgstr "時間"
 msgid "Hours Actual"
 msgstr ""
 
+msgid "Hours and amounts on T&M contracts"
+msgstr ""
+
 msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
 msgstr ""
 
@@ -11800,6 +11878,12 @@ msgstr "IBAN"
 
 msgid "IC Transaction"
 msgstr "企業間取引"
+
+msgid "ICE Export"
+msgstr ""
+
+msgid "ICE Export, FY{fiscalYear}"
+msgstr ""
 
 msgid "Id"
 msgstr "ID"
@@ -12116,6 +12200,9 @@ msgid "Indirect Pools"
 msgstr ""
 
 msgid "Indirect rates"
+msgstr ""
+
+msgid "Indirect Rates"
 msgstr ""
 
 msgid "Infrastructure"
@@ -13518,6 +13605,9 @@ msgstr "ロケーション"
 msgid "Lock"
 msgstr "ロック"
 
+msgid "Lock an accounting period first"
+msgstr ""
+
 msgid "Lock Period"
 msgstr "期間をロック"
 
@@ -13526,6 +13616,9 @@ msgstr ""
 
 msgid "Locked"
 msgstr "ロック中"
+
+msgid "Locked period"
+msgstr ""
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "見積が{quoteStatus}の間、ロック中です。編集するには再オープンしてください。"
@@ -15705,6 +15798,9 @@ msgstr "計画時間または記録時間がありません。"
 msgid "No planning data"
 msgstr "計画データなし"
 
+msgid "No pools yet. Add one under Indirect Pools."
+msgstr ""
+
 msgid "No posted journals in this period for this account"
 msgstr "この期間、このアカウントに転記済の仕訳がありません"
 
@@ -15819,6 +15915,9 @@ msgstr "ここに行はありません。"
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
 
+msgid "No runs yet. A run starts when a period locks, or with Run Period."
+msgstr ""
+
 msgid "No saved views"
 msgstr ""
 
@@ -15866,6 +15965,9 @@ msgstr "まだスライドがない"
 
 msgid "No sorts applied to this view"
 msgstr "このビューに適用されたソートはありません"
+
+msgid "No statement for this period. Run the period to compute it."
+msgstr ""
 
 msgid "No step selected"
 msgstr "ステップが選択されていない"
@@ -16395,6 +16497,9 @@ msgstr "1日1回"
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
 msgstr "1 {0} は何 {1} に相当しますか？"
+
+msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "ワークフローの1回の実行。各ステップが使用および生成した値を含めてステップバイステップで記録され、全体を通じてワークフロー責任者の権限で実行されます。"
@@ -17008,6 +17113,9 @@ msgstr "間接費配賦"
 msgid "Overhead Absorption (default)"
 msgstr "間接費配賦（デフォルト）"
 
+msgid "Overhead pools by account"
+msgstr ""
+
 msgid "Overhead rate"
 msgstr "間接費率"
 
@@ -17372,6 +17480,9 @@ msgstr "支払い"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
 
+msgid "Payroll reconciled to labor distribution"
+msgstr ""
+
 msgid "Payroll totals"
 msgstr ""
 
@@ -17468,6 +17579,9 @@ msgstr ""
 
 msgid "Period"
 msgstr "期間"
+
+msgid "Period {periodNumber}"
+msgstr ""
 
 msgid "Period close"
 msgstr "期間クローズ"
@@ -17836,6 +17950,9 @@ msgstr "ポリシーと手順書"
 msgid "Pool"
 msgstr ""
 
+msgid "Pool Cost"
+msgstr ""
+
 msgid "Pool Type"
 msgstr ""
 
@@ -17862,6 +17979,9 @@ msgstr "転記してメール送信"
 
 msgid "Post and send via Stripe"
 msgstr "転記してStripeで送信"
+
+msgid "Post applied burden for Contract projects"
+msgstr ""
 
 msgid "Post Comment"
 msgstr "コメントを投稿"
@@ -18928,6 +19048,12 @@ msgstr "レート頻度"
 
 msgid "Rate Limit"
 msgstr "レート制限"
+
+msgid "Rate per Hour"
+msgstr ""
+
+msgid "Rate Type"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "連結における純資産勘定の換算に使用されるレート（IAS 21）。空欄の場合は現在の為替レートが使用されます。"
@@ -20484,6 +20610,9 @@ msgstr "MRPを実行"
 msgid "Run payment batches and track aging"
 msgstr "支払いバッチを実行し、経過期間を追跡する"
 
+msgid "Run Period"
+msgstr ""
+
 msgid "Run test"
 msgstr "テストを実行"
 
@@ -20498,6 +20627,9 @@ msgstr "タブレットでショップフロアを実行：労務を記録、進
 
 msgid "Run this workflow now?"
 msgstr "このワークフローを今すぐ実行しますか？"
+
+msgid "Run True-Up"
+msgstr ""
 
 msgid "Running"
 msgstr "実行中"
@@ -20837,6 +20969,9 @@ msgstr "SCAR（仕入先是正処置依頼）"
 
 msgid "Schedule"
 msgstr "スケジュール"
+
+msgid "Schedule {schedule}"
+msgstr ""
 
 msgid "Schedule jobs against work-center capacity"
 msgstr "ワークセンタ容量に対して製造指図をスケジュール"
@@ -21571,6 +21706,12 @@ msgstr "価格設定"
 
 msgid "Set Quantity"
 msgstr "数量を設定"
+
+msgid "Set Rate"
+msgstr ""
+
+msgid "Set Rate, FY{fiscalYear}"
+msgstr ""
 
 msgid "Set terms"
 msgstr ""
@@ -22420,6 +22561,12 @@ msgstr "都道府県"
 
 msgid "State province"
 msgstr "都道府県"
+
+msgid "Statement"
+msgstr ""
+
+msgid "Statement of Indirect Expenses"
+msgstr ""
 
 msgid "States"
 msgstr ""
@@ -24217,6 +24364,12 @@ msgstr "見積はリビジョンサフィックス付きでコピーされます
 msgid "The Ramp connection expired"
 msgstr "Ramp 接続が期限切れになりました"
 
+msgid "The rate applies from this period to the end of the year"
+msgstr ""
+
+msgid "The rate the burden run applies to project cost"
+msgstr ""
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "購入して消費する原材料とマテリアルマスター"
 
@@ -24544,6 +24697,9 @@ msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "スケジューリングを駆動する勤務時間とカレンダー"
+
+msgid "The year-to-date rate of each pool. Actual rates come from the period run."
+msgstr ""
 
 msgid "Their dates and splits are planned again from the lines."
 msgstr "日付と分割は明細から再度計画されます。"

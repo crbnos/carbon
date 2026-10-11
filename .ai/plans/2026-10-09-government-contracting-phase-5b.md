@@ -100,7 +100,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 13: Add the close checklist task
 - [x] Task 14: Add the ICE schedules and the CSV route
 - [x] Task 15: Build the Indirect Pools pages
-- [ ] Task 16: Build the Indirect Rates, Statement and ICE pages
+- [x] Task 16: Build the Indirect Rates, Statement and ICE pages
 - [ ] Task 17: Add rate ceilings to the contract line
 - [ ] Task 18: Add burden by pool to the project Costs tab
 - [ ] Task 19: Extend the demo datasets
@@ -1397,3 +1397,9 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   3. The database refusals become field errors through `indirectRatesFieldErrors` (`packages/ee/src/indirect-rates/models.ts`, client-safe): the pool's sequence and name keys, and the 2 pool account keys (B4). The B2 refusal is matched by its exported text (`INDIRECT_POOL_BASE_PROJECT_ACCOUNT`) and shown on the account field.
   4. The new and edit routes also call `requireFeature` in the new route's loader, as `planning-groups.new.tsx` does. The delete route catches `EntitlementError`, because `deleteIndirectPool` calls `requireEntitlement`; it flashes the "in use" refusal as its message.
   5. A Service Center pool hides **Applies to Projects** (posted as false); an Overhead pool alone shows **Offset Absorbed Overhead**. Both match the validator's refinements and the table checks.
+- Task 16:
+  1. The route names are the plan's, so `indirect-rates.statement.tsx` and `indirect-rates.ice.tsx` are child routes of `indirect-rates.tsx` (flat routes nest on the dot). They open as drawers over the rates page through its `RecordOutlet`; closing returns to the rates page of the same fiscal year.
+  2. The Set Rate modal takes the fiscal year from the page's `?fiscalYear` (a hidden field, and the title names it). A Select of years would hold a string where the validator's default value is a number.
+  3. The runs card lists the runs of the selected fiscal year. **Run Period** and **Run True-Up** pick from every Locked period (newest first) and are disabled, with a tooltip, while no period is Locked. **Run True-Up** shows when every active pool that applies to projects has a Final rate for period 12, the period the true-up reads.
+  4. The statement opens on the last period of the year with Actual rates, else period 12. Its pool cost, base and rate come from that period's Actual rate row. The Absorbed Overhead line shows as a credit and claims nothing (B7).
+  5. Run and true-up errors flash the message the run wrote to `indirectRateRun.error`.

@@ -240,6 +240,7 @@ msgstr "{0} Entwurfs-Buchungszeilen"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} Einträge zur Erfassung · {amount}"
 
+#. placeholder {0}: formatQuantity(rate.baseAmount, locale)
 #. placeholder {0}: formatQuantity(value)
 msgid "{0} h"
 msgstr ""
@@ -431,6 +432,11 @@ msgstr "{0}-Jahr"
 #. placeholder {0}: viewed.size
 #. placeholder {1}: groups.length
 msgid "{0}/{1} viewed"
+msgstr ""
+
+#. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHourFormatter.format(value)
+msgid "{0}/h"
 msgstr ""
 
 #. placeholder {0}: item.days
@@ -1588,6 +1594,9 @@ msgstr ""
 msgid "Absent"
 msgstr "Abwesend"
 
+msgid "Absorbed Overhead"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Absorption"
 
@@ -2517,6 +2526,9 @@ msgstr "Zugewiesen"
 msgid "Allocation"
 msgstr ""
 
+msgid "Allocation bases by element of cost"
+msgstr ""
+
 msgid "Allowability"
 msgstr ""
 
@@ -2856,6 +2868,9 @@ msgstr ""
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Angewendete Beträge sind in der Basiswährung des Unternehmens ({baseCurrency})."
+
+msgid "Applied by work centers"
+msgstr ""
 
 msgid "Applied To"
 msgstr "Angewendet auf"
@@ -4301,6 +4316,9 @@ msgstr "Abschreibung buchen"
 msgid "Books lock date (manual)"
 msgstr "Büchersperrungsdatum (manuell)"
 
+msgid "Books reconciled to claimed direct cost"
+msgstr ""
+
 msgid "Borrow"
 msgstr ""
 
@@ -4404,6 +4422,25 @@ msgid "Bulk Jobs"
 msgstr "Massen-Fertigungsaufträge"
 
 msgid "Burden"
+msgstr ""
+
+msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
+msgstr ""
+
+#. placeholder {0}: line.sourcePoolName ?? ""
+msgid "Burden from {0}"
+msgstr ""
+
+msgid "Burden Rate Type"
+msgstr ""
+
+msgid "Burden Rows"
+msgstr ""
+
+msgid "Burden rows are memo rows unless applied burden posts them to the general ledger."
+msgstr ""
+
+msgid "Burden Settings"
 msgstr ""
 
 msgid "Burn chart"
@@ -5173,6 +5210,12 @@ msgstr ""
 msgid "City"
 msgstr "Stadt"
 
+msgid "Claimed"
+msgstr ""
+
+msgid "Claimed indirect rates: pool, base, rate"
+msgstr ""
+
 msgid "Class"
 msgstr "Klasse"
 
@@ -5576,6 +5619,9 @@ msgid "Compute Burden"
 msgstr ""
 
 msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
+msgid "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
 msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
@@ -6969,6 +7015,9 @@ msgstr "Kumulativ"
 msgid "Cumulative %"
 msgstr "Kumulativ %"
 
+msgid "Cumulative cost claimed and billed, by contract"
+msgstr ""
+
 msgid "Currencies"
 msgstr "Währungen"
 
@@ -7410,6 +7459,9 @@ msgstr "Belastung für {0}"
 
 msgid "Debit Memo"
 msgstr "Sollschrift"
+
+msgid "Debit Project WIP and credit each pool's applied account"
+msgstr ""
 
 msgid "Debits"
 msgstr "Soll"
@@ -8260,6 +8312,9 @@ msgstr "Dimensionen"
 msgid "Direct"
 msgstr "Direkt"
 
+msgid "Direct cost by contract, with indirect cost at claimed rates"
+msgstr ""
+
 msgid "Direct financing lease"
 msgstr "Finanzierungsleasing"
 
@@ -8801,6 +8856,9 @@ msgstr "Jede physische Einheit erhält ihre eigene verfolgte Einheit und eine ei
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Der Verkäufer (oder Ersteller) jeder Mietvereinbarung oder eines Vertrags erhält eine tägliche Zusammenfassung seiner Rechnungen."
+
+msgid "Each run computes the Actual rates, burdens the projects and bills the burden on Cost Plus lines."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Die Fremdarbeitsgänge jedes Lieferanten aus jedem Fertigungsauftrag werden auf einer neuen Bestellung oder auf einem bestehenden Entwurf platziert, den Sie wählen."
@@ -10966,6 +11024,9 @@ msgstr "Von Standort"
 msgid "from on-account credit"
 msgstr "aus dem Gutschrift-Konto"
 
+msgid "From Period"
+msgstr ""
+
 msgid "From previous week"
 msgstr "Aus der vorherigen Woche"
 
@@ -11037,6 +11098,20 @@ msgstr "Währungsgewinn/-verlust"
 
 msgid "FY {year}"
 msgstr "GJ {year}"
+
+#. placeholder {0}: run.fiscalYear
+#. placeholder {1}: run.periodNumber
+msgid "FY{0} P{1}"
+msgstr ""
+
+msgid "FY{fiscalYear} P{period}"
+msgstr ""
+
+msgid "FY{year}"
+msgstr ""
+
+msgid "G&A pool by account, unallowable shown"
+msgstr ""
 
 msgid "Gain on Disposal"
 msgstr "Gewinn aus Abgang"
@@ -11564,6 +11639,9 @@ msgstr "Stunden"
 msgid "Hours Actual"
 msgstr ""
 
+msgid "Hours and amounts on T&M contracts"
+msgstr ""
+
 msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
 msgstr ""
 
@@ -11800,6 +11878,12 @@ msgstr "IBAN"
 
 msgid "IC Transaction"
 msgstr "Intercompany-Transaktion"
+
+msgid "ICE Export"
+msgstr ""
+
+msgid "ICE Export, FY{fiscalYear}"
+msgstr ""
 
 msgid "Id"
 msgstr "ID"
@@ -12116,6 +12200,9 @@ msgid "Indirect Pools"
 msgstr ""
 
 msgid "Indirect rates"
+msgstr ""
+
+msgid "Indirect Rates"
 msgstr ""
 
 msgid "Infrastructure"
@@ -13518,6 +13605,9 @@ msgstr "Standorte"
 msgid "Lock"
 msgstr "Sperren"
 
+msgid "Lock an accounting period first"
+msgstr ""
+
 msgid "Lock Period"
 msgstr "Periode sperren"
 
@@ -13526,6 +13616,9 @@ msgstr ""
 
 msgid "Locked"
 msgstr "Gesperrt"
+
+msgid "Locked period"
+msgstr ""
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "Gesperrt, während das Angebot {quoteStatus} ist. Öffnen Sie es erneut zum Bearbeiten."
@@ -15705,6 +15798,9 @@ msgstr "Keine geplante oder aufgezeichnete Zeit."
 msgid "No planning data"
 msgstr "Keine Planungsdaten"
 
+msgid "No pools yet. Add one under Indirect Pools."
+msgstr ""
+
 msgid "No posted journals in this period for this account"
 msgstr "Keine gebuchten Buchungssätze in diesem Zeitraum für dieses Konto"
 
@@ -15819,6 +15915,9 @@ msgstr "Hier sind keine Zeilen."
 msgid "No rules assigned"
 msgstr "Keine Regeln zugewiesen"
 
+msgid "No runs yet. A run starts when a period locks, or with Run Period."
+msgstr ""
+
 msgid "No saved views"
 msgstr ""
 
@@ -15866,6 +15965,9 @@ msgstr "Noch keine Folien"
 
 msgid "No sorts applied to this view"
 msgstr "Keine Sortierungen auf diese Ansicht angewendet"
+
+msgid "No statement for this period. Run the period to compute it."
+msgstr ""
 
 msgid "No step selected"
 msgstr "Kein Schritt ausgewählt"
@@ -16395,6 +16497,9 @@ msgstr "Einmal täglich"
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
 msgstr "1 {0} entspricht wie vielen {1}?"
+
+msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Ein Workflow-Durchlauf, aufgezeichnet Schritt für Schritt mit den Werten, die jeder Schritt verwendet und erzeugt, ausgeführt mit den Berechtigungen des Verantwortlichen des Workflows."
@@ -17008,6 +17113,9 @@ msgstr "Gemeinkostenverrechnung"
 msgid "Overhead Absorption (default)"
 msgstr "Gemeinkostenverrechnung (Standard)"
 
+msgid "Overhead pools by account"
+msgstr ""
+
 msgid "Overhead rate"
 msgstr "Gemeinkostensatz"
 
@@ -17372,6 +17480,9 @@ msgstr "Zahlungen"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Mit dieser Rechnung verrechnete Zahlungen und Guthaben. Verrechnete Beträge und Kursdifferenzen werden in der Basiswährung des Unternehmens angegeben. Klicken Sie auf eine Zeile, um den Ursprungsbeleg zu öffnen."
 
+msgid "Payroll reconciled to labor distribution"
+msgstr ""
+
 msgid "Payroll totals"
 msgstr ""
 
@@ -17468,6 +17579,9 @@ msgstr ""
 
 msgid "Period"
 msgstr "Zeitraum"
+
+msgid "Period {periodNumber}"
+msgstr ""
 
 msgid "Period close"
 msgstr "Periodenschließung"
@@ -17836,6 +17950,9 @@ msgstr "Richtlinie & Verfahrensanweisung"
 msgid "Pool"
 msgstr ""
 
+msgid "Pool Cost"
+msgstr ""
+
 msgid "Pool Type"
 msgstr ""
 
@@ -17862,6 +17979,9 @@ msgstr "Buchen und per E-Mail versenden"
 
 msgid "Post and send via Stripe"
 msgstr "Buchen und über Stripe versenden"
+
+msgid "Post applied burden for Contract projects"
+msgstr ""
 
 msgid "Post Comment"
 msgstr "Kommentar posten"
@@ -18928,6 +19048,12 @@ msgstr "Satzfrequenz"
 
 msgid "Rate Limit"
 msgstr "Ratenlimit"
+
+msgid "Rate per Hour"
+msgstr ""
+
+msgid "Rate Type"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Kurs für die Umrechnung von Eigenkapitalkonten in der Konsolidierung (IAS 21). Leer lassen, um den aktuellen Wechselkurs zu verwenden."
@@ -20484,6 +20610,9 @@ msgstr "MRP ausführen"
 msgid "Run payment batches and track aging"
 msgstr "Zahlungschargen ausführen und Fälligkeitsanalyse verfolgen"
 
+msgid "Run Period"
+msgstr ""
+
 msgid "Run test"
 msgstr "Test ausführen"
 
@@ -20498,6 +20627,9 @@ msgstr "Führen Sie die Werkstatt auf Tablets aus: Personaleinsatz erfassen, For
 
 msgid "Run this workflow now?"
 msgstr "Diesen Workflow jetzt ausführen?"
+
+msgid "Run True-Up"
+msgstr ""
 
 msgid "Running"
 msgstr "Wird ausgeführt"
@@ -20837,6 +20969,9 @@ msgstr "SCAR (Lieferanten-Korrekturmaßnahmeanforderung)"
 
 msgid "Schedule"
 msgstr "Zeitplan"
+
+msgid "Schedule {schedule}"
+msgstr ""
 
 msgid "Schedule jobs against work-center capacity"
 msgstr "Fertigungsaufträge gegen Arbeitszellenkapazität terminieren"
@@ -21571,6 +21706,12 @@ msgstr "Preisfindung festlegen"
 
 msgid "Set Quantity"
 msgstr "Menge festlegen"
+
+msgid "Set Rate"
+msgstr ""
+
+msgid "Set Rate, FY{fiscalYear}"
+msgstr ""
 
 msgid "Set terms"
 msgstr ""
@@ -22420,6 +22561,12 @@ msgstr "Bundesland / Provinz"
 
 msgid "State province"
 msgstr "Staat/Provinz"
+
+msgid "Statement"
+msgstr ""
+
+msgid "Statement of Indirect Expenses"
+msgstr ""
 
 msgid "States"
 msgstr ""
@@ -24217,6 +24364,12 @@ msgstr "Das Angebot wird mit einem Revisionssuffix kopiert"
 msgid "The Ramp connection expired"
 msgstr "Die Ramp-Verbindung ist abgelaufen"
 
+msgid "The rate applies from this period to the end of the year"
+msgstr ""
+
+msgid "The rate the burden run applies to project cost"
+msgstr ""
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Der Rohstoff und das Materialmaterial, das Sie kaufen und verbrauchen"
 
@@ -24544,6 +24697,9 @@ msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Die Arbeitszeiten und Kalender, die die Planung steuern"
+
+msgid "The year-to-date rate of each pool. Actual rates come from the period run."
+msgstr ""
 
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Ihre Termine und Aufteilungen werden erneut aus den Positionen geplant."

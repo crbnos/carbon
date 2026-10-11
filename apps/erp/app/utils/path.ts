@@ -1412,6 +1412,16 @@ export const path = {
     indirectPool: (id: string) =>
       generatePath(`${x}/accounting/indirect-pools/${id}`),
     indirectPools: `${x}/accounting/indirect-pools`,
+    indirectRates: `${x}/accounting/indirect-rates`,
+    indirectRatesIce: (fiscalYear: number) =>
+      `${x}/accounting/indirect-rates/ice?${new URLSearchParams({
+        fiscalYear: String(fiscalYear)
+      })}`,
+    indirectRatesStatement: (fiscalYear: number, periodNumber?: number) =>
+      `${x}/accounting/indirect-rates/statement?${new URLSearchParams({
+        fiscalYear: String(fiscalYear),
+        ...(periodNumber ? { periodNumber: String(periodNumber) } : {})
+      })}`,
     inspection: (id: string) => generatePath(`${x}/inspection/${id}`),
     inspectionAccept: (id: string) =>
       generatePath(`${x}/inspection/${id}/accept`),

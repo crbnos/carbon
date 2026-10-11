@@ -240,6 +240,7 @@ msgstr "{0} taslak muhasebe fişi"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} muhasebeleştirilecek kayıt · {amount}"
 
+#. placeholder {0}: formatQuantity(rate.baseAmount, locale)
 #. placeholder {0}: formatQuantity(value)
 msgid "{0} h"
 msgstr ""
@@ -431,6 +432,11 @@ msgstr "{0}-Yıl"
 #. placeholder {0}: viewed.size
 #. placeholder {1}: groups.length
 msgid "{0}/{1} viewed"
+msgstr ""
+
+#. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHourFormatter.format(value)
+msgid "{0}/h"
 msgstr ""
 
 #. placeholder {0}: item.days
@@ -1588,6 +1594,9 @@ msgstr ""
 msgid "Absent"
 msgstr "Devamsız"
 
+msgid "Absorbed Overhead"
+msgstr ""
+
 msgid "Absorption"
 msgstr "Emilim"
 
@@ -2517,6 +2526,9 @@ msgstr "Tahsis edildi"
 msgid "Allocation"
 msgstr ""
 
+msgid "Allocation bases by element of cost"
+msgstr ""
+
 msgid "Allowability"
 msgstr ""
 
@@ -2856,6 +2868,9 @@ msgstr ""
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Uygulanan tutarlar şirket temel para birimindedir ({baseCurrency})."
+
+msgid "Applied by work centers"
+msgstr ""
 
 msgid "Applied To"
 msgstr "Uygulandı"
@@ -4301,6 +4316,9 @@ msgstr "Defter Amortismanı"
 msgid "Books lock date (manual)"
 msgstr "Defterlerin kilitlenme tarihi (manuel)"
 
+msgid "Books reconciled to claimed direct cost"
+msgstr ""
+
 msgid "Borrow"
 msgstr ""
 
@@ -4404,6 +4422,25 @@ msgid "Bulk Jobs"
 msgstr "Toplu İş Emirleri"
 
 msgid "Burden"
+msgstr ""
+
+msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
+msgstr ""
+
+#. placeholder {0}: line.sourcePoolName ?? ""
+msgid "Burden from {0}"
+msgstr ""
+
+msgid "Burden Rate Type"
+msgstr ""
+
+msgid "Burden Rows"
+msgstr ""
+
+msgid "Burden rows are memo rows unless applied burden posts them to the general ledger."
+msgstr ""
+
+msgid "Burden Settings"
 msgstr ""
 
 msgid "Burn chart"
@@ -5173,6 +5210,12 @@ msgstr ""
 msgid "City"
 msgstr "Şehir"
 
+msgid "Claimed"
+msgstr ""
+
+msgid "Claimed indirect rates: pool, base, rate"
+msgstr ""
+
 msgid "Class"
 msgstr "Sınıf"
 
@@ -5576,6 +5619,9 @@ msgid "Compute Burden"
 msgstr ""
 
 msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
+msgid "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
 msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
@@ -6969,6 +7015,9 @@ msgstr "Kümülatif"
 msgid "Cumulative %"
 msgstr "Kümülatif %"
 
+msgid "Cumulative cost claimed and billed, by contract"
+msgstr ""
+
 msgid "Currencies"
 msgstr "Para birimleri"
 
@@ -7410,6 +7459,9 @@ msgstr "{0} için borç"
 
 msgid "Debit Memo"
 msgstr "Borç Notu"
+
+msgid "Debit Project WIP and credit each pool's applied account"
+msgstr ""
 
 msgid "Debits"
 msgstr "Borçlar"
@@ -8260,6 +8312,9 @@ msgstr "Boyutlar"
 msgid "Direct"
 msgstr "Doğrudan"
 
+msgid "Direct cost by contract, with indirect cost at claimed rates"
+msgstr ""
+
 msgid "Direct financing lease"
 msgstr "Doğrudan finansman kira sözleşmesi"
 
@@ -8801,6 +8856,9 @@ msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Her kiralama anlaşmasının veya sözleşmenin satış temsilcisi (veya yaratıcısı) faturalarının günlük bir özetini alır."
+
+msgid "Each run computes the Actual rates, burdens the projects and bills the burden on Cost Plus lines."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Her tedarikçinin her iş emrinden dış operasyonları yeni bir satın alma siparişine veya seçtiğiniz mevcut bir taslağa yazılır."
@@ -10966,6 +11024,9 @@ msgstr "Kaynak Konum"
 msgid "from on-account credit"
 msgstr "hesap kredisinden"
 
+msgid "From Period"
+msgstr ""
+
 msgid "From previous week"
 msgstr "Önceki haftadan"
 
@@ -11037,6 +11098,20 @@ msgstr "FX Kazanç/Zarar"
 
 msgid "FY {year}"
 msgstr "Mali Yıl {year}"
+
+#. placeholder {0}: run.fiscalYear
+#. placeholder {1}: run.periodNumber
+msgid "FY{0} P{1}"
+msgstr ""
+
+msgid "FY{fiscalYear} P{period}"
+msgstr ""
+
+msgid "FY{year}"
+msgstr ""
+
+msgid "G&A pool by account, unallowable shown"
+msgstr ""
 
 msgid "Gain on Disposal"
 msgstr "Elden Çıkarmada Kar"
@@ -11564,6 +11639,9 @@ msgstr "Saatler"
 msgid "Hours Actual"
 msgstr ""
 
+msgid "Hours and amounts on T&M contracts"
+msgstr ""
+
 msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
 msgstr ""
 
@@ -11800,6 +11878,12 @@ msgstr "IBAN"
 
 msgid "IC Transaction"
 msgstr "Şirketler Arası İşlem"
+
+msgid "ICE Export"
+msgstr ""
+
+msgid "ICE Export, FY{fiscalYear}"
+msgstr ""
 
 msgid "Id"
 msgstr "Id"
@@ -12116,6 +12200,9 @@ msgid "Indirect Pools"
 msgstr ""
 
 msgid "Indirect rates"
+msgstr ""
+
+msgid "Indirect Rates"
 msgstr ""
 
 msgid "Infrastructure"
@@ -13518,6 +13605,9 @@ msgstr "Lokasyonlar"
 msgid "Lock"
 msgstr "Kilitle"
 
+msgid "Lock an accounting period first"
+msgstr ""
+
 msgid "Lock Period"
 msgstr "Dönemi Kilitle"
 
@@ -13526,6 +13616,9 @@ msgstr ""
 
 msgid "Locked"
 msgstr "Kilitli"
+
+msgid "Locked period"
+msgstr ""
 
 msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
 msgstr "Teklif {quoteStatus} durumundayken kilitlidir. Düzenlemek için yeniden açın."
@@ -15705,6 +15798,9 @@ msgstr "Planlanan veya kaydedilen zaman yok."
 msgid "No planning data"
 msgstr "Planlama verisi yok"
 
+msgid "No pools yet. Add one under Indirect Pools."
+msgstr ""
+
 msgid "No posted journals in this period for this account"
 msgstr "Bu dönem için bu hesapta muhasebeleştirilmiş muhasebe fişi yok"
 
@@ -15819,6 +15915,9 @@ msgstr "Burada satır yok."
 msgid "No rules assigned"
 msgstr "Atanmış kural yok"
 
+msgid "No runs yet. A run starts when a period locks, or with Run Period."
+msgstr ""
+
 msgid "No saved views"
 msgstr ""
 
@@ -15866,6 +15965,9 @@ msgstr "Henüz slayt yok"
 
 msgid "No sorts applied to this view"
 msgstr "Bu görünüme herhangi bir sıralama uygulanmadı"
+
+msgid "No statement for this period. Run the period to compute it."
+msgstr ""
 
 msgid "No step selected"
 msgstr "Adım seçilmedi"
@@ -16395,6 +16497,9 @@ msgstr "Günde bir kez"
 #. placeholder {1}: initialValues.code
 msgid "One {0} is equal to how many {1}?"
 msgstr "1 {0} kaç {1} eder?"
+
+msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
@@ -17008,6 +17113,9 @@ msgstr "Genel üretim gideri dağıtımı"
 msgid "Overhead Absorption (default)"
 msgstr "Genel üretim gideri dağıtımı (varsayılan)"
 
+msgid "Overhead pools by account"
+msgstr ""
+
 msgid "Overhead rate"
 msgstr "Genel üretim giderleri oranı"
 
@@ -17372,6 +17480,9 @@ msgstr "Ödemeler"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Bu faturaya uygulanan ödemeler ve alacaklar. Uygulanan tutarlar ve kur farkları şirketin temel para birimi cinsindendir. Kaynak belgeyi açmak için bir satıra tıklayın."
 
+msgid "Payroll reconciled to labor distribution"
+msgstr ""
+
 msgid "Payroll totals"
 msgstr ""
 
@@ -17468,6 +17579,9 @@ msgstr ""
 
 msgid "Period"
 msgstr "Dönem"
+
+msgid "Period {periodNumber}"
+msgstr ""
 
 msgid "Period close"
 msgstr "Dönem Kapanışı"
@@ -17836,6 +17950,9 @@ msgstr "Politika ve Prosedür"
 msgid "Pool"
 msgstr ""
 
+msgid "Pool Cost"
+msgstr ""
+
 msgid "Pool Type"
 msgstr ""
 
@@ -17862,6 +17979,9 @@ msgstr "Muhasebeleştir ve e-posta gönder"
 
 msgid "Post and send via Stripe"
 msgstr "Muhasebeleştir ve Stripe üzerinden gönder"
+
+msgid "Post applied burden for Contract projects"
+msgstr ""
 
 msgid "Post Comment"
 msgstr "Yorum Yap"
@@ -18928,6 +19048,12 @@ msgstr "Oran Sıklığı"
 
 msgid "Rate Limit"
 msgstr "Hız Sınırı"
+
+msgid "Rate per Hour"
+msgstr ""
+
+msgid "Rate Type"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur (IAS 21). Güncel döviz kurunu kullanmak için boş bırakın."
@@ -20484,6 +20610,9 @@ msgstr "MRP Çalıştır"
 msgid "Run payment batches and track aging"
 msgstr "Ödeme partilerini çalıştırın ve yaşlandırmayı izleyin"
 
+msgid "Run Period"
+msgstr ""
+
 msgid "Run test"
 msgstr "Testi çalıştır"
 
@@ -20498,6 +20627,9 @@ msgstr "Kat'ı tabletlerde çalıştır: İşçiliği kaydet, ilerleme bildir, t
 
 msgid "Run this workflow now?"
 msgstr "Bu iş akışı şimdi çalıştırılsın mı?"
+
+msgid "Run True-Up"
+msgstr ""
 
 msgid "Running"
 msgstr "Çalışıyor"
@@ -20837,6 +20969,9 @@ msgstr "SCAR (Tedarikçi Düzeltici Faaliyet Talebı)"
 
 msgid "Schedule"
 msgstr "Planlama"
+
+msgid "Schedule {schedule}"
+msgstr ""
 
 msgid "Schedule jobs against work-center capacity"
 msgstr "İş emirlerini iş merkezi kapasitesine karşı çizelgele"
@@ -21571,6 +21706,12 @@ msgstr "Fiyatlandırmayı Ayarla"
 
 msgid "Set Quantity"
 msgstr "Miktarı Ayarla"
+
+msgid "Set Rate"
+msgstr ""
+
+msgid "Set Rate, FY{fiscalYear}"
+msgstr ""
 
 msgid "Set terms"
 msgstr ""
@@ -22420,6 +22561,12 @@ msgstr "Eyalet / İl"
 
 msgid "State province"
 msgstr "İl/Bölge"
+
+msgid "Statement"
+msgstr ""
+
+msgid "Statement of Indirect Expenses"
+msgstr ""
 
 msgid "States"
 msgstr ""
@@ -24217,6 +24364,12 @@ msgstr "Teklif revizyon ekiyle kopyalanacaktır"
 msgid "The Ramp connection expired"
 msgstr "Ramp bağlantısının süresi doldu"
 
+msgid "The rate applies from this period to the end of the year"
+msgstr ""
+
+msgid "The rate the burden run applies to project cost"
+msgstr ""
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Satın aldığınız ve tükettiğiniz ham stok ve malzeme ana kaydı"
 
@@ -24544,6 +24697,9 @@ msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Çalışma saatleri ve planlama yöneten takvimler"
+
+msgid "The year-to-date rate of each pool. Actual rates come from the period run."
+msgstr ""
 
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Tarihleri ve bölünüşleri satırlardan yeniden planlanır."
