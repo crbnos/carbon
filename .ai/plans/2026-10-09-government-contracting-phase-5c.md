@@ -97,7 +97,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 10: Check the budget at Issue to Project and job charge
 - [x] Task 11: Warn on timesheets
 - [x] Task 12: Add the ACWP loader and the material point of measurement
-- [ ] Task 13: Add `getEarnedValue` and `closeEarnedValuePeriod`
+- [x] Task 13: Add `getEarnedValue` and `closeEarnedValuePeriod`
 - [ ] Task 14: Add the close checklist task
 - [ ] Task 15: Add the ACWP export
 - [ ] Task 16: Add stop-work orders
@@ -1174,3 +1174,11 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   3. The issues are `itemLedger` rows of the project's stripe (`projectId` set) with `documentType` Project Issue or Job Consumption, summed as `−quantity` per item and day. A return to project stock is a positive Project Issue row, so the sum nets it. The plan read only negative rows.
   4. Risk, not changed: on an Issue project, a Purchase Receipt Material row of an item that never goes through project stock is never recognized.
   5. No test: the loader is glue over 4 reads; `holdUntilIssued` and `acwpElementFor` carry the rules and have tests (Task 7).
+- Task 13:
+  1. `loadWorkPackages` reads the elements joined to `projectState` (the state group) and, in one `DISTINCT ON` statement, the latest baseline per project with `formatVersion ≥ 2` whose `createdAt` falls on or before `asOf` on the company's calendar (`company.timezone`). `parseEarnedValueBaseline` reads the snapshot's element rows (`parentId`, `budget`) and its `schedule`; the ERP's `parsePlanSnapshot` is app code, so ee cannot import it.
+  2. ACWP of a work package is the DIRECT cost of its subtree (`AcwpTotals.direct`). Element budgets are direct budgets (C3), so burden stays out of ACWP, CPI and EAC. `acwpByElement` keeps all 6 elements of cost, burden included, for the export. The plan said "the `loadAcwp` total".
+  3. A work package missing from the baseline has BAC 0 and no dates. An Apportioned package whose base is not a work package reads a base BCWP of 0. Apportioned packages are computed after the others, in passes, so a chain reads each base's BCWP.
+  4. `closeEarnedValuePeriod` uses `loadRatePeriod` (indirect-rates) for the fiscal year and period, and returns `{ data, error }` like `computeProjectBurden`, so a refusal reaches the route as a message. A project with work packages and no baseline gets the warning "<project name>: Take a baseline first" and no rows, so the close task keeps failing for it until a baseline exists.
+  5. `updateElementEarnedValue` clears the fields the technique does not use (the percent unless Percent Complete; the base and factor unless Apportioned; the manager unless a control account), so the CHECKs hold. It also refuses a technique on an element that is not chargeable ("Only a chargeable element takes an earned value technique.") and an element apportioned to itself.
+  6. `getEarnedValueSnapshots` reads with the user's client (the RLS lets every employee read) and loads the element names in a second query.
+  7. Tests: 2 cases of `computeProjectEarnedValue` (the spec criterion 50/50 → BCWP 5,000.00, Apportioned, direct ACWP, the control account roll-up; and "Take a baseline first"). The whole ee suite: 150 files, 2,043 tests pass with `SUPABASE_DB_URL` on the worktree database. Without it, the 15 database tests of 6 files fail on port 54322 (the shell's default), which is the environment, not a flaky test.

@@ -7,8 +7,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const companyHasFeature = vi.hoisted(() => vi.fn());
 vi.mock("../plan.server", () => ({ companyHasFeature }));
 
+import {
+  type EarnedValueElement,
+  parseEarnedValueBaseline
+} from "./loaders.server";
 import { budgetNotices, budgetOverrunMessage } from "./models";
-import { checkBudgetAvailability } from "./service.server";
+import {
+  checkBudgetAvailability,
+  computeProjectEarnedValue
+} from "./service.server";
 
 // A Kysely stand-in: every builder method returns the chain, and `execute`
 // returns the rows of the table the chain started from. It records each
@@ -228,5 +235,127 @@ describe("budgetNotices", () => {
         body: "ST-1 Optics goes over its budget of 10000 by 500."
       }
     ]);
+  });
+});
+
+describe("computeProjectEarnedValue", () => {
+  const element = (
+    id: string,
+    parentId: string | null,
+    fields: Partial<EarnedValueElement> = {}
+  ): EarnedValueElement => ({
+    id,
+    parentId,
+    readableId: id.toUpperCase(),
+    name: `Element ${id}`,
+    isChargeable: true,
+    isControlAccount: false,
+    controlAccountManagerId: null,
+    earnedValueTechnique: null,
+    earnedValuePercent: null,
+    apportionedToElementId: null,
+    apportionedFactor: null,
+    stateGroup: "Unstarted",
+    ...fields
+  });
+
+  const project = (baseline: boolean) => ({
+    projectId: "p1",
+    elements: [
+      element("ca", null, { isControlAccount: true, isChargeable: false }),
+      element("wp", "ca", {
+        earnedValueTechnique: "50/50",
+        stateGroup: "Started"
+      }),
+      element("wp-task", "wp"),
+      element("qa", "ca", {
+        earnedValueTechnique: "Apportioned",
+        apportionedToElementId: "wp",
+        apportionedFactor: 0.1
+      }),
+      element("orphan", null, { earnedValueTechnique: "0/100" })
+    ],
+    baseline: baseline
+      ? parseEarnedValueBaseline("pb1", {
+          elements: [
+            { id: "ca", parentId: null, budget: null },
+            { id: "wp", parentId: "ca", budget: 10000 },
+            { id: "wp-task", parentId: "wp", budget: null },
+            { id: "qa", parentId: "ca", budget: 1000 }
+          ],
+          schedule: [
+            { id: "wp", startDate: "2026-10-01", targetDate: "2026-12-31" },
+            { id: "qa", startDate: "2026-10-01", targetDate: "2026-12-31" }
+          ]
+        })
+      : null
+  });
+
+  const totals = (direct: number, burden: number, hours: number) => ({
+    hours,
+    byElement: {
+      Labor: direct,
+      Material: 0,
+      Subcontract: 0,
+      "Other Direct": 0,
+      Overhead: burden,
+      "G&A": 0
+    },
+    direct,
+    burden
+  });
+
+  it("earns half of a started 50/50 work package and apportions from it", () => {
+    const result = computeProjectEarnedValue(
+      project(true),
+      new Map([
+        ["wp", totals(3000, 600, 30)],
+        ["wp-task", totals(1000, 200, 10)]
+      ]),
+      "2026-10-31"
+    );
+
+    const wp = result.workPackages.find((p) => p.projectElementId === "wp");
+    const qa = result.workPackages.find((p) => p.projectElementId === "qa");
+    // Spec criterion "Earned value": BAC 10,000.00, started → BCWP 5,000.00.
+    expect(wp).toMatchObject({
+      controlAccountId: "ca",
+      bac: 10000,
+      bcws: 5000,
+      bcwp: 5000,
+      // ACWP is the direct cost of the subtree; burden stays out (C3).
+      acwp: 4000,
+      acwpHours: 40,
+      baselineId: "pb1"
+    });
+    expect(wp?.acwpByElement.Overhead).toBe(800);
+    expect(qa?.bcwp).toBe(500);
+    // An element with a technique but no control account above it is not a
+    // work package.
+    expect(result.workPackages.map((p) => p.projectElementId)).toEqual([
+      "wp",
+      "qa"
+    ]);
+    expect(result.controlAccounts).toHaveLength(1);
+    expect(result.controlAccounts[0]).toMatchObject({
+      controlAccountId: "ca",
+      readableId: "CA",
+      bac: 11000,
+      bcwp: 5500,
+      acwp: 4000
+    });
+  });
+
+  it("asks for a baseline when the project has work packages and none", () => {
+    const result = computeProjectEarnedValue(
+      project(false),
+      undefined,
+      "2026-10-31"
+    );
+    expect(result).toEqual({
+      workPackages: [],
+      controlAccounts: [],
+      warnings: ["Take a baseline first"]
+    });
   });
 });
