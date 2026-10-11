@@ -7392,14 +7392,16 @@ export async function getDepreciationRunLines(
 export async function getRevenueRecognitionRuns(
   client: SupabaseClient<Database>,
   companyId: string,
+  type: Database["public"]["Enums"]["runType"],
   args: GenericQueryFilters & { search: string | null }
 ) {
   let query = client
     .from("revenueRecognitionRun")
-    .select("id, runId, periodEnd, status, postedAt, journalId", {
+    .select("id, runId, type, periodEnd, status, postedAt, journalId", {
       count: "exact"
     })
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .eq("type", type);
 
   if (args.search) {
     query = query.ilike("runId", `%${args.search}%`);
@@ -7437,7 +7439,7 @@ export async function getRevenueRecognitionRunLines(
   return client
     .from("revenueRecognitionRunLine")
     .select(
-      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, journalId)"
+      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, leaseId, journalId)"
     )
     .eq("runId", runId)
     .eq("companyId", companyId);
@@ -7533,6 +7535,8 @@ export async function getDeferredRevenueWaterfall(
       query
         .eq("companyId", companyId)
         .eq("status", "Planned")
+        // Lessee lease rows are expense, not revenue.
+        .is("leaseId", null)
         .gte("scheduledDate", asOf)
         .order("id", { ascending: true })
   );

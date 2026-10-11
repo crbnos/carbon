@@ -11789,6 +11789,9 @@ msgstr "租赁收入"
 msgid "Lease Revenue (default)"
 msgstr "租赁收入（默认）"
 
+msgid "Lease Runs"
+msgstr ""
+
 msgid "Leases (Lessee)"
 msgstr ""
 
@@ -14403,6 +14406,9 @@ msgstr "未安排任何事项——在下方添加工位。"
 
 msgid "Nothing selected yet"
 msgstr "尚未选择任何内容"
+
+msgid "Nothing to post for this period."
+msgstr ""
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
@@ -22376,6 +22382,14 @@ msgid "This will create a draft depreciation run for the period ending {0}. All 
 msgstr "这将为期末为 {0} 的期间创建草稿折旧运行。所有启用的固定资产将自动计算。"
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
+msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
 msgstr "这将为下一期创建收入确认草稿运行，结束日期为 {0}。所有应收日期在该日期或之前的行都将被包括。"
 
@@ -22399,15 +22413,15 @@ msgstr "这将覆盖现有的制造方法和所有子组件的最新版本。"
 msgid "This will overwrite the existing quote method"
 msgstr "这将覆盖现有的报价方法"
 
+#. placeholder {0}: run.runId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
+msgstr ""
+
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "这将从固定资产现有状态重建 {0}：每个未被另一运行覆盖、截至 {1} 期间的活跃资产。"
-
-#. placeholder {0}: run.runId
-#. placeholder {1}: formatDate(run.periodEnd)
-msgid "This will rebuild {0} from the revenue schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr "这将从收入排程现有状态重建 {0}：每个应在 {1} 日期或之前、没有其他运行持有的排程行。"
 
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "这将根据启用的制造方法的物料清单和工艺使用生产批次重新计算单位成本。当前成本将被覆盖。您想继续吗？"

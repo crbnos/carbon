@@ -11789,6 +11789,9 @@ msgstr "Finansal Kiralama Hasılat"
 msgid "Lease Revenue (default)"
 msgstr "Finansal Kiralama Hasılat (varsayılan)"
 
+msgid "Lease Runs"
+msgstr ""
+
 msgid "Leases (Lessee)"
 msgstr ""
 
@@ -14403,6 +14406,9 @@ msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
 
 msgid "Nothing selected yet"
 msgstr "Henüz hiçbir şey seçilmedi"
+
+msgid "Nothing to post for this period."
+msgstr ""
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturalandırdığını takip eder."
@@ -22376,6 +22382,14 @@ msgid "This will create a draft depreciation run for the period ending {0}. All 
 msgstr "Bu, {0} tarihinde sona eren dönem için taslak amortisman çalıştırması oluşturacaktır. Tüm aktif sabit kıymetler otomatik olarak hesaplanacaktır."
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
+msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
 msgstr "Bu, {0} tarihinde sona erecek sonraki dönem için taslak bir hasılat muhasebeleştirmesi çalıştırması oluşturacak. O tarihinde veya daha önce vadesi olan tüm çizelge satırları dahil edilecektir."
 
@@ -22399,15 +22413,15 @@ msgstr "Bu, mevcut üretim yöntemini ve tüm alt montajların en son sürümler
 msgid "This will overwrite the existing quote method"
 msgstr "Bu, mevcut teklif yöntemini geçersiz kılacaktır"
 
+#. placeholder {0}: run.runId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
+msgstr ""
+
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Bu, {0}'ı sabit kıymetlerden olduğu gibi yeniden oluşturacak: {1} ile biten dönem için başka bir çalıştırma tarafından karşılanmayan her aktif kıymet."
-
-#. placeholder {0}: run.runId
-#. placeholder {1}: formatDate(run.periodEnd)
-msgid "This will rebuild {0} from the revenue schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr "Bu, {0}'ı hasılat çizelgesinden olduğu gibi yeniden oluşturacak: {1} tarihinde veya daha önce yapılması gereken ve başka hiçbir çalıştırmanın tutmadığı her çizelge satırı."
 
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Bu, geçerli üretim yönteminin ürün ağacından ve işlemlerinden parti boyutunu kullanarak birim maliyeti yeniden hesaplayacaktır. Mevcut maliyet üzerine yazılacaktır. Devam etmek istiyor musunuz?"

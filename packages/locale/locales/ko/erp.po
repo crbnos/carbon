@@ -11789,6 +11789,9 @@ msgstr "리스 매출"
 msgid "Lease Revenue (default)"
 msgstr "리스 매출 (기본값)"
 
+msgid "Lease Runs"
+msgstr ""
+
 msgid "Leases (Lessee)"
 msgstr ""
 
@@ -14403,6 +14406,9 @@ msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요.
 
 msgid "Nothing selected yet"
 msgstr "아직 선택된 항목이 없습니다"
+
+msgid "Nothing to post for this period."
+msgstr ""
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 대로 따릅니다."
@@ -22376,6 +22382,14 @@ msgid "This will create a draft depreciation run for the period ending {0}. All 
 msgstr "이것은 {0}로 끝나는 기간에 대한 초안 감가상각 실행을 생성합니다. 모든 활성 고정자산이 자동으로 계산됩니다."
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
+msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
 msgstr "다음 기간({0} 종료)에 대한 매출 인식 실행 초안을 생성합니다. 해당 날짜까지 예정된 모든 일정 행이 포함됩니다."
 
@@ -22399,15 +22413,15 @@ msgstr "기존 제조 방법과 모든 하위조립품의 최신 버전을 덮�
 msgid "This will overwrite the existing quote method"
 msgstr "기존 견적 방법을 덮어씁니다"
 
+#. placeholder {0}: run.runId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
+msgstr ""
+
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "이것은 {0}을(를) 현재 상태의 고정자산에서 재구축합니다: {1}에 끝나는 기간에 대해 다른 실행으로 적용되지 않은 모든 활성 자산입니다."
-
-#. placeholder {0}: run.runId
-#. placeholder {1}: formatDate(run.periodEnd)
-msgid "This will rebuild {0} from the revenue schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr "이것은 {0}을(를) 현재 상태의 매출 일정에서 재구축합니다: {1}에 또는 그 이전에 기한이 있는 모든 일정 행으로 다른 실행이 보유하지 않은 것입니다."
 
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "이것은 배치 크기를 사용하여 활성 생산 방법의 자재 명세서 및 공법에서 단위 원가를 재계산합니다. 현재 원가가 덮어써집니다. 계속하시겠습니까?"

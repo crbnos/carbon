@@ -11789,6 +11789,9 @@ msgstr "Przychód z dzierżawy"
 msgid "Lease Revenue (default)"
 msgstr "Przychód z dzierżawy (domyślnie)"
 
+msgid "Lease Runs"
+msgstr ""
+
 msgid "Leases (Lessee)"
 msgstr ""
 
@@ -14403,6 +14406,9 @@ msgstr "Nic nie zaplanowano — dodaj stanowisko poniżej."
 
 msgid "Nothing selected yet"
 msgstr "Nic nie wybrano"
+
+msgid "Nothing to post for this period."
+msgstr ""
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nic do rozpoznania. Przychody ze sprzedaży wynikają z tego, co faktury rozliczają."
@@ -22376,6 +22382,14 @@ msgid "This will create a draft depreciation run for the period ending {0}. All 
 msgstr "Spowoduje to utworzenie wersji roboczej przebiegu amortyzacji na okres kończący się {0}. Wszystkie aktywne środki trwałe będą obliczane automatycznie."
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
+msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
 msgstr "To utworzy wersję roboczą przebiegu ujęcia przychodów na następny okres, kończący się {0}. Każdy wiersz harmonogramu należny w tym dniu lub wcześniej będzie uwzględniony."
 
@@ -22399,15 +22413,15 @@ msgstr "To spowoduje zastąpienie istniejącej metody produkcji i najnowszych we
 msgid "This will overwrite the existing quote method"
 msgstr "To spowoduje zastąpienie istniejącej metody oferty"
 
+#. placeholder {0}: run.runId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
+msgstr ""
+
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "To będzie przebudowywać {0} ze środków trwałych takie jakie są teraz: każdy aktywny środek trwały nieobjęty innym przebiegiem dla okresu kończącego się {1}."
-
-#. placeholder {0}: run.runId
-#. placeholder {1}: formatDate(run.periodEnd)
-msgid "This will rebuild {0} from the revenue schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr "To będzie przebudowywać {0} na podstawie harmonogramu przychodów ze sprzedaży takie jaki jest teraz: każdy wiersz harmonogramu należny na lub przed {1}, który żaden inny przebieg nie posiada."
 
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "To spowoduje przeliczenie kosztu jednostkowego na podstawie aktywnej metody produkcji, listy materiałów i procesów przy użyciu wielkości partii. Bieżący koszt zostanie zastąpiony. Czy chcesz kontynuować?"

@@ -11789,6 +11789,9 @@ msgstr "Выручка от лизинга"
 msgid "Lease Revenue (default)"
 msgstr "Выручка от лизинга (по умолчанию)"
 
+msgid "Lease Runs"
+msgstr ""
+
 msgid "Leases (Lessee)"
 msgstr ""
 
@@ -14403,6 +14406,9 @@ msgstr "Ничего не запланировано — добавьте раб
 
 msgid "Nothing selected yet"
 msgstr "Ничего не выбрано"
+
+msgid "Nothing to post for this period."
+msgstr ""
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Нечего признавать. Выручка следует за тем, что выставляют счетом счета."
@@ -22376,6 +22382,14 @@ msgid "This will create a draft depreciation run for the period ending {0}. All 
 msgstr "Это создаст черновик расчета амортизации на период, заканчивающийся {0}. Все активные активы будут рассчитаны автоматически."
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
+msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
 msgstr "Это создаст черновик запуска признания выручки на следующий период, заканчивающийся {0}. Каждая строка графика, подлежащая исполнению на эту дату или ранее, будет включена."
 
@@ -22399,15 +22413,15 @@ msgstr "Это перезапишет существующий производ�
 msgid "This will overwrite the existing quote method"
 msgstr "Это перезапишет существующий метод предложения"
 
+#. placeholder {0}: run.runId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
+msgstr ""
+
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Это пересчитает {0} на основе основных средств в их текущем состоянии: каждое активное средство, не охватываемое другим расчетом, за период, заканчивающийся {1}."
-
-#. placeholder {0}: run.runId
-#. placeholder {1}: formatDate(run.periodEnd)
-msgid "This will rebuild {0} from the revenue schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr "Это пересчитает {0} на основе графика выручки в его текущем состоянии: каждую строку графика, подлежащую выполнению до {1}, которая не включена в другой расчет."
 
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Это пересчитает себестоимость единицы продукции на основе активного метода производства, спецификации материалов и процессов с использованием размера партии. Текущая себестоимость будет перезаписана. Вы хотите продолжить?"

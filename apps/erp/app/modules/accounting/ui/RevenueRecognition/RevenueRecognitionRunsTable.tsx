@@ -21,13 +21,15 @@ export type RevenueRecognitionRunListItem = NonNullable<
 >[number];
 
 type RevenueRecognitionRunsTableProps = {
+  /** Which runs: a revenue recognition run or a lease run. */
+  type: "Revenue Recognition" | "Lease";
   data: RevenueRecognitionRunListItem[];
   count: number;
   primaryAction?: ReactNode;
 };
 
 const RevenueRecognitionRunsTable = memo(
-  ({ data, count, primaryAction }: RevenueRecognitionRunsTableProps) => {
+  ({ type, data, count, primaryAction }: RevenueRecognitionRunsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -122,7 +124,7 @@ const RevenueRecognitionRunsTable = memo(
           count={count}
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
-          title={t`Revenue Recognition`}
+          title={type === "Lease" ? t`Lease Runs` : t`Revenue Recognition`}
         />
         {selectedRun && (
           <ConfirmDelete

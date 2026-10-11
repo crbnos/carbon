@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "accounting"
   });
 
@@ -54,6 +54,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Back to the list of the run's own type.
+  const run = await getRevenueRecognitionRun(client, runId, companyId);
+  const listPath =
+    run.data?.type === "Lease"
+      ? path.to.leaseRuns
+      : path.to.revenueRecognitionRuns;
+
   try {
     await deleteRevenueRecognitionRun(getDatabaseClient(), {
       runId,
@@ -62,20 +69,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   } catch (err) {
     throw redirect(
-      path.to.revenueRecognitionRuns,
-      await flash(
-        request,
-        error(err, "Failed to delete revenue recognition run")
-      )
+      listPath,
+      await flash(request, error(err, "Failed to delete the run"))
     );
   }
 
   throw redirect(
-    path.to.revenueRecognitionRuns,
-    await flash(
-      request,
-      success("Successfully deleted revenue recognition run")
-    )
+    listPath,
+    await flash(request, success("Successfully deleted the run"))
   );
 }
 

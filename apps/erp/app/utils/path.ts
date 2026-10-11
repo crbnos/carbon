@@ -1515,6 +1515,7 @@ export const path = {
       `/api/accounting/journal-line-dimensions/${lineId}`,
     kanban: (id: string) => generatePath(`${x}/inventory/kanbans/${id}`),
     kanbans: `${x}/inventory/kanbans`,
+    lease: (id: string) => generatePath(`${x}/lease/${id}`),
     leaseNetInvestment: `${x}/reports/lease-net-investment`,
     leaseRuns: `${x}/accounting/lease-runs`,
     legal: {

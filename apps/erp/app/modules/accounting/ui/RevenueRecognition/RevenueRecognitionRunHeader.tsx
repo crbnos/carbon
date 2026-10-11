@@ -151,7 +151,11 @@ const RevenueRecognitionRunHeader = () => {
           onCancel={deleteModal.onClose}
           onSubmit={() => {
             deleteModal.onClose();
-            navigate(path.to.revenueRecognitionRuns);
+            navigate(
+              run.type === "Lease"
+                ? path.to.leaseRuns
+                : path.to.revenueRecognitionRuns
+            );
           }}
         />
       )}
@@ -174,7 +178,7 @@ const RevenueRecognitionRunHeader = () => {
           action={path.to.recalculateRevenueRecognitionRun(runId)}
           isOpen={recalculateModal.isOpen}
           title={t`Recalculate Run`}
-          text={t`This will rebuild ${run.runId} from the revenue schedule as it is now: every schedule row due on or before ${formatDate(run.periodEnd)} that no other run holds.`}
+          text={t`This will rebuild ${run.runId} from its schedule as it is now: every schedule row due on or before ${formatDate(run.periodEnd)} that no other run holds.`}
           confirmText={t`Recalculate`}
           onCancel={recalculateModal.onClose}
           onSubmit={recalculateModal.onClose}
@@ -186,7 +190,11 @@ const RevenueRecognitionRunHeader = () => {
           action={path.to.repeatRevenueRecognitionRun(runId)}
           isOpen={repeatModal.isOpen}
           title={t`Repeat Run`}
-          text={t`This will create a draft revenue recognition run for the next period, ending ${formatDate(nextPeriodEnd)}. Every schedule row due on or before that date will be included.`}
+          text={
+            run.type === "Lease"
+              ? t`This will create a draft lease run for the next period, ending ${formatDate(nextPeriodEnd)}. Every lease and rental schedule row due on or before that date will be included.`
+              : t`This will create a draft revenue recognition run for the next period, ending ${formatDate(nextPeriodEnd)}. Every schedule row due on or before that date will be included.`
+          }
           confirmText={t`Create Run`}
           onCancel={repeatModal.onClose}
           onSubmit={repeatModal.onClose}

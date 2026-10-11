@@ -11789,6 +11789,9 @@ msgstr "पट्टा राजस्व"
 msgid "Lease Revenue (default)"
 msgstr "पट्टा राजस्व (डिफ़ॉल्ट)"
 
+msgid "Lease Runs"
+msgstr ""
+
 msgid "Leases (Lessee)"
 msgstr ""
 
@@ -14403,6 +14406,9 @@ msgstr "कुछ भी शेड्यूल नहीं किया गय�
 
 msgid "Nothing selected yet"
 msgstr "अभी कुछ नहीं चुना गया"
+
+msgid "Nothing to post for this period."
+msgstr ""
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "अभी मान्यता देने के लिए कुछ नहीं। राजस्व उसके अनुसार है जो चालान बिल करते हैं।"
@@ -22376,6 +22382,14 @@ msgid "This will create a draft depreciation run for the period ending {0}. All 
 msgstr "यह {0} को समाप्त होने वाली अवधि के लिए एक ड्राफ्ट मूल्यह्रास रन बनाएगा। सभी सक्रिय संपत्तियों की स्वचालित रूप से गणना की जाएगी।"
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
+msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr ""
+
+#. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
 msgstr "यह अगली अवधि के लिए एक ड्राफ्ट राजस्व मान्यता चलाना बनाएगा, {0} में समाप्त होता है। उस तारीख पर या उससे पहले देय प्रत्येक शेड्यूल पंक्ति शामिल की जाएगी।"
 
@@ -22399,15 +22413,15 @@ msgstr "यह मौजूदा विनिर्माण विधि औ�
 msgid "This will overwrite the existing quote method"
 msgstr "यह मौजूदा उद्धरण विधि को अधिलेखित करेगा"
 
+#. placeholder {0}: run.runId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
+msgstr ""
+
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "यह {0} को अचल संपत्तियों से फिर से बनाएगा जैसा कि वे अब हैं: अवधि {1} पर समाप्त होने वाले किसी अन्य चलन द्वारा कवर न की गई हर सक्रिय संपत्ति।"
-
-#. placeholder {0}: run.runId
-#. placeholder {1}: formatDate(run.periodEnd)
-msgid "This will rebuild {0} from the revenue schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr "यह {0} को राजस्व शेड्यूल से फिर से बनाएगा जैसा कि यह अब है: {1} पर या उससे पहले देय हर शेड्यूल पंक्ति जो किसी अन्य चलन के पास नहीं है।"
 
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "यह बैच आकार का उपयोग करके सक्रिय निर्माण विधि की सामग्री सूची और प्रक्रियाओं से इकाई लागत की पुनः गणना करेगा। वर्तमान लागत अधिलेखित की जाएगी। क्या आप जारी रखना चाहते हैं?"

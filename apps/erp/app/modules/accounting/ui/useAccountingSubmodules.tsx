@@ -19,6 +19,7 @@ import {
   LuFileSpreadsheet,
   LuFolderKanban,
   LuHandCoins,
+  LuKeyRound,
   LuLayers,
   LuScale,
   LuSheet,
@@ -90,6 +91,12 @@ export default function useAccountingSubmodules() {
             to: path.to.revenueRecognitionRuns,
             role: "employee",
             icon: <LuCalendarClock />
+          },
+          {
+            name: t`Lease Runs`,
+            to: path.to.leaseRuns,
+            role: "employee",
+            icon: <LuKeyRound />
           },
           {
             name: t`Depreciation`,

@@ -42,14 +42,24 @@ import {
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+const revenueBreadcrumb = detailBreadcrumb(
+  {
+    breadcrumb: msg`Revenue Recognition`,
+    to: path.to.revenueRecognitionRuns
+  },
+  (data) => data?.run?.runId
+);
+const leaseBreadcrumb = detailBreadcrumb(
+  { breadcrumb: msg`Lease Runs`, to: path.to.leaseRuns },
+  (data) => data?.run?.runId
+);
+
 export const handle: Handle = {
-  breadcrumb: detailBreadcrumb(
-    {
-      breadcrumb: msg`Revenue Recognition`,
-      to: path.to.revenueRecognitionRuns
-    },
-    (data) => data?.run?.runId
-  ),
+  // A lease run lives under Lease Runs, a revenue run under Revenue Recognition.
+  breadcrumb: (params: unknown, data: unknown) =>
+    (data as { run?: { type?: string } } | undefined)?.run?.type === "Lease"
+      ? leaseBreadcrumb(params, data)
+      : revenueBreadcrumb(params, data),
   module: "accounting"
 };
 
@@ -94,8 +104,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .filter((id): id is string => Boolean(id))
     )
   ];
+  const leaseIds = [
+    ...new Set(
+      scheduleLines
+        .map((schedule) => schedule?.leaseId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
 
-  const [invoiceLines, rentalLines] = await Promise.all([
+  const [invoiceLines, rentalLines, leases] = await Promise.all([
     invoiceLineIds.length > 0
       ? client
           .from("salesInvoiceLine")
@@ -111,6 +128,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select("id, rentalAgreement(id, rentalAgreementId, status)")
           .eq("companyId", companyId)
           .in("id", rentalLineIds)
+      : null,
+    leaseIds.length > 0
+      ? client
+          .from("lease")
+          .select("id, leaseId")
+          .eq("companyId", companyId)
+          .in("id", leaseIds)
       : null
   ]);
 
@@ -137,6 +161,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       };
       rentalAgreements.set(row.rentalAgreement.id, row.rentalAgreement);
     }
+  }
+
+  // A lessee lease's rows are keyed by the lease id.
+  for (const lease of leases?.data ?? []) {
+    sources[lease.id] = {
+      label: lease.leaseId,
+      to: path.to.lease(lease.id)
+    };
   }
 
   return {
@@ -239,7 +271,11 @@ export default function RevenueRecognitionRunDetailRoute() {
         <Card>
           <CardContent>
             <div className="px-4 py-6 text-sm text-muted-foreground text-center w-full">
-              <Trans>No revenue to recognize for this period.</Trans>
+              {run.type === "Lease" ? (
+                <Trans>Nothing to post for this period.</Trans>
+              ) : (
+                <Trans>No revenue to recognize for this period.</Trans>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -284,7 +320,8 @@ export default function RevenueRecognitionRunDetailRoute() {
                       {section.lines.map((line, index) => {
                         const sourceLineId =
                           line.schedule?.salesInvoiceLineId ??
-                          line.schedule?.rentalAgreementLineId;
+                          line.schedule?.rentalAgreementLineId ??
+                          line.schedule?.leaseId;
                         const source = sourceLineId
                           ? sources[sourceLineId]
                           : undefined;
