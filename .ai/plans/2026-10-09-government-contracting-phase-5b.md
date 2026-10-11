@@ -85,7 +85,7 @@ These correct or add to the spec. Task 21 records them there.
 
 ## Progress
 
-- [ ] Task 1: Create the Phase 5b enum migration
+- [x] Task 1: Create the Phase 5b enum migration
 - [ ] Task 2: Create the indirect rates tables migration
 - [ ] Task 3: Apply migrations, regenerate types, ship RLS
 - [ ] Task 4: Add the feature key and the ee package skeleton
