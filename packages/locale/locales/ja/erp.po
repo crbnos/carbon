@@ -9743,6 +9743,9 @@ msgstr "除外"
 msgid "Executive P&L"
 msgstr "経営幹部向けP&L"
 
+msgid "Exempt"
+msgstr ""
+
 msgid "Exemption Certificate"
 msgstr "免除証明書"
 
@@ -10742,6 +10745,9 @@ msgstr "フリートユニット"
 
 msgid "Fleet Units"
 msgstr "フリート個"
+
+msgid "FLSA status"
+msgstr ""
 
 msgid "Focus on {label}"
 msgstr ""
@@ -11780,6 +11786,9 @@ msgid "In an open menu"
 msgstr "開いているメニュー内"
 
 msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr ""
 
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
@@ -15827,6 +15836,9 @@ msgstr "不適合と検査スクラップ"
 
 msgid "Non-conformances"
 msgstr "不適合"
+
+msgid "Non-Exempt"
+msgstr ""
 
 msgid "Non-Inventory"
 msgstr "非在庫"

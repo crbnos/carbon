@@ -80,7 +80,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 18: Add allowability to the account drawer
 - [x] Task 19: Add the cost objective, restrict charging and members to the project
 - [x] Task 20: Add the element flags
-- [ ] Task 21: Add the FLSA status to the employee job
+- [x] Task 21: Add the FLSA status to the employee job
 - [ ] Task 22: Build the DCAA controls on My Timesheet
 - [ ] Task 23: Add the employee timesheet page for managers
 - [ ] Task 24: Add labor transfers to the correction modal and approvals
@@ -1591,3 +1591,7 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   2. The Log time route (`projects+/log-time.tsx`) posts nothing when the saved status is not Submitted. Its flash reads "Time saved. Submit your week on My Timesheet to certify it."
   3. Service time asks for Draft and posts from Draft, as before. The decision does not change it.
   4. Test: "DCAA, add: Log time saves the owner's entry as Draft for the weekly certification". The existing DCAA `add` test now expects Draft.
+- Task 21:
+  1. `employeeJobValidator` and `updateEmployeeJob` already carried `flsaStatus` (Tasks 14 and 15), so the route action needed no change. The route's initial values now pass the stored status.
+  2. The select is clearable: the column is nullable, and an empty status means "not set". Its helper text says what the status does in DCAA mode.
+  3. Browser verification deferred.

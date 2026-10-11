@@ -9743,6 +9743,9 @@ msgstr "Excluido"
 msgid "Executive P&L"
 msgstr "Estado de Resultados Ejecutivo"
 
+msgid "Exempt"
+msgstr ""
+
 msgid "Exemption Certificate"
 msgstr "Certificado de Exención"
 
@@ -10742,6 +10745,9 @@ msgstr "Unidad de flota"
 
 msgid "Fleet Units"
 msgstr "Unidades de flota"
+
+msgid "FLSA status"
+msgstr ""
 
 msgid "Focus on {label}"
 msgstr ""
@@ -11780,6 +11786,9 @@ msgid "In an open menu"
 msgstr "En un menú abierto"
 
 msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr ""
 
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
@@ -15827,6 +15836,9 @@ msgstr "Desperdicio por no conformidad e inspección"
 
 msgid "Non-conformances"
 msgstr "No conformidades"
+
+msgid "Non-Exempt"
+msgstr ""
 
 msgid "Non-Inventory"
 msgstr "No Inventario"

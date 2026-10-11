@@ -16,11 +16,12 @@ import {
   Input,
   LaborCategory,
   Location,
+  Select,
   Shift,
   StorageUnit,
   Submit
 } from "~/components/Form";
-import { employeeJobValidator } from "../../people.models";
+import { employeeJobValidator, flsaStatuses } from "../../people.models";
 
 type PersonJobProps = {
   initialValues: z.infer<typeof employeeJobValidator>;
@@ -28,6 +29,10 @@ type PersonJobProps = {
 
 const PersonJob = ({ initialValues }: PersonJobProps) => {
   const { t } = useLingui();
+  const flsaLabels: Record<(typeof flsaStatuses)[number], string> = {
+    Exempt: t`Exempt`,
+    "Non-Exempt": t`Non-Exempt`
+  };
   const [location, setLocation] = useState<string | null>(
     initialValues.locationId ?? null
   );
@@ -59,6 +64,15 @@ const PersonJob = ({ initialValues }: PersonJobProps) => {
             />
             <Department name="departmentId" label={t`Department`} />
             <Employee name="managerId" label={t`Manager`} />
+            <Select
+              name="flsaStatus"
+              label={t`FLSA status`}
+              options={flsaStatuses.map((status) => ({
+                value: status,
+                label: flsaLabels[status]
+              }))}
+              helperText={t`In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour.`}
+            />
             <LaborCategory
               name="laborCategoryId"
               label={t`Labor Category`}

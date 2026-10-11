@@ -9743,6 +9743,9 @@ msgstr "बहिष्कृत"
 msgid "Executive P&L"
 msgstr "कार्यकारी P&L"
 
+msgid "Exempt"
+msgstr ""
+
 msgid "Exemption Certificate"
 msgstr "छूट प्रमाणपत्र"
 
@@ -10742,6 +10745,9 @@ msgstr "बेड़े की इकाई"
 
 msgid "Fleet Units"
 msgstr "फ्लीट इकाई"
+
+msgid "FLSA status"
+msgstr ""
 
 msgid "Focus on {label}"
 msgstr ""
@@ -11780,6 +11786,9 @@ msgid "In an open menu"
 msgstr "एक खुले मेनू में"
 
 msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr ""
 
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
@@ -15827,6 +15836,9 @@ msgstr "गैर-अनुरूपता और निरीक्षण स�
 
 msgid "Non-conformances"
 msgstr "गैर-अनुरूपताएँ"
+
+msgid "Non-Exempt"
+msgstr ""
 
 msgid "Non-Inventory"
 msgstr "गैर-इन्वेंटरी"

@@ -9743,6 +9743,9 @@ msgstr "已排除"
 msgid "Executive P&L"
 msgstr "执行损益表"
 
+msgid "Exempt"
+msgstr ""
+
 msgid "Exemption Certificate"
 msgstr "豁免证书"
 
@@ -10742,6 +10745,9 @@ msgstr "租赁单位"
 
 msgid "Fleet Units"
 msgstr "租赁设备"
+
+msgid "FLSA status"
+msgstr ""
 
 msgid "Focus on {label}"
 msgstr ""
@@ -11780,6 +11786,9 @@ msgid "In an open menu"
 msgstr "在打开的菜单中"
 
 msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr ""
 
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
@@ -15827,6 +15836,9 @@ msgstr "不合格和检验报废"
 
 msgid "Non-conformances"
 msgstr "不合格项"
+
+msgid "Non-Exempt"
+msgstr ""
 
 msgid "Non-Inventory"
 msgstr "非库存"
