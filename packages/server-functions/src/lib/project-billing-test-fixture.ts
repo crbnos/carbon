@@ -5,7 +5,9 @@
 // A scratch company for the project billing regressions: a Contract project
 // with a billing element and a child under it, the labor category Engineer II
 // (bill rate 150.00), and helpers for a Time & Materials contract and for
-// ledger rows written through `insertProjectLedgerRows`. Deleted afterwards.
+// ledger rows written through `insertProjectLedgerRows`. `addAccounting` and
+// `addJournalLines` add the accounts and WIP journal lines the revenue
+// recognition run reads. Deleted afterwards.
 
 import type { Database } from "@carbon/database";
 import { sql } from "kysely";
@@ -19,6 +21,18 @@ import {
 const USER = "system";
 
 type CostType = Database["public"]["Enums"]["projectCostType"];
+
+const ACCOUNTS = [
+  { name: "wip", class: "Asset" },
+  { name: "contract-asset", class: "Asset" },
+  { name: "cogs", class: "Expense" },
+  { name: "expense", class: "Expense" },
+  { name: "sales", class: "Revenue" },
+  { name: "deferred", class: "Liability" },
+  { name: "loss-provision", class: "Liability" }
+] as const;
+
+type AccountName = (typeof ACCOUNTS)[number]["name"];
 
 export async function projectBillingTestFixture() {
   const db = await connectLocalTestDatabase();
@@ -68,7 +82,12 @@ export async function projectBillingTestFixture() {
       .values(
         [
           { table: "salesInvoice", name: "Sales Invoice", prefix: "INV-" },
-          { table: "creditMemo", name: "Credit Memo", prefix: "CM-" }
+          { table: "creditMemo", name: "Credit Memo", prefix: "CM-" },
+          {
+            table: "revenueRecognitionRun",
+            name: "Revenue Recognition Run",
+            prefix: "RR-"
+          }
         ].map((row) => ({ ...row, companyId }))
       )
       .execute();
@@ -124,6 +143,88 @@ export async function projectBillingTestFixture() {
   });
 
   const ctx = ServerFnContext.system({ db, companyId, userId: USER });
+
+  const account = (name: AccountName) => `${prefix}-acct-${name}`;
+
+  /** The accounts and account defaults the revenue recognition run needs:
+   *  Project WIP (Asset), cost of goods sold, Deferred Revenue, Contract
+   *  Assets, Sales and the Contract Loss Provision. */
+  const addAccounting = async () => {
+    await db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+      await trx
+        .insertInto("account")
+        .values(
+          ACCOUNTS.map((row) => ({
+            id: account(row.name),
+            name: `${prefix} ${row.name}`,
+            class: row.class,
+            incomeBalance:
+              row.class === "Asset" || row.class === "Liability"
+                ? ("Balance Sheet" as const)
+                : ("Income Statement" as const),
+            companyGroupId: groupId,
+            createdBy: USER
+          }))
+        )
+        .execute();
+      // Every NOT NULL default on cost of goods sold, then the run's own.
+      await sql`INSERT INTO "accountDefault" SELECT (jsonb_populate_record(NULL::"accountDefault",
+        (SELECT jsonb_object_agg(attname, to_jsonb(${account("cogs")}::text)) FROM pg_attribute
+         WHERE attrelid='"accountDefault"'::regclass AND attnum>0 AND NOT attisdropped AND attnotnull AND attname<>'companyId')
+        || jsonb_build_object(
+          'companyId', ${companyId}::text,
+          'costOfGoodsSoldAccount', ${account("cogs")}::text,
+          'salesAccount', ${account("sales")}::text,
+          'deferredRevenueAccount', ${account("deferred")}::text,
+          'contractAssetAccount', ${account("contract-asset")}::text,
+          'contractLossProvisionAccount', ${account("loss-provision")}::text,
+          'projectWorkInProgressAccount', ${account("wip")}::text
+        ))).*`.execute(trx);
+    });
+  };
+
+  let journalCount = 0;
+  /** One Draft journal with these lines; returns the line ids in order. */
+  const addJournalLines = async (
+    lines: { account: AccountName; amount: number }[],
+    postingDate = "2026-02-10"
+  ) => {
+    journalCount += 1;
+    const journalId = `${prefix}-je-${journalCount}`;
+    const reference = (index: number) => `${journalId}-${index}`;
+    return db.transaction().execute(async (trx) => {
+      await trx
+        .insertInto("journal")
+        .values({
+          id: journalId,
+          journalEntryId: journalId,
+          postingDate,
+          status: "Draft",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      const inserted = await trx
+        .insertInto("journalLine")
+        .values(
+          lines.map((line, index) => ({
+            journalId,
+            accountId: account(line.account),
+            amount: line.amount,
+            journalLineReference: reference(index),
+            companyId,
+            createdBy: USER
+          }))
+        )
+        .returning(["id", "journalLineReference"])
+        .execute();
+      const idByReference = new Map(
+        inserted.map((row) => [row.journalLineReference, row.id])
+      );
+      return lines.map((_, index) => idByReference.get(reference(index))!);
+    });
+  };
 
   /** A Released project with a billing element (`<identifier>-1`) and a
    *  child under it (`<identifier>-2`). */
@@ -275,6 +376,7 @@ export async function projectBillingTestFixture() {
       laborCategoryId?: string | null;
       reversalOfId?: string | null;
       documentType?: string;
+      journalLineId?: string | null;
     }[]
   ) =>
     db.transaction().execute((trx) =>
@@ -294,6 +396,7 @@ export async function projectBillingTestFixture() {
             quantity: row.quantity ?? null,
             amount: row.amount,
             reversalOfId: row.reversalOfId ?? null,
+            journalLineId: row.journalLineId ?? null,
             createdBy: USER
           })
         )
@@ -320,6 +423,9 @@ export async function projectBillingTestFixture() {
     locationId,
     laborCategoryId,
     userId: USER,
+    account,
+    addAccounting,
+    addJournalLines,
     addProject,
     addContract,
     post,

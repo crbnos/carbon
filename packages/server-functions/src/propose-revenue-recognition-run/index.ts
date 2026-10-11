@@ -34,6 +34,7 @@ import {
   lockContractPositions
 } from "../lib/contract-ledger";
 import { syncDraftRecognitionRuns } from "../lib/draft-recognition-run";
+import { synthesizeProjectRevenue } from "../lib/project-revenue";
 
 export type RunProposalContext = {
   companyId: string;
@@ -297,6 +298,9 @@ export async function synthesizeContractRevenue(
     .select("id")
     .where("companyId", "=", companyId)
     .where("status", "=", "Planned")
+    // Only revenue rows hang off a month row. A Cost Relief or Loss Provision
+    // row has a line and no month row by design (decision R6).
+    .where("type", "in", ["Deferral", "Accrual"])
     .where("customerContractLineId", "is not", null)
     .where("customerContractRevenueId", "is", null)
     .execute();
@@ -495,12 +499,18 @@ export async function synthesizeContractRevenue(
 
 /** The run's synthesizers in order. `extra` comes from the caller (the
  *  commercial project revenue synthesizer, decision R1) and runs before the
- *  contract synthesizer, which moves the month rows it writes through the
- *  contract position. */
+ *  Right to Invoice and contract synthesizers: the contract synthesizer moves
+ *  the month rows both project synthesizers write through the contract
+ *  position. */
 export function runRowSynthesizers(
   extra: RunRowSynthesizer[] = []
 ): RunRowSynthesizer[] {
-  return [synthesizeRentalAccruals, ...extra, synthesizeContractRevenue];
+  return [
+    synthesizeRentalAccruals,
+    ...extra,
+    synthesizeProjectRevenue,
+    synthesizeContractRevenue
+  ];
 }
 
 export type RunProposal = { id: string; runId: string; lineCount: number };

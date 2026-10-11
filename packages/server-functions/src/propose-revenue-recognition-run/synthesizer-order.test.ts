@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, test } from "vitest";
+import { synthesizeProjectRevenue } from "../lib/project-revenue";
 import { databaseTest } from "../local-database-test-fixture";
 import { paymentFixture } from "../post-payment/payment-test-fixture";
 import { ServerFnContext } from "../server-fn-context";
@@ -14,15 +15,19 @@ import proposeRevenueRecognitionRun, {
 } from "./index";
 import { dropRecognitionRuns } from "./run-test-fixture";
 
-test("a caller's synthesizers run after the rental accruals and before the contract revenue", () => {
-  const extra: RunRowSynthesizer = async () => {};
+test("a caller's synthesizers run after the rental accruals and before Right to Invoice and the contract revenue", () => {
+  const extra: RunRowSynthesizer = async () => {
+    // Writes nothing: only its place in the order matters.
+  };
   expect(runRowSynthesizers([extra])).toEqual([
     synthesizeRentalAccruals,
     extra,
+    synthesizeProjectRevenue,
     synthesizeContractRevenue
   ]);
   expect(runRowSynthesizers()).toEqual([
     synthesizeRentalAccruals,
+    synthesizeProjectRevenue,
     synthesizeContractRevenue
   ]);
 });
