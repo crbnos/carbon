@@ -17380,6 +17380,209 @@ export type Database = {
           }
         ]
       }
+      earnedValuePeriod: {
+        Row: {
+          accountingPeriodId: string
+          acwp: number
+          acwpByElement: Json
+          acwpHours: number
+          bac: number
+          baselineId: string | null
+          bcwp: number
+          bcws: number
+          companyId: string
+          controlAccountId: string
+          createdAt: string
+          createdBy: string
+          fiscalYear: number
+          id: string
+          periodNumber: number
+          projectElementId: string
+          projectId: string
+          technique: Database["public"]["Enums"]["earnedValueTechnique"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountingPeriodId: string
+          acwp: number
+          acwpByElement: Json
+          acwpHours: number
+          bac: number
+          baselineId?: string | null
+          bcwp: number
+          bcws: number
+          companyId: string
+          controlAccountId: string
+          createdAt?: string
+          createdBy: string
+          fiscalYear: number
+          id?: string
+          periodNumber: number
+          projectElementId: string
+          projectId: string
+          technique: Database["public"]["Enums"]["earnedValueTechnique"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountingPeriodId?: string
+          acwp?: number
+          acwpByElement?: Json
+          acwpHours?: number
+          bac?: number
+          baselineId?: string | null
+          bcwp?: number
+          bcws?: number
+          companyId?: string
+          controlAccountId?: string
+          createdAt?: string
+          createdBy?: string
+          fiscalYear?: number
+          id?: string
+          periodNumber?: number
+          projectElementId?: string
+          projectId?: string
+          technique?: Database["public"]["Enums"]["earnedValueTechnique"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earnedValuePeriod_accountingPeriodId_fkey"
+            columns: ["accountingPeriodId"]
+            isOneToOne: false
+            referencedRelation: "accountingPeriod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_baseline_fkey"
+            columns: ["baselineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectBaseline"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_controlAccount_fkey"
+            columns: ["controlAccountId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_element_fkey"
+            columns: ["projectElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnedValuePeriod_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       employee: {
         Row: {
           active: boolean
@@ -47709,6 +47912,8 @@ export type Database = {
       project: {
         Row: {
           active: boolean
+          budgetControl: Database["public"]["Enums"]["budgetControl"]
+          budgetTolerancePercent: number | null
           chargeAtReceipt: boolean
           companyId: string
           costAccountId: string | null
@@ -47730,6 +47935,7 @@ export type Database = {
           isTemplate: boolean
           locationId: string | null
           lockPlanAfterMilestoneId: string | null
+          materialMeasurementPoint: string
           name: string
           nextBaselineSequence: number
           nextChangeRequestSequence: number
@@ -47744,11 +47950,14 @@ export type Database = {
           restrictCharging: boolean
           startDate: string | null
           status: Database["public"]["Enums"]["projectStatus"]
+          stopWorkDate: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
           active?: boolean
+          budgetControl?: Database["public"]["Enums"]["budgetControl"]
+          budgetTolerancePercent?: number | null
           chargeAtReceipt?: boolean
           companyId: string
           costAccountId?: string | null
@@ -47770,6 +47979,7 @@ export type Database = {
           isTemplate?: boolean
           locationId?: string | null
           lockPlanAfterMilestoneId?: string | null
+          materialMeasurementPoint?: string
           name: string
           nextBaselineSequence?: number
           nextChangeRequestSequence?: number
@@ -47784,11 +47994,14 @@ export type Database = {
           restrictCharging?: boolean
           startDate?: string | null
           status?: Database["public"]["Enums"]["projectStatus"]
+          stopWorkDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
           active?: boolean
+          budgetControl?: Database["public"]["Enums"]["budgetControl"]
+          budgetTolerancePercent?: number | null
           chargeAtReceipt?: boolean
           companyId?: string
           costAccountId?: string | null
@@ -47810,6 +48023,7 @@ export type Database = {
           isTemplate?: boolean
           locationId?: string | null
           lockPlanAfterMilestoneId?: string | null
+          materialMeasurementPoint?: string
           name?: string
           nextBaselineSequence?: number
           nextChangeRequestSequence?: number
@@ -47824,6 +48038,7 @@ export type Database = {
           restrictCharging?: boolean
           startDate?: string | null
           status?: Database["public"]["Enums"]["projectStatus"]
+          stopWorkDate?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -49423,9 +49638,12 @@ export type Database = {
         Row: {
           actualParameterId: string | null
           allocationPercent: number | null
+          apportionedFactor: number | null
+          apportionedToElementId: string | null
           budget: number | null
           companyId: string
           completedAt: string | null
+          controlAccountManagerId: string | null
           costAccountId: string | null
           costTreatment:
             | Database["public"]["Enums"]["projectCostTreatment"]
@@ -49435,6 +49653,10 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           description: Json | null
+          earnedValuePercent: number | null
+          earnedValueTechnique:
+            | Database["public"]["Enums"]["earnedValueTechnique"]
+            | null
           estimateAtCompletion: number | null
           estimatedHours: number | null
           fixedAssetId: string | null
@@ -49442,6 +49664,7 @@ export type Database = {
           id: string
           isBilling: boolean
           isChargeable: boolean
+          isControlAccount: boolean
           isFinalAsset: boolean
           isLeave: boolean
           isPreproduction: boolean
@@ -49489,9 +49712,12 @@ export type Database = {
         Insert: {
           actualParameterId?: string | null
           allocationPercent?: number | null
+          apportionedFactor?: number | null
+          apportionedToElementId?: string | null
           budget?: number | null
           companyId: string
           completedAt?: string | null
+          controlAccountManagerId?: string | null
           costAccountId?: string | null
           costTreatment?:
             | Database["public"]["Enums"]["projectCostTreatment"]
@@ -49501,6 +49727,10 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description?: Json | null
+          earnedValuePercent?: number | null
+          earnedValueTechnique?:
+            | Database["public"]["Enums"]["earnedValueTechnique"]
+            | null
           estimateAtCompletion?: number | null
           estimatedHours?: number | null
           fixedAssetId?: string | null
@@ -49508,6 +49738,7 @@ export type Database = {
           id?: string
           isBilling?: boolean
           isChargeable?: boolean
+          isControlAccount?: boolean
           isFinalAsset?: boolean
           isLeave?: boolean
           isPreproduction?: boolean
@@ -49557,9 +49788,12 @@ export type Database = {
         Update: {
           actualParameterId?: string | null
           allocationPercent?: number | null
+          apportionedFactor?: number | null
+          apportionedToElementId?: string | null
           budget?: number | null
           companyId?: string
           completedAt?: string | null
+          controlAccountManagerId?: string | null
           costAccountId?: string | null
           costTreatment?:
             | Database["public"]["Enums"]["projectCostTreatment"]
@@ -49569,6 +49803,10 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           description?: Json | null
+          earnedValuePercent?: number | null
+          earnedValueTechnique?:
+            | Database["public"]["Enums"]["earnedValueTechnique"]
+            | null
           estimateAtCompletion?: number | null
           estimatedHours?: number | null
           fixedAssetId?: string | null
@@ -49576,6 +49814,7 @@ export type Database = {
           id?: string
           isBilling?: boolean
           isChargeable?: boolean
+          isControlAccount?: boolean
           isFinalAsset?: boolean
           isLeave?: boolean
           isPreproduction?: boolean
@@ -49631,6 +49870,13 @@ export type Database = {
             referencedColumns: ["id", "projectId", "companyId"]
           },
           {
+            foreignKeyName: "projectElement_apportioned_fkey"
+            columns: ["apportionedToElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
             foreignKeyName: "projectElement_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
@@ -49657,6 +49903,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectElement_controlAccountManagerId_fkey"
+            columns: ["controlAccountManagerId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_controlAccountManagerId_fkey"
+            columns: ["controlAccountManagerId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_controlAccountManagerId_fkey"
+            columns: ["controlAccountManagerId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_controlAccountManagerId_fkey"
+            columns: ["controlAccountManagerId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectElement_controlAccountManagerId_fkey"
+            columns: ["controlAccountManagerId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
           {
             foreignKeyName: "projectElement_costAccountId_fkey"
@@ -102126,6 +102407,7 @@ export type Database = {
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"
       batchType: "Sequential" | "Simultaneous"
+      budgetControl: "None" | "Warn" | "Block"
       capacityResourceKind: "WorkCenter" | "OperatorPool" | "Employee"
       changeOrderChangeType:
         | "Version"
@@ -102291,6 +102573,13 @@ export type Database = {
         | "Audio"
         | "Other"
         | "Model"
+      earnedValueTechnique:
+        | "0/100"
+        | "50/50"
+        | "Percent Complete"
+        | "Milestone"
+        | "Level of Effort"
+        | "Apportioned"
       elementOfCost:
         | "Labor"
         | "Material"
@@ -103798,6 +104087,7 @@ export const Constants = {
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
       assemblyStepStatus: ["Todo", "Review", "Done"],
       batchType: ["Sequential", "Simultaneous"],
+      budgetControl: ["None", "Warn", "Block"],
       capacityResourceKind: ["WorkCenter", "OperatorPool", "Employee"],
       changeOrderChangeType: [
         "Version",
@@ -103979,6 +104269,14 @@ export const Constants = {
         "Audio",
         "Other",
         "Model",
+      ],
+      earnedValueTechnique: [
+        "0/100",
+        "50/50",
+        "Percent Complete",
+        "Milestone",
+        "Level of Effort",
+        "Apportioned",
       ],
       elementOfCost: [
         "Labor",

@@ -87,7 +87,7 @@ These correct or add to the spec. Task 22 records them there.
 
 - [x] Task 1: Create the Phase 5c enum migration
 - [x] Task 2: Create the project control migration
-- [ ] Task 3: Apply migrations, regenerate types, ship RLS
+- [x] Task 3: Apply migrations, regenerate types, ship RLS
 - [ ] Task 4: Add the schedule to the baseline snapshot
 - [ ] Task 5: Add the ee package skeleton
 - [ ] Task 6: Add the pure budget engine
@@ -1108,3 +1108,8 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   4. Each `ADD CONSTRAINT` sits in one `DO` block per table with the `pg_constraint` guard.
   5. Risk, not changed: a delete of an Apportioned element's base element fails on `projectElement_apportioned_check`, because the FK sets `apportionedToElementId` to null. A project delete fails while a snapshot of a Closed period exists, because the freeze trigger refuses the cascade delete.
   6. 🛑 Until Task 14 ships the `earned-value-closed` evaluator, the close checklist shows "Close earned value for the period" as an open required task on this branch's database. A user can skip it.
+- Task 3:
+  1. The generated RLS migration is `20261011225309_project-control-rls.sql`. `pnpm db:migrate` ran a second time to record it. `authz check` reports no drift. The SELECT policy lets any employee of the company read, the default of `company("projects", …)`.
+  2. The freeze proof ran in a rolled-back transaction on an Open period of a test company: set it Locked, insert a row, update it (allowed), set the period Closed, update again. The last update failed with "Earned value of a closed period cannot change".
+  3. The regenerated types change the MCP digest (`tool-manifest.digest.json`); the commit carries it. `check:workflow-catalog` passes with no catalog change.
+  4. `pnpm --filter @carbon/database test -- migration` runs the whole suite: 518 pass.

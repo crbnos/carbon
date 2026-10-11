@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261011204730",
+  "schemaVersion": "20261011225309",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-11T20:54:25.435Z",
+  "exportedAt": "2026-10-11T22:55:11.581Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -5847,7 +5847,11 @@
         "planningGroupId",
         "planningPriority",
         "costObjective",
-        "restrictCharging"
+        "restrictCharging",
+        "budgetControl",
+        "budgetTolerancePercent",
+        "stopWorkDate",
+        "materialMeasurementPoint"
       ]
     },
     {
@@ -6005,7 +6009,13 @@
         "fixedPrice",
         "isUnallowable",
         "isPreproduction",
-        "isLeave"
+        "isLeave",
+        "isControlAccount",
+        "controlAccountManagerId",
+        "earnedValueTechnique",
+        "earnedValuePercent",
+        "apportionedToElementId",
+        "apportionedFactor"
       ]
     },
     {
@@ -6393,6 +6403,32 @@
         "deferredBase",
         "assetAmount",
         "assetBase",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "earnedValuePeriod",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "controlAccountId",
+        "accountingPeriodId",
+        "fiscalYear",
+        "periodNumber",
+        "technique",
+        "baselineId",
+        "bac",
+        "bcws",
+        "bcwp",
+        "acwp",
+        "acwpHours",
+        "acwpByElement",
         "createdBy",
         "createdAt",
         "updatedBy",

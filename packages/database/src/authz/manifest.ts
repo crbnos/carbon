@@ -493,6 +493,11 @@ export const manifest = {
     select: owner("userId"),
     insert: owner("userId")
   }),
+  earnedValuePeriod: company("projects", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   employee: company("users", { create: "users_update" }),
   employeeAbility: company("resources", { read: "resources_view" }),
   employeeJob: company("people"),

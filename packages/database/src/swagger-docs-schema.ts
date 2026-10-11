@@ -678,6 +678,276 @@ export default {
         tags: ["procedures"]
       }
     },
+    "/earnedValuePeriod": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.controlAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.technique"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.baselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bac"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bcws"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bcwp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwpHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwpByElement"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/earnedValuePeriod"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["earnedValuePeriod"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.earnedValuePeriod"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["earnedValuePeriod"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.controlAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.technique"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.baselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bac"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bcws"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bcwp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwpHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwpByElement"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["earnedValuePeriod"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.controlAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.technique"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.baselineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bac"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bcws"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.bcwp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwp"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwpHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.acwpByElement"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.earnedValuePeriod.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.earnedValuePeriod"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["earnedValuePeriod"]
+      }
+    },
     "/payrollPeriodTotal": {
       get: {
         parameters: [
@@ -10693,6 +10963,24 @@ export default {
             $ref: "#/parameters/rowFilter.projectElement.isLeave"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElement.isControlAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.controlAccountManagerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.earnedValueTechnique"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.earnedValuePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.apportionedToElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.apportionedFactor"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -10920,6 +11208,24 @@ export default {
             $ref: "#/parameters/rowFilter.projectElement.isLeave"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElement.isControlAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.controlAccountManagerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.earnedValueTechnique"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.earnedValuePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.apportionedToElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.apportionedFactor"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -11099,6 +11405,24 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectElement.isLeave"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.isControlAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.controlAccountManagerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.earnedValueTechnique"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.earnedValuePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.apportionedToElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.apportionedFactor"
           },
           {
             $ref: "#/parameters/body.projectElement"
@@ -104662,6 +104986,18 @@ export default {
             $ref: "#/parameters/rowFilter.project.restrictCharging"
           },
           {
+            $ref: "#/parameters/rowFilter.project.budgetControl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.budgetTolerancePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.stopWorkDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.materialMeasurementPoint"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -104829,6 +105165,18 @@ export default {
             $ref: "#/parameters/rowFilter.project.restrictCharging"
           },
           {
+            $ref: "#/parameters/rowFilter.project.budgetControl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.budgetTolerancePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.stopWorkDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.materialMeasurementPoint"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -104948,6 +105296,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.project.restrictCharging"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.budgetControl"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.budgetTolerancePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.stopWorkDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.project.materialMeasurementPoint"
           },
           {
             $ref: "#/parameters/body.project"
@@ -127527,6 +127887,128 @@ export default {
       },
       type: "object"
     },
+    earnedValuePeriod: {
+      required: [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "controlAccountId",
+        "accountingPeriodId",
+        "fiscalYear",
+        "periodNumber",
+        "technique",
+        "bac",
+        "bcws",
+        "bcwp",
+        "acwp",
+        "acwpHours",
+        "acwpByElement",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('evp'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        controlAccountId: {
+          format: "text",
+          type: "string"
+        },
+        accountingPeriodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `accountingPeriod.id`.<fk table='accountingPeriod' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        fiscalYear: {
+          format: "integer",
+          type: "integer"
+        },
+        periodNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        technique: {
+          enum: [
+            "0/100",
+            "50/50",
+            "Percent Complete",
+            "Milestone",
+            "Level of Effort",
+            "Apportioned"
+          ],
+          format: 'public."earnedValueTechnique"',
+          type: "string"
+        },
+        baselineId: {
+          format: "text",
+          type: "string"
+        },
+        bac: {
+          format: "numeric",
+          type: "number"
+        },
+        bcws: {
+          format: "numeric",
+          type: "number"
+        },
+        bcwp: {
+          format: "numeric",
+          type: "number"
+        },
+        acwp: {
+          format: "numeric",
+          type: "number"
+        },
+        acwpHours: {
+          format: "numeric",
+          type: "number"
+        },
+        acwpByElement: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     payrollPeriodTotal: {
       required: [
         "id",
@@ -131875,7 +132357,8 @@ export default {
         "isFinalAsset",
         "isUnallowable",
         "isPreproduction",
-        "isLeave"
+        "isLeave",
+        "isControlAccount"
       ],
       properties: {
         id: {
@@ -132160,6 +132643,41 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        isControlAccount: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        controlAccountManagerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        earnedValueTechnique: {
+          enum: [
+            "0/100",
+            "50/50",
+            "Percent Complete",
+            "Milestone",
+            "Level of Effort",
+            "Apportioned"
+          ],
+          format: 'public."earnedValueTechnique"',
+          type: "string"
+        },
+        earnedValuePercent: {
+          format: "numeric",
+          type: "number"
+        },
+        apportionedToElementId: {
+          format: "text",
+          type: "string"
+        },
+        apportionedFactor: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -176518,7 +177036,9 @@ export default {
         "chargeAtReceipt",
         "governmentFurnished",
         "planningPriority",
-        "restrictCharging"
+        "restrictCharging",
+        "budgetControl",
+        "materialMeasurementPoint"
       ],
       properties: {
         id: {
@@ -176715,6 +177235,25 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        budgetControl: {
+          default: "None",
+          enum: ["None", "Warn", "Block"],
+          format: 'public."budgetControl"',
+          type: "string"
+        },
+        budgetTolerancePercent: {
+          format: "numeric",
+          type: "number"
+        },
+        stopWorkDate: {
+          format: "date",
+          type: "string"
+        },
+        materialMeasurementPoint: {
+          default: "Receipt",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -180920,6 +181459,135 @@ export default {
     },
     "rowFilter.procedures.versions": {
       name: "versions",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.earnedValuePeriod": {
+      name: "earnedValuePeriod",
+      description: "earnedValuePeriod",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/earnedValuePeriod"
+      }
+    },
+    "rowFilter.earnedValuePeriod.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.controlAccountId": {
+      name: "controlAccountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.accountingPeriodId": {
+      name: "accountingPeriodId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.fiscalYear": {
+      name: "fiscalYear",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.periodNumber": {
+      name: "periodNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.technique": {
+      name: "technique",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.baselineId": {
+      name: "baselineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.bac": {
+      name: "bac",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.bcws": {
+      name: "bcws",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.bcwp": {
+      name: "bcwp",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.acwp": {
+      name: "acwp",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.acwpHours": {
+      name: "acwpHours",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.acwpByElement": {
+      name: "acwpByElement",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.earnedValuePeriod.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -186152,6 +186820,42 @@ export default {
     },
     "rowFilter.projectElement.isLeave": {
       name: "isLeave",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.isControlAccount": {
+      name: "isControlAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.controlAccountManagerId": {
+      name: "controlAccountManagerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.earnedValueTechnique": {
+      name: "earnedValueTechnique",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.earnedValuePercent": {
+      name: "earnedValuePercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.apportionedToElementId": {
+      name: "apportionedToElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.apportionedFactor": {
+      name: "apportionedFactor",
       required: false,
       in: "query",
       type: "string"
@@ -235814,6 +236518,30 @@ export default {
     },
     "rowFilter.project.restrictCharging": {
       name: "restrictCharging",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.budgetControl": {
+      name: "budgetControl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.budgetTolerancePercent": {
+      name: "budgetTolerancePercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.stopWorkDate": {
+      name: "stopWorkDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.project.materialMeasurementPoint": {
+      name: "materialMeasurementPoint",
       required: false,
       in: "query",
       type: "string"
