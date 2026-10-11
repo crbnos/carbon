@@ -24,6 +24,7 @@ export * from "./bom";
 export * from "./calculate-due-date";
 export * from "./color";
 export * from "./const";
+export * from "./contract-funding";
 export * from "./contract-invoice-plan";
 export * from "./contract-revenue";
 export * from "./country";

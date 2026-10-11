@@ -67,7 +67,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 5: Create the SQL functions migration
 - [x] Task 6: Apply migrations, regenerate types, ship RLS
 - [x] Task 7: Add the pure timekeeping helpers
-- [ ] Task 8: Add the pure funding helpers
+- [x] Task 8: Add the pure funding helpers
 - [ ] Task 9: Set the unallowable flag and check charge restrictions at posting
 - [ ] Task 10: Add the `save-timesheet-entry` server function
 - [ ] Task 11: Add the `submit-timesheet-week` server function
@@ -1479,3 +1479,4 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   3. The `balance-sheet.test.ts` account fixture gains the 3 new account columns.
 - Task 6: `pnpm --filter @carbon/database authz check` reports no drift, the authz tests pass (35), and `erp`, `mes`, `@carbon/utils`, `@carbon/ee`, `@carbon/server-functions`, `@carbon/database` and `@carbon/jobs` typecheck. The workflow catalog is current. The new UI string has an empty `msgstr` in the other locales; the branch-wide `/translate` run fills it.
 - Task 7: `nextEntryStatus` in Standard mode also lets the owner change a Rejected entry, which becomes Draft. Phase 1a `upsertTimesheetCell` edits a Draft or a Rejected entry, and the rule for the executor says Standard mode keeps Phase 1a behavior. The two types derive from the generated enums (`timekeepingControls`, `timesheetEntryStatus`) in place of hand-written unions, as `project-billing.ts` does. The refusal texts are exported constants (`TIMESHEET_REFUSAL_NOT_DRAFT`, `TIMESHEET_REFUSAL_POSTED`). `weekStartOf` uses `startOfWeek(…, "en-GB")`, as the ERP's week helper in `projects.models.ts` does.
+- Task 8: `allocateToAcrns` leaves an ACRN that takes nothing out of `allocations`, and a credit's `unallocated` is negative. A credit breaks a tie on the first funding date by the reverse ACRN order. The plan does not say either point.
