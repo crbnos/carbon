@@ -93,7 +93,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 31: Add the report queries and the CSV route
 - [x] Task 32: Add the Reports page
 - [x] Task 33: Keep the demo datasets green
-- [ ] Task 34: Update the rules, AGENTS.md, docs and spec
+- [x] Task 34: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 35: Verify in the browser
 
 ## Dependencies
@@ -1692,4 +1692,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   6. The new strings reached the `.po` files in the commit before this task (`f02dedc5ec`, the log fix): the pre-commit hook extracts from the working tree, where this task's files already were. Their `msgstr` is empty in the other locales; the branch-wide `/translate` run fills them.
   7. Browser verification deferred.
 - Task 33: `pnpm db:check:datasets` passes for all four datasets (satellite, robotics, precision, motor) with no change. No `COVERAGE` set in `validate.ts` is built from `timesheetEntryStatus`, so `Pending Employee Review` needs no `except` entry (step 2 does not apply). `pnpm db:check:backups` reports `packages/jobs/manifests/schema.json: restorable`. The task changes no code; this commit holds only the plan.
+- Task 34:
+  1. New rule `.claude/rules/government-contracting.md` (the `paths:` of the plan). `projects-system.md` points to it, notes the `unallowable` stamp and the charge restriction, and no longer names `submitTimesheetEntries`, which Task 16 removed. `event-system.md` names the new sweep; `csv-import-system.md` lists `payrollPeriodTotal` and describes its importer.
+  2. `packages/jobs/AGENTS.md` (the `timesheet-missing-time` entry point), `packages/server-functions/AGENTS.md` (a 5a paragraph), `apps/erp/app/modules/projects/AGENTS.md` (the 5a tables, service functions and reports; the MES line now says the MES calls the 2 server functions), and the root Task Router row.
+  3. `packages/database/AGENTS.md` gained the `./timesheet-readiness` row in the fix commit after Task 30.
+  4. Docs: `docs/content/docs/reference/government-contracting.mdx`, in `reference/meta.json` and in the Projects group of `REFERENCE_GROUPS` (`docs/app/docs/layout.tsx`). `project-billing` was missing from every group, so it rendered ungrouped at the end of the sidebar; it now sits in the Projects group too. The page has one `<Screenshot>` slot (Settings → Timekeeping) and an `<AgentContext>` with the exact refusal texts.
+  5. Spec: decisions P1–P10 in *Design Decisions*, Phase 5a marked done in *Delivery phases*, the status line, and a changelog line. The spec stays in `.ai/specs/`: Phases 5b–5d are not built.
+  6. Verify: `pnpm --filter docs typecheck` exits 0; `pnpm --filter @carbon/checks license-headers` fixes 0 files; `pnpm --filter @carbon/content test` (internal links and anchors) 17 passed; `pnpm run generate:mcp` changes nothing. A temporary `next dev` on port 3012 served the new page with 200 after one fix: a `<project>` placeholder in the `<AgentContext>` text broke the MDX parse and made every page 500.
+- Task 35: Browser verification deferred.
 

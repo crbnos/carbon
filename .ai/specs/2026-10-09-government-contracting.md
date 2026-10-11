@@ -1,6 +1,6 @@
 # Government Contracting: an adequate accounting system, indirect rates, control and R&D tax
 
-> Status: draft. Every open question is resolved (Q1–Q3 answered 2026-10-09). Ready for /plan.
+> Status: Phase 5a implemented (2026-10-11); Phases 5b, 5c and 5d are planned. Every open question is resolved (Q1–Q3 answered 2026-10-09).
 > Author: Brad (with Claude)
 > Date: 2026-10-09
 > Research: `.ai/research/government-contracting-layer.md` and `.ai/research/projects-wbs-pmmo.md` (patterns 8 and 10, Answer 7). The first covers indirect rates, unallowable costs, DCAA timekeeping, CLIN/ACRN funding, budget control, earned value, R&D tax and the SF 1408 ranking.
@@ -217,6 +217,16 @@ A **Stop work** action on a Direct project records the order date and the 90-day
 | 18 | Commercial gating | 5a and 5d community; 5b and 5c commercial (`GOVERNMENT_CONTRACTING`). | Brad 2026-10-09 (Q1). |
 | 19 | Work-center overhead | `offsetAbsorbedOverhead` on a pool subtracts overhead already absorbed by work centers. | Brad 2026-10-09 (Q3). Avoids charging overhead twice. |
 | 17 | Backward compatibility (H7) | Every control is off until DCAA mode or a pool exists. New columns default to today's behavior. | No FROZEN surface. |
+| P1 | Leave element (5a plan) | A column `projectElement.isLeave`. A leave element must be on a project with cost objective Indirect. | Time on leave is charged ahead of the day, so a leave element is the one exception to "no advance entry". |
+| P2 | Late reason (5a plan) | A column `timesheetEntry.lateReason`. The late-entry report lists the entries that have one. | The reason belongs to the entry it explains. |
+| P3 | Labor transfer link (5a plan) | A column `timesheetEntry.correctionOfId` on the replacement entry. A transfer is a correction whose charge number changes. | Reuses the Phase 1 correction; the report finds a transfer by comparing the two charge numbers. |
+| P4 | Re-dilution (5a plan) | A column `timesheetEntry.dilutionFactor`. Null means 1. | A later correction must know the factor the entry posted with. |
+| P5 | Revision of a deleted entry (5a plan) | `timesheetEntryRevision.timesheetEntryId` has no foreign key. The table also stores `employeeId` for the owner read policy. | The trail outlives a deleted Draft entry. |
+| P6 | Certification history (5a plan) | `timesheetCertification` has no unique key. A re-certified week keeps every row; the latest row is current. | Every certification is evidence. |
+| P7 | ACRN allocation (5a plan) | A table `salesInvoiceFundingAllocation` (invoice, contract line, ACRN, amount). | An invoice of one CLIN can draw on more than one ACRN. |
+| P8 | Payroll import path (5a plan) | The existing CSV import wizard, with a table `payrollPeriodTotal`, in place of an `import-payroll-totals` server function. | The wizard already does upload, column mapping and employee mapping. |
+| P9 | Shared timesheet writes (5a plan) | Two server functions, `save-timesheet-entry` and `submit-timesheet-week`. The ERP and the MES call them. | The DCAA rules live in one place. |
+| P10 | Lines with funding actions (5a plan) | Billing lines only (Time & Materials and Cost Plus). | A billing line keeps its id for its whole life (project billing P9), so a funding row never moves to another line. |
 
 ## Data Model Changes
 
@@ -392,7 +402,7 @@ Phase 5d
 
 ## Delivery phases
 
-1. **Phase 5a: adequate system.** Cost objectives, unallowable, DCAA timekeeping, dilution, labor distribution with payroll import, CLIN/ACRN funding, preproduction.
+1. **Phase 5a: adequate system.** Cost objectives, unallowable, DCAA timekeeping, dilution, labor distribution with payroll import, CLIN/ACRN funding, preproduction. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34; the browser verification (Task 35) is deferred.
 2. **Phase 5b: indirect rates.** Pools, rates, computation, burden, provisional billing and ceilings, re-burden, retroactive billing, the ICE export.
 3. **Phase 5c: control and reporting.** Budget availability control, earned value (native and the export), stop-work.
 4. **Phase 5d: R&D tax.** Tags and the two reports.
@@ -446,3 +456,5 @@ Resolved autonomously (2026-10-09), open to veto:
 
   Also from a map of Carbon's accounts, dimensions, periods, employees, timecards, audit log and reports. Q1 (gating) and Q2 (payroll source) are open.
 - 2026-10-09: Q1–Q3 resolved (Brad), each with the recommendation. Status: ready for /plan.
+- 2026-10-11: Phase 5a implemented (`.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34). Decisions P1–P10 of the plan are recorded in *Design Decisions*. Rule: `.claude/rules/government-contracting.md`. The browser verification (Task 35) is deferred.
+

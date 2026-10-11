@@ -132,6 +132,10 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `projectStockTransfer`, `projectStockTransferLine` | Transfer / Borrow / Payback documents; the line's `unitCost` is stamped at posting |
 | `projectBorrow` | An open borrow: quantity, `quantityPaidBack`, `borrowedUnitCost`, due date |
 | `planningGroup` | Location, excess rule (+ `exceptionProjectId`), priority rule, `active` (Phase 3) |
+| `project.costObjective` / `restrictCharging`, `projectMember` | Cost objective and the charge restriction (Government Contracting 5a; `.claude/rules/government-contracting.md`) |
+| `projectElement.isUnallowable` / `isPreproduction` / `isLeave` | Element flags (5a) |
+| `timesheetEntryRevision`, `timesheetCertification` | DCAA correction trail and weekly certification (5a) |
+| `get_missing_timesheet_days` (RPC) | Scheduled work days with no entry (5a) |
 | `projectPeg` | Versioned pegs: supply (`supplyType`, `supplyId`), member demand, `state`, `supersededAt`, `hardenedAt`, `itemLedgerId` |
 
 ## Key Service Functions
@@ -198,6 +202,15 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   recognized to date and the latest month's progress, EAC and price (Phase 4b). The Billing
   tab passes it to `ProjectBillingLines` (**Percent Complete**, **Revenue Recognized**), and
   the contract page (`contract+/$id.details.tsx`) to `ContractProjectBilling`.
+- `getProjectMembers`, `addProjectMember`, `removeProjectMember`;
+  `getTimesheetRevisions`, `getPendingReviewEntries`, `acceptTimesheetReview`;
+  `getTimesheetWeekView` (`.server`, shared by My Timesheet and the manager's employee
+  timesheet page `projects+/timesheets.$employeeId.tsx`) — DCAA timekeeping (5a).
+- `getLateTimesheetEntries`, `getMissingTimesheetDays`, `getLaborTransfers`,
+  `getTimesheetAuditRows`, `getLaborDistributionRows`, `getLaborDistributionPeriods`,
+  `getCostByClin` (Kysely, no `@mcp` tag); `buildLaborDistribution`, `projectReportKeys`
+  (models) — Projects → **Reports** (`projects+/reports.tsx`) and its CSV route
+  `api+/projects.reports.$reportKey[.]csv.ts`, which checks each report's permissions.
 - `getPlanningSegmentOwners`, `moveActionPegsToSupply` (`.server`) — the planning routes'
   Apply in a group segment: the owner of each segment, and one transaction that moves an
   action's pegs onto the PO line or job it created.
@@ -216,7 +229,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   `getMethodMaterialsByMakeMethod` for the Issue Material BOM picks; project stock stripes
   (`inventory-system.md` → *Project stock*), the quantities page's owner filter and the
   count lines' Stock Owner column.
-- **MES** — `apps/mes/app/services/projects.service.ts` copies the timesheet functions.
+- **MES** — saves and submits time through the same `save-timesheet-entry` and
+  `submit-timesheet-week` server functions (`serverFns.system`).
 
 ## Rules References
 - `.claude/rules/projects-system.md` — posting, charge gates, ids, consume-to-project jobs,
@@ -228,5 +242,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 - `.claude/rules/inventory-system.md` → *Project stock* — stripes, the stripe set of a
   demand, the key order.
 - `.claude/rules/fixed-asset-lifecycle.md` — the CIP side of capital projects.
+- `.claude/rules/government-contracting.md` — cost objectives, unallowable cost, DCAA
+  timekeeping, dilution, labor transfers, payroll totals, CLIN funding and the reports.
 - `.claude/rules/accounting-sync-handlers.md` — how the new journal sources sync.
 - `.claude/rules/database-patterns.md` — Kysely transactions and server functions.

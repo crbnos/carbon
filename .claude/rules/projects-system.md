@@ -24,7 +24,10 @@ Phases 4a and 4b of `.ai/specs/implemented/2026-10-09-project-billing.md`; plans
 `.ai/plans/2026-10-08-projects-phase-3.md`,
 `.ai/plans/2026-10-09-project-billing-phase-4a.md` and
 `.ai/plans/2026-10-09-project-billing-phase-4b.md` (their *Execution notes* record every
-deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`.
+deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`. Cost objectives,
+unallowable cost, DCAA timekeeping, dilution, labor transfers and the reports
+(Government Contracting Phase 5a) have their own rule:
+`.claude/rules/government-contracting.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
 an element) is the cost object that jobs, PO lines, purchase invoice lines, charge and
@@ -87,6 +90,9 @@ Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
   only stamped Posted, with no journal (`post-timesheet/plan.ts`).
 - A void or repost writes negative rows with `reversalOfId`
   (`reverseProjectLedgerRows`). Never delete or update a row.
+- `unallowable` is stamped at posting by `isUnallowableCharge` (the account's
+  allowability or an unallowable element up the tree); a reversal copies its original's
+  flag. An unallowable row creates no billable item (see `government-contracting.md`).
 - Every poster writes its rows and its journal for every company. The journal follows
   main's always-post rule (`.ai/specs/implemented/2026-10-08-accounting-cutover.md`):
   `journalPostingStatus` makes it Provisional, with no accounting period, before the
@@ -127,7 +133,10 @@ Brad's decisions of 2026-10-11 (`.ai/runs/2026-10-11-merge-origin-main.md`,
 | `new` — time, an issue, a new charge | Released | chargeable, state group Unstarted or Started |
 | `commitment` — receipt, invoice, job issue or completion, reversal, return | Released, On Hold or Technically Complete | not Backlog or Cancelled |
 
-`post-timesheet` uses `new` for an entry and `commitment` for a reversal.
+`post-timesheet` uses `new` for an entry and `commitment` for a reversal. With
+`project.restrictCharging` on, `assertChargeable(ctx, mode, timeEmployeeId)` also refuses
+time from an employee who is not a `projectMember`; `post-timesheet` passes the employee
+only in DCAA mode and only for a new entry.
 `post-project-issue` uses `new` for an Issue and `commitment` for a Return. The first
 `new` charge moves an Unstarted element to its project's default Started state
 (`startElementsOnFirstCharge`; ERP `startElementOnFirstCharge`).
@@ -376,8 +385,12 @@ for `upsertPlanningGroup`, `createManualPeg` and `writeGroupPegs`). The MRP side
 
 ## Timesheets
 
-`timesheetEntry` status: Draft → Submitted → (Approved) → Posted, or Rejected. A
-Rejected entry is editable and returns to Draft on save. A Posted entry changes only by
+`timesheetEntry` status: Draft → Submitted → (Approved) → Posted, or Rejected; in DCAA
+mode also Pending Employee Review (an entry someone else changed). A
+Rejected entry is editable and returns to Draft on save. Every save goes through the
+`save-timesheet-entry` server function and every week submit through
+`submit-timesheet-week`, from the ERP and the MES; the DCAA rules (Government
+Contracting 5a) live there, see `.claude/rules/government-contracting.md`. A Posted entry changes only by
 `createTimesheetCorrection`: a negative reversal (`reversalOfId`, `correctionReason`)
 plus a replacement entry. With `companySettings.timesheetApprovalRequired` off, submit
 posts at once. Log time (`save-timesheet-entry`, `add` mode) submits its entry in Standard
@@ -387,7 +400,7 @@ mode. In DCAA mode it saves a Draft, which waits for the weekly certification
 **My Timesheet** is personal and lives at `x+/timesheet` (`path.to.timesheet`), outside
 the Projects layout; `x+/projects+/timesheet.tsx` redirects there. A Service row is
 read-only there: service time posts from Draft at Stop Work or Add Time on the order,
-so `submitTimesheetEntries` submits Standard entries only and `post-timesheet` posts a
+so `submit-timesheet-week` submits Standard entries only and `post-timesheet` posts a
 Service project's Draft entry.
 
 `post-timesheet` costs hours × the labor category's rate on the entry date
@@ -398,8 +411,8 @@ its original's `costRate`. The ERP and the MES call it with `serverFns.system`, 
 it requires `projects_update` and an operator does not hold it; the routes check
 ownership first.
 
-RLS: an employee may insert and update only their own Draft rows. Submit
-(`submitTimesheetEntries`), correct (`createTimesheetCorrection`) and post run over
+RLS: an employee may insert and update only their own Draft rows. Save and submit
+(the two server functions), correct (`createTimesheetCorrection`) and post run over
 Kysely, so they bypass that check. Approve and reject use the Supabase client and need
 `projects_update`.
 

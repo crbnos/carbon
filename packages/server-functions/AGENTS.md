@@ -403,6 +403,19 @@ fixture is exported as `@carbon/server-functions/lib/project-billing-test-fixtur
 the database test gate as `@carbon/server-functions/test-fixture`, for the ee database
 tests.
 
+Government contracting (Phase 5a, `.claude/rules/government-contracting.md`):
+`save-timesheet-entry` (a cell save, or `mode: "add"` for Log time and service time) and
+`submit-timesheet-week` hold every timesheet write of the ERP and the MES, and with it
+every DCAA rule (`checkDcaaEntry`, the revision trail, Pending Employee Review, the
+timecard check, the certification row). In Standard mode both keep Phase 1a behavior.
+`lib/project-posting.ts` stamps `projectLedger.unallowable` (`isUnallowableCharge`) and
+refuses time from a non-member of a `restrictCharging` project (`assertChargeable`,
+DCAA mode only). `post-timesheet/plan.ts` dilutes an exempt employee's week
+(`planDilution`, `planRedilutionPostings`, DCAA mode only).
+`create-project-billing-invoices/clin.ts` (`planClinSections`, `acrnPositions`) adds a
+Comment line per CLIN and the `salesInvoiceFundingAllocation` rows. The payroll totals
+import is `import-csv/payroll-total-import.ts`.
+
 Two more internal helpers sit at the `src/` root (not exported): `shelf-life.ts`
 (the company's expired-entity policy and expiry checks, used by `issue` and
 `post-stock-transfer`) and `tracked-entity-attributes.ts` (`attributesContain`, the
