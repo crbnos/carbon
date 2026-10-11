@@ -46,7 +46,8 @@ export function rowMenuColumn<T>(
  * Saves one grid cell: posts `fields` to `action` with `quiet` set, so the
  * route answers `{ error }` instead of a redirect and a flash. A failure
  * toasts and the cell reverts (the editable cells read `error`); a success
- * revalidates the page so totals and footers follow.
+ * revalidates the page so totals and footers follow, and toasts the route's
+ * `warning` when it sends one.
  */
 export function useCellSave() {
   const { t } = useLingui();
@@ -69,6 +70,7 @@ export function useCellSave() {
       }).catch(() => null);
       const body = (await response?.json().catch(() => null)) as {
         error?: string | { message?: string } | null;
+        warning?: string | null;
       } | null;
       // Routes answer `{ error: "…" }` or `{ error: { message } }`.
       const bodyError =
@@ -81,6 +83,9 @@ export function useCellSave() {
       if (message) {
         toast.error(message);
       } else {
+        // A saved change can still carry a warning, such as a timesheet entry
+        // that takes an element over its budget.
+        if (body?.warning) toast.warning(body.warning);
         revalidator.revalidate();
       }
 

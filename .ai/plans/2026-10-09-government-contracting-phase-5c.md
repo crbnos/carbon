@@ -95,7 +95,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 8: Add `checkBudgetAvailability` and the budget notice
 - [x] Task 9: Check the budget at PO line save and PO finalize
 - [x] Task 10: Check the budget at Issue to Project and job charge
-- [ ] Task 11: Warn on timesheets
+- [x] Task 11: Warn on timesheets
 - [ ] Task 12: Add the ACWP loader and the material point of measurement
 - [ ] Task 13: Add `getEarnedValue` and `closeEarnedValuePeriod`
 - [ ] Task 14: Add the close checklist task
@@ -1161,3 +1161,10 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   3. A Block on a job puts the overrun on the `quantity` field. A Warn adds the overrun to the flash: "Job created. <overrun>" on a new job (which had no flash before) and "Updated job. <overrun>" on the details route.
   4. Issue to Project needs `client` from `requirePermissions` for the feature check. A Block returns the overrun as the modal's error and posts nothing.
   5. The service order charge route also calls `postProjectIssue`. It is out of scope: the plan lists only `issue.tsx`.
+- Task 11:
+  1. The ERP cell route is `x+/timesheet.update.tsx` (My Timesheet moved out of `projects+`). Log time is `x+/projects+/log-time.tsx`; the MES route is `x+/timesheet.tsx`.
+  2. The ee function `checkTimesheetBudget(db, client, input)` computes hours × the cost rate (the latest `laborCategoryRate.effectiveFrom` on or before the entry date, the `rateOn` rule), runs the check with `source: "timesheet"`, and returns the message and the notices. `budgetNotices` (models) makes one notice per Block project with an owner. `formatBudgetCheckMessage` moved the base-currency formatting into ee, so the ERP `checkProjectBudget` of Task 9 now calls it.
+  3. Each app has a thin `timesheetBudgetWarning` that sends the notices with `trigger("notify", …)` (`title` and `body` carry the text) and wraps all of it in `try`/`catch`: ERP in `projects.server.ts`, MES in the new `services/project-budget.server.ts`.
+  4. "Show it under the entry": the grid cell and the MES cell have no place under a cell, and the Log time modal closes on success. So the warning is a toast. `useCellSave` toasts a `warning` field of a successful save; the MES cell toasts `message` on success; Log time returns `warning` as fetcher data and adds it to the success flash.
+  5. Not in the plan's file list, so not changed: the manager edit route `x+/projects+/timesheets.$employeeId.tsx` and the service order charge route also save timesheet entries. They give no budget warning.
+  6. Test: `budgetNotices` sends one notice per Block project with an owner (18 project-control tests pass).

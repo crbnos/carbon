@@ -13,6 +13,7 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { formatMoney } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { companyHasFeature } from "../plan.server";
@@ -26,7 +27,10 @@ import {
   BUDGET_COMMITMENT_STATUSES,
   type BudgetCheckInput,
   type BudgetCheckResult,
-  type BudgetOverrun
+  type BudgetNotice,
+  type BudgetOverrun,
+  budgetNotices,
+  budgetOverrunMessage
 } from "./models";
 
 const OK: BudgetCheckResult = { status: "ok", overruns: [] };
@@ -247,4 +251,106 @@ export async function checkBudgetAvailability(
     source !== "timesheet" &&
     overruns.some((overrun) => overrun.budgetControl === "Block");
   return { status: blocks ? "block" : "warn", overruns };
+}
+
+/** The locale of a budget message: a flash or a notice has no user locale. */
+const BUDGET_MESSAGE_LOCALE = "en-US";
+
+/**
+ * A money formatter in the company's base currency, for budget messages and
+ * notices. One read (the base currency).
+ */
+async function budgetMoneyFormatter(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<(value: number) => string> {
+  const currency = await db
+    .selectFrom("company as c")
+    .innerJoin("currency as cur", (join) =>
+      join
+        .onRef("cur.code", "=", "c.baseCurrencyCode")
+        .onRef("cur.companyGroupId", "=", "c.companyGroupId")
+    )
+    .select(["cur.code", "cur.decimalPlaces"])
+    .where("c.id", "=", companyId)
+    .executeTakeFirst();
+  return (value: number) =>
+    currency
+      ? formatMoney(
+          value,
+          BUDGET_MESSAGE_LOCALE,
+          currency.code,
+          currency.decimalPlaces
+        )
+      : String(value);
+}
+
+/**
+ * The overrun text of a check result in the company's base currency, or ""
+ * when there is no overrun.
+ */
+export async function formatBudgetCheckMessage(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  result: Pick<BudgetCheckResult, "overruns">
+): Promise<string> {
+  if (result.overruns.length === 0) return "";
+  return budgetOverrunMessage(
+    result,
+    await budgetMoneyFormatter(db, companyId)
+  );
+}
+
+/**
+ * The budget check of a saved timesheet entry (C4). The amount is hours × the
+ * labor category's cost rate on the entry date: the rate with the latest
+ * `effectiveFrom` on or before it, the rule `post-timesheet` posts with. A
+ * timesheet is never refused: the status is "ok" or "warn". `notices` are
+ * the `ProjectBudgetExceeded` notices for the Block projects' owners; the
+ * caller sends them and never fails the entry for them.
+ */
+export async function checkTimesheetBudget(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    projectId: string;
+    projectElementId: string | null;
+    laborCategoryId: string;
+    entryDate: string;
+    hours: number;
+  }
+): Promise<BudgetCheckResult & { message: string; notices: BudgetNotice[] }> {
+  if (!input.projectElementId || !(input.hours > 0)) {
+    return { ...OK, message: "", notices: [] };
+  }
+  const rate = await db
+    .selectFrom("laborCategoryRate")
+    .select("costRate")
+    .where("companyId", "=", input.companyId)
+    .where("laborCategoryId", "=", input.laborCategoryId)
+    .where("effectiveFrom", "<=", input.entryDate)
+    .orderBy("effectiveFrom", "desc")
+    .limit(1)
+    .executeTakeFirst();
+  const result = await checkBudgetAvailability(db, client, {
+    companyId: input.companyId,
+    source: "timesheet",
+    charges: [
+      {
+        projectId: input.projectId,
+        projectElementId: input.projectElementId,
+        amount: input.hours * Number(rate?.costRate ?? 0)
+      }
+    ]
+  });
+  if (result.overruns.length === 0) {
+    return { ...result, message: "", notices: [] };
+  }
+  const money = await budgetMoneyFormatter(db, input.companyId);
+  return {
+    ...result,
+    message: budgetOverrunMessage(result, money),
+    notices: budgetNotices(result, money)
+  };
 }

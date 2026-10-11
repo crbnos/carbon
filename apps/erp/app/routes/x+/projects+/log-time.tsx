@@ -12,7 +12,8 @@ import { data } from "react-router";
 import { logTimeValidator } from "~/modules/projects";
 import {
   postTimesheetEntries,
-  saveTimesheetEntry
+  saveTimesheetEntry,
+  timesheetBudgetWarning
 } from "~/modules/projects/projects.server";
 import { getCompanySettings } from "~/modules/settings";
 
@@ -67,21 +68,38 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const entryId = saved.data.entryId;
 
+  // Budget control (Government Contracting 5c): a timesheet only warns
+  // (DCAAM 7641.90). The warning goes back as fetcher data and in the flash.
+  const warning = await timesheetBudgetWarning(client, {
+    ...validation.data,
+    companyId
+  });
+  const note = warning ? ` ${warning}` : "";
+
   // DCAA mode: the entry is Draft until the employee certifies the week.
   if (saved.data.status !== "Submitted") {
     return data(
-      { success: true, error: null },
+      { success: true, error: null, warning },
       await flash(
         request,
-        success("Time saved. Submit your week on My Timesheet to certify it.")
+        success(
+          `Time saved. Submit your week on My Timesheet to certify it.${note}`
+        )
       )
     );
   }
 
   if (settings.data.timesheetApprovalRequired) {
     return data(
-      { success: true, error: null },
-      await flash(request, success("Time submitted for approval"))
+      { success: true, error: null, warning },
+      await flash(
+        request,
+        success(
+          warning
+            ? `Time submitted for approval.${note}`
+            : "Time submitted for approval"
+        )
+      )
     );
   }
 
@@ -103,7 +121,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return data(
-    { success: true, error: null },
-    await flash(request, success("Time logged"))
+    { success: true, error: null, warning },
+    await flash(
+      request,
+      success(warning ? `Time logged.${note}` : "Time logged")
+    )
   );
 }

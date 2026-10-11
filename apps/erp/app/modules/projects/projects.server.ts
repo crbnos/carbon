@@ -8,17 +8,22 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
-import {
-  type BudgetCheckInput,
-  type BudgetCheckResult,
-  budgetOverrunMessage
+import type {
+  BudgetCheckInput,
+  BudgetCheckResult
 } from "@carbon/ee/project-control";
-import { checkBudgetAvailability } from "@carbon/ee/project-control.server";
+import {
+  checkBudgetAvailability,
+  checkTimesheetBudget,
+  formatBudgetCheckMessage
+} from "@carbon/ee/project-control.server";
+import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
 import type { SaveTimesheetEntryResult } from "@carbon/server-functions/save-timesheet-entry";
 import type { SubmitTimesheetWeekResult } from "@carbon/server-functions/submit-timesheet-week";
-import { datetime, formatMoney } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
@@ -4123,9 +4128,6 @@ export async function chargeNumberError(
   return null;
 }
 
-/** The locale of a budget message: a flash or a notice has no user locale. */
-const BUDGET_MESSAGE_LOCALE = "en-US";
-
 /**
  * Runs the budget availability check (Government Contracting 5c) and formats
  * its overruns in the company's base currency. Without `GOVERNMENT_CONTRACTING`
@@ -4138,28 +4140,62 @@ export async function checkProjectBudget(
   input: BudgetCheckInput
 ): Promise<BudgetCheckResult & { message: string }> {
   const result = await checkBudgetAvailability(db, client, input);
-  if (result.status === "ok") return { ...result, message: "" };
+  return {
+    ...result,
+    message: await formatBudgetCheckMessage(db, input.companyId, result)
+  };
+}
 
-  const currency = await db
-    .selectFrom("company as c")
-    .innerJoin("currency as cur", (join) =>
-      join
-        .onRef("cur.code", "=", "c.baseCurrencyCode")
-        .onRef("cur.companyGroupId", "=", "c.companyGroupId")
-    )
-    .select(["cur.code", "cur.decimalPlaces"])
-    .where("c.id", "=", input.companyId)
-    .executeTakeFirst();
-  const money = (value: number) =>
-    currency
-      ? formatMoney(
-          value,
-          BUDGET_MESSAGE_LOCALE,
-          currency.code,
-          currency.decimalPlaces
-        )
-      : String(value);
-  return { ...result, message: budgetOverrunMessage(result, money) };
+/**
+ * The budget warning of a saved timesheet entry (Government Contracting 5c).
+ * A timesheet is never refused for budget (DCAAM 7641.90): the entry is
+ * already saved, so this returns the overrun text or null, and sends the
+ * `ProjectBudgetExceeded` notice to the owner of each Block project. Any
+ * failure is logged and returns null, so it never fails the entry.
+ */
+export async function timesheetBudgetWarning(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    projectId: string;
+    projectElementId?: string | null;
+    laborCategoryId: string;
+    entryDate: string;
+    hours: number;
+  }
+): Promise<string | null> {
+  try {
+    const budget = await checkTimesheetBudget(getDatabaseClient(), client, {
+      ...args,
+      projectElementId: args.projectElementId || null
+    });
+    for (const notice of budget.notices) {
+      try {
+        await trigger("notify", {
+          event: NotificationEvent.ProjectBudgetExceeded,
+          companyId: args.companyId,
+          documentId: notice.projectId,
+          recipient: { type: "user", userId: notice.ownerId },
+          title: notice.title,
+          body: notice.body
+        });
+      } catch (err) {
+        logger.error("Failed to send the budget exceeded notice", {
+          companyId: args.companyId,
+          projectId: notice.projectId,
+          error: err
+        });
+      }
+    }
+    return budget.status === "warn" ? budget.message : null;
+  } catch (err) {
+    logger.error("Failed to check the timesheet budget", {
+      companyId: args.companyId,
+      projectId: args.projectId,
+      error: err
+    });
+    return null;
+  }
 }
 
 /**

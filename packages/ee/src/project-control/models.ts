@@ -149,3 +149,36 @@ export function budgetOverrunMessage(
     )
     .join(" ");
 }
+
+/**
+ * The `ProjectBudgetExceeded` notices of a timesheet check: one per Block
+ * project with an owner, with that project's overruns (C4, CAM 6-404.6(10)).
+ */
+export type BudgetNotice = {
+  projectId: string;
+  ownerId: string;
+  title: string;
+  body: string;
+};
+
+export function budgetNotices(
+  result: Pick<BudgetCheckResult, "overruns">,
+  formatMoney: (n: number) => string
+): BudgetNotice[] {
+  const byProject = new Map<string, BudgetOverrun[]>();
+  for (const overrun of result.overruns) {
+    if (overrun.budgetControl !== "Block" || !overrun.ownerId) continue;
+    const list = byProject.get(overrun.projectId) ?? [];
+    list.push(overrun);
+    byProject.set(overrun.projectId, list);
+  }
+  return [...byProject.values()].map((overruns) => {
+    const first = overruns[0] as BudgetOverrun;
+    return {
+      projectId: first.projectId,
+      ownerId: first.ownerId as string,
+      title: `Budget exceeded on ${first.projectName}`,
+      body: budgetOverrunMessage({ overruns }, formatMoney)
+    };
+  });
+}

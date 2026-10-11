@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const companyHasFeature = vi.hoisted(() => vi.fn());
 vi.mock("../plan.server", () => ({ companyHasFeature }));
 
-import { budgetOverrunMessage } from "./models";
+import { budgetNotices, budgetOverrunMessage } from "./models";
 import { checkBudgetAvailability } from "./service.server";
 
 // A Kysely stand-in: every builder method returns the chain, and `execute`
@@ -179,5 +179,54 @@ describe("checkBudgetAvailability", () => {
       projected: 10500,
       overBy: 500
     });
+  });
+});
+
+describe("budgetNotices", () => {
+  const overrun = {
+    projectName: "Star Tracker",
+    elementId: "wbs-1",
+    readableId: "ST-1",
+    elementName: "Optics",
+    budget: 10000,
+    projected: 10500,
+    overBy: 500
+  };
+
+  it("sends one notice per Block project with an owner, never for Warn", () => {
+    const notices = budgetNotices(
+      {
+        overruns: [
+          {
+            ...overrun,
+            projectId: "p1",
+            budgetControl: "Block",
+            ownerId: "manager-1"
+          },
+          {
+            ...overrun,
+            projectId: "p2",
+            budgetControl: "Warn",
+            ownerId: "manager-2"
+          },
+          {
+            ...overrun,
+            projectId: "p3",
+            budgetControl: "Block",
+            ownerId: null
+          }
+        ]
+      },
+      (n) => n.toString()
+    );
+
+    expect(notices).toEqual([
+      {
+        projectId: "p1",
+        ownerId: "manager-1",
+        title: "Budget exceeded on Star Tracker",
+        body: "ST-1 Optics goes over its budget of 10000 by 500."
+      }
+    ]);
   });
 });

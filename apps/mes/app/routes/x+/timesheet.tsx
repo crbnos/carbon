@@ -51,6 +51,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { timesheetCellValidator } from "~/services/models";
+import { timesheetBudgetWarning } from "~/services/project-budget.server";
 import type { ChargeNumber, TimesheetRow } from "~/services/projects.service";
 import {
   getChargeNumbers,
@@ -169,7 +170,13 @@ export async function action({ request }: ActionFunctionArgs) {
         message: result.error.message || "Failed to save the hours"
       };
     }
-    return { success: true, message: null };
+    // Budget control (Government Contracting 5c): a timesheet only warns.
+    // The cell toasts the warning; the entry is already saved.
+    const warning = await timesheetBudgetWarning(getDatabaseClient(), client, {
+      ...validation.data,
+      companyId
+    });
+    return { success: true, message: warning };
   }
 
   if (intent === "submit") {
@@ -488,6 +495,10 @@ function DayCell({
   // A refused save remounts the input with the stored hours.
   const [resets, setResets] = useState(0);
   const fetcher = useAction<typeof action>({
+    onSuccess: (data) => {
+      // A budget overrun never refuses the hours; it only warns.
+      if (data.message) toast.warning(data.message);
+    },
     onError: (data) => {
       toast.error(data.message ?? t`Failed to save the hours`);
       latest.current = serverHours;

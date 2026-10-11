@@ -9,18 +9,22 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { timesheetCellValidator } from "~/modules/projects";
-import { saveTimesheetEntry } from "~/modules/projects/projects.server";
+import {
+  saveTimesheetEntry,
+  timesheetBudgetWarning
+} from "~/modules/projects/projects.server";
 
 const logger = getLogger("erp", "project-timesheet-update");
 
 /**
  * Saves one cell of the signed-in user's timesheet through the
  * `save-timesheet-entry` server function. Answers `{ error }`, which the
- * grid cell reads: a refusal reverts the cell and toasts.
+ * grid cell reads: a refusal reverts the cell and toasts. A budget overrun
+ * comes back as `warning` and never refuses the entry.
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     role: "employee"
   });
 
@@ -49,5 +53,12 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: { message: result.error } }, { status: 400 });
   }
 
-  return data({ error: null, data: result.data });
+  // Budget control (Government Contracting 5c): a timesheet only warns. The
+  // grid toasts the warning; the entry is already saved.
+  const warning = await timesheetBudgetWarning(client, {
+    ...validation.data,
+    companyId
+  });
+
+  return data({ error: null, data: result.data, warning });
 }
