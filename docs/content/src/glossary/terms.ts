@@ -572,6 +572,28 @@ export const terms = {
     definition: msg`A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer.`,
     href: "/docs/reference/rental-agreements#end-of-the-term"
   },
+
+  // ── Leases (lessee) ─────────────────────────────────────────────────────
+  "lessee-lease": {
+    term: msg`Lease (lessee)`,
+    definition: msg`An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization.`,
+    href: "/docs/reference/leases"
+  },
+  "right-of-use-asset": {
+    term: msg`Right-of-use asset`,
+    definition: msg`The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run.`,
+    href: "/docs/reference/leases#what-posts-to-the-ledger"
+  },
+  "lease-liability": {
+    term: msg`Lease liability`,
+    definition: msg`What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment.`,
+    href: "/docs/reference/leases#what-posts-to-the-ledger"
+  },
+  "lease-run": {
+    term: msg`Lease run`,
+    definition: msg`The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals.`,
+    href: "/docs/reference/accounting#revenue-recognition-and-lease-runs"
+  },
   contract: {
     term: msg`Contract`,
     definition: msg`A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled.`,
