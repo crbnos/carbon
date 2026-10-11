@@ -5,6 +5,7 @@
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
+import { toJson } from "@carbon/database/json";
 import { BILLABLE_REASON_NO_BILL_RATE, datetime, round } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -3351,7 +3352,11 @@ export async function rejectTimesheetEntries(
 /**
  * Corrects a Posted entry: a Submitted reversal of the original hours and,
  * when `hours` is not 0, a Submitted replacement. Both carry the reason.
- * Returns the reversal id and the replacement id (or null).
+ * A replacement on another charge number (`projectId`, `projectElementId`)
+ * or labor category is a labor transfer. The replacement names its original
+ * in `correctionOfId`. In DCAA mode the correction writes one
+ * `timesheetEntryRevision` on the original. Returns the reversal id, the
+ * replacement id (or null) and `isTransfer`.
  * @mcp action
  */
 export async function createTimesheetCorrection(
@@ -3362,6 +3367,9 @@ export async function createTimesheetCorrection(
     timesheetEntryId: string;
     hours: number;
     correctionReason: string;
+    projectId?: string;
+    projectElementId?: string;
+    laborCategoryId?: string;
   }
 ) {
   return db.transaction().execute(async (trx) => {
@@ -3409,6 +3417,19 @@ export async function createTimesheetCorrection(
       createdBy: args.userId
     };
 
+    // A labor transfer: the replacement takes the new charge number and
+    // category. The composite foreign keys keep both in the company, and
+    // the element in the project.
+    const projectId = args.projectId || original.projectId;
+    const projectElementId = args.projectId
+      ? args.projectElementId || null
+      : original.projectElementId;
+    const laborCategoryId = args.laborCategoryId || original.laborCategoryId;
+    const isTransfer =
+      projectId !== original.projectId ||
+      projectElementId !== original.projectElementId;
+    const movesProject = projectId !== original.projectId;
+
     const reversal = await trx
       .insertInto("timesheetEntry")
       .values({
@@ -3423,13 +3444,70 @@ export async function createTimesheetCorrection(
     if (args.hours !== 0) {
       const replacement = await trx
         .insertInto("timesheetEntry")
-        .values({ ...shared, hours: args.hours, reversalOfId: null })
+        .values({
+          ...shared,
+          projectId,
+          projectElementId,
+          laborCategoryId,
+          // The visit and the coverage override belong to the original
+          // project: a transfer to another project drops them.
+          ...(movesProject
+            ? { serviceVisitId: null, coverage: null, coverageReason: null }
+            : {}),
+          hours: args.hours,
+          reversalOfId: null,
+          correctionOfId: original.id
+        })
         .returning("id")
         .executeTakeFirstOrThrow();
       replacementId = replacement.id;
     }
 
-    return { reversalId: reversal.id, replacementId };
+    const settings = await trx
+      .selectFrom("companySettings")
+      .select("timekeepingControls")
+      .where("id", "=", args.companyId)
+      .executeTakeFirst();
+    if (settings?.timekeepingControls === "DCAA") {
+      const fields = (entry: {
+        hours: number | string;
+        projectId: string;
+        projectElementId: string | null;
+        laborCategoryId: string;
+        entryDate: string;
+      }) => ({
+        hours: Number(entry.hours),
+        projectId: entry.projectId,
+        projectElementId: entry.projectElementId,
+        laborCategoryId: entry.laborCategoryId,
+        entryDate: entry.entryDate
+      });
+      await trx
+        .insertInto("timesheetEntryRevision")
+        .values({
+          companyId: args.companyId,
+          timesheetEntryId: original.id,
+          employeeId: original.employeeId,
+          revisedBy: args.userId,
+          reason: args.correctionReason,
+          before: toJson(fields(original)) ?? null,
+          after:
+            args.hours === 0
+              ? null
+              : (toJson(
+                  fields({
+                    hours: args.hours,
+                    projectId,
+                    projectElementId,
+                    laborCategoryId,
+                    entryDate: original.entryDate
+                  })
+                ) ?? null)
+        })
+        .execute();
+    }
+
+    return { reversalId: reversal.id, replacementId, isTransfer };
   });
 }
 

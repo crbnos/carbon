@@ -696,8 +696,32 @@ export const timesheetCorrectionValidator = z.object({
   correctionReason: z
     .string()
     .trim()
-    .min(1, { message: "A reason is required for a correction" })
+    .min(1, { message: "A reason is required for a correction" }),
+  // A labor transfer: the new charge number and labor category. Empty keeps
+  // the original's.
+  projectId: zfd.text(z.string().optional()),
+  projectElementId: zfd.text(z.string().optional()),
+  laborCategoryId: zfd.text(z.string().optional())
 });
+
+export const LABOR_TRANSFER_SAME_APPROVER =
+  "A labor transfer needs an approver other than the requester";
+
+/**
+ * In DCAA mode, a labor transfer (an entry with `correctionOfId`) needs an
+ * approver other than the user who created it. Throws
+ * `LABOR_TRANSFER_SAME_APPROVER` when the approver is the requester.
+ */
+export function assertCanApprove(args: {
+  mode: Database["public"]["Enums"]["timekeepingControls"];
+  approverId: string;
+  entry: { correctionOfId: string | null; createdBy: string };
+}): void {
+  if (args.mode !== "DCAA") return;
+  if (args.entry.correctionOfId && args.entry.createdBy === args.approverId) {
+    throw new Error(LABOR_TRANSFER_SAME_APPROVER);
+  }
+}
 
 export const projectIssueDirections = ["Issue", "Return"] as const;
 

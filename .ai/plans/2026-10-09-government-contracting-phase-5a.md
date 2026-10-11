@@ -72,7 +72,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 10: Add the `save-timesheet-entry` server function
 - [x] Task 11: Add the `submit-timesheet-week` server function
 - [x] Task 12: Apply dilution in `post-timesheet`
-- [ ] Task 13: Turn corrections into labor transfers
+- [x] Task 13: Turn corrections into labor transfers
 - [ ] Task 14: Add the validators
 - [ ] Task 15: Add the service functions
 - [ ] Task 16: Route every timesheet write through the server functions
@@ -1510,3 +1510,11 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   6. `buildContractBillableItem` returns null for a Labor row with 0 hours. A dilution adjustment changes the cost, never the hours a Time & Materials line bills, so it must not add an empty billable item. The Cost Plus generator still bills the cost.
   7. The stamp UPDATE sets `dilutionFactor` with `COALESCE`, so Standard mode never writes the column.
   8. A second `databaseTest` covers DCAA end to end: 50 h post 3,400.00 at 68.00, then a reversal of 10 h re-dilutes the other 4 days by +170.00 each.
+- Task 13:
+  1. `assertCanApprove` throws `LABOR_TRANSFER_SAME_APPROVER`, as the other `assert*` helpers do. The plan says "refuses" and does not name the form.
+  2. The transfer fields are empty strings from a form, so the service treats an empty value as "keep the original". If `projectId` is given, the element is `projectElementId` or null (the project root). Without `projectId`, the replacement keeps the original project and element.
+  3. A replacement on another project drops `serviceVisitId`, `coverage` and `coverageReason`. They belong to the original project's service order. On the same project they still travel, as in Phase 1a.
+  4. The revision's `before` and `after` also hold `projectId`. A transfer between two project roots changes only the project, so without it the revision shows no change of charge number.
+  5. The composite foreign keys on `timesheetEntry` keep the new project and category in the company, and the element in the project. The service adds no separate check.
+  6. The ERP has no database test harness, so the Standard-mode path of `createTimesheetCorrection` has no database test. In Standard mode the only change is `correctionOfId` on the replacement; the function writes no revision.
+  7. `pnpm run generate:mcp` changes only the digest of `projects_createTimesheetCorrection` (3 new parameters).
