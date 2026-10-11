@@ -439,7 +439,11 @@ const postProjectIssue = defineServerFn({
       }`;
 
       // One adjustment per stripe drawn; the project is charged their sum.
-      const bookedRows: { itemLedgerId: string; cost: number }[] = [];
+      const bookedRows: {
+        itemLedgerId: string;
+        offsetJournalLineId: string | null;
+        cost: number;
+      }[] = [];
       for (const draw of draws) {
         const bookedRow = await bookAdjustment(trx, {
           ledger: {
@@ -503,6 +507,11 @@ const postProjectIssue = defineServerFn({
       const booked = {
         itemLedgerId: bookedRows[0]!.itemLedgerId,
         journalId: sharedJournalId as string | null,
+        // Every stripe's offset line is on the one project account, so the
+        // first one tells the revenue run which account the row charged.
+        offsetJournalLineId:
+          bookedRows.find((row) => row.offsetJournalLineId)
+            ?.offsetJournalLineId ?? null,
         cost: round(bookedRows.reduce((sum, row) => sum + row.cost, 0))
       };
 
@@ -524,6 +533,7 @@ const postProjectIssue = defineServerFn({
                 itemId,
                 quantity: isIssue ? quantity : -quantity,
                 amount: isIssue ? booked.cost : -booked.cost,
+                journalLineId: booked.offsetJournalLineId,
                 reversalOfId: returnedIssue?.id ?? null,
                 coverage,
                 coverageReason,

@@ -113,3 +113,4 @@ Open:
 - Project billing 4b: through MCP or the API, the close checklist's revenue run preview leaves out the Percent Complete rows. The 3 MCP tools that reach `getPeriodRunPreview` cannot take functions, so they pass no synthesizers. The ERP close page and every run call site include them.
 - Project billing 4b: the browser check (Task 14) is deferred. Check the points in the plan's Task 14 and the UI points in the 4b hand-off.
 - Project billing 4b: the revenue run page's **Amount** sums every line, so it adds the cost relief and the loss provision to the revenue.
+- A void's reversal `projectLedger` row has no `journalLineId` (`reverseProjectLedgerRows`, and the reversal rows in `post-production-event`). If the revenue run relieved the original row, the reversal is never relieved, so Project WIP stays credited by that amount. Before a relief, the two rows net to 0 and nothing is wrong.

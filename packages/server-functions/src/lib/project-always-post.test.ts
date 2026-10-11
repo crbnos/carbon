@@ -184,7 +184,7 @@ databaseTest(
 );
 
 databaseTest(
-  "before the cutover, a project issue posts a Provisional journal with no period",
+  "before the cutover, a project issue posts a Provisional journal with no period and its ledger row points at the project line",
   async () => {
     const f = await projectPostingFixture({ costTreatment: "Expense" });
     try {
@@ -213,12 +213,21 @@ databaseTest(
           sourceType: "Project Issue"
         }
       ]);
+      // A Provisional journal has line ids too: the ledger row stores the
+      // line on the project account, as the revenue run's relief reads it.
       const ledger = await f.db
         .selectFrom("projectLedger")
-        .select(["amount"])
-        .where("companyId", "=", f.companyId)
+        .innerJoin(
+          "journalLine",
+          "journalLine.id",
+          "projectLedger.journalLineId"
+        )
+        .select(["projectLedger.amount", "journalLine.accountId"])
+        .where("projectLedger.companyId", "=", f.companyId)
         .execute();
-      expect(ledger.map((row) => Number(row.amount))).toEqual([50]);
+      expect(ledger.map((row) => [Number(row.amount), row.accountId])).toEqual([
+        [50, f.account("project-expense")]
+      ]);
     } finally {
       await f.cleanup();
     }

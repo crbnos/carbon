@@ -96,7 +96,8 @@ export async function projectBillingTestFixture(
             table: "revenueRecognitionRun",
             name: "Revenue Recognition Run",
             prefix: "RR-"
-          }
+          },
+          { table: "journalEntry", name: "Journal Entry", prefix: "JE-" }
         ].map((row) => ({ ...row, companyId }))
       )
       .execute();
@@ -382,6 +383,74 @@ export async function projectBillingTestFixture(
     return { contractId, lineId };
   };
 
+  /** A FIFO bought item with `quantity` units on hand at the fixture's
+   *  location, in one cost layer at `unitCost`, for a test that posts a real
+   *  Project Issue. */
+  const addStockedItem = async (
+    key: string,
+    { quantity, unitCost }: { quantity: number; unitCost: number }
+  ) => {
+    const stockedItemId = `${prefix}-item-${key}`;
+    await db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+      await trx
+        .insertInto("item")
+        .values({
+          id: stockedItemId,
+          readableId: `${prefix}-${key}`,
+          name: `Part ${key}`,
+          type: "Part",
+          itemTrackingType: "Inventory",
+          replenishmentSystem: "Buy",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      // An item insert may already have created its cost row.
+      await trx
+        .deleteFrom("itemCost")
+        .where("itemId", "=", stockedItemId)
+        .execute();
+      await trx
+        .insertInto("itemCost")
+        .values({
+          itemId: stockedItemId,
+          costingMethod: "FIFO",
+          unitCost,
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("itemLedger")
+        .values({
+          postingDate: "2026-01-01",
+          entryType: "Positive Adjmt.",
+          itemId: stockedItemId,
+          locationId,
+          quantity,
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("costLedger")
+        .values({
+          itemLedgerType: "Positive Adjmt.",
+          costLedgerType: "Direct Cost",
+          adjustment: false,
+          itemId: stockedItemId,
+          quantity,
+          cost: quantity * unitCost,
+          remainingQuantity: quantity,
+          postingDate: "2026-01-01",
+          companyId
+        })
+        .execute();
+    });
+    return stockedItemId;
+  };
+
   /** Writes ledger rows through `insertProjectLedgerRows`, as posting does. */
   const post = async (
     rows: {
@@ -448,11 +517,20 @@ export async function projectBillingTestFixture(
     addJournalLines,
     addProject,
     addContract,
+    addStockedItem,
     post,
     items,
     async cleanup() {
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        // A Posted journal (a real Project Issue) refuses a delete.
+        await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+        await trx
+          .updateTable("journal")
+          .set({ status: "Draft" })
+          .where("companyId", "=", companyId)
+          .execute();
+        await sql`SET LOCAL session_replication_role = origin`.execute(trx);
         await trx.deleteFrom("company").where("id", "=", companyId).execute();
         await trx
           .deleteFrom("companyGroup")

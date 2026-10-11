@@ -114,6 +114,10 @@ export interface BookAdjustmentArgs {
 export interface BookAdjustmentResult {
   itemLedgerId: string;
   journalId: string | null;
+  // The journal line on the offset account (the project account for a
+  // Project Issue), or null when no journal was written. A projectLedger row
+  // stores it so the revenue run can find the account it charged.
+  offsetJournalLineId: string | null;
   cost: number;
 }
 
@@ -269,10 +273,15 @@ export async function bookAdjustment(
     .executeTakeFirstOrThrow();
 
   if (skipValuation) {
-    return { itemLedgerId: inserted.id, journalId: null, cost: 0 };
+    return {
+      itemLedgerId: inserted.id,
+      journalId: null,
+      offsetJournalLineId: null,
+      cost: 0
+    };
   }
 
-  const { journalId, cost } = await valueMovement(trx, {
+  const { journalId, offsetJournalLineId, cost } = await valueMovement(trx, {
     movement: {
       postingDate: ledger.postingDate,
       itemId: ledger.itemId,
@@ -291,7 +300,7 @@ export async function bookAdjustment(
     fixedUnitCost: args.fixedUnitCost
   });
 
-  return { itemLedgerId: inserted.id, journalId, cost };
+  return { itemLedgerId: inserted.id, journalId, offsetJournalLineId, cost };
 }
 
 export interface ValueMovementArgs {
@@ -327,12 +336,16 @@ export interface ValueMovementArgs {
 export async function valueMovement(
   trx: Transaction<DB>,
   args: ValueMovementArgs
-): Promise<{ journalId: string | null; cost: number }> {
+): Promise<{
+  journalId: string | null;
+  offsetJournalLineId: string | null;
+  cost: number;
+}> {
   const { movement, item, itemCost, accounting } = args;
   const { companyId, documentId } = movement;
 
   if (!carriesAdjustmentValue(movement.quantity, item.itemTrackingType)) {
-    return { journalId: null, cost: 0 };
+    return { journalId: null, offsetJournalLineId: null, cost: 0 };
   }
 
   const absQuantity = Math.abs(movement.quantity);
@@ -435,7 +448,7 @@ export async function valueMovement(
   // of the document that day, neither the legacy backfill (which skips a
   // document-day that has a journal) nor the re-cost could book the cost.
   if (!accounting || (cost === 0 && movement.quantity > 0)) {
-    return { journalId: null, cost };
+    return { journalId: null, offsetJournalLineId: null, cost };
   }
 
   const journalId = accounting.getJournalId
@@ -486,5 +499,10 @@ export async function valueMovement(
       .execute();
   }
 
-  return { journalId, cost };
+  return {
+    journalId,
+    // Inserted in the order [inventoryLine, offsetLine].
+    offsetJournalLineId: journalLines[1]?.id ?? null,
+    cost
+  };
 }

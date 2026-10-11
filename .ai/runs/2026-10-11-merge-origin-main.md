@@ -241,6 +241,13 @@ and a Transfer re-costed at cost) and the `splitOpeningLayersByStripe` and
    Contract project never gets a Cost Relief row. This gap is older than the
    merge. Should `bookAdjustment` return the offset line id, so the issue can
    store it?
+   **Fixed.** `valueMovement` and `bookAdjustment` return
+   `offsetJournalLineId`, and the issue stores it on its ledger row, Provisional
+   or Posted. Test: `percent-complete.test.ts` ("a material issue to the
+   Contract project is relieved from Project WIP"). The other paths that post
+   a project charge already store their line. A void's reversal row
+   (`reverseProjectLedgerRows`, the Production Event reversal) still has no
+   line: see the follow-ups in `2026-10-09-overnight-execution.md`.
 
 ## Checks after Phase 2b
 

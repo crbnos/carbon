@@ -9,8 +9,11 @@
 // The feature check reads the company's plan; it is the one stubbed boundary.
 
 import { projectBillingTestFixture } from "@carbon/server-functions/lib/project-billing-test-fixture";
+import postProjectIssue from "@carbon/server-functions/post-project-issue";
 import proposeRevenueRecognitionRun from "@carbon/server-functions/propose-revenue-recognition-run";
 import { databaseTest } from "@carbon/server-functions/test-fixture";
+import { datetime } from "@carbon/utils";
+import { endOfMonth } from "@internationalized/date";
 import { beforeEach, expect, vi } from "vitest";
 
 const plan = vi.hoisted(() => ({ hasProjectRevenue: true }));
@@ -412,6 +415,59 @@ databaseTest(
       expect(months).toEqual([]);
       expect(await reliefs(f)).toEqual([]);
       expect(await f.items(project.projectId)).toEqual([]);
+    } finally {
+      await cleanup(f);
+    }
+  }
+);
+
+databaseTest(
+  "a material issue to the Contract project is relieved from Project WIP",
+  async () => {
+    const f = await fixture();
+    try {
+      const { project } = await percentCompleteLine(f, {
+        key: "pc7",
+        billingMethod: "Cost Plus",
+        estimateAtCompletion: 1000
+      });
+      const itemId = await f.addStockedItem("bolt", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const issued = await postProjectIssue(f.ctx, {
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        itemId,
+        locationId: f.locationId,
+        quantity: 5,
+        direction: "Issue"
+      });
+      expect(issued.error).toBeNull();
+      expect(issued.data?.cost).toBe(50);
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["id", "journalLineId"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Project Issue")
+        .executeTakeFirstOrThrow();
+      expect(ledger.journalLineId).not.toBeNull();
+
+      // The issue posts today, so the run is for the current month.
+      const periodEnd = endOfMonth(
+        datetime.today("America/New_York")
+      ).toString();
+      const runId = await propose(f, periodEnd);
+      expect(runId).not.toBeNull();
+      const { totals, rows } = await runTotals(f, runId!);
+      expect(totals["Cost Relief"]).toBe(50);
+      const relief = rows.find((row) => row.type === "Cost Relief")!;
+      expect(relief.debitAccountId).toBe(f.account("cogs"));
+      expect(relief.creditAccountId).toBe(f.account("wip"));
+      expect(await reliefs(f)).toEqual([
+        { projectLedgerId: ledger.id, amount: expect.anything() }
+      ]);
     } finally {
       await cleanup(f);
     }
