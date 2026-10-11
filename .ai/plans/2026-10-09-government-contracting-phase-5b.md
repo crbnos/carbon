@@ -99,7 +99,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 12: Add the monthly job and the lock trigger
 - [x] Task 13: Add the close checklist task
 - [x] Task 14: Add the ICE schedules and the CSV route
-- [ ] Task 15: Build the Indirect Pools pages
+- [x] Task 15: Build the Indirect Pools pages
 - [ ] Task 16: Build the Indirect Rates, Statement and ICE pages
 - [ ] Task 17: Add rate ceilings to the contract line
 - [ ] Task 18: Add burden by pool to the project Costs tab
@@ -1391,3 +1391,9 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   7. L joins payroll and labor per employee with a full outer join, so an employee with labor and no payroll still shows. The difference is payroll gross wages less labor distribution dollars.
   8. `index.ts` also exports `./ice` (pure, client-safe) for the Task 16 page. The route parses the query with zod and answers 400 on a bad year or schedule.
   9. A database test (`ice.server.test.ts`) runs all 9 schedules against a seeded company. It reads the seeded values back from A, C, E, G, H and I; K and L run their SQL with no rows.
+- Task 15:
+  1. Precedent: the planning groups pages (`x+/projects+/planning-groups*`), the newest ee list with an upgrade overlay. The pool page is a drawer: the pool form, then the account mappings below it, outside the form. The drawer's Save button submits the form by id, as `ExchangeRateForm` does, so the mapping modal and the remove dialog are not nested in the pool form.
+  2. `~/components/Form` has no Dimension picker. The Add modal offers each active dimension with its values (`getActiveDimensionsWithValues`), then a Value select. A Customer, Supplier or Item dimension loads no values there, so the modal leaves it out.
+  3. The database refusals become field errors through `indirectRatesFieldErrors` (`packages/ee/src/indirect-rates/models.ts`, client-safe): the pool's sequence and name keys, and the 2 pool account keys (B4). The B2 refusal is matched by its exported text (`INDIRECT_POOL_BASE_PROJECT_ACCOUNT`) and shown on the account field.
+  4. The new and edit routes also call `requireFeature` in the new route's loader, as `planning-groups.new.tsx` does. The delete route catches `EntitlementError`, because `deleteIndirectPool` calls `requireEntitlement`; it flashes the "in use" refusal as its message.
+  5. A Service Center pool hides **Applies to Projects** (posted as false); an Overhead pool alone shows **Offset Absorbed Overhead**. Both match the validator's refinements and the table checks.

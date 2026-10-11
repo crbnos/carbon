@@ -2624,6 +2624,9 @@ msgstr "एक HTTPS अनुरोध जो कार्बन आपके �
 msgid "An inactive group's members are planned on their own"
 msgstr ""
 
+msgid "An inactive pool computes no rate and burdens nothing"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
 
@@ -2848,6 +2851,9 @@ msgstr "उपस्थिति"
 msgid "Applied"
 msgstr "लागू"
 
+msgid "Applied Account"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "लागू की गई राशि कंपनी की आधार मुद्रा ({baseCurrency}) में है।"
 
@@ -2868,6 +2874,9 @@ msgstr "सभी वर्क सेंटर पर लागू होता 
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "उन विशेषताओं पर लागू होता है जिनके अपने नियम नहीं हैं, और लॉट पर जब यह योजना निरीक्षण संचालित करती है।"
+
+msgid "Applies to Projects"
+msgstr ""
 
 msgid "Apply"
 msgstr "लागू करें"
@@ -3257,6 +3266,9 @@ msgid "Are you sure you want to delete the payment term: {0}? This cannot be und
 msgstr "क्या आप भुगतान शर्तें {0} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the pool: {name}? This cannot be undone."
 msgstr ""
 
 #. placeholder {0}: pricingRule.name
@@ -5563,6 +5575,9 @@ msgstr "घटक केवल तब छिपे होते हैं जब
 msgid "Compute Burden"
 msgstr ""
 
+msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "की गणना {0}"
@@ -6346,6 +6361,9 @@ msgstr ""
 msgid "Cost charged to Expense projects"
 msgstr ""
 
+msgid "Cost goes into the pool. Base is what the pool's rate applies to."
+msgstr ""
+
 msgid "Cost History"
 msgstr "लागत इतिहास"
 
@@ -6923,6 +6941,9 @@ msgstr "क्रेडिट किया गया"
 #. placeholder {0}: memo.memoId
 msgid "Credited on <0>{0}</0>"
 msgstr "<0>{0}</0> पर जमा किया गया"
+
+msgid "Credited when burden posts as applied burden"
+msgstr ""
 
 msgid "Crediting needs permission to create invoices."
 msgstr "क्रेडिटिंग को चालान बनाने की अनुमति चाहिए।"
@@ -7824,6 +7845,9 @@ msgid "Delete Picking List"
 msgstr "पिकिंग सूची हटाएं"
 
 msgid "Delete Planning Group"
+msgstr ""
+
+msgid "Delete Pool"
 msgstr ""
 
 msgid "Delete Portal"
@@ -9052,6 +9076,9 @@ msgid "Edit Plan"
 msgstr ""
 
 msgid "Edit Planning Group"
+msgstr ""
+
+msgid "Edit Pool"
 msgstr ""
 
 msgid "Edit Portal"
@@ -12085,6 +12112,12 @@ msgstr "अप्रत्यक्ष सामग्री और सेवा
 msgid "Indirect Materials & Services (default)"
 msgstr "अप्रत्यक्ष सामग्री और सेवाएं (डिफ़ॉल्ट)"
 
+msgid "Indirect Pools"
+msgstr ""
+
+msgid "Indirect rates"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "बुनियादी ढांचा"
 
@@ -14815,6 +14848,9 @@ msgstr "नई पिकिंग सूची"
 msgid "New Planning Group"
 msgstr ""
 
+msgid "New Pool"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "नया मूल्य ओवरराइड"
 
@@ -15090,6 +15126,9 @@ msgstr ""
 
 msgid "No accounts match your search"
 msgstr "कोई खाता आपकी खोज से मेल नहीं खाता"
+
+msgid "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
+msgstr ""
 
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
@@ -16237,6 +16276,9 @@ msgstr "बंद — सिंक के बाहर संभाला गय
 
 msgid "Off — released revisions stay editable"
 msgstr "बंद — जारी किए गए रिवीजन संपादन योग्य रहते हैं"
+
+msgid "Offset Absorbed Overhead"
+msgstr ""
 
 msgid "Offset Account"
 msgstr "ऑफसेट खाता"
@@ -17792,6 +17834,12 @@ msgid "Policy & Procedure"
 msgstr "नीति और कार्यविधि"
 
 msgid "Pool"
+msgstr ""
+
+msgid "Pool Type"
+msgstr ""
+
+msgid "Pools compute in this order. A later pool takes the burden of an earlier one."
 msgstr ""
 
 msgid "Portal Link"
@@ -19420,6 +19468,7 @@ msgstr "विभाजन के बाद शेष मूल पंक्त�
 msgid "Remove"
 msgstr "निकालें"
 
+#. placeholder {0}: deleting.account?.number ?? ""
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "निकालें {0}"
@@ -19521,6 +19570,10 @@ msgstr "कॉलम के अनुसार क्रमबद्धता �
 
 msgid "Remove station"
 msgstr "स्टेशन हटाएं"
+
+#. placeholder {0}: deleting.account?.number ?? ""
+msgid "Remove the account {0} from this pool? Rates already computed keep it."
+msgstr ""
 
 msgid "Remove this item"
 msgstr "इस आइटम को निकालें"
@@ -21342,6 +21395,9 @@ msgstr "प्रत्येक प्राप्तकर्ता को भ
 msgid "Sent via Stripe"
 msgstr "Stripe के माध्यम से भेजा गया"
 
+msgid "Sequence"
+msgstr ""
+
 msgid "Sequences"
 msgstr "अनुक्रम"
 
@@ -22735,6 +22791,9 @@ msgstr "उप-योग"
 msgid "Subtotal:"
 msgstr "उप-योग:"
 
+msgid "Subtract the overhead work centers already applied from each project's burden"
+msgstr ""
+
 msgid "Succeeded"
 msgstr "सफल"
 
@@ -23445,6 +23504,9 @@ msgstr "सभी पोस्ट किए गए जर्नल पंक्�
 
 msgid "The buckets you track costs against"
 msgstr "वह बाल्टियाँ जिनके विरुद्ध आप लागत को ट्रैक करते हैं"
+
+msgid "The burden run burdens project cost with this pool"
+msgstr ""
 
 msgid "The capital assets you own and depreciate"
 msgstr "पूंजीगत संपत्ति जिसे आप मालिक हैं और मूल्यह्रास करते हैं"

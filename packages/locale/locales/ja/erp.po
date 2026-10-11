@@ -2624,6 +2624,9 @@ msgstr "ワークフローがそのステップに到達したときに、Carbon
 msgid "An inactive group's members are planned on their own"
 msgstr ""
 
+msgid "An inactive pool computes no rate and burdens nothing"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "連携またはカスタム変更 — 実際にカスタムされている小さなスライス。"
 
@@ -2848,6 +2851,9 @@ msgstr "外観"
 msgid "Applied"
 msgstr "適用"
 
+msgid "Applied Account"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "適用金額は会社基本通貨（{baseCurrency}）です。"
 
@@ -2868,6 +2874,9 @@ msgstr "すべての作業区に適用"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "独自のルールを持たない特性に適用され、この計画が検査を実施する場合はロットに適用されます。"
+
+msgid "Applies to Projects"
+msgstr ""
 
 msgid "Apply"
 msgstr "適用"
@@ -3257,6 +3266,9 @@ msgid "Are you sure you want to delete the payment term: {0}? This cannot be und
 msgstr "支払条件: {0} を削除してもよろしいですか?これは元に戻せません。"
 
 msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the pool: {name}? This cannot be undone."
 msgstr ""
 
 #. placeholder {0}: pricingRule.name
@@ -5563,6 +5575,9 @@ msgstr "このステップの再生中にのみ非表示になるコンポーネ
 msgid "Compute Burden"
 msgstr ""
 
+msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "{0}で計算済み"
@@ -6346,6 +6361,9 @@ msgstr ""
 msgid "Cost charged to Expense projects"
 msgstr ""
 
+msgid "Cost goes into the pool. Base is what the pool's rate applies to."
+msgstr ""
+
 msgid "Cost History"
 msgstr "原価履歴"
 
@@ -6923,6 +6941,9 @@ msgstr "クレジット済み"
 #. placeholder {0}: memo.memoId
 msgid "Credited on <0>{0}</0>"
 msgstr "<0>{0}</0>で適用されました"
+
+msgid "Credited when burden posts as applied burden"
+msgstr ""
 
 msgid "Crediting needs permission to create invoices."
 msgstr "クレジット処理には請求書を作成する権限が必要です。"
@@ -7824,6 +7845,9 @@ msgid "Delete Picking List"
 msgstr "ピッキングリストを削除"
 
 msgid "Delete Planning Group"
+msgstr ""
+
+msgid "Delete Pool"
 msgstr ""
 
 msgid "Delete Portal"
@@ -9052,6 +9076,9 @@ msgid "Edit Plan"
 msgstr ""
 
 msgid "Edit Planning Group"
+msgstr ""
+
+msgid "Edit Pool"
 msgstr ""
 
 msgid "Edit Portal"
@@ -12085,6 +12112,12 @@ msgstr "間接材料とサービス"
 msgid "Indirect Materials & Services (default)"
 msgstr "間接材料とサービス（デフォルト）"
 
+msgid "Indirect Pools"
+msgstr ""
+
+msgid "Indirect rates"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "インフラストラクチャ"
 
@@ -14815,6 +14848,9 @@ msgstr "新しいピッキングリスト"
 msgid "New Planning Group"
 msgstr ""
 
+msgid "New Pool"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "新規価格上書き"
 
@@ -15090,6 +15126,9 @@ msgstr ""
 
 msgid "No accounts match your search"
 msgstr "検索に一致するアカウントがありません"
+
+msgid "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
+msgstr ""
 
 msgid "No action needed"
 msgstr "対応は不要です"
@@ -16237,6 +16276,9 @@ msgstr "オフ — 同期外で処理"
 
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
+
+msgid "Offset Absorbed Overhead"
+msgstr ""
 
 msgid "Offset Account"
 msgstr "相殺勘定"
@@ -17792,6 +17834,12 @@ msgid "Policy & Procedure"
 msgstr "ポリシーと手順書"
 
 msgid "Pool"
+msgstr ""
+
+msgid "Pool Type"
+msgstr ""
+
+msgid "Pools compute in this order. A later pool takes the burden of an earlier one."
 msgstr ""
 
 msgid "Portal Link"
@@ -19420,6 +19468,7 @@ msgstr "分割後の残りは元の行に留まります。"
 msgid "Remove"
 msgstr "除去"
 
+#. placeholder {0}: deleting.account?.number ?? ""
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0}を除去"
@@ -19521,6 +19570,10 @@ msgstr "列でのソートを除去"
 
 msgid "Remove station"
 msgstr "ステーションを削除"
+
+#. placeholder {0}: deleting.account?.number ?? ""
+msgid "Remove the account {0} from this pool? Rates already computed keep it."
+msgstr ""
 
 msgid "Remove this item"
 msgstr "このアイテムを除去"
@@ -21342,6 +21395,9 @@ msgstr "メール通知がオンになっている各受信者に送信されま
 msgid "Sent via Stripe"
 msgstr "Stripe経由で送信"
 
+msgid "Sequence"
+msgstr ""
+
 msgid "Sequences"
 msgstr "採番"
 
@@ -22735,6 +22791,9 @@ msgstr "小計"
 msgid "Subtotal:"
 msgstr "小計:"
 
+msgid "Subtract the overhead work centers already applied from each project's burden"
+msgstr ""
+
 msgid "Succeeded"
 msgstr "成功"
 
@@ -23445,6 +23504,9 @@ msgstr "すべての転記済仕訳明細の帳簿で、勘定別に合計され
 
 msgid "The buckets you track costs against"
 msgstr "原価を追跡する集計単位"
+
+msgid "The burden run burdens project cost with this pool"
+msgstr ""
 
 msgid "The capital assets you own and depreciate"
 msgstr "所有・減価償却する固定資産"

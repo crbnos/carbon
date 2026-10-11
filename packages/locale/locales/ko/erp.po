@@ -2624,6 +2624,9 @@ msgstr "워크플로우가 해당 단계에 도달할 때 Carbon이 귀사의 �
 msgid "An inactive group's members are planned on their own"
 msgstr ""
 
+msgid "An inactive pool computes no rate and burdens nothing"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "연동이나 커스텀 변경 — 실제로 커스텀인 작은 부분."
 
@@ -2848,6 +2851,9 @@ msgstr "모양"
 msgid "Applied"
 msgstr "적용됨"
 
+msgid "Applied Account"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "적용 금액은 회사 기본 통화({baseCurrency})입니다."
 
@@ -2868,6 +2874,9 @@ msgstr "모든 작업장에 적용"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "자신의 규칙이 없는 특성과 이 계획이 검사를 실행하는 로트에 적용됩니다."
+
+msgid "Applies to Projects"
+msgstr ""
 
 msgid "Apply"
 msgstr "적용"
@@ -3257,6 +3266,9 @@ msgid "Are you sure you want to delete the payment term: {0}? This cannot be und
 msgstr "지불 조건을 삭제하시겠습니까: {0}? 이 작업은 취소할 수 없습니다."
 
 msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the pool: {name}? This cannot be undone."
 msgstr ""
 
 #. placeholder {0}: pricingRule.name
@@ -5563,6 +5575,9 @@ msgstr "지그와 같이 방해가 되는 구성품은 이 단계가 재생되�
 msgid "Compute Burden"
 msgstr ""
 
+msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "{0}에 계산됨"
@@ -6346,6 +6361,9 @@ msgstr ""
 msgid "Cost charged to Expense projects"
 msgstr ""
 
+msgid "Cost goes into the pool. Base is what the pool's rate applies to."
+msgstr ""
+
 msgid "Cost History"
 msgstr "원가 이력"
 
@@ -6923,6 +6941,9 @@ msgstr "크레딧됨"
 #. placeholder {0}: memo.memoId
 msgid "Credited on <0>{0}</0>"
 msgstr "크레딧으로 적용됨 <0>{0}</0>"
+
+msgid "Credited when burden posts as applied burden"
+msgstr ""
 
 msgid "Crediting needs permission to create invoices."
 msgstr "송장 생성을 위해서는 권한이 필요합니다."
@@ -7824,6 +7845,9 @@ msgid "Delete Picking List"
 msgstr "피킹 리스트 삭제"
 
 msgid "Delete Planning Group"
+msgstr ""
+
+msgid "Delete Pool"
 msgstr ""
 
 msgid "Delete Portal"
@@ -9052,6 +9076,9 @@ msgid "Edit Plan"
 msgstr ""
 
 msgid "Edit Planning Group"
+msgstr ""
+
+msgid "Edit Pool"
 msgstr ""
 
 msgid "Edit Portal"
@@ -12085,6 +12112,12 @@ msgstr "간접 자재 및 서비스"
 msgid "Indirect Materials & Services (default)"
 msgstr "간접 자재 및 서비스(기본값)"
 
+msgid "Indirect Pools"
+msgstr ""
+
+msgid "Indirect rates"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "인프라"
 
@@ -14815,6 +14848,9 @@ msgstr "새 피킹 리스트"
 msgid "New Planning Group"
 msgstr ""
 
+msgid "New Pool"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "새 가격 재정의"
 
@@ -15090,6 +15126,9 @@ msgstr ""
 
 msgid "No accounts match your search"
 msgstr "검색과 일치하는 계정이 없습니다"
+
+msgid "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
+msgstr ""
 
 msgid "No action needed"
 msgstr "조치가 필요하지 않습니다"
@@ -16237,6 +16276,9 @@ msgstr "끔 — 동기화 외부에서 처리됨"
 
 msgid "Off — released revisions stay editable"
 msgstr "꺼짐 — 릴리스된 리비전은 편집 가능한 상태로 유지됨"
+
+msgid "Offset Absorbed Overhead"
+msgstr ""
 
 msgid "Offset Account"
 msgstr "상계 계정"
@@ -17792,6 +17834,12 @@ msgid "Policy & Procedure"
 msgstr "정책 & 절차서"
 
 msgid "Pool"
+msgstr ""
+
+msgid "Pool Type"
+msgstr ""
+
+msgid "Pools compute in this order. A later pool takes the burden of an earlier one."
 msgstr ""
 
 msgid "Portal Link"
@@ -19420,6 +19468,7 @@ msgstr "분할 후 남은 수량은 원래 행에 유지됩니다."
 msgid "Remove"
 msgstr "제거"
 
+#. placeholder {0}: deleting.account?.number ?? ""
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "{0} 제거"
@@ -19521,6 +19570,10 @@ msgstr "열 정렬 제거"
 
 msgid "Remove station"
 msgstr "스테이션 제거"
+
+#. placeholder {0}: deleting.account?.number ?? ""
+msgid "Remove the account {0} from this pool? Rates already computed keep it."
+msgstr ""
 
 msgid "Remove this item"
 msgstr "이 항목 제거"
@@ -21342,6 +21395,9 @@ msgstr "이메일 알림이 켜져 있는 각 수신자에게 전송됩니다."
 msgid "Sent via Stripe"
 msgstr "Stripe를 통해 발송됨"
 
+msgid "Sequence"
+msgstr ""
+
 msgid "Sequences"
 msgstr "채번 규칙"
 
@@ -22735,6 +22791,9 @@ msgstr "소계"
 msgid "Subtotal:"
 msgstr "소계:"
 
+msgid "Subtract the overhead work centers already applied from each project's burden"
+msgstr ""
+
 msgid "Succeeded"
 msgstr "성공"
 
@@ -23445,6 +23504,9 @@ msgstr "전기된 모든 전표 라인의 장부이며 계정별로 합계됩니
 
 msgid "The buckets you track costs against"
 msgstr "원가를 추적하는 버킷"
+
+msgid "The burden run burdens project cost with this pool"
+msgstr ""
 
 msgid "The capital assets you own and depreciate"
 msgstr "소유하고 감가상각하는 고정자산"

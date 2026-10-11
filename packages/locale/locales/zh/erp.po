@@ -2624,6 +2624,9 @@ msgstr "当工作流到达该步骤时，Carbon向您的系统发送的HTTPS请�
 msgid "An inactive group's members are planned on their own"
 msgstr ""
 
+msgid "An inactive pool computes no rate and burdens nothing"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "一个集成或自定义更改——实际上是自定义的小部分。"
 
@@ -2848,6 +2851,9 @@ msgstr "外观"
 msgid "Applied"
 msgstr "已应用"
 
+msgid "Applied Account"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "应用的金额采用公司基础货币（{baseCurrency}）。"
 
@@ -2868,6 +2874,9 @@ msgstr "适用于所有工作中心"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "适用于没有自己规则的特性，以及当该计划驱动检验时适用于批次。"
+
+msgid "Applies to Projects"
+msgstr ""
 
 msgid "Apply"
 msgstr "应用"
@@ -3257,6 +3266,9 @@ msgid "Are you sure you want to delete the payment term: {0}? This cannot be und
 msgstr "确定要删除付款条件：{0}吗？此操作无法撤消。"
 
 msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the pool: {name}? This cannot be undone."
 msgstr ""
 
 #. placeholder {0}: pricingRule.name
@@ -5563,6 +5575,9 @@ msgstr "组件仅在此步骤播放时隐藏，例如挡路的工装夹具；使
 msgid "Compute Burden"
 msgstr ""
 
+msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "计算于 {0}"
@@ -6346,6 +6361,9 @@ msgstr ""
 msgid "Cost charged to Expense projects"
 msgstr ""
 
+msgid "Cost goes into the pool. Base is what the pool's rate applies to."
+msgstr ""
+
 msgid "Cost History"
 msgstr "成本历史记录"
 
@@ -6923,6 +6941,9 @@ msgstr "已贷项"
 #. placeholder {0}: memo.memoId
 msgid "Credited on <0>{0}</0>"
 msgstr "于 <0>{0}</0> 贷记"
+
+msgid "Credited when burden posts as applied burden"
+msgstr ""
 
 msgid "Crediting needs permission to create invoices."
 msgstr "贷项需要创建发票的权限。"
@@ -7824,6 +7845,9 @@ msgid "Delete Picking List"
 msgstr "删除拣货单"
 
 msgid "Delete Planning Group"
+msgstr ""
+
+msgid "Delete Pool"
 msgstr ""
 
 msgid "Delete Portal"
@@ -9052,6 +9076,9 @@ msgid "Edit Plan"
 msgstr ""
 
 msgid "Edit Planning Group"
+msgstr ""
+
+msgid "Edit Pool"
 msgstr ""
 
 msgid "Edit Portal"
@@ -12085,6 +12112,12 @@ msgstr "间接原材料及服务"
 msgid "Indirect Materials & Services (default)"
 msgstr "间接原材料及服务（默认）"
 
+msgid "Indirect Pools"
+msgstr ""
+
+msgid "Indirect rates"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "基础设施"
 
@@ -14815,6 +14848,9 @@ msgstr "新拣货单"
 msgid "New Planning Group"
 msgstr ""
 
+msgid "New Pool"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "新价格覆盖"
 
@@ -15090,6 +15126,9 @@ msgstr ""
 
 msgid "No accounts match your search"
 msgstr "没有账户与您的搜索匹配"
+
+msgid "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
+msgstr ""
 
 msgid "No action needed"
 msgstr "无需操作"
@@ -16237,6 +16276,9 @@ msgstr "关闭 — 在同步外处理"
 
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已下达修订版保持可编辑"
+
+msgid "Offset Absorbed Overhead"
+msgstr ""
 
 msgid "Offset Account"
 msgstr "抵消账户"
@@ -17792,6 +17834,12 @@ msgid "Policy & Procedure"
 msgstr "政策与程序文件"
 
 msgid "Pool"
+msgstr ""
+
+msgid "Pool Type"
+msgstr ""
+
+msgid "Pools compute in this order. A later pool takes the burden of an earlier one."
 msgstr ""
 
 msgid "Portal Link"
@@ -19420,6 +19468,7 @@ msgstr "拆分后的剩余部分保留在原始行上。"
 msgid "Remove"
 msgstr "移除"
 
+#. placeholder {0}: deleting.account?.number ?? ""
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "移除{0}"
@@ -19521,6 +19570,10 @@ msgstr "移除按列排序"
 
 msgid "Remove station"
 msgstr "删除工位"
+
+#. placeholder {0}: deleting.account?.number ?? ""
+msgid "Remove the account {0} from this pool? Rates already computed keep it."
+msgstr ""
 
 msgid "Remove this item"
 msgstr "移除此物料"
@@ -21342,6 +21395,9 @@ msgstr "发送给打开了电子邮件通知的每个收件人。"
 msgid "Sent via Stripe"
 msgstr "已通过 Stripe 发送"
 
+msgid "Sequence"
+msgstr ""
+
 msgid "Sequences"
 msgstr "编号规则"
 
@@ -22735,6 +22791,9 @@ msgstr "小计"
 msgid "Subtotal:"
 msgstr "小计："
 
+msgid "Subtract the overhead work centers already applied from each project's burden"
+msgstr ""
+
 msgid "Succeeded"
 msgstr "成功"
 
@@ -23445,6 +23504,9 @@ msgstr "所有已过账凭证行的汇总，按帐户汇总。来自公司设置
 
 msgid "The buckets you track costs against"
 msgstr "您用来追踪成本的分类"
+
+msgid "The burden run burdens project cost with this pool"
+msgstr ""
 
 msgid "The capital assets you own and depreciate"
 msgstr "您拥有并折旧的固定资产"

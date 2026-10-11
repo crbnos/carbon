@@ -2624,6 +2624,9 @@ msgstr "HTTPS-запрос, который Carbon отправляет в ваш
 msgid "An inactive group's members are planned on their own"
 msgstr ""
 
+msgid "An inactive pool computes no rate and burdens nothing"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Интеграция или пользовательское изменение — небольшая часть, которая действительно является пользовательской."
 
@@ -2848,6 +2851,9 @@ msgstr "Внешний вид"
 msgid "Applied"
 msgstr "Применено"
 
+msgid "Applied Account"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Применённые суммы указаны в базовой валюте организации ({baseCurrency})."
 
@@ -2868,6 +2874,9 @@ msgstr "Применяется ко всем рабочим центрам"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Применяется к характеристикам без собственного правила и к партии, когда этот план контроля проводит контроль."
+
+msgid "Applies to Projects"
+msgstr ""
 
 msgid "Apply"
 msgstr "Применить"
@@ -3257,6 +3266,9 @@ msgid "Are you sure you want to delete the payment term: {0}? This cannot be und
 msgstr "Вы уверены, что хотите удалить условия оплаты: {0}? Это невозможно отменить."
 
 msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the pool: {name}? This cannot be undone."
 msgstr ""
 
 #. placeholder {0}: pricingRule.name
@@ -5563,6 +5575,9 @@ msgstr "Компоненты скрыты только во время восп�
 msgid "Compute Burden"
 msgstr ""
 
+msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "вычислено {0}"
@@ -6346,6 +6361,9 @@ msgstr ""
 msgid "Cost charged to Expense projects"
 msgstr ""
 
+msgid "Cost goes into the pool. Base is what the pool's rate applies to."
+msgstr ""
+
 msgid "Cost History"
 msgstr "История себестоимости"
 
@@ -6923,6 +6941,9 @@ msgstr "Скредитовано"
 #. placeholder {0}: memo.memoId
 msgid "Credited on <0>{0}</0>"
 msgstr "Зачислено {0}"
+
+msgid "Credited when burden posts as applied burden"
+msgstr ""
 
 msgid "Crediting needs permission to create invoices."
 msgstr "Выставление кредит-записей требует право доступа на создание счетов-фактур."
@@ -7824,6 +7845,9 @@ msgid "Delete Picking List"
 msgstr "Удалить лист отбора"
 
 msgid "Delete Planning Group"
+msgstr ""
+
+msgid "Delete Pool"
 msgstr ""
 
 msgid "Delete Portal"
@@ -9052,6 +9076,9 @@ msgid "Edit Plan"
 msgstr ""
 
 msgid "Edit Planning Group"
+msgstr ""
+
+msgid "Edit Pool"
 msgstr ""
 
 msgid "Edit Portal"
@@ -12085,6 +12112,12 @@ msgstr "Косвенные материалы и услуги"
 msgid "Indirect Materials & Services (default)"
 msgstr "Косвенные материалы и услуги (по умолчанию)"
 
+msgid "Indirect Pools"
+msgstr ""
+
+msgid "Indirect rates"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "Инфраструктура"
 
@@ -14815,6 +14848,9 @@ msgstr "Новый лист отбора"
 msgid "New Planning Group"
 msgstr ""
 
+msgid "New Pool"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "Новое переопределение цены"
 
@@ -15090,6 +15126,9 @@ msgstr ""
 
 msgid "No accounts match your search"
 msgstr "Ни один счет не соответствует вашему поиску"
+
+msgid "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
+msgstr ""
 
 msgid "No action needed"
 msgstr "Никаких действий не требуется"
@@ -16237,6 +16276,9 @@ msgstr "Отключено — обработано вне синхрониза�
 
 msgid "Off — released revisions stay editable"
 msgstr "Отключено — выпущенные ревизии остаются редактируемыми"
+
+msgid "Offset Absorbed Overhead"
+msgstr ""
 
 msgid "Offset Account"
 msgstr "Счет компенсации"
@@ -17792,6 +17834,12 @@ msgid "Policy & Procedure"
 msgstr "Политика и процедура"
 
 msgid "Pool"
+msgstr ""
+
+msgid "Pool Type"
+msgstr ""
+
+msgid "Pools compute in this order. A later pool takes the burden of an earlier one."
 msgstr ""
 
 msgid "Portal Link"
@@ -19420,6 +19468,7 @@ msgstr "Остаток после разделения остается в ис�
 msgid "Remove"
 msgstr "Убрать"
 
+#. placeholder {0}: deleting.account?.number ?? ""
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Убрать {0}"
@@ -19521,6 +19570,10 @@ msgstr "Убрать сортировку по столбцу"
 
 msgid "Remove station"
 msgstr "Удалить рабочее место"
+
+#. placeholder {0}: deleting.account?.number ?? ""
+msgid "Remove the account {0} from this pool? Rates already computed keep it."
+msgstr ""
 
 msgid "Remove this item"
 msgstr "Убрать этот элемент"
@@ -21342,6 +21395,9 @@ msgstr "Отправляется каждому получателю, у кот�
 msgid "Sent via Stripe"
 msgstr "Отправлено через Stripe"
 
+msgid "Sequence"
+msgstr ""
+
 msgid "Sequences"
 msgstr "Нумерация"
 
@@ -22735,6 +22791,9 @@ msgstr "Промежуточный итог"
 msgid "Subtotal:"
 msgstr "Промежуточный итог:"
 
+msgid "Subtract the overhead work centers already applied from each project's burden"
+msgstr ""
+
 msgid "Succeeded"
 msgstr "Успешно"
 
@@ -23445,6 +23504,9 @@ msgstr "Книга всех проведенных строк операций, 
 
 msgid "The buckets you track costs against"
 msgstr "Категории затрат, по которым вы отслеживаете расходы"
+
+msgid "The burden run burdens project cost with this pool"
+msgstr ""
 
 msgid "The capital assets you own and depreciate"
 msgstr "Основные средства, которыми вы владеете и амортизируете"

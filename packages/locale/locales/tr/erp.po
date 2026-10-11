@@ -2624,6 +2624,9 @@ msgstr "Bir iş akışı bu adıma ulaştığında Carbon'un sisteminize gönder
 msgid "An inactive group's members are planned on their own"
 msgstr ""
 
+msgid "An inactive pool computes no rate and burdens nothing"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Bir entegrasyon veya özel bir değişiklik — aslında özel olan küçük dilim."
 
@@ -2848,6 +2851,9 @@ msgstr "Görünüm"
 msgid "Applied"
 msgstr "Uygulandı"
 
+msgid "Applied Account"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Uygulanan tutarlar şirket temel para birimindedir ({baseCurrency})."
 
@@ -2868,6 +2874,9 @@ msgstr "Tüm iş merkezlerine uygulanır"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Kendi kuralı olmayan özelliklere ve bu kontrol planı bir muayene başlattığında lota uygulanır."
+
+msgid "Applies to Projects"
+msgstr ""
 
 msgid "Apply"
 msgstr "Uygula"
@@ -3257,6 +3266,9 @@ msgid "Are you sure you want to delete the payment term: {0}? This cannot be und
 msgstr "{0} ödeme koşulunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
 msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the pool: {name}? This cannot be undone."
 msgstr ""
 
 #. placeholder {0}: pricingRule.name
@@ -5563,6 +5575,9 @@ msgstr "Bu adım oynarken yalnızca gizli bileşenler, yolda bir bağlama aparat
 msgid "Compute Burden"
 msgstr ""
 
+msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "hesaplanan {0}"
@@ -6346,6 +6361,9 @@ msgstr ""
 msgid "Cost charged to Expense projects"
 msgstr ""
 
+msgid "Cost goes into the pool. Base is what the pool's rate applies to."
+msgstr ""
+
 msgid "Cost History"
 msgstr "Maliyet Geçmişi"
 
@@ -6923,6 +6941,9 @@ msgstr "Alacaklandırılmış"
 #. placeholder {0}: memo.memoId
 msgid "Credited on <0>{0}</0>"
 msgstr "Alacaklandırıldı <0>{0}</0>"
+
+msgid "Credited when burden posts as applied burden"
+msgstr ""
 
 msgid "Crediting needs permission to create invoices."
 msgstr "Kredi oluşturmak için fatura oluşturma izni gerekiyor."
@@ -7824,6 +7845,9 @@ msgid "Delete Picking List"
 msgstr "Toplama Listesini Sil"
 
 msgid "Delete Planning Group"
+msgstr ""
+
+msgid "Delete Pool"
 msgstr ""
 
 msgid "Delete Portal"
@@ -9052,6 +9076,9 @@ msgid "Edit Plan"
 msgstr ""
 
 msgid "Edit Planning Group"
+msgstr ""
+
+msgid "Edit Pool"
 msgstr ""
 
 msgid "Edit Portal"
@@ -12085,6 +12112,12 @@ msgstr "Dolaylı Malzemeler ve Hizmetler"
 msgid "Indirect Materials & Services (default)"
 msgstr "Dolaylı Malzemeler ve Hizmetler (varsayılan)"
 
+msgid "Indirect Pools"
+msgstr ""
+
+msgid "Indirect rates"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "Altyapı"
 
@@ -14815,6 +14848,9 @@ msgstr "Yeni Toplama Listesi"
 msgid "New Planning Group"
 msgstr ""
 
+msgid "New Pool"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "Yeni Fiyat Geçersiz Kılma"
 
@@ -15090,6 +15126,9 @@ msgstr ""
 
 msgid "No accounts match your search"
 msgstr "Aramanızla eşleşen hesap yok"
+
+msgid "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
+msgstr ""
 
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"
@@ -16237,6 +16276,9 @@ msgstr "Kapalı — senkronizasyon dışında işlenir"
 
 msgid "Off — released revisions stay editable"
 msgstr "Kapalı — yayınlanan revizyonlar düzenlenebilir kalır"
+
+msgid "Offset Absorbed Overhead"
+msgstr ""
 
 msgid "Offset Account"
 msgstr "Karşı Hesap"
@@ -17792,6 +17834,12 @@ msgid "Policy & Procedure"
 msgstr "Politika ve Prosedür"
 
 msgid "Pool"
+msgstr ""
+
+msgid "Pool Type"
+msgstr ""
+
+msgid "Pools compute in this order. A later pool takes the burden of an earlier one."
 msgstr ""
 
 msgid "Portal Link"
@@ -19420,6 +19468,7 @@ msgstr "Bölme sonrası kalan orijinal satırda kalır."
 msgid "Remove"
 msgstr "Kaldır"
 
+#. placeholder {0}: deleting.account?.number ?? ""
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Kaldır {0}"
@@ -19521,6 +19570,10 @@ msgstr "Sıralamayı kaldır"
 
 msgid "Remove station"
 msgstr "İstasyonu kaldır"
+
+#. placeholder {0}: deleting.account?.number ?? ""
+msgid "Remove the account {0} from this pool? Rates already computed keep it."
+msgstr ""
 
 msgid "Remove this item"
 msgstr "Bu stok kartını kaldır"
@@ -21342,6 +21395,9 @@ msgstr "E-posta bildirimleri açık olan her alıcıya gönderilir."
 msgid "Sent via Stripe"
 msgstr "Stripe aracılığıyla gönderildi"
 
+msgid "Sequence"
+msgstr ""
+
 msgid "Sequences"
 msgstr "Numaralandırmalar"
 
@@ -22735,6 +22791,9 @@ msgstr "Ara Toplamı"
 msgid "Subtotal:"
 msgstr "Ara Toplamı:"
 
+msgid "Subtract the overhead work centers already applied from each project's burden"
+msgstr ""
+
 msgid "Succeeded"
 msgstr "Başarılı"
 
@@ -23445,6 +23504,9 @@ msgstr "Tüm muhasebeleştirilmiş muhasebe fiş satırlarının, hesap tarafın
 
 msgid "The buckets you track costs against"
 msgstr "Maliyetleri takip ettiğiniz gruplar"
+
+msgid "The burden run burdens project cost with this pool"
+msgstr ""
 
 msgid "The capital assets you own and depreciate"
 msgstr "Sahip olduğunuz ve amortiye ettiğiniz sabit kıymetler"

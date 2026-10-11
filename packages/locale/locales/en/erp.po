@@ -2624,6 +2624,9 @@ msgstr "An https request Carbon sends to a system of yours when a workflow reach
 msgid "An inactive group's members are planned on their own"
 msgstr "An inactive group's members are planned on their own"
 
+msgid "An inactive pool computes no rate and burdens nothing"
+msgstr "An inactive pool computes no rate and burdens nothing"
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
 
@@ -2848,6 +2851,9 @@ msgstr "Appearance"
 msgid "Applied"
 msgstr "Applied"
 
+msgid "Applied Account"
+msgstr "Applied Account"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Applied amounts are in company base currency ({baseCurrency})."
 
@@ -2868,6 +2874,9 @@ msgstr "Applies to all work centers"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+
+msgid "Applies to Projects"
+msgstr "Applies to Projects"
 
 msgid "Apply"
 msgstr "Apply"
@@ -3258,6 +3267,9 @@ msgstr "Are you sure you want to delete the payment term: {0}? This cannot be un
 
 msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
 msgstr "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+
+msgid "Are you sure you want to delete the pool: {name}? This cannot be undone."
+msgstr "Are you sure you want to delete the pool: {name}? This cannot be undone."
 
 #. placeholder {0}: pricingRule.name
 msgid "Are you sure you want to delete the pricing rule: {0}? This cannot be undone."
@@ -5563,6 +5575,9 @@ msgstr "Components hidden only while this step plays, such as a fixture in the w
 msgid "Compute Burden"
 msgstr "Compute Burden"
 
+msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "computed {0}"
@@ -6346,6 +6361,9 @@ msgstr "Cost charged to Contract projects until it is billed"
 msgid "Cost charged to Expense projects"
 msgstr "Cost charged to Expense projects"
 
+msgid "Cost goes into the pool. Base is what the pool's rate applies to."
+msgstr "Cost goes into the pool. Base is what the pool's rate applies to."
+
 msgid "Cost History"
 msgstr "Cost History"
 
@@ -6923,6 +6941,9 @@ msgstr "Credited"
 #. placeholder {0}: memo.memoId
 msgid "Credited on <0>{0}</0>"
 msgstr "Credited on <0>{0}</0>"
+
+msgid "Credited when burden posts as applied burden"
+msgstr "Credited when burden posts as applied burden"
 
 msgid "Crediting needs permission to create invoices."
 msgstr "Crediting needs permission to create invoices."
@@ -7825,6 +7846,9 @@ msgstr "Delete Picking List"
 
 msgid "Delete Planning Group"
 msgstr "Delete Planning Group"
+
+msgid "Delete Pool"
+msgstr "Delete Pool"
 
 msgid "Delete Portal"
 msgstr "Delete Portal"
@@ -9053,6 +9077,9 @@ msgstr "Edit Plan"
 
 msgid "Edit Planning Group"
 msgstr "Edit Planning Group"
+
+msgid "Edit Pool"
+msgstr "Edit Pool"
 
 msgid "Edit Portal"
 msgstr "Edit Portal"
@@ -12085,6 +12112,12 @@ msgstr "Indirect Materials & Services"
 msgid "Indirect Materials & Services (default)"
 msgstr "Indirect Materials & Services (default)"
 
+msgid "Indirect Pools"
+msgstr "Indirect Pools"
+
+msgid "Indirect rates"
+msgstr "Indirect rates"
+
 msgid "Infrastructure"
 msgstr "Infrastructure"
 
@@ -14815,6 +14848,9 @@ msgstr "New Picking List"
 msgid "New Planning Group"
 msgstr "New Planning Group"
 
+msgid "New Pool"
+msgstr "New Pool"
+
 msgid "New Price Override"
 msgstr "New Price Override"
 
@@ -15090,6 +15126,9 @@ msgstr "No accounting periods yet"
 
 msgid "No accounts match your search"
 msgstr "No accounts match your search"
+
+msgid "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
+msgstr "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
 
 msgid "No action needed"
 msgstr "No action needed"
@@ -16237,6 +16276,9 @@ msgstr "Off — handled outside the sync"
 
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
+
+msgid "Offset Absorbed Overhead"
+msgstr "Offset Absorbed Overhead"
 
 msgid "Offset Account"
 msgstr "Offset Account"
@@ -17793,6 +17835,12 @@ msgstr "Policy & Procedure"
 
 msgid "Pool"
 msgstr "Pool"
+
+msgid "Pool Type"
+msgstr "Pool Type"
+
+msgid "Pools compute in this order. A later pool takes the burden of an earlier one."
+msgstr "Pools compute in this order. A later pool takes the burden of an earlier one."
 
 msgid "Portal Link"
 msgstr "Portal Link"
@@ -19420,6 +19468,7 @@ msgstr "Remaining after split stays on the original row."
 msgid "Remove"
 msgstr "Remove"
 
+#. placeholder {0}: deleting.account?.number ?? ""
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Remove {0}"
@@ -19521,6 +19570,10 @@ msgstr "Remove sort by column"
 
 msgid "Remove station"
 msgstr "Remove station"
+
+#. placeholder {0}: deleting.account?.number ?? ""
+msgid "Remove the account {0} from this pool? Rates already computed keep it."
+msgstr "Remove the account {0} from this pool? Rates already computed keep it."
 
 msgid "Remove this item"
 msgstr "Remove this item"
@@ -21342,6 +21395,9 @@ msgstr "Sent to each recipient who has email notifications turned on."
 msgid "Sent via Stripe"
 msgstr "Sent via Stripe"
 
+msgid "Sequence"
+msgstr "Sequence"
+
 msgid "Sequences"
 msgstr "Sequences"
 
@@ -22735,6 +22791,9 @@ msgstr "Subtotal"
 msgid "Subtotal:"
 msgstr "Subtotal:"
 
+msgid "Subtract the overhead work centers already applied from each project's burden"
+msgstr "Subtract the overhead work centers already applied from each project's burden"
+
 msgid "Succeeded"
 msgstr "Succeeded"
 
@@ -23445,6 +23504,9 @@ msgstr "The book of all posted journal lines, summed by account. Provisional jou
 
 msgid "The buckets you track costs against"
 msgstr "The buckets you track costs against"
+
+msgid "The burden run burdens project cost with this pool"
+msgstr "The burden run burdens project cost with this pool"
 
 msgid "The capital assets you own and depreciate"
 msgstr "The capital assets you own and depreciate"

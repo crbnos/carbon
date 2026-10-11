@@ -176,3 +176,28 @@ export const burdenSettingsValidator = z.object({
   }),
   postAppliedBurden: zfd.checkbox()
 });
+
+/**
+ * A unique key the database refused on a pool or a pool account, as a field
+ * error the form shows (B4: one cell is Cost in at most one pool).
+ */
+export function indirectRatesFieldErrors(error: {
+  code?: string;
+  message?: string;
+}): Record<string, string> | null {
+  if (error.code !== "23505") return null;
+  const message = error.message ?? "";
+  if (message.includes("indirectPool_sequence_key")) {
+    return { sequence: "Another pool already has this sequence" };
+  }
+  if (message.includes("indirectPool_name_key")) {
+    return { name: "Another pool already has this name" };
+  }
+  if (message.includes("indirectPoolAccount_cost_key")) {
+    return { accountId: "This account is already a Cost account of a pool" };
+  }
+  if (message.includes("indirectPoolAccount_cell_key")) {
+    return { accountId: "This pool already has this account in this role" };
+  }
+  return null;
+}

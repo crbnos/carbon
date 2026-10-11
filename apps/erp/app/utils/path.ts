@@ -857,6 +857,8 @@ export const path = {
     deleteGroup: (id: string) => generatePath(`${x}/users/groups/delete/${id}`),
     deleteHoliday: (id: string) =>
       generatePath(`${x}/people/holidays/delete/${id}`),
+    deleteIndirectPool: (id: string) =>
+      generatePath(`${x}/accounting/indirect-pools/delete/${id}`),
     deleteInspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}/delete`),
     deleteInvestigationType: (id: string) =>
@@ -1407,6 +1409,9 @@ export const path = {
     incomeStatement: `${x}/reports/income-statement`,
     incomeStatementLedger: (id: string) =>
       generatePath(`${x}/reports/income-statement/${id}`),
+    indirectPool: (id: string) =>
+      generatePath(`${x}/accounting/indirect-pools/${id}`),
+    indirectPools: `${x}/accounting/indirect-pools`,
     inspection: (id: string) => generatePath(`${x}/inspection/${id}`),
     inspectionAccept: (id: string) =>
       generatePath(`${x}/inspection/${id}/accept`),
@@ -1745,6 +1750,7 @@ export const path = {
     newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
+    newIndirectPool: `${x}/accounting/indirect-pools/new`,
     newInspectionDocument: `${x}/quality/inspection-plans/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,

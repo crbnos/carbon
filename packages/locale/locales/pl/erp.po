@@ -2624,6 +2624,9 @@ msgstr "Żądanie https, które Carbon wysyła do Twojego systemu, gdy przepływ
 msgid "An inactive group's members are planned on their own"
 msgstr ""
 
+msgid "An inactive pool computes no rate and burdens nothing"
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Integracja lub zmiana niestandardowa — mała część, która jest faktycznie niestandardowa."
 
@@ -2848,6 +2851,9 @@ msgstr "Wygląd"
 msgid "Applied"
 msgstr "Zastosowano"
 
+msgid "Applied Account"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Zastosowane kwoty są w bazowej walucie firmy ({baseCurrency})."
 
@@ -2868,6 +2874,9 @@ msgstr "Dotyczy wszystkich stanowisk roboczych"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Dotyczy charakterystyk bez własnej reguły i partii, gdy ten plan kontroli prowadzi do wykonania kontroli."
+
+msgid "Applies to Projects"
+msgstr ""
 
 msgid "Apply"
 msgstr "Zastosuj"
@@ -3257,6 +3266,9 @@ msgid "Are you sure you want to delete the payment term: {0}? This cannot be und
 msgstr "Czy chcesz usunąć warunki płatności: {0}? Tej czynności nie można cofnąć."
 
 msgid "Are you sure you want to delete the planning group: {name}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the pool: {name}? This cannot be undone."
 msgstr ""
 
 #. placeholder {0}: pricingRule.name
@@ -5563,6 +5575,9 @@ msgstr "Komponenty ukryte tylko podczas odtwarzania tego kroku, takie jak przyrz
 msgid "Compute Burden"
 msgstr ""
 
+msgid "Compute fringe, overhead and G&A rates, burden your projects and bill at provisional rates."
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "obliczono {0}"
@@ -6346,6 +6361,9 @@ msgstr ""
 msgid "Cost charged to Expense projects"
 msgstr ""
 
+msgid "Cost goes into the pool. Base is what the pool's rate applies to."
+msgstr ""
+
 msgid "Cost History"
 msgstr "Historia kosztów"
 
@@ -6923,6 +6941,9 @@ msgstr "Zarachowany"
 #. placeholder {0}: memo.memoId
 msgid "Credited on <0>{0}</0>"
 msgstr "Zaliczone na <0>{0}</0>"
+
+msgid "Credited when burden posts as applied burden"
+msgstr ""
 
 msgid "Crediting needs permission to create invoices."
 msgstr "Tworzenie notatek kredytowych wymaga uprawnień do tworzenia faktur."
@@ -7824,6 +7845,9 @@ msgid "Delete Picking List"
 msgstr "Usuń listę kompletacyjną"
 
 msgid "Delete Planning Group"
+msgstr ""
+
+msgid "Delete Pool"
 msgstr ""
 
 msgid "Delete Portal"
@@ -9052,6 +9076,9 @@ msgid "Edit Plan"
 msgstr ""
 
 msgid "Edit Planning Group"
+msgstr ""
+
+msgid "Edit Pool"
 msgstr ""
 
 msgid "Edit Portal"
@@ -12085,6 +12112,12 @@ msgstr "Materiały Pośrednie i Usługi"
 msgid "Indirect Materials & Services (default)"
 msgstr "Materiały Pośrednie i Usługi (domyślne)"
 
+msgid "Indirect Pools"
+msgstr ""
+
+msgid "Indirect rates"
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "Infrastruktura"
 
@@ -14815,6 +14848,9 @@ msgstr "Nowa Lista kompletacyjna"
 msgid "New Planning Group"
 msgstr ""
 
+msgid "New Pool"
+msgstr ""
+
 msgid "New Price Override"
 msgstr "Nowe Nadpisanie ceny"
 
@@ -15090,6 +15126,9 @@ msgstr ""
 
 msgid "No accounts match your search"
 msgstr "Żadne konta nie pasują do Twojego wyszukiwania"
+
+msgid "No accounts yet. Add the accounts this pool collects as cost, and any account that is part of its base."
+msgstr ""
 
 msgid "No action needed"
 msgstr "Brak wymaganych działań"
@@ -16237,6 +16276,9 @@ msgstr "Wyłączone — obsługiwane poza synchronizacją"
 
 msgid "Off — released revisions stay editable"
 msgstr "Wyłączone — zwolnione rewizje pozostają edytowalne"
+
+msgid "Offset Absorbed Overhead"
+msgstr ""
 
 msgid "Offset Account"
 msgstr "Konto równoważące"
@@ -17792,6 +17834,12 @@ msgid "Policy & Procedure"
 msgstr "Polityka i procedura"
 
 msgid "Pool"
+msgstr ""
+
+msgid "Pool Type"
+msgstr ""
+
+msgid "Pools compute in this order. A later pool takes the burden of an earlier one."
 msgstr ""
 
 msgid "Portal Link"
@@ -19420,6 +19468,7 @@ msgstr "Pozostała ilość po podziale pozostaje w oryginalnym wierszu."
 msgid "Remove"
 msgstr "Usuń z listy"
 
+#. placeholder {0}: deleting.account?.number ?? ""
 #. placeholder {0}: item.label
 msgid "Remove {0}"
 msgstr "Usuń z listy {0}"
@@ -19521,6 +19570,10 @@ msgstr "Usuń z listy sortowanie po kolumnie"
 
 msgid "Remove station"
 msgstr "Usuń stanowisko"
+
+#. placeholder {0}: deleting.account?.number ?? ""
+msgid "Remove the account {0} from this pool? Rates already computed keep it."
+msgstr ""
 
 msgid "Remove this item"
 msgstr "Usuń ten artykuł"
@@ -21342,6 +21395,9 @@ msgstr "Wysłane do każdego odbiorcy, który ma włączone powiadomienia e-mail
 msgid "Sent via Stripe"
 msgstr "Wysłano za pośrednictwem Stripe"
 
+msgid "Sequence"
+msgstr ""
+
 msgid "Sequences"
 msgstr "Numeracja"
 
@@ -22735,6 +22791,9 @@ msgstr "Suma częściowa"
 msgid "Subtotal:"
 msgstr "Suma częściowa:"
 
+msgid "Subtract the overhead work centers already applied from each project's burden"
+msgstr ""
+
 msgid "Succeeded"
 msgstr "Powiodło się"
 
@@ -23445,6 +23504,9 @@ msgstr "Rejestr wszystkich zaksięgowanych linii dowodów księgowych, zsumowany
 
 msgid "The buckets you track costs against"
 msgstr "Zasobniki, w których śledzisz koszty"
+
+msgid "The burden run burdens project cost with this pool"
+msgstr ""
 
 msgid "The capital assets you own and depreciate"
 msgstr "Środki trwałe, które posiadasz i amortyzujesz"

@@ -9,6 +9,7 @@ import {
   LuAxis3D,
   LuBetweenHorizontalStart,
   LuBookOpen,
+  LuBoxes,
   LuBuilding2,
   LuCalendar1,
   LuCalendarCheck,
@@ -161,6 +162,12 @@ export default function useAccountingSubmodules() {
             to: path.to.fiscalYears,
             role: "employee",
             icon: <LuCalendar1 />
+          },
+          {
+            name: t`Indirect Pools`,
+            to: path.to.indirectPools,
+            role: "employee",
+            icon: <LuBoxes />
           },
           {
             name: t`Payment Terms`,
