@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { MissingAccountDefaultError } from "@carbon/database/journal-posting-status";
 import { dilutionFactor } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
@@ -64,7 +65,13 @@ const rates: TimesheetLaborRate[] = [
   { laborCategoryId: "lbc", effectiveFrom: "2026-11-01", costRate: 90 }
 ];
 
-const options = { accountingEnabled: true, laborAbsorptionAccount: "5030" };
+const options = {
+  postingStatus: "Posted" as const,
+  accountDefaults: {
+    laborAbsorptionAccount: "5030",
+    retainedEarningsAccount: "3200"
+  }
+};
 
 describe("planTimesheetPosting", () => {
   it("posts 6 h at 85.00 to the expense account against labor absorption", () => {
@@ -114,6 +121,44 @@ describe("planTimesheetPosting", () => {
       reversalOfId: "pjl-1"
     });
     expect(plan.stamps[0]?.costRate).toEqual(85);
+  });
+
+  it("posts an empty labor absorption default to a stand-in line before the cutover", () => {
+    const plan = planTimesheetPosting(
+      [entry],
+      contexts("Expense"),
+      rates,
+      new Map(),
+      {
+        postingStatus: "Provisional",
+        accountDefaults: {
+          laborAbsorptionAccount: null,
+          retainedEarningsAccount: "3200"
+        }
+      }
+    );
+    expect(
+      plan.lines.map((line) => [
+        line.accountId,
+        line.amount,
+        line.accountDefaultRole
+      ])
+    ).toEqual([
+      ["6100", 510, null],
+      ["3200", -510, "laborAbsorptionAccount"]
+    ]);
+  });
+
+  it("refuses an empty labor absorption default after the cutover", () => {
+    expect(() =>
+      planTimesheetPosting([entry], contexts("Expense"), rates, new Map(), {
+        postingStatus: "Posted",
+        accountDefaults: {
+          laborAbsorptionAccount: null,
+          retainedEarningsAccount: "3200"
+        }
+      })
+    ).toThrow(MissingAccountDefaultError);
   });
 
   it("posts nothing for a Statistical project", () => {

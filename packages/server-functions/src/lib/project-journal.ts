@@ -2,12 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// One posted journal for one project charge: the period of its date, the
-// journal header, its lines and their dimension tags. Used by
-// post-project-expense and reclass-project-coverage.
+// One journal for one project charge: the status and period, the journal
+// header, its lines and their dimension tags. Used by post-project-expense
+// and reclass-project-coverage. The journal is Provisional before the
+// company's accounting cutover and Posted after it.
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
@@ -24,8 +26,10 @@ export type ProjectJournalLine = {
 };
 
 /**
- * Posts one journal dated `postingDate` in its accounting period, with every
+ * Writes one journal dated `postingDate`, with every
  * line tagged by each active dimension in `dimensions` that has a value.
+ * Before the company's accounting cutover the journal is Provisional and has
+ * no accounting period; after it, Posted in the period of `postingDate`.
  * Returns the journal id and the line ids, in the order of `lines`.
  */
 export async function postProjectJournal(
@@ -44,17 +48,23 @@ export async function postProjectJournal(
   }
 ): Promise<{ journalId: string; lineIds: string[] }> {
   const { companyId } = args;
-  const period = await resolveAccountingPeriod(
-    trx,
-    companyId,
-    args.postingDate,
-    "current"
-  );
+  // FOR SHARE holds the status until the caller's transaction commits.
+  const status = await journalPostingStatus(trx, companyId);
+  const accountingPeriodId =
+    status === "Posted"
+      ? (
+          await resolveAccountingPeriod(
+            trx,
+            companyId,
+            args.postingDate,
+            "current"
+          )
+        ).id
+      : null;
   const journalId = await createAdjustmentJournal(trx, {
     companyId,
-    accountingPeriodId: period.id,
-    // accountingEnabled still gates every caller, so the journal is Posted.
-    status: "Posted",
+    accountingPeriodId,
+    status,
     description: args.description,
     postingDate: args.postingDate,
     userId: args.userId,

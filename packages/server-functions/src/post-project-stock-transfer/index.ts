@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCompanyTimeZone } from "@carbon/database";
-import { inOrder, single } from "@carbon/database/rows";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import { inOrder } from "@carbon/database/rows";
 import { datetime, round } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -67,14 +68,7 @@ const postProjectStockTransfer = defineServerFn({
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    const [settings, accountDefaults, dimensions] = await inOrder([
-      () =>
-        single(
-          db,
-          "companySettings",
-          { id: companyId },
-          { columns: ["accountingEnabled"] }
-        ),
+    const [accountDefaults, dimensions] = await inOrder([
       () =>
         db
           .selectFrom("accountDefault")
@@ -104,12 +98,7 @@ const postProjectStockTransfer = defineServerFn({
           ])
           .execute()
     ]);
-    // Fail closed: a failed settings read must not post without the GL.
-    if (settings.error) throw new Error("Failed to fetch company settings");
-    const accountingEnabled = settings.data?.accountingEnabled ?? false;
-    if (accountingEnabled && !accountDefaults) {
-      throw new Error("Error getting account defaults");
-    }
+    if (!accountDefaults) throw new Error("Error getting account defaults");
     const dimensionMap: Record<string, string> = {};
     for (const dimension of dimensions) {
       if (dimension.entityType) {
@@ -295,8 +284,12 @@ const postProjectStockTransfer = defineServerFn({
         }
       }
 
+      // A payback variance writes a journal: Provisional before the
+      // company's accounting cutover, Posted after it. FOR SHARE holds the
+      // status until commit. A Provisional journal has no accounting period.
+      const postingStatus = await journalPostingStatus(trx, companyId);
       const accountingPeriodId =
-        accountingEnabled && header.type === "Payback"
+        postingStatus === "Posted" && header.type === "Payback"
           ? (
               await resolveAccountingPeriod(
                 trx,
@@ -313,9 +306,8 @@ const postProjectStockTransfer = defineServerFn({
         if (!journalId) {
           journalId = await createAdjustmentJournal(trx, {
             companyId,
-            accountingPeriodId: accountingPeriodId!,
-            // accountingEnabled still gates this path, so it posts Posted.
-            status: "Posted",
+            accountingPeriodId,
+            status: postingStatus,
             description: `Payback ${header.projectStockTransferId}`,
             postingDate,
             userId,
@@ -512,45 +504,42 @@ const postProjectStockTransfer = defineServerFn({
           if (variance !== 0) {
             // The borrower takes the difference: Dr variance / Cr inventory
             // when it paid back dearer stock, the mirror when cheaper.
-            let journalLineId: string | null = null;
-            if (accountingPeriodId && accountDefaults) {
-              const journalLines = await trx
-                .insertInto("journalLine")
-                .values(
-                  buildAdjustmentJournalLines({
-                    journalId: await getJournalId(),
-                    documentId: header.id,
-                    documentType: "Project Transfer",
-                    journalLineReference: nanoid(),
-                    isGain: variance < 0,
-                    cost: Math.abs(variance),
-                    quantity,
-                    replenishmentSystem: item.replenishmentSystem,
-                    accountDefaults,
-                    offsetDescription: "Payback Variance",
-                    companyId
-                  })
-                )
-                .returning("id")
+            const journalLines = await trx
+              .insertInto("journalLine")
+              .values(
+                buildAdjustmentJournalLines({
+                  journalId: await getJournalId(),
+                  documentId: header.id,
+                  documentType: "Project Transfer",
+                  journalLineReference: nanoid(),
+                  isGain: variance < 0,
+                  cost: Math.abs(variance),
+                  quantity,
+                  replenishmentSystem: item.replenishmentSystem,
+                  accountDefaults,
+                  offsetDescription: "Payback Variance",
+                  companyId
+                })
+              )
+              .returning("id")
+              .execute();
+            const journalLineId = journalLines[1]?.id ?? null;
+            const tags = buildJournalLineDimensions({
+              journalLineIds: journalLines.map((jl) => jl.id),
+              dimensions: dimensionMap,
+              itemId: line.itemId,
+              itemPostingGroupId: postingGroupByItem.get(line.itemId),
+              locationId: header.locationId,
+              extraDimensions: [
+                { entityType: "Project", valueId: fromProjectId! }
+              ],
+              companyId
+            });
+            if (tags.length > 0) {
+              await trx
+                .insertInto("journalLineDimension")
+                .values(tags)
                 .execute();
-              journalLineId = journalLines[1]?.id ?? null;
-              const tags = buildJournalLineDimensions({
-                journalLineIds: journalLines.map((jl) => jl.id),
-                dimensions: dimensionMap,
-                itemId: line.itemId,
-                itemPostingGroupId: postingGroupByItem.get(line.itemId),
-                locationId: header.locationId,
-                extraDimensions: [
-                  { entityType: "Project", valueId: fromProjectId! }
-                ],
-                companyId
-              });
-              if (tags.length > 0) {
-                await trx
-                  .insertInto("journalLineDimension")
-                  .values(tags)
-                  .execute();
-              }
             }
             await insertProjectLedgerRows(trx, {
               companyId,

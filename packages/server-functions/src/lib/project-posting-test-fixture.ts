@@ -170,9 +170,11 @@ export async function projectPostingFixture(
       .execute();
     await trx
       .insertInto("companySettings")
-      .values({ id: companyId, accountingEnabled: true })
+      // A cutover inside the test period: every journal posts Posted. A test
+      // of a company before its cutover sets the date back to null.
+      .values({ id: companyId, accountingCutoverDate: "2000-01-01" })
       .onConflict((oc) =>
-        oc.column("id").doUpdateSet({ accountingEnabled: true })
+        oc.column("id").doUpdateSet({ accountingCutoverDate: "2000-01-01" })
       )
       .execute();
     await trx

@@ -7,7 +7,6 @@ import {
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
-import { inOrder, single } from "@carbon/database/rows";
 import { credit, datetime, debit, round } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -73,19 +72,9 @@ const reclassProjectCoverage = defineServerFn({
   ): Promise<ReclassProjectCoverageResult> {
     const { db, companyId, userId } = ctx;
 
-    const [settings, timezone] = await inOrder([
-      () =>
-        single(
-          db,
-          "companySettings",
-          { id: companyId },
-          { columns: ["accountingEnabled"] }
-        ),
-      () => getCompanyTimeZone(db, companyId)
-    ]);
-    if (settings.error) throw new Error("Failed to fetch company settings");
-    const accountingEnabled = settings.data?.accountingEnabled ?? false;
-    const postingDate = datetime.today(timezone).toString();
+    const postingDate = datetime
+      .today(await getCompanyTimeZone(db, companyId))
+      .toString();
 
     return db.transaction().execute(async (trx) => {
       // Row lock: two reclasses of one charge must not both reverse it.
@@ -165,9 +154,11 @@ const reclassProjectCoverage = defineServerFn({
       let journalId: string | null = null;
       let debitLineId: string | null = null;
       let creditLineId: string | null = null;
-      // The account the replacement posts to; null with accounting off.
+      // The account the replacement posts to; null for a zero charge. The
+      // journal is written for every company: Provisional before the
+      // accounting cutover, Posted after it (postProjectJournal).
       let newAccount: string | null = null;
-      if (accountingEnabled && amount !== 0) {
+      if (amount !== 0) {
         newAccount = resolveProjectPostingAccount(
           context,
           postingDate,

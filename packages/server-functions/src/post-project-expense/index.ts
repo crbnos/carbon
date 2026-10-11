@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { journalReference } from "@carbon/database";
-import { single } from "@carbon/database/rows";
 import {
   credit,
   datetime,
@@ -49,8 +48,9 @@ export type PostProjectExpenseResult = {
  * part bought on a card): Dr the project account / Cr
  * goodsReceivedNotInvoicedAccount, with `sourceType 'Project Expense'` and the
  * Project, Project Element and Employee dimensions, plus one projectLedger row
- * of type Other Direct. With accounting off only the ledger row is written. A
- * Statistical project charges indirectCostAccount and writes no ledger row.
+ * of type Other Direct. The journal is Provisional before the company's
+ * accounting cutover and Posted after it. A Statistical project charges
+ * indirectCostAccount and writes no ledger row.
  *
  * On a Service project the coverage decides the account (the user's override
  * with a reason, else `resolveCoverage` for an expense), the journal carries
@@ -65,15 +65,6 @@ const postProjectExpense = defineServerFn({
   permissions: { update: "projects" },
   async run(ctx, { projectExpenseEntryId }): Promise<PostProjectExpenseResult> {
     const { db, companyId, userId } = ctx;
-
-    const settings = await single(
-      db,
-      "companySettings",
-      { id: companyId },
-      { columns: ["accountingEnabled"] }
-    );
-    if (settings.error) throw new Error("Failed to fetch company settings");
-    const accountingEnabled = settings.data?.accountingEnabled ?? false;
 
     return db.transaction().execute(async (trx) => {
       // Row lock: two posts of one entry must not both post it.
@@ -183,7 +174,9 @@ const postProjectExpense = defineServerFn({
 
       let journalId: string | null = null;
       let debitLineId: string | null = null;
-      if (accountingEnabled && amount !== 0) {
+      // The journal is written for every company: Provisional before the
+      // accounting cutover, Posted after it (postProjectJournal).
+      if (amount !== 0) {
         const defaults = await trx
           .selectFrom("accountDefault")
           .select(["goodsReceivedNotInvoicedAccount", "indirectCostAccount"])

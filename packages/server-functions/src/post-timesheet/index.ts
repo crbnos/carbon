@@ -4,6 +4,7 @@
 
 import { journalReference } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { inOrder, single } from "@carbon/database/rows";
 import {
   datetime,
@@ -63,8 +64,9 @@ export type PostTimesheetResult = {
  * Posts Submitted or Approved timesheet entries: the cost (hours × the labor
  * category's rate, or the original's rate for a reversal) goes Dr the project
  * account / Cr laborAbsorptionAccount, one projectLedger row per entry, and
- * each entry is stamped Posted. A Statistical project writes no journal and no
- * ledger row. Entries that are not postable (Draft, Rejected, already posted)
+ * each entry is stamped Posted. The journal is Provisional before the
+ * company's accounting cutover and Posted after it. A Statistical project
+ * writes no journal and no ledger row. Entries that are not postable (Draft, Rejected, already posted)
  * are skipped. The ERP checks who may post (approval routing) before it calls.
  *
  * A Service project's entry also posts from Draft (service time posts at Stop
@@ -86,14 +88,9 @@ const postTimesheet = defineServerFn({
       "companySettings",
       { id: companyId },
       {
-        columns: [
-          "accountingEnabled",
-          "timekeepingControls",
-          "standardWeeklyHours"
-        ]
+        columns: ["timekeepingControls", "standardWeeklyHours"]
       }
     );
-    const accountingEnabled = settings.data?.accountingEnabled ?? false;
     const isDcaa = settings.data?.timekeepingControls === "DCAA";
     const standardWeeklyHours = Number(
       settings.data?.standardWeeklyHours ?? 40
@@ -258,11 +255,18 @@ const postTimesheet = defineServerFn({
         () =>
           trx
             .selectFrom("accountDefault")
-            .select(["laborAbsorptionAccount"])
+            .select(["laborAbsorptionAccount", "retainedEarningsAccount"])
             .where("companyId", "=", companyId)
             .executeTakeFirst(),
         () => loadServicePostingContexts(trx, companyId, serviceRefs)
       ]);
+      if (!accountDefaults) throw new Error("Error getting account defaults");
+      // Every posting writes its journal: Provisional before the company's
+      // accounting cutover, Posted after it. FOR SHARE holds the status until
+      // commit. A Provisional journal has no accounting period.
+      const postingStatus = await journalPostingStatus(trx, companyId);
+      const journalOptions = { postingStatus, accountDefaults };
+
       // A re-diluted Service entry keeps its order's Customer dimension.
       for (const entry of redilutedEntries) {
         if (!entry.isService) continue;
@@ -329,9 +333,7 @@ const postTimesheet = defineServerFn({
         })),
         originalById,
         {
-          accountingEnabled,
-          laborAbsorptionAccount:
-            accountDefaults?.laborAbsorptionAccount ?? null,
+          ...journalOptions,
           dilutionFactors: dilution?.factorByEntry,
           restrictCharging: isDcaa
         }
@@ -350,39 +352,34 @@ const postTimesheet = defineServerFn({
             amount: adjustment.amount
           })),
           contexts,
-          {
-            accountingEnabled,
-            laborAbsorptionAccount:
-              accountDefaults?.laborAbsorptionAccount ?? null
-          }
+          journalOptions
         );
         plan.lines.push(...redilution.lines);
         plan.ledgerRows.push(...redilution.ledgerRows);
       }
 
       // Journals: one per accounting period the entries fall in, dated the
-      // period's latest entry date.
+      // period's latest entry date. Before the cutover there is no period,
+      // so one Provisional journal holds every line.
       const journalIdByEntry = new Map<string, string>();
       const debitLineIdByEntry = new Map<string, string>();
       const journalIds: string[] = [];
 
       if (plan.lines.length > 0) {
-        const periodByDate = new Map<string, string>();
+        const periodByDate = new Map<string, string | null>();
         for (const date of [
           ...new Set(plan.lines.map((l) => l.postingDate))
         ].sort()) {
-          const period = await resolveAccountingPeriod(
-            trx,
-            companyId,
-            date,
-            "current"
-          );
-          periodByDate.set(date, period.id);
+          const period =
+            postingStatus === "Posted"
+              ? await resolveAccountingPeriod(trx, companyId, date, "current")
+              : null;
+          periodByDate.set(date, period?.id ?? null);
         }
 
-        const linesByPeriod = new Map<string, TimesheetJournalLine[]>();
+        const linesByPeriod = new Map<string | null, TimesheetJournalLine[]>();
         for (const line of plan.lines) {
-          const periodId = periodByDate.get(line.postingDate)!;
+          const periodId = periodByDate.get(line.postingDate) ?? null;
           const group = linesByPeriod.get(periodId) ?? [];
           group.push(line);
           linesByPeriod.set(periodId, group);
@@ -420,8 +417,7 @@ const postTimesheet = defineServerFn({
           const journalId = await createAdjustmentJournal(trx, {
             companyId,
             accountingPeriodId,
-            // accountingEnabled still gates this path, so it posts Posted.
-            status: "Posted",
+            status: postingStatus,
             description: "Project Timesheet",
             postingDate,
             userId,
@@ -438,6 +434,7 @@ const postTimesheet = defineServerFn({
                 id: lineIds[index]!,
                 journalId,
                 accountId: line.accountId,
+                accountDefaultRole: line.accountDefaultRole,
                 description: line.description,
                 amount: line.amount,
                 quantity: 1,

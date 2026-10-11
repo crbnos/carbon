@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Constants, getCompanyTimeZone } from "@carbon/database";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { inOrder, rpcRows, single } from "@carbon/database/rows";
 import {
   datetime,
@@ -150,7 +151,6 @@ const postProjectIssue = defineServerFn({
     const [
       itemResult,
       itemCostResult,
-      settings,
       accountDefaults,
       dimensions,
       quantities
@@ -175,13 +175,6 @@ const postProjectIssue = defineServerFn({
               "itemPostingGroupId"
             ]
           }
-        ),
-      () =>
-        single(
-          db,
-          "companySettings",
-          { id: companyId },
-          { columns: ["accountingEnabled"] }
         ),
       () =>
         db
@@ -224,8 +217,6 @@ const postProjectIssue = defineServerFn({
 
     if (itemResult.error) throw new Error("Failed to fetch item");
     if (itemCostResult.error) throw new Error("Failed to fetch item cost");
-    // Fail closed: a failed settings read must not post without the GL.
-    if (settings.error) throw new Error("Failed to fetch company settings");
     if (quantities.error) throw new Error("Failed to fetch current quantities");
     if (!accountDefaults) throw new Error("Error getting account defaults");
 
@@ -313,7 +304,6 @@ const postProjectIssue = defineServerFn({
           : split.draws;
     }
 
-    const accountingEnabled = settings.data?.accountingEnabled ?? false;
     const dimensionMap: Record<string, string> = {};
     for (const dimension of dimensions) {
       if (dimension.entityType) {
@@ -411,16 +401,21 @@ const postProjectIssue = defineServerFn({
           .execute();
       }
 
-      const accountingPeriodId = accountingEnabled
-        ? (
-            await resolveAccountingPeriod(
-              trx,
-              companyId,
-              postingDate,
-              "current"
-            )
-          ).id
-        : null;
+      // Every issue writes its journal: Provisional before the company's
+      // accounting cutover, Posted after it. FOR SHARE holds the status until
+      // commit. A Provisional journal has no accounting period.
+      const postingStatus = await journalPostingStatus(trx, companyId);
+      const accountingPeriodId =
+        postingStatus === "Posted"
+          ? (
+              await resolveAccountingPeriod(
+                trx,
+                companyId,
+                postingDate,
+                "current"
+              )
+            ).id
+          : null;
 
       // One journal for every stripe drawn, created on the first movement
       // that carries value.
@@ -429,9 +424,8 @@ const postProjectIssue = defineServerFn({
         if (!sharedJournalId) {
           sharedJournalId = await createAdjustmentJournal(trx, {
             companyId,
-            accountingPeriodId: accountingPeriodId!,
-            // accountingEnabled still gates this path, so it posts Posted.
-            status: "Posted",
+            accountingPeriodId,
+            status: postingStatus,
             description: journalDescription,
             postingDate,
             userId,
@@ -468,43 +462,41 @@ const postProjectIssue = defineServerFn({
             itemPostingGroupId: itemCostResult.data.itemPostingGroupId
           },
           itemCost: itemCostResult.data,
-          accounting: accountingPeriodId
-            ? {
-                postingStatus: "Posted",
-                accountingPeriodId,
-                accountDefaults: {
-                  rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
-                  finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
-                  inventoryAdjustmentVarianceAccount:
-                    accountDefaults.inventoryAdjustmentVarianceAccount
-                },
-                offsetAccount,
-                offsetDescription: isStatistical
-                  ? "Indirect Cost"
-                  : service
-                    ? "Service Material"
-                    : "Project Material",
-                sourceType: "Project Issue",
-                description: journalDescription,
-                getJournalId,
-                userId,
-                dimensions: dimensionMap,
-                extraDimensions: [
-                  { entityType: "Project", valueId: projectId },
-                  ...(projectElementId
-                    ? [
-                        {
-                          entityType: "ProjectElement",
-                          valueId: projectElementId
-                        }
-                      ]
-                    : []),
-                  ...(service?.customerId
-                    ? [{ entityType: "Customer", valueId: service.customerId }]
-                    : [])
-                ]
-              }
-            : null
+          accounting: {
+            postingStatus,
+            accountingPeriodId,
+            accountDefaults: {
+              rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
+              finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
+              inventoryAdjustmentVarianceAccount:
+                accountDefaults.inventoryAdjustmentVarianceAccount
+            },
+            offsetAccount,
+            offsetDescription: isStatistical
+              ? "Indirect Cost"
+              : service
+                ? "Service Material"
+                : "Project Material",
+            sourceType: "Project Issue",
+            description: journalDescription,
+            getJournalId,
+            userId,
+            dimensions: dimensionMap,
+            extraDimensions: [
+              { entityType: "Project", valueId: projectId },
+              ...(projectElementId
+                ? [
+                    {
+                      entityType: "ProjectElement",
+                      valueId: projectElementId
+                    }
+                  ]
+                : []),
+              ...(service?.customerId
+                ? [{ entityType: "Customer", valueId: service.customerId }]
+                : [])
+            ]
+          }
         });
         bookedRows.push(bookedRow);
       }

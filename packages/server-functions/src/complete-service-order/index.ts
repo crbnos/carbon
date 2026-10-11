@@ -14,7 +14,7 @@ import {
   journalReference
 } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
-import { single } from "@carbon/database/rows";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { credit, datetime, debit, round } from "@carbon/utils";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
@@ -97,15 +97,6 @@ const completeServiceOrder = defineServerFn({
     const today = datetime
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
-    const settings = await single(
-      db,
-      "companySettings",
-      { id: companyId },
-      { columns: ["accountingEnabled"] }
-    );
-    if (settings.error) throw new Error("Failed to fetch company settings");
-    const accountingEnabled = settings.data?.accountingEnabled ?? false;
-
     return db.transaction().execute(async (trx) => {
       // Row lock: two completions of one order must not both capitalize it.
       const order = await trx
@@ -240,7 +231,7 @@ const completeServiceOrder = defineServerFn({
       }
 
       const journalId =
-        accountingEnabled && plan.journal.length > 0
+        plan.journal.length > 0
           ? await postCompletionJournal(trx, {
               companyId,
               userId,
@@ -577,17 +568,19 @@ async function postCompletionJournal(
     }
   }
 
-  const period = await resolveAccountingPeriod(
-    trx,
-    companyId,
-    args.today,
-    "current"
-  );
+  // Every completion writes its journal: Provisional before the company's
+  // accounting cutover, Posted after it. FOR SHARE holds the status until
+  // commit. A Provisional journal has no accounting period.
+  const status = await journalPostingStatus(trx, companyId);
+  const accountingPeriodId =
+    status === "Posted"
+      ? (await resolveAccountingPeriod(trx, companyId, args.today, "current"))
+          .id
+      : null;
   const journalId = await createAdjustmentJournal(trx, {
     companyId,
-    accountingPeriodId: period.id,
-    // accountingEnabled still gates this path, so its journal is Posted.
-    status: "Posted",
+    accountingPeriodId,
+    status,
     description: `Refurbishment ${order.serviceOrderId}`,
     postingDate: args.today,
     userId: args.userId,

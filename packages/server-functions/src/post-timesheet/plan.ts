@@ -6,12 +6,20 @@
 // category's rate on the entry date (a reversal reuses the rate its original
 // posted at), and posts Dr the project account / Cr labor absorption. A
 // Statistical project posts nothing: the entry is only stamped Posted.
+// The journal is Provisional before the company's accounting cutover and
+// Posted after it; an empty laborAbsorptionAccount becomes a stand-in line
+// before the cutover and refuses the posting after it (resolveDefaultAccount).
 // In DCAA mode an exempt employee's week is diluted (`planDilution`): each
 // entry costs hours × rate × the week's factor, and a later change to the
 // week re-dilutes its posted entries by posting the difference.
 // Spec: .ai/specs/2026-10-03-projects.md (Charging: the five entry points);
 // .ai/specs/2026-10-09-government-contracting.md (Dilution for exempt staff).
 
+import {
+  type AutomaticJournalStatus,
+  type OptionalDefaultRole,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
 import { credit, debit, round, type ServiceCoverage } from "@carbon/utils";
 import {
   assertChargeable,
@@ -58,6 +66,8 @@ export type TimesheetJournalLine = {
   accountId: string;
   description: string;
   amount: number; // natural-balance signed, journalLine convention
+  /** A stand-in line names the default it wanted (resolveDefaultAccount). */
+  accountDefaultRole: OptionalDefaultRole | null;
   isProjectDebit: boolean;
   projectId: string;
   projectElementId: string | null;
@@ -181,14 +191,20 @@ export function planDilution(
  * `restrictCharging` checks the employee against the project's members
  * (DCAA charge restrictions). Both are off in Standard mode.
  */
+export type TimesheetJournalOptions = {
+  postingStatus: AutomaticJournalStatus;
+  accountDefaults: {
+    laborAbsorptionAccount: string | null;
+    retainedEarningsAccount: string;
+  };
+};
+
 export function planTimesheetPosting(
   entries: TimesheetPostingEntry[],
   contexts: Map<string, ProjectPostingContext>,
   rates: TimesheetLaborRate[],
   originals: Map<string, TimesheetOriginal>,
-  options: {
-    accountingEnabled: boolean;
-    laborAbsorptionAccount: string | null;
+  options: TimesheetJournalOptions & {
     dilutionFactors?: Map<string, number>;
     restrictCharging?: boolean;
   }
@@ -269,8 +285,7 @@ export function planTimesheetPosting(
 
 /**
  * The ledger row and the journal lines of one timesheet cost: Dr the project
- * account / Cr labor absorption, with no journal for a 0 cost or with
- * accounting off.
+ * account / Cr labor absorption, with no journal lines for a 0 cost.
  */
 function pushCost(
   plan: Pick<TimesheetPostingPlan, "lines" | "ledgerRows">,
@@ -286,10 +301,7 @@ function pushCost(
     quantity: number;
     cost: number;
     reversalOfId: string | null;
-    options: {
-      accountingEnabled: boolean;
-      laborAbsorptionAccount: string | null;
-    };
+    options: TimesheetJournalOptions;
   }
 ): void {
   const { entry, ctx, resolved, cost, options } = args;
@@ -312,12 +324,12 @@ function pushCost(
     unallowable: isUnallowableCharge(ctx, accountId)
   });
 
-  if (!options.accountingEnabled || cost === 0) return;
-  if (!options.laborAbsorptionAccount) {
-    throw new Error(
-      "laborAbsorptionAccount not configured in account defaults"
-    );
-  }
+  if (cost === 0) return;
+  const absorption = resolveDefaultAccount(
+    options.accountDefaults,
+    "laborAbsorptionAccount",
+    options.postingStatus
+  );
 
   const shared = {
     entryId: entry.id,
@@ -334,13 +346,15 @@ function pushCost(
       description:
         treatment === "By Coverage" ? "Service Labor" : "Project Labor",
       amount: debit("expense", cost),
+      accountDefaultRole: null,
       isProjectDebit: true
     },
     {
       ...shared,
-      accountId: options.laborAbsorptionAccount,
+      accountId: absorption.accountId,
       description: "Labor Absorption",
       amount: credit("expense", cost),
+      accountDefaultRole: absorption.accountDefaultRole,
       isProjectDebit: false
     }
   );
@@ -355,7 +369,7 @@ function pushCost(
 export function planRedilutionPostings(
   adjustments: { entry: TimesheetPostingEntry; amount: number }[],
   contexts: Map<string, ProjectPostingContext>,
-  options: { accountingEnabled: boolean; laborAbsorptionAccount: string | null }
+  options: TimesheetJournalOptions
 ): Pick<TimesheetPostingPlan, "lines" | "ledgerRows"> {
   const plan: Pick<TimesheetPostingPlan, "lines" | "ledgerRows"> = {
     lines: [],
