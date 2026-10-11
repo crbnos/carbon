@@ -5636,6 +5636,9 @@ msgstr "Contract Line"
 msgid "Contract lines"
 msgstr "Contract lines"
 
+msgid "Contract Loss Provision"
+msgstr "Contract Loss Provision"
+
 msgid "Contract setup"
 msgstr "Contract setup"
 
@@ -12661,6 +12664,9 @@ msgstr "Liability account for sales tax collected from customers"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Liability account for tax paid on purchases"
+
+msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
+msgstr "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"

@@ -5636,6 +5636,9 @@ msgstr ""
 msgid "Contract lines"
 msgstr ""
 
+msgid "Contract Loss Provision"
+msgstr ""
+
 msgid "Contract setup"
 msgstr "Sözleşme kurulumu"
 
@@ -12661,6 +12664,9 @@ msgstr "Müşterilerden toplanan satış vergisi için borç hesabı"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Satın almalar üzerinde ödenen vergi için borç hesabı"
+
+msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Hizmet tarihli veya kiralama fatura satırı, hasılat kazanılmadan önce faturalandırıldığında kredi verilen yükümlülük; muhasebe tanıma çalıştırmaları tarafından serbest bırakılır"

@@ -66,7 +66,7 @@ These correct or add to the spec. Task 13 records them there.
 - [x] Task 9: Add the Percent Complete database tests
 - [x] Task 10: Show progress in the run review
 - [x] Task 11: Show progress on the Billing tab and the contract
-- [ ] Task 12: Add the Contract Loss Provision account default
+- [x] Task 12: Add the Contract Loss Provision account default
 - [ ] Task 13: Update the rules, AGENTS.md, docs, spec and changelog
 - [ ] Task 14: Verify in the browser
 
@@ -613,3 +613,4 @@ ls .ai/playbooks/project-billing-phase-4b.md
 - Task 10: `revenueScheduleTypes` (`accounting.models.ts`) gains `Cost Relief` and `Loss Provision`. The run page builds its sections from that list, so without them the 2 new row types had no section and did not show. Only the run page reads the list. The page header's **Amount** still sums every line, so it now adds the cost relief and the loss provision to the revenue.
 - Task 10: the run lines select (`getRevenueRecognitionRunLines`) embeds the month row (`revenue`) and the contract line (`contractLine`, with its contract and billing element) through the schedule's composite FKs. A contract row's **Source** cell now links to its contract. `ProjectRevenueProgress.ee.tsx` builds one row per contract line with a progress month (`earnedToDate` set), a Cost Relief row or a Loss Provision row (`projectRevenueRows`). **This Month** counts each month row once, because its Deferral and Accrual rows both point at it. `check:manifest` passes unchanged. The UI is not checked in a browser (Task 14).
 - Task 11: `getProjectContractRevenue` returns `{ data, error }` with `data` keyed by line id (`ProjectContractRevenue`). **Revenue Recognized** sums the months that are not Planned, so a month `Recognized Externally` counts too. The 2 surfaces list only billing lines (Time & Materials and Cost Plus), as before; a Fixed Percent Complete line shows its figures in the run review only. `ProjectBillingLines` shows **Percent Complete** for a Percent Complete line and "—" for the rest. The UI is not checked in a browser (Task 14).
+- Task 12: **Contract Loss Provision** sits under Accounts Receivable, after **Deferred Revenue**, with `badgeType: "Liability"`. The form offers that badge's accounts from the accounting layout's balance sheet list, as for Deferred Revenue. It has no glossary `termId`, as **Project WIP** has none. `updateDefaultAccounts` writes the validated object as it is, so the new optional field saves with no service change.

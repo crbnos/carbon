@@ -5636,6 +5636,9 @@ msgstr ""
 msgid "Contract lines"
 msgstr ""
 
+msgid "Contract Loss Provision"
+msgstr ""
+
 msgid "Contract setup"
 msgstr "Impostazione del contratto"
 
@@ -12661,6 +12664,9 @@ msgstr "Conto passività per imposta di vendita riscossa dai clienti"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Conto passività per l'imposta pagata su acquisti"
+
+msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Passività accreditata quando una riga di fattura con data di servizio o una riga di noleggio viene fatturata prima che il ricavo sia guadagnato; rilasciata da esecuzioni di riconoscimento"

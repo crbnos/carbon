@@ -5636,6 +5636,9 @@ msgstr ""
 msgid "Contract lines"
 msgstr ""
 
+msgid "Contract Loss Provision"
+msgstr ""
+
 msgid "Contract setup"
 msgstr "अनुबंध सेटअप"
 
@@ -12661,6 +12664,9 @@ msgstr "ग्राहकों से एकत्र किए गए बि�
 
 msgid "Liability account for tax paid on purchases"
 msgstr "खरीद पर भुगतान किए गए कर के लिए दायित्व खाता"
+
+msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "देयता जमा की जाती है जब सेवा-तारीखित या किराये की चालान पंक्ति राजस्व अर्जित होने से पहले बिल किया जाता है; पहचान रन द्वारा जारी किया जाता है।"

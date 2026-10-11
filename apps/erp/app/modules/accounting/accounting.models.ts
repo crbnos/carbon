@@ -487,6 +487,7 @@ export const defaultBalanceSheetAccountValidator = z.object({
     message: "Deferred tax liability account is required"
   }),
   deferredRevenueAccount: z.string().optional(),
+  contractLossProvisionAccount: z.string().optional(),
   contractAssetAccount: z.string().optional(),
   netInvestmentInLeasesAccount: z.string().optional()
 });

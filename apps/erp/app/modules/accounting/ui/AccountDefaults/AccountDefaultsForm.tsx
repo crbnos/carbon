@@ -141,6 +141,12 @@ const AccountDefaultsForm = ({
             termId: "account-default-deferred-revenue"
           },
           {
+            name: "contractLossProvisionAccount",
+            label: t`Contract Loss Provision`,
+            description: t`Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs`,
+            badgeType: "Liability"
+          },
+          {
             name: "contractAssetAccount",
             label: t`Contract Assets`,
             description: t`Unbilled receivable for rent earned before it is invoiced`,
