@@ -77,7 +77,7 @@ These correct or add to the spec. Task 20 records them there.
 - [x] Task 15: Add the billing fields to the contract line form
 - [x] Task 16: Add the contract line billing drawer
 - [x] Task 17: Add the Project billing section and the backup report
-- [ ] Task 18: Add Projects → Billing and the project Billing tab
+- [x] Task 18: Add Projects → Billing and the project Billing tab
 - [ ] Task 19: Add the bill rate to labor categories
 - [ ] Task 20: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 21: Verify in the browser
@@ -1121,3 +1121,7 @@ ls .ai/playbooks/project-billing-phase-4a.md
 - Task 16: the drawer has **Generate Billable Items**, so the run log needs no follow-up for it (the Task 20 brief asked to check).
 - Task 17: two new MCP read tools in `sales.service.ts`: `getContractProjectBillingInvoices` (the contract's invoice lines whose contract line is not Fixed, one query with an inner embed, grouped by invoice in memory with the billed total) and `getProjectBillingBackup` (the items an invoice stamps, filtered through an inner embed of `salesInvoiceLine`). `$id.details` reads the billing line ids first and skips the rest when there is none, so a Fixed-only contract costs one extra query.
 - Task 17: the backup report renders the app `Table` in the center pane (CSV export comes with it), not a separate page component. `projectLedger` has no FK to `laborCategory` or `user`, so labor category and employee names come from `useLaborCategories` and `usePeople` in the browser, and each column's `exportValue` writes the name into the CSV.
+- Task 18: `getContractBillableItems` now types its rows from a base query (`ContractBillableItemRow`): `setGenericQueryFilters` returns an untyped builder, so the rows were `any`. A new MCP read tool, `getContractBillingLines`, lists the billing lines (of a project, or of the company for the contract-line filter) with contract, item and billing element.
+- Task 18: the default filter (Unbilled and On Hold) applies in the loader when the URL has no `status` filter; the status chip is not shown for it. The project filter's options are the projects on the loaded page. Bulk actions are the table's selection menu; each row also has the same actions in its context menu. **Edit Price** needs exactly one open, non-reversal item. `billing.update.tsx` returns `{ success, error }` with a flash, as the service order billing route does.
+- Task 18: the project **Billing** tab shows only for a Contract-treatment project (`costTreatment = 'Contract'`), as the Stock tab shows only with project stock. Its shortcut is `mod+shift+i` (`PROJECT_TAB_SHORTCUTS.billing`; B is Baselines). The tab lists the contract lines above the project's items, as the Time & materials tab lists open time above its ledger.
+- Task 18: the line billing page's items card (Task 16) now links to Projects → Billing (**Review Items**).

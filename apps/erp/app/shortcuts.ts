@@ -53,6 +53,7 @@ export const PROJECT_TAB_SHORTCUTS = {
   changeRequests: "mod+shift+r",
   costs: "mod+shift+c",
   time: "mod+shift+h",
+  billing: "mod+shift+i",
   stock: "mod+shift+k",
   pegging: "mod+shift+p",
   settings: "mod+shift+s",

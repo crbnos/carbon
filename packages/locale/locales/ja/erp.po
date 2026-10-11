@@ -472,6 +472,9 @@ msgstr "{count, plural, one {# バッチがリリース済} other {# バッチ�
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# 製造指図がリリース済} other {# 製造指図がリリース済}}"
 
+msgid "{count} items"
+msgstr ""
+
 msgid "{count} linked elements changed. Review the links."
 msgstr ""
 
@@ -737,6 +740,9 @@ msgstr "1件の認識対象明細 · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1件の請求書は前のシステムで請求済みであり、再度作成されません。"
+
+msgid "1 item"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1件のジョブが作成されました"
@@ -1472,6 +1478,9 @@ msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "変動料金（走行距離超過、損傷、配送、清掃など）は契約の次の請求書に計上されます。"
+
+msgid "A written off item is never billed."
+msgstr ""
 
 msgid "ABA"
 msgstr "ABA"
@@ -5617,6 +5626,12 @@ msgstr "契約クローズ日"
 
 msgid "Contract Close Date"
 msgstr "契約クローズ日"
+
+msgid "Contract Line"
+msgstr ""
+
+msgid "Contract lines"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "コントラクト設定"
@@ -10017,6 +10032,9 @@ msgstr "仕入先見積行の更新に失敗しました"
 msgid "Failed to update the item"
 msgstr ""
 
+msgid "Failed to update the items"
+msgstr ""
+
 msgid "Failed to update the price"
 msgstr ""
 
@@ -10982,6 +11000,9 @@ msgid "History by Order"
 msgstr ""
 
 msgid "Hold"
+msgstr ""
+
+msgid "Hold Items"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -14551,6 +14572,9 @@ msgstr "まだコンポーネントがない"
 
 msgid "No condition may match"
 msgstr "条件が一致しない"
+
+msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
+msgstr ""
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr ""
@@ -18492,6 +18516,9 @@ msgstr "リリース管理"
 msgid "Release Control"
 msgstr "リリース管理"
 
+msgid "Release Items"
+msgstr ""
+
 msgid "Release Job"
 msgstr "ジョブをリリース"
 
@@ -18509,6 +18536,9 @@ msgstr "リリース済み"
 
 msgid "Released date"
 msgstr "リリース日"
+
+msgid "Released items bill on the next invoice run, within the line's funding."
+msgstr ""
 
 msgid "Released revision"
 msgstr "リリースされたリビジョン"
@@ -19330,6 +19360,9 @@ msgstr "確認と作成"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
+
+msgid "Review Items"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "期間の貸借対照表と損益計算書をレビューして、数字が正しいことを確認してください。これは手動の承認です。レビュー後、完了にマークしてください。"
@@ -23087,6 +23120,9 @@ msgstr "Ramp 接続が期限切れになりました"
 msgid "The raw stock and material master you buy and consume"
 msgstr "購入して消費する原材料とマテリアルマスター"
 
+msgid "The reason shows on the item until it is released."
+msgstr ""
+
 msgid "The reasons you record when parts get scrapped"
 msgstr "部品がスクラップされたときに記録する理由"
 
@@ -26183,6 +26219,9 @@ msgid "Worst Performing Machines"
 msgstr "最も性能が低い機械"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write Off Items"
 msgstr ""
 
 msgid "Write-down"

@@ -12,6 +12,7 @@ import {
   LuLink2,
   LuListTree,
   LuPackage,
+  LuReceipt,
   LuSettings2,
   LuTimer
 } from "react-icons/lu";
@@ -33,6 +34,9 @@ export function useProjectNavigation() {
   // The Pegging tab shows for a member of a planning group. A company without
   // PLANNING_GROUPS still sees it, with the upgrade overlay.
   const isGroupMember = Boolean(routeData?.project?.planningGroupId);
+  // The Billing tab shows for a Contract project: only its cost bills a
+  // customer contract line.
+  const billsContract = routeData?.project?.costTreatment === "Contract";
 
   return [
     {
@@ -74,6 +78,16 @@ export function useProjectNavigation() {
       icon: LuTimer,
       shortcut: PROJECT_TAB_SHORTCUTS.time
     },
+    ...(billsContract
+      ? [
+          {
+            name: t`Billing`,
+            to: path.to.projectBilling(projectId),
+            icon: LuReceipt,
+            shortcut: PROJECT_TAB_SHORTCUTS.billing
+          }
+        ]
+      : []),
     ...(hasProjectStock
       ? [
           {

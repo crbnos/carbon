@@ -472,6 +472,9 @@ msgstr "{count, plural, one {# lot de production lancé} other {# lots de produc
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# ordre de fabrication lancé} other {# ordres de fabrication lancés}}"
 
+msgid "{count} items"
+msgstr ""
+
 msgid "{count} linked elements changed. Review the links."
 msgstr ""
 
@@ -737,6 +740,9 @@ msgstr "1 écriture à reconnaître · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 facture a été facturée dans votre système précédent et n'est pas créée à nouveau."
+
+msgid "1 item"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 tâche créée"
@@ -1472,6 +1478,9 @@ msgstr "Un Utilisateur enregistre la date de Péremption pour chaque Lot de prod
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Une charge variable — dépassement de kilométrage, dommages, livraison, nettoyage — est facturée sur la prochaine facture de l'accord."
+
+msgid "A written off item is never billed."
+msgstr ""
 
 msgid "ABA"
 msgstr "ABA"
@@ -5617,6 +5626,12 @@ msgstr "Date de clôture du contrat"
 
 msgid "Contract Close Date"
 msgstr "Date de Clôture du Contrat"
+
+msgid "Contract Line"
+msgstr ""
+
+msgid "Contract lines"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "Configuration du contrat"
@@ -10017,6 +10032,9 @@ msgstr "Impossible de mettre à jour la ligne de devis fournisseur"
 msgid "Failed to update the item"
 msgstr ""
 
+msgid "Failed to update the items"
+msgstr ""
+
 msgid "Failed to update the price"
 msgstr ""
 
@@ -10982,6 +11000,9 @@ msgid "History by Order"
 msgstr ""
 
 msgid "Hold"
+msgstr ""
+
+msgid "Hold Items"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -14551,6 +14572,9 @@ msgstr "Aucun composant pour le moment"
 
 msgid "No condition may match"
 msgstr "Aucune condition ne doit correspondre"
+
+msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
+msgstr ""
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr ""
@@ -18492,6 +18516,9 @@ msgstr "Contrôle de lancement"
 msgid "Release Control"
 msgstr "Contrôle de lancement"
 
+msgid "Release Items"
+msgstr ""
+
 msgid "Release Job"
 msgstr "Lancer le travail"
 
@@ -18509,6 +18536,9 @@ msgstr "Libéré"
 
 msgid "Released date"
 msgstr "Date de libération"
+
+msgid "Released items bill on the next invoice run, within the line's funding."
+msgstr ""
 
 msgid "Released revision"
 msgstr "Révision publiée"
@@ -19330,6 +19360,9 @@ msgstr "Examiner et créer"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Examinez les modifications de chaque article, puis confirmez — la libération ne peut pas être annulée."
+
+msgid "Review Items"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Examinez le bilan et le compte de résultat de la période et confirmez que les chiffres semblent corrects. C'est une approbation manuelle — marquez-le comme fait une fois que vous les avez examinés."
@@ -23087,6 +23120,9 @@ msgstr "La connexion Ramp a expiré"
 msgid "The raw stock and material master you buy and consume"
 msgstr "Le stock brut et le master matériel que vous achetez et consommez"
 
+msgid "The reason shows on the item until it is released."
+msgstr ""
+
 msgid "The reasons you record when parts get scrapped"
 msgstr "Les raisons que vous enregistrez lorsque des pièces sont mises au rebut"
 
@@ -26183,6 +26219,9 @@ msgid "Worst Performing Machines"
 msgstr "Machines les plus défaillantes"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write Off Items"
 msgstr ""
 
 msgid "Write-down"

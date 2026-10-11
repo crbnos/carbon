@@ -2010,6 +2010,8 @@ export const path = {
       `${generatePath(`${x}/project/${id}/baselines/compare`)}?${new URLSearchParams({ from, to })}`,
     projectBaselines: (id: string) =>
       generatePath(`${x}/project/${id}/baselines`),
+    projectBilling: (projectId: string) =>
+      generatePath(`${x}/project/${projectId}/billing`),
     projectChangeRequest: (id: string, crId: string) =>
       generatePath(`${x}/project/${id}/change-requests/${crId}`),
     projectChangeRequestComments: (id: string, crId: string) =>
@@ -2067,6 +2069,8 @@ export const path = {
       generatePath(`${x}/project-stock-transfer/${id}/status`),
     projectStockTransfers: `${x}/projects/transfers`,
     projects: `${x}/projects`,
+    projectsBilling: `${x}/projects/billing`,
+    projectsBillingUpdate: `${x}/projects/billing/update`,
     projectsSettings: `${x}/settings/projects`,
     projectTemplate: (id: string) =>
       generatePath(`${x}/project/${id}/template`),

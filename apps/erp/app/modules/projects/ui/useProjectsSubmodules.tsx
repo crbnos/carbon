@@ -9,6 +9,7 @@ import {
   LuClipboardCheck,
   LuFolderKanban,
   LuGroup,
+  LuReceipt,
   LuTimer
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -20,6 +21,7 @@ import { path } from "~/utils/path";
 // The Projects route owns every page under /x/projects except the module's
 // other submodules, plus the project workspace under /x/project.
 const otherProjectsRoutes = [
+  path.to.projectsBilling,
   path.to.projectTimesheetApprovals,
   path.to.projectStockTransfers,
   path.to.laborCategories,
@@ -65,6 +67,13 @@ export default function useProjectsSubmodules() {
           isActive: (pathname: string) =>
             pathname.startsWith(path.to.projectStockTransfers) ||
             pathname.startsWith(path.to.projectStockTransfer(""))
+        },
+        {
+          name: t`Billing`,
+          to: path.to.projectsBilling,
+          icon: <LuReceipt />,
+          isActive: (pathname: string) =>
+            pathname.startsWith(path.to.projectsBilling)
         },
         {
           name: t`Approvals`,

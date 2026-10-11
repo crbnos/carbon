@@ -472,6 +472,9 @@ msgstr "{count, plural, one {# बैच जारी} other {# बैच जा
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# जॉब जारी} other {# जॉब जारी}}"
 
+msgid "{count} items"
+msgstr ""
+
 msgid "{count} linked elements changed. Review the links."
 msgstr ""
 
@@ -737,6 +740,9 @@ msgstr "1 प्रविष्टि को पहचानने के लि
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 चालान आपकी पिछली प्रणाली में बिल किया गया था और फिर से ड्राफ्ट नहीं किया गया है।"
+
+msgid "1 item"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 नौकरी बनाई गई"
@@ -1472,6 +1478,9 @@ msgstr "एक उपयोगकर्ता प्रत्येक बैच
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "एक परिवर्तनीय शुल्क — माइलेज अधिकता, क्षति, डिलीवरी, सफाई — समझौते के अगले चालान पर बिल किया जाता है।"
+
+msgid "A written off item is never billed."
+msgstr ""
 
 msgid "ABA"
 msgstr "ABA"
@@ -5617,6 +5626,12 @@ msgstr "अनुबंध समापन तिथि"
 
 msgid "Contract Close Date"
 msgstr "अनुबंध समापन तिथि"
+
+msgid "Contract Line"
+msgstr ""
+
+msgid "Contract lines"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "अनुबंध सेटअप"
@@ -10017,6 +10032,9 @@ msgstr "आपूर्तिकर्ता कोटेशन पंक्त�
 msgid "Failed to update the item"
 msgstr ""
 
+msgid "Failed to update the items"
+msgstr ""
+
 msgid "Failed to update the price"
 msgstr ""
 
@@ -10982,6 +11000,9 @@ msgid "History by Order"
 msgstr ""
 
 msgid "Hold"
+msgstr ""
+
+msgid "Hold Items"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -14551,6 +14572,9 @@ msgstr "अभी कोई घटक नहीं"
 
 msgid "No condition may match"
 msgstr "कोई भी शर्त मेल नहीं खा सकती"
+
+msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
+msgstr ""
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr ""
@@ -18492,6 +18516,9 @@ msgstr "नियंत्रण जारी करें"
 msgid "Release Control"
 msgstr "नियंत्रण जारी करें"
 
+msgid "Release Items"
+msgstr ""
+
 msgid "Release Job"
 msgstr "जॉब जारी करें"
 
@@ -18509,6 +18536,9 @@ msgstr "जारी किया गया"
 
 msgid "Released date"
 msgstr "जारी की गई तारीख"
+
+msgid "Released items bill on the next invoice run, within the line's funding."
+msgstr ""
 
 msgid "Released revision"
 msgstr "जारी रिवीजन"
@@ -19330,6 +19360,9 @@ msgstr "समीक्षा और बनाएं"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
+
+msgid "Review Items"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि के तुलन पत्र और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही दिखते हैं। यह एक मैनुअल हस्ताक्षर बंद है — समीक्षा के बाद इसे पूरा करें।"
@@ -23087,6 +23120,9 @@ msgstr "Ramp कनेक्शन समाप्त हो गया"
 msgid "The raw stock and material master you buy and consume"
 msgstr "कच्चा स्टॉक और सामग्री मास्टर जो आप खरीदते और उपभोग करते हैं"
 
+msgid "The reason shows on the item until it is released."
+msgstr ""
+
 msgid "The reasons you record when parts get scrapped"
 msgstr "वह कारण जो आप रिकॉर्ड करते हैं जब पार्ट्स को स्क्रैप किया जाता है"
 
@@ -26183,6 +26219,9 @@ msgid "Worst Performing Machines"
 msgstr "सबसे खराब प्रदर्शन करने वाली मशीनें"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write Off Items"
 msgstr ""
 
 msgid "Write-down"

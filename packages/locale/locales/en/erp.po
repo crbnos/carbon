@@ -472,6 +472,9 @@ msgstr "{count, plural, one {Released # batch} other {Released # batches}}"
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Released # job} other {Released # jobs}}"
 
+msgid "{count} items"
+msgstr "{count} items"
+
 msgid "{count} linked elements changed. Review the links."
 msgstr "{count} linked elements changed. Review the links."
 
@@ -737,6 +740,9 @@ msgstr "1 entry to recognize · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 invoice was billed in your previous system and is not drafted again."
+
+msgid "1 item"
+msgstr "1 item"
 
 msgid "1 job created"
 msgstr "1 job created"
@@ -1472,6 +1478,9 @@ msgstr "A user records the expiry date on each batch or serial when the goods ar
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
+
+msgid "A written off item is never billed."
+msgstr "A written off item is never billed."
 
 msgid "ABA"
 msgstr "ABA"
@@ -5617,6 +5626,12 @@ msgstr "Contract close date"
 
 msgid "Contract Close Date"
 msgstr "Contract Close Date"
+
+msgid "Contract Line"
+msgstr "Contract Line"
+
+msgid "Contract lines"
+msgstr "Contract lines"
 
 msgid "Contract setup"
 msgstr "Contract setup"
@@ -10017,6 +10032,9 @@ msgstr "Failed to update supplier quote line"
 msgid "Failed to update the item"
 msgstr "Failed to update the item"
 
+msgid "Failed to update the items"
+msgstr "Failed to update the items"
+
 msgid "Failed to update the price"
 msgstr "Failed to update the price"
 
@@ -10983,6 +11001,9 @@ msgstr "History by Order"
 
 msgid "Hold"
 msgstr "Hold"
+
+msgid "Hold Items"
+msgstr "Hold Items"
 
 msgid "Hold the journal as a warning to fix."
 msgstr "Hold the journal as a warning to fix."
@@ -14551,6 +14572,9 @@ msgstr "No components yet"
 
 msgid "No condition may match"
 msgstr "No condition may match"
+
+msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
+msgstr "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr "No contract rates. Hours bill at the default rates."
@@ -18492,6 +18516,9 @@ msgstr "Release control"
 msgid "Release Control"
 msgstr "Release Control"
 
+msgid "Release Items"
+msgstr "Release Items"
+
 msgid "Release Job"
 msgstr "Release Job"
 
@@ -18509,6 +18536,9 @@ msgstr "Released"
 
 msgid "Released date"
 msgstr "Released date"
+
+msgid "Released items bill on the next invoice run, within the line's funding."
+msgstr "Released items bill on the next invoice run, within the line's funding."
 
 msgid "Released revision"
 msgstr "Released revision"
@@ -19330,6 +19360,9 @@ msgstr "Review & create"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Review each item's changes, then confirm — releasing can't be undone."
+
+msgid "Review Items"
+msgstr "Review Items"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
@@ -23087,6 +23120,9 @@ msgstr "The Ramp connection expired"
 msgid "The raw stock and material master you buy and consume"
 msgstr "The raw stock and material master you buy and consume"
 
+msgid "The reason shows on the item until it is released."
+msgstr "The reason shows on the item until it is released."
+
 msgid "The reasons you record when parts get scrapped"
 msgstr "The reasons you record when parts get scrapped"
 
@@ -26184,6 +26220,9 @@ msgstr "Worst Performing Machines"
 
 msgid "Write Off"
 msgstr "Write Off"
+
+msgid "Write Off Items"
+msgstr "Write Off Items"
 
 msgid "Write-down"
 msgstr "Write-down"

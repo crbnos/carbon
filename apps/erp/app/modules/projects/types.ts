@@ -4,6 +4,8 @@
 
 import type { Database } from "@carbon/database";
 import type {
+  ContractBillableItemRow,
+  getContractBillingLines,
   getPlanningGroupMembers,
   getPlanningGroups,
   getProjectBaselines,
@@ -62,4 +64,8 @@ export type ProjectBorrow = NonNullable<
 >[number];
 export type StockOwnerProject = NonNullable<
   Awaited<ReturnType<typeof getStockOwnerProjects>>["data"]
+>[number];
+export type ContractBillableItem = ContractBillableItemRow;
+export type ContractBillingLine = NonNullable<
+  Awaited<ReturnType<typeof getContractBillingLines>>["data"]
 >[number];

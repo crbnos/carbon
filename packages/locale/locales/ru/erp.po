@@ -472,6 +472,9 @@ msgstr "{count, plural, one {Запущена # серия} few {Запущен�
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Запущен # производственный заказ} few {Запущено # производственных заказа} many {Запущено # производственных заказов} other {Запущено # производственных заказов}}"
 
+msgid "{count} items"
+msgstr ""
+
 msgid "{count} linked elements changed. Review the links."
 msgstr ""
 
@@ -737,6 +740,9 @@ msgstr "1 запись к признанию · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 счет-фактура была выставлена в вашей предыдущей системе и не создается снова."
+
+msgid "1 item"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 задание создано"
@@ -1472,6 +1478,9 @@ msgstr "Пользователь записывает срок годности 
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Переменная плата — превышение пробега, повреждение, доставка, уборка — выставляется счетом по следующей счет-фактуре договора."
+
+msgid "A written off item is never billed."
+msgstr ""
 
 msgid "ABA"
 msgstr "ABA"
@@ -5617,6 +5626,12 @@ msgstr "Дата закрытия контракта"
 
 msgid "Contract Close Date"
 msgstr "Дата закрытия контракта"
+
+msgid "Contract Line"
+msgstr ""
+
+msgid "Contract lines"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "Настройка контракта"
@@ -10017,6 +10032,9 @@ msgstr "Не удалось обновить строку предложения
 msgid "Failed to update the item"
 msgstr ""
 
+msgid "Failed to update the items"
+msgstr ""
+
 msgid "Failed to update the price"
 msgstr ""
 
@@ -10982,6 +11000,9 @@ msgid "History by Order"
 msgstr ""
 
 msgid "Hold"
+msgstr ""
+
+msgid "Hold Items"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -14551,6 +14572,9 @@ msgstr "Компонентов еще нет"
 
 msgid "No condition may match"
 msgstr "Ни одно условие не должно совпадать"
+
+msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
+msgstr ""
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr ""
@@ -18492,6 +18516,9 @@ msgstr "Управление запуском в работу"
 msgid "Release Control"
 msgstr "Управление запуском в работу"
 
+msgid "Release Items"
+msgstr ""
+
 msgid "Release Job"
 msgstr "Запустить производственный заказ в работу"
 
@@ -18509,6 +18536,9 @@ msgstr "Выпущено"
 
 msgid "Released date"
 msgstr "Дата выпуска"
+
+msgid "Released items bill on the next invoice run, within the line's funding."
+msgstr ""
 
 msgid "Released revision"
 msgstr "Выпущенная ревизия"
@@ -19330,6 +19360,9 @@ msgstr "Просмотр и создание"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Рассмотреть изменения каждой номенклатуры, затем подтвердить — выпуск нельзя отменить."
+
+msgid "Review Items"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Рассмотреть бухгалтерский баланс и отчет о прибылях и убытках периода и подтвердить, что цифры выглядят правильно. Это ручное утверждение — отметьте как готово как только вы их рассмотрели."
@@ -23087,6 +23120,9 @@ msgstr "Срок действия подключения Ramp истек"
 msgid "The raw stock and material master you buy and consume"
 msgstr "Сырьё и материалы, которые вы покупаете и используете"
 
+msgid "The reason shows on the item until it is released."
+msgstr ""
+
 msgid "The reasons you record when parts get scrapped"
 msgstr "Причины, которые вы записываете, когда детали списываются"
 
@@ -26183,6 +26219,9 @@ msgid "Worst Performing Machines"
 msgstr "Худшие станки"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write Off Items"
 msgstr ""
 
 msgid "Write-down"

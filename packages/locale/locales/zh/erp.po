@@ -472,6 +472,9 @@ msgstr "{count, plural, one {已发布 # 生产批次} other {已发布 # 生产
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {已下达 # 工单} other {已下达 # 工单}}"
 
+msgid "{count} items"
+msgstr ""
+
 msgid "{count} linked elements changed. Review the links."
 msgstr ""
 
@@ -737,6 +740,9 @@ msgstr "1 项待确认分录 · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 张发票已在您的上一个系统中开票，不会再次起草"
+
+msgid "1 item"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 个作业已创建"
@@ -1472,6 +1478,9 @@ msgstr "用户在收货时记录每个生产批次或序列号的有效期。当
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "可变费用（如里程超额、损害、交付、清洁）在协议的下一份发票上计费。"
+
+msgid "A written off item is never billed."
+msgstr ""
 
 msgid "ABA"
 msgstr "ABA"
@@ -5617,6 +5626,12 @@ msgstr "合同关闭日期"
 
 msgid "Contract Close Date"
 msgstr "合同关闭日期"
+
+msgid "Contract Line"
+msgstr ""
+
+msgid "Contract lines"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "合同配置"
@@ -10017,6 +10032,9 @@ msgstr "未能更新供应商报价行"
 msgid "Failed to update the item"
 msgstr ""
 
+msgid "Failed to update the items"
+msgstr ""
+
 msgid "Failed to update the price"
 msgstr ""
 
@@ -10982,6 +11000,9 @@ msgid "History by Order"
 msgstr ""
 
 msgid "Hold"
+msgstr ""
+
+msgid "Hold Items"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -14551,6 +14572,9 @@ msgstr "还没有组件"
 
 msgid "No condition may match"
 msgstr "没有条件可以匹配"
+
+msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
+msgstr ""
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr ""
@@ -18492,6 +18516,9 @@ msgstr "下达控制"
 msgid "Release Control"
 msgstr "下达控制"
 
+msgid "Release Items"
+msgstr ""
+
 msgid "Release Job"
 msgstr "下达工单"
 
@@ -18509,6 +18536,9 @@ msgstr "已下达"
 
 msgid "Released date"
 msgstr "下达日期"
+
+msgid "Released items bill on the next invoice run, within the line's funding."
+msgstr ""
 
 msgid "Released revision"
 msgstr "已下达修订版"
@@ -19330,6 +19360,9 @@ msgstr "查看和创建"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "评审每个物料的更改，然后确认——发布无法撤销。"
+
+msgid "Review Items"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "评审期间的资产负债表和利润表，并确认数字正确。这是手动签核——一旦您评审完毕即标记为完成。"
@@ -23087,6 +23120,9 @@ msgstr "Ramp 连接已过期"
 msgid "The raw stock and material master you buy and consume"
 msgstr "您购买和消耗的原材料库存及物料主档"
 
+msgid "The reason shows on the item until it is released."
+msgstr ""
+
 msgid "The reasons you record when parts get scrapped"
 msgstr "零件报废时记录的原因"
 
@@ -26183,6 +26219,9 @@ msgid "Worst Performing Machines"
 msgstr "性能最差的机器"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write Off Items"
 msgstr ""
 
 msgid "Write-down"

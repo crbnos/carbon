@@ -1,5 +1,5 @@
 {
-  "totalTools": 1626,
+  "totalTools": 1627,
   "modules": 16,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -857,7 +857,8 @@
     {"name":"projects_deleteProjectState","classification":"DESTRUCTIVE","paramCount":2,"schema":"d9ad53d8595f","response":"3797626bd17e","injectAuth":"companyId","permission":"projects:delete","paginates":false},
     {"name":"projects_deleteProjectStockTransferLine","classification":"DESTRUCTIVE","paramCount":2,"schema":"250b2399dfc6","response":"bcde375ebd4c","injectAuth":"companyId","permission":"projects:delete","paginates":false},
     {"name":"projects_getChargeNumbers","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"9a43e97b9086","injectAuth":"companyId","permission":"projects:view","paginates":false},
-    {"name":"projects_getContractBillableItems","classification":"READ","paramCount":5,"schema":"6b29ac0549ed","response":"none","injectAuth":"companyId","permission":"projects:view","paginates":true,"defaults":"always"},
+    {"name":"projects_getContractBillableItems","classification":"READ","paramCount":5,"schema":"6b29ac0549ed","response":"dcf27580b935","injectAuth":"companyId","permission":"projects:view","paginates":true,"defaults":"always"},
+    {"name":"projects_getContractBillingLines","classification":"READ","paramCount":1,"schema":"5aeb73f99193","response":"f43b6916dc34","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getElementHistoryByItem","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"398efaf3fb7d","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getItemNumericCustomFields","classification":"READ","paramCount":1,"schema":"fe0e9264c8ae","response":"17a01397ed2e","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getLaborCategories","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"48b654f2a9fa","injectAuth":"companyId","permission":"projects:view","paginates":true,"defaults":"always"},

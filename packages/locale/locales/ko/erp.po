@@ -472,6 +472,9 @@ msgstr "{count, plural, one {배치 # 릴리스됨} other {배치 # 릴리스됨
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {작업 지시 # 릴리스됨} other {작업 지시 # 릴리스됨}}"
 
+msgid "{count} items"
+msgstr ""
+
 msgid "{count} linked elements changed. Review the links."
 msgstr ""
 
@@ -737,6 +740,9 @@ msgstr "1개의 인식할 항목 · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1개 송장이 이전 시스템에서 청구되었으며 다시 초안으로 작성되지 않습니다."
+
+msgid "1 item"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1개 작업이 생성됨"
@@ -1472,6 +1478,9 @@ msgstr "사용자는 상품을 수령할 때 각 배치 또는 시리얼의 유�
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "변동 요금(마일리지 초과, 손상, 배송, 청소)은 계약의 다음 송장에 청구됩니다."
+
+msgid "A written off item is never billed."
+msgstr ""
 
 msgid "ABA"
 msgstr "ABA"
@@ -5617,6 +5626,12 @@ msgstr "계약 마감일"
 
 msgid "Contract Close Date"
 msgstr "계약 마감일"
+
+msgid "Contract Line"
+msgstr ""
+
+msgid "Contract lines"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "계약 설정"
@@ -10017,6 +10032,9 @@ msgstr "공급업체 견적 라인을 업데이트하지 못했습니다"
 msgid "Failed to update the item"
 msgstr ""
 
+msgid "Failed to update the items"
+msgstr ""
+
 msgid "Failed to update the price"
 msgstr ""
 
@@ -10982,6 +11000,9 @@ msgid "History by Order"
 msgstr ""
 
 msgid "Hold"
+msgstr ""
+
+msgid "Hold Items"
 msgstr ""
 
 msgid "Hold the journal as a warning to fix."
@@ -14551,6 +14572,9 @@ msgstr "아직 구성 요소 없음"
 
 msgid "No condition may match"
 msgstr "조건이 하나도 일치하지 않을 수 있습니다"
+
+msgid "No contract bills this project. A Time & Materials or Cost Plus contract line names a billing element of it."
+msgstr ""
 
 msgid "No contract rates. Hours bill at the default rates."
 msgstr ""
@@ -18492,6 +18516,9 @@ msgstr "릴리스 제어"
 msgid "Release Control"
 msgstr "릴리스 제어"
 
+msgid "Release Items"
+msgstr ""
+
 msgid "Release Job"
 msgstr "작업 지시 릴리스"
 
@@ -18509,6 +18536,9 @@ msgstr "릴리즈됨"
 
 msgid "Released date"
 msgstr "출시일"
+
+msgid "Released items bill on the next invoice run, within the line's funding."
+msgstr ""
 
 msgid "Released revision"
 msgstr "릴리스된 리비전"
@@ -19330,6 +19360,9 @@ msgstr "검토 및 생성"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "각 항목의 변경 사항을 검토한 후 확인하세요 — 릴리스는 실행 취소할 수 없습니다."
+
+msgid "Review Items"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "기간의 재무상태표 및 손익계산서를 검토하고 수치가 올바른지 확인합니다. 이는 수동 승인입니다 — 검토한 후 완료로 표시합니다."
@@ -23087,6 +23120,9 @@ msgstr "Ramp 연결 만료됨"
 msgid "The raw stock and material master you buy and consume"
 msgstr "구매하고 소비하는 원자재 재고 및 자재 마스터"
 
+msgid "The reason shows on the item until it is released."
+msgstr ""
+
 msgid "The reasons you record when parts get scrapped"
 msgstr "부품이 스크랩될 때 기록하는 사유"
 
@@ -26183,6 +26219,9 @@ msgid "Worst Performing Machines"
 msgstr "성능이 가장 낮은 기계"
 
 msgid "Write Off"
+msgstr ""
+
+msgid "Write Off Items"
 msgstr ""
 
 msgid "Write-down"

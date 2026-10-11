@@ -211,6 +211,13 @@ function ContractLineBillableItems({
             Hold, release, write off or reprice items in Projects → Billing.
           </Trans>
         </CardDescription>
+        <CardAction>
+          <Button variant="secondary" asChild>
+            <Link to={path.to.projectsBilling}>
+              <Trans>Review Items</Trans>
+            </Link>
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (

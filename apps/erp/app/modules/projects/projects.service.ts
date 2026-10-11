@@ -2567,6 +2567,20 @@ export async function getProjectBillingElements(
 const CONTRACT_BILLABLE_ITEM_COLUMNS =
   "id, projectId, projectElementId, projectLedgerId, customerContractLineId, itemId, description, quantity, unitPrice, amount, status, statusReason, reversalOfId, salesInvoiceLineId, voidedSalesInvoiceId, createdAt, ledger:projectLedger!projectBillableItem_ledger_fkey(postingDate, costType, documentType, documentId, employeeId, laborCategoryId, quantity, amount), element:projectElement!projectBillableItem_element_fkey(id, readableId, name), project:project!projectBillableItem_project_fkey(id, identifier, name), contractLine:customerContractLine!projectBillableItem_contractLine_fkey(id, customerContractId, billingMethod, description), invoiceLine:salesInvoiceLine!projectBillableItem_invoiceLine_fkey(invoiceId)" as const;
 
+function contractBillableItemsQuery(client: Client, companyId: string) {
+  return client
+    .from("projectBillableItem")
+    .select(CONTRACT_BILLABLE_ITEM_COLUMNS, { count: LIST_COUNT })
+    .eq("companyId", companyId)
+    .not("customerContractLineId", "is", null);
+}
+
+/** One contract billable item as `getContractBillableItems` returns it.
+ *  Typed from the base query: `setGenericQueryFilters` loses the row type. */
+export type ContractBillableItemRow = NonNullable<
+  Awaited<ReturnType<typeof contractBillableItemsQuery>>["data"]
+>[number];
+
 /**
  * Lists the billable items of contract billing lines, with the ledger row's
  * posting date and cost type, and the invoice that billed each one. Filter
@@ -2581,12 +2595,12 @@ export async function getContractBillableItems(
     projectId?: string | null;
     status?: ProjectBillableItemStatus[] | null;
   }
-) {
-  let query = client
-    .from("projectBillableItem")
-    .select(CONTRACT_BILLABLE_ITEM_COLUMNS, { count: LIST_COUNT })
-    .eq("companyId", args.companyId)
-    .not("customerContractLineId", "is", null);
+): Promise<{
+  data: ContractBillableItemRow[] | null;
+  count: number | null;
+  error: PostgrestError | null;
+}> {
+  let query = contractBillableItemsQuery(client, args.companyId);
 
   if (args.customerContractLineId) {
     query = query.eq("customerContractLineId", args.customerContractLineId);
@@ -2598,9 +2612,36 @@ export async function getContractBillableItems(
     query = query.in("status", args.status);
   }
 
-  return setGenericQueryFilters(query, args, [
+  const result = await setGenericQueryFilters(query, args, [
     { column: "createdAt", ascending: true }
   ]);
+  return {
+    data: (result.data ?? null) as ContractBillableItemRow[] | null,
+    count: result.count ?? null,
+    error: result.error
+  };
+}
+
+/**
+ * Lists the Time & Materials and Cost Plus contract lines, of one project or
+ * of the company, with their contract, billing element and funding terms.
+ * @mcp read
+ */
+export async function getContractBillingLines(
+  client: Client,
+  args: { companyId: string; projectId?: string | null }
+) {
+  let query = client
+    .from("customerContractLine")
+    .select(
+      "id, customerContractId, projectId, projectElementId, billingMethod, revenueMethod, description, fundedAmount, fundedCost, ceilingAmount, noticePercent, startDate, endDate, item(name), contract:customerContract!customerContractLine_contract_fkey(id, customerContractId, status), element:projectElement!customerContractLine_projectElement_fkey(readableId, name)"
+    )
+    .eq("companyId", args.companyId)
+    .neq("billingMethod", "Fixed");
+  if (args.projectId) query = query.eq("projectId", args.projectId);
+  return query
+    .order("customerContractId", { ascending: true })
+    .order("startDate", { ascending: true });
 }
 
 /** The statuses each review action applies to. Billed and Written Off
