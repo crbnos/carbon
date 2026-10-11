@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
 import {
   type CalendarDate,
@@ -990,4 +991,44 @@ export function diffJournalLines(
     changes,
     deleteIds: stored.map((l) => l.id).filter((id) => !claimed.has(id))
   };
+}
+
+type RevenueScheduleType = Database["public"]["Enums"]["revenueScheduleType"];
+
+const REVENUE_LINE_DESCRIPTIONS: Record<
+  RevenueScheduleType,
+  { debit: string; credit: string }
+> = {
+  Deferral: {
+    debit: "Deferred revenue released",
+    credit: "Revenue recognized"
+  },
+  Accrual: { debit: "Unbilled rent accrued", credit: "Rental income accrued" },
+  Interest: {
+    debit: "Net investment interest",
+    credit: "Lease interest income"
+  },
+  "Cost Relief": {
+    debit: "Contract cost recognized",
+    credit: "Project WIP relieved"
+  },
+  "Loss Provision": {
+    debit: "Contract loss provided",
+    credit: "Contract loss provision"
+  }
+};
+
+/**
+ * The two journal line descriptions of a revenue recognition schedule row. A
+ * contract Accrual row accrues a contract asset, not unbilled rent; every
+ * other row reads its type's pair.
+ */
+export function revenueRowDescriptions(row: {
+  type: RevenueScheduleType;
+  customerContractLineId: string | null;
+}): { debit: string; credit: string } {
+  if (row.customerContractLineId && row.type === "Accrual") {
+    return { debit: "Contract asset accrued", credit: "Revenue recognized" };
+  }
+  return REVENUE_LINE_DESCRIPTIONS[row.type];
 }

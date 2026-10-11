@@ -32,6 +32,7 @@ import {
   depreciationRunLinesMatch,
   isFutureRunPeriod,
   monthEndOf,
+  revenueRowDescriptions,
   runPostingTargets
 } from "./accounting.utils";
 
@@ -1198,33 +1199,11 @@ export type RevenueRecognitionDimensionIds = {
   location?: string;
   /** Contract rows only: the contract line's project, else the contract's. */
   project?: string;
+  /** Contract rows only: the contract line's billing element. */
+  projectElement?: string;
 };
 
-type RevenueScheduleType = Database["public"]["Enums"]["revenueScheduleType"];
 type AccountClass = NonNullable<Database["public"]["Enums"]["glAccountClass"]>;
-
-const REVENUE_LINE_DESCRIPTIONS: Record<
-  RevenueScheduleType,
-  { debit: string; credit: string }
-> = {
-  Deferral: {
-    debit: "Deferred revenue released",
-    credit: "Revenue recognized"
-  },
-  Accrual: { debit: "Unbilled rent accrued", credit: "Rental income accrued" },
-  Interest: {
-    debit: "Net investment interest",
-    credit: "Lease interest income"
-  },
-  "Cost Relief": {
-    debit: "Contract cost recognized",
-    credit: "Project WIP relieved"
-  },
-  "Loss Provision": {
-    debit: "Contract loss provided",
-    credit: "Contract loss provision"
-  }
-};
 
 /**
  * Posts a Draft revenue recognition run as one journal per month its rows
@@ -1459,6 +1438,7 @@ export async function postRevenueRecognitionRun(
               "ccl.itemId",
               "cc.id as customerContractId",
               "cc.customerId",
+              "ccl.projectElementId",
               sql<string | null>`COALESCE(ccl."projectId", cc."projectId")`.as(
                 "projectId"
               )
@@ -1527,10 +1507,7 @@ export async function postRevenueRecognitionRun(
     for (const row of rows) {
       const journal = journalOf(row);
       const amount = Number(row.amount);
-      const descriptions =
-        row.customerContractLineId && row.type === "Accrual"
-          ? { debit: "Contract asset accrued", credit: "Revenue recognized" }
-          : REVENUE_LINE_DESCRIPTIONS[row.type];
+      const descriptions = revenueRowDescriptions(row);
       const invoiceSource = row.salesInvoiceLineId
         ? invoiceLineById.get(row.salesInvoiceLineId)
         : undefined;
@@ -1548,6 +1525,7 @@ export async function postRevenueRecognitionRun(
             itemId: string | null;
             locationId?: string | null;
             projectId?: string | null;
+            projectElementId?: string | null;
           }
         | undefined = invoiceSource ?? rentalSource ?? contractSource;
       const document = invoiceSource
@@ -1632,6 +1610,12 @@ export async function postRevenueRecognitionRun(
           dimensionValues.push({
             dimensionId: dimensionIds.project,
             valueId: source.projectId
+          });
+        }
+        if (dimensionIds.projectElement && source?.projectElementId) {
+          dimensionValues.push({
+            dimensionId: dimensionIds.projectElement,
+            valueId: source.projectElementId
           });
         }
         if (dimensionValues.length > 0) {

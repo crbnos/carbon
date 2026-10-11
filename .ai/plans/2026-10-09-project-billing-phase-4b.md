@@ -62,7 +62,7 @@ These correct or add to the spec. Task 13 records them there.
 - [x] Task 5: Add the Percent Complete and loss provision math
 - [x] Task 6: Add the commercial Percent Complete synthesizer
 - [x] Task 7: Pass the project revenue synthesizers at every run call site
-- [ ] Task 8: Post Cost Relief and Loss Provision rows
+- [x] Task 8: Post Cost Relief and Loss Provision rows
 - [ ] Task 9: Add the Percent Complete database tests
 - [ ] Task 10: Show progress in the run review
 - [ ] Task 11: Show progress on the Billing tab and the contract
@@ -603,3 +603,5 @@ ls .ai/playbooks/project-billing-phase-4b.md
 - Task 7: 3 functions reach `getPeriodRunPreview` through `runPreviewer`, not 2, and all 3 are MCP tools: `closeAccountingPeriod` (through `closePeriodWithChecklist`, `@mcp update`), `getPeriodCloseChecklist` (`@mcp action`) and `getPeriodCloseReadiness` (`@mcp read`). A new parameter on an MCP tool changes its published schema, and the API cannot send functions. So the MCP tools keep their signatures and pass `revenueRunSynthesizers: []`. `runPreviewer` is now exported (untagged, so not a tool) with a required `revenueRunSynthesizers`. The close route's loader calls `loadPeriodCloseChecklist` with `runPreviewer(…, projectRevenueSynthesizers)`, which is the body of `getPeriodCloseChecklist`. Its action calls `closeAccountingPeriod` with that previewer, which is the body of `closePeriodWithChecklist`. `check:manifest` passes unchanged.
 - Task 7, known gap: through MCP or the API, the close checklist's revenue run preview leaves out the Percent Complete rows. The ERP close page and every run call site include them.
 - Task 7: 5 code files pass the synthesizers: the 4 routes (`revenue-recognition-runs.new`, `$runId.repeat`, `$runId.recalculate`, `periods.$periodId.close`, which covers the propose call and the checklist preview) and the job. `accounting.service.ts` takes them as an argument and names them only in a comment. `revenue-recognition-proposal.test.ts` mocks `@carbon/ee/project-revenue.server`. Through the plan gates, that module reaches the docs glossary's Lingui macros, which fail outside compilation (lesson "The `@carbon/ee` barrel boots the server env"). The jobs suite passed (70 files) and the ERP accounting tests passed (6 files, 216 tests).
+- Task 8: `revenueRowDescriptions` and `REVENUE_LINE_DESCRIPTIONS` live in `accounting.utils.ts`, not in `accounting.server.ts`. The test then imports a pure module and needs no mocks; `accounting.server.ts` imports the function. The utils file is not in the module barrel.
+- Task 8, the posting policy: the phase adds no journal source type. `Cost Relief` and `Loss Provision` are `revenueScheduleType` values, and their rows post in the run's `Revenue Recognition` journal. `POSTING_POLICY` already has `Revenue Recognition` at `defaultEnabled: false`, so the one rule holds with no change (`posting-policy.test.ts`, 30 passed).
