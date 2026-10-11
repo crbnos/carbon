@@ -318,6 +318,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "post-inventory-count": {
     "update": "inventory",
   },
+  "post-lease": {
+    "update": "purchasing",
+  },
   "post-maintenance-event": {
     "update": "resources",
   },

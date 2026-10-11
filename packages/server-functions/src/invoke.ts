@@ -33,6 +33,7 @@ const registry = {
   "post-customer-contract": () => import("./post-customer-contract"),
   "post-inventory-adjustment": () => import("./post-inventory-adjustment"),
   "post-inventory-count": () => import("./post-inventory-count"),
+  "post-lease": () => import("./post-lease"),
   "post-maintenance-event": () => import("./post-maintenance-event"),
   "post-memo": () => import("./post-memo"),
   "post-nonconformance": () => import("./post-nonconformance"),
