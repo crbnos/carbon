@@ -18,6 +18,7 @@ const registry = {
   "batch-operations": () => import("./batch-operations"),
   "close-job": () => import("./close-job"),
   "create-contract-invoices": () => import("./create-contract-invoices"),
+  "create-lease-invoices": () => import("./create-lease-invoices"),
   "create-rental-invoices": () => import("./create-rental-invoices"),
   convert: () => import("./convert"),
   "correct-stock-movement": () => import("./correct-stock-movement"),

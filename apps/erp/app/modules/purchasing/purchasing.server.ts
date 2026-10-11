@@ -8,6 +8,8 @@ import {
   canApproveRequest,
   getLatestApprovalRequestForDocument
 } from "@carbon/ee/approvals.server";
+import { serverFns } from "@carbon/server-functions";
+import type { DraftedLeaseInvoice } from "@carbon/server-functions/create-lease-invoices";
 import { generateLeasePayments } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
@@ -308,4 +310,28 @@ export async function deletePurchaseInvoiceLineReleasingLeases(
       .where("companyId", "=", companyId)
       .execute();
   });
+}
+
+/** The lease page's "Invoice": drafts the purchase invoices the lease has
+ *  due, exactly as the daily job would — the `create-lease-invoices` server
+ *  function. */
+export async function generateLeaseInvoicesNow(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    /** `YYYY-MM-DD` in the company's timezone. */
+    asOf: string;
+    leaseId: string;
+  }
+): Promise<{ invoices: DraftedLeaseInvoice[]; invoiceIds: string[] }> {
+  const { companyId, userId, asOf, leaseId } = args;
+  const { invoices, invoiceIds, failures } = await serverFns
+    .system({ db, companyId, userId })
+    .invokeOrThrow("create-lease-invoices", { asOf, leaseId });
+  // One lease is billed here, so its failure is the action's failure.
+  if (failures.length > 0) {
+    throw new Error(failures.map((f) => f.error).join("; "));
+  }
+  return { invoices, invoiceIds };
 }

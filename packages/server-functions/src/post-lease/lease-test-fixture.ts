@@ -115,6 +115,12 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
         { table: "leaseRun", name: "Lease Run", prefix: "LR", companyId },
         { table: "fixedAsset", name: "Fixed Asset", prefix: "FA", companyId },
         {
+          table: "purchaseInvoice",
+          name: "Purchase Invoice",
+          prefix: "PI",
+          companyId
+        },
+        {
           table: "journalEntry",
           name: "Journal Entry",
           prefix: "JE-",
