@@ -7,6 +7,7 @@ import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
+  Badge,
   Button,
   cn,
   DropdownMenu,
@@ -131,6 +132,12 @@ type TimesheetGridProps = {
   laborCategories: { id: string; name: string }[];
   /** DCAA mode's controls (5a); null in Standard mode. */
   controls: TimesheetControls | null;
+  /**
+   * A manager's view of another employee's week (5a). Every change needs a
+   * reason and waits for the employee's review; only the employee submits.
+   * Standard mode shows the week read-only: only the owner changes time.
+   */
+  employee?: { id: string; name: string; absenceDays: string[] } | null;
 };
 
 /** What DCAA mode adds to the grid (5a). */
@@ -164,6 +171,12 @@ const DCAA_EDITABLE_STATUSES: TimesheetEntryStatusType[] = [
   ...EDITABLE_STATUSES,
   "Pending Employee Review"
 ];
+/** DCAA mode: a manager changes any entry that is not posted. */
+const MANAGER_EDITABLE_STATUSES: TimesheetEntryStatusType[] = [
+  ...DCAA_EDITABLE_STATUSES,
+  "Submitted",
+  "Approved"
+];
 
 /**
  * The signed-in user's week: one row per charge number and labor category,
@@ -185,7 +198,8 @@ export default function TimesheetGrid({
   rows,
   timecardHours,
   laborCategories,
-  controls
+  controls,
+  employee = null
 }: TimesheetGridProps) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -212,9 +226,23 @@ export default function TimesheetGrid({
   );
   const [certifying, setCertifying] = useState(false);
   const save = useCellSave();
-  const editableStatuses = controls
-    ? DCAA_EDITABLE_STATUSES
-    : EDITABLE_STATUSES;
+  const editableStatuses = employee
+    ? MANAGER_EDITABLE_STATUSES
+    : controls
+      ? DCAA_EDITABLE_STATUSES
+      : EDITABLE_STATUSES;
+  const saveAction = employee
+    ? path.to.employeeTimesheet(employee.id)
+    : path.to.timesheetUpdate;
+  const weekPath = employee
+    ? path.to.employeeTimesheet(employee.id)
+    : path.to.timesheet;
+  // Standard mode: only the owner changes time, so a manager only reads it.
+  const isReadOnly = Boolean(employee) && !controls;
+  const absenceDays = useMemo(
+    () => new Set(employee?.absenceDays ?? []),
+    [employee?.absenceDays]
+  );
   const revisedEntryIds = useMemo(
     () => new Set(controls?.revisedEntryIds ?? []),
     [controls?.revisedEntryIds]
@@ -300,7 +328,7 @@ export default function TimesheetGrid({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <HStack spacing={2}>
           <h2 className="text-base font-medium">
-            <Trans>My Timesheet</Trans>
+            {employee ? employee.name : <Trans>My Timesheet</Trans>}
           </h2>
           <HStack spacing={1}>
             <IconButton
@@ -308,9 +336,7 @@ export default function TimesheetGrid({
               icon={<LuChevronLeft />}
               variant="ghost"
               size="sm"
-              onClick={() =>
-                navigate(`${path.to.timesheet}?week=${weekOffset - 1}`)
-              }
+              onClick={() => navigate(`${weekPath}?week=${weekOffset - 1}`)}
             />
             <span className="whitespace-nowrap text-sm tabular-nums">
               {formatDate(weekStart)} – {formatDate(weekEnd)}
@@ -320,13 +346,11 @@ export default function TimesheetGrid({
               icon={<LuChevronRight />}
               variant="ghost"
               size="sm"
-              onClick={() =>
-                navigate(`${path.to.timesheet}?week=${weekOffset + 1}`)
-              }
+              onClick={() => navigate(`${weekPath}?week=${weekOffset + 1}`)}
             />
             {weekOffset !== 0 && (
               <Button variant="ghost" size="sm" asChild>
-                <Link to={path.to.timesheet}>
+                <Link to={weekPath}>
                   <Trans>This week</Trans>
                 </Link>
               </Button>
@@ -334,14 +358,16 @@ export default function TimesheetGrid({
           </HStack>
         </HStack>
         <HStack spacing={2}>
-          <Button
-            variant="secondary"
-            leftIcon={<LuPlus />}
-            onClick={() => setAddingRow(true)}
-          >
-            <Trans>Add row</Trans>
-          </Button>
-          {controls ? (
+          {!isReadOnly && (
+            <Button
+              variant="secondary"
+              leftIcon={<LuPlus />}
+              onClick={() => setAddingRow(true)}
+            >
+              <Trans>Add row</Trans>
+            </Button>
+          )}
+          {employee ? null : controls ? (
             <Button
               leftIcon={<LuSend />}
               isDisabled={!hasDraft}
@@ -379,13 +405,20 @@ export default function TimesheetGrid({
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
           <LuTimer className="size-6 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            <Trans>
-              No time this week. Add a row for each charge number you worked on.
-            </Trans>
+            {employee ? (
+              <Trans>No time this week.</Trans>
+            ) : (
+              <Trans>
+                No time this week. Add a row for each charge number you worked
+                on.
+              </Trans>
+            )}
           </p>
-          <Button leftIcon={<LuPlus />} onClick={() => setAddingRow(true)}>
-            <Trans>Add row</Trans>
-          </Button>
+          {!isReadOnly && (
+            <Button leftIcon={<LuPlus />} onClick={() => setAddingRow(true)}>
+              <Trans>Add row</Trans>
+            </Button>
+          )}
         </div>
       ) : (
         <div className="w-full overflow-x-auto rounded-lg border border-border bg-card">
@@ -397,8 +430,15 @@ export default function TimesheetGrid({
                 </Th>
                 {days.map((day) => (
                   <Th key={day} className="w-24 text-right">
-                    <span className="whitespace-nowrap">
-                      {formatDate(day, { weekday: "short", day: "numeric" })}
+                    <span className="flex flex-col items-end gap-0.5">
+                      <span className="whitespace-nowrap">
+                        {formatDate(day, { weekday: "short", day: "numeric" })}
+                      </span>
+                      {absenceDays.has(day) && (
+                        <Badge variant="secondary">
+                          <Trans>Absence</Trans>
+                        </Badge>
+                      )}
                     </span>
                   </Th>
                 ))}
@@ -439,7 +479,7 @@ export default function TimesheetGrid({
                       cell && revisedEntryIds.has(cell.entryId) ? (
                         <TimesheetRevisionsPopover entryId={cell.entryId} />
                       ) : null;
-                    if (row.isService) {
+                    if (row.isService || isReadOnly) {
                       return (
                         <Td key={day} className="p-0">
                           {cell && <ReadOnlyCell cell={cell} />}
@@ -452,12 +492,16 @@ export default function TimesheetGrid({
                           <CellWithHistory history={history}>
                             <LockedCell
                               cell={cell}
-                              onCorrect={() =>
-                                setCorrecting({
-                                  entryId: cell.entryId,
-                                  hours: cell.hours,
-                                  label: cellLabel
-                                })
+                              onCorrect={
+                                // Only the employee corrects their posted time.
+                                employee
+                                  ? undefined
+                                  : () =>
+                                      setCorrecting({
+                                        entryId: cell.entryId,
+                                        hours: cell.hours,
+                                        label: cellLabel
+                                      })
                               }
                             />
                           </CellWithHistory>
@@ -482,6 +526,7 @@ export default function TimesheetGrid({
                       <Td key={day} className="p-0">
                         <CellWithHistory history={history}>
                           <HoursCell
+                            action={saveAction}
                             row={row}
                             day={day}
                             cell={cell}
@@ -497,7 +542,9 @@ export default function TimesheetGrid({
                                     });
                                     const requiresLateReason =
                                       entryWindow.allowed && entryWindow.late;
-                                    const requiresReason = Boolean(cell);
+                                    // A manager's every change needs a reason.
+                                    const requiresReason =
+                                      Boolean(cell) || Boolean(employee);
                                     if (
                                       !requiresReason &&
                                       !requiresLateReason
@@ -600,7 +647,7 @@ export default function TimesheetGrid({
           requiresReason={pendingChange.requiresReason}
           requiresLateReason={pendingChange.requiresLateReason}
           onConfirm={async (reasons: TimesheetChangeReasons) => {
-            const result = await save(path.to.timesheetUpdate, {
+            const result = await save(saveAction, {
               ...pendingChange.fields,
               ...(reasons.reason ? { reason: reasons.reason } : {}),
               ...(reasons.lateReason ? { lateReason: reasons.lateReason } : {})
@@ -654,12 +701,15 @@ function CellWithHistory({
  * the change modal, which saves the value or reverts the cell.
  */
 function HoursCell({
+  action,
   row,
   day,
   cell,
   label,
   onRequestReasons
 }: {
+  /** The route that saves the cell. */
+  action: string;
   row: GridRow;
   day: string;
   cell?: TimesheetCell;
@@ -701,7 +751,7 @@ function HoursCell({
     ) {
       return;
     }
-    const result = await save(path.to.timesheetUpdate, fields);
+    const result = await save(action, fields);
     if (result.error) revert();
   };
 
@@ -751,12 +801,13 @@ function LockedCell({
   onCorrect
 }: {
   cell: TimesheetCell;
-  onCorrect: () => void;
+  /** Absent when the viewer cannot correct the time. */
+  onCorrect?: () => void;
 }) {
   const { t } = useLingui();
   const content = <ReadOnlyCell cell={cell} />;
 
-  if (cell.status !== "Posted") return content;
+  if (cell.status !== "Posted" || !onCorrect) return content;
 
   return (
     <DropdownMenu>

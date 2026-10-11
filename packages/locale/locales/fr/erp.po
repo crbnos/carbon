@@ -1569,6 +1569,9 @@ msgstr "À propos"
 msgid "About (notification)"
 msgstr "À propos (notification)"
 
+msgid "Absence"
+msgstr ""
+
 msgid "Absent"
 msgstr "Absent"
 
@@ -15758,6 +15761,9 @@ msgstr "Aucune entrée de temps pour cette semaine"
 msgid "No time is waiting for approval."
 msgstr ""
 
+msgid "No time this week."
+msgstr ""
+
 msgid "No time this week. Add a row for each charge number you worked on."
 msgstr ""
 
@@ -16494,6 +16500,9 @@ msgstr "Ouvrez l’intégration Ramp et essayez de vous reconnecter pour termine
 
 msgid "Open the Setup Map"
 msgstr "Ouvrir la carte de configuration"
+
+msgid "Open timesheet"
+msgstr ""
 
 msgid "Open transactions"
 msgstr "Transactions ouvertes"

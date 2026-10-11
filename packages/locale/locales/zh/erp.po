@@ -1569,6 +1569,9 @@ msgstr "关于"
 msgid "About (notification)"
 msgstr "关于（通知）"
 
+msgid "Absence"
+msgstr ""
+
 msgid "Absent"
 msgstr "缺席"
 
@@ -15758,6 +15761,9 @@ msgstr "本周没有时间条目"
 msgid "No time is waiting for approval."
 msgstr ""
 
+msgid "No time this week."
+msgstr ""
+
 msgid "No time this week. Add a row for each charge number you worked on."
 msgstr ""
 
@@ -16494,6 +16500,9 @@ msgstr "打开 Ramp 集成，然后重新连接以完成配置。"
 
 msgid "Open the Setup Map"
 msgstr "打开设置地图"
+
+msgid "Open timesheet"
+msgstr ""
 
 msgid "Open transactions"
 msgstr "未结交易"

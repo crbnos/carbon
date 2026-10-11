@@ -1569,6 +1569,9 @@ msgstr "について"
 msgid "About (notification)"
 msgstr "について（通知）"
 
+msgid "Absence"
+msgstr ""
+
 msgid "Absent"
 msgstr "不在"
 
@@ -15758,6 +15761,9 @@ msgstr "今週のタイムエントリがありません"
 msgid "No time is waiting for approval."
 msgstr ""
 
+msgid "No time this week."
+msgstr ""
+
 msgid "No time this week. Add a row for each charge number you worked on."
 msgstr ""
 
@@ -16494,6 +16500,9 @@ msgstr "Ramp 連携を開き、設定を完了するためにもう一度接続�
 
 msgid "Open the Setup Map"
 msgstr "セットアップマップを開く"
+
+msgid "Open timesheet"
+msgstr ""
 
 msgid "Open transactions"
 msgstr "未処理トランザクション"

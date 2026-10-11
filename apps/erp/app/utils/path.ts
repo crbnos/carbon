@@ -1108,6 +1108,8 @@ export const path = {
     employeeAccounts: `${x}/users/employees`,
     employeeResetMfa: (id: string) =>
       generatePath(`${x}/users/employees/reset-mfa/${id}`),
+    employeeTimesheet: (employeeId: string) =>
+      generatePath(`${x}/projects/timesheets/${employeeId}`),
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,

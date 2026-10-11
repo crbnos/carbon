@@ -1569,6 +1569,9 @@ msgstr "Hakkında"
 msgid "About (notification)"
 msgstr "Hakkında (bildirim)"
 
+msgid "Absence"
+msgstr ""
+
 msgid "Absent"
 msgstr "Devamsız"
 
@@ -15758,6 +15761,9 @@ msgstr "Bu hafta için zaman girişi yok"
 msgid "No time is waiting for approval."
 msgstr ""
 
+msgid "No time this week."
+msgstr ""
+
 msgid "No time this week. Add a row for each charge number you worked on."
 msgstr ""
 
@@ -16494,6 +16500,9 @@ msgstr "Ramp entegrasyonunu açın ve kurulumu tamamlamak için yeniden bağlanm
 
 msgid "Open the Setup Map"
 msgstr "Kurulum Haritasını Aç"
+
+msgid "Open timesheet"
+msgstr ""
 
 msgid "Open transactions"
 msgstr "Açık işlemler"

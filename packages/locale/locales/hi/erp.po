@@ -1569,6 +1569,9 @@ msgstr "के बारे में"
 msgid "About (notification)"
 msgstr "के बारे में (सूचना)"
 
+msgid "Absence"
+msgstr ""
+
 msgid "Absent"
 msgstr "अनुपस्थित"
 
@@ -15758,6 +15761,9 @@ msgstr "इस सप्ताह के लिए कोई समय प्र
 msgid "No time is waiting for approval."
 msgstr ""
 
+msgid "No time this week."
+msgstr ""
+
 msgid "No time this week. Add a row for each charge number you worked on."
 msgstr ""
 
@@ -16494,6 +16500,9 @@ msgstr "Ramp एकीकरण खोलें और कॉन्फ़िग�
 
 msgid "Open the Setup Map"
 msgstr "सेटअप मैप खोलें"
+
+msgid "Open timesheet"
+msgstr ""
 
 msgid "Open transactions"
 msgstr "खुले लेनदेन"

@@ -3,21 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCompanyTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getLaborCategoriesList,
-  getPendingReviewEntries,
-  getTimesheetWeek,
-  groupTimesheetRows
-} from "~/modules/projects";
+import { getPendingReviewEntries } from "~/modules/projects";
+import { getTimesheetWeekView } from "~/modules/projects/projects.server";
 import TimesheetGrid from "~/modules/projects/ui/Timesheet/TimesheetGrid";
-import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -38,69 +30,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const weekOffset = Number.parseInt(url.searchParams.get("week") ?? "0", 10);
-  const offset = Number.isFinite(weekOffset) ? weekOffset : 0;
 
-  // The week runs Monday to Sunday on the company calendar, as the timecard
-  // does, so the two line up day by day.
-  const timeZone = await getCompanyTimeZone(client, companyId);
-  const { from, to } = datetime.weekBounds(timeZone, offset);
-  const weekStart = datetime.businessDay(from, timeZone).toString();
-  const weekEnd = datetime.businessDay(to, timeZone).toString();
-  const monday = parseDate(weekStart);
-  const days = Array.from({ length: 7 }, (_, index) =>
-    monday.add({ days: index }).toString()
-  );
-
-  const [entries, timecard, laborCategories, settings, job, pendingReview] =
-    await Promise.all([
-      getTimesheetWeek(client, {
-        companyId,
-        employeeId: userId,
-        from: weekStart,
-        to: weekEnd
-      }),
-      client
-        .from("timeCardEntry")
-        .select("clockIn, clockOut")
-        .eq("employeeId", userId)
-        .eq("companyId", companyId)
-        .gte("clockIn", from)
-        .lte("clockIn", to),
-      getLaborCategoriesList(client, companyId),
-      getCompanySettings(client, companyId),
-      client
-        .from("employeeJob")
-        .select("flsaStatus")
-        .eq("id", userId)
-        .eq("companyId", companyId)
-        .maybeSingle(),
-      getPendingReviewEntries(client, { companyId, employeeId: userId })
-    ]);
-
-  if (entries.error) {
-    logger.error("Failed to load the timesheet", {
+  const [view, job, pendingReview] = await Promise.all([
+    getTimesheetWeekView(client, {
       companyId,
-      error: entries.error
-    });
-  }
-  if (timecard.error) {
-    logger.error("Failed to load the timecard", {
-      companyId,
-      error: timecard.error
-    });
-  }
-  if (laborCategories.error) {
-    logger.error("Failed to load labor categories", {
-      companyId,
-      error: laborCategories.error
-    });
-  }
-  if (settings.error) {
-    logger.error("Failed to load company settings", {
-      companyId,
-      error: settings.error
-    });
-  }
+      employeeId: userId,
+      weekOffset
+    }),
+    client
+      .from("employeeJob")
+      .select("flsaStatus")
+      .eq("id", userId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getPendingReviewEntries(client, { companyId, employeeId: userId })
+  ]);
   if (job.error) {
     logger.error("Failed to load the employee job", {
       companyId,
@@ -115,60 +59,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // DCAA mode (5a): the entry window, the certification text for the
-  // employee's FLSA status, and the cells that have a correction trail.
-  const isDcaa = settings.data?.timekeepingControls === "DCAA";
-  let revisedEntryIds: string[] = [];
-  const entryIds = (entries.data ?? []).map((entry) => entry.id);
-  if (isDcaa && entryIds.length > 0) {
-    const revised = await client
-      .from("timesheetEntryRevision")
-      .select("timesheetEntryId")
-      .eq("companyId", companyId)
-      .in("timesheetEntryId", entryIds);
-    if (revised.error) {
-      logger.error("Failed to load the timesheet revisions", {
-        companyId,
-        error: revised.error
-      });
-    }
-    revisedEntryIds = [
-      ...new Set((revised.data ?? []).map((row) => row.timesheetEntryId))
-    ];
-  }
-  const controls = isDcaa
+  // employee's FLSA status, and the changes waiting for the employee.
+  const controls = view.isDcaa
     ? {
-        today: datetime.today(timeZone).toString(),
-        windowDays: settings.data?.timesheetEntryWindowDays ?? 0,
-        revisedEntryIds,
+        today: view.today,
+        windowDays: view.settings?.timesheetEntryWindowDays ?? 0,
+        revisedEntryIds: view.revisedEntryIds,
         certificationText:
           (job.data?.flsaStatus === "Exempt"
-            ? settings.data?.certificationTextExempt
-            : settings.data?.certificationTextNonExempt) ?? null,
+            ? view.settings?.certificationTextExempt
+            : view.settings?.certificationTextNonExempt) ?? null,
         pendingReview: pendingReview.data ?? []
       }
     : null;
 
-  // Hours clocked per day: each closed clock entry counts on the day it
-  // started. Comparing two stored instants needs no time zone.
-  const timecardHours: Record<string, number> = {};
-  for (const entry of timecard.data ?? []) {
-    if (!entry.clockOut) continue;
-    const day = datetime.businessDay(entry.clockIn, timeZone).toString();
-    const hours =
-      (Date.parse(entry.clockOut) - Date.parse(entry.clockIn)) / 3_600_000;
-    timecardHours[day] = (timecardHours[day] ?? 0) + Math.max(hours, 0);
-  }
-
-  return {
-    weekOffset: offset,
-    weekStart,
-    weekEnd,
-    days,
-    rows: groupTimesheetRows(entries.data ?? []),
-    timecardHours,
-    laborCategories: laborCategories.data ?? [],
-    controls
-  };
+  return { ...view.week, controls };
 }
 
 export default function TimesheetRoute() {

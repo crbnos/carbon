@@ -1569,6 +1569,9 @@ msgstr "О программе"
 msgid "About (notification)"
 msgstr "О (уведомление)"
 
+msgid "Absence"
+msgstr ""
+
 msgid "Absent"
 msgstr "Отсутствует"
 
@@ -15758,6 +15761,9 @@ msgstr "Нет записей о времени на эту неделю"
 msgid "No time is waiting for approval."
 msgstr ""
 
+msgid "No time this week."
+msgstr ""
+
 msgid "No time this week. Add a row for each charge number you worked on."
 msgstr ""
 
@@ -16494,6 +16500,9 @@ msgstr "Откройте интеграцию Ramp и попробуйте по�
 
 msgid "Open the Setup Map"
 msgstr "Открыть карту настройки"
+
+msgid "Open timesheet"
+msgstr ""
 
 msgid "Open transactions"
 msgstr "Открытые транзакции"

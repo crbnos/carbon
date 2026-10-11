@@ -82,7 +82,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 20: Add the element flags
 - [x] Task 21: Add the FLSA status to the employee job
 - [x] Task 22: Build the DCAA controls on My Timesheet
-- [ ] Task 23: Add the employee timesheet page for managers
+- [x] Task 23: Add the employee timesheet page for managers
 - [ ] Task 24: Add labor transfers to the correction modal and approvals
 - [ ] Task 25: Add allowable, unallowable and preproduction cost to the Costs tab
 - [ ] Task 26: Add CLIN numbers and funding actions to the contract line
@@ -1605,3 +1605,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   7. The history icon shows on each cell with revisions, locked cells included. On a posted cell it sits in front of the correction menu button, not inside it.
   8. The Log time modal shows an optional **Reason for late entry** in DCAA mode. The server decides when it is needed. The service order charge route passes it to `saveTimesheetEntry` too.
   9. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 23:
+  1. `TimesheetGrid` takes an `employee` prop, and the new route renders it. Every change opens the change modal with a required reason. The page hides **Submit week** and the review banner, and a posted cell offers the manager no correction.
+  2. In Standard mode the server refuses a save by anyone but the owner (Phase 1a). So the page shows the week read-only there, with no **Add row**. In effect the page edits only in DCAA mode.
+  3. The week read moved into `getTimesheetWeekView` (`projects.server.ts`). My Timesheet and the employee page both call it, so both read the week the same way.
+  4. `canManageTimesheet` checks access in the loader and in the action: the employee's manager, or `update: "projects"`. A refused loader redirects to My Timesheet with an error flash. The user's own id redirects to My Timesheet, where the week is certified.
+  5. The absence days are read with Kysely after the access check, so a manager without `people` view still sees them. Each shows as an **Absence** badge in its day header.
+  6. A manager changes any entry that is not Posted (`MANAGER_EDITABLE_STATUSES`), because the server sends each such change to Pending Employee Review.
+  7. The **Open timesheet** link on each approval card computes the week offset from the company's today.
+  8. Browser verification deferred.

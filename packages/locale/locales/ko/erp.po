@@ -1569,6 +1569,9 @@ msgstr "정보"
 msgid "About (notification)"
 msgstr "정보 (알림)"
 
+msgid "Absence"
+msgstr ""
+
 msgid "Absent"
 msgstr "부재중"
 
@@ -15758,6 +15761,9 @@ msgstr "이번 주 시간 기록이 없습니다"
 msgid "No time is waiting for approval."
 msgstr ""
 
+msgid "No time this week."
+msgstr ""
+
 msgid "No time this week. Add a row for each charge number you worked on."
 msgstr ""
 
@@ -16494,6 +16500,9 @@ msgstr "Ramp 연동을 열고 다시 연결하여 설정을 완료해 보세요.
 
 msgid "Open the Setup Map"
 msgstr "설정 맵 열기"
+
+msgid "Open timesheet"
+msgstr ""
 
 msgid "Open transactions"
 msgstr "미결 거래"

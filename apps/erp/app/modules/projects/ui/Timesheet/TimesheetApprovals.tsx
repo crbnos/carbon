@@ -29,13 +29,18 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
+import { weekStartOf } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuCheck, LuClipboardCheck, LuX } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { LuCalendarDays, LuCheck, LuClipboardCheck, LuX } from "react-icons/lu";
+import { Link, useFetcher } from "react-router";
 import { EmployeeAvatar } from "~/components";
-import { useDateFormatter, useQuantityFormatter } from "~/hooks";
+import {
+  useCompanyToday,
+  useDateFormatter,
+  useQuantityFormatter
+} from "~/hooks";
 import { path } from "~/utils/path";
 import type { getTimesheetApprovals } from "../../projects.service";
 
@@ -101,8 +106,12 @@ function ApprovalCard({
   const formatQuantity = useQuantityFormatter();
   const fetcher = useFetcher();
   const isApproving = fetcher.state !== "idle";
+  const today = useCompanyToday();
 
   const weekEnd = parseDate(group.weekStart).add({ days: 6 }).toString();
+  // The employee page navigates by weeks from this week, as My Timesheet.
+  const weekOffset =
+    parseDate(group.weekStart).compare(parseDate(weekStartOf(today))) / 7;
   const weekLabel = `${formatDate(group.weekStart)} – ${formatDate(weekEnd)}`;
   const employeeName = group.employee?.fullName ?? "";
   const allIds = group.entries.map((entry) => entry.id);
@@ -131,6 +140,13 @@ function ApprovalCard({
         </CardHeader>
         <CardAction>
           <HStack spacing={2}>
+            <Button variant="ghost" leftIcon={<LuCalendarDays />} asChild>
+              <Link
+                to={`${path.to.employeeTimesheet(group.employeeId)}?week=${weekOffset}`}
+              >
+                <Trans>Open timesheet</Trans>
+              </Link>
+            </Button>
             <Button
               variant="secondary"
               leftIcon={<LuX />}

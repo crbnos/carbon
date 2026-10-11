@@ -5,7 +5,7 @@
 import { error, hasPermission } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
-import type { Database } from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import { getLogger } from "@carbon/logger";
@@ -13,6 +13,7 @@ import { serverFns } from "@carbon/server-functions";
 import type { SaveTimesheetEntryResult } from "@carbon/server-functions/save-timesheet-entry";
 import type { SubmitTimesheetWeekResult } from "@carbon/server-functions/submit-timesheet-week";
 import { datetime } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { customAlphabet } from "nanoid";
@@ -57,6 +58,7 @@ import {
   defaultProjectStates,
   diffPlanSnapshots,
   findConflicts,
+  groupTimesheetRows,
   isProjectPlanLocked,
   mergeChangeRequestItem,
   netBuildComponents,
@@ -91,7 +93,8 @@ import {
   getProjectElementLinks,
   getProjectElementPlanLines,
   getProjectElements,
-  getProjectItemValues
+  getProjectItemValues,
+  getTimesheetWeek
 } from "./projects.service";
 import type { ProjectElementLink } from "./types";
 
@@ -4437,4 +4440,107 @@ export async function moveActionPegsToSupply(
     });
     return { moved: 0, error: message };
   }
+}
+
+/**
+ * One employee's timesheet week for the grid (My Timesheet and the manager's
+ * employee page). The week runs Monday to Sunday on the company calendar, as
+ * the timecard does, so the two line up day by day. Returns the entries as
+ * grid rows, the hours clocked per day, the labor categories, the company
+ * settings and, in DCAA mode, the entries that have a correction trail. A
+ * failed read is logged and shows as empty.
+ */
+export async function getTimesheetWeekView(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; employeeId: string; weekOffset: number }
+) {
+  const { companyId, employeeId } = args;
+  const offset = Number.isFinite(args.weekOffset) ? args.weekOffset : 0;
+  const timeZone = await getCompanyTimeZone(client, companyId);
+  const { from, to } = datetime.weekBounds(timeZone, offset);
+  const weekStart = datetime.businessDay(from, timeZone).toString();
+  const weekEnd = datetime.businessDay(to, timeZone).toString();
+  const monday = parseDate(weekStart);
+  const days = Array.from({ length: 7 }, (_, index) =>
+    monday.add({ days: index }).toString()
+  );
+
+  const [entries, timecard, laborCategories, settings] = await Promise.all([
+    getTimesheetWeek(client, {
+      companyId,
+      employeeId,
+      from: weekStart,
+      to: weekEnd
+    }),
+    client
+      .from("timeCardEntry")
+      .select("clockIn, clockOut")
+      .eq("employeeId", employeeId)
+      .eq("companyId", companyId)
+      .gte("clockIn", from)
+      .lte("clockIn", to),
+    getLaborCategoriesList(client, companyId),
+    client.from("companySettings").select("*").eq("id", companyId).single()
+  ]);
+  for (const [what, result] of [
+    ["the timesheet", entries],
+    ["the timecard", timecard],
+    ["labor categories", laborCategories],
+    ["company settings", settings]
+  ] as const) {
+    if (result.error) {
+      logger.error(`Failed to load ${what}`, {
+        companyId,
+        error: result.error
+      });
+    }
+  }
+
+  // Hours clocked per day: each closed clock entry counts on the day it
+  // started. Comparing two stored instants needs no time zone.
+  const timecardHours: Record<string, number> = {};
+  for (const entry of timecard.data ?? []) {
+    if (!entry.clockOut) continue;
+    const day = datetime.businessDay(entry.clockIn, timeZone).toString();
+    const hours =
+      (Date.parse(entry.clockOut) - Date.parse(entry.clockIn)) / 3_600_000;
+    timecardHours[day] = (timecardHours[day] ?? 0) + Math.max(hours, 0);
+  }
+
+  // DCAA mode (5a): the cells that have a correction trail.
+  const isDcaa = settings.data?.timekeepingControls === "DCAA";
+  const entryIds = (entries.data ?? []).map((entry) => entry.id);
+  let revisedEntryIds: string[] = [];
+  if (isDcaa && entryIds.length > 0) {
+    const revised = await client
+      .from("timesheetEntryRevision")
+      .select("timesheetEntryId")
+      .eq("companyId", companyId)
+      .in("timesheetEntryId", entryIds);
+    if (revised.error) {
+      logger.error("Failed to load the timesheet revisions", {
+        companyId,
+        error: revised.error
+      });
+    }
+    revisedEntryIds = [
+      ...new Set((revised.data ?? []).map((row) => row.timesheetEntryId))
+    ];
+  }
+
+  return {
+    week: {
+      weekOffset: offset,
+      weekStart,
+      weekEnd,
+      days,
+      rows: groupTimesheetRows(entries.data ?? []),
+      timecardHours,
+      laborCategories: laborCategories.data ?? []
+    },
+    settings: settings.data,
+    isDcaa,
+    today: datetime.today(timeZone).toString(),
+    revisedEntryIds
+  };
 }
