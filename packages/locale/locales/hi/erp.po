@@ -3710,6 +3710,10 @@ msgstr "बैकअप"
 msgid "Backup failed"
 msgstr "बैकअप विफल रहा"
 
+#. placeholder {0}: invoice.invoiceId
+msgid "Backup for {0}"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "बैकअप अपलोड किया गया"
 
@@ -10487,6 +10491,9 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded"
+msgstr ""
+
 msgid "Funded Amount"
 msgstr ""
 
@@ -12694,6 +12701,9 @@ msgstr "एक क्रय आदेश प्राप्ति पोस्�
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "पंक्तियाँ यहाँ दिखाई देती हैं जब विक्रय आदेश की शिपमेंट पोस्ट की जाती है, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य RMA पर अधिकृत नहीं हैं। एक अंधी रिटर्न के लिए पंक्ति मद जोड़ें का उपयोग करें।"
+
+msgid "Lines billed from project work, and the invoices that billed them."
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "लाइनों को आंतरिक भाग संख्याओं की आवश्यकता है"
@@ -14956,6 +14966,9 @@ msgstr "इस ऑपरेशन के लिए अभी तक कोई �
 
 msgid "No production recorded yet."
 msgstr "अभी तक कोई उत्पादन दर्ज नहीं किया गया।"
+
+msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
+msgstr ""
 
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"
@@ -17374,6 +17387,9 @@ msgstr ""
 
 msgid "Project"
 msgstr "प्रोजेक्ट"
+
+msgid "Project Billing"
+msgstr ""
 
 msgid "Project Change Requests"
 msgstr ""

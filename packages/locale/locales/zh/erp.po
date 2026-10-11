@@ -3710,6 +3710,10 @@ msgstr "备份"
 msgid "Backup failed"
 msgstr "备份失败"
 
+#. placeholder {0}: invoice.invoiceId
+msgid "Backup for {0}"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "已上传备份"
 
@@ -10487,6 +10491,9 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded"
+msgstr ""
+
 msgid "Funded Amount"
 msgstr ""
 
@@ -12694,6 +12701,9 @@ msgstr "采购订单收货过账后，行才会在此显示，且仅针对尚未
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "销售订单发货已过账后，行将显示在此处，仅适用于尚未在另一个RMA中授权的数量。对于盲目退货，请使用添加行项目。"
+
+msgid "Lines billed from project work, and the invoices that billed them."
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "行需要内部零件号"
@@ -14956,6 +14966,9 @@ msgstr "此操作尚未记录任何生产事件"
 
 msgid "No production recorded yet."
 msgstr "还没有生产记录。"
+
+msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
+msgstr ""
 
 msgid "No purchases in this period"
 msgstr "此期间无采购"
@@ -17374,6 +17387,9 @@ msgstr ""
 
 msgid "Project"
 msgstr "项目"
+
+msgid "Project Billing"
+msgstr ""
 
 msgid "Project Change Requests"
 msgstr ""

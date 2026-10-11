@@ -17,6 +17,7 @@ import ContractLineForm from "./ContractLineForm";
 import ContractMoney from "./ContractMoney";
 import ContractProductsGrid from "./ContractProductsGrid";
 import ContractProject from "./ContractProject";
+import ContractProjectBilling from "./ContractProjectBilling";
 import ContractProperties from "./ContractProperties";
 import ContractRevenue from "./ContractRevenue";
 import ContractRevenueGrid, {
@@ -55,6 +56,7 @@ export {
   ContractMoney,
   ContractProductsGrid,
   ContractProject,
+  ContractProjectBilling,
   ContractProperties,
   ContractRecognitionGrid,
   ContractRevenue,

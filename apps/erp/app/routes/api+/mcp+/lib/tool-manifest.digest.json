@@ -1,5 +1,5 @@
 {
-  "totalTools": 1624,
+  "totalTools": 1626,
   "modules": 16,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -1284,6 +1284,7 @@
     {"name":"sales_getContractLine","classification":"READ","paramCount":1,"schema":"3d08011d330a","response":"ad7657fb7344","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContractLineFunding","classification":"READ","paramCount":2,"schema":"cff70a19c8a5","response":"b70ab10e5f2d","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContractLines","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"458e8a55a6c2","injectAuth":"companyId","permission":"sales:view","paginates":false},
+    {"name":"sales_getContractProjectBillingInvoices","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"31fed0c436f7","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContracts","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"fc8b89e1366e","injectAuth":"companyId","permission":"sales:view","paginates":true,"defaults":"always"},
     {"name":"sales_getCreditableQuantities","classification":"READ","paramCount":1,"schema":"f41daa12b05a","response":"da2f02c5bdac","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getCustomer","classification":"READ","paramCount":1,"schema":"09e48c79fb16","response":"8642159293c2","injectAuth":"companyId","permission":"sales:view","paginates":false},
@@ -1324,6 +1325,7 @@
     {"name":"sales_getOpportunityLineDocuments","classification":"READ","paramCount":2,"schema":"067400ea63f8","response":"95c1c04c0566","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getPricingRule","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"ad07d2ee862b","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getPricingRules","classification":"READ","paramCount":3,"schema":"b00172859bab","response":"ef4af464ac84","injectAuth":"companyId","permission":"sales:view","paginates":true,"defaults":"always"},
+    {"name":"sales_getProjectBillingBackup","classification":"READ","paramCount":1,"schema":"9e382a0affeb","response":"df948dc96d81","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getQuote","classification":"READ","paramCount":1,"schema":"c726ae407913","response":"3964449e5d70","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getQuoteAssemblies","classification":"READ","paramCount":1,"schema":"c726ae407913","response":"9807da529af1","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getQuoteAssembliesByLine","classification":"READ","paramCount":1,"schema":"e0050938a2c8","response":"9807da529af1","injectAuth":"companyId","permission":"sales:view","paginates":false},

@@ -3710,6 +3710,10 @@ msgstr "Резервная копия"
 msgid "Backup failed"
 msgstr "Ошибка резервной копии"
 
+#. placeholder {0}: invoice.invoiceId
+msgid "Backup for {0}"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "Резервная копия загружена"
 
@@ -10487,6 +10491,9 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded"
+msgstr ""
+
 msgid "Funded Amount"
 msgstr ""
 
@@ -12694,6 +12701,9 @@ msgstr "Строки появятся здесь после проведения
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "Строки появляются здесь после проведения отгрузки, и только для количеств, не авторизованных на другой RMA. Используйте функцию «Добавить строку» для слепого возврата."
+
+msgid "Lines billed from project work, and the invoices that billed them."
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "Строки требуют внутренние номера деталей"
@@ -14956,6 +14966,9 @@ msgstr "Для этой операции еще не записано ни од�
 
 msgid "No production recorded yet."
 msgstr "Производство еще не записано."
+
+msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
+msgstr ""
 
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
@@ -17374,6 +17387,9 @@ msgstr ""
 
 msgid "Project"
 msgstr "Проект"
+
+msgid "Project Billing"
+msgstr ""
 
 msgid "Project Change Requests"
 msgstr ""

@@ -3710,6 +3710,10 @@ msgstr "백업"
 msgid "Backup failed"
 msgstr "백업 실패"
 
+#. placeholder {0}: invoice.invoiceId
+msgid "Backup for {0}"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "백업이 업로드되었습니다"
 
@@ -10487,6 +10491,9 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded"
+msgstr ""
+
 msgid "Funded Amount"
 msgstr ""
 
@@ -12694,6 +12701,9 @@ msgstr "발주서 입고가 전기된 후 라인이 여기에 나타나며, 다�
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "수주 출하가 전기된 후 라인이 여기에 나타나며, 다른 RMA에서 이미 승인되지 않은 수량만 나타납니다. 맹목적 반품의 경우 「라인 항목 추가」를 사용하세요."
+
+msgid "Lines billed from project work, and the invoices that billed them."
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "내부 품번이 필요한 라인"
@@ -14956,6 +14966,9 @@ msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습�
 
 msgid "No production recorded yet."
 msgstr "아직 기록된 생산이 없습니다."
+
+msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
+msgstr ""
 
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
@@ -17374,6 +17387,9 @@ msgstr ""
 
 msgid "Project"
 msgstr "프로젝트"
+
+msgid "Project Billing"
+msgstr ""
 
 msgid "Project Change Requests"
 msgstr ""

@@ -3710,6 +3710,10 @@ msgstr "Backup"
 msgid "Backup failed"
 msgstr "Backup falhou"
 
+#. placeholder {0}: invoice.invoiceId
+msgid "Backup for {0}"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "Backup enviado"
 
@@ -10487,6 +10491,9 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded"
+msgstr ""
+
 msgid "Funded Amount"
 msgstr ""
 
@@ -12694,6 +12701,9 @@ msgstr "As linhas aparecem aqui quando um recebimento de pedido de compra é con
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "As linhas aparecem aqui uma vez que uma remessa de pedido de venda tenha sido contabilizada, e apenas para quantidades não já autorizadas em outro RMA. Use Adicionar Item de Linha para uma devolução cega."
+
+msgid "Lines billed from project work, and the invoices that billed them."
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "As linhas precisam de números de peça internos"
@@ -14956,6 +14966,9 @@ msgstr "Ainda não há eventos de produção registados para esta operação"
 
 msgid "No production recorded yet."
 msgstr "Nenhuma produção registrada ainda."
+
+msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
+msgstr ""
 
 msgid "No purchases in this period"
 msgstr "Nenhuma compra neste período"
@@ -17374,6 +17387,9 @@ msgstr ""
 
 msgid "Project"
 msgstr "Projeto"
+
+msgid "Project Billing"
+msgstr ""
 
 msgid "Project Change Requests"
 msgstr ""

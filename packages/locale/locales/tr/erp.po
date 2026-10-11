@@ -3710,6 +3710,10 @@ msgstr "Yedek"
 msgid "Backup failed"
 msgstr "Yedekleme başarısız oldu"
 
+#. placeholder {0}: invoice.invoiceId
+msgid "Backup for {0}"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "Yedek yüklendi"
 
@@ -10487,6 +10491,9 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded"
+msgstr ""
+
 msgid "Funded Amount"
 msgstr ""
 
@@ -12694,6 +12701,9 @@ msgstr "Satınalma siparişi mal kabulü muhasebeleştirildiğinde satırlar bur
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "Satırlar, bir satış siparişi sevkiyatı muhasebeleştirildiğinde burada görünür ve yalnızca başka bir RMA üzerinde zaten yetkilendirilmemiş miktarlar için. Kör iade için satırı ekle kullanın."
+
+msgid "Lines billed from project work, and the invoices that billed them."
+msgstr ""
 
 msgid "Lines need internal part numbers"
 msgstr "Satırlar dahili parça numaralarına ihtiyaç duyuyor"
@@ -14956,6 +14966,9 @@ msgstr "Bu operasyon için henüz kaydedilmiş üretim olayı yok"
 
 msgid "No production recorded yet."
 msgstr "Henüz kayıtlı üretim yok."
+
+msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
+msgstr ""
 
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"
@@ -17374,6 +17387,9 @@ msgstr ""
 
 msgid "Project"
 msgstr "Proje"
+
+msgid "Project Billing"
+msgstr ""
 
 msgid "Project Change Requests"
 msgstr ""

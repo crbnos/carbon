@@ -3710,6 +3710,10 @@ msgstr "Backup"
 msgid "Backup failed"
 msgstr "Backup failed"
 
+#. placeholder {0}: invoice.invoiceId
+msgid "Backup for {0}"
+msgstr "Backup for {0}"
+
 msgid "Backup uploaded"
 msgstr "Backup uploaded"
 
@@ -10487,6 +10491,9 @@ msgstr "Function"
 msgid "Functional"
 msgstr "Functional"
 
+msgid "Funded"
+msgstr "Funded"
+
 msgid "Funded Amount"
 msgstr "Funded Amount"
 
@@ -12694,6 +12701,9 @@ msgstr "Lines appear here once a purchase order receipt has been posted, and onl
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+
+msgid "Lines billed from project work, and the invoices that billed them."
+msgstr "Lines billed from project work, and the invoices that billed them."
 
 msgid "Lines need internal part numbers"
 msgstr "Lines need internal part numbers"
@@ -14956,6 +14966,9 @@ msgstr "No production events recorded for this operation yet"
 
 msgid "No production recorded yet."
 msgstr "No production recorded yet."
+
+msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
+msgstr "No project billing invoices yet. The nightly billing run drafts one per billing period."
 
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
@@ -17374,6 +17387,9 @@ msgstr "Progress is this element's cost against its estimate at completion"
 
 msgid "Project"
 msgstr "Project"
+
+msgid "Project Billing"
+msgstr "Project Billing"
 
 msgid "Project Change Requests"
 msgstr "Project Change Requests"

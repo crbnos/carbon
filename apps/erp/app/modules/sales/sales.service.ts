@@ -10435,6 +10435,71 @@ export async function updateContractLineFunding(
     .single();
 }
 
+/**
+ * Lists the sales invoices that bill a contract's Time & Materials and Cost
+ * Plus lines, each with the lines' billed total, newest first.
+ * @mcp read
+ */
+export async function getContractProjectBillingInvoices(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; customerContractId: string }
+) {
+  const lines = await client
+    .from("salesInvoiceLine")
+    .select(
+      "invoiceId, quantity, unitPrice, invoice:salesInvoice!salesInvoiceLine_invoiceId_fkey(id, invoiceId, status, dateIssued), contractLine:customerContractLine!salesInvoiceLine_customerContractLine_fkey!inner(billingMethod)"
+    )
+    .eq("companyId", args.companyId)
+    .eq("customerContractId", args.customerContractId)
+    .neq("contractLine.billingMethod", "Fixed");
+  if (lines.error) return { data: null, error: lines.error };
+
+  const byInvoice = new Map<
+    string,
+    {
+      id: string;
+      invoiceId: string;
+      status: Database["public"]["Enums"]["salesInvoiceStatus"];
+      dateIssued: string | null;
+      amount: number;
+    }
+  >();
+  for (const line of lines.data) {
+    if (!line.invoice) continue;
+    const current = byInvoice.get(line.invoice.id) ?? {
+      ...line.invoice,
+      amount: 0
+    };
+    current.amount += Number(line.quantity) * Number(line.unitPrice);
+    byInvoice.set(line.invoice.id, current);
+  }
+  const data = [...byInvoice.values()]
+    .map((invoice) => ({ ...invoice, amount: round(invoice.amount) }))
+    .sort((a, b) => (b.dateIssued ?? "").localeCompare(a.dateIssued ?? ""));
+  return { data, error: null };
+}
+
+/**
+ * The backup of one project billing invoice: every billable item it billed,
+ * with the ledger row's posting date, cost type, employee, labor category,
+ * hours and document, and the billing element. Reconciles the invoice to the
+ * books (DFARS 252.242-7006).
+ * @mcp read
+ */
+export async function getProjectBillingBackup(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; salesInvoiceId: string }
+) {
+  return client
+    .from("projectBillableItem")
+    .select(
+      "id, description, quantity, unitPrice, amount, customerContractLineId, ledger:projectLedger!projectBillableItem_ledger_fkey(postingDate, costType, documentType, documentId, employeeId, laborCategoryId, quantity), element:projectElement!projectBillableItem_element_fkey(readableId, name), invoiceLine:salesInvoiceLine!projectBillableItem_invoiceLine_fkey!inner(invoiceId)"
+    )
+    .eq("companyId", args.companyId)
+    .eq("invoiceLine.invoiceId", args.salesInvoiceId)
+    .order("createdAt", { ascending: true });
+}
+
 /** Adds several Service items to a Draft contract at once, each as a line
  *  with the defaults a new line gets (the setup wizard's Add Products).
  *  One read of the contract, one of the items, one insert. Not an MCP tool:

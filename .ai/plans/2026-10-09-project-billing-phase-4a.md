@@ -76,7 +76,7 @@ These correct or add to the spec. Task 20 records them there.
 - [x] Task 14: Add the contract and project services
 - [x] Task 15: Add the billing fields to the contract line form
 - [x] Task 16: Add the contract line billing drawer
-- [ ] Task 17: Add the Project billing section and the backup report
+- [x] Task 17: Add the Project billing section and the backup report
 - [ ] Task 18: Add Projects → Billing and the project Billing tab
 - [ ] Task 19: Add the bill rate to labor categories
 - [ ] Task 20: Update the rules, AGENTS.md, docs and spec
@@ -1119,3 +1119,5 @@ ls .ai/playbooks/project-billing-phase-4a.md
 - Task 16: `FundingBar` draws two `BarProgress` rows: billing (billed, then unbilled) against the funded amount, and cost incurred against the funded cost with an amber mark at `noticePercent × fundedCost` (an absolutely positioned line over the bar; `BarProgress` has no marker). `compact` draws the billing bar alone for Tasks 17 and 18. Edit Funding reuses `ContractLineBillingFields` with a new `fundingOnly` prop.
 - Task 16: the items card is read-only. Review (hold, release, write off, price) is Projects → Billing (Task 18), so the card says so; Task 18 adds the link. `generate.tsx` catches a throw from `generateCostPlusItems` and flashes it. The loader reads the funding on the company's today, and refuses a Fixed line.
 - Task 16: the drawer has **Generate Billable Items**, so the run log needs no follow-up for it (the Task 20 brief asked to check).
+- Task 17: two new MCP read tools in `sales.service.ts`: `getContractProjectBillingInvoices` (the contract's invoice lines whose contract line is not Fixed, one query with an inner embed, grouped by invoice in memory with the billed total) and `getProjectBillingBackup` (the items an invoice stamps, filtered through an inner embed of `salesInvoiceLine`). `$id.details` reads the billing line ids first and skips the rest when there is none, so a Fixed-only contract costs one extra query.
+- Task 17: the backup report renders the app `Table` in the center pane (CSV export comes with it), not a separate page component. `projectLedger` has no FK to `laborCategory` or `user`, so labor category and employee names come from `useLaborCategories` and `usePeople` in the browser, and each column's `exportValue` writes the name into the CSV.

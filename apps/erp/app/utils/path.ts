@@ -603,6 +603,8 @@ export const path = {
     contact: `${x}/people/contact`,
     contract: (id: string) => generatePath(`${x}/contract/${id}`),
     contractAmend: (id: string) => generatePath(`${x}/contract/${id}/amend`),
+    contractBillingBackup: (id: string, invoiceId: string) =>
+      generatePath(`${x}/contract/${id}/billing-backup/${invoiceId}`),
     contractCancel: (id: string) => generatePath(`${x}/contract/${id}/cancel`),
     contractConfirm: (id: string) =>
       generatePath(`${x}/contract/${id}/confirm`),
