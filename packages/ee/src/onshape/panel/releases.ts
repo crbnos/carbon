@@ -56,7 +56,7 @@ export type PanelRelease = {
   releaseName: string | null;
   createdAt: string | null;
   items: PanelReleaseItem[];
-  /** Over model items (parts + assemblies) only; drawings ride along. */
+  /** Over every item: a model item by its letter, a drawing by its landed PDF. */
   state: "pushed" | "partial" | "not-pushed";
 };
 
@@ -153,23 +153,26 @@ export type ReleaseCarbonItemRow = {
 
 /**
  * Join releases to Carbon: a model item is "in-carbon" when an item row exists
- * with its part number AND its release revision letter. Drawings never count
- * toward the release state (they attach to model items, they aren't items).
+ * with its part number AND its release revision letter; a drawing when the
+ * PDF the release push exports for it has landed on an item
+ * (`attachedDrawings`: file names, see `releaseDrawingFileName`). The state
+ * counts every item, so a drawing-only release reads pushed once its PDFs are
+ * in Carbon, and a release whose drawing export is still running reads
+ * partial until a refresh.
  */
 export function resolveReleaseStates(
   releases: PanelRelease[],
-  carbonItems: ReleaseCarbonItemRow[]
+  carbonItems: ReleaseCarbonItemRow[],
+  attachedDrawings: ReadonlySet<string> = new Set()
 ): PanelRelease[] {
   const byKey = new Map(
     carbonItems.map((row) => [`${row.readableId}\u0000${row.revision}`, row])
   );
   return releases.map((release) => {
-    let modelCount = 0;
     let inCarbonCount = 0;
     const items = release.items.map((item) => {
-      const match = byKey.get(`${item.partNumber}\u0000${item.revision}`);
       if (isModelReleaseItem(item)) {
-        modelCount += 1;
+        const match = byKey.get(`${item.partNumber}\u0000${item.revision}`);
         if (match) inCarbonCount += 1;
         return {
           ...item,
@@ -177,20 +180,38 @@ export function resolveReleaseStates(
           itemId: match?.id ?? null
         };
       }
-      // Drawing: reported for display, never counted.
-      return { ...item, state: "missing" as const, itemId: null };
+      // A drawing attaches to a model item and has no item of its own.
+      const attached = attachedDrawings.has(releaseDrawingFileName(item));
+      if (attached) inCarbonCount += 1;
+      return {
+        ...item,
+        state: attached ? ("in-carbon" as const) : ("missing" as const),
+        itemId: null
+      };
     });
+    const count = release.items.length;
     return {
       ...release,
       items,
       state:
-        modelCount > 0 && inCarbonCount === modelCount
+        count > 0 && inCarbonCount === count
           ? ("pushed" as const)
           : inCarbonCount > 0
             ? ("partial" as const)
             : ("not-pushed" as const)
     };
   });
+}
+
+/**
+ * The file name the release push gives a drawing's PDF: the export's
+ * `assetBaseName` (`<partNumber>-<revision>`) plus the extension the sync job
+ * adds. The Releases tab reads a drawing back by this name.
+ */
+export function releaseDrawingFileName(
+  item: Pick<PanelReleaseItem, "partNumber" | "revision">
+) {
+  return `${item.partNumber}-${item.revision}.pdf`;
 }
 
 export type ReleaseExportSelection =

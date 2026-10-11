@@ -1232,7 +1232,11 @@ export async function action({ request }: ActionFunctionArgs) {
       : null;
     if (!targetId) {
       summary.skipped.push(
-        `${drawing.partNumber}: drawing has no matching model item in this release`
+        model
+          ? `${drawing.partNumber}: drawing waits for ${model.partNumber}${
+              model.revision ? ` Rev ${model.revision}` : ""
+            }, which isn't in Carbon; push its release first`
+          : `${drawing.partNumber}: drawing has no matching model item in this release`
       );
       continue;
     }

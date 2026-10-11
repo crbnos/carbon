@@ -253,7 +253,7 @@ export async function action({ request }: ActionFunctionArgs) {
       results.push({
         partId,
         action: "skipped",
-        message: `Released in Carbon as Rev ${row.item?.revision ?? "?"}: changes come through a release`
+        message: `Released in Onshape as Rev ${row.item?.revision ?? "?"}: changes come through a release`
       });
       continue;
     }

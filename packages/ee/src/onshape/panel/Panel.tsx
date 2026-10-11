@@ -510,10 +510,14 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
       : plural(s.linesWritten, "BOM line") +
         (unchanged > 0 ? ` (${unchanged} unchanged)` : "");
   const fieldsUpdated = s.fieldsUpdated ?? 0;
+  // A push that skipped every method touched none; "across 0 methods" reads
+  // as a failure.
+  const methods =
+    s.methodsTouched > 0 ? ` across ${plural(s.methodsTouched, "method")}` : "";
   const text =
     `${plural(s.itemsCreated, "item")} created, ${s.itemsReused} reused` +
     (fieldsUpdated > 0 ? ` (${fieldsUpdated} updated)` : "") +
-    `, ${lines} across ${plural(s.methodsTouched, "method")}`;
+    `, ${lines}${methods}`;
   const drafts = s.draftVersionsCreated ?? [];
   const takenOver = s.linesTakenOver ?? 0;
   const described = s.descriptionsUpdated ?? 0;
@@ -2451,7 +2455,7 @@ function PartsSection({
                       !part.partNumber
                         ? "Set a part number in Onshape first"
                         : part.state === "released"
-                          ? "Released in Carbon: changes come through a release"
+                          ? "Released in Onshape: changes come through a release"
                           : undefined
                     }
                   >
@@ -2558,7 +2562,7 @@ function ReleasesSection({
                           (item) => `${item.partNumber} Rev ${item.revision}`
                         )
                         .join(", ")}
-                      {drawings > 0 ? ` · ${drawings} drawing(s)` : ""}
+                      {drawings > 0 ? ` · ${plural(drawings, "drawing")}` : ""}
                     </p>
                   </div>
                   <HStack spacing={2} className="shrink-0">
@@ -4786,7 +4790,11 @@ function releaseItemLabel(item: ReleasePlanItem): string {
         item.drawingOf?.revision ? ` Rev ${item.drawingOf.revision}` : ""
       }`;
     case "drawing-unmatched":
-      return "drawing has no model item";
+      return item.drawingOf
+        ? `drawing → ${item.drawingOf.partNumber}${
+            item.drawingOf.revision ? ` Rev ${item.drawingOf.revision}` : ""
+          } isn't in Carbon; push its release first`
+        : "drawing has no model item";
   }
 }
 
@@ -5080,7 +5088,7 @@ function ReleaseStateBadge({ state }: { state: PanelRelease["state"] }) {
 function ReleasedNote({ revision }: { revision: string | null | undefined }) {
   return (
     <p className="mt-1 text-xs text-muted-foreground">
-      Released in Carbon as Rev {revision ?? "?"}. Its fields change only
+      Released in Onshape as Rev {revision ?? "?"}. Its fields change only
       through a release.
     </p>
   );
@@ -5091,7 +5099,7 @@ function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
     return (
       <Status
         color="purple"
-        tooltip="Released in Carbon. A workspace push leaves it as it is; its changes come through a release."
+        tooltip="Released in Onshape. A workspace push leaves it as it is; its changes come through a release."
       >
         Released
       </Status>

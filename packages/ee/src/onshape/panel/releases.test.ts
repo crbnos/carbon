@@ -7,6 +7,7 @@ import type { ReleaseRevisionLike } from "./releases";
 import {
   drawingModels,
   groupRevisionsIntoReleases,
+  releaseDrawingFileName,
   releaseExportSelection,
   resolveReleaseStates
 } from "./releases";
@@ -100,25 +101,54 @@ describe("resolveReleaseStates", () => {
       partial[0]?.items.find((i) => i.partNumber === "PAD-005")?.state
     ).toBe("missing");
 
-    const pushed = resolveReleaseStates(releases, [
-      { id: "item-1", readableId: "WB-100", revision: "A" },
-      { id: "item-3", readableId: "PAD-005", revision: "A" }
-    ]);
+    const pushed = resolveReleaseStates(
+      releases,
+      [
+        { id: "item-1", readableId: "WB-100", revision: "A" },
+        { id: "item-3", readableId: "PAD-005", revision: "A" }
+      ],
+      new Set(["DRW-001-A.pdf"])
+    );
     expect(pushed[0]?.state).toBe("pushed");
 
     expect(resolveReleaseStates(releases, [])[0]?.state).toBe("not-pushed");
   });
 
-  it("ignores drawings when computing the release state", () => {
-    const resolved = resolveReleaseStates(releases, [
+  it("counts a drawing as in Carbon once its PDF has landed", () => {
+    const models = [
       { id: "item-1", readableId: "WB-100", revision: "A" },
       { id: "item-3", readableId: "PAD-005", revision: "A" }
-      // No DRW-001 item anywhere — state must still be pushed.
-    ]);
-    expect(resolved[0]?.state).toBe("pushed");
+    ];
+    // Models pushed, drawing export still running: partial until a refresh.
+    const pending = resolveReleaseStates(releases, models);
+    expect(pending[0]?.state).toBe("partial");
     expect(
-      resolved[0]?.items.find((i) => i.partNumber === "DRW-001")?.itemId
-    ).toBeNull();
+      pending[0]?.items.find((i) => i.partNumber === "DRW-001")?.state
+    ).toBe("missing");
+
+    const landed = resolveReleaseStates(
+      releases,
+      models,
+      new Set([
+        releaseDrawingFileName({ partNumber: "DRW-001", revision: "A" })
+      ])
+    );
+    expect(landed[0]?.state).toBe("pushed");
+    const drawing = landed[0]?.items.find((i) => i.partNumber === "DRW-001");
+    expect(drawing?.state).toBe("in-carbon");
+    // A drawing has no item of its own.
+    expect(drawing?.itemId).toBeNull();
+  });
+
+  it("reads a drawing-only release from its PDFs alone", () => {
+    const drawingOnly = groupRevisionsIntoReleases([
+      revision({ partNumber: "DRW-001", elementType: 2, elementId: "e-drw" })
+    ]);
+    expect(resolveReleaseStates(drawingOnly, [])[0]?.state).toBe("not-pushed");
+    expect(
+      resolveReleaseStates(drawingOnly, [], new Set(["DRW-001-A.pdf"]))[0]
+        ?.state
+    ).toBe("pushed");
   });
 });
 

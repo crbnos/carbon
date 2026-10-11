@@ -1051,7 +1051,11 @@ describe("buildReleasePlan", () => {
         "drawing",
         { partNumber: "WB-100", revision: "C", itemId: "wb-c" }
       ],
-      ["PAD-005-DWG", "drawing-unmatched", null]
+      [
+        "PAD-005-DWG",
+        "drawing-unmatched",
+        { partNumber: "PAD-005", revision: "C" }
+      ]
     ]);
     expect(plan.changeNotice).toBeNull();
   });

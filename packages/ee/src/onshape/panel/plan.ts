@@ -2074,7 +2074,9 @@ export type ReleasePlanItem = MappedRowPlan & {
    * Drawings only: the model the drawing attaches to — the model item with
    * the drawing's part number in this release, else the model the release
    * package lists under the drawing. `itemId` is set when that model is not
-   * in this release and Carbon already has it at the package's revision.
+   * in this release and Carbon already has it at the package's revision. An
+   * unmatched drawing keeps the model it waits for (never with an `itemId`),
+   * or null when the package lists none.
    */
   drawingOf?: {
     partNumber: string;
@@ -2241,10 +2243,9 @@ export function buildReleasePlan({
         existingItemId: null,
         proposed: null,
         methodStatus: null,
-        drawingOf:
-          attaches && model
-            ? { ...model, ...(carbonRow ? { itemId: carbonRow.id } : {}) }
-            : null
+        drawingOf: model
+          ? { ...model, ...(carbonRow ? { itemId: carbonRow.id } : {}) }
+          : null
       });
       continue;
     }

@@ -233,6 +233,7 @@ export {
   drawingModels,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
+  releaseDrawingFileName,
   releaseKeyFor,
   resolveReleaseStates
 } from "./onshape/panel/releases";

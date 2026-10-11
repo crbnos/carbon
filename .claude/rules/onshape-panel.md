@@ -61,9 +61,9 @@ either sync connection.
 - Migration `20261007050300_onshape-v2-integration.sql` seeds the `integration`
   row; `…501_onshape-v2-vault-secrets.sql` puts `onshape-v2` in `SECRET_KEYS`,
   so its tokens live in Supabase Vault.
-- The V2 integration form holds the five push defaults (`config-v2.tsx`, "Push
-  defaults" group). The unit dropdown's options are the company's units, loaded
-  in `x+/settings+/integrations.$id.tsx` as `dynamicOptions`.
+- The five push defaults live on the panel's Fields page beside the property
+  map (`api+/integrations.onshape.panel.fields.ts` returns and saves them). The
+  V2 integration form holds the connection only.
 
 ## Integration state — one owner per key
 
@@ -319,7 +319,10 @@ onshapeName, valueType, target, mode, translations? }`, where `target` is
   null in `parseProperties`. A list default reads as the value, in metadata
   and BOM alike, for parts that never set it. Map
   empty → zero extra reads for mapped values. `loadPlanMapping` reads the map,
-  the modes, the definitions and the held `part.customFields`.
+  the modes, the definitions and the held `part.customFields`. It and
+  `loadPlanOptions` take the service role: `companyIntegration` SELECT needs
+  settings view, and through a planner's own client the row reads as absent,
+  so every push would silently take the built-in defaults and an empty map.
 - The editor is the panel's **Fields** page: Onshape lists properties only from
   inside a document. `api+/integrations.onshape.panel.fields.ts`: GET lists the
   element's properties (a part studio's as the union across its parts), the
@@ -381,6 +384,14 @@ onshapeName, valueType, target, mode, translations? }`, where `target` is
 - Model exports carry the revision's `partId` and configuration
   (`releaseExportSelection`); the configuration is sent as Onshape returned it.
   A Part Studio item with no single `partId` is reported as skipped.
+- A released drawing attaches to its model item as a PDF named
+  `<partNumber>-<revision>.pdf` (`releaseDrawingFileName`), and that document
+  is the only record of the push. The Releases tab reads it back by name
+  (`document` rows with `sourceDocument` Part, service role, company-scoped)
+  and the release state counts every item, so a drawing-only release reads In
+  Carbon once its PDFs land, and a release whose drawing export is still
+  running reads Partial until Refresh. A re-push re-exports the PDF onto the
+  same path (an upsert), so it costs a translation but leaves no duplicate.
 
 ## Batch every `.in()` sized by CAD data
 
@@ -436,8 +447,8 @@ loads without Carbon's cookies, so the user's mode would otherwise follow the
 OS.
 
 The panel shows status and pushes. Anything a user would change lives in
-Onshape or on the Onshape V2 integration page in Carbon, except the property
-map (the Fields page), because Onshape lists properties only inside a document.
+Onshape, except the property map and the push defaults (the Fields page),
+because Onshape lists properties only inside a document.
 
 Top band pinned (`Tabs` is the outermost element): **Parts / Assembly** (label
 follows the element kind; hidden on a drawing), **Releases** (needs a

@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ReleaseCarbonItemRow } from "@carbon/ee";
 import {
   groupRevisionsIntoReleases,
   isModelReleaseItem,
+  releaseDrawingFileName,
   resolveReleaseStates
 } from "@carbon/ee";
 import {
@@ -109,9 +111,42 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const carbonRows = rows.data as ReleaseCarbonItemRow[];
 
+  // A pushed drawing is the PDF the sync job attached to its model item; the
+  // panel keeps no row of its own for it. Read with the service role, scoped
+  // by company: whether a release is in Carbon does not depend on the user's
+  // document permissions.
+  const drawingNames = [
+    ...new Set(
+      releases.flatMap((release) =>
+        release.items
+          .filter((item) => !isModelReleaseItem(item))
+          .map(releaseDrawingFileName)
+      )
+    )
+  ];
+  const attachedDrawings = new Set<string>();
+  if (drawingNames.length > 0) {
+    const documents = await selectInBatches(drawingNames, (batch) =>
+      getCarbonServiceRole()
+        .from("document")
+        .select("name")
+        .eq("companyId", companyId)
+        .eq("sourceDocument", "Part")
+        .eq("active", true)
+        .in("name", batch)
+    );
+    if (documents.error) {
+      return data(
+        { error: "Failed to read Carbon documents" },
+        { status: 500 }
+      );
+    }
+    for (const document of documents.data) attachedDrawings.add(document.name);
+  }
+
   return data(
     {
-      releases: resolveReleaseStates(releases, carbonRows),
+      releases: resolveReleaseStates(releases, carbonRows, attachedDrawings),
       releaseManagementAvailable
     },
     { headers: { "Cache-Control": "no-store" } }
