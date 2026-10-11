@@ -103,6 +103,25 @@ default 587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (default
 Optional `RESEND_API_KEY` (marketing contacts; also a legacy SMTP fallback via
 smtp.resend.com when `SMTP_*` is unset) and `RESEND_AUDIENCE_ID`.
 
+**Push** — no env vars. `getVapidDetails()` (`@carbon/env/push.server`,
+server-only because it imports `node:crypto`) derives the VAPID pair from
+`SESSION_SECRET` with HKDF-SHA256 (salt `carbon`, info `web-push-vapid/<n>`,
+the first `n` whose 32 bytes are a valid P-256 scalar) and memoizes it. The
+subject is `getAppUrl()` when it is https, else `mailto:` + `SUPPORT_EMAIL`.
+Every browser subscription is bound to the public key, so the pair must be
+stable: never generate it at build time (images are published per commit, which
+would rotate it and ship the private key). Rotating `SESSION_SECRET` rotates the
+pair — each browser re-subscribes on its next visit
+(`useRestoreBrowserNotifications`); until then, a push to an old-key row gets
+401 (WNS) or 403 (FCM), and `send-push` logs a warning and keeps the row. It
+never deletes on those codes: Apple answers 403 for a token it refuses, which
+would remove every Safari row. The hash, salt and info label are frozen —
+`push.server.test.ts` pins a known answer.
+`isPushConfigured()` is false only without `SESSION_SECRET` (a
+`SKIP_ENV_VALIDATION` script). The public key reaches the browser through the
+account notifications loader and the app shell loader (`pushPublicKey`), not
+`getBrowserEnv()`.
+
 **Integrations (all optional)** — Ramp (`RAMP_CLIENT_ID`, public and exposed by
 `getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code
 exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,

@@ -5,7 +5,7 @@
 import type { TableName } from "@carbon/database/audit.config";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
-import { renameColumns, TABLE_RENAMES } from "./renames";
+import { renameColumns, renameLiveColumns, TABLE_RENAMES } from "./renames";
 
 /**
  * Schema introspection + backup-compatibility logic, shared by the backup jobs
@@ -33,7 +33,11 @@ export const BACKUP_VERSION = 1;
  * every operator's PIN. `ssoConnection` / `ssoDomain` are the company's login
  * identity — `providerId` and a verified `domain` are unique across ALL
  * companies, so a copy collides with the source company or hands its domain to
- * another. `oauthCode` is a live auth code, and dangles without `oauthClient`.)
+ * another. `oauthCode` is a live auth code, and dangles without `oauthClient`.
+ * `pushSubscription` holds a browser's push endpoint and its encryption keys:
+ * a device credential that means nothing in another company, and being secret
+ * keeps an in-place restore from bringing back signed-out browsers or wiping
+ * the current ones.)
  */
 export const SECRET_TABLES = [
   "apiKey",
@@ -46,7 +50,8 @@ export const SECRET_TABLES = [
   "oauthCode",
   "oauthToken",
   "ssoConnection",
-  "ssoDomain"
+  "ssoDomain",
+  "pushSubscription"
 ];
 
 /**
@@ -557,10 +562,11 @@ export function reportBackupCompatibility(
       }
     }
 
-    // A renamed table's columns are compared under their CURRENT names, so a
-    // column that moved with the table is not reported as both added and removed.
+    // A renamed table's (or renamed column's) values are compared under their
+    // CURRENT names, so a column that moved is not reported as both added and
+    // removed.
     const backupColumnNames = liveByName.has(backupTable.name)
-      ? backupTable.columns
+      ? renameLiveColumns(backupTable.name, backupTable.columns)
       : renameColumns(backupTable.name, backupTable.columns);
     const backupCols = new Set(backupColumnNames);
     for (const c of live.columns) {

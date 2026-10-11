@@ -39,6 +39,7 @@ const WEEKS_TO_PLAN = 12 * 4;
 const logger = getLogger("erp", "purchasing", "planning");
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Purchasing`,
   breadcrumb: msg`Material Planning`,
   to: path.to.purchasingPlanning
 };
@@ -239,7 +240,7 @@ export default function PurchasingPlanningRoute() {
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel
           defaultSize={50}
           maxSize={70}

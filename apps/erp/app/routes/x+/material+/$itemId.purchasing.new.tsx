@@ -62,7 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (newSupplierPartId && priceBreaksRaw) {
     const priceBreaks = JSON.parse(priceBreaksRaw as string) as {
       quantity: number;
-      unitPrice: number;
+      supplierUnitPrice: number;
       leadTime: number;
     }[];
     if (priceBreaks.length > 0) {
@@ -70,7 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         priceBreaks.map((pb) => ({
           supplierPartId: newSupplierPartId,
           quantity: pb.quantity,
-          unitPrice: pb.unitPrice,
+          supplierUnitPrice: pb.supplierUnitPrice,
           leadTime: pb.leadTime ?? 0,
           sourceType: "Manual Entry" as const,
           companyId,
@@ -96,7 +96,7 @@ export default function NewMaterialSupplierRoute() {
     itemId: itemId,
     supplierId: "",
     supplierMaterialId: "",
-    unitPrice: 0,
+    supplierUnitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
     orderMultiple: 1,

@@ -1,4 +1,4 @@
-name: Check Lint and Types
+name: Checks
 
 on:
   pull_request:

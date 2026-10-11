@@ -16,6 +16,13 @@ export const MOUNT_API_VERSION = "2026-06-01";
 
 export const MOUNT_INTEGRATION_ID = "mount";
 
+/** The integration's action ids, by the entity type each one publishes. */
+export const MOUNT_PUBLISH_ACTION_IDS = {
+  customer: "push-customers",
+  supplier: "push-suppliers",
+  item: "push-parts"
+} as const;
+
 export function isHttpsUrl(value: string) {
   try {
     return new URL(value).protocol === "https:";

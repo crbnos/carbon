@@ -252,7 +252,7 @@ export default function EmailRecipients({
         <PopoverTrigger asChild>
           <div
             className={cn(
-              "flex flex-wrap gap-1 min-h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text",
+              "flex flex-wrap gap-1 min-h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text max-md:min-h-11 max-md:text-base",
               inputError ? "border-destructive" : "border-input"
             )}
             onClick={(e) => {
@@ -300,7 +300,7 @@ export default function EmailRecipients({
               placeholder={
                 emails.length === 0 ? "Search or enter email..." : ""
               }
-              className="flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground"
+              className="flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground max-md:text-base"
             />
           </div>
         </PopoverTrigger>

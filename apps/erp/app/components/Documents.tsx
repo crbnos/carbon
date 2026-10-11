@@ -12,6 +12,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -235,7 +236,7 @@ const Documents = ({
             <Trans>Files</Trans>
           </CardTitle>
         </CardHeader>
-        <CardAction>
+        <CardAction className="max-md:hidden">
           <File
             isDisabled={!canUpdate}
             leftIcon={<LuUpload />}
@@ -252,7 +253,11 @@ const Documents = ({
       </HStack>
       <CardContent>
         <Table>
-          <Thead>
+          <Thead
+            className={cn(
+              allFiles.length === 0 && !modelUpload && "max-md:hidden"
+            )}
+          >
             <Tr>
               <Th>
                 <Trans>Name</Trans>

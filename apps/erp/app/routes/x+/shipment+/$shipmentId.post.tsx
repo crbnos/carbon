@@ -48,6 +48,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const acknowledged = formData.get("acknowledged") === "true";
+  const postingDateValue = formData.get("postingDate");
+  const postingDate =
+    typeof postingDateValue === "string" && postingDateValue !== ""
+      ? postingDateValue
+      : undefined;
 
   // Storage Rule evaluation across every line on this shipment before posting.
   const serviceRole = getCarbonServiceRole();
@@ -373,7 +378,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .system({ db: getDatabaseClient(), companyId, userId })
       .invoke("post-shipment", {
         type: "post",
-        shipmentId: shipmentId
+        shipmentId,
+        postingDate
       });
 
     if (posted.error) {

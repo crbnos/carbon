@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { revenueRowDescriptions } from "../app/modules/accounting/accounting.utils";
+import { revenueRowDescriptions } from "@carbon/database/run-journals";
 
 describe("revenueRowDescriptions", () => {
   it("names a contract Accrual row as a contract asset", () => {

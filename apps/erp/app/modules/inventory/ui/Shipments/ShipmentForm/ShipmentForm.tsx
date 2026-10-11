@@ -53,6 +53,7 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
   } = useShipmentForm({ status, initialValues });
 
   const isPosted = status === "Posted";
+  const isRental = initialValues.sourceDocument === "Rental Agreement";
   const isEditing = initialValues.id !== undefined;
 
   return (
@@ -75,16 +76,18 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
           name="sourceDocument"
           label={t`Source Document`}
           termId="shipment-source-document"
-          options={shipmentSourceDocumentType.map((v) => ({
-            label: v,
-            value: v
-          }))}
+          options={shipmentSourceDocumentType
+            .filter((v) => isRental || v !== "Rental Agreement")
+            .map((v) => ({
+              label: v,
+              value: v
+            }))}
           onChange={(newValue) => {
             if (newValue) {
               setSourceDocument(newValue.value as ShipmentSourceDocument);
             }
           }}
-          isReadOnly={isPosted}
+          isReadOnly={isPosted || isRental}
         />
         <Combobox
           key={sourceDocument}
@@ -95,7 +98,7 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
             label: d.name,
             value: d.id
           }))}
-          isReadOnly={isPosted}
+          isReadOnly={isPosted || isRental}
         />
         <Location
           name="locationId"

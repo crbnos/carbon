@@ -41,6 +41,7 @@ const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P1",
           icon: <LuShapes />
         }
       }

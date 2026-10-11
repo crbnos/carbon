@@ -11,13 +11,15 @@ description: Company-defined extra fields that attach to core records like custo
 
 <FieldTable>
   <Field name="Name" type="text" required>The label shown on the record's form. Unique per table, per company.</Field>
-  <Field name="Data Type" type="enum" required>One of nine types (below). **Once saved, the type can't be changed**; delete and re-create to switch.</Field>
+  <Field name="Data Type" type="enum" required>One of ten types (below). **Once saved, the type can't be changed**; delete and re-create to switch.</Field>
   <Field name="List Options" type="text[]">Required only for the **List** type: the dropdown's choices.</Field>
   <Field name="Required" type="boolean">The field must be filled before the form saves. Boolean fields are never treated as required.</Field>
   <Field name="Tags" type="text[]">Scopes the field to records carrying a matching tag; leave empty to show it on every record of the table.</Field>
 </FieldTable>
 
-The nine data types are **Boolean**, **Date**, **List**, **Numeric**, **Text**, **File**, **User**, **Customer**, and **Supplier**. The three reference types store a reference to an existing Carbon record rather than free text.
+The ten data types are **Boolean**, **Date**, **List**, **Numeric**, **Text**, **Link**, **File**, **User**, **Customer**, and **Supplier**. The three reference types store a reference to an existing Carbon record rather than free text.
+
+A **Link** field holds a web address, such as a supplier's product page. Tables and record panels show it as a link that opens in a new tab, without the `https://` and `www.` (hover to see the full address). An address typed without `https://` gets it added when the link opens. Only `http` and `https` addresses become links; any other value shows as plain text.
 
 <Callout type="note" title="The data type is permanent">
 Carbon locks the data type after creation. To change it, create a replacement field and migrate existing values.
@@ -38,10 +40,16 @@ The CSV flows map built-in fields only; neither import nor the table download to
 <AgentContext>
 ## Internals and troubleshooting
 
-Definitions live in the `customField` table (`20240311021818_custom-fields.sql:21`); the form validator is `customFieldValidator` (`settings.models.ts:109`). The eligible-entity catalog is `customFieldTable`, seeded from `20240511125727_seed_custom_fields.sql` onward; the settings page renders it in `CustomFieldsTable.tsx:32`. Forms drop in the shared `<CustomFormFields table="…" />` (`components/Form/CustomFormFields.tsx`; rendering switch at `:75`), inputs are named with a `custom-` prefix, and route actions collect them via `setCustomFields(formData)` / repopulate via `getCustomFields` (`utils/form.ts`). The nine types are the `DataType` enum (`modules/shared/types.ts:83`). Swagger exposes `rowFilter.<table>.customFields`.
+Definitions live in the `customField` table (`20240311021818_custom-fields.sql:21`); the form validator is `customFieldValidator` (`settings.models.ts:109`). The eligible-entity catalog is `customFieldTable`, seeded from `20240511125727_seed_custom_fields.sql` onward; the settings page renders it in `CustomFieldsTable.tsx:32`. Forms drop in the shared `<CustomFormFields table="…" />` (`components/Form/CustomFormFields.tsx`; rendering switch at `:109`), inputs are named with a `custom-` prefix, and route actions collect them via `setCustomFields(formData)` / repopulate via `getCustomFields` (`utils/form.ts`). The ten types are the `DataType` enum (`modules/shared/types.ts:44`). Swagger exposes `rowFilter.<table>.customFields`.
 
 ### "Required" on a custom field that won't submit
-Requiredness is enforced by a runtime validator the form registers per table (`CustomFormFields.tsx:44`), separate from the entity's zod schema. Fill the field or clear its Required flag. Boolean fields are never treated as required, even with the flag on (`CustomFormFields.tsx:31`).
+Requiredness is enforced by a runtime validator the form registers per table (`CustomFormFields.tsx:67`), separate from the entity's zod schema. Fill the field or clear its Required flag. Boolean fields are never treated as required, even with the flag on (`CustomFormFields.tsx:46`).
+
+### Link custom field rejected on save
+The same per-table validator refuses a Link value that `toSafeHref` (`packages/utils/src/url.ts`) cannot turn into an `http` or `https` address: another scheme such as `javascript:` or `mailto:`, a value with spaces, or a bare word with no dotted host. Enter the full address.
+
+### A Link value shows as plain text
+`LinkValue` (`components/LinkValue.tsx`) renders a link only when `toSafeHref` accepts the stored value. Values written through the API, MCP or a workflow skip the form check, so an unsafe or malformed one is stored but never rendered as a link.
 
 ### List custom field rejected on save
 A List field with no options or an empty option fails the validator's refine (`settings.models.ts:121-131`). Give it at least one non-empty choice.

@@ -23,8 +23,13 @@ import type { ConformanceCheck, Violation } from "../check";
  * The rule is deliberately blunt: scope the WRITE itself, even when the ids
  * were read under `companyId` a few lines up. A scoped read proves nothing
  * once the code is refactored so the ids come from somewhere else, and the
- * extra predicate costs nothing. The only exemption is `company`, whose `id`
- * IS the tenant.
+ * extra predicate costs nothing. `company` and `companySettings` have no
+ * `companyId` column — their `id` IS the tenant — so for them
+ * `.where("id", …)` is the tenant predicate. A write to either still needs it:
+ * an UPDATE of `companySettings` with no WHERE changes every tenant's
+ * settings. Tables shared by a company GROUP carry no `companyId` at all
+ * (`GROUP_SCOPED_TABLES`); their tenant key is `companyGroupId`, so a write to
+ * one must name that instead.
  *
  * Scope: Node code that holds the superuser `db` — the ERP's modules and
  * routes, the MES app, `packages/jobs` and `packages/server-functions`. The
@@ -56,12 +61,26 @@ const SCOPED_PREFIXES = [
   "packages/server-functions/src/"
 ];
 
-/** Tables whose own `id` is the tenant key, or that are keyed by user alone. */
-const EXEMPT_TABLES = new Set(["company", "userPermission"]);
+/** Tables whose own `id` is the tenant key: `.where("id", …)` scopes them. */
+const ID_KEYED_TENANT_TABLES = new Set(["company", "companySettings"]);
+
+/** Tables keyed by user alone. */
+const EXEMPT_TABLES = new Set(["userPermission"]);
+
+/**
+ * Tables with no `companyId` column, shared by every company in a group. A
+ * `companyGroupId` predicate is their tenant boundary. Only add a table that
+ * genuinely lacks `companyId` — on any other table a group predicate is wider
+ * than the tenant.
+ */
+const GROUP_SCOPED_TABLES = new Set(["currency"]);
 
 const WRITE = /\.(updateTable|deleteFrom)\s*\(/g;
 const COMPANY_PREDICATE =
   /\.where(?:Ref)?\s*\(\s*["'`](?:\w+\.)?companyId["'`]/;
+const ID_PREDICATE = /\.where(?:Ref)?\s*\(\s*["'`](?:\w+\.)?id["'`]/;
+const COMPANY_GROUP_PREDICATE =
+  /\.where(?:Ref)?\s*\(\s*["'`](?:\w+\.)?companyGroupId["'`]/;
 const STATEMENT_END = /^\.(?:execute\w*|compile)\s*\(/;
 const ROWS_WRITE = /\b(updateRows|deleteRows)\s*\(/g;
 const ROWS_MESSAGE =
@@ -183,6 +202,20 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
 
       const statement = statementFrom(text, start + 1);
       if (COMPANY_PREDICATE.test(statement)) continue;
+      if (
+        table &&
+        ID_KEYED_TENANT_TABLES.has(table) &&
+        ID_PREDICATE.test(statement)
+      ) {
+        continue;
+      }
+      if (
+        table &&
+        GROUP_SCOPED_TABLES.has(table) &&
+        COMPANY_GROUP_PREDICATE.test(statement)
+      ) {
+        continue;
+      }
 
       const call = text.slice(start, text.indexOf(")", openParen) + 1);
       violations.push({
@@ -198,7 +231,15 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
       if (args.length < 3) continue;
       const table = args[1]?.trim().replace(/^["'`]|["'`]$/g, "");
       if (table && EXEMPT_TABLES.has(table)) continue;
-      if (/\bcompanyId\b/.test(args[args.length - 1] ?? "")) continue;
+      const filter = args[args.length - 1] ?? "";
+      if (/\bcompanyId\b/.test(filter)) continue;
+      if (
+        table &&
+        ID_KEYED_TENANT_TABLES.has(table) &&
+        /(?:^|[{,\s])id\b/.test(filter)
+      ) {
+        continue;
+      }
       violations.push({
         file,
         line: text.slice(0, start).split("\n").length,

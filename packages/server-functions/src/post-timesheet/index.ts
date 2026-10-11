@@ -420,6 +420,8 @@ const postTimesheet = defineServerFn({
           const journalId = await createAdjustmentJournal(trx, {
             companyId,
             accountingPeriodId,
+            // accountingEnabled still gates this path, so it posts Posted.
+            status: "Posted",
             description: "Project Timesheet",
             postingDate,
             userId,

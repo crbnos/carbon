@@ -6,7 +6,7 @@
 
 import { Trans } from "@lingui/react/macro";
 import { Slot, Slottable } from "@radix-ui/react-slot";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
 import {
   createContext,
   forwardRef,
@@ -16,6 +16,7 @@ import {
   useRef,
   useState
 } from "react";
+import { LuArrowUpRight } from "react-icons/lu";
 import type { LinkProps } from "react-router";
 import { Link, useLocation } from "react-router";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
@@ -49,10 +50,8 @@ export const navRailItemClasses = [
  * open (a `SidebarTrigger`, or ⌘B where the provider binds it), and a left drawer below `md`. Open state
  * comes from `SidebarProvider`, so it must be rendered inside one.
  *
- * Hovering expands the rail OVER the page; only a pinned rail takes layout
- * space. A hover is transient and usually ends in a navigation, so resizing
- * the page for it re-laid-out every table twice, the second time while the
- * destination was rendering.
+ * Expanding the rail, by hover or by pin, pushes the page right rather than
+ * covering it.
  */
 // A pointer only passing over the rail (on its way to the page) shouldn't open it.
 const HOVER_OPEN_DELAY_MS = 150;
@@ -165,22 +164,46 @@ export function NavRail({
   );
 
   if (isMobile) {
+    // A tap on a link closes the sheet, also when it is the current page and
+    // so no navigation follows.
+    const closeOnLink = (event: MouseEvent<HTMLElement>) => {
+      if ((event.target as Element).closest("a")) setOpenMobile(false);
+    };
+    // The footer (Clock In, My Hours, the user) stays pinned under the
+    // scrolling groups, so it shows without a scroll.
     return (
       <Drawer open={openMobile} onOpenChange={setOpenMobile}>
-        <DrawerContent
-          position="left"
-          size="content"
-          className="w-[17rem] max-w-[85vw] p-0"
-        >
-          <DrawerTitle className="px-6 py-4">
+        <DrawerContent position="left" size="content" className="p-0">
+          <DrawerTitle className="px-6 py-4 max-md:px-4 max-md:text-[17px] max-md:font-semibold max-md:text-foreground">
             <Trans>Navigation</Trans>
           </DrawerTitle>
-          <nav
-            data-state="expanded"
-            className="group flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pb-4"
-          >
-            {content}
-          </nav>
+          <NavRailHoldContext.Provider value={hold}>
+            <nav
+              data-state="expanded"
+              onClick={closeOnLink}
+              className="group min-h-0 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+            >
+              <VStack spacing={1} className="px-2">
+                {header ? <div className="w-full pb-2">{header}</div> : null}
+                {children}
+              </VStack>
+              {/* A static fade: it pins to the bottom while rows sit under
+                  the footer, and is only end padding once scrolled down. */}
+              <div
+                aria-hidden
+                className="pointer-events-none sticky bottom-0 h-8 bg-gradient-to-t from-card"
+              />
+            </nav>
+            {footer ? (
+              <div
+                data-state="expanded"
+                onClick={closeOnLink}
+                className="group shrink-0 border-t border-border px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+              >
+                <VStack spacing={1}>{footer}</VStack>
+              </div>
+            ) : null}
+          </NavRailHoldContext.Provider>
         </DrawerContent>
       </Drawer>
     );
@@ -190,28 +213,25 @@ export function NavRail({
   const state = pinned || hovered ? "expanded" : "collapsed";
 
   return (
-    // The wrapper is the rail's footprint in the layout: it grows only when
-    // pinned, pushing the page right. The nav inside is out of flow, so a
-    // hover widens it without moving anything else. Sticky so it stays in
-    // view in shells whose page scrolls as a whole.
+    // The wrapper is the rail's footprint in the layout: it grows with the
+    // rail, pushing the page right. Sticky so it stays in view in shells
+    // whose page scrolls as a whole.
     <div
-      data-pinned={pinned}
+      data-state={state}
       className={cn(
         "sticky top-0 h-svh z-50 hidden md:block shrink-0",
-        "w-14 data-[pinned=true]:w-[13rem]",
+        "w-14 data-[state=expanded]:w-[13rem]",
         "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
       )}
     >
       <nav
         ref={navRef}
         data-state={state}
-        data-floating={!pinned && hovered}
         data-sliding-hover=""
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
           "w-14 data-[state=expanded]:w-[13rem]",
-          "transition-[width,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-          "data-[floating=true]:shadow-xl data-[floating=true]:ring-1 data-[floating=true]:ring-border",
+          "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
           "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
@@ -335,7 +355,7 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
           {icon}
         </span>
         {tag ? (
-          <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums">
+          <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums max-md:top-1/2 max-md:right-3 max-md:h-5 max-md:min-w-5 max-md:-translate-y-1/2 max-md:text-xs max-md:leading-5">
             {tag}
           </span>
         ) : null}
@@ -345,7 +365,8 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
           className={cn(
             "absolute left-7 right-3 min-w-32 group-data-[state=expanded]:left-12",
             "flex items-center gap-2",
-            "opacity-0 group-data-[state=expanded]:opacity-100"
+            "md:opacity-0 group-data-[state=expanded]:opacity-100",
+            tag ? "max-md:right-11" : null
           )}
         >
           <span
@@ -434,10 +455,14 @@ export function NavRailBrand({
       </span>
       <span
         aria-hidden
-        className="min-w-0 flex-1 truncate opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
+        className="min-w-0 flex-1 truncate md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
       >
         {label}
       </span>
+      <LuArrowUpRight
+        aria-hidden
+        className="hidden size-4 shrink-0 text-muted-foreground max-md:block"
+      />
     </a>
   );
 }
@@ -457,7 +482,7 @@ export function NavRailGroup({
           aria-hidden
           className="absolute inset-x-0 top-1/2 mx-auto h-px w-6 bg-border opacity-100 transition-opacity duration-200 group-data-[state=expanded]:opacity-0"
         />
-        <span className="absolute inset-0 flex items-center px-2 text-[11px] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
+        <span className="absolute inset-0 flex items-center px-2 text-[11px] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
           {label}
         </span>
       </div>

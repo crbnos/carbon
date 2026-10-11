@@ -445,7 +445,7 @@ export function validateReimbursementAccountMapping(args: {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
-      message: `Cannot sync reimbursement ${reimbursement.reimbursementId}: it has no employee-payable control account. Post the reimbursement (with accounting enabled), then retry.`,
+      message: `Cannot sync reimbursement ${reimbursement.reimbursementId}: it has no employee-payable control account. Post the reimbursement, then retry.`,
       metadata: { reimbursementId: reimbursement.id }
     });
   }

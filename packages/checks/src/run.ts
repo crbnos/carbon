@@ -14,6 +14,7 @@ import type {
 } from "./check";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
+import { journalStatusFilter } from "./conformance/journal-status-filter";
 import { moduleShape } from "./conformance/module-shape";
 import {
   MANAGED_FUNCTION_SETS,
@@ -72,7 +73,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noLegacyRls,
   noDerivedPercentColumn,
   noRequiredColumnWithoutDefault,
-  noViewWithoutInvoker
+  noViewWithoutInvoker,
+  journalStatusFilter
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -92,7 +94,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noUnscopedKyselyWrite,
   noUnguardedSubmit,
   noNoopOpenChange,
-  noPostgresChanges
+  noPostgresChanges,
+  journalStatusFilter
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */

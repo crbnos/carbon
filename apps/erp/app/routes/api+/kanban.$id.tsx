@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import type { Database } from "@carbon/database";
+import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
@@ -23,7 +24,7 @@ import {
   getKanban,
   insertStockTransfer
 } from "~/modules/inventory";
-import { getItemReplenishment } from "~/modules/items";
+import { getItemReplenishment, getSupplierPartPricing } from "~/modules/items";
 import {
   getActiveJobOperationByJobId,
   insertJob,
@@ -35,6 +36,7 @@ import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import { resolveSupplierPrice } from "~/modules/shared";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
@@ -240,13 +242,15 @@ async function handleKanban({
   } else if (kanban.data.replenishmentSystem === "Buy") {
     const existingPurchaseOrder = await client
       .from("purchaseOrder")
-      .select("id")
+      .select("id, currencyCode, exchangeRate")
       .eq("supplierId", kanban.data.supplierId!)
       .in("status", ["Planned", "Draft"])
       .eq("companyId", companyId)
       .maybeSingle();
 
     let purchaseOrderId = existingPurchaseOrder.data?.id;
+    let orderCurrencyCode = existingPurchaseOrder.data?.currencyCode ?? null;
+    let orderExchangeRate = existingPurchaseOrder.data?.exchangeRate ?? 1;
 
     if (!purchaseOrderId) {
       const newPurchaseOrder = await insertPurchaseOrder(client, {
@@ -269,9 +273,11 @@ async function handleKanban({
       }
 
       purchaseOrderId = newPurchaseOrder.data.id;
+      orderCurrencyCode = null;
+      orderExchangeRate = newPurchaseOrder.data.exchangeRate;
     }
 
-    const [item, supplierPart, inventory] = await Promise.all([
+    const [item, supplierPart, inventory, company] = await Promise.all([
       client
         .from("item")
         .select(
@@ -293,11 +299,46 @@ async function handleKanban({
         .eq("itemId", kanban.data.itemId!)
         .eq("companyId", companyId)
         .eq("locationId", kanban.data.locationId!)
-        .maybeSingle()
+        .maybeSingle(),
+      client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", companyId)
+        .single()
     ]);
 
     const itemCost = item?.data?.itemCost?.[0];
     const itemReplenishment = item?.data?.itemReplenishment;
+
+    // The line is in the ORDER's currency: the supplier part's price converts
+    // from its own currency at today's rate, the item cost from base.
+    const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+    const order = {
+      currencyCode: orderCurrencyCode ?? baseCurrencyCode,
+      exchangeRate: orderExchangeRate
+    };
+    const pricing = supplierPart.data
+      ? await getSupplierPartPricing(
+          client,
+          supplierPart.data,
+          baseCurrencyCode,
+          order.currencyCode
+        )
+      : null;
+    if (pricing?.error) {
+      logger.error("Kanban operation failed", { error: pricing.error });
+      return { data: null, error: pricing.error.message };
+    }
+    const supplierUnitPrice = resolveSupplierPrice(
+      pricing?.data ?? null,
+      kanban.data.quantity!,
+      order,
+      convertUnitPrice(
+        itemCost?.unitCost ?? 0,
+        { currencyCode: baseCurrencyCode, exchangeRate: 1 },
+        order
+      )
+    );
 
     if (item.error) {
       logger.error("Kanban operation failed", { error: item.error });
@@ -312,12 +353,11 @@ async function handleKanban({
       purchaseOrderLineType: item.data?.type as any,
       itemId: kanban.data.itemId!,
       purchaseQuantity: kanban.data.quantity!,
-      supplierUnitPrice:
-        supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+      supplierUnitPrice,
       supplierShippingCost: 0,
       supplierTaxAmount: 0,
       taxPercent: 0,
-      exchangeRate: 1,
+      exchangeRate: order.exchangeRate,
       purchaseUnitOfMeasureCode: kanban.data.purchaseUnitOfMeasureCode!,
       inventoryUnitOfMeasureCode:
         item.data?.unitOfMeasureCode || kanban.data.purchaseUnitOfMeasureCode!,

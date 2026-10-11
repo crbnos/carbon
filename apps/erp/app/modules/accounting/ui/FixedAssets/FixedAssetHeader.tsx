@@ -16,6 +16,7 @@ import {
   LuCircleCheck,
   LuCircleX,
   LuClipboardCheck,
+  LuCoins,
   LuLink,
   LuPackageCheck,
   LuPencil,
@@ -134,6 +135,17 @@ const FixedAssetHeader = () => {
               >
                 <DropdownMenuIcon icon={<LuWrench />} />
                 <Trans>Take Out of Service</Trans>
+              </DropdownMenuItem>
+            )}
+            {isActive && (
+              <DropdownMenuItem
+                disabled={!canUpdate}
+                onClick={() =>
+                  navigate(path.to.fixedAssetAdjustCost(fixedAssetId))
+                }
+              >
+                <DropdownMenuIcon icon={<LuCoins />} />
+                <Trans>Adjust Cost</Trans>
               </DropdownMenuItem>
             )}
             {canReturnToInventory && (

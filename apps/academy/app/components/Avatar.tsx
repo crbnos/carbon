@@ -4,6 +4,7 @@
 
 import type { AvatarProps as AvatarBaseProps } from "@carbon/react";
 import { Avatar as AvatarBase } from "@carbon/react";
+import { avatarSrc } from "@carbon/utils";
 import { forwardRef } from "react";
 import { getStoragePath } from "~/utils/path";
 
@@ -14,7 +15,7 @@ type AvatarProps = AvatarBaseProps & {
 
 const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
   ({ name, path, bucket = "avatars", ...props }, ref) => {
-    const imagePath = path ? getStoragePath(bucket, path) : undefined;
+    const imagePath = avatarSrc(path, (value) => getStoragePath(bucket, value));
 
     return <AvatarBase src={imagePath} name={name} ref={ref} {...props} />;
   }

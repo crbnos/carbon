@@ -9,7 +9,8 @@ import {
   DrawerBody,
   DrawerContent,
   DrawerHeader,
-  DrawerTitle
+  DrawerTitle,
+  useViewport
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -79,6 +80,7 @@ export default function WorkflowRunDetailRoute() {
   const { run, steps, chain, recordNames, truncated } =
     useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const { isPhone } = useViewport();
   return (
     <Drawer
       open
@@ -86,13 +88,19 @@ export default function WorkflowRunDetailRoute() {
         if (!open) navigate(path.to.workflowRuns);
       }}
     >
-      <DrawerContent size="xl">
+      <DrawerContent
+        size="xl"
+        // Phones: no focus ring on the first link when the sheet opens.
+        onOpenAutoFocus={(e) => {
+          if (isPhone) e.preventDefault();
+        }}
+      >
         <DrawerHeader>
           <DrawerTitle>
             <Trans>Run Details</Trans>
           </DrawerTitle>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           <WorkflowRunDetail
             run={run}
             steps={steps}

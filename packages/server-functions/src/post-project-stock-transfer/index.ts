@@ -314,6 +314,8 @@ const postProjectStockTransfer = defineServerFn({
           journalId = await createAdjustmentJournal(trx, {
             companyId,
             accountingPeriodId: accountingPeriodId!,
+            // accountingEnabled still gates this path, so it posts Posted.
+            status: "Posted",
             description: `Payback ${header.projectStockTransferId}`,
             postingDate,
             userId,

@@ -4,23 +4,26 @@
 
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { useSubmit } from "react-router";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCompanyToday, useCurrencyFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import RentalAgreementReturnForm from "./RentalAgreementReturnForm";
+import RentalAgreementReleaseForm from "./RentalAgreementReleaseForm";
 import type { RentalAgreement, RentalAgreementLine } from "./types";
 
-type RentalLineAction = "deliver" | "return" | "sell" | "delete";
+type RentalLineAction = "deliver" | "return" | "release" | "sell" | "delete";
 
 export type RentalLineActionState = {
   /** Shown at all: the line is in the state the action applies to. */
   canDeliver: boolean;
   canReturn: boolean;
+  canRelease: boolean;
   canSell: boolean;
   canDelete: boolean;
   /** Shown but refused for want of a permission. */
   deliverDisabled: boolean;
   returnDisabled: boolean;
+  releaseDisabled: boolean;
   sellDisabled: boolean;
   deleteDisabled: boolean;
 };
@@ -32,14 +35,16 @@ export const rentalUnitLabel = (line: RentalAgreementLine) =>
   line.item?.readableIdWithRevision ||
   "";
 
-/** The one home of a unit's lifecycle actions — Deliver, Return, Sell to
- *  Customer and Delete — so the units table, the explorer and the unit page
- *  offer the same actions under the same rules. Each opens its confirmation
- *  (or the return form) as page state and posts to the action route, which
- *  redirects back to the page it came from. */
+/** The one home of a unit's lifecycle actions — Deliver, Return, Release
+ *  unit, Sell to Customer and Delete — so the units table, the explorer and
+ *  the unit page offer the same actions under the same rules. Deliver and
+ *  Return open a rental shipment or receipt holding the unit; Release unit
+ *  opens a date modal; Sell and Delete open their confirmation. Each posts to
+ *  its action route, which redirects to the document or back to the page. */
 export function useRentalLineActions(rentalAgreement: RentalAgreement) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const submit = useSubmit();
   const today = useCompanyToday();
   const [pending, setPending] = useState<{
     action: RentalLineAction;
@@ -50,6 +55,8 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
   const isDraft = rentalAgreement.status === "Draft";
   const isActive = rentalAgreement.status === "Active";
   const canUpdate = permissions.can("update", "sales");
+  // Deliver and Return draft an inventory document.
+  const canMoveUnits = canUpdate && permissions.can("create", "inventory");
   // Selling bills a charge and drafts its invoice.
   const canSellPermission =
     canUpdate &&
@@ -61,45 +68,59 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
   });
 
   const stateOf = (line: RentalAgreementLine): RentalLineActionState => {
-    // Returned and Sold lines are finished; only a unit on rent comes back.
-    const canReturn = isActive && line.status === "On Rent";
+    // Returned and Sold lines are finished. A receipt also takes back a
+    // Pending unit (spec Q8).
+    const canReturn =
+      isActive && (line.status === "On Rent" || line.status === "Pending");
     return {
       canDeliver: isActive && line.status === "Pending",
       canReturn,
+      // A unit treated as a sale comes back on a receipt, with Return To
+      // (plan decision P1).
+      canRelease:
+        isActive &&
+        line.status === "Pending" &&
+        line.lessorClassification !== "Sale",
       // The purchase option ends a sales-type lease by sale, at the end of
       // the term (the sell route refuses it earlier).
       canSell:
-        canReturn &&
+        isActive &&
+        line.status === "On Rent" &&
         line.lessorClassification === "Sale" &&
         purchaseOptionAmount > 0 &&
         (!rentalAgreement.endDate || today >= rentalAgreement.endDate),
       canDelete: isDraft,
-      deliverDisabled: !canUpdate,
-      returnDisabled: !canUpdate,
+      deliverDisabled: !canMoveUnits,
+      returnDisabled: !canMoveUnits,
+      releaseDisabled: !canUpdate,
       sellDisabled: !canSellPermission,
       deleteDisabled: !permissions.can("delete", "sales")
     };
   };
 
-  const open = (action: RentalLineAction, line: RentalAgreementLine) =>
+  const open = (action: RentalLineAction, line: RentalAgreementLine) => {
+    if (action === "deliver") {
+      submit(new FormData(), {
+        method: "post",
+        action: path.to.rentalAgreementLineDeliver(id, line.id)
+      });
+      return;
+    }
+    if (action === "return") {
+      submit(new FormData(), {
+        method: "post",
+        action: path.to.rentalAgreementLineReturn(id, line.id)
+      });
+      return;
+    }
     setPending({ action, line });
+  };
   const close = () => setPending(null);
 
   const label = pending ? rentalUnitLabel(pending.line) : "";
 
   const modals = pending ? (
     <>
-      {pending.action === "deliver" && (
-        <Confirm
-          action={path.to.rentalAgreementLineDeliver(id, pending.line.id)}
-          title={t`Deliver ${label}`}
-          text={t`Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle.`}
-          confirmText={t`Deliver`}
-          confirmVariant="primary"
-          onCancel={close}
-          onSubmit={close}
-        />
-      )}
       {pending.action === "sell" && (
         <Confirm
           action={path.to.rentalAgreementLineSell(id, pending.line.id)}
@@ -121,19 +142,14 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
           onSubmit={close}
         />
       )}
-      {pending.action === "return" && (
-        <RentalAgreementReturnForm
-          action={path.to.rentalAgreementLineReturn(id, pending.line.id)}
+      {pending.action === "release" && (
+        <RentalAgreementReleaseForm
+          action={path.to.rentalAgreementLineRelease(id, pending.line.id)}
           initialValues={{
             rentalAgreementLineId: pending.line.id,
-            returnedAt: today,
-            takeOutOfService: false,
-            isSalesType: pending.line.lessorClassification === "Sale",
-            residualDestination: undefined
+            returnedAt: today
           }}
           unitLabel={label}
-          isSalesType={pending.line.lessorClassification === "Sale"}
-          endDate={rentalAgreement.endDate}
           onClose={close}
         />
       )}

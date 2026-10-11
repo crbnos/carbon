@@ -100,7 +100,8 @@ export const receiptSourceDocumentType = [
   "Purchase Order",
   "Purchase Invoice",
   // "Purchase Return Order",
-  "Inbound Transfer"
+  "Inbound Transfer",
+  "Rental Agreement"
   // "Outbound Transfer",
   // "Manufacturing Consumption",
   // "Manufacturing Output",
@@ -175,6 +176,16 @@ export const inventoryCountLineValidator = z.object({
   )
 });
 
+// Put a cost of the user's own on one serial unit in stock (FIFO / LIFO).
+export const serialUnitRecostValidator = z.object({
+  trackedEntityId: z.string().min(1, { message: "Unit is required" }),
+  unitCost: zfd.numeric(
+    z.number().min(0, { message: "Unit cost cannot be negative" })
+  ),
+  offsetAccountId: zfd.text(z.string().optional()),
+  postingDate: z.string().min(1, { message: "Posting date is required" })
+});
+
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
@@ -201,8 +212,8 @@ export const inventoryAdjustmentValidator = z
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
-    // Required for Scrap (enforced below); lands on the itemLedger row and,
-    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // Required for Scrap (enforced below); lands on the itemLedger row and as
+    // a ScrapReason journal dimension. Unscrap
     // omits it — the server function inherits the reason from the original scrap
     // movement it reverses.
     scrapReasonId: zfd.text(z.string().optional()),
@@ -363,7 +374,8 @@ export const shipmentSourceDocumentType = [
   // "Purchase Invoice",
   "Purchase Return Order",
   // "Inbound Transfer",
-  "Outbound Transfer"
+  "Outbound Transfer",
+  "Rental Agreement"
 ] as const;
 
 export const shippingCarrierType = [
@@ -387,6 +399,70 @@ export const shipmentValidator = z.object({
   sourceDocumentReadableId: zfd.text(z.string().optional()),
   customerId: zfd.text(z.string().optional())
 });
+
+const meterValue = z
+  .string()
+  .refine((v) => v === "" || (Number.isFinite(Number(v)) && Number(v) >= 0), {
+    message: "Enter a meter reading of 0 or more"
+  });
+
+export const shipmentFixedAssetLineUpdateValidator = z.discriminatedUnion(
+  "field",
+  [
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("shipped"),
+      value: z.enum(["true", "false"])
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("serialNumber"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("meter"),
+      value: meterValue
+    })
+  ]
+);
+
+export const receiptFixedAssetLineUpdateValidator = z.discriminatedUnion(
+  "field",
+  [
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("received"),
+      value: z.enum(["true", "false"])
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("serialNumber"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("meter"),
+      value: meterValue
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("notes"),
+      value: z.string()
+    }),
+    // "" takes the unit off the out-of-service list; any other text is the reason.
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("outOfService"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("residualDestination"),
+      value: z.enum(["", "Fleet", "Inventory"])
+    })
+  ]
+);
 
 export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),

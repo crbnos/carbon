@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
 import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
 import {
   type CalendarDate,
@@ -767,6 +767,52 @@ export function calculateTaxDepreciation(
   return null;
 }
 
+/** Cost less residual less what is already accumulated, never negative. */
+function depreciableRemaining(
+  asset: { acquisitionCost: number; residualValuePercent: number },
+  accumulated: number,
+  decimalPlaces: number
+): number {
+  const cost = Number(asset.acquisitionCost);
+  const base = cost - cost * (Number(asset.residualValuePercent) / 100);
+  return Math.max(0, round(base - accumulated, decimalPlaces));
+}
+
+/**
+ * What a Straight Line asset is behind by after its cost was raised: the
+ * depreciation its CURRENT cost would have accumulated from its start through
+ * `through` (the last month already depreciated), less what it accumulated at
+ * the old cost. Never negative — an asset ahead of schedule (an opening
+ * balance at registration) is left alone.
+ */
+export function straightLineShortfall(args: {
+  acquisitionCost: number;
+  residualValuePercent: number;
+  usefulLifeMonths: number;
+  startDate: string;
+  through: string | null;
+  accumulated: number;
+  /** Settlement decimals from currency.decimalPlaces — data, never a literal. */
+  decimalPlaces: number;
+}): number {
+  if (!args.through || args.usefulLifeMonths <= 0) return 0;
+  const start = toCalendarDate(args.startDate);
+  const through = toCalendarDate(args.through);
+  if (start.compare(through) > 0) return 0;
+  const cost = Number(args.acquisitionCost);
+  const depreciableBase =
+    cost - cost * (Number(args.residualValuePercent) / 100);
+  const expected = Math.min(
+    round(
+      (depreciableBase / args.usefulLifeMonths) *
+        getMonthsBetween(start, through),
+      args.decimalPlaces
+    ),
+    depreciableBase
+  );
+  return Math.max(0, round(expected - args.accumulated, args.decimalPlaces));
+}
+
 /**
  * One line per asset per month, from the month after `lastPostedPeriodEnd` (or
  * the asset's start month) through `periodEnd` — FAM's depreciation history
@@ -774,6 +820,17 @@ export function calculateTaxDepreciation(
  * tax depreciation of the months before it, so a catch-up run posts each
  * month in its own period at the amount a monthly run would have posted.
  * `usageMap` holds Units of Production usage by `usageKey(asset, month)`.
+ *
+ * An asset whose cost was adjusted after capitalization (`costAdjusted`, a
+ * posted Cost Adjustment transfer) took its earlier months at the old cost.
+ * Straight Line — book, and tax when its method is Straight Line — adds that
+ * shortfall to the run's first month, so the asset still ends on its original
+ * schedule. Declining Balance and MACRS need nothing: both depreciate what is
+ * left over the life that is left. Units of Production does not catch up.
+ *
+ * An asset with a capital project's late cost (`remainingLifeBasis`)
+ * depreciates Straight Line on its remaining life instead, and takes no
+ * catch-up.
  */
 export function buildDepreciationLines(
   assets: Array<{
@@ -795,6 +852,7 @@ export function buildDepreciationLines(
     bonusDepreciationPercent: number | null;
     /** A cost was added after the asset went into service. */
     remainingLifeBasis?: boolean;
+    costAdjusted?: boolean;
   }>,
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
@@ -829,6 +887,39 @@ export function buildDepreciationLines(
         ? endOfMonth(firstMonth.subtract({ months: 1 })).toString()
         : lastPostedPeriodEnd;
 
+    let catchUp = 0;
+    let taxCatchUp = 0;
+    // A remaining-life asset already spreads all that is left over the life
+    // that is left, so it takes no catch-up.
+    if (asset.costAdjusted && !asset.remainingLifeBasis && start) {
+      if (asset.depreciationMethod === "Straight Line") {
+        catchUp = straightLineShortfall({
+          acquisitionCost: Number(asset.acquisitionCost),
+          residualValuePercent: Number(asset.residualValuePercent),
+          usefulLifeMonths: asset.usefulLifeMonths,
+          startDate: start,
+          through: previous,
+          accumulated,
+          decimalPlaces
+        });
+      }
+      if (
+        taxEnabled &&
+        asset.taxDepreciationMethod === "Straight Line" &&
+        asset.taxUsefulLifeMonths
+      ) {
+        taxCatchUp = straightLineShortfall({
+          acquisitionCost: Number(asset.acquisitionCost),
+          residualValuePercent: Number(asset.taxResidualValuePercent ?? 0),
+          usefulLifeMonths: asset.taxUsefulLifeMonths,
+          startDate: start,
+          through: previous,
+          accumulated: accumulatedTax,
+          decimalPlaces
+        });
+      }
+    }
+
     for (
       let month = firstMonth;
       month.toString() <= periodEnd;
@@ -836,7 +927,7 @@ export function buildDepreciationLines(
     ) {
       const monthEnd = month.toString();
       const units = usageMap.get(usageKey(asset.id, monthEnd)) ?? 0;
-      const amount = calculateDepreciation(
+      const scheduled = calculateDepreciation(
         {
           acquisitionCost: Number(asset.acquisitionCost),
           accumulatedDepreciation: accumulated,
@@ -855,6 +946,15 @@ export function buildDepreciationLines(
         decimalPlaces,
         { unitsProduced: units }
       );
+      // The catch-up lands on the first month only, within what is left.
+      const amount =
+        catchUp > 0
+          ? Math.min(
+              round(scheduled + catchUp, decimalPlaces),
+              depreciableRemaining(asset, accumulated, decimalPlaces)
+            )
+          : scheduled;
+      catchUp = 0;
 
       let taxAmount: number | null = null;
       if (taxEnabled) {
@@ -878,7 +978,20 @@ export function buildDepreciationLines(
         );
         if (taxAmount === null) {
           taxAmount = amount;
+        } else if (taxCatchUp > 0) {
+          taxAmount = Math.min(
+            round(taxAmount + taxCatchUp, decimalPlaces),
+            depreciableRemaining(
+              {
+                acquisitionCost: asset.acquisitionCost,
+                residualValuePercent: asset.taxResidualValuePercent ?? 0
+              },
+              accumulatedTax,
+              decimalPlaces
+            )
+          );
         }
+        taxCatchUp = 0;
       }
 
       if (amount > 0 || (taxAmount !== null && taxAmount > 0)) {
@@ -993,42 +1106,72 @@ export function diffJournalLines(
   };
 }
 
-type RevenueScheduleType = Database["public"]["Enums"]["revenueScheduleType"];
+/**
+ * The period end a depreciation run continues from: the last posted run's,
+ * or the day before the accounting cutover when that is later. Depreciation
+ * before the cutover lives in the prior system and in each asset's
+ * accumulated depreciation at the cutover, never in a Carbon run, so a
+ * company's first run after the cutover starts at the cutover month.
+ * Dates are `YYYY-MM-DD`, so string order is chronological.
+ */
+export function depreciationFloor(
+  postedPeriodEnd: string | null,
+  cutoverDate: string | null
+): string | null {
+  if (!cutoverDate) return postedPeriodEnd;
+  const beforeCutover = dayBeforeCutover(cutoverDate);
+  return !postedPeriodEnd || postedPeriodEnd < beforeCutover
+    ? beforeCutover
+    : postedPeriodEnd;
+}
 
-const REVENUE_LINE_DESCRIPTIONS: Record<
-  RevenueScheduleType,
-  { debit: string; credit: string }
-> = {
-  Deferral: {
-    debit: "Deferred revenue released",
-    credit: "Revenue recognized"
-  },
-  Accrual: { debit: "Unbilled rent accrued", credit: "Rental income accrued" },
-  Interest: {
-    debit: "Net investment interest",
-    credit: "Lease interest income"
-  },
-  "Cost Relief": {
-    debit: "Contract cost recognized",
-    credit: "Project WIP relieved"
-  },
-  "Loss Provision": {
-    debit: "Contract loss provided",
-    credit: "Contract loss provision"
-  }
+/** A company has set up accounting once it has a cutover date. The wizard
+ *  sets it, and nothing clears it. */
+export function hasAccountingCutover(
+  settings: { accountingCutoverDate?: string | null } | null | undefined
+): boolean {
+  return settings?.accountingCutoverDate != null;
+}
+
+/** The enable wizard's cutover date and the range its date picker allows. */
+export type ActivationCutoverDates = {
+  cutoverDate: string;
+  earliestCutoverDate: string;
+  latestCutoverDate: string;
 };
 
 /**
- * The two journal line descriptions of a revenue recognition schedule row. A
- * contract Accrual row accrues a contract asset, not unbilled rent; every
- * other row reads its type's pair.
+ * The cutover date the enable wizard works against: `param` (the wizard's
+ * search param) when it is a `YYYY-MM-DD` calendar date, else the first day
+ * of the current period. Periods are calendar months, as `cutoverDateError`
+ * reads them. The date picker allows the first day of the current period and
+ * of the `maxPeriodsBack` periods before it. A date outside that range still
+ * comes back as the cutover date: the readiness check refuses it.
  */
-export function revenueRowDescriptions(row: {
-  type: RevenueScheduleType;
-  customerContractLineId: string | null;
-}): { debit: string; credit: string } {
-  if (row.customerContractLineId && row.type === "Accrual") {
-    return { debit: "Contract asset accrued", credit: "Revenue recognized" };
+export function activationCutoverDates(
+  param: string | null,
+  companyToday: CalendarDate,
+  maxPeriodsBack: number
+): ActivationCutoverDates {
+  const currentPeriodStart = startOfMonth(companyToday);
+  return {
+    cutoverDate:
+      param && isCalendarDateString(param)
+        ? param
+        : currentPeriodStart.toString(),
+    earliestCutoverDate: currentPeriodStart
+      .subtract({ months: maxPeriodsBack })
+      .toString(),
+    latestCutoverDate: currentPeriodStart.toString()
+  };
+}
+
+function isCalendarDateString(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  try {
+    parseDate(value);
+    return true;
+  } catch {
+    return false;
   }
-  return REVENUE_LINE_DESCRIPTIONS[row.type];
 }

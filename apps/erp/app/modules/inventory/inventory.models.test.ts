@@ -4,7 +4,9 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  receiptFixedAssetLineUpdateValidator,
   resolveStockTransferPickForward,
+  shipmentFixedAssetLineUpdateValidator,
   storageTypeValidator,
   storageUnitValidator
 } from "./inventory.models";
@@ -130,5 +132,67 @@ describe("resolveStockTransferPickForward", () => {
       pickedQuantity: 0.98
     });
     expect(r.ok).toBe(true);
+  });
+});
+
+describe("shipmentFixedAssetLineUpdateValidator", () => {
+  it("rejects a negative meter reading", () => {
+    const r = shipmentFixedAssetLineUpdateValidator.safeParse({
+      id: "sfal1",
+      field: "meter",
+      value: "-1"
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("accepts an empty or a positive meter reading", () => {
+    for (const value of ["", "120"]) {
+      const r = shipmentFixedAssetLineUpdateValidator.safeParse({
+        id: "sfal1",
+        field: "meter",
+        value
+      });
+      expect(r.success).toBe(true);
+    }
+  });
+
+  it("rejects an unknown field", () => {
+    const r = shipmentFixedAssetLineUpdateValidator.safeParse({
+      id: "sfal1",
+      field: "notes",
+      value: "scratched"
+    });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("receiptFixedAssetLineUpdateValidator", () => {
+  it("rejects a negative meter reading", () => {
+    const r = receiptFixedAssetLineUpdateValidator.safeParse({
+      id: "rfal1",
+      field: "meter",
+      value: "-1"
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("accepts an empty or a positive meter reading", () => {
+    for (const value of ["", "120"]) {
+      const r = receiptFixedAssetLineUpdateValidator.safeParse({
+        id: "rfal1",
+        field: "meter",
+        value
+      });
+      expect(r.success).toBe(true);
+    }
+  });
+
+  it("rejects an unknown field", () => {
+    const r = receiptFixedAssetLineUpdateValidator.safeParse({
+      id: "rfal1",
+      field: "shipped",
+      value: "true"
+    });
+    expect(r.success).toBe(false);
   });
 });

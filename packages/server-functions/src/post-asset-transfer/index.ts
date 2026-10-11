@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase as DB, Kysely } from "@carbon/database/client";
+import {
+  type AutomaticJournalStatus,
+  assertPostingStatusUnchanged,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import { inOrder } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { datetime, round } from "@carbon/utils";
@@ -22,35 +28,45 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { getOffsetAccount } from "../lib/offset-account";
 import {
   bookAdjustment,
   createAdjustmentJournal
 } from "../lib/post-adjustment";
+import { authorize } from "../server-fn-context";
 import {
+  ADJUSTABLE_ASSET_STATUSES,
   type AssetTransferInput,
   CLOSED_JOB_STATUSES,
   postAssetTransferInput,
   RETURNABLE_ASSET_STATUSES,
-  resolveCapitalizationStock
+  resolveCapitalizationCost,
+  resolveCapitalizationStock,
+  statusAfterCostAdjustment
 } from "./validators";
 
 export { postAssetTransferInput } from "./validators";
 
 // The single write path for moving value between inventory and the fixed
-// asset register (spec §2, "Fleet bridge"). Four actions, each creating and
+// asset register (spec §2, "Fleet bridge"). Five actions, each creating and
 // posting one `fixedAssetTransfer` document in ONE transaction:
 //
 //   capitalize     stock → asset at the unit's carrying cost (the serial is
 //                  consumed INTO the asset; Dr class asset / Cr inventory);
-//                  refused when that cost is zero
+//                  a unit carried at zero takes the cost the user enters
+//                  instead (Dr class asset / Cr the chosen offset account),
+//                  and is refused without one
 //   return         asset → stock at net book value (Dr inventory N / Dr
 //                  accumulated depreciation / Cr class asset at cost)
 //   attachJob      point a job at a Construction in Progress asset and sweep
 //                  its WIP balance there (Dr CIP / Cr WIP), SAP AuC style
 //   capitalizeCip  CIP asset → its in-service class (Dr class / Cr CIP)
+//   adjustCost     raise an asset's cost after it was capitalized (Dr class
+//                  asset / Cr the chosen offset account), SAP
+//                  post-capitalization style
 //
-// With companySettings.accountingEnabled = false every ledger, entity and
-// asset write is identical and no journal is created.
+// Every action writes its journal: Provisional before the company's
+// accounting cutover, Posted after it.
 //
 // Business-validation failures are 400s (`InvalidInputError`) with the exact
 // message the app shows; a referenced record the caller's company does not own
@@ -66,7 +82,10 @@ type Scoped<T extends AssetTransferInput["type"]> = Extract<
 > & { companyId: string; userId: string };
 
 type AccountingContext = {
-  accountingPeriodId: string;
+  // Provisional before the company's accounting cutover, Posted after it
+  postingStatus: AutomaticJournalStatus;
+  // null for a Provisional journal: it has no accounting period
+  accountingPeriodId: string | null;
   accountDefaults: {
     rawMaterialsAccount: string;
     finishedGoodsAccount: string;
@@ -91,15 +110,8 @@ async function loadAccounting(
   db: Db,
   companyId: string,
   postingDate: string
-): Promise<AccountingContext | null> {
-  const settings = await db
-    .selectFrom("companySettings")
-    .select("accountingEnabled")
-    .where("id", "=", companyId)
-    .executeTakeFirst();
-  // Fail closed: a failed settings read must not silently post without GL.
-  if (!settings) throw new Error("Failed to fetch company settings");
-  if (!settings.accountingEnabled) return null;
+): Promise<AccountingContext> {
+  const postingStatus = await journalPostingStatus(db, companyId);
 
   const accountDefaults = await getDefaultPostingGroup(db, companyId);
   if (accountDefaults.error || !accountDefaults.data) {
@@ -126,13 +138,15 @@ async function loadAccounting(
     dimensions[dimension.entityType] = dimension.id;
   }
 
-  const accountingPeriodId = await getAccountingPeriodForDate(
-    companyId,
-    db,
-    postingDate
-  );
+  // A Provisional journal has no period, and no posting creates one before
+  // the cutover.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getAccountingPeriodForDate(companyId, db, postingDate)
+      : null;
 
   return {
+    postingStatus,
     accountingPeriodId,
     accountDefaults: {
       rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
@@ -143,7 +157,8 @@ async function loadAccounting(
   };
 }
 
-// One posted 'Asset Transfer' journal from already-balanced lines, tagged with
+// One 'Asset Transfer' journal from already-balanced lines (Provisional before
+// the accounting cutover, Posted after it), tagged with
 // the Location / FixedAssetClass / Item dimensions the company group has
 // active (post-receipt precedent for fixed-asset lines).
 async function postAssetJournal(
@@ -168,6 +183,7 @@ async function postAssetJournal(
   const journalId = await createAdjustmentJournal(trx, {
     companyId,
     accountingPeriodId: accounting.accountingPeriodId,
+    status: accounting.postingStatus,
     description: args.description,
     postingDate: args.postingDate,
     userId,
@@ -514,12 +530,23 @@ async function capitalize(
   }
 
   const accounting = await loadAccounting(db, companyId, payload.transferDate);
+  // Only read when a cost was entered; whether one may be is decided once the
+  // unit's carrying cost is known, inside the transaction.
+  const offsetAccount =
+    payload.cost != null
+      ? await getOffsetAccount(db, companyId, payload.offsetAccountId)
+      : null;
   const serial = entity.readableId ?? entity.id;
   const status = assetClass.isConstructionInProgress
     ? ("Under Construction" as const)
     : ("Active" as const);
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // Net on-hand per bin at the location, read inside the transaction so the
     // consumption below books against the same snapshot.
     const stockRows = await trx
@@ -654,39 +681,48 @@ async function capitalize(
       itemCost: item.itemCost,
       accounting: null
     });
-    const cost = round(booked.cost);
+    // The transfer moves the value inventory already holds. A unit carried at
+    // nothing (a job that recorded no production or material, a no-cost
+    // issue) would become an asset worth nothing with no journal to say so,
+    // so it takes the cost the user entered instead — booked from the offset
+    // account that value was spent from — and is refused without one.
+    const resolved = resolveCapitalizationCost({
+      carried: round(booked.cost),
+      entered: payload.cost == null ? null : round(payload.cost),
+      serial,
+      itemReadableId: item.readableId
+    });
+    if ("error" in resolved) throw new InvalidInputError(resolved.error);
+    const cost = resolved.cost;
 
-    // A unit with no carrying value would become an asset worth nothing, with
-    // no journal to say so. The transfer moves the value inventory already
-    // holds and cannot invent one, so the unit needs a cost first.
-    if (cost <= 0) {
-      throw new InvalidInputError(
-        `${serial} has no cost in inventory, so the asset would be worth nothing. Set a unit cost on ${item.readableId}, then capitalize it.`
-      );
-    }
-
-    let journalId: string | null = null;
-    if (accounting) {
-      const inventoryAccount = resolveInventoryAccount(
-        item.replenishmentSystem,
-        accounting.accountDefaults
-      );
-      journalId = await postAssetJournal(trx, {
-        accounting,
-        companyId,
-        userId,
-        postingDate: payload.transferDate,
-        description: `Capitalize ${item.readableId} ${serial} → ${asset.fixedAssetId}`,
-        lines: buildCapitalizationLines({
-          cost,
-          assetAccountId: assetClass.assetAccountId,
-          creditAccountId: inventoryAccount.account,
-          creditDescription: inventoryAccount.description
-        }),
-        documentId: transfer.id,
-        tags: { locationId, fixedAssetClassId: assetClass.id, itemId }
-      });
-    }
+    const inventoryAccount = resolveInventoryAccount(
+      item.replenishmentSystem,
+      accounting.accountDefaults
+    );
+    const credit =
+      resolved.source === "entered" && offsetAccount
+        ? {
+            account: offsetAccount.id,
+            description: "Capitalized Cost",
+            type: offsetAccount.type
+          }
+        : { ...inventoryAccount, type: "asset" as const };
+    const journalId = await postAssetJournal(trx, {
+      accounting,
+      companyId,
+      userId,
+      postingDate: payload.transferDate,
+      description: `Capitalize ${item.readableId} ${serial} → ${asset.fixedAssetId}`,
+      lines: buildCapitalizationLines({
+        cost,
+        assetAccountId: assetClass.assetAccountId,
+        creditAccountId: credit.account,
+        creditDescription: credit.description,
+        creditAccountType: credit.type
+      }),
+      documentId: transfer.id,
+      tags: { locationId, fixedAssetClassId: assetClass.id, itemId }
+    });
 
     await trx
       .updateTable("fixedAsset")
@@ -816,6 +852,11 @@ async function returnToInventory(
   const itemId = item.id;
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // A unit reserved or on rent belongs to that agreement until it comes
     // back: the live-line statuses are the ones the fleetAssets view and the
     // rentalAgreementLine_asset_live_idx unique index key on.
@@ -895,7 +936,7 @@ async function returnToInventory(
 
     // An asset carried at zero cost has nothing on the books to move.
     let journalId: string | null = null;
-    if (accounting && round(asset.acquisitionCost) > 0) {
+    if (round(asset.acquisitionCost) > 0) {
       const inventoryAccount = resolveInventoryAccount(
         item.replenishmentSystem,
         accounting.accountDefaults
@@ -1054,40 +1095,41 @@ async function attachJob(
   const accounting = await loadAccounting(db, companyId, today);
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // The job's WIP balance so far: cost leaves WIP at attachment (SAP AuC).
-    // Without accounting there are no journals and nothing to sweep.
-    let balance = 0;
-    if (accounting) {
-      const wip = await trx
-        .selectFrom("journalLine as jl")
-        .innerJoin("journal as j", (join) =>
-          join
-            .onRef("j.id", "=", "jl.journalId")
-            .onRef("j.companyId", "=", "jl.companyId")
-        )
-        .select((eb) =>
-          eb.fn
-            .coalesce(eb.fn.sum<number>("jl.amount"), sql<number>`0`)
-            .as("balance")
-        )
-        .where(
-          "jl.accountId",
-          "=",
-          accounting.accountDefaults.workInProgressAccount
-        )
-        .where("jl.documentId", "=", jobId)
-        .where("jl.companyId", "=", companyId)
-        .where("j.status", "<>", "Draft")
-        .executeTakeFirst();
-      balance = round(Number(wip?.balance ?? 0));
-    }
+    // Before the cutover it sits in Provisional journals and is swept by one.
+    const wip = await trx
+      .selectFrom("journalLine as jl")
+      .innerJoin("journal as j", (join) =>
+        join
+          .onRef("j.id", "=", "jl.journalId")
+          .onRef("j.companyId", "=", "jl.companyId")
+      )
+      .select((eb) =>
+        eb.fn
+          .coalesce(eb.fn.sum<number>("jl.amount"), sql<number>`0`)
+          .as("balance")
+      )
+      .where(
+        "jl.accountId",
+        "=",
+        accounting.accountDefaults.workInProgressAccount
+      )
+      .where("jl.documentId", "=", jobId)
+      .where("jl.companyId", "=", companyId)
+      .where("j.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+      .executeTakeFirst();
+    const balance = round(Number(wip?.balance ?? 0));
 
     let result: Pick<AssetTransferResult, "id" | "transferId"> = {
       id: null,
       transferId: null
     };
-    // balance is 0 without accounting; the narrowing is for the journal below.
-    if (accounting && balance > 0) {
+    if (balance > 0) {
       const transferId = await getNextSequence(
         trx,
         "fixedAssetTransfer",
@@ -1265,6 +1307,11 @@ async function capitalizeCip(
   const accounting = await loadAccounting(db, companyId, inServiceDate);
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
     // Lock the asset before summing its cost rows: an attachment or a
     // receipt adding a row after the sum would be left out of the
     // capitalized cost while the asset leaves Under Construction.
@@ -1323,28 +1370,25 @@ async function capitalizeCip(
       .returning(["id"])
       .executeTakeFirstOrThrow();
 
-    let journalId: string | null = null;
-    if (accounting) {
-      journalId = await postAssetJournal(trx, {
-        accounting,
-        companyId,
-        userId,
-        postingDate: inServiceDate,
-        description: `Capitalize ${asset.fixedAssetId} — ${cipClass.name} → ${targetClass.name}`,
-        lines: buildCapitalizationLines({
-          cost: total,
-          assetAccountId: targetClass.assetAccountId,
-          creditAccountId: cipClass.assetAccountId,
-          creditDescription: "Construction in Progress"
-        }),
-        documentId: transfer.id,
-        tags: {
-          locationId: assetLocationId,
-          fixedAssetClassId: targetClass.id,
-          itemId: asset.itemId
-        }
-      });
-    }
+    const journalId = await postAssetJournal(trx, {
+      accounting,
+      companyId,
+      userId,
+      postingDate: inServiceDate,
+      description: `Capitalize ${asset.fixedAssetId} — ${cipClass.name} → ${targetClass.name}`,
+      lines: buildCapitalizationLines({
+        cost: total,
+        assetAccountId: targetClass.assetAccountId,
+        creditAccountId: cipClass.assetAccountId,
+        creditDescription: "Construction in Progress"
+      }),
+      documentId: transfer.id,
+      tags: {
+        locationId: assetLocationId,
+        fixedAssetClassId: targetClass.id,
+        itemId: asset.itemId
+      }
+    });
 
     // Depreciation starts at the in-service date under the in-service class's
     // policy; the CIP class's method / life / residual were placeholders that
@@ -1391,6 +1435,153 @@ async function capitalizeCip(
   });
 }
 
+async function adjustCost(
+  db: Db,
+  payload: Scoped<"adjustCost">
+): Promise<AssetTransferResult> {
+  const { companyId, userId, locationId } = payload;
+
+  const asset = await getAsset(db, companyId, payload.fixedAssetId);
+  if (!ADJUSTABLE_ASSET_STATUSES.has(asset.status)) {
+    throw new InvalidInputError(
+      `Asset ${asset.fixedAssetId} is ${asset.status}; only an Active or Fully Depreciated asset's cost can be adjusted`
+    );
+  }
+  const [assetClass] = await inOrder([
+    () => getAssetClass(db, companyId, asset.fixedAssetClassId),
+    () =>
+      assertCompanyRecords(db, "location", [locationId], companyId, "Location")
+  ]);
+
+  const amount = round(payload.amount);
+  if (amount <= 0) {
+    throw new InvalidInputError("The cost adjustment must be more than zero");
+  }
+
+  const accounting = await loadAccounting(db, companyId, payload.transferDate);
+  const offsetAccount = await getOffsetAccount(
+    db,
+    companyId,
+    payload.offsetAccountId
+  );
+
+  return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
+    await assertPostingStatusUnchanged(
+      trx,
+      companyId,
+      accounting.postingStatus
+    );
+    // Re-read under a row lock: a concurrent run, disposal or adjustment
+    // changes the values the new status is derived from.
+    const current = await trx
+      .selectFrom("fixedAsset")
+      .select([
+        "status",
+        "acquisitionCost",
+        "accumulatedDepreciation",
+        "residualValuePercent"
+      ])
+      .where("id", "=", asset.id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (!ADJUSTABLE_ASSET_STATUSES.has(current.status)) {
+      throw new InvalidInputError(
+        `Asset ${asset.fixedAssetId} is ${current.status}; only an Active or Fully Depreciated asset's cost can be adjusted`
+      );
+    }
+    const acquisitionCost = round(Number(current.acquisitionCost) + amount);
+
+    const transferId = await getNextSequence(
+      trx,
+      "fixedAssetTransfer",
+      companyId
+    );
+    const transfer = await trx
+      .insertInto("fixedAssetTransfer")
+      .values({
+        transferId,
+        type: "Cost Adjustment",
+        sourceType: "Manual",
+        fixedAssetId: asset.id,
+        itemId: asset.itemId,
+        trackedEntityId: asset.trackedEntityId,
+        locationId,
+        quantity: 1,
+        transferDate: payload.transferDate,
+        amount: 0,
+        accumulatedDepreciation: Number(current.accumulatedDepreciation),
+        status: "Draft",
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const journalId = await postAssetJournal(trx, {
+      accounting,
+      companyId,
+      userId,
+      postingDate: payload.transferDate,
+      description: `Cost Adjustment ${asset.fixedAssetId}`,
+      lines: buildCapitalizationLines({
+        cost: amount,
+        assetAccountId: assetClass.assetAccountId,
+        creditAccountId: offsetAccount.id,
+        creditDescription: "Capitalized Cost",
+        creditAccountType: offsetAccount.type
+      }),
+      documentId: transfer.id,
+      tags: {
+        locationId,
+        fixedAssetClassId: assetClass.id,
+        itemId: asset.itemId
+      }
+    });
+
+    // Depreciation already taken stays; the next run catches a Straight Line
+    // asset up on the months it took at the old cost (buildDepreciationLines).
+    const adjusted = await trx
+      .updateTable("fixedAsset")
+      .set({
+        acquisitionCost,
+        status: statusAfterCostAdjustment({
+          status: current.status,
+          acquisitionCost,
+          accumulatedDepreciation: Number(current.accumulatedDepreciation),
+          residualValuePercent: Number(current.residualValuePercent)
+        }),
+        locationId: asset.locationId ?? locationId,
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .where("id", "=", asset.id)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...ADJUSTABLE_ASSET_STATUSES])
+      .executeTakeFirst();
+    if (!adjusted.numUpdatedRows) {
+      throw new InvalidInputError(
+        `Asset ${asset.fixedAssetId} changed status while its cost was being adjusted`
+      );
+    }
+
+    await postTransfer(trx, {
+      id: transfer.id,
+      amount,
+      journalId,
+      companyId,
+      userId
+    });
+
+    return {
+      id: transfer.id,
+      transferId,
+      fixedAssetId: asset.id,
+      fixedAssetReadableId: asset.fixedAssetId
+    };
+  });
+}
+
 /**
  * Creates and posts one `fixedAssetTransfer` document between inventory and
  * the fixed asset register, per `type`. Every record id in the input is
@@ -1399,11 +1590,26 @@ async function capitalizeCip(
 const postAssetTransfer = defineServerFn({
   name: "post-asset-transfer",
   input: postAssetTransferInput,
-  permissions: { create: "accounting" },
+  // Moving value the books already hold is `create`; putting a number of
+  // your own on an asset (an entered cost, a cost adjustment) is recosting,
+  // which takes `update`.
+  permissions: {
+    by: "type",
+    rules: {
+      capitalize: { create: "accounting" },
+      return: { create: "accounting" },
+      attachJob: { create: "accounting" },
+      capitalizeCip: { create: "accounting" },
+      adjustCost: { update: "accounting" }
+    }
+  },
   async run(ctx, input): Promise<AssetTransferResult> {
     const { db, companyId, userId } = ctx;
     switch (input.type) {
       case "capitalize":
+        if (input.cost != null) {
+          await authorize(ctx, { update: "accounting" });
+        }
         return capitalize(db, { ...input, companyId, userId });
       case "return":
         return returnToInventory(db, { ...input, companyId, userId });
@@ -1411,6 +1617,8 @@ const postAssetTransfer = defineServerFn({
         return attachJob(db, { ...input, companyId, userId });
       case "capitalizeCip":
         return capitalizeCip(db, { ...input, companyId, userId });
+      case "adjustCost":
+        return adjustCost(db, { ...input, companyId, userId });
     }
   }
 });

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { OptionalDefaultRole } from "@carbon/database/journal-posting-status";
 import { assertBalanced, EPSILON, round } from "@carbon/database/precision";
 import {
   billingHorizon,
@@ -182,6 +183,15 @@ export type PostingLine = {
   accountId: string;
   description: string;
   amount: number;
+  /** The default a stand-in line wanted (journalLine.accountDefaultRole). */
+  accountDefaultRole?: OptionalDefaultRole | null;
+};
+
+/** The default a lease account stands in for before the accounting cutover,
+ *  or null when the default is set (resolveDefaultAccount). */
+export type LeaseStandInRoles = {
+  netInvestmentInLeases?: OptionalDefaultRole | null;
+  leaseRevenue?: OptionalDefaultRole | null;
 };
 
 type AccountType = "asset" | "expense" | "revenue";
@@ -204,6 +214,7 @@ type Leg = {
   accountId: string;
   description: string;
   amount: number;
+  accountDefaultRole?: OptionalDefaultRole | null;
 };
 
 /** Legs → natural-balance-signed journal lines, dropping zero legs and
@@ -223,7 +234,10 @@ function toPostingLines(legs: Leg[], label: string): PostingLine[] {
     lines.push({
       accountId: leg.accountId,
       description: leg.description,
-      amount: naturalAmount(side, leg.accountType, value)
+      amount: naturalAmount(side, leg.accountType, value),
+      ...(leg.accountDefaultRole
+        ? { accountDefaultRole: leg.accountDefaultRole }
+        : {})
     });
   }
   assertBalanced(round(debits), round(credits), EPSILON, label);
@@ -256,6 +270,8 @@ export function buildCommencementLines(args: {
     assetAccountId: string;
     accumulatedDepreciationAccountId: string;
   };
+  /** The default each lease account stands in for, when it is a stand-in. */
+  accountDefaultRoles?: LeaseStandInRoles;
 }): PostingLine[] {
   const amounts = commencementAmounts(args);
   const { accounts } = args;
@@ -266,7 +282,8 @@ export function buildCommencementLines(args: {
         accountType: "asset",
         accountId: accounts.netInvestmentInLeasesAccountId,
         description: "Net Investment in Leases",
-        amount: amounts.netInvestment
+        amount: amounts.netInvestment,
+        accountDefaultRole: args.accountDefaultRoles?.netInvestmentInLeases
       },
       {
         side: "debit",
@@ -280,7 +297,8 @@ export function buildCommencementLines(args: {
         accountType: "revenue",
         accountId: accounts.leaseRevenueAccountId,
         description: "Lease Revenue",
-        amount: args.pvPayments
+        amount: args.pvPayments,
+        accountDefaultRole: args.accountDefaultRoles?.leaseRevenue
       },
       {
         side: "debit",
@@ -341,6 +359,8 @@ export function buildResidualReturnLines(args: {
   debitAccountId: string;
   debitDescription: string;
   netInvestmentInLeasesAccountId: string;
+  /** The default each lease account stands in for, when it is a stand-in. */
+  accountDefaultRoles?: LeaseStandInRoles;
 }): PostingLine[] {
   if (!Number.isFinite(args.closing)) {
     throw new Error("The closing net investment must be finite");
@@ -362,7 +382,8 @@ export function buildResidualReturnLines(args: {
         accountType: "asset",
         accountId: args.netInvestmentInLeasesAccountId,
         description: "Net Investment in Leases",
-        amount: args.closing
+        amount: args.closing,
+        accountDefaultRole: args.accountDefaultRoles?.netInvestmentInLeases
       }
     ],
     "Lease residual return journal"

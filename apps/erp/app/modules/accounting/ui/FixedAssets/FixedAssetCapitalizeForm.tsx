@@ -18,12 +18,21 @@ import {
   ModalDrawerTitle,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuTriangleAlert } from "react-icons/lu";
+import { LuInfo } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Combobox, DatePicker, Hidden, Input, Submit } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import {
+  Account,
+  Combobox,
+  DatePicker,
+  Hidden,
+  Input,
+  Number,
+  Submit
+} from "~/components/Form";
+import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { fixedAssetCapitalizeValidator } from "../../accounting.models";
 
@@ -53,7 +62,13 @@ const FixedAssetCapitalizeForm = ({
   const currencyFormatter = useCurrencyFormatter({
     currency: company.baseCurrencyCode
   });
+  const currencyDecimals = useCurrencyDecimals(company.baseCurrencyCode);
+  // A unit inventory carries at nothing — made by a job that recorded no
+  // production or material, or issued at no cost — takes the cost entered
+  // here instead.
   const hasNoCost = cost !== null && cost <= 0;
+  // Entering a cost is recosting, which takes accounting update.
+  const canEnterCost = permissions.can("update", "accounting");
 
   return (
     <ModalDrawerProvider type="modal">
@@ -96,16 +111,25 @@ const FixedAssetCapitalizeForm = ({
                   </DetailRow>
                 </div>
                 {hasNoCost ? (
-                  <Alert variant="destructive">
-                    <LuTriangleAlert className="h-4 w-4" />
+                  <Alert>
+                    <LuInfo className="h-4 w-4" />
                     <AlertTitle>
                       <Trans>This unit has no cost in inventory</Trans>
                     </AlertTitle>
                     <AlertDescription>
-                      <Trans>
-                        The asset would be worth nothing. Set a unit cost on the
-                        item, then capitalize it.
-                      </Trans>
+                      {!canEnterCost ? (
+                        <Trans>
+                          Someone who can update accounting has to enter what it
+                          cost to make before it can be capitalized.
+                        </Trans>
+                      ) : (
+                        <Trans>
+                          Enter what it cost to make. The value is booked to the
+                          asset from the account it was spent from: Retained
+                          Earnings for an earlier year, or this year's labor or
+                          material expense.
+                        </Trans>
+                      )}
                     </AlertDescription>
                   </Alert>
                 ) : (
@@ -115,6 +139,21 @@ const FixedAssetCapitalizeForm = ({
                       inventory carries it at.
                     </Trans>
                   </p>
+                )}
+                {hasNoCost && canEnterCost && (
+                  <>
+                    <Number
+                      name="cost"
+                      label={t`Acquisition Cost`}
+                      termId="fixed-asset-acquisition-cost"
+                      minValue={0}
+                      formatOptions={INPUT_FORMAT.money(
+                        company.baseCurrencyCode,
+                        currencyDecimals
+                      )}
+                    />
+                    <Account name="offsetAccountId" label={t`Offset Account`} />
+                  </>
                 )}
                 <Combobox
                   name="fixedAssetClassId"
@@ -133,7 +172,8 @@ const FixedAssetCapitalizeForm = ({
               <HStack>
                 <Submit
                   isDisabled={
-                    hasNoCost || !permissions.can("create", "accounting")
+                    !permissions.can("create", "accounting") ||
+                    (hasNoCost && !canEnterCost)
                   }
                 >
                   <Trans>Capitalize</Trans>

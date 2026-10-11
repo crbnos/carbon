@@ -53,6 +53,8 @@ export async function postProjectJournal(
   const journalId = await createAdjustmentJournal(trx, {
     companyId,
     accountingPeriodId: period.id,
+    // accountingEnabled still gates every caller, so the journal is Posted.
+    status: "Posted",
     description: args.description,
     postingDate: args.postingDate,
     userId: args.userId,

@@ -24,6 +24,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -94,6 +95,7 @@ const KanbansTable = memo(
     const [items] = useItems();
     const [suppliers] = useSuppliers();
     const locations = useLocations();
+    const { isPhone } = useViewport();
 
     const columns = useMemo<ColumnDef<Kanban>[]>(
       () => [
@@ -120,6 +122,7 @@ const KanbansTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             filter: {
               type: "static",
               options: items?.map((item) => ({
@@ -154,6 +157,10 @@ const KanbansTable = memo(
                 </Link>
               </Badge>
             );
+          },
+          meta: {
+            mobile: "P2",
+            mobilePill: true
           }
         },
         {
@@ -400,6 +407,7 @@ const KanbansTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },
@@ -410,6 +418,7 @@ const KanbansTable = memo(
             <Enumerable value={row.original.replenishmentSystem} />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: ["Buy", "Make", "Transfer"].map((type) => ({
@@ -427,6 +436,7 @@ const KanbansTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuContainer />,
             filter: {
               type: "static",
@@ -568,6 +578,48 @@ const KanbansTable = memo(
                 </Link>
               </MenuItem>
             )}
+            {/* Phone rows drop the label links column; keep them reachable here */}
+            {isPhone && kanbanOutput === "label" && (
+              <>
+                <MenuItem asChild>
+                  <a
+                    href={path.to.file.kanbanLabelsPdf([row.id!], "order")}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <LuTag className="mr-2 size-4" />
+                    <Trans>Create</Trans>
+                  </a>
+                </MenuItem>
+                {row.replenishmentSystem === "Make" && (
+                  <>
+                    <MenuItem asChild>
+                      <a
+                        href={path.to.file.kanbanLabelsPdf([row.id!], "start")}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <LuTag className="mr-2 size-4" />
+                        <Trans>Start</Trans>
+                      </a>
+                    </MenuItem>
+                    <MenuItem asChild>
+                      <a
+                        href={path.to.file.kanbanLabelsPdf(
+                          [row.id!],
+                          "complete"
+                        )}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <LuTag className="mr-2 size-4" />
+                        <Trans>Complete</Trans>
+                      </a>
+                    </MenuItem>
+                  </>
+                )}
+              </>
+            )}
             {canViewItems &&
               row.itemId &&
               (() => {
@@ -607,7 +659,7 @@ const KanbansTable = memo(
           </>
         );
       },
-      [params, permissions, items.find]
+      [params, permissions, items.find, isPhone, kanbanOutput]
     );
 
     const renderActions = useCallback((selectedRows: typeof data) => {

@@ -8,6 +8,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { useModules, useSettingsModule } from "~/hooks";
 import {
+  CREATE_PREFIX,
   DETAIL_TAB_SHORTCUTS,
   EXPLORER_SHORTCUTS,
   MODULE_GO_TO,
@@ -17,6 +18,7 @@ import {
   SHORTCUTS,
   searchShortcut
 } from "~/shortcuts";
+import { useCreate } from "./Layout/Topbar/CreateMenu";
 
 /**
  * ERP `?` help overlay. Every entry is built from the central shortcut
@@ -26,6 +28,7 @@ const ShortcutHelp = () => {
   const { t } = useLingui();
   const modules = useModules();
   const settingsModule = useSettingsModule();
+  const createLinks = useCreate();
 
   const entries = useMemo<ShortcutHelpEntry[]>(() => {
     const general = t`General`;
@@ -37,6 +40,7 @@ const ShortcutHelp = () => {
     const procedures = t`Procedures and training`;
     const goTo = t`Go to module`;
     const projectElements = t`Project elements`;
+    const create = t`Create`;
 
     const moduleEntries: ShortcutHelpEntry[] = (
       settingsModule ? [...modules, settingsModule] : modules
@@ -215,9 +219,14 @@ const ShortcutHelp = () => {
         description: t`Issue material (the open element)`,
         group: projectElements
       },
-      ...moduleEntries
+      ...moduleEntries,
+      ...createLinks.map((link) => ({
+        shortcut: [CREATE_PREFIX, link.shortcut],
+        description: link.name,
+        group: create
+      }))
     ];
-  }, [t, modules, settingsModule]);
+  }, [t, modules, settingsModule, createLinks]);
 
   return (
     <ShortcutHelpOverlay

@@ -390,6 +390,7 @@ export type Database = {
           lotSizeVarianceAccount: string
           maintenanceAccount: string
           materialVarianceAccount: string
+          migrationClearingAccount: string | null
           netInvestmentInLeasesAccount: string | null
           overheadAbsorptionAccount: string | null
           overheadVarianceAccount: string
@@ -458,6 +459,7 @@ export type Database = {
           lotSizeVarianceAccount: string
           maintenanceAccount: string
           materialVarianceAccount: string
+          migrationClearingAccount?: string | null
           netInvestmentInLeasesAccount?: string | null
           overheadAbsorptionAccount?: string | null
           overheadVarianceAccount: string
@@ -526,6 +528,7 @@ export type Database = {
           lotSizeVarianceAccount?: string
           maintenanceAccount?: string
           materialVarianceAccount?: string
+          migrationClearingAccount?: string | null
           netInvestmentInLeasesAccount?: string | null
           overheadAbsorptionAccount?: string | null
           overheadVarianceAccount?: string
@@ -4935,6 +4938,7 @@ export type Database = {
           isCustomer: boolean
           isDate: boolean
           isFile: boolean
+          isLink: boolean
           isList: boolean
           isNumeric: boolean
           isSupplier: boolean
@@ -4948,6 +4952,7 @@ export type Database = {
           isCustomer?: boolean
           isDate?: boolean
           isFile?: boolean
+          isLink?: boolean
           isList?: boolean
           isNumeric?: boolean
           isSupplier?: boolean
@@ -4961,6 +4966,7 @@ export type Database = {
           isCustomer?: boolean
           isDate?: boolean
           isFile?: boolean
+          isLink?: boolean
           isList?: boolean
           isNumeric?: boolean
           isSupplier?: boolean
@@ -7504,6 +7510,7 @@ export type Database = {
           countryCode: string | null
           createdAt: string
           customIndustryDescription: string | null
+          dimensions: Json
           email: string | null
           eori: string | null
           fax: string | null
@@ -7542,6 +7549,7 @@ export type Database = {
           countryCode?: string | null
           createdAt?: string
           customIndustryDescription?: string | null
+          dimensions?: Json
           email?: string | null
           eori?: string | null
           fax?: string | null
@@ -7580,6 +7588,7 @@ export type Database = {
           countryCode?: string | null
           createdAt?: string
           customIndustryDescription?: string | null
+          dimensions?: Json
           email?: string | null
           eori?: string | null
           fax?: string | null
@@ -8140,6 +8149,9 @@ export type Database = {
       }
       companySettings: {
         Row: {
+          accountingActivatedAt: string | null
+          accountingActivatedBy: string | null
+          accountingCutoverDate: string | null
           accountingEnabled: boolean
           accountsPayableAddress: boolean | null
           accountsPayableEmail: string | null
@@ -8216,6 +8228,9 @@ export type Database = {
           useMetric: boolean
         }
         Insert: {
+          accountingActivatedAt?: string | null
+          accountingActivatedBy?: string | null
+          accountingCutoverDate?: string | null
           accountingEnabled?: boolean
           accountsPayableAddress?: boolean | null
           accountsPayableEmail?: string | null
@@ -8292,6 +8307,9 @@ export type Database = {
           useMetric?: boolean
         }
         Update: {
+          accountingActivatedAt?: string | null
+          accountingActivatedBy?: string | null
+          accountingCutoverDate?: string | null
           accountingEnabled?: boolean
           accountsPayableAddress?: boolean | null
           accountsPayableEmail?: string | null
@@ -8368,6 +8386,41 @@ export type Database = {
           useMetric?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "companySettings_companyId_fkey"
             columns: ["id"]
@@ -31486,6 +31539,7 @@ export type Database = {
       }
       journalLine: {
         Row: {
+          accountDefaultRole: string | null
           accountId: string | null
           accrual: boolean
           amount: number
@@ -31510,6 +31564,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          accountDefaultRole?: string | null
           accountId?: string | null
           accrual?: boolean
           amount: number
@@ -31534,6 +31589,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          accountDefaultRole?: string | null
           accountId?: string | null
           accrual?: boolean
           amount?: number
@@ -55974,6 +56030,106 @@ export type Database = {
           }
         ]
       }
+      pushSubscription: {
+        Row: {
+          auth: string
+          companyId: string
+          createdAt: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updatedAt: string
+          userAgent: string | null
+          userId: string
+        }
+        Insert: {
+          auth: string
+          companyId: string
+          createdAt?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updatedAt?: string
+          userAgent?: string | null
+          userId: string
+        }
+        Update: {
+          auth?: string
+          companyId?: string
+          createdAt?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updatedAt?: string
+          userAgent?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       qualityDocument: {
         Row: {
           assignee: string | null
@@ -59512,10 +59668,16 @@ export type Database = {
           createdAt: string
           createdBy: string
           id: string
-          purchaseOrderLineId: string
+          meter: number | null
+          notes: string | null
+          outOfServiceReason: string | null
+          purchaseOrderLineId: string | null
           receiptId: string
           received: boolean
+          rentalAgreementLineId: string | null
+          residualDestination: string | null
           serialNumber: string | null
+          takeOutOfService: boolean
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -59524,10 +59686,16 @@ export type Database = {
           createdAt?: string
           createdBy: string
           id?: string
-          purchaseOrderLineId: string
+          meter?: number | null
+          notes?: string | null
+          outOfServiceReason?: string | null
+          purchaseOrderLineId?: string | null
           receiptId: string
           received?: boolean
+          rentalAgreementLineId?: string | null
+          residualDestination?: string | null
           serialNumber?: string | null
+          takeOutOfService?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -59536,10 +59704,16 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           id?: string
-          purchaseOrderLineId?: string
+          meter?: number | null
+          notes?: string | null
+          outOfServiceReason?: string | null
+          purchaseOrderLineId?: string | null
           receiptId?: string
           received?: boolean
+          rentalAgreementLineId?: string | null
+          residualDestination?: string | null
           serialNumber?: string | null
+          takeOutOfService?: boolean
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -59641,6 +59815,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "receipts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptFixedAssetLine_rentalAgreementLineId_fkey"
+            columns: ["rentalAgreementLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreementLine"
+            referencedColumns: ["id", "companyId"]
           }
         ]
       }
@@ -68619,7 +68800,9 @@ export type Database = {
           createdAt: string
           createdBy: string
           id: string
-          salesOrderLineId: string
+          meter: number | null
+          rentalAgreementLineId: string | null
+          salesOrderLineId: string | null
           serialNumber: string | null
           shipmentId: string
           shipped: boolean
@@ -68631,7 +68814,9 @@ export type Database = {
           createdAt?: string
           createdBy: string
           id?: string
-          salesOrderLineId: string
+          meter?: number | null
+          rentalAgreementLineId?: string | null
+          salesOrderLineId?: string | null
           serialNumber?: string | null
           shipmentId: string
           shipped?: boolean
@@ -68643,7 +68828,9 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           id?: string
-          salesOrderLineId?: string
+          meter?: number | null
+          rentalAgreementLineId?: string | null
+          salesOrderLineId?: string | null
           serialNumber?: string | null
           shipmentId?: string
           shipped?: boolean
@@ -68713,6 +68900,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipmentFixedAssetLine_rentalAgreementLineId_fkey"
+            columns: ["rentalAgreementLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreementLine"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "shipmentFixedAssetLine_salesOrderLineId_fkey"
@@ -71532,6 +71726,7 @@ export type Database = {
           conversionFactor: number
           createdAt: string
           createdBy: string
+          currencyCode: string | null
           customFields: Json | null
           id: string
           itemId: string
@@ -71540,8 +71735,8 @@ export type Database = {
           supplierId: string
           supplierPartId: string | null
           supplierUnitOfMeasureCode: string | null
+          supplierUnitPrice: number | null
           tags: string[] | null
-          unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -71551,6 +71746,7 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy: string
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string
           itemId: string
@@ -71559,8 +71755,8 @@ export type Database = {
           supplierId: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
+          supplierUnitPrice?: number | null
           tags?: string[] | null
-          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -71570,6 +71766,7 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy?: string
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string
           itemId?: string
@@ -71578,8 +71775,8 @@ export type Database = {
           supplierId?: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
+          supplierUnitPrice?: number | null
           tags?: string[] | null
-          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -71744,6 +71941,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "supplierPart_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           }
         ]
       }
@@ -71757,7 +71961,7 @@ export type Database = {
           sourceDocumentId: string | null
           sourceType: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId: string
-          unitPrice: number
+          supplierUnitPrice: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -71770,7 +71974,7 @@ export type Database = {
           sourceDocumentId?: string | null
           sourceType?: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId: string
-          unitPrice: number
+          supplierUnitPrice: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -71783,7 +71987,7 @@ export type Database = {
           sourceDocumentId?: string | null
           sourceType?: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId?: string
-          unitPrice?: number
+          supplierUnitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -85911,6 +86115,7 @@ export type Database = {
       }
       journalLines: {
         Row: {
+          accountDefaultRole: string | null
           accountId: string | null
           accrual: boolean | null
           amount: number | null
@@ -100165,6 +100370,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      journal_posting_status: {
+        Args: { p_company_id: string }
+        Returns: Database["public"]["Enums"]["journalEntryStatus"]
+      }
       journalDimensionPivot: {
         Args: {
           p_account_classes?: string[]
@@ -101118,7 +101327,11 @@ export type Database = {
         | "Inventory"
         | "Job"
         | "Construction in Progress"
-      fixedAssetTransferType: "Capitalization" | "Return to Inventory"
+        | "Manual"
+      fixedAssetTransferType:
+        | "Capitalization"
+        | "Return to Inventory"
+        | "Cost Adjustment"
       flsaStatus: "Exempt" | "Non-Exempt"
       fulfillmentType: "Inventory" | "Job"
       gaugeCalibrationStatus:
@@ -101300,7 +101513,12 @@ export type Database = {
         | "Project Expense"
         | "Service Order"
         | "Project Transfer"
-      journalEntryStatus: "Draft" | "Posted" | "Reversed"
+      journalEntryStatus:
+        | "Draft"
+        | "Posted"
+        | "Reversed"
+        | "Provisional"
+        | "Superseded"
       journalLineDocumentType:
         | "Receipt"
         | "Invoice"
@@ -101628,6 +101846,7 @@ export type Database = {
         | "Outbound Transfer"
         | "Manufacturing Consumption"
         | "Manufacturing Output"
+        | "Rental Agreement"
       receiptStatus: "Draft" | "Pending" | "Posted" | "Voided"
       reimbursementStatus: "Draft" | "Posted" | "Voided"
       rentalAgreementLineStatus: "Pending" | "On Rent" | "Returned" | "Sold"
@@ -101750,6 +101969,7 @@ export type Database = {
         | "Purchase Return Order"
         | "Inbound Transfer"
         | "Outbound Transfer"
+        | "Rental Agreement"
       shipmentStatus: "Draft" | "Pending" | "Posted" | "Voided"
       shippingCarrier: "UPS" | "FedEx" | "USPS" | "DHL" | "Other"
       sourcingType: "Specified" | "Drop Ship" | "Ship from Inventory"
@@ -102784,8 +103004,13 @@ export const Constants = {
         "Inventory",
         "Job",
         "Construction in Progress",
+        "Manual",
       ],
-      fixedAssetTransferType: ["Capitalization", "Return to Inventory"],
+      fixedAssetTransferType: [
+        "Capitalization",
+        "Return to Inventory",
+        "Cost Adjustment",
+      ],
       flsaStatus: ["Exempt", "Non-Exempt"],
       fulfillmentType: ["Inventory", "Job"],
       gaugeCalibrationStatus: [
@@ -102982,7 +103207,13 @@ export const Constants = {
         "Service Order",
         "Project Transfer",
       ],
-      journalEntryStatus: ["Draft", "Posted", "Reversed"],
+      journalEntryStatus: [
+        "Draft",
+        "Posted",
+        "Reversed",
+        "Provisional",
+        "Superseded",
+      ],
       journalLineDocumentType: [
         "Receipt",
         "Invoice",
@@ -103335,6 +103566,7 @@ export const Constants = {
         "Outbound Transfer",
         "Manufacturing Consumption",
         "Manufacturing Output",
+        "Rental Agreement",
       ],
       receiptStatus: ["Draft", "Pending", "Posted", "Voided"],
       reimbursementStatus: ["Draft", "Posted", "Voided"],
@@ -103469,6 +103701,7 @@ export const Constants = {
         "Purchase Return Order",
         "Inbound Transfer",
         "Outbound Transfer",
+        "Rental Agreement",
       ],
       shipmentStatus: ["Draft", "Pending", "Posted", "Voided"],
       shippingCarrier: ["UPS", "FedEx", "USPS", "DHL", "Other"],

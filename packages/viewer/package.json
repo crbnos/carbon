@@ -28,6 +28,7 @@
     ".": "./src/index.ts",
     "./steps": "./src/steps.ts",
     "./canvas": "./src/ModelCanvas.tsx",
+    "./empty-cabinet": "./src/EmptyCabinet.tsx",
     "./model-preview": "./src/ModelPreview.tsx",
     "./optimize-progress": "./src/OptimizeProgress.tsx",
     "./use-optimized-model": "./src/useOptimizedModel.ts"

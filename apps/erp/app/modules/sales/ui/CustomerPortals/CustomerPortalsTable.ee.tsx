@@ -52,7 +52,8 @@ const CustomerPortalsTable = memo(
             </Hyperlink>
           ),
           meta: {
-            icon: <LuSquareUser />
+            icon: <LuSquareUser />,
+            mobile: "P1"
           }
         },
         {
@@ -75,7 +76,8 @@ const CustomerPortalsTable = memo(
             );
           },
           meta: {
-            icon: <LuExternalLink />
+            icon: <LuExternalLink />,
+            mobile: "P3"
           }
         }
       ];

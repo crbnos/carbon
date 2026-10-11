@@ -244,7 +244,7 @@ export function InventoryValuationWorkbench({
                     <button
                       type="button"
                       aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground max-md:hit-area"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpand(r.id);
@@ -278,7 +278,9 @@ export function InventoryValuationWorkbench({
                     </Hyperlink>
                   </HStack>
                 ) : (
-                  <span className="font-semibold">{r.label}</span>
+                  <span className="font-semibold max-md:min-w-0 max-md:truncate">
+                    {r.label}
+                  </span>
                 )}
               </div>
             );
@@ -315,6 +317,7 @@ export function InventoryValuationWorkbench({
           );
         },
         meta: {
+          mobile: "P1",
           exportValue: (row: ValuationRow) =>
             row.kind === "group" ? row.label : detailLabel(row)
         }
@@ -665,6 +668,7 @@ export function InventoryValuationWorkbench({
       <div className="flex-1 w-full">
         <Table<ValuationRow>
           data={displayRows}
+          mobileLayout="table"
           columns={columns}
           count={displayRows.length}
           title={t`Inventory Valuation`}

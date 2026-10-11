@@ -15,6 +15,7 @@ import { useNavigate } from "react-router";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { Chart } from "../../types";
+import { reportFrameClassName, useReportColumnStep } from "./ColumnStepper";
 import {
   accountsToFlatTree,
   filterAccounts,
@@ -60,6 +61,27 @@ const TrialBalanceTree = memo(
     ledgerPath
   }: TrialBalanceTreeProps) => {
     const { t } = useLingui();
+    const columnLabels = [
+      t`Beginning`,
+      t`Debits`,
+      t`Credits`,
+      t`Ending`,
+      ...(showTranslated
+        ? [t`Ending (${parentCurrency ?? "Translated"})`]
+        : []),
+      t`Ratio`
+    ];
+    // Phones: one value column at a time, starting on Ending.
+    const {
+      isPhone,
+      index: columnIndex,
+      estimatedRowHeight,
+      stepper
+    } = useReportColumnStep({
+      count: columnLabels.length,
+      initial: 3,
+      label: (index) => columnLabels[index]
+    });
     useRealtime("journal");
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -98,37 +120,32 @@ const TrialBalanceTree = memo(
     } = useTree<TrialBalanceChart, undefined>({
       tree,
       parentRef,
-      estimatedRowHeight: () => 36,
+      estimatedRowHeight,
       isEager: true
     });
 
     return (
-      <ScrollArea className="h-[calc(100dvh-var(--header-height)-61px)] w-full">
-        <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card">
-          <div className="flex-1 px-4">
-            <Trans>Account</Trans>
+      <ScrollArea className={reportFrameClassName}>
+        {isPhone ? (
+          <div className="sticky top-0 z-10">{stepper}</div>
+        ) : (
+          <div className="sticky top-0 z-10 flex h-11 items-center pr-4 text-sm font-medium text-foreground/80 border-b border-border bg-card">
+            <div className="flex-1 px-4">
+              <Trans>Account</Trans>
+            </div>
+            {columnLabels.map((label, index) => (
+              <span
+                key={label}
+                className={cn(
+                  index === columnLabels.length - 1 ? "w-20" : "w-28",
+                  "text-right px-2"
+                )}
+              >
+                {label}
+              </span>
+            ))}
           </div>
-          <span className="w-28 text-right px-2">
-            <Trans>Beginning</Trans>
-          </span>
-          <span className="w-28 text-right px-2">
-            <Trans>Debits</Trans>
-          </span>
-          <span className="w-28 text-right px-2">
-            <Trans>Credits</Trans>
-          </span>
-          <span className="w-28 text-right px-2">
-            <Trans>Ending</Trans>
-          </span>
-          {showTranslated && (
-            <span className="w-28 text-right px-2">
-              {t`Ending (${parentCurrency ?? "Translated"})`}
-            </span>
-          )}
-          <span className="w-20 text-right px-2">
-            <Trans>Ratio</Trans>
-          </span>
-        </div>
+        )}
         <TreeView<TrialBalanceChart>
           tree={tree}
           nodes={nodes}
@@ -158,24 +175,9 @@ const TrialBalanceTree = memo(
 
             const isDrillable = !isGroup && !!ledgerPath;
 
-            return (
-              <div
-                className={cn(
-                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row",
-                  state.selected
-                    ? "bg-muted hover:bg-accent"
-                    : "bg-transparent hover:bg-accent",
-                  isGroup && "font-semibold"
-                )}
-                onClick={() => {
-                  selectNode(node.id, false);
-                  if (isGroup) {
-                    toggleExpandNode(node.id);
-                  } else if (isDrillable) {
-                    openLedger(account.id);
-                  }
-                }}
-              >
+            // Indentation + folder + number + name.
+            const accountCell = (
+              <>
                 {/* Indentation lines */}
                 <div className="flex h-9 items-center">
                   {Array.from({ length: node.level }).map((_, index) => (
@@ -205,7 +207,12 @@ const TrialBalanceTree = memo(
                 </div>
 
                 {/* Folder icon */}
-                <div className="w-5 h-5 flex items-center justify-center mr-2 shrink-0">
+                <div
+                  className={cn(
+                    "w-5 h-5 flex items-center justify-center mr-2 shrink-0",
+                    !isGroup && "max-md:hidden"
+                  )}
+                >
                   {isGroup &&
                     (isExpanded ? (
                       <LuFolderOpen className="h-4 w-4 text-muted-foreground" />
@@ -223,46 +230,77 @@ const TrialBalanceTree = memo(
                   )}
                   <span className="truncate">{account.name}</span>
                 </div>
+              </>
+            );
 
-                {/* Beginning Balance */}
-                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                  {formatCurrency(beginningBalance)}
-                </span>
+            // Same order as the header; the translated cell only when shown.
+            const cellClass =
+              "w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground";
+            const valueCells = [
+              <span key="beginning" className={cellClass}>
+                {formatCurrency(beginningBalance)}
+              </span>,
+              <span key="debit" className={cellClass}>
+                {formatCurrency(debit)}
+              </span>,
+              <span key="credit" className={cellClass}>
+                {formatCurrency(credit)}
+              </span>,
+              <span
+                key="ending"
+                className={cn(
+                  cellClass,
+                  isDrillable &&
+                    "group-hover/row:text-foreground group-hover/row:underline underline-offset-2 decoration-border"
+                )}
+              >
+                {formatCurrency(endingBalance)}
+              </span>,
+              ...(showTranslated
+                ? [
+                    <span key="translated" className={cellClass}>
+                      {account.translatedBalance != null
+                        ? formatCurrency(account.translatedBalance)
+                        : "-"}
+                    </span>
+                  ]
+                : []),
+              <span
+                key="ratio"
+                className="w-20 text-right tabular-nums shrink-0 px-2 text-muted-foreground"
+              >
+                {node.parentId ? formatPercent(ratio) : ""}
+              </span>
+            ];
 
-                {/* Debits */}
-                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                  {formatCurrency(debit)}
-                </span>
-
-                {/* Credits */}
-                <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                  {formatCurrency(credit)}
-                </span>
-
-                {/* Ending Balance */}
-                <span
-                  className={cn(
-                    "w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground",
-                    isDrillable &&
-                      "group-hover/row:text-foreground group-hover/row:underline underline-offset-2 decoration-border"
-                  )}
-                >
-                  {formatCurrency(endingBalance)}
-                </span>
-
-                {/* Translated Ending Balance */}
-                {showTranslated && (
-                  <span className="w-28 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                    {account.translatedBalance != null
-                      ? formatCurrency(account.translatedBalance)
-                      : "-"}
-                  </span>
+            return (
+              <div
+                className={cn(
+                  "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:h-11",
+                  state.selected
+                    ? "bg-muted hover:bg-accent"
+                    : "bg-transparent hover:bg-accent",
+                  isGroup && "font-semibold"
+                )}
+                onClick={() => {
+                  selectNode(node.id, false);
+                  if (isGroup) {
+                    toggleExpandNode(node.id);
+                  } else if (isDrillable) {
+                    openLedger(account.id);
+                  }
+                }}
+              >
+                {/* Phones: the name takes the width; one value shows. */}
+                {isPhone ? (
+                  <div className="flex h-full min-w-0 flex-1 items-center overflow-hidden">
+                    {accountCell}
+                  </div>
+                ) : (
+                  accountCell
                 )}
 
-                {/* Ratio */}
-                <span className="w-20 text-right tabular-nums shrink-0 px-2 text-muted-foreground">
-                  {node.parentId ? formatPercent(ratio) : ""}
-                </span>
+                {isPhone ? valueCells[columnIndex] : valueCells}
               </div>
             );
           }}

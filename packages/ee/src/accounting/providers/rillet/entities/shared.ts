@@ -578,7 +578,7 @@ export async function loadRilletMemoReasonAccount(
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
-      message: `Cannot sync memo ${memo.memoId}: it has no reason account. Post the memo (with accounting enabled), then retry.`,
+      message: `Cannot sync memo ${memo.memoId}: it has no reason account. Post the memo, then retry.`,
       metadata: { memoId: memo.id }
     });
   }

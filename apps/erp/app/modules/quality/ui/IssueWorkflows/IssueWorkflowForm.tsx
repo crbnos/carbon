@@ -148,7 +148,7 @@ const IssueWorkflowForm = ({
       />
       <VStack
         spacing={4}
-        className="py-12 px-4 max-w-[50rem] h-full mx-auto gap-2"
+        className="py-12 px-4 max-w-[50rem] h-full mx-auto gap-2 max-md:pt-4"
       >
         <HStack className="w-full justify-between">
           <VStack spacing={0}>
@@ -272,7 +272,7 @@ const IssueWorkflowForm = ({
                     key={action.id}
                     type="button"
                     onClick={() => handleAddAction(action.id)}
-                    className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left text-sm"
+                    className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left text-sm max-md:min-h-11"
                   >
                     <Checkbox
                       onClick={(e) => e.preventDefault()}

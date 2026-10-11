@@ -369,7 +369,7 @@ export function BatchDetailDrawer({
         {/* One surface (DrawerBody), two panes divided by a rule — the members
             list grows to fill the page and scrolls internally, so the drawer
             never leaves a dead lower half. No nested cards. */}
-        <DrawerBody className="w-full flex-1 min-h-0 overflow-hidden p-0">
+        <DrawerBody className="w-full flex-1 min-h-0 overflow-hidden p-0 max-md:p-0">
           <div className="grid h-full min-h-0 w-full grid-cols-1 lg:grid-cols-3">
             {/* Operations — the batch's contents */}
             <section className="flex min-h-0 flex-col lg:col-span-2">

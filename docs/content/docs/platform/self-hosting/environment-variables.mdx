@@ -35,7 +35,7 @@ Carbon's single Postgres database. The first four are required and crash boot if
 ## Auth & sessions
 
 <EnvVars>
-<EnvVar name="SESSION_SECRET" type="string" required>Signs the session cookie.</EnvVar>
+<EnvVar name="SESSION_SECRET" type="string" required>Signs the session cookie. Carbon also derives its Web Push keys from it, so changing it makes each user's browser notifications re-subscribe on their next visit.</EnvVar>
 <EnvVar name="SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID" type="string">Google OAuth client id, when `google` is in `AUTH_PROVIDERS`.</EnvVar>
 <EnvVar name="SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET" type="string">Google OAuth client secret.</EnvVar>
 <EnvVar name="SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID" type="string">Azure OAuth client id, when `azure` is enabled.</EnvVar>

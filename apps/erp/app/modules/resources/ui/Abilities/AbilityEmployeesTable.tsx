@@ -69,6 +69,7 @@ const AbilityEmployeesTable = memo(
             <EmployeeAvatar employeeId={row.original.employeeId} />
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -79,6 +80,7 @@ const AbilityEmployeesTable = memo(
             <EmployeeAbilityStatus employeeAbility={row.original} />
           ),
           meta: {
+            mobile: "P2",
             filterHeader: t`Status`,
             icon: <LuAward />,
             // Values must match getEmployeeAbilityStatus's `kind`.
@@ -103,6 +105,7 @@ const AbilityEmployeesTable = memo(
               <span className="text-muted-foreground">&mdash;</span>
             ),
           meta: {
+            mobile: "P3",
             icon: <LuCalendarDays />
           }
         },
@@ -116,6 +119,7 @@ const AbilityEmployeesTable = memo(
               <span className="text-muted-foreground">&mdash;</span>
             ),
           meta: {
+            mobile: "P2",
             icon: <LuCalendarClock />
           }
         }

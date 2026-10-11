@@ -181,7 +181,7 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
         <MethodIcon type={type} className="w-3 h-3 mr-1 " />
         {text}
       </Badge>
-      <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+      <span className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
         <LuExternalLink />
       </span>
     </PrefetchLink>

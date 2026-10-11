@@ -343,6 +343,7 @@ async function postOpeningBalance(f: Fixture, value: number) {
     const journalId = await createAdjustmentJournal(trx, {
       companyId: f.companyId,
       accountingPeriodId: period.id,
+      status: "Posted",
       description: "Opening stock",
       postingDate: "2026-01-01",
       userId: "system",

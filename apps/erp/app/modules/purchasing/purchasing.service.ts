@@ -5,6 +5,10 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  convertUnitPrice,
+  supplierPartCurrency
+} from "@carbon/database/supplier-part-price";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
@@ -1698,7 +1702,7 @@ export async function insertPurchaseOrder(
     customFields?: Json;
   }
 ): Promise<{
-  data: { id: string; purchaseOrderId: string } | null;
+  data: { id: string; purchaseOrderId: string; exchangeRate: number } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
   let purchaseOrderId: string;
@@ -1823,7 +1827,7 @@ export async function insertPurchaseOrder(
     return { data: null, error: delivery.error ?? payment.error };
   }
 
-  return { data: { id: orderId, purchaseOrderId }, error: null };
+  return { data: { id: orderId, purchaseOrderId, exchangeRate }, error: null };
 }
 
 /** @mcp update */
@@ -5051,7 +5055,9 @@ export async function createReplacementPurchaseOrder(
 
   const supplierParts = await client
     .from("supplierPart")
-    .select("itemId, unitPrice, conversionFactor, supplierUnitOfMeasureCode")
+    .select(
+      "itemId, currencyCode, supplierUnitPrice, conversionFactor, supplierUnitOfMeasureCode"
+    )
     .eq("supplierId", order.data.supplierId)
     .eq("companyId", companyId)
     .in(
@@ -5081,6 +5087,54 @@ export async function createReplacementPurchaseOrder(
   }
   const purchaseOrderId = purchaseOrder.data.id;
 
+  // A supplier part's price is in its own currency; the replacement order is
+  // in the return's, so it converts at today's rate.
+  const [company, exchangeRates] = await Promise.all([
+    client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .single(),
+    client.rpc("get_exchange_rates", { p_company_id: companyId })
+  ]);
+  if (company.error || exchangeRates.error) {
+    await deletePurchaseOrder(client, purchaseOrderId);
+    return { data: null, error: company.error ?? exchangeRates.error };
+  }
+  const baseCurrencyCode = company.data.baseCurrencyCode;
+  const exchangeRateByCurrency = new Map(
+    exchangeRates.data.map((rate) => [rate.currencyCode, rate.rate])
+  );
+  const orderCurrency = {
+    currencyCode: order.data.currencyCode ?? baseCurrencyCode,
+    exchangeRate: purchaseOrder.data.exchangeRate
+  };
+  const supplierPartPrice = (
+    supplierPart:
+      | { currencyCode: string | null; supplierUnitPrice: number | null }
+      | undefined
+  ) => {
+    if (supplierPart?.supplierUnitPrice == null) return null;
+    const currencyCode = supplierPartCurrency(
+      supplierPart.currencyCode,
+      baseCurrencyCode
+    );
+    // Base is always 1, whether or not the group lists it.
+    const exchangeRate =
+      currencyCode === orderCurrency.currencyCode
+        ? orderCurrency.exchangeRate
+        : currencyCode === baseCurrencyCode
+          ? 1
+          : exchangeRateByCurrency.get(currencyCode);
+    // No rate: leave it to the next fallback rather than price it at par.
+    if (!exchangeRate) return null;
+    return convertUnitPrice(
+      supplierPart.supplierUnitPrice,
+      { currencyCode, exchangeRate },
+      orderCurrency
+    );
+  };
+
   const lineTypeFor = (
     itemType: string | null | undefined
   ): Database["public"]["Enums"]["purchaseOrderLineType"] => {
@@ -5108,7 +5162,7 @@ export async function createReplacementPurchaseOrder(
     // unitPrice generated column is base currency and would double-convert
     const unitPrice = Number(
       poLine?.supplierUnitPrice ??
-        supplierPart?.unitPrice ??
+        supplierPartPrice(supplierPart) ??
         Number(line.unitPrice) * conversionFactor
     );
     const purchaseQuantity =
@@ -5122,6 +5176,7 @@ export async function createReplacementPurchaseOrder(
       itemId: line.itemId,
       purchaseQuantity,
       supplierUnitPrice: unitPrice,
+      exchangeRate: orderCurrency.exchangeRate,
       conversionFactor,
       purchaseUnitOfMeasureCode:
         poLine?.purchaseUnitOfMeasureCode ??

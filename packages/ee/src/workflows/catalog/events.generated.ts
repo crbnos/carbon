@@ -1472,7 +1472,8 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Inbound Transfer",
       "Outbound Transfer",
       "Manufacturing Consumption",
-      "Manufacturing Output"
+      "Manufacturing Output",
+      "Rental Agreement"
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },
@@ -1513,7 +1514,8 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Purchase Invoice",
       "Purchase Return Order",
       "Inbound Transfer",
-      "Outbound Transfer"
+      "Outbound Transfer",
+      "Rental Agreement"
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },

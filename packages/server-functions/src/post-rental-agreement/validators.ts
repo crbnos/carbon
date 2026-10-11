@@ -37,22 +37,20 @@ export const activateValidator = z.object({
 export const RESIDUAL_DESTINATIONS = ["Fleet", "Inventory"] as const;
 export type ResidualDestination = (typeof RESIDUAL_DESTINATIONS)[number];
 
-/** A unit comes back: re-cut its billing, optionally straight to maintenance.
- *  `residualDestination` is where a SALES-TYPE unit goes at the end of its
- *  term — a new Rental Fleet asset, or stock — and is required for such a
- *  line (the function refuses without it); an operating return ignores it. */
-export const returnValidator = z
-  .object({
-    type: z.literal("return"),
-    rentalAgreementLineId: z.string().min(1),
-    returnedAt: calendarDate,
-    meterIn: z.number().min(0).optional().nullable(),
-    returnNotes: z.string().optional().nullable(),
-    takeOutOfService: z.boolean().optional(),
-    outOfServiceReason: z.string().optional().nullable(),
-    residualDestination: z.enum(RESIDUAL_DESTINATIONS).optional().nullable(),
-    ...scope
-  })
+/** One unit coming back, without the agreement: the fields a rental receipt
+ *  line and the agreement's return action share. */
+const unitReturnFields = {
+  rentalAgreementLineId: z.string().min(1),
+  returnedAt: calendarDate,
+  meterIn: z.number().min(0).optional().nullable(),
+  returnNotes: z.string().optional().nullable(),
+  takeOutOfService: z.boolean().optional(),
+  outOfServiceReason: z.string().optional().nullable(),
+  residualDestination: z.enum(RESIDUAL_DESTINATIONS).optional().nullable()
+};
+
+export const unitReturnValidator = z
+  .object(unitReturnFields)
   .refine(
     (data) => !data.takeOutOfService || !!data.outOfServiceReason?.trim(),
     {
@@ -60,6 +58,15 @@ export const returnValidator = z
       path: ["outOfServiceReason"]
     }
   );
+
+/** A Pending unit that never left the yard: stop its billing at
+ *  `returnedAt` and free the unit, with no document (spec Q8). */
+export const releaseValidator = z.object({
+  type: z.literal("release"),
+  rentalAgreementLineId: z.string().min(1),
+  returnedAt: calendarDate,
+  ...scope
+});
 
 /** Every unit is back (or sold) and everything is billed. */
 export const closeValidator = z.object({
@@ -75,7 +82,7 @@ export const cancelValidator = z.object({
 
 export const payloadValidator = z.discriminatedUnion("type", [
   activateValidator,
-  returnValidator,
+  releaseValidator,
   closeValidator,
   cancelValidator
 ]);
@@ -239,6 +246,102 @@ export function cancelBlocker(args: {
   }
   if (args.recognizedRows > 0) {
     return "Rental income has been recognized on this agreement; it can be closed, not cancelled";
+  }
+  return null;
+}
+
+/** The unit's name in a refusal: its asset number, else its asset name, else the line id. */
+export function unitLabel(
+  asset: { fixedAssetId: string | null; name: string | null } | undefined,
+  lineId: string
+): string {
+  return asset?.fixedAssetId || asset?.name || lineId;
+}
+
+/** Why a delivery cannot be dated `deliveredOn`, or null. */
+export function futureDeliveryError(
+  deliveredOn: string,
+  today: string
+): string | null {
+  // `YYYY-MM-DD` compares chronologically as text.
+  return deliveredOn > today
+    ? "The delivery date cannot be in the future"
+    : null;
+}
+
+/** Why a rental shipment cannot be voided, or null. `accrual` is the worst
+ *  Accrual row of the unit: "Posted", "Draft run" (Planned with a runLineId), or null. */
+export function rentalShipmentVoidBlocker(
+  units: {
+    label: string;
+    status: Enums["rentalAgreementLineStatus"];
+    accrual: "Posted" | "Draft run" | null;
+  }[]
+): string | null {
+  const notOnRent = units.find((unit) => unit.status !== "On Rent");
+  if (notOnRent) {
+    return `${notOnRent.label} is ${notOnRent.status}; a rental shipment can be voided only while every unit is On Rent`;
+  }
+  for (const unit of units) {
+    if (unit.accrual === "Posted") {
+      return `A posted revenue recognition run holds accrued rent for ${unit.label}; the shipment cannot be voided`;
+    }
+    if (unit.accrual === "Draft run") {
+      return `A draft revenue recognition run holds accrued rent for ${unit.label}; delete the run before voiding the shipment`;
+    }
+  }
+  return null;
+}
+
+/** Why an agreement cannot close while a rental document is still open, or null. */
+export function openRentalDocumentBlocker(args: {
+  shipmentId: string | null; // readable id of an open shipment that has a line
+  receiptId: string | null; // readable id of an open receipt that has a line
+}): string | null {
+  if (args.shipmentId) {
+    return `Shipment ${args.shipmentId} is still open; post or delete it before closing the agreement`;
+  }
+  if (args.receiptId) {
+    return `Receipt ${args.receiptId} is still open; post or delete it before closing the agreement`;
+  }
+  return null;
+}
+
+/** Why a unit on a rental receipt cannot be returned, or null.
+ *  A receipt returns a Pending or an On Rent unit (spec Q8). */
+export function receiptReturnError(
+  label: string,
+  status: Enums["rentalAgreementLineStatus"]
+): string | null {
+  return RETURNABLE_LINE_STATUSES.has(status)
+    ? null
+    : `${label} is ${status}; only a Pending or On Rent unit can be returned`;
+}
+
+/** Why a release date is refused, or null. */
+export function futureReleaseError(
+  releasedOn: string,
+  today: string
+): string | null {
+  // `YYYY-MM-DD` compares chronologically as text.
+  return releasedOn > today ? "The release date cannot be in the future" : null;
+}
+
+/** Why a unit cannot be released, or null (spec Q8, plan decisions P1 and P2). */
+export function releaseBlocker(args: {
+  label: string;
+  status: Enums["rentalAgreementLineStatus"];
+  classification: Enums["lessorClassification"] | null;
+  openDocument: string | null; // e.g. "shipment SHP-000004" or "receipt RCV-000002"
+}): string | null {
+  if (args.status !== "Pending") {
+    return `${args.label} is ${args.status}; only a Pending unit can be released`;
+  }
+  if (args.classification === "Sale") {
+    return `${args.label} is treated as a sale; return it on a rental receipt instead`;
+  }
+  if (args.openDocument) {
+    return `${args.label} is on ${args.openDocument}; remove it there before releasing the unit`;
   }
   return null;
 }

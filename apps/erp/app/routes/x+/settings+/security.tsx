@@ -52,6 +52,7 @@ import { LuShieldCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useFetcher, useLoaderData } from "react-router";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
@@ -280,7 +281,7 @@ function SsoDomainRow({
   const submitting = fetcher.formData?.get("intent");
 
   return (
-    <div className="w-full rounded-md border border-border p-4">
+    <div className="w-full rounded-md border border-border p-4 max-md:border-0 max-md:p-0 max-md:rounded-none">
       <HStack className="w-full justify-between items-center">
         <HStack spacing={2}>
           <span className="text-sm font-medium font-mono">{domain.domain}</span>
@@ -443,14 +444,11 @@ export default function Security() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-8"
-      >
+      <SettingsPage className="gap-8">
         <div className="flex flex-col gap-1 w-full">
-          <Heading size="h3">
+          <SettingsPageHeading>
             <Trans>Security</Trans>
-          </Heading>
+          </SettingsPageHeading>
           <p className="text-sm text-muted-foreground text-pretty">
             <Trans>
               Manage authentication and sign-in requirements for your company.
@@ -716,7 +714,7 @@ export default function Security() {
             )}
           </>
         )}
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

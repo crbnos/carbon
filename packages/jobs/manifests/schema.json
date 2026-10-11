@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009154248",
+  "schemaVersion": "20261011163015",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-09T15:47:26.762Z",
+  "exportedAt": "2026-10-11T16:44:02.551Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -31,7 +31,10 @@
         "parentId",
         "isGroup",
         "accountType",
-        "isSystem"
+        "isSystem",
+        "allowability",
+        "unallowableReason",
+        "elementOfCost"
       ]
     },
     {
@@ -102,7 +105,9 @@
         "netInvestmentInLeasesAccount",
         "projectExpenseAccount",
         "projectWorkInProgressAccount",
-        "warrantyExpenseAccount"
+        "warrantyExpenseAccount",
+        "contractLossProvisionAccount",
+        "migrationClearingAccount"
       ]
     },
     {
@@ -1001,7 +1006,13 @@
     {
       "name": "itemStockQuantities",
       "rows": 0,
-      "columns": ["itemId", "companyId", "locationId", "quantityOnHand"]
+      "columns": [
+        "itemId",
+        "companyId",
+        "locationId",
+        "quantityOnHand",
+        "projectId"
+      ]
     },
     {
       "name": "journal",
@@ -1051,7 +1062,8 @@
         "updatedAt",
         "updatedBy",
         "intercompanyPartnerId",
-        "createdBy"
+        "createdBy",
+        "accountDefaultRole"
       ]
     },
     {
@@ -1133,7 +1145,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "billRate"
       ]
     },
     {
@@ -1634,6 +1647,23 @@
         "updatedBy",
         "customFields",
         "tags"
+      ]
+    },
+    {
+      "name": "payrollPeriodTotal",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "employeeId",
+        "periodStart",
+        "periodEnd",
+        "grossWages",
+        "hoursPaid",
+        "importedBy",
+        "importedAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -2277,6 +2307,34 @@
       ]
     },
     {
+      "name": "timesheetCertification",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "employeeId",
+        "weekStart",
+        "certifiedAt",
+        "textHash",
+        "flsaStatus"
+      ]
+    },
+    {
+      "name": "timesheetEntryRevision",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "timesheetEntryId",
+        "employeeId",
+        "revisedBy",
+        "revisedAt",
+        "reason",
+        "before",
+        "after"
+      ]
+    },
+    {
       "name": "tool",
       "rows": 0,
       "columns": [
@@ -2688,7 +2746,16 @@
         "invoiceNotificationGroup",
         "timesheetApprovalRequired",
         "requireProjectElement",
-        "serviceLaborItemId"
+        "serviceLaborItemId",
+        "timekeepingControls",
+        "timesheetEntryWindowDays",
+        "timesheetTimecardCheck",
+        "certificationTextExempt",
+        "certificationTextNonExempt",
+        "standardWeeklyHours",
+        "accountingCutoverDate",
+        "accountingActivatedAt",
+        "accountingActivatedBy"
       ]
     },
     {
@@ -2750,7 +2817,8 @@
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "planningSegmentId"
       ]
     },
     {
@@ -2862,30 +2930,6 @@
       ]
     },
     {
-      "name": "inventoryCountLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "inventoryCountId",
-        "itemId",
-        "locationId",
-        "storageUnitId",
-        "trackedEntityId",
-        "readableId",
-        "systemQuantity",
-        "countedQuantity",
-        "countedBy",
-        "countedAt",
-        "postedItemLedgerId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields"
-      ]
-    },
-    {
       "name": "itemCost",
       "rows": 0,
       "columns": [
@@ -2944,7 +2988,8 @@
         "demandAccumulationSafetyStock",
         "minimumReserveQuantity",
         "responsibleEmployee",
-        "planningHorizonDays"
+        "planningHorizonDays",
+        "allowCommonSupplyForProjects"
       ]
     },
     {
@@ -3749,34 +3794,8 @@
         "departmentId",
         "tags",
         "laborCategoryId",
-        "defaultStorageUnitId"
-      ]
-    },
-    {
-      "name": "itemLedger",
-      "rows": 0,
-      "columns": [
-        "id",
-        "entryNumber",
-        "postingDate",
-        "entryType",
-        "documentType",
-        "documentId",
-        "externalDocumentId",
-        "itemId",
-        "locationId",
-        "storageUnitId",
-        "quantity",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "documentLineId",
-        "trackedEntityId",
-        "comment",
-        "trackedEntityStatus",
-        "updatedBy",
-        "correctionOfItemLedgerId",
-        "scrapReasonId"
+        "defaultStorageUnitId",
+        "flsaStatus"
       ]
     },
     {
@@ -3922,31 +3941,6 @@
         "createdAt",
         "companyId",
         "updatedBy"
-      ]
-    },
-    {
-      "name": "costLedger",
-      "rows": 0,
-      "columns": [
-        "id",
-        "entryNumber",
-        "postingDate",
-        "itemLedgerType",
-        "costLedgerType",
-        "adjustment",
-        "documentType",
-        "documentId",
-        "externalDocumentId",
-        "itemId",
-        "quantity",
-        "cost",
-        "nominalCost",
-        "companyId",
-        "createdAt",
-        "supplierId",
-        "remainingQuantity",
-        "appliesToCostLedgerId",
-        "trackedEntityId"
       ]
     },
     {
@@ -4686,6 +4680,25 @@
       ]
     },
     {
+      "name": "customerContractFunding",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractLineId",
+        "modificationNumber",
+        "fundedDate",
+        "acrn",
+        "fundedCost",
+        "fundedFee",
+        "expiresOn",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "customerContractInvoiceLine",
       "rows": 0,
       "columns": [
@@ -4710,37 +4723,20 @@
       ]
     },
     {
-      "name": "customerContractLine",
+      "name": "customerContractLaborRate",
       "rows": 0,
       "columns": [
         "id",
         "companyId",
-        "customerContractId",
-        "revenueType",
-        "itemId",
-        "description",
-        "quantity",
-        "rate",
-        "rateUnit",
-        "discountPercent",
-        "discountEndsOn",
-        "taxPercent",
-        "startDate",
-        "endDate",
-        "goLiveDate",
-        "revenueMethod",
-        "revenueStartDate",
-        "revenueEndDate",
-        "amendmentId",
-        "amendsLineId",
-        "salesOrderLineId",
-        "projectId",
-        "sortOrder",
+        "customerContractLineId",
+        "laborCategoryId",
+        "employeeId",
+        "billRate",
+        "effectiveFrom",
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt",
-        "customFields"
+        "updatedAt"
       ]
     },
     {
@@ -4758,32 +4754,11 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
-      "name": "customerContractLedgerEntry",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "customerContractId",
-        "customerContractLineId",
-        "entryType",
-        "postingDate",
-        "salesInvoiceLineId",
-        "memoId",
-        "revenueRecognitionScheduleId",
-        "customerContractRevenueId",
-        "journalId",
-        "deferredAmount",
-        "deferredBase",
-        "assetAmount",
-        "assetBase",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "earnedToDate",
+        "estimateAtCompletion",
+        "transactionPrice",
+        "progress"
       ]
     },
     {
@@ -5164,6 +5139,59 @@
         "createdAt",
         "createdBy",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "inventoryCountLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "inventoryCountId",
+        "itemId",
+        "locationId",
+        "storageUnitId",
+        "trackedEntityId",
+        "readableId",
+        "systemQuantity",
+        "countedQuantity",
+        "countedBy",
+        "countedAt",
+        "postedItemLedgerId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "projectId"
+      ]
+    },
+    {
+      "name": "itemLedger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "entryNumber",
+        "postingDate",
+        "entryType",
+        "documentType",
+        "documentId",
+        "externalDocumentId",
+        "itemId",
+        "locationId",
+        "storageUnitId",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "documentLineId",
+        "trackedEntityId",
+        "comment",
+        "trackedEntityStatus",
+        "updatedBy",
+        "correctionOfItemLedgerId",
+        "scrapReasonId",
+        "projectId"
       ]
     },
     {
@@ -5604,6 +5632,24 @@
       ]
     },
     {
+      "name": "planningGroup",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "locationId",
+        "excessRule",
+        "exceptionProjectId",
+        "priorityRule",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "productionEvent",
       "rows": 0,
       "columns": [
@@ -5678,7 +5724,14 @@
         "nextChangeRequestSequence",
         "nextBaselineSequence",
         "projectType",
-        "parentProjectId"
+        "parentProjectId",
+        "projectStock",
+        "chargeAtReceipt",
+        "governmentFurnished",
+        "planningGroupId",
+        "planningPriority",
+        "costObjective",
+        "restrictCharging"
       ]
     },
     {
@@ -5691,6 +5744,19 @@
         "name",
         "color",
         "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectMember",
+      "rows": 0,
+      "columns": [
+        "projectId",
+        "userId",
+        "companyId",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -5714,6 +5780,36 @@
         "createdAt",
         "updatedBy",
         "updatedAt"
+      ]
+    },
+    {
+      "name": "projectPeg",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "planningGroupId",
+        "itemId",
+        "locationId",
+        "supplyType",
+        "supplyId",
+        "projectId",
+        "projectElementId",
+        "demandSourceType",
+        "demandSourceId",
+        "parentPegId",
+        "quantity",
+        "needDate",
+        "state",
+        "manualReason",
+        "exception",
+        "createdByRunId",
+        "supersededAt",
+        "supersededByRunId",
+        "hardenedAt",
+        "itemLedgerId",
+        "createdBy",
+        "createdAt"
       ]
     },
     {
@@ -5790,7 +5886,10 @@
         "parameterItemField",
         "parameterContingencyPercent",
         "trackedEntityId",
-        "fixedPrice"
+        "fixedPrice",
+        "isUnallowable",
+        "isPreproduction",
+        "isLeave"
       ]
     },
     {
@@ -5812,6 +5911,53 @@
         "updatedAt",
         "customFields",
         "projectElementId"
+      ]
+    },
+    {
+      "name": "customerContractLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "revenueType",
+        "itemId",
+        "description",
+        "quantity",
+        "rate",
+        "rateUnit",
+        "discountPercent",
+        "discountEndsOn",
+        "taxPercent",
+        "startDate",
+        "endDate",
+        "goLiveDate",
+        "revenueMethod",
+        "revenueStartDate",
+        "revenueEndDate",
+        "amendmentId",
+        "amendsLineId",
+        "salesOrderLineId",
+        "projectId",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "billingMethod",
+        "projectElementId",
+        "materialHandlingPercent",
+        "feePercent",
+        "fundedAmount",
+        "fundedCost",
+        "noticePercent",
+        "noticeWindowDays",
+        "ceilingAmount",
+        "thresholdNoticeFundedCost",
+        "runOutNoticeFundedCost",
+        "lineItemNumber",
+        "parentLineId"
       ]
     },
     {
@@ -5861,7 +6007,9 @@
         "fixedAssetId",
         "projectId",
         "projectElementId",
-        "consumeToProject"
+        "consumeToProject",
+        "receiveToProjectStock",
+        "planningGroupId"
       ]
     },
     {
@@ -6108,6 +6256,31 @@
       ]
     },
     {
+      "name": "customerContractLedgerEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractLineId",
+        "entryType",
+        "postingDate",
+        "salesInvoiceLineId",
+        "memoId",
+        "revenueRecognitionScheduleId",
+        "customerContractRevenueId",
+        "journalId",
+        "deferredAmount",
+        "deferredBase",
+        "assetAmount",
+        "assetBase",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "jobMakeMethod",
       "rows": 0,
       "columns": [
@@ -6291,7 +6464,8 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "quantityReturned"
+        "quantityReturned",
+        "projectId"
       ]
     },
     {
@@ -6452,7 +6626,112 @@
         "createdBy",
         "createdAt",
         "updatedBy",
+        "updatedAt",
+        "voidedSalesInvoiceId"
+      ]
+    },
+    {
+      "name": "projectBorrow",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "borrowerProjectId",
+        "lenderProjectId",
+        "itemId",
+        "locationId",
+        "quantity",
+        "quantityPaidBack",
+        "borrowedUnitCost",
+        "paybackDueDate",
+        "status",
+        "projectStockTransferLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
         "updatedAt"
+      ]
+    },
+    {
+      "name": "projectStockTransfer",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectStockTransferId",
+        "type",
+        "status",
+        "fromProjectId",
+        "toProjectId",
+        "locationId",
+        "reason",
+        "paybackDueDate",
+        "settlesBorrowId",
+        "planningActionId",
+        "approvedBy",
+        "approvedAt",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectStockTransferLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectStockTransferId",
+        "itemId",
+        "quantity",
+        "storageUnitId",
+        "trackedEntityId",
+        "unitCost",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "costLedger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "entryNumber",
+        "postingDate",
+        "itemLedgerType",
+        "costLedgerType",
+        "adjustment",
+        "documentType",
+        "documentId",
+        "externalDocumentId",
+        "itemId",
+        "quantity",
+        "cost",
+        "nominalCost",
+        "companyId",
+        "createdAt",
+        "supplierId",
+        "remainingQuantity",
+        "appliesToCostLedgerId",
+        "trackedEntityId",
+        "projectId",
+        "projectBorrowId"
+      ]
+    },
+    {
+      "name": "projectCostRelief",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectLedgerId",
+        "revenueRecognitionScheduleId",
+        "amount",
+        "createdAt"
       ]
     },
     {
@@ -6498,7 +6777,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "reversalReason"
       ]
     },
     {
@@ -6602,7 +6882,8 @@
         "sortOrder",
         "supplierPartId",
         "projectId",
-        "projectElementId"
+        "projectElementId",
+        "planningGroupId"
       ]
     },
     {
@@ -6649,7 +6930,12 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "planningSegmentId",
+        "fromProjectId",
+        "toProjectId",
+        "projectStockTransferId",
+        "projectBorrowId"
       ]
     },
     {
@@ -6899,7 +7185,13 @@
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "rentalAgreementLineId",
+        "meter",
+        "notes",
+        "takeOutOfService",
+        "outOfServiceReason",
+        "residualDestination"
       ]
     },
     {
@@ -7011,6 +7303,22 @@
         "customerContractRevenueId",
         "contractAmount",
         "memoId"
+      ]
+    },
+    {
+      "name": "salesInvoiceFundingAllocation",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "salesInvoiceId",
+        "customerContractLineId",
+        "acrn",
+        "amount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -7174,7 +7482,12 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "salesReturnOrderLineId",
+        "capitalizedAmount",
+        "writeDownAmount",
+        "completionJournalId",
+        "completionCostingMethod"
       ]
     },
     {
@@ -7229,7 +7542,10 @@
         "updatedAt",
         "coverage",
         "coverageReason",
-        "serviceVisitId"
+        "serviceVisitId",
+        "lateReason",
+        "correctionOfId",
+        "dilutionFactor"
       ]
     },
     {
@@ -7290,7 +7606,9 @@
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "rentalAgreementLineId",
+        "meter"
       ]
     },
     {
@@ -7804,9 +8122,10 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "unitPrice",
+        "supplierUnitPrice",
         "tags",
-        "orderMultiple"
+        "orderMultiple",
+        "currencyCode"
       ]
     },
     {
@@ -7815,7 +8134,7 @@
       "columns": [
         "supplierPartId",
         "quantity",
-        "unitPrice",
+        "supplierUnitPrice",
         "sourceType",
         "sourceDocumentId",
         "companyId",
@@ -8095,6 +8414,7 @@
     "oauthClient",
     "oauthCode",
     "oauthToken",
+    "pushSubscription",
     "ssoConnection",
     "ssoDomain",
     "tableChange",

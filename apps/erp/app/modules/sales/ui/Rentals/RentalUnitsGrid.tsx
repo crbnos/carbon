@@ -215,14 +215,10 @@ const RentalUnitsGrid = ({
   );
 
   const canAdd = permissions.can("create", "sales");
-  const noUnitsAvailable = rentableAssets.length === 0 && (
-    <div className="w-full max-w-2xl text-left">
-      <FleetUnitsHint />
-    </div>
-  );
 
   return (
     <div className="flex w-full flex-col gap-4">
+      {rows.length === 0 && rentableAssets.length === 0 && <FleetUnitsHint />}
       {rows.length === 0 ? (
         <div className="flex w-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border px-6 py-16 text-center">
           <p className="text-sm text-muted-foreground">
@@ -237,7 +233,6 @@ const RentalUnitsGrid = ({
           >
             <Trans>Add Units</Trans>
           </Button>
-          {noUnitsAvailable}
         </div>
       ) : (
         <>
@@ -267,18 +262,15 @@ const RentalUnitsGrid = ({
               sort={null}
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <div>
-              <Button
-                variant="secondary"
-                leftIcon={<LuPlus />}
-                isDisabled={!canAdd || rentableAssets.length === 0}
-                onClick={addUnits.onOpen}
-              >
-                <Trans>Add Units</Trans>
-              </Button>
-            </div>
-            {noUnitsAvailable}
+          <div>
+            <Button
+              variant="secondary"
+              leftIcon={<LuPlus />}
+              isDisabled={!canAdd || rentableAssets.length === 0}
+              onClick={addUnits.onOpen}
+            >
+              <Trans>Add Units</Trans>
+            </Button>
           </div>
         </>
       )}

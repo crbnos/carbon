@@ -75,7 +75,7 @@ export async function pickApps(): Promise<AppId[]> {
       .map((s) => s.trim())
       .filter((s): s is AppId => APP_CHOICES.some((c) => c.value === s));
   }
-  const optInApps: readonly AppId[] = ["assembler", "email"];
+  const optInApps: readonly AppId[] = ["assembler", "email", "studio"];
   const defaultApps = APP_CHOICES.filter(
     (c) => !optInApps.includes(c.value)
   ).map((c) => c.value);

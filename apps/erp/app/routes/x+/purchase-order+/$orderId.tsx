@@ -61,6 +61,7 @@ import { stripSpecialCharacters } from "~/utils/string";
 const logger = getLogger("erp", "purchase-order");
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Purchase Order`,
   realtime: [
     { table: "purchaseOrder", column: "id", param: "orderId" },
     { table: "purchaseOrderLine", column: "purchaseOrderId", param: "orderId" },

@@ -430,6 +430,8 @@ const postProjectIssue = defineServerFn({
           sharedJournalId = await createAdjustmentJournal(trx, {
             companyId,
             accountingPeriodId: accountingPeriodId!,
+            // accountingEnabled still gates this path, so it posts Posted.
+            status: "Posted",
             description: journalDescription,
             postingDate,
             userId,
@@ -468,6 +470,7 @@ const postProjectIssue = defineServerFn({
           itemCost: itemCostResult.data,
           accounting: accountingPeriodId
             ? {
+                postingStatus: "Posted",
                 accountingPeriodId,
                 accountDefaults: {
                   rawMaterialsAccount: accountDefaults.rawMaterialsAccount,

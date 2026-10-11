@@ -354,12 +354,13 @@ export default function ReportsIndexRoute() {
 
   return (
     <div className="h-[calc(100dvh-var(--header-height))] w-full overflow-y-auto bg-card">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-8">
-        <div className="flex items-center justify-between gap-4">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-8 max-md:gap-6 max-md:p-4">
+        {/* Phones: the app bar already titles the page. */}
+        <div className="flex items-center justify-between gap-4 max-md:[&>h1]:hidden">
           <Heading as="h1" size="h1">
             <Trans>Reporting</Trans>
           </Heading>
-          <InputGroup size="sm" className="w-64">
+          <InputGroup size="sm" className="w-64 max-md:w-full">
             <InputLeftElement>
               <LuSearch className="h-4 w-4 text-muted-foreground" />
             </InputLeftElement>
@@ -427,7 +428,9 @@ export default function ReportsIndexRoute() {
                       }
                     >
                       <report.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="text-sm font-medium">{report.name}</span>
+                      <span className="text-sm font-medium max-md:shrink-0 max-md:whitespace-nowrap">
+                        {report.name}
+                      </span>
                       <span className="truncate text-sm text-muted-foreground">
                         {report.description}
                       </span>

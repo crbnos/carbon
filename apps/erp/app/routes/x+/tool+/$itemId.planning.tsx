@@ -18,9 +18,11 @@ import {
 } from "~/modules/items";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
+import { replanAfterItemChange } from "~/modules/production/production.server";
 import { getLocationsList } from "~/modules/resources";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -138,6 +140,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  // The planning pages list MRP's suggestions; re-plan so they follow the
+  // new settings now, not at the next scheduled run.
+  await replanAfterItemChange(getDatabaseClient(), {
+    itemId,
+    companyId,
+    userId
+  });
 
   throw redirect(
     path.to.toolPlanningLocation(itemId, validation.data.locationId),

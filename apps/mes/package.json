@@ -2,6 +2,7 @@
   "name": "mes",
   "type": "module",
   "dependencies": {
+    "@carbon/account": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",

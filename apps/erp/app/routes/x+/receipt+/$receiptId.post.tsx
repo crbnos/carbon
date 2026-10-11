@@ -35,6 +35,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const acknowledged = formData.get("acknowledged") === "true";
+  const postingDateValue = formData.get("postingDate");
+  const postingDate =
+    typeof postingDateValue === "string" && postingDateValue !== ""
+      ? postingDateValue
+      : undefined;
 
   // Storage Rule evaluation across every line on this receipt before posting.
   // Use service role so item / storageUnit reads are not blocked by RLS for
@@ -221,7 +226,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const posted = await serverFns
       .system({ db: getDatabaseClient(), companyId, userId })
       .invoke("post-receipt", {
-        receiptId: receiptId
+        receiptId,
+        postingDate
       });
 
     if (posted.error) {

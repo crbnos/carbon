@@ -38,6 +38,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
         ),
 
         meta: {
+          mobile: "P1",
           icon: <LuUsers />
         }
       }

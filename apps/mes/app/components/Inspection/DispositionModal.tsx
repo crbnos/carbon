@@ -40,6 +40,7 @@ import { useFetcher } from "react-router";
 import ScrapReason from "~/components/JobOperation/components/ScrapReason";
 import { inspectionDispositionValidator } from "~/services/models";
 import type { IssueTypeListItem } from "~/services/types";
+import { OriginInput } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 export type FailedFeatureSummary = {
@@ -212,6 +213,7 @@ const DispositionModal = ({
           </ModalHeader>
           <ModalBody>
             <Hidden name="decision" value={decision} />
+            <OriginInput />
             <Hidden name="operationId" value={operationId} />
             {isSerial ? (
               <>

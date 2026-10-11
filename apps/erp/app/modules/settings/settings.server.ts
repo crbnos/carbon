@@ -8,6 +8,7 @@ import type { Database, Json } from "@carbon/database";
 import {
   getIntegrationConfigById,
   getIntegrationIdsByRole,
+  type IntegrationHealthcheckResult,
   type IntegrationID,
   resolveIntegrationSecrets,
   splitSecrets
@@ -477,6 +478,12 @@ export type IntegrationHealthStatus =
   | "inactive"
   | "sync-off";
 
+type IntegrationHealthFields = {
+  health: IntegrationHealthStatus;
+  /** Why an unhealthy check failed, when the integration says. */
+  healthReason: string | null;
+};
+
 /**
  * Connection health, plus `sync-off` for an accounting integration whose
  * connection works but whose sync switch is off (a new connection still being
@@ -486,7 +493,7 @@ export type IntegrationHealthStatus =
 export async function getIntegrationHealth(
   companyId: string,
   integration: Integration
-): Promise<Integration & { health: IntegrationHealthStatus }> {
+): Promise<Integration & IntegrationHealthFields> {
   const result = await getConnectionHealth(companyId, integration);
   if (
     result.health === "healthy" &&
@@ -503,11 +510,15 @@ export async function getIntegrationHealth(
 async function getConnectionHealth(
   companyId: string,
   integration: Integration
-): Promise<Integration & { health: "healthy" | "unhealthy" | "inactive" }> {
+): Promise<
+  Integration &
+    IntegrationHealthFields & { health: "healthy" | "unhealthy" | "inactive" }
+> {
   if (!integration.active) {
     return {
       ...integration,
-      health: "inactive"
+      health: "inactive",
+      healthReason: null
     };
   }
 
@@ -518,7 +529,8 @@ async function getConnectionHealth(
   if (!healthcheck) {
     return {
       ...integration,
-      health: "healthy"
+      health: "healthy",
+      healthReason: null
     };
   }
 
@@ -530,7 +542,8 @@ async function getConnectionHealth(
   if (cached === "1") {
     return {
       ...integration,
-      health: "healthy"
+      health: "healthy",
+      healthReason: null
     };
   }
 
@@ -553,22 +566,26 @@ async function getConnectionHealth(
   } catch {
     return {
       ...integration,
-      health: "unhealthy"
+      health: "unhealthy",
+      healthReason: null
     };
   }
 
-  const status = await (
+  const result = await (
     healthcheck as (
       companyId: string,
       metadata: Record<string, any>
-    ) => Promise<boolean>
+    ) => Promise<boolean | IntegrationHealthcheckResult>
   )(companyId, resolvedMetadata);
+  const healthy = typeof result === "boolean" ? result : result.healthy;
+  const reason = typeof result === "boolean" ? null : (result.reason ?? null);
 
-  await redis.set(key, status ? "1" : "0", "EX", INTEGRATION_CACHE_TTL * 5); // Cache for 5 minutes
+  await redis.set(key, healthy ? "1" : "0", "EX", INTEGRATION_CACHE_TTL * 5); // Cache for 5 hours
 
   return {
     ...integration,
-    health: status ? "healthy" : "unhealthy"
+    health: healthy ? "healthy" : "unhealthy",
+    healthReason: healthy ? null : reason
   };
 }
 

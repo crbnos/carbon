@@ -69,7 +69,7 @@ export default function AuditLogDetailsRoute() {
             <Trans>All Audit Logs</Trans>
           </DrawerTitle>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           <AuditLogTable entries={entries} count={count} />
         </DrawerBody>
       </DrawerContent>

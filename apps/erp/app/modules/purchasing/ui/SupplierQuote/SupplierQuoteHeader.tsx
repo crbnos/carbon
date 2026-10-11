@@ -16,9 +16,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   Input,
   InputGroup,
   InputRightElement,
@@ -40,21 +37,19 @@ import {
   LuCheckCheck,
   LuChevronDown,
   LuCircleStop,
-  LuEllipsisVertical,
   LuExternalLink,
   LuEye,
   LuGitCompare,
   LuLoaderCircle,
-  LuPanelLeft,
-  LuPanelRight,
   LuSend,
   LuShoppingCart,
   LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import type { FetcherWithComponents } from "react-router";
-import { Link, useFetcher, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
   usePermissions,
@@ -135,217 +130,209 @@ const SupplierQuoteHeader = () => {
 
   const canFinalize = ["Draft", "Declined"].includes(quoteStatus);
 
+  const menuItems = (
+    <>
+      <DropdownMenuItem
+        disabled={
+          routeData?.quote?.status === "Draft" ||
+          statusFetcher.state !== "idle" ||
+          !permissions.can("update", "purchasing")
+        }
+        onClick={() => {
+          statusFetcher.submit(
+            { status: "Draft" },
+            {
+              method: "post",
+              action: path.to.supplierQuoteStatus(id)
+            }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          isLocked ||
+          !permissions.can("delete", "purchasing") ||
+          !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Supplier Quote</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+  const statusBadges = (
+    <>
+      <SupplierQuoteStatus status={routeData?.quote?.status} />
+      {isOutsideProcessing && (
+        <Badge variant="default">{routeData?.quote?.supplierQuoteType}</Badge>
+      )}
+      {supplierApprovalRequired && !isSupplierApproved && (
+        <Status color="red">
+          <Trans>Unapproved Supplier</Trans>
+        </Status>
+      )}
+    </>
+  );
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="w-full justify-between">
-          <HStack>
-            <IconButton
-              aria-label={t`Toggle Explorer`}
-              icon={<LuPanelLeft />}
-              onClick={toggleExplorer}
-              variant="ghost"
-            />
-            <Link to={path.to.supplierQuoteDetails(id)}>
-              <Heading size="h4">
-                <span>{routeData?.quote?.supplierQuoteId}</span>
-              </Heading>
-            </Link>
-            <Copy text={routeData?.quote?.supplierQuoteId ?? ""} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  disabled={
-                    routeData?.quote?.status === "Draft" ||
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "purchasing")
-                  }
-                  onClick={() => {
-                    statusFetcher.submit(
-                      { status: "Draft" },
-                      {
-                        method: "post",
-                        action: path.to.supplierQuoteStatus(id)
-                      }
-                    );
-                  }}
-                >
-                  <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                  <Trans>Reopen</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  disabled={
-                    isLocked ||
-                    !permissions.can("delete", "purchasing") ||
-                    !permissions.is("employee")
-                  }
-                  destructive
-                  onClick={deleteModal.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Supplier Quote</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <SupplierQuoteStatus status={routeData?.quote?.status} />
-            {isOutsideProcessing && (
-              <Badge variant="default">
-                {routeData?.quote?.supplierQuoteType}
-              </Badge>
-            )}
-            {supplierApprovalRequired && !isSupplierApproved && (
-              <Status color="red">
-                <Trans>Unapproved Supplier</Trans>
-              </Status>
-            )}
-          </HStack>
-          <HStack>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  leftIcon={<LuEye />}
-                  variant="secondary"
-                  rightIcon={<LuChevronDown />}
-                >
-                  <Trans>Preview</Trans>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild>
-                  <a
-                    target="_blank"
-                    href={path.to.externalSupplierQuote(
-                      (routeData?.quote as any).externalLinkId
-                    )}
-                    rel="noreferrer"
+      <RecordHeader
+        title={routeData?.quote?.supplierQuoteId}
+        titleTo={path.to.supplierQuoteDetails(id)}
+        copyValue={routeData?.quote?.supplierQuoteId ?? ""}
+        menu={menuItems}
+        status={statusBadges}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            <RecordAction slot="overflow">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<LuEye />}
+                    variant="secondary"
+                    rightIcon={<LuChevronDown />}
                   >
-                    <DropdownMenuIcon icon={<LuExternalLink />} />
-                    <Trans>Digital Quote</Trans>
-                  </a>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <Trans>Preview</Trans>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem asChild>
+                    <a
+                      target="_blank"
+                      href={path.to.externalSupplierQuote(
+                        (routeData?.quote as any).externalLinkId
+                      )}
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuExternalLink />} />
+                      <Trans>Digital Quote</Trans>
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </RecordAction>
 
             {canSend && (
-              <Button
-                onClick={sendModal.onOpen}
-                isLoading={sendFetcher.state !== "idle"}
-                isDisabled={
-                  quoteStatus == "Active" ||
-                  sendFetcher.state !== "idle" ||
-                  !permissions.can("update", "purchasing") ||
-                  !hasLines
-                }
-                variant="primary"
-                leftIcon={<LuSend />}
-              >
-                <Trans>Send</Trans>
-              </Button>
+              <RecordAction slot="primary">
+                <Button
+                  onClick={sendModal.onOpen}
+                  isLoading={sendFetcher.state !== "idle"}
+                  isDisabled={
+                    quoteStatus == "Active" ||
+                    sendFetcher.state !== "idle" ||
+                    !permissions.can("update", "purchasing") ||
+                    !hasLines
+                  }
+                  variant="primary"
+                  leftIcon={<LuSend />}
+                >
+                  <Trans>Send</Trans>
+                </Button>
+              </RecordAction>
             )}
 
             {canFinalize && (
-              <Button
-                onClick={() => {
-                  revalidator.revalidate();
-                  finalizeModal.onOpen();
-                }}
-                isLoading={finalizeFetcher.state !== "idle"}
-                isDisabled={
-                  finalizeFetcher.state !== "idle" ||
-                  !permissions.can("update", "purchasing") ||
-                  !hasLines
-                }
-                variant="secondary"
-                leftIcon={<LuCheckCheck />}
-              >
-                <Trans>Finalize</Trans>
-              </Button>
+              <RecordAction slot="secondary">
+                <Button
+                  onClick={() => {
+                    revalidator.revalidate();
+                    finalizeModal.onOpen();
+                  }}
+                  isLoading={finalizeFetcher.state !== "idle"}
+                  isDisabled={
+                    finalizeFetcher.state !== "idle" ||
+                    !permissions.can("update", "purchasing") ||
+                    !hasLines
+                  }
+                  variant="secondary"
+                  leftIcon={<LuCheckCheck />}
+                >
+                  <Trans>Finalize</Trans>
+                </Button>
+              </RecordAction>
             )}
 
             {routeData?.quote?.status === "Active" &&
               (hasSiblingQuotes ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      isDisabled={
-                        !permissions.can("update", "purchasing") ||
-                        !isSupplierApproved
-                      }
-                      variant="primary"
-                      leftIcon={<LuShoppingCart />}
-                      rightIcon={<LuChevronDown />}
-                    >
-                      <Trans>Order</Trans>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={convertToOrderModal.onOpen}>
-                      <DropdownMenuIcon icon={<LuShoppingCart />} />
-                      <Trans>Order</Trans>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={compareModal.onOpen}>
-                      <DropdownMenuIcon icon={<LuGitCompare />} />
-                      <Trans>Compare and Order</Trans>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <RecordAction slot="primary">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        isDisabled={
+                          !permissions.can("update", "purchasing") ||
+                          !isSupplierApproved
+                        }
+                        variant="primary"
+                        leftIcon={<LuShoppingCart />}
+                        rightIcon={<LuChevronDown />}
+                      >
+                        <Trans>Order</Trans>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={convertToOrderModal.onOpen}>
+                        <DropdownMenuIcon icon={<LuShoppingCart />} />
+                        <Trans>Order</Trans>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={compareModal.onOpen}>
+                        <DropdownMenuIcon icon={<LuGitCompare />} />
+                        <Trans>Compare and Order</Trans>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </RecordAction>
               ) : (
-                <Button
-                  isDisabled={
-                    !permissions.can("update", "purchasing") ||
-                    !isSupplierApproved
-                  }
-                  variant="primary"
-                  leftIcon={<LuShoppingCart />}
-                  onClick={convertToOrderModal.onOpen}
-                >
-                  <Trans>Order</Trans>
-                </Button>
+                <RecordAction slot="primary">
+                  <Button
+                    isDisabled={
+                      !permissions.can("update", "purchasing") ||
+                      !isSupplierApproved
+                    }
+                    variant="primary"
+                    leftIcon={<LuShoppingCart />}
+                    onClick={convertToOrderModal.onOpen}
+                  >
+                    <Trans>Order</Trans>
+                  </Button>
+                </RecordAction>
               ))}
 
             {routeData?.quote?.status === "Draft" && (
-              <statusFetcher.Form
-                method="post"
-                action={path.to.supplierQuoteStatus(id)}
-              >
-                <input type="hidden" name="status" value="Cancelled" />
-                <Button
-                  isDisabled={
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("update", "purchasing")
-                  }
-                  isLoading={
-                    statusFetcher.state !== "idle" &&
-                    statusFetcher.formData?.get("status") === "Cancelled"
-                  }
-                  leftIcon={<LuCircleStop />}
-                  type="submit"
-                  variant="secondary"
+              <RecordAction slot="overflow">
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.supplierQuoteStatus(id)}
                 >
-                  <Trans>Cancel</Trans>
-                </Button>
-              </statusFetcher.Form>
+                  <input type="hidden" name="status" value="Cancelled" />
+                  <Button
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "purchasing")
+                    }
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Cancelled"
+                    }
+                    leftIcon={<LuCircleStop />}
+                    type="submit"
+                    variant="secondary"
+                  >
+                    <Trans>Cancel</Trans>
+                  </Button>
+                </statusFetcher.Form>
+              </RecordAction>
             )}
-
-            <IconButton
-              aria-label={t`Toggle Properties`}
-              icon={<LuPanelRight />}
-              onClick={toggleProperties}
-              variant="ghost"
-            />
-          </HStack>
-        </HStack>
-      </div>
+          </>
+        }
+      />
 
       <SupplierQuoteToOrderDrawer
         isOpen={convertToOrderModal.isOpen}

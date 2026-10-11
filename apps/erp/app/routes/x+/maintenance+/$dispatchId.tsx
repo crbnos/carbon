@@ -10,6 +10,7 @@ import type { JSONContent } from "@carbon/react";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
@@ -90,6 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function MaintenanceDispatchRoute() {
+  const { t } = useLingui();
   const { dispatchId } = useParams();
   const { dispatch, events, items, files } = useLoaderData<typeof loader>();
 
@@ -104,6 +106,7 @@ export default function MaintenanceDispatchRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Items`}
               explorer={
                 <MaintenanceDispatchExplorer items={items} events={events} />
               }

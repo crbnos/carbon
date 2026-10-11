@@ -35,6 +35,7 @@ const ShipmentHeader = () => {
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ItemTracking[];
     fixedAssetLines: { id: string; shipped: boolean }[];
+    rentalLines: { id: string; shipped: boolean }[];
     relatedItems?: Promise<{ invoices: SalesInvoice[] }>;
   }>(path.to.shipment(shipmentId));
 
@@ -54,9 +55,13 @@ const ShipmentHeader = () => {
   const hasShippableFaLines = (routeData?.fixedAssetLines ?? []).some(
     (line) => line.shipped
   );
+  const hasShippableRentalLines = (routeData?.rentalLines ?? []).some(
+    (line) => line.shipped
+  );
   const canPost =
     shipmentLines.some((line) => (line.shippedQuantity ?? 0) !== 0) ||
-    hasShippableFaLines;
+    hasShippableFaLines ||
+    hasShippableRentalLines;
 
   const hasTrackingLabels = (routeData?.shipmentLineTracking ?? []).length > 0;
 

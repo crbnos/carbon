@@ -4,6 +4,9 @@
 -- get_production_planning and get_purchasing_planning are forked from
 -- 20261006130001; their grid wrappers from 20261006205037. Each keeps its
 -- SECURITY setting and its assert_company_access guard.
+-- get_purchasing_planning reports supplier prices as quoted
+-- ("supplierUnitPrice", "currencyCode"), as main's 20261009181437 does:
+-- on a new database this file runs after that column rename.
 --
 --   * Demand, supply and actuals group by "planningSegmentId" ('' is common).
 --     Demand projections are common demand only.
@@ -608,7 +611,8 @@ AS $function$
             'minimumOrderQuantity', ps."minimumOrderQuantity",
             'supplierUnitOfMeasureCode', ps."supplierUnitOfMeasureCode",
             'conversionFactor', ps."conversionFactor",
-            'unitPrice', ps."unitPrice",
+            'supplierUnitPrice', ps."supplierUnitPrice",
+            'currencyCode', ps."currencyCode",
             'supplierId', ps."supplierId",
             'supplierPartId', ps."supplierPartId"
           )

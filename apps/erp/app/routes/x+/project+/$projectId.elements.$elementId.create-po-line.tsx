@@ -16,6 +16,7 @@ import {
   taxableBase
 } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { getSupplierPartPricing } from "~/modules/items";
 import {
   createPurchaseOrderLineFromMaterialValidator,
   NEW_PURCHASE_ORDER
@@ -25,6 +26,7 @@ import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import { resolveSupplierPrice } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-create-po-line");
@@ -194,7 +196,7 @@ export async function action({
     client
       .from("supplierPart")
       .select(
-        "unitPrice, supplierUnitOfMeasureCode, conversionFactor, minimumOrderQuantity"
+        "id, companyId, currencyCode, supplierUnitPrice, supplierUnitOfMeasureCode, conversionFactor, minimumOrderQuantity"
       )
       .eq("itemId", itemId)
       .eq("supplierId", supplierId)
@@ -242,14 +244,13 @@ export async function action({
       .select("code, decimalPlaces")
       .eq("companyGroupId", companyGroupId)
   ]);
-  const currencyCode =
-    supplier.data.currencyCode ?? company.data?.baseCurrencyCode ?? "USD";
-  const decimals =
-    (currencies.data ?? []).find((c) => c.code === currencyCode)
-      ?.decimalPlaces ?? SCALE;
+  const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+  const currencyCode = supplier.data.currencyCode ?? baseCurrencyCode;
   const locationId = project.data?.locationId ?? undefined;
 
   let orderId = purchaseOrderId;
+  // The order's currency and rate (foreign per base): the line's price is in it.
+  let order = { currencyCode, exchangeRate: 1 };
   if (purchaseOrderId === NEW_PURCHASE_ORDER) {
     const created = await insertPurchaseOrder(client, {
       status: "Draft",
@@ -271,10 +272,11 @@ export async function action({
       return { error: { message: "Failed to create the purchase order" } };
     }
     orderId = created.data.id;
+    order = { currencyCode, exchangeRate: created.data.exchangeRate };
   } else {
     const draft = await client
       .from("purchaseOrder")
-      .select("id")
+      .select("id, currencyCode, exchangeRate")
       .eq("id", purchaseOrderId)
       .eq("supplierId", supplierId)
       .eq("status", "Draft")
@@ -285,9 +287,34 @@ export async function action({
         error: { message: "The purchase order is not a Draft of this supplier" }
       };
     }
+    order = {
+      currencyCode: draft.data.currencyCode ?? baseCurrencyCode,
+      exchangeRate: Number(draft.data.exchangeRate ?? 1)
+    };
   }
+  const decimals =
+    (currencies.data ?? []).find((c) => c.code === order.currencyCode)
+      ?.decimalPlaces ?? SCALE;
 
-  const supplierUnitPrice = Number(part?.unitPrice ?? 0);
+  // The supplier part's price is in its own currency; convert it into the
+  // order's, as every purchase document does (resolveSupplierPrice).
+  const pricing = part
+    ? await getSupplierPartPricing(
+        client,
+        part,
+        baseCurrencyCode,
+        order.currencyCode
+      )
+    : null;
+  if (pricing?.error) {
+    return { error: { message: pricing.error.message } };
+  }
+  const supplierUnitPrice = resolveSupplierPrice(
+    pricing?.data ?? null,
+    purchaseQuantity,
+    order,
+    0
+  );
   const taxPercent = Number(supplier.data.taxPercent ?? 0);
   const line = await upsertPurchaseOrderLine(client, {
     purchaseOrderId: orderId,
@@ -299,6 +326,7 @@ export async function action({
     inventoryUnitOfMeasureCode: inventoryUnit,
     conversionFactor,
     supplierUnitPrice,
+    exchangeRate: order.exchangeRate,
     taxPercent,
     supplierTaxAmount: applyRate(
       taxableBase(supplierUnitPrice, purchaseQuantity, 0),

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Json } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { LeasePaymentTerms, RateUnit, Timing } from "@carbon/utils";
 import {
   classifyLessorLease,
@@ -414,6 +414,84 @@ export function leaseCommencementPreview(
     carryingAmount: round(carryingAmount),
     sellingProfit: round(pv.pvPayments - costOfGoodsSold)
   };
+}
+
+export type RentalEquipmentStatus =
+  | "To Deliver"
+  | "Partially Delivered"
+  | "On Rent"
+  | "Partially Returned"
+  | "Returned";
+
+/** Where an agreement's units are, from their line statuses: the header badge
+ *  next to the agreement's own status. Sold counts as back — the unit no
+ *  longer rents. Null with no units. */
+export function rentalEquipmentStatus(
+  lines: {
+    status: Database["public"]["Enums"]["rentalAgreementLineStatus"];
+  }[]
+): RentalEquipmentStatus | null {
+  if (lines.length === 0) return null;
+  const pending = lines.filter((line) => line.status === "Pending").length;
+  const onRent = lines.filter((line) => line.status === "On Rent").length;
+  const back = lines.length - pending - onRent;
+
+  if (pending === lines.length) return "To Deliver";
+  // A unit still in the yard while others have left.
+  if (pending > 0) return "Partially Delivered";
+  if (onRent === lines.length) return "On Rent";
+  if (onRent > 0) return "Partially Returned";
+  return back > 0 ? "Returned" : null;
+}
+
+/** The last Posted shipment that delivered the unit and the last Posted receipt that returned it. */
+export function rentalLineDocuments(
+  lineId: string,
+  shipments: {
+    id: string;
+    shipmentId: string;
+    status: string;
+    shipmentFixedAssetLine: {
+      rentalAgreementLineId: string | null;
+      shipped: boolean;
+    }[];
+  }[],
+  receipts: {
+    id: string;
+    receiptId: string;
+    status: string;
+    receiptFixedAssetLine: {
+      rentalAgreementLineId: string | null;
+      received: boolean;
+    }[];
+  }[]
+): {
+  shipment: { id: string; shipmentId: string } | null;
+  receipt: { id: string; receiptId: string } | null;
+} {
+  let shipment: { id: string; shipmentId: string } | null = null;
+  for (const s of shipments) {
+    if (s.status !== "Posted") continue;
+    if (
+      s.shipmentFixedAssetLine.some(
+        (l) => l.rentalAgreementLineId === lineId && l.shipped
+      )
+    ) {
+      shipment = { id: s.id, shipmentId: s.shipmentId };
+    }
+  }
+  let receipt: { id: string; receiptId: string } | null = null;
+  for (const r of receipts) {
+    if (r.status !== "Posted") continue;
+    if (
+      r.receiptFixedAssetLine.some(
+        (l) => l.rentalAgreementLineId === lineId && l.received
+      )
+    ) {
+      receipt = { id: r.id, receiptId: r.receiptId };
+    }
+  }
+  return { shipment, receipt };
 }
 
 // The surcharge one configuration price adds for a line's configuration: the

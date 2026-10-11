@@ -44,6 +44,7 @@ import {
   jiraSyncFunction,
   linearSyncFunction,
   mountPublishFunction,
+  mountSweepFunction,
   onshapeBackfillFunction,
   onshapeRevisionSyncFunction,
   paperlessPartsFunction,
@@ -61,6 +62,7 @@ import {
 import {
   notifyFunction,
   sendEmailFunction,
+  sendPushFunction,
   sendSlackFunction
 } from "./functions/notifications";
 import {
@@ -116,6 +118,7 @@ export const functions = [
   // Notifications
   notifyFunction,
   sendEmailFunction,
+  sendPushFunction,
   sendSlackFunction,
   // Event handlers
   auditFunction,
@@ -184,6 +187,7 @@ export const functions = [
   accountingReconciliationFunction,
   accountingPullSweepFunction,
   mountPublishFunction,
+  mountSweepFunction,
   onshapeBackfillFunction,
   onshapeRevisionSyncFunction,
   rampSyncFunction,

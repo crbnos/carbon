@@ -16,19 +16,14 @@ import {
   upsertPrinterRoute
 } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
-import {
-  Button,
-  Heading,
-  RecordOutlet,
-  ScrollArea,
-  VStack
-} from "@carbon/react";
+import { Button, RecordOutlet, ScrollArea } from "@carbon/react";
 import { labelSizes, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuPrinter } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { getLocationsList, getWorkCentersList } from "~/modules/resources";
 import { getCompanySettings, printerRouteValidator } from "~/modules/settings";
 import { AssignmentsCard, PrintersCard } from "~/modules/settings/ui/Printing";
@@ -243,14 +238,11 @@ export default function PrintingSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <div className="flex items-center justify-between w-full">
-          <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <div className="flex items-center justify-between w-full max-md:justify-end">
+          <SettingsPageHeading>
             <Trans>Printing</Trans>
-          </Heading>
+          </SettingsPageHeading>
           <Button variant="secondary" leftIcon={<LuPrinter />} asChild>
             <Link to={path.to.printingSettingsJobs}>
               <Trans>View Prints</Trans>
@@ -266,7 +258,7 @@ export default function PrintingSettingsRoute() {
           locations={locations}
           workCenters={workCenters}
         />
-      </VStack>
+      </SettingsPage>
       <RecordOutlet />
     </ScrollArea>
   );

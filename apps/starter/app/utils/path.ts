@@ -13,12 +13,12 @@ const ERP_URL = getAppUrl();
 export const path = {
   to: {
     authenticatedRoot: x,
-    accountSettings: `${ERP_URL}/x/account`,
     callback: "/callback",
     companySwitch: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
     dashboard: `${ERP_URL}/x`,
-
+    // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
+    erpApi: `${x}/proxy/api`,
     health: "/health",
     login: "/login",
     logout: "/logout",

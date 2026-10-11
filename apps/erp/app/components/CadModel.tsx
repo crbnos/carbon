@@ -22,7 +22,8 @@ import {
   Spinner,
   toast,
   useDisclosure,
-  useMode
+  useMode,
+  useViewport
 } from "@carbon/react";
 import { getFileSizeLimit, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
@@ -32,7 +33,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
+import { LuBox, LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
@@ -459,6 +460,7 @@ const CadModelUpload = ({
   onFileChange
 }: CadModelUploadProps) => {
   const hasFile = !!file;
+  const { isPhone } = useViewport();
 
   const { getRootProps, getInputProps } = useDropzone({
     disabled: hasFile,
@@ -494,6 +496,36 @@ const CadModelUpload = ({
       toast.error(message);
     }
   });
+
+  // Phones: no model yet is one line with an Upload button, not a 400px drop zone.
+  if (isPhone && !hasFile) {
+    return (
+      <div className="flex w-full flex-col rounded-xl border border-border bg-card">
+        {title && (
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3 font-medium">
+            {title}
+            {titleExtras}
+          </div>
+        )}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <LuBox className="size-4" />
+          </span>
+          <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+            <Trans>No CAD model to preview.</Trans>
+          </p>
+          {!isReadOnly && (
+            <div {...getRootProps()}>
+              <input {...getInputProps()} name="file" className="sr-only" />
+              <Button variant="secondary" leftIcon={<LuCloudUpload />}>
+                <Trans>Upload</Trans>
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Read-only with no model yet: keep the section (and its title) so the reader
   // knows it exists, but drop the drop zone entirely.

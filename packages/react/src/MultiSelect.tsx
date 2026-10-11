@@ -3,25 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useId, useMemo, useRef, useState } from "react";
-import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
+import { forwardRef, useId, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2, LuX } from "react-icons/lu";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandTrigger
-} from "./Command";
+import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
+import type { PickerListOption } from "./PickerList";
+import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString, withDistinctHelpers } from "./utils/react";
+import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type MultiSelectProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -82,6 +76,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
     const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const openAutoFocus = usePhoneOpenAutoFocus();
 
     const id = useId();
 
@@ -162,19 +157,30 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
+            onOpenAutoFocus={openAutoFocus}
             className="min-w-[var(--radix-popover-trigger-width)] p-1"
           >
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
-              <VirtualizedCommand
+              <PickerList
                 options={options}
-                value={value}
-                onChange={onChange}
+                filter={filterMultiSelectOptions}
+                selectionMode="multiple"
                 itemHeight={itemHeight}
-                setOpen={setOpen}
                 search={search}
-                setSearch={setSearch}
+                onSearchChange={setSearch}
+                getItemValue={getMultiSelectItemValue}
+                isChecked={(option) => value.includes(option.value)}
+                emptyMessage={t`No option found.`}
+                onSelect={(option) => {
+                  onChange(
+                    value.includes(option.value)
+                      ? value.filter((item) => item !== option.value)
+                      : [...value, option.value]
+                  );
+                  setOpen(true);
+                }}
               />
             )}
           </PopoverContent>
@@ -196,125 +202,23 @@ MultiSelect.displayName = "MultiSelect";
 
 export { MultiSelect };
 
-type VirtualizedCommandProps = {
-  options: MultiSelectProps["options"];
-  value: string[];
-  onChange: (selected: string[]) => void;
-  itemHeight: number;
-  setOpen: (open: boolean) => void;
-  search: string;
-  setSearch: (search: string) => void;
-};
+const filterMultiSelectOptions = (
+  options: PickerListOption[],
+  search: string
+) =>
+  search
+    ? options.filter((option) => {
+        const value =
+          typeof option.label === "string"
+            ? `${option.label} ${option.helper ?? ""}`
+            : reactNodeToString(option.label);
 
-function VirtualizedCommand({
-  options,
-  value,
-  onChange,
-  itemHeight,
-  setOpen,
-  search,
-  setSearch
-}: VirtualizedCommandProps) {
-  const { t } = useLingui();
-  const parentRef = useRef<HTMLDivElement>(null);
+        return value.toLowerCase().includes(search.toLowerCase());
+      })
+    : options;
 
-  const filteredOptions = useMemo(() => {
-    return search
-      ? options.filter((option) => {
-          const value =
-            typeof option.label === "string"
-              ? `${option.label} ${option.helper ?? ""}`
-              : reactNodeToString(option.label);
-
-          return value.toLowerCase().includes(search.toLowerCase());
-        })
-      : options;
-  }, [options, search]);
-
-  const virtualizer = useVirtualizer({
-    count: filteredOptions.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => itemHeight,
-    overscan: 12
-  });
-
-  const items = virtualizer.getVirtualItems();
-
-  return (
-    <Command shouldFilter={false}>
-      <CommandInput
-        value={search}
-        onValueChange={setSearch}
-        placeholder={t`Search...`}
-        className="h-9"
-      />
-      <CommandEmpty>{t`No option found.`}</CommandEmpty>
-      <div
-        ref={parentRef}
-        className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1"
-        style={{
-          height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`
-        }}
-      >
-        <CommandGroup
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative"
-          }}
-        >
-          {items.map((virtualRow) => {
-            const option = filteredOptions[virtualRow.index]!;
-            const isSelected = value.includes(option.value);
-
-            return (
-              <CommandItem
-                key={option.value}
-                value={
-                  typeof option.label === "string"
-                    ? option.label.replace(/"/g, '\\"') +
-                      (option.helper?.replace(/"/g, '\\"') ?? "")
-                    : undefined
-                }
-                onSelect={() => {
-                  onChange(
-                    isSelected
-                      ? value.filter((item) => item !== option.value)
-                      : [...value, option.value]
-                  );
-                  setOpen(true);
-                }}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${itemHeight}px`,
-                  transform: `translateY(${virtualRow.start}px)`
-                }}
-              >
-                <div className="flex items-center justify-start gap-2">
-                  {isSelected ? (
-                    <FaSquareCheck className="mr-1.5 text-primary shrink-0" />
-                  ) : (
-                    <FaRegSquare className="mr-1.5 text-muted-foreground shrink-0" />
-                  )}
-                  {option.helper ? (
-                    <div className="flex flex-col min-w-0">
-                      <p className="line-clamp-1">{option.label}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-1">
-                        {option.helper}
-                      </p>
-                    </div>
-                  ) : (
-                    <span className="line-clamp-1 min-w-0">{option.label}</span>
-                  )}
-                </div>
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-      </div>
-    </Command>
-  );
-}
+const getMultiSelectItemValue = (option: PickerListOption) =>
+  typeof option.label === "string"
+    ? option.label.replace(/"/g, '\\"') +
+      (option.helper?.replace(/"/g, '\\"') ?? "")
+    : undefined;

@@ -3,6 +3,8 @@ paths:
   - "apps/erp/app/modules/purchasing/**"
   - "apps/erp/app/components/Form/ConversionFactor.tsx"
   - "packages/server-functions/src/{create,convert,update-purchased-prices}/index.ts"
+  - "packages/server-functions/src/finalize-supplier-quote/index.ts"
+  - "packages/database/src/supplier-part-price.ts"
   - "packages/database/supabase/migrations/*conversion*.sql"
 ---
 
@@ -97,6 +99,32 @@ divide price by it for inventory unit price (`SupplierQuoteLinePricing.tsx`).
   retyped them to bare `NUMERIC` (along with `supplierPart.unitPrice`, which was
   clamped to 2 dp and rounded distributor prices like `0.164` on entry), so the
   factor is now stored exactly as entered. See `.claude/rules/numeric-precision.md`.
+
+## Supplier part prices: per purchase unit, in the part's currency
+
+`supplierPart.supplierUnitPrice` and `supplierPartPrice.supplierUnitPrice` (renamed
+from `unitPrice` in `20261009181437_supplier-part-currency.sql`) hold the price as
+the supplier quoted it: per PURCHASE unit, in `supplierPart.currencyCode` (NULL =
+the company base currency; the migration backfilled base). Break quantities are
+purchase quantities. Nothing stores a converted copy — every reader converts at
+the CURRENT rate through `@carbon/database/supplier-part-price`:
+
+- **Onto a purchase document** (PO/invoice line forms, planning orders, kanban,
+  replacement PO, return lines): `convertUnitPrice(price, partCurrency,
+  documentCurrency)` — identity when the codes match, else through base at the
+  part currency's `get_exchange_rate` and the document's stamped rate. ERP forms
+  load `getSupplierPartPricing` and call `resolveSupplierPrice`.
+- **Into quote costing** (base per INVENTORY unit): `buildSupplierPriceMap`, used
+  by `getSupplierPriceBreaksForItems` (ERP) and its `methods.ts` mirror; a part
+  whose currency has no rate is left out, never costed at par.
+- **Writers that learn a price** (`finalize-supplier-quote`, `convert`
+  supplierQuoteToPurchaseOrder, `update-purchased-prices`) record the document's
+  `supplierUnitPrice` per purchase unit. A part they create takes the document's
+  currency; an existing part keeps its own and the price is converted into it
+  (`getSupplierPartPriceConverter`, `server-functions/src/lib`).
+
+Before this, convert and finalize stored base per INVENTORY unit while every
+reader assumed per purchase unit; the migration repaired those rows.
 
 ## UI component
 

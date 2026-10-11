@@ -12,7 +12,7 @@ import RentalAgreementHeader from "./RentalAgreementHeader";
 import RentalAgreementLineForm from "./RentalAgreementLineForm";
 import RentalAgreementLineSummary from "./RentalAgreementLineSummary";
 import RentalAgreementProperties from "./RentalAgreementProperties";
-import RentalAgreementReturnForm from "./RentalAgreementReturnForm";
+import RentalAgreementReleaseForm from "./RentalAgreementReleaseForm";
 import RentalAgreementSummary from "./RentalAgreementSummary";
 import RentalAgreementsTable from "./RentalAgreementsTable";
 import RentalBillingPeriods from "./RentalBillingPeriods";
@@ -51,7 +51,7 @@ export {
   RentalAgreementLineForm,
   RentalAgreementLineSummary,
   RentalAgreementProperties,
-  RentalAgreementReturnForm,
+  RentalAgreementReleaseForm,
   RentalAgreementSummary,
   RentalAgreementsTable,
   RentalBillingPeriods,

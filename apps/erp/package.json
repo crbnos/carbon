@@ -7,6 +7,7 @@
     "@ai-sdk/react": "catalog:",
     "@base-ui-components/react": "1.0.0-rc.0",
     "@carbon/api": "workspace:*",
+    "@carbon/account": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",

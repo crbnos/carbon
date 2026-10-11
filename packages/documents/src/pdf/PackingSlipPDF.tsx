@@ -13,7 +13,10 @@ import {
 } from "../template";
 import type { PDF } from "../types";
 import { resolveRegistrationLine } from "../utils/shared";
-import type { PackingSlipData } from "./blocks/packingSlip";
+import type {
+  PackingSlipData,
+  PackingSlipRentalUnit
+} from "./blocks/packingSlip";
 import {
   buildPackingSlipVars,
   packingSlipBlockRegistry
@@ -34,6 +37,7 @@ interface PackingSlipProps extends PDF {
   shippingMethod: { id: string; name: string };
   terms: JSONContent;
   trackedEntities: Database["public"]["Tables"]["trackedEntity"]["Row"][];
+  rentalUnits?: PackingSlipRentalUnit[];
   thumbnails?: Record<string, string | null>;
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
@@ -55,6 +59,7 @@ const PackingSlipPDF = ({
   title = "Packing Slip",
   locale,
   trackedEntities,
+  rentalUnits,
   thumbnails,
   template,
   sections = {}
@@ -83,6 +88,7 @@ const PackingSlipPDF = ({
   });
 
   const data: PackingSlipData = {
+    title,
     company,
     locale,
     customer,
@@ -96,6 +102,7 @@ const PackingSlipPDF = ({
     shippingMethod,
     terms,
     trackedEntities,
+    rentalUnits,
     thumbnails,
     theme,
     sections,

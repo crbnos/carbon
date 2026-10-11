@@ -10,6 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -22,27 +23,40 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
+  LuChevronDown,
   LuCircleCheck,
+  LuCirclePlus,
   LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
   LuListChecks,
+  LuPackageCheck,
   LuPanelLeft,
   LuPlay,
-  LuTrash
+  LuTrash,
+  LuTruck
 } from "react-icons/lu";
-import { Link } from "react-router";
+import { Link, useSubmit } from "react-router";
 import { usePanels } from "~/components/Layout";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCompanyToday, usePermissions } from "~/hooks";
+import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
+import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import { path } from "~/utils/path";
+import { rentalEquipmentStatus } from "../../sales.utils";
 import { RentalCommencementPreview } from "./RentalLeaseClassification";
-import RentalStatus from "./RentalStatus";
+import RentalStatus, { RentalEquipmentStatusBadge } from "./RentalStatus";
 import type { RentalAgreementRouteData } from "./types";
 
 type RentalAgreementHeaderProps = Pick<
   RentalAgreementRouteData,
-  "rentalAgreement" | "lines" | "periods" | "leasePolicy" | "leaseInputs"
+  | "rentalAgreement"
+  | "lines"
+  | "periods"
+  | "leasePolicy"
+  | "leaseInputs"
+  | "shipments"
+  | "receipts"
 >;
 
 type PendingAction = "activate" | "invoice" | "close" | "cancel";
@@ -52,10 +66,13 @@ const RentalAgreementHeader = ({
   lines,
   periods,
   leasePolicy,
-  leaseInputs
+  leaseInputs,
+  shipments,
+  receipts
 }: RentalAgreementHeaderProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const submit = useSubmit();
   const { toggleExplorer } = usePanels();
   const today = useCompanyToday();
 
@@ -82,6 +99,11 @@ const RentalAgreementHeader = ({
     (period) => period.status === "Invoiced"
   );
   const hasUnitOnRent = lines.some((line) => line.status === "On Rent");
+  // Delivering and returning draft inventory documents.
+  const canMoveUnits = canUpdate && permissions.can("create", "inventory");
+  const hasPendingUnit = lines.some((line) => line.status === "Pending");
+  // A receipt also holds Pending units (spec Q8).
+  const canReturn = hasUnitOnRent || hasPendingUnit;
   const hasInvoicedPeriod = periods.some(
     (period) => period.status === "Invoiced"
   );
@@ -95,6 +117,21 @@ const RentalAgreementHeader = ({
     !!rentalAgreement.endDate &&
     rentalAgreement.endDate < today &&
     hasUnitOnRent;
+
+  // POST the agreement to the create route, which drafts the document (or
+  // finds the open Draft) and redirects into it.
+  const deliver = () => {
+    const formData = new FormData();
+    formData.set("sourceDocument", "Rental Agreement");
+    formData.set("sourceDocumentId", id);
+    submit(formData, { method: "post", action: path.to.newShipment });
+  };
+  const returnUnits = () => {
+    const formData = new FormData();
+    formData.set("sourceDocument", "Rental Agreement");
+    formData.set("sourceDocumentId", id);
+    submit(formData, { method: "post", action: path.to.newReceipt });
+  };
 
   const open = (next: PendingAction) => {
     setAction(next);
@@ -181,6 +218,11 @@ const RentalAgreementHeader = ({
               </DropdownMenuContent>
             </DropdownMenu>
             <RentalStatus status={status} />
+            {isActive && (
+              <RentalEquipmentStatusBadge
+                status={rentalEquipmentStatus(lines)}
+              />
+            )}
             {isPastEndDate && (
               <Badge variant="orange">
                 <Trans>Past end date</Trans>
@@ -188,6 +230,96 @@ const RentalAgreementHeader = ({
             )}
           </HStack>
           <HStack>
+            {isActive &&
+              canMoveUnits &&
+              (shipments.length === 0 ? (
+                <Button
+                  variant={hasPendingUnit ? "primary" : "secondary"}
+                  leftIcon={<LuTruck />}
+                  isDisabled={!hasPendingUnit}
+                  onClick={deliver}
+                >
+                  <Trans>Deliver</Trans>
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      leftIcon={<LuTruck />}
+                      variant={hasPendingUnit ? "primary" : "secondary"}
+                      rightIcon={<LuChevronDown />}
+                    >
+                      <Trans>Shipments</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      disabled={!hasPendingUnit}
+                      onClick={deliver}
+                    >
+                      <DropdownMenuIcon icon={<LuCirclePlus />} />
+                      <Trans>New Shipment</Trans>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {shipments.map((shipment) => (
+                      <DropdownMenuItem key={shipment.id} asChild>
+                        <Link to={path.to.shipment(shipment.id)}>
+                          <DropdownMenuIcon icon={<LuTruck />} />
+                          <HStack spacing={8}>
+                            <span>{shipment.shipmentId}</span>
+                            <ShipmentStatus status={shipment.status} />
+                          </HStack>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ))}
+            {isActive &&
+              canMoveUnits &&
+              (receipts.length === 0 ? (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuPackageCheck />}
+                  isDisabled={!canReturn}
+                  onClick={returnUnits}
+                >
+                  <Trans>Return</Trans>
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      leftIcon={<LuPackageCheck />}
+                      variant="secondary"
+                      rightIcon={<LuChevronDown />}
+                    >
+                      <Trans>Receipts</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      disabled={!canReturn}
+                      onClick={returnUnits}
+                    >
+                      <DropdownMenuIcon icon={<LuCirclePlus />} />
+                      <Trans>New Receipt</Trans>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {receipts.map((receipt) => (
+                      <DropdownMenuItem key={receipt.id} asChild>
+                        <Link to={path.to.receipt(receipt.id)}>
+                          <DropdownMenuIcon icon={<LuPackageCheck />} />
+                          <HStack spacing={8}>
+                            <span>{receipt.receiptId}</span>
+                            <ReceiptStatus status={receipt.status} />
+                          </HStack>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ))}
             {isActive && (
               <Button
                 variant="secondary"

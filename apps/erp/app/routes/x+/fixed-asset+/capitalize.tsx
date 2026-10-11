@@ -13,6 +13,7 @@ import { data, useLoaderData, useNavigate } from "react-router";
 import {
   fixedAssetCapitalizeValidator,
   getCapitalizationCost,
+  getDefaultAccounts,
   invokeAssetTransfer
 } from "~/modules/accounting";
 import { FixedAssetCapitalizeForm } from "~/modules/accounting/ui/FixedAssets";
@@ -52,26 +53,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const [entity, item, capitalization, assetClasses, timeZone] =
-    await Promise.all([
-      getTrackedEntity(client, trackedEntityId),
-      getItem(client, itemId),
-      getCapitalizationCost(client, getDatabaseClient(), {
-        companyId,
-        userId,
-        trackedEntityId
-      }),
-      // A CIP class is a holding account, never a capitalization target.
-      // `getFixedAssetClassesList` does not select `isConstructionInProgress`,
-      // so the filter is applied here (same select as `x+/job+/new.tsx`).
-      client
-        .from("fixedAssetClass")
-        .select("id, name")
-        .eq("companyId", companyId)
-        .eq("isConstructionInProgress", false)
-        .order("name"),
-      getCompanyTimeZone(client, companyId)
-    ]);
+  const [
+    entity,
+    item,
+    capitalization,
+    assetClasses,
+    timeZone,
+    accountDefaults
+  ] = await Promise.all([
+    getTrackedEntity(client, trackedEntityId),
+    getItem(client, itemId),
+    getCapitalizationCost(client, getDatabaseClient(), {
+      companyId,
+      userId,
+      trackedEntityId
+    }),
+    // A CIP class is a holding account, never a capitalization target.
+    // `getFixedAssetClassesList` does not select `isConstructionInProgress`,
+    // so the filter is applied here (same select as `x+/job+/new.tsx`).
+    client
+      .from("fixedAssetClass")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .eq("isConstructionInProgress", false)
+      .order("name"),
+    getCompanyTimeZone(client, companyId),
+    getDefaultAccounts(client, companyId)
+  ]);
 
   if (
     entity.error ||
@@ -112,7 +120,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       locationId,
       storageUnitId: storageUnitId ?? "",
       transferDate: datetime.today(timeZone).toString(),
-      name: [item.data.name, serialNumber].filter(Boolean).join(" ")
+      name: [item.data.name, serialNumber].filter(Boolean).join(" "),
+      // Used only when the unit carries no cost: the value is booked from
+      // Retained Earnings unless the accountant picks the account it was
+      // spent from this year.
+      offsetAccountId: accountDefaults.data?.retainedEarningsAccount ?? ""
     },
     assetClasses: classes,
     item: {
@@ -141,7 +153,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { storageUnitId, name, ...transfer } = validation.data;
+  const { storageUnitId, name, cost, offsetAccountId, ...transfer } =
+    validation.data;
 
   const result = await invokeAssetTransfer(client, getDatabaseClient(), {
     type: "capitalize",
@@ -149,7 +162,9 @@ export async function action({ request }: ActionFunctionArgs) {
     userId,
     ...transfer,
     storageUnitId: storageUnitId || null,
-    name: name || null
+    name: name || null,
+    cost: cost ?? null,
+    offsetAccountId: cost ? offsetAccountId || null : null
   });
 
   if (result.error) {

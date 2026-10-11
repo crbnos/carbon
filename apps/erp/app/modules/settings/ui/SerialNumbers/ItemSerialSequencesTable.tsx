@@ -48,6 +48,7 @@ const ItemSerialSequencesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuPackage />,
             filter: {
               type: "static",
@@ -63,6 +64,7 @@ const ItemSerialSequencesTable = memo(
           header: t`Name`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuText />
           }
         },
@@ -71,6 +73,7 @@ const ItemSerialSequencesTable = memo(
           header: t`Prefix`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P2",
             icon: <LuTextCursor />
           }
         },

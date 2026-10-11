@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
   fetchRemoteJournalTotals,
   getAccountingIntegration,
@@ -414,7 +415,7 @@ async function computeTieOutForCompany(args: {
       .selectFrom("journal")
       .select(["id", "postingDate", "reversalOfId"])
       .where("companyId", "=", companyId)
-      .where("status", "in", ["Posted", "Reversed"])
+      .where("status", "in", GL_JOURNAL_STATUSES)
       .where("postingDate", ">=", minStart)
       .where("postingDate", "<=", maxEnd)
       .orderBy("id", "asc")

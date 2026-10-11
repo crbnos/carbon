@@ -99,14 +99,8 @@ export async function bootstrap(
       userId,
       companyName: DEV_COMPANY_NAME
     });
-    // Dev/test convenience: enable accounting so posting flows create GL
-    // journals out of the box. Production keeps the column default (false) —
-    // this is the dev-seed bootstrap path only, not seedCompanyReferenceData,
-    // which onboarding and the drift checker also run.
-    await client.query(
-      `UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = $1`,
-      [companyId]
-    );
+    // The dataset's tier 01 gives the company its accounting cutover, so its
+    // posting flows write Posted journals (spec 2026-10-08-accounting-cutover).
     await client.query("COMMIT");
     return { companyId, userId };
   } catch (err) {

@@ -55,7 +55,9 @@ import {
   computePlanningOrders,
   datetime,
   equals,
+  orderSizingRules,
   RoundingMode,
+  reducedOrderQuantity,
   round
 } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
@@ -293,7 +295,54 @@ export type DeriveChangeActionsInput = {
   policyFloor: number;
   toleranceDays: number;
   todayDate: string;
+  /**
+   * How the item's policy sizes one order (`orderSizingRules`). A Decrease
+   * never takes an order below its minimum or off a whole multiple — a Fixed
+   * Reorder Quantity order stays a multiple of that quantity. Absent: none.
+   */
+  orderRules?: Pick<
+    ReturnType<typeof orderSizingRules>,
+    "minimum" | "multiples"
+  >;
+  /**
+   * The item's lead time in days. An order whose latest start (due date less
+   * lead time) has passed is frozen (`isOrderFrozen`): it gets no Expedite,
+   * Increase or Decrease. Absent: 0 — only an overdue order is frozen.
+   */
+  leadTimeDays?: number;
 };
+
+/**
+ * An order nothing can change in time: its due date less the item's lead
+ * time is before today — every overdue order, and one due sooner than a
+ * lead time away. It is already being made or shipped, so an Expedite,
+ * Increase or Decrease on it cannot be carried out; a shortfall it cannot
+ * cover becomes new supply instead. (An Increase on an overdue job sat beside
+ * a Make for the same week, and the planner read the two as ordering twice.)
+ */
+export function isOrderFrozen(
+  order: Pick<OpenSupplyOrder, "dueDate">,
+  todayDate: string,
+  leadTimeDays = 0
+): boolean {
+  return daysBetween(order.dueDate, todayDate) < Math.max(leadTimeDays, 0);
+}
+
+/**
+ * Days an order lands after it is first needed (negative: before). Both dates
+ * count from today at the earliest: an overdue order arrives today, and a need
+ * in the current week is needed today, not on the week's start.
+ */
+function daysLate(
+  order: Pick<OpenSupplyOrder, "dueDate">,
+  firstNeed: { startDate: string },
+  todayDate: string
+): number {
+  return daysBetween(
+    laterDate(order.dueDate, todayDate),
+    laterDate(firstNeed.startDate, todayDate)
+  );
+}
 
 type ChangeCandidate = Omit<
   PlanningActionCandidate,
@@ -385,12 +434,26 @@ export function firstNeedPeriodByOrder(
   input: Pick<
     DeriveChangeActionsInput,
     "onHand" | "demandPeriods" | "openOrders" | "periods" | "policyFloor"
-  >
+  >,
+  /**
+   * With these, a FROZEN order late by more than the tolerance is left out:
+   * it gets no Expedite, so it lands when it lands, and the projection must
+   * not count it earlier — the need it misses gets new supply.
+   */
+  frozen?: { toleranceDays: number; todayDate: string; leadTimeDays?: number }
 ): Map<string, string> {
   const needs = new Map<string, string>();
   for (const { order, firstNeed } of walkOrderCoverage(input)) {
     const ref = order.purchaseOrderLineId ?? order.jobId;
-    if (ref && firstNeed) needs.set(ref, firstNeed.periodId);
+    if (!ref || !firstNeed) continue;
+    if (
+      frozen &&
+      isOrderFrozen(order, frozen.todayDate, frozen.leadTimeDays) &&
+      daysLate(order, firstNeed, frozen.todayDate) > frozen.toleranceDays
+    ) {
+      continue;
+    }
+    needs.set(ref, firstNeed.periodId);
   }
   return needs;
 }
@@ -454,25 +517,29 @@ export function deriveChangeActions(
       continue;
     }
 
+    const frozen = isOrderFrozen(order, todayDate, input.leadTimeDays);
+
     if (firstNeed) {
       // An overdue order arrives today at the earliest, not on its old due
       // date: measured from that date it read as "early" and was offered a
-      // Defer to a date already past.
-      const expectedDate = laterDate(order.dueDate, todayDate);
-      // Likewise a need in the current week is needed today, not on the
-      // week's start: Apply writes the suggested date onto the order, so an
-      // Expedite to a past week start made the order overdue — read as
-      // arriving today, days after the week start — and the same Expedite
-      // came back every run whenever the tolerance was under a week.
+      // Defer to a date already past. Likewise a need in the current week is
+      // needed today, not on the week's start: Apply writes the suggested
+      // date onto the order, so an Expedite to a past week start made the
+      // order overdue — read as arriving today, days after the week start —
+      // and the same Expedite came back every run whenever the tolerance was
+      // under a week.
       const needDate = laterDate(firstNeed.startDate, todayDate);
       // gap > 0: the order lands AFTER it is needed
-      const gap = daysBetween(expectedDate, needDate);
+      const gap = daysLate(order, firstNeed, todayDate);
       // Moving a promised date is agreed with the supplier, not applied.
       const dateTarget = {
         ...target,
         requiresManualAction:
           target.requiresManualAction || Boolean(order.dateIsPromised)
       };
+      // A frozen order cannot be pulled in; the need it misses is planned
+      // as new supply (`firstNeedPeriodByOrder` leaves it where it lands).
+      if (gap > toleranceDays && frozen) continue;
       if (gap > toleranceDays) {
         actions.push({
           ...dateTarget,
@@ -504,10 +571,18 @@ export function deriveChangeActions(
 
     // Round at the compare: `consumed` is a running float sum, so the raw
     // difference can be ~1e-16 for an order that is fully required.
+    // Nor can a frozen order be cut back.
+    if (frozen) continue;
     const required = round(consumed);
-    // What the order holds once decreased — a PO line in whole purchase
-    // units — so a line already at the rounded quantity is left alone.
-    const decreasedTo = quantityAfterApply(order, required);
+    // What the order holds once decreased — no less than the policy's
+    // minimum, on its whole multiples, and a PO line in whole purchase
+    // units — so an order already at that quantity is left alone.
+    const decreasedTo = quantityAfterApply(
+      order,
+      input.orderRules
+        ? reducedOrderQuantity(required, order.quantity, input.orderRules)
+        : required
+    );
     if (round(order.quantity - decreasedTo) > 0) {
       const period = periodFor(order.dueDate);
       actions.push({
@@ -615,8 +690,18 @@ export function convertOrdersToIncreases(args: {
   changeActions: ChangeCandidate[];
   toleranceDays: number;
   todayDate: string;
+  /**
+   * The most one order may hold (`orderSizingRules(...).maximum`: the batch
+   * size, the fixed reorder quantity, the maximum order quantity). A
+   * suggestion is folded only into an order it fits; otherwise it stays a new
+   * order. 0 or absent: no limit.
+   */
+  maximumPerOrder?: number;
+  /** The item's lead time: a frozen order (`isOrderFrozen`) is never increased. */
+  leadTimeDays?: number;
 }): ChangeCandidate[] {
   const { sizingCandidates, openOrders, changeActions, toleranceDays } = args;
+  const maximumPerOrder = args.maximumPerOrder ?? 0;
   // Both dates as the day they mean: an overdue order lands today, and a
   // suggestion for the current week (dated its start) is needed today — so
   // an order an Expedite moved to today still matches this week's shortfall.
@@ -637,6 +722,21 @@ export function convertOrdersToIncreases(args: {
       const isBuy = Boolean(order.purchaseOrderLineId);
       if (candidate.type === "Order" && !isBuy) return false;
       if (candidate.type === "Make" && isBuy) return false;
+      if (isOrderFrozen(order, args.todayDate, args.leadTimeDays)) return false;
+      // Growing an order past what one order holds (a batch, a fixed
+      // reorder quantity, the maximum order quantity) breaks the rule it was
+      // sized by, so the suggestion stays a new order of its own.
+      if (
+        maximumPerOrder > 0 &&
+        round(
+          quantityAfterApply(
+            order,
+            order.quantity + candidate.suggestedQuantity
+          )
+        ) > maximumPerOrder
+      ) {
+        return false;
+      }
       return (
         Math.abs(
           daysBetween(
@@ -1463,10 +1563,50 @@ export function deriveRowActions(
     periods,
     policyFloor: isProjectSegment ? 0 : policyFloorFor(row)
   };
+  const leadTime = Number(row.leadTime) || 0;
+  // lot-for-lot in a project segment: one order per short week, sized to the
+  // shortfall
+  const sizingPolicy = isProjectSegment
+    ? "Demand-Based Reorder"
+    : row.reorderingPolicy;
+  const sizingParams = isProjectSegment
+    ? {
+        reorderPoint: 0,
+        reorderQuantity: 0,
+        minimumOrderQuantity: 0,
+        maximumOrderQuantity: 0,
+        orderMultiple: 0,
+        lotSize: 0,
+        maximumInventoryQuantity: 0,
+        demandAccumulationPeriod: 1,
+        demandAccumulationSafetyStock: 0,
+        leadTime
+      }
+    : {
+        reorderPoint: Number(row.reorderPoint) || 0,
+        reorderQuantity: Number(row.reorderQuantity) || 0,
+        minimumOrderQuantity: Number(row.minimumOrderQuantity) || 0,
+        maximumOrderQuantity: Number(row.maximumOrderQuantity) || 0,
+        orderMultiple: Number(row.orderMultiple) || 0,
+        lotSize: Number(row.lotSize) || 0,
+        maximumInventoryQuantity: Number(row.maximumInventoryQuantity) || 0,
+        demandAccumulationPeriod: Number(row.demandAccumulationPeriod) || 1,
+        demandAccumulationSafetyStock:
+          Number(row.demandAccumulationSafetyStock) || 0,
+        leadTime
+      };
+  const orderRules = orderSizingRules(
+    !isProjectSegment && row.supersessionMode === "Stock Only"
+      ? "Stock Only"
+      : sizingPolicy,
+    sizingParams
+  );
   const changeActions = deriveChangeActions({
     ...coverageInput,
     toleranceDays,
-    todayDate
+    todayDate,
+    orderRules,
+    leadTimeDays: leadTime
   });
 
   // new-supply suggestions from the shared sizing (same math as the grid),
@@ -1520,43 +1660,18 @@ export function deriveRowActions(
       periods,
       changeActions,
       openOrders,
-      firstNeedPeriods: firstNeedPeriodByOrder(coverageInput)
+      firstNeedPeriods: firstNeedPeriodByOrder(coverageInput, {
+        toleranceDays,
+        todayDate,
+        leadTimeDays: leadTime
+      })
     });
-    const leadTime = Number(row.leadTime) || 0;
     sizing = computePlanningOrders({
-      // lot-for-lot: one order per short week, sized to the shortfall
-      reorderingPolicy: isProjectSegment
-        ? "Demand-Based Reorder"
-        : row.reorderingPolicy,
+      reorderingPolicy: sizingPolicy,
       periods,
       projections,
       todayDate,
-      params: isProjectSegment
-        ? {
-            reorderPoint: 0,
-            reorderQuantity: 0,
-            minimumOrderQuantity: 0,
-            maximumOrderQuantity: 0,
-            orderMultiple: 0,
-            lotSize: 0,
-            maximumInventoryQuantity: 0,
-            demandAccumulationPeriod: 1,
-            demandAccumulationSafetyStock: 0,
-            leadTime
-          }
-        : {
-            reorderPoint: Number(row.reorderPoint) || 0,
-            reorderQuantity: Number(row.reorderQuantity) || 0,
-            minimumOrderQuantity: Number(row.minimumOrderQuantity) || 0,
-            maximumOrderQuantity: Number(row.maximumOrderQuantity) || 0,
-            orderMultiple: Number(row.orderMultiple) || 0,
-            lotSize: Number(row.lotSize) || 0,
-            maximumInventoryQuantity: Number(row.maximumInventoryQuantity) || 0,
-            demandAccumulationPeriod: Number(row.demandAccumulationPeriod) || 1,
-            demandAccumulationSafetyStock:
-              Number(row.demandAccumulationSafetyStock) || 0,
-            leadTime
-          }
+      params: sizingParams
     }).map((order) => ({
       type: kind,
       periodId: order.periodId,
@@ -1588,12 +1703,17 @@ export function deriveRowActions(
     openOrders,
     changeActions,
     toleranceDays,
-    todayDate
+    todayDate,
+    maximumPerOrder: orderRules.maximum,
+    leadTimeDays: leadTime
   });
 
   // Lot-size splitting can emit several new-supply suggestions in one
   // period; persist ONE action per (type, period) with the summed quantity
   // — the natural key would otherwise collide and silently drop batches.
+  // The planning pages split the action back into the orders its policy
+  // sized (`splitIntoOrders`): a batch, a fixed reorder quantity, a
+  // maximum order quantity each.
   const aggregated = new Map<string, ChangeCandidate>();
   const passthrough: ChangeCandidate[] = [];
   for (const candidate of merged) {

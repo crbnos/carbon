@@ -64,33 +64,52 @@ export async function getNextSequence(
   trx: Transaction<KyselyDatabase>,
   tableName: string,
   companyId: string
-) {
-  // Atomic increment: the UPDATE takes the row lock before reading, so two
-  // concurrent transactions can't both read the same "next" and return the
-  // same sequence number.
+): Promise<string> {
+  const [sequence] = await getNextSequences(trx, tableName, companyId, 1);
+  if (sequence === undefined) throw new Error("No sequence number allocated");
+  return sequence;
+}
+
+/**
+ * `count` numbers of one sequence in a single statement, in order.
+ *
+ * Atomic increment: the UPDATE takes the row lock before reading, so two
+ * concurrent transactions can't both read the same "next" and return the same
+ * sequence number. Date tokens in the prefix and suffix roll over at the
+ * COMPANY's midnight — document numbering is ledger-scoped.
+ */
+export async function getNextSequences(
+  trx: Transaction<KyselyDatabase>,
+  tableName: string,
+  companyId: string,
+  count: number
+): Promise<string[]> {
+  if (count <= 0) return [];
   const sequence = await trx
     .updateTable("sequence")
     .set({
-      next: sql<number>`"next" + "step"`,
+      next: sql<number>`"next" + "step" * ${count}`,
       updatedBy: "system"
     })
     .where("table", "=", tableName)
     .where("companyId", "=", companyId)
-    .returning(["next", "prefix", "suffix", "size"])
+    .returning(["next", "step", "prefix", "suffix", "size"])
     .executeTakeFirstOrThrow();
 
-  const { prefix, suffix, next, size } = sequence;
+  const { prefix, suffix, next, step, size } = sequence;
   if (!Number.isInteger(next)) throw new Error("Next is not an integer");
+  if (!Number.isInteger(step)) throw new Error("Step is not an integer");
   if (!Number.isInteger(size)) throw new Error("Size is not an integer");
 
-  const nextSequence = next!.toString().padStart(size!, "0");
-  // Sequence date tokens roll over at the COMPANY's midnight — document
-  // numbering is ledger-scoped.
   const timezone = await getCompanyTimeZone(trx, companyId);
   const derivedPrefix = interpolateSequenceDate(prefix, timezone);
   const derivedSuffix = interpolateSequenceDate(suffix, timezone);
-
-  return `${derivedPrefix}${nextSequence}${derivedSuffix}`;
+  const first = next! - step! * (count - 1);
+  return Array.from(
+    { length: count },
+    (_, index) =>
+      `${derivedPrefix}${(first + step! * index).toString().padStart(size!, "0")}${derivedSuffix}`
+  );
 }
 
 export async function getNextRevisionSequence(

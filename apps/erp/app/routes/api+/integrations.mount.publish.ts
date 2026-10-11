@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getMountIntegration } from "@carbon/ee/mount.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -23,7 +24,7 @@ const PublishRequestSchema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -44,13 +45,20 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Returned to the page and written into the run's record, so the page can
+  // tell when the run it started has begun and ended.
+  const requestId = nanoid();
+
   try {
     await trigger("mount-publish", {
       companyId,
-      entityTypes: [parsed.data.entityType]
+      entityTypes: [parsed.data.entityType],
+      userId,
+      requestId,
+      trigger: "manual"
     });
 
-    return data({ success: true, message: "Mount publish started" });
+    return data({ success: true, message: "Mount publish started", requestId });
   } catch (error) {
     logger.error("Failed to start Mount publish", {
       companyId,

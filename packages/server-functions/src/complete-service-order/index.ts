@@ -586,6 +586,8 @@ async function postCompletionJournal(
   const journalId = await createAdjustmentJournal(trx, {
     companyId,
     accountingPeriodId: period.id,
+    // accountingEnabled still gates this path, so its journal is Posted.
+    status: "Posted",
     description: `Refurbishment ${order.serviceOrderId}`,
     postingDate: args.today,
     userId: args.userId,

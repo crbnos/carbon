@@ -32,6 +32,7 @@ import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import { JournalEntryStatus } from "~/modules/accounting/ui/JournalEntries";
 import { ChargeStatus, getCharge } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
@@ -116,14 +117,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       charge.data.journalId
         ? client
             .from("journal")
-            .select("id, journalEntryId")
+            .select("id, journalEntryId, status")
             .eq("id", charge.data.journalId)
             .eq("companyId", companyId)
             .maybeSingle()
-        : Promise.resolve({
-            data: null as { id: string; journalEntryId: string } | null,
-            error: null
-          }),
+        : Promise.resolve({ data: null, error: null }),
       // The charge number of each line, read-only: editing charge lines is
       // .ai/specs/2026-09-23-editable-imported-spend-documents.md.
       projectIds.length > 0
@@ -296,9 +294,12 @@ export default function ChargeDetailRoute() {
                   </dt>
                   <dd>
                     {journal ? (
-                      <Hyperlink to={path.to.journalEntryDetails(journal.id)}>
-                        {journal.journalEntryId}
-                      </Hyperlink>
+                      <HStack spacing={2}>
+                        <Hyperlink to={path.to.journalEntryDetails(journal.id)}>
+                          {journal.journalEntryId}
+                        </Hyperlink>
+                        <JournalEntryStatus status={journal.status} />
+                      </HStack>
                     ) : (
                       charge.journalId
                     )}

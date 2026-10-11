@@ -70,6 +70,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -85,6 +86,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <TbRoute />,
           filter: {
             type: "static",
@@ -97,6 +99,8 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <ProcedureStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
+          mobilePill: true,
           icon: <LuCalendar />
         }
       },
@@ -107,6 +111,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuUser />
         }
       },

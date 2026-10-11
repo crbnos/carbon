@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { fetchAllRecords } from "./utils";
+import { fetchAllByIds, fetchAllRecords } from "./utils";
 
 // `fetchAllRecords` is the only thing standing between a >1000-row read and a
 // silently truncated one, and the local dev stack does not enforce `max_rows`, so
@@ -127,5 +127,66 @@ describe("fetchAllRecords", () => {
 
     expect(result.data).toBeNull();
     expect(result.error?.message).toContain("exceeded");
+  });
+});
+
+// `fetchAllByIds` guards the other limit: `.in()` writes every id into the URL,
+// and the gateway rejects a request line it cannot buffer (HTTP 431). Each
+// group must stay small, every group must be paged past the row cap, and a
+// failed group must fail the read instead of dropping its rows.
+describe("fetchAllByIds", () => {
+  /** Rows per id; the factory records each group it is asked for. */
+  function fakeById(rowsPerId: number, opts: { failGroup?: number } = {}) {
+    const groups: string[][] = [];
+    const build = (batch: string[]) => {
+      groups.push(batch);
+      const group = groups.length - 1;
+      const rows = batch.flatMap((id) =>
+        Array.from({ length: rowsPerId }, (_, i) => ({ id: `${id}:${i}` }))
+      );
+      return {
+        range: (from: number, to: number) =>
+          Promise.resolve(
+            opts.failGroup === group
+              ? { data: null, error: { message: "boom" } }
+              : { data: rows.slice(from, to + 1), error: null }
+          )
+      } as any;
+    };
+    return { build, groups };
+  }
+
+  const idsOf = (n: number) => Array.from({ length: n }, (_, i) => `u${i}`);
+
+  it("sends at most 100 ids per request and returns every row", async () => {
+    const { build, groups } = fakeById(3);
+    const result = await fetchAllByIds(idsOf(250), build);
+
+    expect(groups.map((g) => g.length)).toEqual([100, 100, 50]);
+    expect(result.error).toBeNull();
+    expect(result.data).toHaveLength(750);
+  });
+
+  it("pages a group whose rows pass the row cap", async () => {
+    const { build } = fakeById(30);
+    const result = await fetchAllByIds(idsOf(100), build);
+
+    expect(result.data).toHaveLength(3000);
+  });
+
+  it("makes no request for an empty list", async () => {
+    const { build, groups } = fakeById(1);
+    const result = await fetchAllByIds([], build);
+
+    expect(groups).toEqual([]);
+    expect(result.data).toEqual([]);
+  });
+
+  it("fails the whole read when one group fails", async () => {
+    const { build } = fakeById(1, { failGroup: 1 });
+    const result = await fetchAllByIds(idsOf(250), build);
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toBe("boom");
   });
 });

@@ -3,7 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
-import { inOrder, single } from "@carbon/database/rows";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import { single } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { credit, datetime, debit, round } from "@carbon/utils";
 import { nanoid } from "nanoid";
@@ -18,8 +20,9 @@ export const closeJobInput = z.object({
 
 /**
  * Closing a job writes off whatever is left in WIP for it as production
- * variance, so the job's WIP nets to zero. Nothing to do when accounting is off
- * or the residual is under a cent.
+ * variance, so the job's WIP nets to zero. Nothing to do when the residual is
+ * under a cent. The journal is Provisional before the company's accounting
+ * cutover and Posted after it.
  */
 const closeJob = defineServerFn({
   name: "close-job",
@@ -31,29 +34,12 @@ const closeJob = defineServerFn({
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    const [accountingSettings, companyRecord] = await inOrder([
-      () =>
-        single(
-          db,
-          "companySettings",
-          { id: companyId },
-          { columns: ["accountingEnabled"] }
-        ),
-      () =>
-        single(
-          db,
-          "company",
-          { id: companyId },
-          { columns: ["companyGroupId"] }
-        )
-    ]);
-
-    const accountingEnabled =
-      accountingSettings.data?.accountingEnabled ?? false;
-
-    if (!accountingEnabled) {
-      return { success: true };
-    }
+    const companyRecord = await single(
+      db,
+      "company",
+      { id: companyId },
+      { columns: ["companyGroupId"] }
+    );
 
     if (companyRecord.error) throw new Error("Failed to fetch company");
 
@@ -63,6 +49,10 @@ const closeJob = defineServerFn({
     }
 
     await db.transaction().execute(async (trx) => {
+      // Provisional before the company's accounting cutover, Posted after it.
+      // Read inside the transaction so the FOR SHARE lock holds until commit.
+      const postingStatus = await journalPostingStatus(trx, companyId);
+
       const wipBalance = await trx
         .selectFrom("journalLine")
         .innerJoin("journal", "journal.id", "journalLine.journalId")
@@ -74,6 +64,7 @@ const closeJob = defineServerFn({
         )
         .where("journalLine.documentId", "=", jobId)
         .where("journal.companyId", "=", companyId)
+        .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
         .executeTakeFirst();
 
       const remainingWip = Number(wipBalance?.balance ?? 0);
@@ -142,11 +133,11 @@ const closeJob = defineServerFn({
         }
       ];
 
-      const accountingPeriodId = await getCurrentAccountingPeriod(
-        companyId,
-        trx,
-        today
-      );
+      // A Provisional journal has no accounting period.
+      const accountingPeriodId =
+        postingStatus === "Posted"
+          ? await getCurrentAccountingPeriod(companyId, trx, today)
+          : null;
 
       const journalEntryId = await getNextSequence(
         trx,
@@ -163,7 +154,7 @@ const closeJob = defineServerFn({
           postingDate: today,
           companyId,
           sourceType: "Job Close",
-          status: "Posted",
+          status: postingStatus,
           postedAt: datetime.timestamp(),
           postedBy: userId,
           createdBy: userId

@@ -219,7 +219,7 @@ export default function PrintJobsRoute() {
             <Trans>Print Jobs</Trans>
           </DrawerTitle>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           <PrintJobsTable jobs={jobs} count={count} />
         </DrawerBody>
       </DrawerContent>

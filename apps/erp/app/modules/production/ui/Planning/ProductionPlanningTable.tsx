@@ -306,11 +306,12 @@ const ProductionPlanningTable = ({
             openNewSupplyActions(
               actionsByRowKey.get(planningRowKey(row)),
               "Make"
-            )
+            ),
+            { item: row, todayDate: locationToday }
           )
         ])
       ),
-    [data, actionsByRowKey]
+    [data, actionsByRowKey, locationToday]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -421,6 +422,17 @@ const ProductionPlanningTable = ({
     []
   );
 
+  // Planning a Draft job re-runs MRP: the item's draft list is stale, so the
+  // drawer re-seeds from the new suggestions.
+  const dropOrders = useCallback((item: ProductionPlanningItem) => {
+    if (!item.id) return;
+    setOrdersMap((prev) => {
+      if (!(item.id! in prev)) return prev;
+      const { [item.id!]: _dropped, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+
   // The drawer's own Planning Horizon control: the same on-screen override as
   // the grid cell, for the row the drawer is open on.
   const selectedItemId = selectedItem?.id;
@@ -509,6 +521,7 @@ const ProductionPlanningTable = ({
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -582,9 +595,15 @@ const ProductionPlanningTable = ({
         }
       },
       ...shared.periods,
-      shared.reorderPolicy,
+      {
+        ...shared.reorderPolicy,
+        meta: { ...shared.reorderPolicy.meta, mobile: "P2" }
+      },
       shared.unitOfMeasure,
-      shared.onHand,
+      {
+        ...shared.onHand,
+        meta: { ...shared.onHand.meta, mobile: "P3", mobileLabel: true }
+      },
       shared.firstNegativeDate,
       shared.latestOrderDate,
       shared.timeFence,
@@ -640,6 +659,9 @@ const ProductionPlanningTable = ({
               </Button>
             </div>
           );
+        },
+        meta: {
+          mobile: "action"
         }
       }
     ];
@@ -766,7 +788,11 @@ const ProductionPlanningTable = ({
                 window.location.href = getLocationPath(selected);
               }}
             />
-            <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
+            <mrpFetcher.Form
+              method="post"
+              action={path.to.api.mrp(locationId)}
+              className="max-md:hidden"
+            >
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -782,7 +808,24 @@ const ProductionPlanningTable = ({
                 <TooltipContent>{mrpScheduleDescription}</TooltipContent>
               </Tooltip>
             </mrpFetcher.Form>
+            <p className="basis-full text-xs text-muted-foreground md:hidden">
+              {mrpScheduleDescription}
+            </p>
           </div>
+        }
+        mobileMenuItems={
+          <DropdownMenuItem
+            disabled={mrpFetcher.state !== "idle"}
+            onSelect={() =>
+              mrpFetcher.submit(
+                {},
+                { method: "post", action: path.to.api.mrp(locationId) }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuCirclePlay />} />
+            <Trans>Recalculate</Trans>
+          </DropdownMenuItem>
         }
         renderActions={renderActions}
         renderExpandedRow={renderExpandedRow}
@@ -812,6 +855,7 @@ const ProductionPlanningTable = ({
           actions={selectedActions}
           actionHandlers={actionHandlers}
           setOrders={setOrders}
+          onSuggestionsStale={dropOrders}
           periods={periods}
           isOpen={isDrawerOpen}
           onClose={closeDrawer}

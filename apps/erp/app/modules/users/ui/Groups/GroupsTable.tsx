@@ -63,6 +63,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
             </Hyperlink>
           ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -90,6 +91,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
           </AvatarGroup>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuUsers />
         }
       }

@@ -17,6 +17,7 @@ import { resolveMemoJournalPartyFromDatabase } from "../../../core/memo-party";
 import type { PostingSyncDimensionSlot } from "../../../core/models";
 import {
   getPostingSyncSourceTypeSkipReason,
+  getZeroJournalSkipReason,
   JournalEntrySyncError,
   type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
@@ -556,6 +557,11 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
       }
     );
     if (sourceTypeSkipReason) return sourceTypeSkipReason;
+
+    // An all-zero journal (an outbound movement at no cost) has nothing to
+    // book, and some providers refuse a journal of zero lines.
+    const zeroJournalSkipReason = getZeroJournalSkipReason(local);
+    if (zeroJournalSkipReason) return zeroJournalSkipReason;
 
     return true;
   }

@@ -12,7 +12,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -23,11 +23,12 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewAction } from "~/components/New";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { clearStockTransferWizard, usePeople } from "~/stores";
@@ -55,6 +56,26 @@ const StockTransfersTable = memo(
     const rows = useMemo(() => data, [data]);
     const [people] = usePeople();
 
+    // `?new` (path.to.stockTransfersNew, the Create menu's target) opens the
+    // wizard, then drops the param so a refresh or back doesn't reopen it.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { onOpen: openWizard } = wizardDisclosure;
+    const canCreate = permissions.can("create", "inventory");
+    useEffect(() => {
+      if (!searchParams.has("new")) return;
+      if (canCreate) {
+        clearStockTransferWizard();
+        openWizard();
+      }
+      setSearchParams(
+        (prev) => {
+          prev.delete("new");
+          return prev;
+        },
+        { replace: true }
+      );
+    }, [searchParams, setSearchParams, openWizard, canCreate]);
+
     const customColumns = useCustomColumns<StockTransfer>("stockTransfer");
     const locations = useLocations();
 
@@ -69,6 +90,7 @@ const StockTransfersTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -103,6 +125,7 @@ const StockTransfersTable = memo(
             return <StockTransferStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: stockTransferStatusType.map((type) => ({
@@ -121,6 +144,7 @@ const StockTransfersTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -274,15 +298,23 @@ const StockTransfersTable = memo(
                 }}
               />
               {permissions.can("create", "inventory") && (
-                <Button
+                <NewAction
+                  label={t`Add Stock Transfer`}
                   onClick={() => {
                     clearStockTransferWizard();
                     wizardDisclosure.onOpen();
                   }}
-                  leftIcon={<LuCirclePlus />}
                 >
-                  {t`Add Stock Transfer`}
-                </Button>
+                  <Button
+                    onClick={() => {
+                      clearStockTransferWizard();
+                      wizardDisclosure.onOpen();
+                    }}
+                    leftIcon={<LuCirclePlus />}
+                  >
+                    {t`Add Stock Transfer`}
+                  </Button>
+                </NewAction>
               )}
             </div>
           }

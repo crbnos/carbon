@@ -33,6 +33,7 @@ import type {
   PeriodRunPreview
 } from "./accounting.service";
 import {
+  ACCOUNTING_NOT_STARTED,
   checklistTasksToCreate,
   closeAccountingPeriod,
   computePeriodReadiness,
@@ -42,8 +43,10 @@ import {
   getAccountingPeriodDeletability,
   getFiscalCalendarCommitted,
   getOrCreateAccountingPeriod,
+  lockAccountingPeriod,
   postJournalEntry,
   reopenAccountingPeriod,
+  requireAccountingCutover,
   skipCloseTask
 } from "./accounting.service";
 
@@ -206,6 +209,7 @@ const noRunsDue = async () => nothingDue;
 describe("closeAccountingPeriod — sequential close", () => {
   it("rejects closing period N while an earlier period is not Closed", async () => {
     const client = makeClient([
+      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
       { data: { id: "P2", startDate: "2026-02-01", closeStatus: "Locked" } },
       { count: 1 } // one earlier period still open
     ]);
@@ -220,6 +224,7 @@ describe("closeAccountingPeriod — sequential close", () => {
 
   it("rejects closing a period that is not yet Locked", async () => {
     const client = makeClient([
+      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
       { data: { id: "P2", startDate: "2026-02-01", closeStatus: "Open" } }
     ]);
     const { db } = makeKyselyRecorder();
@@ -235,6 +240,7 @@ describe("closeAccountingPeriod — sequential close", () => {
     //   getPeriodCloseChecklist: getAccountingPeriodById -> [definitions, tasks]
     //     -> readiness (4 parallel) ; then the period-flip update.
     const client = makeClient([
+      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
       { data: { id: "P2", startDate: "2026-02-01", closeStatus: "Locked" } },
       { count: 0 }, // no earlier open periods
       {
@@ -298,6 +304,7 @@ const lockedPeriodWithRange = {
 describe("closeAccountingPeriod — Blocker gate + Auto-task persistence", () => {
   it("rejects the close when a Blocker auto-check (draft JEs) is failing", async () => {
     const { client, updates } = makeRecordingClient([
+      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
       { data: lockedPeriod }, // getAccountingPeriodById
       { count: 0 }, // no earlier open periods
       { data: lockedPeriodWithRange }, // checklist: getAccountingPeriodById
@@ -356,6 +363,7 @@ describe("closeAccountingPeriod — Blocker gate + Auto-task persistence", () =>
 
   it("persists the resolved Auto-task state, then closes, when checks pass", async () => {
     const { client } = makeRecordingClient([
+      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
       { data: lockedPeriod }, // getAccountingPeriodById
       { count: 0 }, // no earlier open periods
       { data: lockedPeriodWithRange }, // checklist: getAccountingPeriodById
@@ -746,6 +754,7 @@ describe("postJournalEntry — period gate wiring", () => {
   it("rejects posting a balanced manual JE into a Closed period", async () => {
     const client = makeClient([
       draftEntry,
+      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
       { data: { id: "P2", status: "Active", closeStatus: "Closed" } }
     ]);
 
@@ -758,6 +767,7 @@ describe("postJournalEntry — period gate wiring", () => {
   it("posts a balanced manual JE into a Locked period (accounting source)", async () => {
     const client = makeClient([
       draftEntry,
+      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
       { data: { id: "P2", status: "Active", closeStatus: "Locked" } },
       { data: { id: "J1" }, error: null }
     ]);
@@ -931,6 +941,23 @@ describe("getFiscalCalendarCommitted", () => {
     const client = makeClient([{ count: 1 }, { count: 0 }]);
     const result = await getFiscalCalendarCommitted(client, "C1");
     expect(result.data?.committed).toBe(true);
+  });
+
+  it("counts only Posted and Reversed journals, never a Provisional one", async () => {
+    const statusFilters: unknown[] = [];
+    const builder: any = {
+      select: () => builder,
+      eq: () => builder,
+      neq: () => builder,
+      in: (column: string, values: unknown[]) => {
+        if (column === "status") statusFilters.push(values);
+        return builder;
+      },
+      then: (resolve: (v: Scripted) => unknown) => resolve({ count: 0 })
+    };
+    const client = { from: () => builder } as any;
+    await getFiscalCalendarCommitted(client, "C1");
+    expect(statusFilters).toEqual([["Posted", "Reversed"]]);
   });
 });
 
@@ -1134,5 +1161,32 @@ describe("computePeriodReadiness — run checks", () => {
         { id: "D1", readableId: "DEP-000001", periodEnd: "2026-10-31" }
       ]
     });
+  });
+});
+
+describe("requireAccountingCutover", () => {
+  it("refuses manual accounting work before the cutover", async () => {
+    const client = makeClient([{ data: { accountingCutoverDate: null } }]);
+    const result = await requireAccountingCutover(client, "C1");
+    expect(result.error?.message).toBe(ACCOUNTING_NOT_STARTED);
+  });
+
+  it("allows it once the company has a cutover", async () => {
+    const client = makeClient([
+      { data: { accountingCutoverDate: "2026-01-01" } }
+    ]);
+    const result = await requireAccountingCutover(client, "C1");
+    expect(result.error).toBeNull();
+  });
+
+  it("stops a period lock before the cutover, before any other read", async () => {
+    const client = makeClient([{ data: { accountingCutoverDate: null } }]);
+    const result = await lockAccountingPeriod(client, {
+      periodId: "P1",
+      companyId: "C1",
+      userId: "U1"
+    });
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toBe(ACCOUNTING_NOT_STARTED);
   });
 });

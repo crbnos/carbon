@@ -25,6 +25,11 @@ export const APP_CHOICES = [
     value: "email",
     label: "Email previews",
     hint: "react-email server for every email template"
+  },
+  {
+    value: "studio",
+    label: "Studio",
+    hint: "Supabase dashboard for the local database"
   }
 ] as const;
 export type AppId = (typeof APP_CHOICES)[number]["value"];

@@ -62,8 +62,8 @@ When you've picked a winning quote, **"Convert to Order"** turns it into a purch
 
 Conversion also updates the item's **supplier part**. For each converted line, Carbon writes quantity-break prices to the supplier's `supplierPart` record (source: `Purchase Order`) and sets its primary unit price to the best tier. Later orders can reuse these prices.
 
-<Callout type="note" title="Converting updates item costs">
-The quantity-break prices land on the supplier part in *inventory* units: the supplier's per-purchase-unit price is divided by both the exchange rate and the conversion factor before it's stored. That's why a quote in another currency, in the supplier's pack size, still shows a sensible per-stock-unit cost afterward.
+<Callout type="note" title="Prices are kept as quoted">
+The quantity-break prices land on the supplier part as the supplier quoted them: per purchase unit, in the quote's currency. A supplier part that already exists in another currency keeps its currency, and the prices are converted into it. Each later order converts the stored price into its own currency at the exchange rate of that day.
 </Callout>
 
 For the full narrative, from sending the RFQ through comparing quotes to raising the order, see the [RFQ to PO guide](/guides/rfq-to-po). For what happens to the order once it exists, see [purchase orders](/docs/reference/purchase-orders).

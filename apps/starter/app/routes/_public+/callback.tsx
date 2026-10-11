@@ -155,7 +155,7 @@ export default function AuthCallback() {
   }, [fetcher, redirectTo]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-card">
       {error ? (
         <>
           <div className="flex justify-center mb-8">

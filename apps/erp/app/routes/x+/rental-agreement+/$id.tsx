@@ -17,6 +17,7 @@ import {
   getRentalAgreementCharges,
   getRentalAgreementDeposits,
   getRentalAgreementLines,
+  getRentalAgreementRelatedDocuments,
   getRentalBillingPeriods
 } from "~/modules/sales";
 import type {
@@ -62,7 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const customerContactId = rentalAgreement.data.customerContactId;
-  const [lines, charges, periods, deposits, rentableAssets, contact] =
+  const [lines, charges, periods, deposits, rentableAssets, contact, related] =
     await Promise.all([
       getRentalAgreementLines(client, id, companyId),
       getRentalAgreementCharges(client, id, companyId),
@@ -79,7 +80,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .eq("id", customerContactId)
             .eq("companyId", companyId)
             .maybeSingle()
-        : Promise.resolve({ data: null, error: null })
+        : Promise.resolve({ data: null, error: null }),
+      getRentalAgreementRelatedDocuments(client, id, companyId)
     ]);
 
   // `salesInvoiceLineId` on periods and charges has no foreign key, so the
@@ -165,6 +167,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     charges: charges.data ?? [],
     periods: periods.data ?? [],
     deposits: deposits.data ?? [],
+    // A failed read leaves the lists empty rather than failing the page.
+    shipments: related.error ? [] : related.data.shipments,
+    receipts: related.error ? [] : related.data.receipts,
     rentableAssets: rentableAssets.data ?? [],
     invoiceLinks,
     contactEmail: contact.data?.contact?.email || null,
@@ -178,8 +183,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function RentalAgreementRoute() {
-  const { rentalAgreement, lines, periods, leasePolicy, leaseInputs } =
-    useLoaderData<typeof loader>();
+  const {
+    rentalAgreement,
+    lines,
+    periods,
+    leasePolicy,
+    leaseInputs,
+    shipments,
+    receipts
+  } = useLoaderData<typeof loader>();
   const { id } = useParams();
   const matches = useMatches();
   if (!id) throw new Error("Could not find id");
@@ -199,6 +211,8 @@ export default function RentalAgreementRoute() {
           periods={periods}
           leasePolicy={leasePolicy}
           leaseInputs={leaseInputs}
+          shipments={shipments}
+          receipts={receipts}
         />
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">

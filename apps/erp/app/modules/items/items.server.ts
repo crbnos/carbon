@@ -4,13 +4,12 @@
 
 import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllByIds } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
 import { NotificationEvent } from "@carbon/notifications";
-import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { data } from "react-router";
 import {
@@ -767,25 +766,9 @@ export type UnreleasedChangeOrderItem = {
   changeOrderReadableId: string;
 };
 
-// PostgREST caps a response at `max_rows` (1000) and an `in` filter rides in the
-// URL, so both reads walk their ids in batches. Truncating either one would drop
-// an item from the answer, and a missing row reads as "no change order holds it".
-const CHANGE_ORDER_ID_BATCH_SIZE = 500;
-
-async function readIdsInBatches<T>(
-  ids: string[],
-  read: (
-    batch: string[]
-  ) => PromiseLike<{ data: T[] | null; error: unknown | null }>
-): Promise<{ data: T[]; error: unknown | null }> {
-  const rows: T[] = [];
-  for (const batch of chunkArray(ids, CHANGE_ORDER_ID_BATCH_SIZE)) {
-    const result = await read(batch);
-    if (result.error) return { data: [], error: result.error };
-    rows.push(...(result.data ?? []));
-  }
-  return { data: rows, error: null };
-}
+// Both reads go through fetchAllByIds: an `in` filter rides in the URL and a
+// response stops at PostgREST's row cap. Truncating either one would drop an
+// item from the answer, and a missing row reads as "no change order holds it".
 
 // Two queries per batch of ids — the bulk item update can carry a whole table
 // selection.
@@ -799,12 +782,13 @@ export async function getUnreleasedChangeOrderItems(
 ): Promise<{ data: UnreleasedChangeOrderItem[]; error: string | null }> {
   if (args.itemIds.length === 0) return { data: [], error: null };
 
-  const items = await readIdsInBatches(args.itemIds, (batch) =>
+  const items = await fetchAllByIds(args.itemIds, (batch) =>
     client
       .from("item")
       .select("id, readableIdWithRevision, changeOrderId")
       .in("id", batch)
       .eq("companyId", args.companyId)
+      .order("id")
   );
 
   if (items.error) {
@@ -824,7 +808,7 @@ export async function getUnreleasedChangeOrderItems(
   );
   if (owned.length === 0) return { data: [], error: null };
 
-  const changeOrders = await readIdsInBatches(
+  const changeOrders = await fetchAllByIds(
     [...new Set(owned.map((item) => item.changeOrderId))],
     (batch) =>
       client
@@ -832,6 +816,7 @@ export async function getUnreleasedChangeOrderItems(
         .select("id, changeOrderId, status")
         .in("id", batch)
         .eq("companyId", args.companyId)
+        .order("id")
   );
 
   if (changeOrders.error) {

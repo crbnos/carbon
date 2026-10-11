@@ -33,7 +33,8 @@ Key service functions (verified):
   transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
-  `accountDefault.inventoryAdjustmentVarianceAccount`) when `companySettings.accountingEnabled`.
+  `accountDefault.inventoryAdjustmentVarianceAccount`) for every company — Provisional before the
+  accounting cutover, Posted after it.
   `post-inventory-count` books its variances through the same shared core
   (`packages/server-functions/src/lib/post-adjustment.ts`). Storage-unit transfers post no GL.
   **Serial units are costed by specific identification.** `costLedger.trackedEntityId`
@@ -66,7 +67,27 @@ Key service functions (verified):
   lands as a `Revaluation` child. **`get_inventory_valuation`** (migration
   `20261010002941_valuation-child-rows.sql`) counts only parent rows as layers and adds each
   open child's remaining cost to its parent; it counted an open child as a layer of its
-  own before. The valuation
+  own before.
+  **Serial unit cost and Recost.** `preview-serial-unit-costs` (`{ itemId,
+  locationId? }`, `view: accounting`) values every on-hand serial of an item
+  with the pure `serialUnitCost` (`lib/serial-unit-cost.ts`): calculateCOGS's
+  arithmetic for a quantity of one (own layer, then unstamped, with price
+  correction children; Standard / Average at the item cost), from one read of
+  the item's layers. ERP: `getSerialUnitCosts` → cached `api+/items.$itemId.serial-costs.ts`
+  (also returns `costingMethod` and `retainedEarningsAccountId`), read by
+  `InventoryStorageUnits` only when the user can view accounting; a zero
+  cost reads "No cost". **Recost** (row action, `update: accounting`, FIFO /
+  LIFO only) → `x+/inventory+/quantities+/$itemId.recost.tsx` →
+  `recostSerialUnit` → `recost-serial-unit` (`{ trackedEntityId, unitCost,
+  offsetAccountId?, postingDate }`, `update: accounting`): exactly one unit on
+  hand at one location; relieves it via `calculateCOGS` (its own layer first)
+  and books −1 at the old cost / +1 stamped at the new, both
+  `costLedgerType 'Revaluation'` (refurbishment completion also writes one; no
+  `itemLedger` row — nothing moves); posts an `'Inventory
+  Adjustment'` journal (Provisional before the accounting cutover) of the difference, inventory account vs the offset
+  account (`getOffsetAccount`, `lib/offset-account.ts`, signed by the offset
+  account's own class via `buildOffsetLines`). The valuation report's FIFO /
+  LIFO layer average moves by exactly the difference, so the tie-out holds. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
   **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +
@@ -95,8 +116,9 @@ Key service functions (verified):
 - `correctStockMovement` — wraps the **`correct-stock-movement` server function**: fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
-  `postingDate` and (when accounting is on) posting its journal into the period containing
-  that date via `getAccountingPeriodForDate` (throws on Locked/Closed). The delta is
+  `postingDate` and posting its journal: after the accounting cutover into the period containing
+  that date via `getAccountingPeriodForDate` (throws on Locked/Closed); before it the journal is
+  Provisional and has no period. The delta is
   `correctedQuantity − effective` (effective = root + all prior corrections in the group),
   so repeat corrections converge. `documentType`/`documentId` are copied from the original
   so document-scoped movement views keep including the fix. Entry point: "Correct Quantity"

@@ -48,6 +48,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
   } = useReceiptForm({ status, initialValues });
 
   const isPosted = status === "Posted";
+  const isRental = initialValues.sourceDocument === "Rental Agreement";
   const isEditing = initialValues.id !== undefined;
 
   return (
@@ -70,16 +71,18 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
           name="sourceDocument"
           label={t`Source Document`}
           termId="receipt-source-document"
-          options={receiptSourceDocumentType.map((v) => ({
-            label: v,
-            value: v
-          }))}
+          options={receiptSourceDocumentType
+            .filter((v) => isRental || v !== "Rental Agreement")
+            .map((v) => ({
+              label: v,
+              value: v
+            }))}
           onChange={(newValue) => {
             if (newValue) {
               setSourceDocument(newValue.value as ReceiptSourceDocument);
             }
           }}
-          isReadOnly={isPosted}
+          isReadOnly={isPosted || isRental}
         />
         <Combobox
           name="sourceDocumentId"
@@ -89,7 +92,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
             label: d.name,
             value: d.id
           }))}
-          isReadOnly={isPosted}
+          isReadOnly={isPosted || isRental}
         />
         <Location
           name="locationId"

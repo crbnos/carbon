@@ -14,24 +14,22 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { LuImage, LuTruck, LuUndo2 } from "react-icons/lu";
+import { LuImage } from "react-icons/lu";
 import { Link } from "react-router";
 import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
-import { useCurrencyDecimals } from "~/hooks";
+import { useCurrencyDecimals, useRouteData } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
+import { rentalLineDocuments } from "../../sales.utils";
 import { LeaseClassificationBadge } from "./RentalLeaseClassification";
 import RentalStatus from "./RentalStatus";
 import type {
   RentalAgreement,
   RentalAgreementLine,
+  RentalAgreementRouteData,
   RentalAgreementStatusType,
   RentalBillingPeriod
 } from "./types";
-import {
-  type RentalLineActionState,
-  rentalUnitLabel,
-  useRentalLineActions
-} from "./useRentalLineActions";
+import { rentalUnitLabel } from "./useRentalLineActions";
 
 type RentalAgreementSummaryProps = {
   rentalAgreement: RentalAgreement;
@@ -40,9 +38,9 @@ type RentalAgreementSummaryProps = {
 };
 
 /** The agreement at a glance, laid out like the sales order summary: its
- *  units as line items with their rates (and Deliver / Return, so a unit
- *  need not be opened to move it), then what has been billed, what is still
- *  to bill, the deposit and the next due date. */
+ *  units as line items with their rates, then what has been billed, what is
+ *  still to bill, the deposit and the next due date. Units are delivered and
+ *  returned from the header's Shipments / Receipts actions. */
 const RentalAgreementSummary = ({
   rentalAgreement,
   lines,
@@ -50,7 +48,11 @@ const RentalAgreementSummary = ({
 }: RentalAgreementSummaryProps) => {
   const currencyCode = rentalAgreement.currencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
-  const actions = useRentalLineActions(rentalAgreement);
+  const routeData = useRouteData<RentalAgreementRouteData>(
+    path.to.rentalAgreement(rentalAgreement.id!)
+  );
+  const shipments = routeData?.shipments ?? [];
+  const receipts = routeData?.receipts ?? [];
 
   const billed = periods
     .filter((period) => period.status === "Invoiced")
@@ -73,117 +75,112 @@ const RentalAgreementSummary = ({
   );
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <HStack className="justify-between items-center">
-            <div className="flex flex-col gap-1">
-              <CardTitle>{rentalAgreement.rentalAgreementId}</CardTitle>
-            </div>
-            <div className="flex flex-col gap-1 items-end">
-              <CustomerAvatar customerId={rentalAgreement.customerId ?? null} />
-              <span className="text-xs text-muted-foreground tracking-tight">
-                <DateTime value={rentalAgreement.startDate} variant="date" />
-                {" – "}
-                {rentalAgreement.endDate ? (
-                  <DateTime value={rentalAgreement.endDate} variant="date" />
-                ) : (
-                  <Trans>Open-ended</Trans>
-                )}
-              </span>
-            </div>
-          </HStack>
-        </CardHeader>
-        <CardContent>
-          {lines.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                No units yet. Add a fleet unit from the Units list before
-                activating the agreement.
-              </Trans>
-            </p>
-          ) : (
-            <VStack spacing={0} className="w-full overflow-hidden">
-              {lines.map((line) => (
-                <SummaryLine
-                  key={line.id}
-                  agreementId={rentalAgreement.id!}
-                  currencyCode={currencyCode}
-                  line={line}
-                  state={actions.stateOf(line)}
-                  onDeliver={() => actions.open("deliver", line)}
-                  onReturn={() => actions.open("return", line)}
-                />
-              ))}
-            </VStack>
-          )}
-
-          <VStack spacing={2} className="mt-8">
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>
-                <Trans>Billed:</Trans>
-              </span>
-              <MotionMoney
-                value={billed}
-                currency={currencyCode}
-                decimalPlaces={currencyDecimals}
+    <Card>
+      <CardHeader>
+        <HStack className="justify-between items-center">
+          <div className="flex flex-col gap-1">
+            <CardTitle>{rentalAgreement.rentalAgreementId}</CardTitle>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            <CustomerAvatar customerId={rentalAgreement.customerId ?? null} />
+            <span className="text-xs text-muted-foreground tracking-tight">
+              <DateTime value={rentalAgreement.startDate} variant="date" />
+              {" – "}
+              {rentalAgreement.endDate ? (
+                <DateTime value={rentalAgreement.endDate} variant="date" />
+              ) : (
+                <Trans>Open-ended</Trans>
+              )}
+            </span>
+          </div>
+        </HStack>
+      </CardHeader>
+      <CardContent>
+        {lines.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              No units yet. Add a fleet unit from the Units list before
+              activating the agreement.
+            </Trans>
+          </p>
+        ) : (
+          <VStack spacing={0} className="w-full overflow-hidden">
+            {lines.map((line) => (
+              <SummaryLine
+                key={line.id}
+                agreementId={rentalAgreement.id!}
+                currencyCode={currencyCode}
+                line={line}
+                documents={rentalLineDocuments(line.id, shipments, receipts)}
               />
-            </HStack>
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>
-                <Trans>Unbilled:</Trans>
-              </span>
-              <MotionMoney
-                value={Number(rentalAgreement.unbilledAmount ?? 0)}
-                currency={currencyCode}
-                decimalPlaces={currencyDecimals}
-              />
-            </HStack>
-            {monthlyRent !== null && (
-              <HStack className="justify-between text-xl font-semibold w-full">
-                <span>
-                  <Trans>Monthly Rent:</Trans>
-                </span>
-                <MotionMoney
-                  value={monthlyRent}
-                  currency={currencyCode}
-                  decimalPlaces={currencyDecimals}
-                />
-              </HStack>
-            )}
-            <div className="h-px bg-border my-2 w-full" />
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>
-                <Trans>Deposit:</Trans>
-              </span>
-              <MotionMoney
-                value={Number(rentalAgreement.depositAmount ?? 0)}
-                currency={currencyCode}
-                decimalPlaces={currencyDecimals}
-              />
-            </HStack>
-            <HStack className="justify-between text-sm text-muted-foreground w-full">
-              <span>
-                <Trans>Next Due:</Trans>
-              </span>
-              <span>
-                {rentalAgreement.nextDueOn ? (
-                  <DateTime value={rentalAgreement.nextDueOn} variant="date" />
-                ) : (
-                  "—"
-                )}
-              </span>
-            </HStack>
-            {invoicingSchedule && (
-              <p className="text-xs text-muted-foreground w-full">
-                {invoicingSchedule}
-              </p>
-            )}
+            ))}
           </VStack>
-        </CardContent>
-      </Card>
-      {actions.modals}
-    </>
+        )}
+
+        <VStack spacing={2} className="mt-8">
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Billed:</Trans>
+            </span>
+            <MotionMoney
+              value={billed}
+              currency={currencyCode}
+              decimalPlaces={currencyDecimals}
+            />
+          </HStack>
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Unbilled:</Trans>
+            </span>
+            <MotionMoney
+              value={Number(rentalAgreement.unbilledAmount ?? 0)}
+              currency={currencyCode}
+              decimalPlaces={currencyDecimals}
+            />
+          </HStack>
+          {monthlyRent !== null && (
+            <HStack className="justify-between text-xl font-semibold w-full">
+              <span>
+                <Trans>Monthly Rent:</Trans>
+              </span>
+              <MotionMoney
+                value={monthlyRent}
+                currency={currencyCode}
+                decimalPlaces={currencyDecimals}
+              />
+            </HStack>
+          )}
+          <div className="h-px bg-border my-2 w-full" />
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Deposit:</Trans>
+            </span>
+            <MotionMoney
+              value={Number(rentalAgreement.depositAmount ?? 0)}
+              currency={currencyCode}
+              decimalPlaces={currencyDecimals}
+            />
+          </HStack>
+          <HStack className="justify-between text-sm text-muted-foreground w-full">
+            <span>
+              <Trans>Next Due:</Trans>
+            </span>
+            <span>
+              {rentalAgreement.nextDueOn ? (
+                <DateTime value={rentalAgreement.nextDueOn} variant="date" />
+              ) : (
+                "—"
+              )}
+            </span>
+          </HStack>
+          {invoicingSchedule && (
+            <p className="text-xs text-muted-foreground w-full">
+              {invoicingSchedule}
+            </p>
+          )}
+        </VStack>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -191,16 +188,12 @@ function SummaryLine({
   agreementId,
   currencyCode,
   line,
-  state,
-  onDeliver,
-  onReturn
+  documents
 }: {
   agreementId: string;
   currencyCode: string;
   line: RentalAgreementLine;
-  state: RentalLineActionState;
-  onDeliver: () => void;
-  onReturn: () => void;
+  documents: ReturnType<typeof rentalLineDocuments>;
 }) {
   const { t } = useLingui();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -255,38 +248,32 @@ function SummaryLine({
               {line.lessorClassification && (
                 <LeaseClassificationBadge value={line.lessorClassification} />
               )}
+              {documents.shipment && (
+                <Link
+                  to={path.to.shipment(documents.shipment.id)}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  {documents.shipment.shipmentId}
+                </Link>
+              )}
+              {documents.receipt && (
+                <Link
+                  to={path.to.receipt(documents.receipt.id)}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  {documents.receipt.receiptId}
+                </Link>
+              )}
             </HStack>
           </VStack>
-          <VStack spacing={2} className="flex-shrink-0 items-end w-auto">
-            <VStack spacing={0} className="items-end">
-              <MotionMoney
-                className="font-semibold text-xl whitespace-nowrap"
-                value={Number(line.rate)}
-                currency={currencyCode}
-                decimalPlaces={currencyDecimals}
-              />
-              <span className="text-xs text-muted-foreground">{per}</span>
-            </VStack>
-            {state.canDeliver && (
-              <Button
-                variant="primary"
-                leftIcon={<LuTruck />}
-                isDisabled={state.deliverDisabled}
-                onClick={onDeliver}
-              >
-                <Trans>Deliver</Trans>
-              </Button>
-            )}
-            {state.canReturn && (
-              <Button
-                variant="primary"
-                leftIcon={<LuUndo2 />}
-                isDisabled={state.returnDisabled}
-                onClick={onReturn}
-              >
-                <Trans>Return</Trans>
-              </Button>
-            )}
+          <VStack spacing={0} className="flex-shrink-0 items-end w-auto">
+            <MotionMoney
+              className="font-semibold text-xl whitespace-nowrap"
+              value={Number(line.rate)}
+              currency={currencyCode}
+              decimalPlaces={currencyDecimals}
+            />
+            <span className="text-xs text-muted-foreground">{per}</span>
           </VStack>
         </div>
       </HStack>

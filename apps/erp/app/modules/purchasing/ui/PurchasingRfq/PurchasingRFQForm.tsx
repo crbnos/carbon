@@ -107,7 +107,7 @@ const PurchasingRFQForm = ({ initialValues }: PurchasingRFQFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isLocked ||

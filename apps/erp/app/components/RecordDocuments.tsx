@@ -12,6 +12,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -129,7 +130,7 @@ const RecordDocuments = ({
       </HStack>
       <CardContent>
         <Table>
-          <Thead>
+          <Thead className={cn(filesToRender.length === 0 && "max-md:hidden")}>
             <Tr>
               <Th>
                 <Trans>Name</Trans>

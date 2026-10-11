@@ -296,8 +296,8 @@ status to flip, so a Reject posts a compensating write-off instead (see disposit
 
 **Reject / disposition GL posting.** A non-tracked `Inventory` reject and every NCR disposition
 route their inventory value through the **`post-nonconformance` server function** (`itemLedger` +
-`costLedger` relief + a `journal` offset to `accountDefault.scrapAccount`, gated on
-`accountingEnabled`; idempotent per `(documentType, documentId)`). The reject route
+`costLedger` relief + a `journal` offset to `accountDefault.scrapAccount` for every company,
+Provisional before the accounting cutover; idempotent per `(documentType, documentId)`). The reject route
 (`$id.reject.tsx`) invokes it with the lot write-off (`documentType 'Inbound Inspection'`,
 `documentId = inspection.id`) after `dispositionInspection` commits — `dispositionInspection`
 itself no longer writes `itemLedger`, it returns a `writeOff` descriptor. Disposition close

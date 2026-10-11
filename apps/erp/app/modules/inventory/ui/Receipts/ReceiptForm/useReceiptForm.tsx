@@ -113,6 +113,10 @@ export default function useReceiptForm({
           });
         break;
 
+      case "Rental Agreement":
+        // Created from the agreement; the initial option already holds its
+        // readable id, and the source cannot change.
+        break;
       default:
         setSourceDocuments([]);
     }

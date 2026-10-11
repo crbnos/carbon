@@ -21,16 +21,19 @@ import {
   OperatingSystemContextProvider,
   Toaster,
   TooltipProvider,
-  useMode
+  useMode,
+  ViewportProvider
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
   getPreferenceHeaders,
+  getViewportHint,
   isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
+  themeColorValidator,
   themes
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
@@ -66,7 +69,7 @@ import { path } from "~/utils/path";
 import "@carbon/lib/shims";
 import { MotionConfig } from "motion/react";
 import type { Route } from "./+types/root";
-import { getTheme } from "./services/theme.server";
+import { getTheme, setTheme } from "./services/theme.server";
 
 export const middleware = timedMiddleware({
   // First: the request scope (context, request id, access log).
@@ -149,6 +152,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         VERCEL_URL
       },
       ...getMode(request),
+      viewport: getViewportHint(request),
       theme: getTheme(request),
       preferences,
       result: context.get(flashResultContext)
@@ -168,9 +172,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid content type" }, { status: 400 });
   }
 
-  const validation = await validator(modeValidator).validate(
-    await request.formData()
-  );
+  const formData = await request.formData();
+
+  // The account settings Appearance pane posts its theme color here too.
+  if (formData.has("theme")) {
+    const themeValidation =
+      await validator(themeColorValidator).validate(formData);
+    if (themeValidation.error) {
+      return data(error(themeValidation.error, "Invalid theme"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: { "Set-Cookie": setTheme(themeValidation.data.theme) }
+      }
+    );
+  }
+
+  const validation = await validator(modeValidator).validate(formData);
 
   if (validation.error) {
     return data(error(validation.error, "Invalid mode"), {
@@ -238,7 +259,10 @@ function Document({
     >
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         {/* Before any paint: records the OS color scheme for a `system` user
             and reloads once if the server rendered the wrong mode. */}
         <script
@@ -306,24 +330,26 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <OperatingSystemContextProvider platform={prefs.platform}>
-        <LocaleProvider locale={appLanguage} catalog={catalog}>
-          <I18nProvider locale={prefs.locale}>
-            <TooltipProvider>
-              <MotionConfig reducedMotion="user">
-                <Document
-                  mode={mode}
-                  theme={theme}
-                  lang={appLanguage}
-                  env={env}
-                >
-                  <Outlet />
-                  {/* Renders nothing outside development; the package strips itself. */}
-                  <ReactQueryDevtools buttonPosition="bottom-right" />
-                </Document>
-              </MotionConfig>
-            </TooltipProvider>
-          </I18nProvider>
-        </LocaleProvider>
+        <ViewportProvider initialViewport={loaderData?.viewport ?? "desktop"}>
+          <LocaleProvider locale={appLanguage} catalog={catalog}>
+            <I18nProvider locale={prefs.locale}>
+              <TooltipProvider>
+                <MotionConfig reducedMotion="user">
+                  <Document
+                    mode={mode}
+                    theme={theme}
+                    lang={appLanguage}
+                    env={env}
+                  >
+                    <Outlet />
+                    {/* Renders nothing outside development; the package strips itself. */}
+                    <ReactQueryDevtools buttonPosition="bottom-right" />
+                  </Document>
+                </MotionConfig>
+              </TooltipProvider>
+            </I18nProvider>
+          </LocaleProvider>
+        </ViewportProvider>
       </OperatingSystemContextProvider>
     </QueryClientProvider>
   );

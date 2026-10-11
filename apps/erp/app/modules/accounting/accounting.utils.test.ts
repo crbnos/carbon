@@ -7,12 +7,14 @@ import { endOfMonth, parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
   acquisitionLines,
+  activationCutoverDates,
   addOneMonth,
   buildDepreciationLines,
   calculateDepreciation,
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
   computeDisposalGainLoss,
+  depreciationFloor,
   depreciationRunLineDisplay,
   depreciationRunLinesMatch,
   diffJournalLines,
@@ -22,9 +24,11 @@ import {
   getMonthsElapsed,
   getNextPeriodEnd,
   getNextRevenueRecognitionPeriodEnd,
+  hasAccountingCutover,
   isFutureRunPeriod,
   monthEndOf,
   runPostingTargets,
+  straightLineShortfall,
   usageKey
 } from "./accounting.utils";
 
@@ -1482,5 +1486,205 @@ describe("Straight Line on a remaining-life basis", () => {
     );
     expect(lines).toHaveLength(1);
     expect(lines[0]!.taxAmount).toBe(2166.67);
+  });
+});
+
+describe("cost adjustment catch-up", () => {
+  // Capitalized at zero on Jan 1, depreciated (at nothing) through March,
+  // then raised to 6,000: 100 a month over 60 months.
+  const adjusted = {
+    id: "asset-adjusted",
+    acquisitionCost: 6000,
+    accumulatedDepreciation: 0,
+    residualValuePercent: 0,
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    depreciationStartDate: "2025-01-01",
+    acquisitionDate: "2025-01-01",
+    assetLifetimeUsage: null,
+    accumulatedTaxDepreciation: 0,
+    taxDepreciationMethod: "Straight Line",
+    taxUsefulLifeMonths: 36,
+    taxResidualValuePercent: 0,
+    macrsPropertyClass: null,
+    macrsConvention: null,
+    bonusDepreciationPercent: null,
+    costAdjusted: true
+  };
+
+  it("adds the months taken at the old cost to the run's first month", () => {
+    const lines = buildDepreciationLines(
+      [adjusted],
+      "2025-05-31",
+      "2025-03-31",
+      true,
+      new Map(),
+      2
+    );
+    expect(lines).toEqual([
+      // 100 for April + 300 for Jan–Mar; tax 6,000 / 36 = 166.67 a month.
+      {
+        fixedAssetId: "asset-adjusted",
+        periodEnd: "2025-04-30",
+        amount: 400,
+        taxAmount: 666.67
+      },
+      {
+        fixedAssetId: "asset-adjusted",
+        periodEnd: "2025-05-31",
+        amount: 100,
+        taxAmount: 166.67
+      }
+    ]);
+  });
+
+  it("catches up once: the next run is back on schedule", () => {
+    const lines = buildDepreciationLines(
+      [
+        {
+          ...adjusted,
+          accumulatedDepreciation: 500,
+          accumulatedTaxDepreciation: 833.34
+        }
+      ],
+      "2025-06-30",
+      "2025-05-31",
+      true,
+      new Map(),
+      2
+    );
+    expect(lines.map((line) => [line.amount, line.taxAmount])).toEqual([
+      [100, 166.67]
+    ]);
+  });
+
+  it("leaves an asset without a cost adjustment on its usual schedule", () => {
+    const lines = buildDepreciationLines(
+      [{ ...adjusted, costAdjusted: false }],
+      "2025-04-30",
+      "2025-03-31",
+      false,
+      new Map(),
+      2
+    );
+    expect(lines.map((line) => line.amount)).toEqual([100]);
+  });
+
+  it("never takes back depreciation from an asset ahead of schedule", () => {
+    expect(
+      straightLineShortfall({
+        acquisitionCost: 6000,
+        residualValuePercent: 0,
+        usefulLifeMonths: 60,
+        startDate: "2025-01-01",
+        through: "2025-03-31",
+        accumulated: 1000,
+        decimalPlaces: 2
+      })
+    ).toEqual(0);
+  });
+
+  it("is nothing before the asset's first month has been depreciated", () => {
+    expect(
+      straightLineShortfall({
+        acquisitionCost: 6000,
+        residualValuePercent: 0,
+        usefulLifeMonths: 60,
+        startDate: "2025-04-01",
+        through: "2025-03-31",
+        accumulated: 0,
+        decimalPlaces: 2
+      })
+    ).toEqual(0);
+  });
+
+  it("never catches up past the depreciable base", () => {
+    const lines = buildDepreciationLines(
+      [
+        {
+          ...adjusted,
+          residualValuePercent: 20,
+          usefulLifeMonths: 12,
+          depreciationStartDate: "2024-01-01",
+          acquisitionDate: "2024-01-01",
+          taxDepreciationMethod: null
+        }
+      ],
+      "2025-04-30",
+      "2025-03-31",
+      false,
+      new Map(),
+      2
+    );
+    // 6,000 less a 20 % residual is 4,800 — all of it, in one line.
+    expect(lines.map((line) => line.amount)).toEqual([4800]);
+  });
+});
+
+describe("depreciationFloor", () => {
+  it("starts a company with no posted run at its accounting cutover", () => {
+    expect(depreciationFloor(null, "2026-10-01")).toBe("2026-09-30");
+  });
+
+  it("keeps a run posted after the cutover", () => {
+    expect(depreciationFloor("2026-11-30", "2026-10-01")).toBe("2026-11-30");
+  });
+
+  it("moves a run posted before the cutover up to the cutover", () => {
+    expect(depreciationFloor("2026-03-31", "2026-10-01")).toBe("2026-09-30");
+  });
+
+  it("changes nothing for a company with no cutover", () => {
+    expect(depreciationFloor("2026-03-31", null)).toBe("2026-03-31");
+    expect(depreciationFloor(null, null)).toBeNull();
+  });
+});
+
+describe("activationCutoverDates", () => {
+  const today = parseDate("2026-10-09");
+
+  it("defaults to the first day of the current period", () => {
+    expect(activationCutoverDates(null, today, 3)).toEqual({
+      cutoverDate: "2026-10-01",
+      earliestCutoverDate: "2026-07-01",
+      latestCutoverDate: "2026-10-01"
+    });
+  });
+
+  it("takes a calendar date from the search param", () => {
+    expect(activationCutoverDates("2026-08-01", today, 3).cutoverDate).toBe(
+      "2026-08-01"
+    );
+  });
+
+  it("keeps a date outside the range, for the readiness check to refuse", () => {
+    expect(activationCutoverDates("2026-03-15", today, 3).cutoverDate).toBe(
+      "2026-03-15"
+    );
+  });
+
+  it("ignores a param that is not a calendar date", () => {
+    for (const param of ["", "2026-8-1", "2026-02-30", "tomorrow", "2026-08"]) {
+      expect(activationCutoverDates(param, today, 3).cutoverDate).toBe(
+        "2026-10-01"
+      );
+    }
+  });
+
+  it("crosses a year boundary going back", () => {
+    expect(
+      activationCutoverDates(null, parseDate("2026-02-28"), 3)
+        .earliestCutoverDate
+    ).toBe("2025-11-01");
+  });
+});
+
+describe("hasAccountingCutover", () => {
+  it("is true only with a cutover date", () => {
+    expect(hasAccountingCutover({ accountingCutoverDate: "2026-10-01" })).toBe(
+      true
+    );
+    expect(hasAccountingCutover({ accountingCutoverDate: null })).toBe(false);
+    expect(hasAccountingCutover(null)).toBe(false);
   });
 });

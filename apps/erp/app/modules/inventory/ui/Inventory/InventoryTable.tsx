@@ -153,6 +153,7 @@ const InventoryTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -172,6 +173,7 @@ const InventoryTable = memo(
               formatNumber(row.original.quantityOnHand)
             ),
           meta: {
+            mobile: "P2",
             icon: <LuBlocks />,
             renderTotal: true,
             formatter: formatNumber

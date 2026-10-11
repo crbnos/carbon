@@ -3,25 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { CommandEmpty } from "cmdk";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useId, useMemo, useRef, useState } from "react";
-import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
+import { forwardRef, useId, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2 } from "react-icons/lu";
-import {
-  Command,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandTrigger
-} from "./Command";
+import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
+import type { PickerListOption } from "./PickerList";
+import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
+import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type CreatableMultiSelectProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -87,6 +81,7 @@ const CreatableMultiSelect = forwardRef<
     const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const openAutoFocus = usePhoneOpenAutoFocus();
 
     const id = useId();
 
@@ -182,6 +177,7 @@ const CreatableMultiSelect = forwardRef<
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
+            onOpenAutoFocus={openAutoFocus}
             className="w-auto min-w-[max(var(--radix-popover-trigger-width),11rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
           >
             {/* Zero-height sizer: the widest option, so the auto width fits it
@@ -195,18 +191,32 @@ const CreatableMultiSelect = forwardRef<
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
-              <VirtualizedCommand
+              <PickerList
                 options={options}
-                selected={value}
-                onChange={onChange}
-                onCreateOption={onCreateOption}
+                filter={filterCreatableMultiSelectOptions}
+                selectionMode="multiple"
                 itemHeight={itemHeight}
-                setOpen={setOpen}
-                label={label}
-                createLabel={createLabel}
                 search={search}
-                setSearch={setSearch}
+                onSearchChange={setSearch}
+                creatable
+                createLabel={createLabel ?? label}
                 showCreateOptionOnEmpty={showCreateOptionOnEmpty}
+                getItemValue={getCreatableMultiSelectItemValue}
+                isChecked={(item) => value.includes(item.value)}
+                emptyMessage={t`No matches. Type to create one.`}
+                onSelect={(item, { isCreateOption }) => {
+                  if (isCreateOption) {
+                    onCreateOption?.(search);
+                    setSearch("");
+                  } else {
+                    onChange(
+                      value.includes(item.value)
+                        ? value.filter((current) => current !== item.value)
+                        : [...value, item.value]
+                    );
+                  }
+                  setOpen(true);
+                }}
               />
             )}
           </PopoverContent>
@@ -219,183 +229,23 @@ CreatableMultiSelect.displayName = "CreatableMultiSelect";
 
 export { CreatableMultiSelect };
 
-type VirtualizedCommandProps = {
-  options: CreatableMultiSelectProps["options"];
-  selected: string[];
-  onChange: (selected: string[]) => void;
-  onCreateOption?: (inputValue: string) => void;
-  itemHeight: number;
-  setOpen: (open: boolean) => void;
-  label?: string;
-  createLabel?: string;
-  search: string;
-  setSearch: (search: string) => void;
-  showCreateOptionOnEmpty?: boolean;
-};
+const filterCreatableMultiSelectOptions = (
+  options: PickerListOption[],
+  search: string
+) =>
+  search
+    ? options.filter((option) => {
+        const value =
+          typeof option.label === "string"
+            ? `${option.label} ${option.helper ?? ""}`
+            : reactNodeToString(option.label);
 
-function VirtualizedCommand({
-  options,
-  selected,
-  onChange,
-  onCreateOption,
-  itemHeight,
-  setOpen,
-  label,
-  createLabel,
-  search,
-  setSearch,
-  showCreateOptionOnEmpty = false
-}: VirtualizedCommandProps) {
-  const { t } = useLingui();
-  const parentRef = useRef<HTMLDivElement>(null);
+        return value.toLowerCase().includes(search.toLowerCase());
+      })
+    : options;
 
-  const filteredOptions = useMemo(() => {
-    const filtered = search
-      ? options.filter((option) => {
-          const value =
-            typeof option.label === "string"
-              ? `${option.label} ${option.helper}`
-              : reactNodeToString(option.label);
-
-          return value.toLowerCase().includes(search.toLowerCase());
-        })
-      : options;
-
-    const isExactMatch = options.some((option) =>
-      [option.label.toLowerCase(), option.helper?.toLowerCase()].includes(
-        search.toLowerCase()
-      )
-    );
-
-    const trimmedSearch = search.trim();
-    if (isExactMatch || (trimmedSearch === "" && !showCreateOptionOnEmpty)) {
-      return filtered;
-    }
-
-    return [
-      ...filtered,
-      {
-        label: t`New`,
-        value: "create"
-      }
-    ];
-  }, [options, search, showCreateOptionOnEmpty, t]);
-
-  const virtualizer = useVirtualizer({
-    count: filteredOptions.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => itemHeight,
-    overscan: 12
-  });
-
-  const items = virtualizer.getVirtualItems();
-
-  return (
-    <Command shouldFilter={false}>
-      <CommandInput
-        value={search}
-        onValueChange={setSearch}
-        placeholder={t`Search...`}
-        className="h-9"
-      />
-      <div
-        ref={parentRef}
-        className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1"
-        style={{
-          height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`
-        }}
-      >
-        <CommandEmpty>{t`No matches. Type to create one.`}</CommandEmpty>
-        <CommandGroup
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative"
-          }}
-        >
-          {items.map((virtualRow) => {
-            const item = filteredOptions[virtualRow.index]!;
-            const isSelected = selected.includes(item.value);
-            const isCreateOption = item.value === "create";
-            const itemHoverText = [item.label, item.helper]
-              .filter(Boolean)
-              .join(" - ");
-
-            return (
-              <CommandItem
-                key={item.value}
-                value={
-                  typeof item.label === "string"
-                    ? item.label.replace(/"/g, '\\"') +
-                      item.helper?.replace(/"/g, '\\"')
-                    : undefined
-                }
-                onSelect={() => {
-                  if (isCreateOption) {
-                    onCreateOption?.(search);
-                    setSearch("");
-                  } else {
-                    onChange(
-                      isSelected
-                        ? selected.filter((value) => value !== item.value)
-                        : [...selected, item.value]
-                    );
-                  }
-                  setOpen(true);
-                }}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${itemHeight}px`,
-                  transform: `translateY(${virtualRow.start}px)`
-                }}
-              >
-                <div className="flex justify-start items-center gap-1 px-2 min-w-0 flex-1">
-                  {isCreateOption ? (
-                    <>
-                      <LuCirclePlus className="mr-1.5 flex-shrink-0" />
-                      <span>{t`Create ${search.trim() === "" ? (createLabel ?? label) : search}`}</span>
-                    </>
-                  ) : (
-                    <>
-                      {isSelected ? (
-                        <FaSquareCheck className="mr-1.5 text-primary flex-shrink-0" />
-                      ) : (
-                        <FaRegSquare className="mr-1.5 text-muted-foreground flex-shrink-0" />
-                      )}
-                      {item.helper ? (
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <TruncatedTooltipText
-                            className="block w-full truncate"
-                            tooltip={itemHoverText}
-                          >
-                            {item.label}
-                          </TruncatedTooltipText>
-                          <TruncatedTooltipText
-                            className="text-xs text-muted-foreground truncate"
-                            tooltip={itemHoverText}
-                          >
-                            {item.helper}
-                          </TruncatedTooltipText>
-                        </div>
-                      ) : (
-                        <TruncatedTooltipText
-                          className="truncate flex-1"
-                          tooltip={itemHoverText}
-                        >
-                          {item.label}
-                        </TruncatedTooltipText>
-                      )}
-                    </>
-                  )}
-                </div>
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-      </div>
-    </Command>
-  );
-}
+const getCreatableMultiSelectItemValue = (item: PickerListOption) =>
+  typeof item.label === "string"
+    ? item.label.replace(/"/g, '\\"') +
+      (item.helper?.replace(/"/g, '\\"') ?? "")
+    : undefined;

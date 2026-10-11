@@ -44,6 +44,36 @@ describe("noUnscopedKyselyWrite", () => {
     expect(scan(ts)).toHaveLength(0);
   });
 
+  it("accepts companyGroupId on a group-scoped table with no companyId", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("currency")',
+      "  .set({ decimalPlaces })",
+      '  .where("id", "=", id)',
+      '  .where("companyGroupId", "=", companyGroupId)',
+      "  .execute();"
+    ].join("\n");
+    expect(scan(ts)).toHaveLength(0);
+  });
+
+  it("does not accept companyGroupId on a company-scoped table", () => {
+    const ts = [
+      "await trx",
+      '  .updateTable("quoteLine")',
+      "  .set({ sortOrder })",
+      '  .where("id", "=", id)',
+      '  .where("companyGroupId", "=", companyGroupId)',
+      "  .execute();"
+    ].join("\n");
+    expect(scan(ts)).toHaveLength(1);
+  });
+
+  it("still flags a group-scoped table written by id alone", () => {
+    const ts =
+      'await trx.updateTable("currency").set({ decimalPlaces }).where("id", "=", id).execute();';
+    expect(scan(ts)).toHaveLength(1);
+  });
+
   it("accepts an aliased table's qualified companyId", () => {
     const ts =
       'await trx.updateTable("job as j").set({ status }).where("j.id", "=", id).where("j.companyId", "=", companyId).executeTakeFirst();';
@@ -129,10 +159,38 @@ describe("noUnscopedKyselyWrite", () => {
     expect(scan(ts)).toHaveLength(0);
   });
 
-  it("exempts the company table, whose id is the tenant", () => {
-    const ts =
-      'await trx.updateTable("company").set(fields).where("id", "=", companyId).execute();';
-    expect(scan(ts)).toHaveLength(0);
+  it("accepts an id predicate on company and companySettings, whose id is the tenant", () => {
+    for (const table of ["company", "companySettings"]) {
+      const ts = `await trx.updateTable("${table}").set(fields).where("id", "=", companyId).execute();`;
+      expect(scan(ts)).toHaveLength(0);
+    }
+    expect(
+      scan(
+        'await updateRows(db, "companySettings", { digitalReceipts }, { id: companyId });'
+      )
+    ).toHaveLength(0);
+  });
+
+  it("flags a company or companySettings write with no where", () => {
+    for (const table of ["company", "companySettings"]) {
+      expect(
+        scan(`await trx.updateTable("${table}").set(fields).execute();`)
+      ).toHaveLength(1);
+      expect(scan(`await trx.deleteFrom("${table}").execute();`)).toHaveLength(
+        1
+      );
+    }
+    expect(
+      scan('await updateRows(db, "companySettings", { digitalReceipts }, {});')
+    ).toHaveLength(1);
+  });
+
+  it("does not let an id predicate scope any other table", () => {
+    expect(
+      scan(
+        'await trx.updateTable("item").set(fields).where("id", "=", id).execute();'
+      )
+    ).toHaveLength(1);
   });
 
   it("covers routes, MES and jobs", () => {

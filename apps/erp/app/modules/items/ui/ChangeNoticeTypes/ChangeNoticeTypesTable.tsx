@@ -37,6 +37,7 @@ const ChangeNoticeTypesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuGitPullRequestArrow />
           }
         }

@@ -73,6 +73,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -83,6 +84,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
           <span className="line-clamp-1">{row.original.name}</span>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuFolderKanban />
         }
       },
@@ -99,6 +101,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
             }))
           },
           pluralHeader: t`Statuses`,
+          mobile: "P2",
           icon: <LuStar />
         }
       },

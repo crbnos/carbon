@@ -251,6 +251,18 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
+- `clearAuthCookies` (which `destroyAuthSession` and the login loader's
+  expired-session branch call) also ends this browser's push notifications: it
+  reads the signed `carbon-push` cookie (`pushEndpointCookie`, set by
+  `api+/push-subscription` when browser notifications are enabled), deletes every
+  `pushSubscription` row of that endpoint with the service role, and clears the
+  cookie. Every sign-out path therefore stops pushes in that browser. A cross-site
+  navigation (`Sec-Fetch-Site: cross-site`, the login GET from another site's
+  link) skips the cleanup, per the GET-write rule; such rows lapse anyway, because
+  `notify` skips rows no page load has refreshed within a session's lifetime. The
+  service-role client is imported inside that cleanup, not at module load, so
+  importing `session.server` builds no Supabase client (the session tests mock
+  `config/env` without the Supabase keys).
   `updateCompanySession` / `updateSessionConsole` switch active company / console mode.
 - **Console pin-in** (`@carbon/auth/console-pin.server`): which operator is pinned in
   at a console terminal lives in the `console-pin-<companyId>` cookie, SIGNED with
@@ -290,8 +302,9 @@ Supabase's `auth.mfa_factors` — no app table.
 - **auth-js gotcha**: `supabase.auth.mfa.*` reads the client's INTERNAL session, not the
   `Authorization` header override — `mfa.server.ts` seeds a fresh anon client via
   `auth.setSession` with the cookie's tokens.
-- **Enrollment**: Account → Security (`x+/account+/security.tsx`, which also owns
-  passkeys) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
+- **Enrollment**: Account settings → Security (the modal pane
+  `packages/account/src/ui/SecuritySettings.tsx`, data and passkey writes in
+  `api+/account.security.ts`) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
   current code as step-up). The enroll→scan→verify state machine, the 6-slot code
   input, and the invalid-code copy are shared with the enforcement gate via
   `~/components/TotpEnrollment` (`useTotpEnrollment`, `OtpInput`,

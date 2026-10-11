@@ -50,6 +50,7 @@ const MaterialFinishesTable = memo(
           header: t`Substance`,
           cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
           meta: {
+            mobile: "P2",
             icon: <LuGlassWater />,
             filter: {
               type: "static",
@@ -76,6 +77,7 @@ const MaterialFinishesTable = memo(
               </Hyperlink>
             ),
           meta: {
+            mobile: "P1",
             icon: <LuDessert />
           }
         },

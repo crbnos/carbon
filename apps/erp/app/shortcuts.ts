@@ -64,9 +64,11 @@ export const PROJECT_TAB_SHORTCUTS = {
  * Project Elements page and element page. Single letters, so they are bound
  * only while one of those pages is mounted and never while typing in a
  * field (the keyboard shortcuts spec rules out global single letters).
+ * New element is the list page's New key (`n`): bare `c` starts the global
+ * c-then-letter Create sequence, and the Create menu has no page context.
  */
 export const PROJECT_SHORTCUTS = {
-  create: "c",
+  create: SHORTCUTS.newRecord,
   state: "s",
   owner: "a",
   priority: "p",
@@ -120,6 +122,32 @@ export const MODULE_GO_TO: Record<string, string> = {
   users: "y",
   workflows: "w"
 };
+
+/**
+ * c-then-letter create, from anywhere — the Create menu's items, keyed by a
+ * stable id (the menu is filtered by permission, so never by position). `c`
+ * rather than `n`: bare `n` is already the list page's New button.
+ */
+export const CREATE_PREFIX = "c";
+
+export const CREATE_SHORTCUTS = {
+  batch: "b",
+  customer: "c",
+  employee: "e",
+  issue: "i",
+  job: "j",
+  maintenance: "m",
+  part: "p",
+  pickingList: "l",
+  purchaseOrder: "u",
+  quote: "q",
+  rfq: "r",
+  salesOrder: "o",
+  serviceOrder: "v",
+  stockTransfer: "x",
+  supplier: "s",
+  warehouseTransfer: "w"
+} as const;
 
 /** Leaves the rail's Customize mode without saving. */
 export const navigationEditCancelShortcut: ShortcutInput = "escape";

@@ -43,6 +43,7 @@ pnpm --filter @carbon/env test
 - **URLs:** `getAppUrl()`, `getMESUrl()`, `getBrowserEnv()`
 - **Logging:** `LOG_LEVEL` (optional, non-secret, browser-safe — consumed by `@carbon/logger`)
 - **Integrations:** Stripe, SMTP email, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)
+- **Web Push (`@carbon/env/push.server`, server-only — imports `node:crypto`):** `getVapidDetails()`, `isPushConfigured()`, `deriveVapidDetails(secret, appUrl)`. The VAPID pair is derived from `SESSION_SECRET` by HKDF, so there are no push env vars; keep it out of `src/index.ts`, which the browser imports.
 
 ## Cross-References
 

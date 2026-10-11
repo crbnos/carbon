@@ -36,6 +36,7 @@ export type AttributeDataType = {
   isList: boolean;
   isNumeric: boolean;
   isText: boolean;
+  isLink: boolean;
   isUser: boolean;
   isCustomer: boolean;
   isSupplier: boolean;

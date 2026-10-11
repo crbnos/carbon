@@ -48,7 +48,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
             <Enumerable value={row.original.name} />
           </Hyperlink>
         ),
-        meta: { icon: <LuTag /> }
+        meta: { mobile: "P1", icon: <LuTag /> }
       }
     ];
     return [...defaultColumns, ...customColumns];

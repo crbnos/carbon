@@ -3,23 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
-import {
-  Command,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandTrigger
-} from "./Command";
+import { forwardRef, useEffect, useMemo, useState } from "react";
+import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
+import type { PickerListOption } from "./PickerList";
+import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString, withDistinctHelpers } from "./utils/react";
+import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type CreatableComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -83,6 +79,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const openAutoFocus = usePhoneOpenAutoFocus();
 
     // Reset the search box whenever the dropdown closes.
     useEffect(() => {
@@ -188,6 +185,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
+            onOpenAutoFocus={openAutoFocus}
             className={cn(
               "w-auto max-w-[min(560px,calc(100vw-2rem))] p-1",
               // Inline mode's trigger is a small icon button, so falling back to
@@ -208,17 +206,33 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
-              <VirtualizedCommand
-                label={label}
+              <PickerList
                 options={options}
-                selected={selected}
+                filter={filterCreatableComboboxOptions}
+                selectionMode="single"
                 value={value}
                 itemHeight={itemHeight}
                 search={search}
-                onChange={onChange}
-                onCreateOption={onCreateOption}
-                setOpen={setOpen}
-                setSearch={setSearch}
+                onSearchChange={setSearch}
+                creatable
+                createLabel={label}
+                showCreateOptionOnEmpty
+                getItemValue={getCreatableComboboxItemValue}
+                isChecked={(item) =>
+                  !!selected?.includes(item.value) || item.value === value
+                }
+                isHelperPadded={(item) =>
+                  !selected?.includes(item.value) && item.value === value
+                }
+                onSelect={(item, { isCreateOption }) => {
+                  if (isCreateOption) {
+                    onCreateOption?.(search);
+                  } else if (!selected?.includes(item.value)) {
+                    onChange?.(item.value);
+                    setSearch("");
+                  }
+                  setOpen(false);
+                }}
               />
             )}
           </PopoverContent>
@@ -240,195 +254,22 @@ CreatableCombobox.displayName = "CreatableCombobox";
 
 export { CreatableCombobox };
 
-type VirtualizedCommandProps = {
-  options: CreatableComboboxProps["options"];
-  selected?: string[];
-  value?: string;
-  label?: string;
-  itemHeight: number;
-  search: string;
-  onChange?: (selected: string) => void;
-  onCreateOption?: (inputValue: string) => void;
-  setOpen: (open: boolean) => void;
-  setSearch: (search: string) => void;
-};
+const filterCreatableComboboxOptions = (
+  options: PickerListOption[],
+  search: string
+) =>
+  search
+    ? options.filter((option) => {
+        const value =
+          typeof option.label === "string"
+            ? `${option.label} ${option.helper ?? ""}`
+            : reactNodeToString(option.label);
 
-function VirtualizedCommand({
-  options,
-  label,
-  selected,
-  value,
-  itemHeight,
-  search,
-  setSearch,
-  onChange,
-  onCreateOption,
-  setOpen
-}: VirtualizedCommandProps) {
-  const { t } = useLingui();
-  const parentRef = useRef<HTMLDivElement>(null);
+        return value.toLowerCase().includes(search.toLowerCase());
+      })
+    : options;
 
-  const filteredOptions = useMemo(() => {
-    const filtered = search
-      ? options.filter((option) => {
-          const value =
-            typeof option.label === "string"
-              ? `${option.label} ${option.helper}`
-              : reactNodeToString(option.label);
-
-          return value.toLowerCase().includes(search.toLowerCase());
-        })
-      : options;
-
-    const isExactMatch = options.some((option) => {
-      const labelValue =
-        typeof option.label === "string"
-          ? option.label
-          : reactNodeToString(option.label);
-      return [labelValue.toLowerCase(), option.helper?.toLowerCase()].includes(
-        search.toLowerCase()
-      );
-    });
-
-    return isExactMatch
-      ? filtered
-      : [
-          ...filtered,
-          {
-            label: t`New`,
-            value: "create"
-          }
-        ];
-  }, [options, search, t]);
-
-  const virtualizer = useVirtualizer({
-    count: filteredOptions.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => itemHeight,
-    overscan: 12
-  });
-
-  const items = virtualizer.getVirtualItems();
-
-  return (
-    <Command shouldFilter={false}>
-      <CommandInput
-        value={search}
-        onValueChange={setSearch}
-        placeholder={t`Search...`}
-        className="h-9"
-      />
-      <CommandGroup>
-        <div
-          ref={parentRef}
-          className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
-          style={{
-            height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`
-          }}
-        >
-          <div
-            style={{
-              height: `${virtualizer.getTotalSize()}px`,
-              width: "100%",
-              position: "relative"
-            }}
-          >
-            {items.map((virtualRow) => {
-              const item = filteredOptions[virtualRow.index]!;
-              const itemHoverText =
-                typeof item.label === "string"
-                  ? [item.label, item.helper].filter(Boolean).join(" - ")
-                  : [reactNodeToString(item.label), item.helper]
-                      .filter(Boolean)
-                      .join(" - ");
-
-              const isSelected = !!selected?.includes(item.value);
-              const isCreateOption = item.value === "create";
-
-              return (
-                <CommandItem
-                  key={item.value}
-                  value={
-                    typeof item.label === "string"
-                      ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
-                      : undefined
-                  }
-                  onSelect={() => {
-                    if (isCreateOption) {
-                      onCreateOption?.(search);
-                    } else if (!isSelected) {
-                      onChange?.(item.value);
-                      setSearch("");
-                    }
-                    setOpen(false);
-                  }}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: `${itemHeight}px`,
-                    transform: `translateY(${virtualRow.start}px)`
-                  }}
-                  className="flex items-center justify-between min-w-0"
-                >
-                  {isCreateOption ? (
-                    <div className="flex items-center min-w-0 flex-1">
-                      <span>
-                        {t`Create ${search.trim() === "" ? label : search}`}
-                      </span>
-                    </div>
-                  ) : item.helper ? (
-                    <div
-                      className={cn(
-                        "flex flex-col min-w-0 flex-1",
-                        isSelected || (item.value === value && "pr-2")
-                      )}
-                    >
-                      <TruncatedTooltipText
-                        className="block w-full truncate"
-                        tooltip={itemHoverText}
-                      >
-                        {item.label}
-                      </TruncatedTooltipText>
-                      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                        <TruncatedTooltipText
-                          className="truncate flex-1"
-                          tooltip={itemHoverText}
-                        >
-                          {item.helper}
-                        </TruncatedTooltipText>
-                        {item.helperRight && (
-                          <span className="flex-shrink-0">
-                            {item.helperRight}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <TruncatedTooltipText
-                      className="truncate flex-1"
-                      tooltip={itemHoverText}
-                    >
-                      {item.label}
-                    </TruncatedTooltipText>
-                  )}
-                  {!isCreateOption && (
-                    <LuCheck
-                      className={cn(
-                        "ml-auto h-4 w-4 flex-shrink-0",
-                        isSelected || item.value === value
-                          ? "opacity-100"
-                          : "opacity-0 hidden"
-                      )}
-                    />
-                  )}
-                </CommandItem>
-              );
-            })}
-          </div>
-        </div>
-      </CommandGroup>
-    </Command>
-  );
-}
+const getCreatableComboboxItemValue = (item: PickerListOption) =>
+  typeof item.label === "string"
+    ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
+    : undefined;

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { AccountType } from "@carbon/database/ledger";
 import { assertBalanced, credit, debit, EPSILON, round } from "@carbon/utils";
 
 /**
@@ -9,11 +10,12 @@ import { assertBalanced, credit, debit, EPSILON, round } from "@carbon/utils";
  * asset register — capitalising stock / WIP / CIP into an asset, and returning
  * an asset to stock at its net book value.
  *
- * Every account these builders touch is class Asset, so a line's stored amount
- * is natural-balance-signed the way `journalLine.amount` is: `debit("asset", x)`
- * is +x and `credit("asset", x)` is −x. Each amount is rounded to the internal
- * scale before it is placed on a line, and every builder refuses to return an
- * unbalanced set of lines.
+ * A line's stored amount is natural-balance-signed the way `journalLine.amount`
+ * is: on an Asset account `debit("asset", x)` is +x and `credit("asset", x)` is
+ * −x. Every account is class Asset except the offset of `buildOffsetLines`
+ * (and an entered cost's credit), which is signed by its own class. Each
+ * amount is rounded to the internal scale before it is placed on a line, and
+ * every builder refuses to return an unbalanced set of lines.
  */
 
 export type PostingLine = {
@@ -42,34 +44,83 @@ function assertAssetLinesBalance(lines: PostingLine[], label: string): void {
   assertBalanced(signedDebitTotal, 0, EPSILON, label);
 }
 
+/** A stored, natural-balance-signed amount as a signed debit. */
+function asSignedDebit(type: AccountType, amount: number): number {
+  return amount * debit(type, 1);
+}
+
 /**
  * Capitalise `cost` into a fixed asset: Dr the asset account, Cr the account
  * the value came from — a stock account (Finished Goods / Raw Materials), WIP,
- * or CIP — under `creditDescription`.
+ * or CIP — under `creditDescription`. `creditAccountType` is that account's
+ * class (default asset): an entered cost is credited to whatever account it
+ * was spent from — Retained Earnings is Equity, so its credit is stored +x.
  */
 export function buildCapitalizationLines(args: {
   cost: number;
   assetAccountId: string;
   creditAccountId: string;
   creditDescription: string;
+  creditAccountType?: AccountType;
 }): PostingLine[] {
   const cost = ledgerAmount(args.cost, "Asset cost");
   // A cost that rounds to nothing at ledger precision has nothing to post.
   if (cost <= 0) throw new Error("Asset cost must be positive");
 
+  return buildOffsetLines({
+    amount: cost,
+    accountId: args.assetAccountId,
+    description: "Fixed Asset Acquisition",
+    offsetAccountId: args.creditAccountId,
+    offsetDescription: args.creditDescription,
+    offsetAccountType: args.creditAccountType ?? "asset",
+    label: "Asset capitalization journal"
+  });
+}
+
+/**
+ * Raise (`amount` > 0) or lower (`amount` < 0) an Asset-class account against
+ * an offset account of any class: Dr asset / Cr offset to raise, the reverse
+ * to lower. Each line is signed by its own account's natural balance, and the
+ * pair is checked as debits = credits.
+ */
+export function buildOffsetLines(args: {
+  amount: number;
+  accountId: string;
+  description: string;
+  offsetAccountId: string;
+  offsetDescription: string;
+  offsetAccountType: AccountType;
+  label: string;
+}): PostingLine[] {
+  const amount = ledgerAmount(args.amount, args.label);
+  if (amount === 0) throw new Error(`${args.label} has nothing to post`);
+  const raise = amount > 0;
+  const size = Math.abs(amount);
   const lines: PostingLine[] = [
     {
-      accountId: args.assetAccountId,
-      description: "Fixed Asset Acquisition",
-      amount: debit("asset", cost)
+      accountId: args.accountId,
+      description: args.description,
+      amount: raise ? debit("asset", size) : credit("asset", size)
     },
     {
-      accountId: args.creditAccountId,
-      description: args.creditDescription,
-      amount: credit("asset", cost)
+      accountId: args.offsetAccountId,
+      description: args.offsetDescription,
+      amount: raise
+        ? credit(args.offsetAccountType, size)
+        : debit(args.offsetAccountType, size)
     }
   ];
-  assertAssetLinesBalance(lines, "Asset capitalization journal");
+  const [assetLine, offsetLine] = lines as [PostingLine, PostingLine];
+  assertBalanced(
+    round(
+      asSignedDebit("asset", assetLine.amount) +
+        asSignedDebit(args.offsetAccountType, offsetLine.amount)
+    ),
+    0,
+    EPSILON,
+    args.label
+  );
   return lines;
 }
 

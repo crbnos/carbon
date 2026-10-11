@@ -5,29 +5,20 @@
 import {
   Badge,
   Button,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  HStack,
-  IconButton,
   Input,
   MENU_ITEM_SHORTCUTS,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import {
-  LuBlocks,
-  LuEllipsisVertical,
-  LuPanelLeft,
-  LuPanelRight,
-  LuRefreshCw,
-  LuTrash
-} from "react-icons/lu";
+import { LuBlocks, LuRefreshCw, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { DateTime, VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import { Confirm } from "~/components/Modals";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -43,38 +34,45 @@ import AssemblyInstructionStatus from "./AssemblyInstructionStatus";
 
 const itemTypesWithDetails = ["Part", "Material", "Tool", "Consumable"];
 
-const AssemblyInstructionHeader = () => {
+function useInstruction() {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
-
   const routeData = useRouteData<{
     instruction: AssemblyInstruction;
     versions: AssemblyInstructionVersion[];
   }>(path.to.assemblyInstruction(id));
-  const instruction = routeData?.instruction;
-  const versions = routeData?.versions ?? [];
+  return {
+    id,
+    instruction: routeData?.instruction,
+    versions: routeData?.versions ?? []
+  };
+}
 
-  const permissions = usePermissions();
-  const user = useUser();
-  const { toggleExplorer, toggleProperties } = usePanels();
-  const deleteDisclosure = useDisclosure();
-  const activateDisclosure = useDisclosure();
-
-  const nameFetcher = useFetcher<{}>();
+function useNewVersion() {
+  const { id, instruction } = useInstruction();
   const newVersionFetcher = useFetcher<{}>();
-  const invalidateFetcher = useFetcher<{ success: boolean }>();
+  const onNewVersion = () => {
+    if (!instruction) return;
+    const formData = new FormData();
+    formData.append("copyFromId", instruction.id);
+    newVersionFetcher.submit(formData, {
+      method: "post",
+      action: path.to.assemblyInstructionVersionNew(id)
+    });
+  };
+  return {
+    onNewVersion,
+    isCreatingVersion: newVersionFetcher.state !== "idle"
+  };
+}
 
+function InstructionNameInput() {
+  const { id, instruction } = useInstruction();
+  const permissions = usePermissions();
+  const nameFetcher = useFetcher<{}>();
   const [name, setName] = useState(instruction?.name ?? "");
-
-  const isDraft = instruction?.status === "Draft";
-  const canUpdate = permissions.can("update", "production");
-  const canCreate = permissions.can("create", "production");
-  const isCreatingVersion = newVersionFetcher.state !== "idle";
-
-  const [items] = useItems();
-  const item = instruction?.itemId
-    ? items.find((i) => i.id === instruction.itemId)
-    : undefined;
+  const isEditable =
+    instruction?.status === "Draft" && permissions.can("update", "production");
 
   const onUpdateName = (value: string) => {
     if (!instruction || !value.trim() || value === instruction.name) return;
@@ -88,160 +86,217 @@ const AssemblyInstructionHeader = () => {
     });
   };
 
-  const onNewVersion = () => {
-    if (!instruction) return;
-    const formData = new FormData();
-    formData.append("copyFromId", instruction.id);
-    newVersionFetcher.submit(formData, {
-      method: "post",
-      action: path.to.assemblyInstructionVersionNew(id)
-    });
-  };
-
   return (
-    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-      <HStack className="flex-grow" spacing={1}>
-        <IconButton
-          aria-label="Toggle Explorer"
-          icon={<LuPanelLeft />}
-          onClick={toggleExplorer}
-          variant="ghost"
-        />
-        <Input
-          className="mr-2 w-auto min-w-0 max-w-[320px] font-semibold text-foreground field-sizing-content"
-          value={name}
-          borderless
-          onChange={
-            isDraft && canUpdate ? (e) => setName(e.target.value) : undefined
-          }
-          onBlur={
-            isDraft && canUpdate
-              ? (e) => onUpdateName(e.target.value)
-              : undefined
-          }
-        />
-        <AssemblyInstructionStatus status={instruction?.status} />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <IconButton
-              aria-label="More options"
-              icon={<LuEllipsisVertical />}
-              variant="secondary"
-              size="sm"
+    <Input
+      className="mr-2 w-auto min-w-0 max-w-[320px] font-semibold text-foreground field-sizing-content"
+      value={name}
+      borderless
+      onChange={isEditable ? (e) => setName(e.target.value) : undefined}
+      onBlur={isEditable ? (e) => onUpdateName(e.target.value) : undefined}
+    />
+  );
+}
+
+function InstructionStatus() {
+  const { instruction } = useInstruction();
+  const user = useUser();
+  if (!instruction) return null;
+  return (
+    <>
+      <AssemblyInstructionStatus status={instruction.status} />
+      <Badge variant="outline" className="shrink-0 tabular-nums">
+        <Trans>Version {instruction.version}</Trans>
+      </Badge>
+      <span className="hidden whitespace-nowrap text-xs text-muted-foreground lg:inline">
+        {instruction.createdBy === user.id ? (
+          <Trans>
+            By you · edited{" "}
+            <DateTime
+              value={instruction.updatedAt ?? instruction.createdAt}
+              variant="relative"
             />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {item && itemTypesWithDetails.includes(item.type) && (
-              <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
-                <Link
-                  to={getLinkToItemDetails(
-                    item.type as MethodItemType,
-                    item.id
-                  )}
-                >
-                  <DropdownMenuIcon icon={<LuBlocks />} />
-                  View Item Master
-                </Link>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              disabled={
-                !permissions.can("update", "production") ||
-                invalidateFetcher.state !== "idle"
-              }
-              onClick={() =>
-                invalidateFetcher.submit(null, {
-                  method: "post",
-                  action: path.to.assemblyModelInvalidate(id)
-                })
-              }
-            >
-              <DropdownMenuIcon icon={<LuRefreshCw />} />
-              Re-convert Model
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              shortcut={MENU_ITEM_SHORTCUTS.delete}
-              disabled={
-                !permissions.can("delete", "production") ||
-                !permissions.is("employee")
-              }
-              destructive
-              onClick={deleteDisclosure.onOpen}
-            >
-              <DropdownMenuIcon icon={<LuTrash />} />
-              Delete Instruction
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {instruction && (
-          <Badge variant="outline" className="shrink-0 tabular-nums">
-            Version {instruction.version}
-          </Badge>
-        )}
-        {instruction && (
-          <span className="hidden whitespace-nowrap text-xs text-muted-foreground lg:inline">
-            {instruction.createdBy === user.id ? "By you · " : ""}
+          </Trans>
+        ) : (
+          <Trans>
             edited{" "}
             <DateTime
               value={instruction.updatedAt ?? instruction.createdAt}
               variant="relative"
             />
-          </span>
+          </Trans>
         )}
-      </HStack>
-      <div className="flex flex-shrink-0 gap-2 items-center justify-end">
-        {instruction && (
-          <VersionMenu
-            versions={versions}
-            currentVersionId={id}
-            getKey={(v) => v.id}
-            getHref={(v) => path.to.assemblyInstruction(v.id)}
-            renderLabel={(v) => (
-              <>
-                <Badge variant="outline" className="tabular-nums">
-                  V{v.version}
-                </Badge>
-                <span>{v.name}</span>
-              </>
-            )}
-            renderStatus={(v) => (
-              <AssemblyInstructionStatus status={v.status} />
-            )}
-            onNewVersion={canCreate ? onNewVersion : undefined}
-            isNewVersionDisabled={isCreatingVersion}
-          />
-        )}
-        {instruction?.status === "Published"
-          ? canCreate && (
-              <Button
-                isDisabled={isCreatingVersion}
-                isLoading={isCreatingVersion}
-                onClick={onNewVersion}
-              >
-                New Version
-              </Button>
-            )
-          : instruction && (
-              <Button
-                isDisabled={!canUpdate}
-                onClick={activateDisclosure.onOpen}
-              >
-                Make Active
-              </Button>
-            )}
-        <IconButton
-          aria-label="Toggle Properties"
-          icon={<LuPanelRight />}
-          onClick={toggleProperties}
-          variant="ghost"
+      </span>
+    </>
+  );
+}
+
+/** The next step: New Version on a published instruction, else Make Active. */
+function InstructionPrimaryAction() {
+  const { t } = useLingui();
+  const { id, instruction } = useInstruction();
+  const permissions = usePermissions();
+  const activateDisclosure = useDisclosure();
+  const { onNewVersion, isCreatingVersion } = useNewVersion();
+  if (!instruction) return null;
+
+  if (instruction.status === "Published") {
+    if (!permissions.can("create", "production")) return null;
+    return (
+      <RecordAction slot="primary">
+        <Button
+          isDisabled={isCreatingVersion}
+          isLoading={isCreatingVersion}
+          onClick={onNewVersion}
+        >
+          <Trans>New Version</Trans>
+        </Button>
+      </RecordAction>
+    );
+  }
+
+  return (
+    <>
+      <RecordAction slot="primary">
+        <Button
+          isDisabled={!permissions.can("update", "production")}
+          onClick={activateDisclosure.onOpen}
+        >
+          <Trans>Make Active</Trans>
+        </Button>
+      </RecordAction>
+      {activateDisclosure.isOpen && (
+        <Confirm
+          isOpen
+          title={t`Make Active`}
+          text={t`Make version ${instruction.version} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it.`}
+          confirmText={t`Make Active`}
+          action={path.to.assemblyInstructionActivate(id)}
+          onCancel={activateDisclosure.onClose}
+          onSubmit={activateDisclosure.onClose}
         />
+      )}
+    </>
+  );
+}
+
+/**
+ * Phones: the name, status and next step at the top of the Overview tab, so
+ * Steps and Properties get the full height.
+ */
+export function AssemblyInstructionOverviewHero() {
+  return (
+    <div className="flex shrink-0 flex-col gap-1.5 border-b border-border bg-card px-4 py-3">
+      <InstructionNameInput />
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5 empty:hidden">
+        <InstructionStatus />
       </div>
+      <InstructionPrimaryAction />
+    </div>
+  );
+}
+
+const AssemblyInstructionHeader = () => {
+  const { id, instruction, versions } = useInstruction();
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
+  const permissions = usePermissions();
+  const { toggleExplorer, toggleProperties } = usePanels();
+  const deleteDisclosure = useDisclosure();
+  const invalidateFetcher = useFetcher<{ success: boolean }>();
+  const { onNewVersion, isCreatingVersion } = useNewVersion();
+  const canCreate = permissions.can("create", "production");
+
+  const [items] = useItems();
+  const item = instruction?.itemId
+    ? items.find((i) => i.id === instruction.itemId)
+    : undefined;
+
+  const menuItems = (
+    <>
+      {item && itemTypesWithDetails.includes(item.type) && (
+        <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
+          <Link to={getLinkToItemDetails(item.type as MethodItemType, item.id)}>
+            <DropdownMenuIcon icon={<LuBlocks />} />
+            <Trans>View Item Master</Trans>
+          </Link>
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem
+        disabled={
+          !permissions.can("update", "production") ||
+          invalidateFetcher.state !== "idle"
+        }
+        onClick={() =>
+          invalidateFetcher.submit(null, {
+            method: "post",
+            action: path.to.assemblyModelInvalidate(id)
+          })
+        }
+      >
+        <DropdownMenuIcon icon={<LuRefreshCw />} />
+        <Trans>Re-convert Model</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          !permissions.can("delete", "production") ||
+          !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteDisclosure.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Instruction</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+
+  return (
+    <>
+      {/* Phones show the name, status and next step on the Overview tab
+          (AssemblyInstructionOverviewHero), not above the tab row. */}
+      <RecordHeader
+        title={isPhone ? null : <InstructionNameInput />}
+        titleInHero
+        menu={menuItems}
+        status={isPhone ? undefined : <InstructionStatus />}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            {instruction && (
+              <RecordAction slot="overflow">
+                <VersionMenu
+                  versions={versions}
+                  currentVersionId={id}
+                  getKey={(v) => v.id}
+                  getHref={(v) => path.to.assemblyInstruction(v.id)}
+                  renderLabel={(v) => (
+                    <>
+                      <Badge variant="outline" className="tabular-nums">
+                        V{v.version}
+                      </Badge>
+                      <span>{v.name}</span>
+                    </>
+                  )}
+                  renderStatus={(v) => (
+                    <AssemblyInstructionStatus status={v.status} />
+                  )}
+                  onNewVersion={canCreate ? onNewVersion : undefined}
+                  isNewVersionDisabled={isCreatingVersion}
+                />
+              </RecordAction>
+            )}
+            {isPhone ? null : <InstructionPrimaryAction />}
+          </>
+        }
+      />
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
           action={path.to.deleteAssemblyInstruction(id)}
           isOpen={deleteDisclosure.isOpen}
-          name={instruction?.name ?? "assembly instruction"}
-          text={`Are you sure you want to delete ${instruction?.name}? This cannot be undone.`}
+          name={instruction?.name ?? t`assembly instruction`}
+          text={t`Are you sure you want to delete ${instruction?.name}? This cannot be undone.`}
           onCancel={() => {
             deleteDisclosure.onClose();
           }}
@@ -250,18 +305,7 @@ const AssemblyInstructionHeader = () => {
           }}
         />
       )}
-      {activateDisclosure.isOpen && instruction && (
-        <Confirm
-          isOpen
-          title="Make Active"
-          text={`Make version ${instruction.version} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it.`}
-          confirmText="Make Active"
-          action={path.to.assemblyInstructionActivate(id)}
-          onCancel={activateDisclosure.onClose}
-          onSubmit={activateDisclosure.onClose}
-        />
-      )}
-    </div>
+    </>
   );
 };
 
