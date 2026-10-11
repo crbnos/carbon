@@ -67,6 +67,7 @@ const registry = {
     import("./recalculate-revenue-recognition-run"),
   "reclass-project-coverage": () => import("./reclass-project-coverage"),
   reschedule: () => import("./reschedule"),
+  "save-timesheet-entry": () => import("./save-timesheet-entry"),
   "seed-company": () => import("./seed-company"),
   sync: () => import("./sync"),
   "trigger-rework": () => import("./trigger-rework"),

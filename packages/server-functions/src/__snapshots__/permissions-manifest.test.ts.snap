@@ -371,6 +371,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "reschedule": {
     "update": "production",
   },
+  "save-timesheet-entry": {
+    "update": "projects",
+  },
   "seed-company": "system",
   "sync": {
     "update": "resources",

@@ -69,7 +69,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 7: Add the pure timekeeping helpers
 - [x] Task 8: Add the pure funding helpers
 - [x] Task 9: Set the unallowable flag and check charge restrictions at posting
-- [ ] Task 10: Add the `save-timesheet-entry` server function
+- [x] Task 10: Add the `save-timesheet-entry` server function
 - [ ] Task 11: Add the `submit-timesheet-week` server function
 - [ ] Task 12: Apply dilution in `post-timesheet`
 - [ ] Task 13: Turn corrections into labor transfers
@@ -1488,3 +1488,10 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   5. A `Payback Variance` row sets `unallowable: false`. It sits on the project root and posts to the inventory variance account, and the stock transfer loads no posting context.
   6. `loadProjectPostingContexts` also reads the allowability of the asset class accounts. `isUnallowableCharge` falls back to the parent context's map, for a Service project's Contract charge.
   7. Billable items: `buildContractBillableItem` and the Cost Plus generator already skip an unallowable row. The field service `buildBillableItem` is unchanged.
+- Task 10:
+  1. Standard mode keeps the Phase 1a refusal texts ("This time is posted. Use a correction to change posted hours." and "This time is submitted. It can change only after it is rejected."), not the `nextEntryStatus` text. Step 3 asks for the Phase 1a behavior exactly. Standard mode refuses a save by anyone but the owner with `TIMESHEET_REFUSAL_NOT_DRAFT`; every Phase 1a caller saves for the signed-in user.
+  2. The cell edits a Draft first, then a Rejected, Pending Employee Review, Submitted or Approved entry. It takes a Posted entry only when no other entry exists, so `nextEntryStatus` can refuse it. Step 2.3 says to ignore Posted entries, but then a new entry would sit beside a posted one, which Phase 1a refuses.
+  3. A refusal throws a `ServerFnError` with status 422, so the caller gets `{ error }` with its message. This is the idiom of `defineServerFn`.
+  4. An owner's or a manager's change also clears `submittedAt`, `approvedBy`, `approvedAt` and `rejectionNote`, because the entry needs approval again.
+  5. The refusal texts are exported constants. A supervisor entry on a day with no absence reads "You can enter time for another employee only on a day of recorded absence". A change with no reason reads "Give a reason for the change".
+  6. The test creates a second user (the manager) with `session_replication_role = replica`, and deletes it the same way.
