@@ -6094,6 +6094,9 @@ msgstr ""
 msgid "Cost Relief"
 msgstr ""
 
+msgid "Cost Relieved"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -8346,6 +8349,9 @@ msgstr "например, первые 3-4 недели"
 msgid "e.g. Zebra 2x1"
 msgstr "например Zebra 2x1"
 
+msgid "EAC"
+msgstr ""
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "Каждая сумма начинается с остатка счета по строке."
 
@@ -8429,6 +8435,9 @@ msgstr "Запас из ранних недель расходуется в пе
 
 msgid "Earliest operation start"
 msgstr "Самое раннее начало операции"
+
+msgid "Earned to Date"
+msgstr ""
 
 msgid "Earned, not billed"
 msgstr "Заработано, но не выставлено счетом"
@@ -12956,6 +12965,9 @@ msgstr "Счёт убытков от выбытия"
 msgid "Loss Provision"
 msgstr ""
 
+msgid "Loss Provisions"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Убытки, признаваемые при выбытии основных средств"
 
@@ -17203,6 +17215,9 @@ msgstr "Предыдущая неделя"
 msgid "Previous Week"
 msgstr "Предыдущая неделя"
 
+msgid "Price"
+msgstr ""
+
 msgid "Price break actions"
 msgstr "Действия ценовой шкалы"
 
@@ -17435,6 +17450,9 @@ msgstr "Ответственный проекта"
 
 msgid "Project Plan"
 msgstr "План проекта"
+
+msgid "Project Revenue"
+msgstr ""
 
 msgid "Project revenue is not in your plan"
 msgstr ""
@@ -23086,6 +23104,9 @@ msgstr "Процедура, которую следуют техники при 
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Процессы, которые может выполнять этот рабочий центр; отображается в программах выбора процессов при планировании операций и ограничивает, какие производственные заказы могут проходить через этот рабочий центр."
+
+msgid "The progress behind each project contract line in this run."
+msgstr ""
 
 msgid "The project had no pegs on that day."
 msgstr ""

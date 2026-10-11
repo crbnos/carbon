@@ -6094,6 +6094,9 @@ msgstr ""
 msgid "Cost Relief"
 msgstr ""
 
+msgid "Cost Relieved"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -8346,6 +8349,9 @@ msgstr "例：最初の3～4週間"
 msgid "e.g. Zebra 2x1"
 msgstr "例：Zebra 2x1"
 
+msgid "EAC"
+msgstr ""
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "各金額は明細が請求待ちしている金額から始まります。"
 
@@ -8429,6 +8435,9 @@ msgstr "早い週から消費されます。"
 
 msgid "Earliest operation start"
 msgstr "最早操作開始"
+
+msgid "Earned to Date"
+msgstr ""
 
 msgid "Earned, not billed"
 msgstr "発生済み、未請求"
@@ -12956,6 +12965,9 @@ msgstr "除却損勘定"
 msgid "Loss Provision"
 msgstr ""
 
+msgid "Loss Provisions"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定資産の除却時に認識される損失"
 
@@ -17203,6 +17215,9 @@ msgstr "前の週"
 msgid "Previous Week"
 msgstr "前週"
 
+msgid "Price"
+msgstr ""
+
 msgid "Price break actions"
 msgstr "価格スケールアクション"
 
@@ -17435,6 +17450,9 @@ msgstr "プロジェクト責任者"
 
 msgid "Project Plan"
 msgstr "プロジェクト計画"
+
+msgid "Project Revenue"
+msgstr ""
 
 msgid "Project revenue is not in your plan"
 msgstr ""
@@ -23086,6 +23104,9 @@ msgstr "この保全が実施されるときに技術者が従う手順書。ス
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "この作業区が実行できる工法。工程のスケジュール時にプロセスピッカーに表示され、この作業区を経由できる製造指図を制限します。"
+
+msgid "The progress behind each project contract line in this run."
+msgstr ""
 
 msgid "The project had no pegs on that day."
 msgstr ""

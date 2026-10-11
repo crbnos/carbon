@@ -6094,6 +6094,9 @@ msgstr ""
 msgid "Cost Relief"
 msgstr ""
 
+msgid "Cost Relieved"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -8346,6 +8349,9 @@ msgstr "예: 처음 3~4주"
 msgid "e.g. Zebra 2x1"
 msgstr "예: Zebra 2x1"
 
+msgid "EAC"
+msgstr ""
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "각 금액은 라인이 송장으로 발행할 남은 금액에서 시작됩니다."
 
@@ -8429,6 +8435,9 @@ msgstr "이전 주가 먼저 소진됩니다."
 
 msgid "Earliest operation start"
 msgstr "최초 작업 시작"
+
+msgid "Earned to Date"
+msgstr ""
 
 msgid "Earned, not billed"
 msgstr "발생, 미청구"
@@ -12956,6 +12965,9 @@ msgstr "처분 손실 계정"
 msgid "Loss Provision"
 msgstr ""
 
+msgid "Loss Provisions"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 손실"
 
@@ -17203,6 +17215,9 @@ msgstr "이전 주"
 msgid "Previous Week"
 msgstr "이전 주"
 
+msgid "Price"
+msgstr ""
+
 msgid "Price break actions"
 msgstr "가격 구간 작업"
 
@@ -17435,6 +17450,9 @@ msgstr "프로젝트 책임자"
 
 msgid "Project Plan"
 msgstr "프로젝트 계획"
+
+msgid "Project Revenue"
+msgstr ""
 
 msgid "Project revenue is not in your plan"
 msgstr ""
@@ -23086,6 +23104,9 @@ msgstr "이 유지보수가 수행될 때 기술자가 따르는 절차서로, �
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "이 작업장이 실행할 수 있는 공법으로, 공정 일정 시 공법 선택기에 표시되며, 이 작업장을 통해 라우팅할 수 있는 작업 지시를 제한합니다."
+
+msgid "The progress behind each project contract line in this run."
+msgstr ""
 
 msgid "The project had no pegs on that day."
 msgstr ""

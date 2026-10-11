@@ -791,7 +791,9 @@ export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
 export const revenueScheduleTypes = [
   "Deferral",
   "Accrual",
-  "Interest"
+  "Interest",
+  "Cost Relief",
+  "Loss Provision"
 ] as const;
 
 export const revenueScheduleStatuses = ["Planned", "Posted"] as const;

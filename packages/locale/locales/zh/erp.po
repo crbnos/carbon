@@ -6094,6 +6094,9 @@ msgstr ""
 msgid "Cost Relief"
 msgstr ""
 
+msgid "Cost Relieved"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -8346,6 +8349,9 @@ msgstr "例如前3到4周"
 msgid "e.g. Zebra 2x1"
 msgstr "例如 Zebra 2x1"
 
+msgid "EAC"
+msgstr ""
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "每个金额从该行剩余的待开票部分开始"
 
@@ -8429,6 +8435,9 @@ msgstr "较早的周次先被消耗。"
 
 msgid "Earliest operation start"
 msgstr "最早操作开始"
+
+msgid "Earned to Date"
+msgstr ""
 
 msgid "Earned, not billed"
 msgstr "已获得但未计费"
@@ -12956,6 +12965,9 @@ msgstr "处置亏损账户"
 msgid "Loss Provision"
 msgstr ""
 
+msgid "Loss Provisions"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的亏损"
 
@@ -17203,6 +17215,9 @@ msgstr "前一周"
 msgid "Previous Week"
 msgstr "前一周"
 
+msgid "Price"
+msgstr ""
+
 msgid "Price break actions"
 msgstr "价格阶梯操作"
 
@@ -17435,6 +17450,9 @@ msgstr "项目负责人"
 
 msgid "Project Plan"
 msgstr "项目计划"
+
+msgid "Project Revenue"
+msgstr ""
 
 msgid "Project revenue is not in your plan"
 msgstr ""
@@ -23086,6 +23104,9 @@ msgstr "技术人员执行此维护时遵循的程序文件；在已生成排程
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "此工作中心可以运行的工艺；在排程工序时显示在工艺选择器中，并限制哪些工单可以通过此工作中心。"
+
+msgid "The progress behind each project contract line in this run."
+msgstr ""
 
 msgid "The project had no pegs on that day."
 msgstr ""

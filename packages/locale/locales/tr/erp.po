@@ -6094,6 +6094,9 @@ msgstr ""
 msgid "Cost Relief"
 msgstr ""
 
+msgid "Cost Relieved"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -8346,6 +8349,9 @@ msgstr "örn. ilk 3 ila 4 hafta"
 msgid "e.g. Zebra 2x1"
 msgstr "örneğin Zebra 2x1"
 
+msgid "EAC"
+msgstr ""
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "Her tutar, satırın faturalandırılacak kalanından başlar."
 
@@ -8429,6 +8435,9 @@ msgstr "Daha önceki haftalar önce tüketilir."
 
 msgid "Earliest operation start"
 msgstr "En erken operasyon başlangıcı"
+
+msgid "Earned to Date"
+msgstr ""
 
 msgid "Earned, not billed"
 msgstr "Kazanıldı, faturalanmadı"
@@ -12956,6 +12965,9 @@ msgstr "Elden Çıkarmada Zarar Hesabı"
 msgid "Loss Provision"
 msgstr ""
 
+msgid "Loss Provisions"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Sabit kıymetlerin elden çıkarılmasında tanınan zararlar"
 
@@ -17203,6 +17215,9 @@ msgstr "Önceki hafta"
 msgid "Previous Week"
 msgstr "Önceki Hafta"
 
+msgid "Price"
+msgstr ""
+
 msgid "Price break actions"
 msgstr "Fiyat kademesi işlemleri"
 
@@ -17435,6 +17450,9 @@ msgstr "Proje sahibi"
 
 msgid "Project Plan"
 msgstr "Proje Planı"
+
+msgid "Project Revenue"
+msgstr ""
 
 msgid "Project revenue is not in your plan"
 msgstr ""
@@ -23086,6 +23104,9 @@ msgstr "Teknikerin bu bakım gerçekleştirildiğinde izlediği prosedür; krono
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Bu iş merkezinin çalıştırabileceği prosesler; operasyonları zamanlarken proses seçicilerinde görünür ve hangi iş emirlerinin bu iş merkezinden geçebileceğini sınırlar."
+
+msgid "The progress behind each project contract line in this run."
+msgstr ""
 
 msgid "The project had no pegs on that day."
 msgstr ""

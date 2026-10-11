@@ -64,7 +64,7 @@ These correct or add to the spec. Task 13 records them there.
 - [x] Task 7: Pass the project revenue synthesizers at every run call site
 - [x] Task 8: Post Cost Relief and Loss Provision rows
 - [x] Task 9: Add the Percent Complete database tests
-- [ ] Task 10: Show progress in the run review
+- [x] Task 10: Show progress in the run review
 - [ ] Task 11: Show progress on the Billing tab and the contract
 - [ ] Task 12: Add the Contract Loss Provision account default
 - [ ] Task 13: Update the rules, AGENTS.md, docs, spec and changelog
@@ -610,3 +610,5 @@ ls .ai/playbooks/project-billing-phase-4b.md
   2. `addContract` takes `revenueMethod`, `ceilingAmount` and a `Fixed` billing method.
   3. The header names its ee caller.
 - Task 9: the test mocks `../plan.server` (`companyHasFeature`) and `@carbon/auth/client.server` (`getCarbonServiceRole`), the plan read and the service-role client. The EAC is the billing element's `estimateAtCompletion` override. The Fixed line's contract value is one `customerContractInvoiceLine` under a `customerContractInvoice` (`customerContractInvoiceLine_parent_check`). The months are September and October 2026, as in Task 4. 6 passed; the whole ee suite passed (138 files, 1,957 tests).
+- Task 10: `revenueScheduleTypes` (`accounting.models.ts`) gains `Cost Relief` and `Loss Provision`. The run page builds its sections from that list, so without them the 2 new row types had no section and did not show. Only the run page reads the list. The page header's **Amount** still sums every line, so it now adds the cost relief and the loss provision to the revenue.
+- Task 10: the run lines select (`getRevenueRecognitionRunLines`) embeds the month row (`revenue`) and the contract line (`contractLine`, with its contract and billing element) through the schedule's composite FKs. A contract row's **Source** cell now links to its contract. `ProjectRevenueProgress.ee.tsx` builds one row per contract line with a progress month (`earnedToDate` set), a Cost Relief row or a Loss Provision row (`projectRevenueRows`). **This Month** counts each month row once, because its Deferral and Accrual rows both point at it. `check:manifest` passes unchanged. The UI is not checked in a browser (Task 14).

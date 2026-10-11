@@ -114,7 +114,7 @@
     {"name":"accounting_getReportPins","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"3536c9c9a314","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getReportViews","classification":"READ","paramCount":1,"schema":"f60ae5d8a496","response":"7f6aad3009db","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getRevenueRecognitionRun","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"d0de7b5f5bf7","injectAuth":"companyId","permission":"accounting:view","paginates":false},
-    {"name":"accounting_getRevenueRecognitionRunLines","classification":"READ","paramCount":1,"schema":"8245d2d4cee4","response":"5af485522af2","injectAuth":"companyId","permission":"accounting:view","paginates":false},
+    {"name":"accounting_getRevenueRecognitionRunLines","classification":"READ","paramCount":1,"schema":"8245d2d4cee4","response":"886045400ad0","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getRevenueRecognitionRuns","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"567192f531f1","injectAuth":"companyId","permission":"accounting:view","paginates":true,"defaults":"always"},
     {"name":"accounting_getRevenueSchedules","classification":"READ","paramCount":4,"schema":"5fa45837b9c2","response":"c97717075324","injectAuth":"companyId","permission":"accounting:view","paginates":true,"defaults":"always"},
     {"name":"accounting_getScrapAccountIds","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"681004346c78","injectAuth":"companyId","permission":"accounting:view","paginates":false},

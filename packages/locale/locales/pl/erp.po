@@ -6094,6 +6094,9 @@ msgstr ""
 msgid "Cost Relief"
 msgstr ""
 
+msgid "Cost Relieved"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -8346,6 +8349,9 @@ msgstr "np. pierwsze 3 do 4 tygodnie"
 msgid "e.g. Zebra 2x1"
 msgstr "np. Zebra 2x1"
 
+msgid "EAC"
+msgstr ""
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "Każda kwota wynosi pozostałej do zafakturowania kwocie Pozycji."
 
@@ -8429,6 +8435,9 @@ msgstr "Wcześniejsze tygodnie są zużywane najpierw."
 
 msgid "Earliest operation start"
 msgstr "Najwcześniejszy początek operacji"
+
+msgid "Earned to Date"
+msgstr ""
 
 msgid "Earned, not billed"
 msgstr "Zarobione, ale nie zafakturowane"
@@ -12956,6 +12965,9 @@ msgstr "Konto straty na likwidacji"
 msgid "Loss Provision"
 msgstr ""
 
+msgid "Loss Provisions"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Straty ujęte przy likwidacji środków trwałych"
 
@@ -17203,6 +17215,9 @@ msgstr "Poprzedni tydzień"
 msgid "Previous Week"
 msgstr "Poprzedni tydzień"
 
+msgid "Price"
+msgstr ""
+
 msgid "Price break actions"
 msgstr "Działania progu cenowego"
 
@@ -17435,6 +17450,9 @@ msgstr "Właściciel projektu"
 
 msgid "Project Plan"
 msgstr "Plan Projektu"
+
+msgid "Project Revenue"
+msgstr ""
 
 msgid "Project revenue is not in your plan"
 msgstr ""
@@ -23086,6 +23104,9 @@ msgstr "Procedura, którą technicy stosują podczas wykonywania tego utrzymania
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "Procesy, które może wykonać to stanowisko robocze; pojawia się w selectorach procesów podczas planowania operacji i ogranicza, które zlecenia produkcyjne mogą przejść przez to stanowisko robocze."
+
+msgid "The progress behind each project contract line in this run."
+msgstr ""
 
 msgid "The project had no pegs on that day."
 msgstr ""

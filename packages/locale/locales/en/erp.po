@@ -6094,6 +6094,9 @@ msgstr "Cost Rate per Hour"
 msgid "Cost Relief"
 msgstr "Cost Relief"
 
+msgid "Cost Relieved"
+msgstr "Cost Relieved"
+
 msgid "Cost treatment"
 msgstr "Cost treatment"
 
@@ -8346,6 +8349,9 @@ msgstr "e.g. the first 3 to 4 weeks"
 msgid "e.g. Zebra 2x1"
 msgstr "e.g. Zebra 2x1"
 
+msgid "EAC"
+msgstr "EAC"
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "Each amount starts at what the line has left to invoice."
 
@@ -8429,6 +8435,9 @@ msgstr "Earlier weeks are consumed first."
 
 msgid "Earliest operation start"
 msgstr "Earliest operation start"
+
+msgid "Earned to Date"
+msgstr "Earned to Date"
 
 msgid "Earned, not billed"
 msgstr "Earned, not billed"
@@ -12956,6 +12965,9 @@ msgstr "Loss on Disposal Account"
 msgid "Loss Provision"
 msgstr "Loss Provision"
 
+msgid "Loss Provisions"
+msgstr "Loss Provisions"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Losses recognized on disposal of fixed assets"
 
@@ -17203,6 +17215,9 @@ msgstr "Previous week"
 msgid "Previous Week"
 msgstr "Previous Week"
 
+msgid "Price"
+msgstr "Price"
+
 msgid "Price break actions"
 msgstr "Price break actions"
 
@@ -17435,6 +17450,9 @@ msgstr "Project owner"
 
 msgid "Project Plan"
 msgstr "Project Plan"
+
+msgid "Project Revenue"
+msgstr "Project Revenue"
 
 msgid "Project revenue is not in your plan"
 msgstr "Project revenue is not in your plan"
@@ -23086,6 +23104,9 @@ msgstr "The procedure technicians follow when this maintenance is performed; rep
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
+
+msgid "The progress behind each project contract line in this run."
+msgstr "The progress behind each project contract line in this run."
 
 msgid "The project had no pegs on that day."
 msgstr "The project had no pegs on that day."

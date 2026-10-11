@@ -6094,6 +6094,9 @@ msgstr ""
 msgid "Cost Relief"
 msgstr ""
 
+msgid "Cost Relieved"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -8346,6 +8349,9 @@ msgstr "उदाहरण के लिए पहले 3 से 4 सप्त
 msgid "e.g. Zebra 2x1"
 msgstr "उदाहरण के लिए Zebra 2x1"
 
+msgid "EAC"
+msgstr ""
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "प्रत्येक राशि उस पर शुरू होती है जो पंक्ति के पास चालान करने के लिए बचा है।"
 
@@ -8429,6 +8435,9 @@ msgstr "पहले के सप्ताह सबसे पहले उप�
 
 msgid "Earliest operation start"
 msgstr "सबसे पहले संचालन शुरू"
+
+msgid "Earned to Date"
+msgstr ""
 
 msgid "Earned, not billed"
 msgstr "अर्जित, बिल नहीं किया गया"
@@ -12956,6 +12965,9 @@ msgstr "निपटान पर हानि खाता"
 msgid "Loss Provision"
 msgstr ""
 
+msgid "Loss Provisions"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "अचल संपत्ति के निपटान पर मान्यता प्राप्त हानियाँ"
 
@@ -17203,6 +17215,9 @@ msgstr "पिछला सप्ताह"
 msgid "Previous Week"
 msgstr "पिछला सप्ताह"
 
+msgid "Price"
+msgstr ""
+
 msgid "Price break actions"
 msgstr "मूल्य स्तर की क्रियाएँ"
 
@@ -17435,6 +17450,9 @@ msgstr "परियोजना स्वामी"
 
 msgid "Project Plan"
 msgstr "प्रोजेक्ट प्लान"
+
+msgid "Project Revenue"
+msgstr ""
 
 msgid "Project revenue is not in your plan"
 msgstr ""
@@ -23086,6 +23104,9 @@ msgstr "कार्यविधि जिसका पालन तकनीश
 
 msgid "The processes this work center can run; appears in process-pickers when scheduling operations, and limits which jobs can route through this work center."
 msgstr "प्रक्रियाएँ जो यह वर्क सेंटर चला सकता है; ऑपरेशन शेड्यूल करते समय प्रक्रिया-पिकर में दिखाई देता है, और यह सीमित करता है कि कौन से जॉब इस वर्क सेंटर के माध्यम से रूट हो सकते हैं।"
+
+msgid "The progress behind each project contract line in this run."
+msgstr ""
 
 msgid "The project had no pegs on that day."
 msgstr ""

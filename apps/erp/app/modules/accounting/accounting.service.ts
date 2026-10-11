@@ -7536,11 +7536,13 @@ export async function getRevenueRecognitionRunLines(
 ) {
   // The run line -> schedule FK is composite (scheduleId, companyId), so the
   // embed must name the target table and constraint; `schedule:scheduleId(...)`
-  // only resolves single-column FKs and fails with PGRST200.
+  // only resolves single-column FKs and fails with PGRST200. A contract row
+  // also brings its month's progress figures and the line's billing element
+  // (the project revenue review, Phase 4b).
   return client
     .from("revenueRecognitionRunLine")
     .select(
-      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, journalId)"
+      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, customerContractLineId, journalId, revenue:customerContractRevenue!revenueRecognitionSchedule_customerContractRevenue_fkey(id, periodStart, amount, earnedToDate, estimateAtCompletion, transactionPrice, progress), contractLine:customerContractLine!revenueRecognitionSchedule_customerContractLine_fkey(id, description, customerContractId, contract:customerContract!customerContractLine_contract_fkey(id, customerContractId), element:projectElement!customerContractLine_projectElement_fkey(id, readableId, name)))"
     )
     .eq("runId", runId)
     .eq("companyId", companyId);
