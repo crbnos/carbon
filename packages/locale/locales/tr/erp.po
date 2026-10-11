@@ -17732,6 +17732,9 @@ msgstr "Avanslar"
 msgid "Prepayments (default)"
 msgstr "Avanslar (varsayılan)"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Ödemelerin bugünkü değeri adil değerin en azından {threshold}'idir ({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "ABD Vatandaşı Tasdiki"
 
 msgid "Unable to unlock"
 msgstr "Kilit Açılamadı"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""

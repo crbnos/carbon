@@ -17732,6 +17732,9 @@ msgstr "Acomptes (par défaut)"
 msgid "Prepayments (default)"
 msgstr "Acomptes (par défaut)"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "La valeur actualisée des paiements est au moins {threshold} de la juste valeur ({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "Attestation de personne des États-Unis"
 
 msgid "Unable to unlock"
 msgstr "Impossible de déverrouiller"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""

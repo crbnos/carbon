@@ -79,7 +79,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 17: Add Settings → Timekeeping
 - [x] Task 18: Add allowability to the account drawer
 - [x] Task 19: Add the cost objective, restrict charging and members to the project
-- [ ] Task 20: Add the element flags
+- [x] Task 20: Add the element flags
 - [ ] Task 21: Add the FLSA status to the employee job
 - [ ] Task 22: Build the DCAA controls on My Timesheet
 - [ ] Task 23: Add the employee timesheet page for managers
@@ -1580,3 +1580,9 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   5. `addMember` refuses a user who is not an employee of the company, because `projectMember.userId` references the global `user` table. Both intents refuse a form whose `projectId` is not the route's project.
   6. A member row shows the user's name and avatar from the embed in `getProjectMembers`, so a former employee still shows a name. Remove is one click with no confirm: it changes no posted data, and Add puts the member back.
   7. Browser verification deferred.
+- Task 20:
+  1. The 3 switches share one `FlagSwitch`, the shape of `ChargeableSwitch`, and post through `useElementField` to the existing field update route. They sit below **Chargeable**.
+  2. A Parameter element shows none of the 3 switches. A Parameter takes no charge, and its Chargeable switch is already disabled.
+  3. `ElementSidebar` takes the project's `costObjective` from `ElementView`, to show **Leave** only on an Indirect project.
+  4. The List layout reads elements through `PROJECT_ELEMENT_LIST_COLUMNS`, which now selects `isUnallowable` for the badge. `pnpm run generate:mcp` changes the response digest of that list read. The badge is a red `Badge` after the element name.
+  5. Browser verification deferred.

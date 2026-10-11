@@ -17732,6 +17732,9 @@ msgstr "预付款（默认）"
 msgid "Prepayments (default)"
 msgstr "预付款（默认）"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "付款现值至少为公允价值的{threshold}({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "美国人身份证明"
 
 msgid "Unable to unlock"
 msgstr "无法解锁"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""

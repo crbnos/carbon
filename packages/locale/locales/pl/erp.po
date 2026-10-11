@@ -17732,6 +17732,9 @@ msgstr "Zaliczki"
 msgid "Prepayments (default)"
 msgstr "Zaliczki (domyślnie)"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Wartość obecna płatności wynosi co najmniej {threshold} wartości godziwej ({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "Zaświadczenie osoby ze Stanów Zjednoczonych"
 
 msgid "Unable to unlock"
 msgstr "Nie można odblokować"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""

@@ -17732,6 +17732,9 @@ msgstr "Adiantamentos (padrão)"
 msgid "Prepayments (default)"
 msgstr "Adiantamentos (padrão)"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "O valor presente dos pagamentos é pelo menos {threshold} do valor justo ({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "Atestação de Pessoa dos EUA"
 
 msgid "Unable to unlock"
 msgstr "Incapaz de desbloquear"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""

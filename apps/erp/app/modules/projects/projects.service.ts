@@ -1051,7 +1051,7 @@ export async function getLaborCategoryNames(
 // --- Elements ----------------------------------------------------------------
 
 const PROJECT_ELEMENT_LIST_COLUMNS =
-  "id, projectId, readableId, sequence, type, parentId, name, stateId, ownerId, priority, milestoneId, startDate, targetDate, completedAt, estimatedHours, isChargeable, budget, itemId, sortOrder, createdAt, updatedAt, requirementCategory, targetOperator, targetValue, targetUpperValue, targetUnit, verificationMethod, actualParameterId, qualityDocumentId, verdict, verdictAt, verdictBy, parameterValue, parameterUnit, parameterSource, parameterFormula, parameterItemField, parameterContingencyPercent, allocationPercent, state:projectState!projectElement_state_fkey!inner(name, group, color), labels:projectElementLabel!projectElementLabel_element_fkey(projectLabelId)" as const;
+  "id, projectId, readableId, sequence, type, parentId, name, stateId, ownerId, priority, milestoneId, startDate, targetDate, completedAt, estimatedHours, isChargeable, isUnallowable, budget, itemId, sortOrder, createdAt, updatedAt, requirementCategory, targetOperator, targetValue, targetUpperValue, targetUnit, verificationMethod, actualParameterId, qualityDocumentId, verdict, verdictAt, verdictBy, parameterValue, parameterUnit, parameterSource, parameterFormula, parameterItemField, parameterContingencyPercent, allocationPercent, state:projectState!projectElement_state_fkey!inner(name, group, color), labels:projectElementLabel!projectElementLabel_element_fkey(projectLabelId)" as const;
 
 function projectElementsQuery(
   client: Client,

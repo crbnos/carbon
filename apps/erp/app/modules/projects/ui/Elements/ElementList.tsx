@@ -4,6 +4,7 @@
 
 import { useAction } from "@carbon/query";
 import {
+  Badge,
   Button,
   Checkbox,
   Combobox,
@@ -291,6 +292,11 @@ export function ElementList({
                   >
                     <span className="truncate font-medium">{element.name}</span>
                   </Link>
+                  {element.isUnallowable && (
+                    <Badge variant="red" className="shrink-0">
+                      <Trans>Unallowable</Trans>
+                    </Badge>
+                  )}
                   {suspectIds?.has(element.id) && <SuspectBadge />}
                   {element.type === "Requirement" &&
                     requirementStatus?.[element.id] && (

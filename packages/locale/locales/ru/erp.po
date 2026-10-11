@@ -17732,6 +17732,9 @@ msgstr "Предоплаты"
 msgid "Prepayments (default)"
 msgstr "Предоплаты (по умолчанию)"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Текущая стоимость платежей составляет не менее {threshold} справедливой стоимости ({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "Удостоверение лица США"
 
 msgid "Unable to unlock"
 msgstr "Не удается разблокировать"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""

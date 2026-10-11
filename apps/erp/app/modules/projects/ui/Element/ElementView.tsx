@@ -383,6 +383,7 @@ export function ElementView({
             element={element}
             capitalAsset={capitalAsset}
             costTreatment={project?.costTreatment ?? null}
+            costObjective={project?.costObjective ?? null}
             states={states}
             labels={labels}
             milestones={milestones}

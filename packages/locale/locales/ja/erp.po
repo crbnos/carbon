@@ -17732,6 +17732,9 @@ msgstr "前払金（デフォルト）"
 msgid "Prepayments (default)"
 msgstr "前払金 (デフォルト)"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "支払の現在価値は公正価値の{threshold}以上です({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "米国人証明"
 
 msgid "Unable to unlock"
 msgstr "ロック解除できません"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""

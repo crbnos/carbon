@@ -17732,6 +17732,9 @@ msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
 msgid "Prepayments (default)"
 msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "भुगतान का वर्तमान मूल्य न्यायसंगत मूल्य का कम से कम {threshold} है ({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "U.S. व्यक्ति साक्ष्य"
 
 msgid "Unable to unlock"
 msgstr "अनलॉक करने में असमर्थ"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""

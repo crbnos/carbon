@@ -11,7 +11,10 @@ import { Link } from "react-router";
 import { usePermissions } from "~/hooks";
 import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
 import { path } from "~/utils/path";
-import type { ProjectCostTreatment } from "../../projects.models";
+import type {
+  ProjectCostObjective,
+  ProjectCostTreatment
+} from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import {
@@ -51,6 +54,7 @@ export function ElementSidebar({
   element,
   capitalAsset,
   costTreatment,
+  costObjective,
   states,
   labels,
   milestones,
@@ -61,6 +65,7 @@ export function ElementSidebar({
   element: Element;
   capitalAsset: CapitalAsset;
   costTreatment: ProjectCostTreatment | null;
+  costObjective: ProjectCostObjective | null;
   states: ProjectState[];
   labels: ProjectLabel[];
   milestones: ProjectMilestone[];
@@ -141,6 +146,44 @@ export function ElementSidebar({
           isDisabled={isDisabled || element.type === "Parameter"}
         />
       </Property>
+      {/* Government contracting: an element's allowability, its
+          preproduction cost and, on an Indirect project, its leave time. */}
+      {element.type !== "Parameter" && (
+        <>
+          <Property label={t`Unallowable`}>
+            <FlagSwitch
+              projectId={projectId}
+              elementId={element.id}
+              field="isUnallowable"
+              label={t`Unallowable`}
+              value={element.isUnallowable}
+              isDisabled={isDisabled}
+            />
+          </Property>
+          <Property label={t`Preproduction`}>
+            <FlagSwitch
+              projectId={projectId}
+              elementId={element.id}
+              field="isPreproduction"
+              label={t`Preproduction`}
+              value={element.isPreproduction}
+              isDisabled={isDisabled}
+            />
+          </Property>
+          {costObjective === "Indirect" && (
+            <Property label={t`Leave`}>
+              <FlagSwitch
+                projectId={projectId}
+                elementId={element.id}
+                field="isLeave"
+                label={t`Leave`}
+                value={element.isLeave}
+                isDisabled={isDisabled}
+              />
+            </Property>
+          )}
+        </>
+      )}
       <Property label={t`Budget`}>
         <NumberPill {...common} field="budget" number={element.budget} />
       </Property>
@@ -204,6 +247,37 @@ function ChargeableSwitch({
       <Switch
         variant="small"
         aria-label={t`Chargeable`}
+        checked={checked}
+        disabled={isDisabled}
+        onCheckedChange={(next) => submit(next ? "true" : "false")}
+      />
+    </div>
+  );
+}
+
+/** A yes/no element flag, saved through the element field update route. */
+function FlagSwitch({
+  projectId,
+  elementId,
+  field,
+  label,
+  value,
+  isDisabled
+}: {
+  projectId: string;
+  elementId: string;
+  field: "isUnallowable" | "isPreproduction" | "isLeave";
+  label: string;
+  value: boolean;
+  isDisabled: boolean;
+}) {
+  const { pending, submit } = useElementField(projectId, elementId, field);
+  const checked = pending === undefined ? value : pending === "true";
+  return (
+    <div className="px-2">
+      <Switch
+        variant="small"
+        aria-label={label}
         checked={checked}
         disabled={isDisabled}
         onCheckedChange={(next) => submit(next ? "true" : "false")}

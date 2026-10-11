@@ -17732,6 +17732,9 @@ msgstr "Prepayments"
 msgid "Prepayments (default)"
 msgstr "Prepayments (default)"
 
+msgid "Preproduction"
+msgstr "Preproduction"
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Present value of payments is at least {threshold} of fair value ({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "U.S. Person Attestation"
 
 msgid "Unable to unlock"
 msgstr "Unable to unlock"
+
+msgid "Unallowable"
+msgstr "Unallowable"
 
 msgid "Unallowable reason"
 msgstr "Unallowable reason"

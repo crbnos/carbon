@@ -17732,6 +17732,9 @@ msgstr "Anzahlungen"
 msgid "Prepayments (default)"
 msgstr "Anzahlungen (Standard)"
 
+msgid "Preproduction"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Der Barwert der Zahlungen ist mindestens {threshold} des beizulegenden Zeitwertes ({actual})"
 
@@ -25357,6 +25360,9 @@ msgstr "U.S. Person-Bestätigung"
 
 msgid "Unable to unlock"
 msgstr "Entsperrung nicht möglich"
+
+msgid "Unallowable"
+msgstr ""
 
 msgid "Unallowable reason"
 msgstr ""
