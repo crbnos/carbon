@@ -49,6 +49,13 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   (`planningSegmentId` = the project id). A **Transfer** planning action proposes common
   stock the common segment does not need; applying it creates a Draft transfer with
   `planningActionId`. An overdue Open borrow shows as a badge in `ProjectHeader`.
+- **Planning group** (Phase 3, commercial `PLANNING_GROUPS`) — `planningGroup` pools
+  projects with project stock at one location; members (`project.planningGroupId`,
+  `planningPriority`) net in the group's segment. Grouped PO lines and jobs carry
+  `planningGroupId` and no project. **Pegs** (`projectPeg`) say which member each piece of
+  grouped supply is for: Soft (MRP moves them), Hard (received or completed; set only by
+  `harden_pegs_for_supply`), Manual (a planner's override with a reason). A peg row is
+  superseded, never updated, so the history stays.
 
 ## Safety
 
@@ -123,6 +130,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `project.projectStock` / `chargeAtReceipt` / `governmentFurnished` | Project stock flags (Phase 2a) |
 | `projectStockTransfer`, `projectStockTransferLine` | Transfer / Borrow / Payback documents; the line's `unitCost` is stamped at posting |
 | `projectBorrow` | An open borrow: quantity, `quantityPaidBack`, `borrowedUnitCost`, due date |
+| `planningGroup` | Location, excess rule (+ `exceptionProjectId`), priority rule, `active` (Phase 3) |
+| `projectPeg` | Versioned pegs: supply (`supplyType`, `supplyId`), member demand, `state`, `supersededAt`, `hardenedAt`, `itemLedgerId` |
 
 ## Key Service Functions
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
@@ -165,6 +174,15 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   Apply of Transfer planning actions from both planning routes: needs `update: projects`;
   one transaction claims the actions and creates one Draft transfer each, readable ids
   from the `projectStockTransfer` sequence. Kept out of the service so it is no MCP tool.
+- `getPlanningGroups`, `getPlanningGroupsList`, `getPlanningGroup`, `getPlanningGroupMembers`,
+  `deletePlanningGroup` (no plan check), `getProjectPegs` (current, or `asOf` for history),
+  `getPlanningGroupOpenSupplies`; `planningGroupValidator`, `manualPegValidator` (models) —
+  Phase 3. The commercial writes live in `@carbon/ee/pegging.server`: `upsertPlanningGroup`
+  and `createManualPeg` call `requireEntitlement` first; routes call `requireFeature` and turn
+  an `EntitlementError` into a flash.
+- `getPlanningSegmentOwners`, `moveActionPegsToSupply` (`.server`) — the planning routes'
+  Apply in a group segment: the owner of each segment, and one transaction that moves an
+  action's pegs onto the PO line or job it created.
 
 ## Related Modules
 - **production** — `job.projectId/projectElementId/consumeToProject`; `getJobProjectCharge`;
@@ -185,7 +203,10 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 ## Rules References
 - `.claude/rules/projects-system.md` — posting, charge gates, ids, consume-to-project jobs,
   capital projects, trace links, verification, layouts, templates, Build from part,
-  baselines, change requests, the plan lock and project stock.
+  baselines, change requests, the plan lock, project stock, and planning groups, pegging
+  and distribution.
+- `.claude/rules/mrp-system.md` → *Planning groups and pegging* — the group segment, the
+  pegging run and the member moves.
 - `.claude/rules/inventory-system.md` → *Project stock* — stripes, the stripe set of a
   demand, the key order.
 - `.claude/rules/fixed-asset-lifecycle.md` — the CIP side of capital projects.

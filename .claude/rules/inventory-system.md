@@ -228,7 +228,15 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
   `get_inventory_value_by_location` still sum every stripe. The quantities page takes
   `?project` (absent, `common` or a project id) and the item's storage-unit card groups rows
   by owner. `post-inventory-adjustment` takes `projectId` for untracked stock and a new lot.
-- **Planning** reads common stock only until Projects Phase 2b (`mrp-system.md`).
+- **Planning** nets a project with project stock in its own segment, and a planning group's
+  members in the group's segment (Projects Phase 2b and 3, `mrp-system.md`).
+- **Grouped receipts and completions** (Projects Phase 3). A PO line or job with
+  `planningGroupId` is received or completed into its members' stripes by its pegs:
+  `harden_pegs_for_supply` returns one row per member plus the excess (the exception project,
+  else common stock), and `post-receipt` / `complete_job_to_inventory` write one item ledger
+  row and one cost layer per row, at the receipt's or the job's unit cost. A negative receipt
+  takes units back through `soften_pegs_for_return`. Details: `projects-system.md` →
+  *Planning groups, pegging and distribution*.
 - **Transfer, Borrow, Payback** post through `post-project-stock-transfer`; the costing is in
   `projects-system.md` → *Project stock*.
 

@@ -5,7 +5,7 @@ description: Break engineering and contract work into elements, charge time, mat
 
 A **project** holds a tree of <Term id="element">elements</Term>: the systems, requirements, tasks and tests that make up the work. Jobs, purchase order lines, purchase invoice lines, timesheets and material issues charge their cost to a project or to one of its elements. The <Term>project ledger</Term> records each charge, so you can compare it with the plan.
 
-Open **Projects** in the sidebar. The module has **Projects**, **My Timesheet**, **Transfers** and **Labor Categories**, plus **Approvals** when timesheet approval is on.
+Open **Projects** in the sidebar. The module has **Projects**, **My Timesheet**, **Transfers**, **Labor Categories** and **Planning Groups**, plus **Approvals** when timesheet approval is on.
 
 <Screenshot label="A project's Elements tab in the List layout, with the element tree, state and owner pills, and the tabs Elements, Milestones, Costs, Time & materials, Settings and Details" caption="Each project opens on its Elements tab." />
 
@@ -230,6 +230,35 @@ A project with **Project stock** owns the stock received for it. Other stock is 
 ### Planning
 
 MRP plans a project with project stock on its own, as described in [planning](/docs/reference/planning#projects-with-project-stock). The project's plan-line materials are its demand. When common stock has more than it needs, MRP suggests a **Transfer** into the project; what is still short becomes an Order or Make for the project, charged to it. The project's manager owns these suggestions. An open borrow past its payback date shows an **Overdue borrows** badge on the project's header, linked to the Stock tab.
+
+### Planning groups
+
+<PlanBadge plan="Business" />
+
+A **planning group** lets projects with project stock share supply of the same parts. MRP plans the members as one, so one order covers all of their demand. Each piece of that order is still assigned to a member, and it becomes the member's stock when it arrives.
+
+Open **Projects → Planning Groups** and click **New**:
+
+<FieldTable>
+  <Field name="Name" type="text" required>Unique in the company.</Field>
+  <Field name="Location" type="reference" required>Only projects at this location can join.</Field>
+  <Field name="Priority Rule" type="enum" required>`Earliest Need` gives the group's supply to the earliest need date first. `Project Priority` gives it to the member with the lowest **Planning Priority** first.</Field>
+  <Field name="Excess Rule" type="enum" required>Where received stock goes when no member needs it: `Common Stock` or `Exception Project`.</Field>
+  <Field name="Exception Project" type="reference">The project that takes the excess. Required with `Exception Project`, and it must have project stock.</Field>
+  <Field name="Active" type="boolean">The members of an inactive group are planned on their own.</Field>
+</FieldTable>
+
+A project joins on its **Details** tab after you save it: set **Planning Group** and **Planning Priority**. The project must have project stock and be at the group's location. You cannot delete a group while it has members, or purchase order lines or jobs made for it.
+
+An order that MRP places for the group belongs to the group, not to one project. MRP **pegs** each part of it to a member's demand:
+
+- A **Soft** peg sits on an order that has not arrived. MRP may move it on any run. A soft peg on a purchase order counts in the member's **Committed** cost.
+- A **Hard** peg is made when the order is received, or when the job completes. The receipt or the job's output is split into one piece of stock per member, at its cost. MRP never moves a hard peg. What no member needs follows the excess rule.
+- A **Manual** peg is a planner's choice, made with a reason. MRP keeps it. If its demand goes away, the peg shows an exception.
+
+A price difference on the supplier's invoice is split over the members' pieces. On stock already used, each member's share is charged to its project as material variance. When one member is short and another has stock it does not need, MRP suggests a **Transfer**, or a **Borrow** with a payback date when the other member needs the stock back later.
+
+A member project has a **Pegging** tab. It lists the group's orders that are for the project, with quantity, need date, state and element. Choose an **As of** date to see the pegs on that day. **Override** replaces a soft peg with a manual peg on another open order of the group.
 
 ### Transfers, borrows and paybacks
 

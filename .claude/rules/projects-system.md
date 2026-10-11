@@ -8,16 +8,19 @@ paths:
   - "packages/server-functions/src/lib/project-cip.ts"
   - "packages/server-functions/src/post-project-stock-transfer/**"
   - "packages/server-functions/src/lib/stock-stripes.ts"
+  - "packages/server-functions/src/post-receipt/grouped-receipt.ts"
+  - "packages/ee/src/pegging/**"
 ---
 
 # Projects
 
-Phases 1a, 1b, 1c, 2a and 2b of `.ai/specs/2026-10-03-projects.md`; plans
+Phases 1a, 1b, 1c, 2a, 2b and 3 of `.ai/specs/2026-10-03-projects.md`; plans
 `.ai/plans/2026-10-07-projects-phase-1a.md`,
 `.ai/plans/2026-10-08-projects-phase-1b.md`,
 `.ai/plans/2026-10-08-projects-phase-1c.md`,
-`.ai/plans/2026-10-08-projects-phase-2a.md` and
-`.ai/plans/2026-10-08-projects-phase-2b.md` (their *Execution notes* record every
+`.ai/plans/2026-10-08-projects-phase-2a.md`,
+`.ai/plans/2026-10-08-projects-phase-2b.md` and
+`.ai/plans/2026-10-08-projects-phase-3.md` (their *Execution notes* record every
 deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
@@ -234,6 +237,79 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   in the `$projectId.tsx` loader). The planning worklists list the same
   borrows above the grid.
 
+## Planning groups, pegging and distribution (Phase 3)
+
+Commercial: the feature key is `PLANNING_GROUPS` (Business, Partner). The pegging engine is in
+`packages/ee/src/pegging/` (`@carbon/ee/pegging` for the pure functions, `@carbon/ee/pegging.server`
+for `upsertPlanningGroup`, `createManualPeg` and `writeGroupPegs`). The MRP side is in
+`mrp-system.md` → *Planning groups and pegging*.
+
+- **The group.** `planningGroup` has a location, an excess rule (`Common Stock` or
+  `Exception Project` with `exceptionProjectId`), a priority rule (`Earliest Need` or
+  `Project Priority`) and `active`. `upsertPlanningGroup` calls `requireEntitlement` first, then
+  refuses a location of another company and an exception project without project stock.
+  `deletePlanningGroup` (`projects.service.ts`, no plan check, so a lapsed plan can clean up)
+  refuses while a member, a grouped PO line or a grouped job exists. Pages: Projects →
+  **Planning Groups** (`projects+/planning-groups*.tsx`). The list shows
+  `PlanningGroupsUpgradeOverlay` through `usePlanGate`; the write routes call `requireFeature`.
+- **Membership.** `project.planningGroupId` and `project.planningPriority` (lower first), set on
+  an existing project's Details tab. The CHECK `project_planningGroup_stock_check` requires
+  project stock, and the `$projectId.details.tsx` action requires the group at the project's
+  location. `project_planning_segment` returns the group id for a member of an active group.
+- **Grouped supply.** A PO line or job made for the group carries `planningGroupId` and no
+  `projectId` (`purchaseOrderLine_owner_check`, `job_owner_check`). Applying an Order or Make in
+  a group segment creates it (`getPlanningSegmentOwners`, `projects.server.ts`), and
+  `moveActionPegsToSupply` moves the action's pegs onto the new supply in one transaction.
+- **Peg states.** `projectPeg` rows are versioned: a row is never updated in place. A new row
+  supersedes the old one (`supersededAt`, `supersededByRunId`). The writes in place are
+  `itemLedgerId` on the Hard row a receipt just made and a Manual peg's `exception`.
+
+  | State | Set by | MRP may change it? |
+  |---|---|---|
+  | Soft | the MRP run, on open or planned supply | yes, on every run |
+  | Hard | `harden_pegs_for_supply`, at receipt or completion | never |
+  | Manual | **Override** on the Pegging tab, with a reason (`createManualPeg`) | no; a gone demand sets `exception` |
+
+- **One way, one rule.** Only `harden_pegs_for_supply(supplyType, supplyId, quantity)`
+  (`20261010155314`) turns Soft pegs Hard. It locks the supply's current pegs in need date,
+  project priority and demand source order, supersedes each peg it covers, and inserts a Hard row
+  with `hardenedAt`. The uncovered part keeps the peg's state. It returns one row per member
+  stripe plus an excess row: the exception project, else common stock. `post-receipt` and
+  `complete_job_to_inventory` both call it. The reverse for a negative receipt is
+  `soften_pegs_for_return` (`20261010162300`): the excess first, then the Hard pegs, latest
+  first.
+- **Distribution at receipt.** `post-receipt` (`post-receipt/grouped-receipt.ts`) calls
+  `hardenPegsForSupply` per receipt line of a grouped PO line in the posting transaction, then
+  splits the line's item ledger rows and cost layers into the returned stripes
+  (`allocateToStripes`, `stripeItemLedgerRows`, `stripeCostLedgerRows`). The last piece of a
+  layer takes the rounding rest. The journal does not change: one inventory debit per line.
+  `linkPegsToItemLedger` sets each Hard peg's `itemLedgerId`. A void softens the Hard pegs of
+  the receipt's rows (`softenPegsOfItemLedger`).
+- **Distribution at completion.** `complete_job_to_inventory` (`20261010160658`) loops over a
+  stripe list: one stripe for an ungrouped job, the harden rows for a grouped job. The Output
+  layer is written per stripe at the job's unit cost, so scrap spreads through the unit cost
+  with no separate posting. The backflush of a grouped job draws the members' stock in the
+  pegs' order, then common stock.
+- **Price variance.** At invoice, `allocateVarianceAcrossLayers` spreads the variance over the
+  striped layers. For a PO line with `planningGroupId`, the share of units already consumed goes
+  to each member's project account as a `Material Variance` `projectLedger` row
+  (`stripeVarianceCharge`, `post-purchase-invoice/project-charges.ts`). A Statistical member's
+  share stays in purchase price variance.
+- **Commitments.** `get_project_cost_summary` (`20261010161720`) adds each Soft and Manual peg on
+  an open PO line to the project's committed cost, valued at
+  `quantity / conversionFactor × unitPrice`, by the peg's element (none is the project root).
+- **Member moves.** MRP proposes a **Transfer** from a sibling's permanent excess and a
+  **Borrow** (with a payback date in `triggerValues`) from the rest of a sibling's stock, when
+  the sibling needs it later. `createProjectStockTransfersFromActions` (`projects.server.ts`)
+  makes a Draft transfer of the action's type. It refuses a Borrow with no payback date.
+- **The Pegging tab** (`$projectId.pegging.tsx`, `ProjectPegging`, shown for a project with
+  `planningGroupId`) lists the project's current pegs by item (`getProjectPegs`). With **As of**
+  it shows the rows current at the start of the next day in the company timezone:
+  `createdAt <= asOf AND (supersededAt IS NULL OR supersededAt > asOf)`. **Override**
+  (`$projectId.pegging.manual.tsx`) replaces a Soft peg with a Manual peg on another open PO line
+  or job of the group (`getPlanningGroupOpenSupplies`). The state colours are
+  `PROJECT_PEG_STATE_COLOR_MAP`.
+
 ## Timesheets
 
 `timesheetEntry` status: Draft → Submitted → (Approved) → Posted, or Rejected. A
@@ -448,6 +524,14 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
 - The demo datasets seed no baseline, change request, item, comment or view.
 - The demo datasets seed project stock and one Posted Transfer per Contract project
   (`seedProjectStock`, tier 09), but no borrow.
+- The satellite dataset seeds the **Star Tracker** planning group (`seedPlanningGroups`, tier
+  09): a striped receipt with Hard pegs and an open PO line with Soft pegs. The other three
+  datasets seed no group.
+- Phase 3: a group segment can get a Transfer from common stock (`commonSurplusDraws`) with
+  the group id as `toProjectId`; applying it fails on the project FK. Without the feature, the
+  planning RPCs still group on-hand by `project_planning_segment`, so a lapsed plan shows group
+  rows. The void of a negative receipt puts units back in the member stripes but leaves the
+  pegs Soft until the next run.
 - A Posted project stock transfer has no void; a Transfer back is the correction.
 - Planning: a Project Material demand writes no `demandForecastSource` lineage row,
   so the item planning chart cannot name the plan line. The order drawer's Open

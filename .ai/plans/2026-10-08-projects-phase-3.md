@@ -57,7 +57,7 @@ Brad decided on 2026-10-09 that Phase 3 is commercial (spec decision 34). Follow
 - [x] Task 14: Propose member Transfers and Borrows
 - [x] Task 15: Add the Pegging tab and manual pegs
 - [x] Task 16: Extend the demo datasets
-- [ ] Task 17: Update the rules, AGENTS.md, docs and spec
+- [x] Task 17: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 18: Verify in the browser
 
 ## Dependencies
@@ -833,8 +833,25 @@ ls .ai/playbooks/projects-phase-3.md
 - Task 15: the peg state colours are `PROJECT_PEG_STATE_COLOR_MAP` (Soft gray, Hard green, Manual blue). A Manual peg with an `exception` is an amber row with the exception text under its state. `erp`, `@carbon/ee` and `@carbon/utils` typecheck; `erp` passes (2073), `@carbon/ee` passes (1943) and the checks package passes (278). Browser verification waits for Task 18.
 - Task 16: satellite's **Star Tracker** group has 3 members: ORBSEC Block 2 (`orbsec-block2`), NovaSat Gen-3 (`novasat-gen3`) and a new Released Contract project, PolarView Imaging Pathfinder (`polarview-pathfinder`, PVP, 8 elements). Each member has a plan-line material of `ST-050` (`ProjectElementSpec.materials`, a new field): OB2 2 at +20 and 1 at +60, NSG3 1 at +35, PVP 2 at +45. NSG3 gains the element `task-tracker` at the end of its list, so no existing readable id moves.
 - Task 16: 2 new Deep Space RF orders carry the group's supply. `po:st-group-received` (To Invoice) has a Posted receipt of 4 at −10. `po:st-group-open` (To Receive) has 2 on order. Earliest Need gives Hard pegs of 2 (OB2), 1 (NSG3) and 1 (PVP) on the receipt, and Soft pegs of 1 (PVP) and 1 (OB2's pointing test) on the open line. By the Task 6 rules (own stripe first, then Earliest Need), MRP gives the same Soft pegs for this data, so the first run after the seed should keep them (not run).
-- Task 16: `seedPlanningGroups` (tier 09) runs after `postInventoryDocuments`, because it splits the receipt's cost layer. For each member it sets project stock, the group, the priority and the plant: the project Details action requires a group at the project's location, and the stock and the PO line are at the plant. It splits the receipt's item ledger row and cost layer into 3 stripes, the first by UPDATE and the rest by INSERT. Each stripe gets a Hard peg with `itemLedgerId`, which supersedes a Soft peg created at the order date, so the Pegging tab's As of date shows the history. The receipt journal does not change.
+- Task 16: `seedPlanningGroups` (tier 09) runs after `postInventoryDocuments`, because it splits the receipt's cost layer. For each member it sets project stock, the group, the priority and the plant. The project Details action requires the group at the project's location, and the stock and the PO lines are at the plant. It splits the receipt's item ledger row and cost layer into 3 stripes, the first by UPDATE and the rest by INSERT. Each stripe gets a Hard peg with `itemLedgerId`. The Hard peg supersedes a Soft peg created at the order date, so the Pegging tab's As of date shows the history. The receipt journal does not change.
 - Task 16 (deviation): the coverage floors are per dataset. `COVERAGE_FLOORS` takes the smallest count of any dataset, so a satellite-only table floors at 0. The plan keeps the other 3 datasets out of scope, so `DATASET_COVERAGE_FLOORS` (`coverage.ts`) adds satellite's floors: `planningGroup` 1, `projectElementMaterial` 4, `projectPeg` 8 (3 superseded Soft, 3 Hard, 2 Soft). `findCoverageShortfalls` takes the dataset key. The Phase 2a precedent seeded all 4 datasets instead; this change keeps the plan's scope.
-- Task 16: the validator gains the `planningGroups` rule (distinct Released members, an untracked item, a received line whose Posted receipt equals its pegs, an open line that is open supply and covers its pegs, every peg on a member's material, no material pegged beyond its quantity) and material checks in `projectElementChecks`. `onHandLedger` takes the striped receipt out of common stock. A mutated copy of satellite fails the rule with 3 named violations; the clean datasets pass.
+- Task 16: the validator gains material checks in `projectElementChecks` and the `planningGroups` rule. The rule checks 6 things:
+  1. the members are distinct Released projects;
+  2. the item is untracked;
+  3. the received line's Posted receipt equals its pegs;
+  4. the open line is open supply and covers its pegs;
+  5. every peg names a member's material of the item;
+  6. no material is pegged beyond its quantity.
+- Task 16: `onHandLedger` takes the striped receipt out of common stock. A changed copy of satellite fails the rule with 3 named violations; the 4 datasets pass.
 - Task 16 (verification gap): only layer 1 of `pnpm db:check:datasets` ran. All 4 datasets pass it. Layer 2 skipped with "no database connection": the worktree's Postgres container does not exist (the `pgdata` volume does), and the brief forbids rebuilding the stack. So the tier SQL is checked only against the migrations by reading. Run `pnpm db:check:datasets` when the stack is up. `@carbon/database` typechecks and the dataset tests pass (10).
+- Task 17: 3 rules document the 5 points:
+  1. `projects-system.md`, new section *Planning groups, pegging and distribution*;
+  2. `mrp-system.md`, new section *Planning groups and pegging*;
+  3. `inventory-system.md`, a bullet on grouped receipts and completions.
+- Task 17: `packages/planning/AGENTS.md`, the projects module `AGENTS.md` and `docs/content/docs/reference/projects.mdx` (new section *Planning groups*, with the Business plan badge) describe the same. `projects-system.md` and `mrp-system.md` gain `packages/ee/src/pegging/**` in `paths:`.
+- Task 17: the spec records the 4 decisions as 21a (peg write location), 21b (planned supply column), 23b (scrap) and 23c (price variance), plus 23a (the one split rule). Its Phase 3 prose now names `get_project_cost_summary` for commitments and the unit-cost spread for scrap. It also says that supplier down payments are not built.
+- Task 17 (the Gate): Brad decided on 2026-10-09 that Phase 3 is commercial (decision 34). The spec's Phase 3 changelog entry records it with the no-cycle check from before Task 1. The Risks row on gating now says it is decided.
+- Task 17 (beyond the plan): the spec's Phase 4 and Phase 5 sections were outlines. Each now points to its own spec and plans (4a, 4b; 5a–5d) with a short summary, as Brad asked. The status line marks Phases 2b and 3 implemented.
+- Task 17: `cd docs && pnpm typecheck` exits 0. No docs dev server ran, so the RSS and link checks did not apply (the edit adds no link).
+- Task 18: Browser verification deferred. Do not use localhost:3000: it is a different product, not Carbon.
 

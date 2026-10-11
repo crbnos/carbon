@@ -20,6 +20,7 @@ paths:
   - "apps/erp/app/routes/api+/items.$id.$locationId.forecast.ts"
   - "apps/erp/app/hooks/useMrpScheduleDescription.ts"
   - "packages/planning/src/index.ts"
+  - "packages/ee/src/pegging/**"
 ---
 
 # MRP (Material Requirements Planning)
@@ -254,7 +255,7 @@ Phase-7 write) and throws on failure.
 
 MRP nets each project with project stock in its own **netting segment**. The
 segment is the fourth key, `planningSegmentId`: `''` is common, a project id is
-a project with `projectStock` (Phase 3 adds planning group ids). The sentinel is
+a project with `projectStock`, or a planning group id (Phase 3, below). The sentinel is
 `''`, never NULL, because the column is in primary keys. A company with no
 project stock gets output identical to before, row for row.
 
@@ -328,6 +329,74 @@ stock) and compares every output array with a snapshot. Never edit that
 snapshot to make a test pass: a change means the change broke the invariant.
 `plan-company.project.json` pins the spec case (P-101 needs 20 and holds 5,
 common has 8 to spare → draw 8, need 7).
+
+## Planning groups and pegging (Projects Phase 3)
+
+A planning group pools projects with project stock. Its members' demand nets
+in one segment, the group id. The feature is commercial (`PLANNING_GROUPS`).
+The pure functions are in `packages/ee/src/pegging/mrp-pegging.ts`
+(`@carbon/ee/pegging`) and the writer in `peg-writer.ts`
+(`@carbon/ee/pegging.server`). `@carbon/planning` imports both lazily; it is
+the one gate in this package (`packages/planning/AGENTS.md`). The posting side
+(receipt, completion, variance) is in `projects-system.md`.
+
+- **Segment rule.** `project_planning_segment` (`20261010145821`) returns the
+  group id for a member of an active group. A grouped PO line or job sits in
+  its group's segment (`COALESCE("planningGroupId", …)` in the views), also
+  when the group is inactive. `planningSegmentOf` and `loadSegmentOnHand` take
+  the same project-to-group map.
+- **Gating (degrade).** `runMrp` reads the groups and members (2 queries). Only
+  when a group exists does it ask `companyHasFeature(PLANNING_GROUPS)`. With
+  the feature, `planCompany` gets `planningGroups`. Without it, it gets
+  `ungroupedPlanningGroupIds`: each member's rows go back to the member's own
+  segment, grouped supply nets as common, and no peg is written.
+- **Member attribution.** `DemandContributorBase` carries `projectId`,
+  `projectElementId` and `needDate`. In a group segment only, `explodeBom`
+  (`groupSegments`) scales a parent's contributors by
+  `netRequirement / grossQty` before it copies them to the child. A grouped
+  job's own material has no project until the job has pegs.
+- **Pegging** (`pegGroupSegment`, pure). `planCompany` returns
+  `groupPegInputs`, one per (group, item, location): the demands of the
+  segment and its supplies (members' own stock, open PO lines, open jobs,
+  planned supply). Each member first covers its demand with its own stock and
+  supply, with no peg. The rest of the demand takes grouped supply in the
+  priority rule's order: `Earliest Need` sorts by need date, then project
+  priority; `Project Priority` the reverse; then the demand id. A Hard peg is kept and takes nothing (its stock is already the
+  member's stripe). A Manual peg takes from its supply and its demand.
+  `splitGroupedJobDemand` splits a grouped job's component demand by the job's
+  pegs (`parentPegId`).
+- **The diff-writer, in the planning-action transaction.** `generatePlanningActions`
+  runs `writePegs` inside the same transaction as `writePlanningActionDiff`,
+  after it, because a peg on planned supply needs the action id
+  (`supplyType = 'Planning Action'`, mapped by `naturalKey` in
+  `withPlannedPegSupplies`). The transaction holds the company's advisory
+  lock. `writeGroupPegs` reads the current pegs in one query, then `diffPegs`
+  returns keep, supersede and insert lists. It supersedes with
+  `supersededAt = now()` and the run id (`randomUUID()`), so a replaced row and
+  its new row share one timestamp. A current Soft peg with no input this run
+  is superseded; a Manual peg there gets `exception`. Writes go in batches of
+  500. `runMrp` passes `pegging` with the feature even with no active group,
+  so the pegs of a group that turned inactive are superseded.
+- **Member moves** (`proposeMemberMoves`, called by `memberMoveCandidates`).
+  Per peg input, a member with a shortfall gets a **Transfer** from a
+  sibling's permanent excess (stock its balance never needs up to the horizon
+  end), then a **Borrow** of the rest of a sibling's stock when the sibling
+  needs it after the short member does. The payback date is the sibling's next
+  need date less the item's lead time, stored in `triggerValues`. A member with
+  its own shortfall lends nothing. `applyMemberMoves` moves the stock in the
+  peg input before pegging; the group total does not change.
+- **Apply.** An Order or Make in a group segment creates a PO line or job with
+  `planningGroupId` and no project (`getPlanningSegmentOwners`). The route
+  matches each settled action to its new supply and calls
+  `moveActionPegsToSupply` (`projects.server.ts`): one transaction supersedes
+  the action's pegs and copies them onto the PO line or job. If it fails, the
+  order stands and the next run re-pegs.
+- **History.** Every peg row stays. The pegs current at an instant are
+  `createdAt <= t AND (supersededAt IS NULL OR supersededAt > t)`, which the
+  project's Pegging tab reads (`getProjectPegs`).
+
+A company with no planning group gets the same output as before: the golden
+snapshot did not change, and `groupPegInputs` is empty for it.
 
 ## Planning data model (tables — all in newest schema)
 
