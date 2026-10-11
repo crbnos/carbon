@@ -24,6 +24,18 @@ export type LeaseFixtureOptions = {
   purchaseOptionReasonablyCertain?: boolean;
 };
 
+export type LeaseFixtureAccount =
+  | "other"
+  | "rou"
+  | "accumulated"
+  | "liability"
+  | "opex"
+  | "amortization"
+  | "interest"
+  | "gain"
+  | "loss"
+  | "ppe";
+
 export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
   db: Kysely<KyselyDatabase>;
   ctx: ServerFnContext;
@@ -31,7 +43,7 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
   leaseId: string;
   supplierId: string;
   assetClassId: string;
-  accounts: Record<string, string>;
+  accounts: Record<LeaseFixtureAccount, string>;
   cleanup(): Promise<void>;
 }> {
   const endDate = options.endDate ?? "2029-12-31";
