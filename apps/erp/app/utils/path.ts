@@ -859,6 +859,7 @@ export const path = {
       generatePath(`${x}/journal-entry/${id}/delete`),
     deleteKanban: (id: string) =>
       generatePath(`${x}/inventory/kanbans/delete/${id}`),
+    deleteLease: (id: string) => generatePath(`${x}/lease/${id}/delete`),
     deleteLocation: (id: string) =>
       generatePath(`${x}/resources/locations/delete/${id}`),
     deleteMaintenanceDispatch: (id: string) =>
@@ -1516,8 +1517,30 @@ export const path = {
     kanban: (id: string) => generatePath(`${x}/inventory/kanbans/${id}`),
     kanbans: `${x}/inventory/kanbans`,
     lease: (id: string) => generatePath(`${x}/lease/${id}`),
+    leaseActivate: (id: string) => generatePath(`${x}/lease/${id}/activate`),
+    leaseClassification: (id: string) =>
+      generatePath(`${x}/lease/${id}/classification`),
+    leaseDetails: (id: string) => generatePath(`${x}/lease/${id}/details`),
+    leaseEvents: (id: string) => generatePath(`${x}/lease/${id}/events`),
+    leaseInvoice: (id: string) => generatePath(`${x}/lease/${id}/invoice`),
+    leaseLiabilities: `${x}/reports/lease-liabilities`,
+    leaseModify: (id: string) => generatePath(`${x}/lease/${id}/modify`),
     leaseNetInvestment: `${x}/reports/lease-net-investment`,
+    leasePayment: (id: string, paymentId: string) =>
+      generatePath(`${x}/lease/${id}/payments/${paymentId}`),
+    leasePaymentDelete: (id: string, paymentId: string) =>
+      generatePath(`${x}/lease/${id}/payments/${paymentId}/delete`),
+    leasePaymentNew: (id: string) =>
+      generatePath(`${x}/lease/${id}/payments/new`),
+    leasePaymentsRegenerate: (id: string) =>
+      generatePath(`${x}/lease/${id}/payments/regenerate`),
+    leasePurchase: (id: string) => generatePath(`${x}/lease/${id}/purchase`),
     leaseRuns: `${x}/accounting/lease-runs`,
+    leaseSchedule: (id: string) => generatePath(`${x}/lease/${id}/schedule`),
+    leaseStatus: (id: string) => generatePath(`${x}/lease/${id}/status`),
+    leases: `${x}/purchasing/leases`,
+    leaseTerminate: (id: string) => generatePath(`${x}/lease/${id}/terminate`),
+    leaseUpdate: `${x}/lease/update`,
     legal: {
       privacyPolicy: "https://carbon.ms/privacy",
       termsAndConditions: "https://carbon.ms/terms"
@@ -1729,6 +1752,7 @@ export const path = {
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
+    newLease: `${x}/lease/new`,
     newLeaseRun: `${x}/accounting/lease-runs/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaintenanceDispatch: `${x}/maintenance/new`,

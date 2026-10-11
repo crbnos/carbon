@@ -11808,6 +11808,9 @@ msgstr "Lease Run"
 msgid "Lease Runs"
 msgstr "Lease Runs"
 
+msgid "Leases"
+msgstr "Leases"
+
 msgid "Leases (Lessee)"
 msgstr "Leases (Lessee)"
 

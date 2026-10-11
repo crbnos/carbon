@@ -6,6 +6,7 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuContainer,
   LuFileText,
+  LuKeyRound,
   LuLayoutList,
   LuListTodo,
   LuPackageSearch,
@@ -49,6 +50,12 @@ export default function usePurchasingSubmodules() {
           to: path.to.purchaseOrders,
           icon: <LuLayoutList />,
           table: "purchaseOrder"
+        },
+        {
+          name: t`Leases`,
+          to: path.to.leases,
+          icon: <LuKeyRound />,
+          table: "lease"
         },
         {
           name: t`Returns`,
