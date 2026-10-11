@@ -48,7 +48,8 @@ export {
 export {
   ACCOUNT_DEFAULT_COLUMNS,
   ACCOUNTING_ALREADY_SET_UP,
-  type CutoverDb
+  type CutoverDb,
+  FEATURE_ACCOUNT_DEFAULTS
 } from "./accounting-cutover/shared";
 export {
   type CutoverOpeningInputs,
