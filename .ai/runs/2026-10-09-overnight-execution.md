@@ -73,22 +73,31 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 10-09 pm | Field service C | Tasks 1–10; 11 deferred | done — Phase C implemented |
 | 10-10 | Field service D | backflush fix + Tasks 1–7; 8 deferred | done — spec moved to `implemented/` |
 | 10-10 | Projects 2a | Tasks 1–20 + Charge-at-receipt fix; 21 deferred | done — Phase 2a implemented |
+| 10-10 | Projects 2b | Tasks 1–15; 16 deferred | done (`1e210d03c9`…`e61caf22dc`, then `d51585c203`) — Phase 2b implemented |
+| 10-11 | Projects 3 | Tasks 1–17 + return fix; 18 deferred | done (`03b7c24044`…`16e1cb00da`) — Phase 3 implemented; Task 16's dataset check ran without its database layer |
+| 10-11 | Tree canvas (Flow-style) | Tasks 1–8; 9 deferred | done (`dbdaed7797`…`628fae0cbb`) |
 
 ## Follow-ups found during execution
 
+Brad resolved 4 items on 2026-10-10, so they are gone from this list:
+1. Payback accounting: fixed in `ef9483c0e8`.
+2. Remaining-life Straight Line: it stays as built.
+3. External ledger sync: one rule, with all 5 project and service journal types off by default (`f065898e05`).
+4. A technician without `service_update` charges only their own open visit: it stays as built.
+
+Open:
 - A receipt still makes an inspection lot for a stocked item that the project consumes at receipt (Phase 1a Task 21).
-- `POSTING_POLICY` syncs `Timesheet` and `Project Issue` journals to external ledgers by default, as `Maintenance Event` does. Confirm with Brad.
 - Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts` and `get-accounting-period.test.ts` fail sometimes in full runs and pass alone.
-- Phase 1b Task 12: the remaining-life Straight Line applies only to assets with a late capital cost. Confirm with Brad before it applies to every asset (it would change existing schedules).
-- Remaining-life Straight Line applies only to assets with a late cost; every other asset keeps its old schedule (Phase 1b Task 12). Brad to confirm.
-- `shouldRevalidate` on the Elements route skips the reload after a preference save (Phase 1b Task 21). Brad to confirm against `coding-conventions.md`.
-- `Template.tsx` in `packages/documents` (Ask First) now passes its font to children so italic text cannot crash a PDF (Phase 1b Task 20).
+- `shouldRevalidate` on the Elements route skips the reload after a preference save (Phase 1b Task 21), and the Tree canvas adds a skip on a `root` change (Task 6). Brad to confirm both against `coding-conventions.md`.
+- `Template.tsx` in `packages/documents` (Ask First) now passes its font to children, so italic text cannot crash a PDF (Phase 1b Task 20).
 - Restoring a backup into another company does not rewrite ids inside the baseline snapshot and change request JSON columns (Phase 1c).
-- Re-applying a demo dataset over a company with contract invoice lines fails in the wipe (`customerContractInvoiceLine_parent_check`); a contracts issue, found in Phase 1a Task 45.
-- `projects.mdx` is about 2,600 words, over the docs skill's 1,500-word entity page limit.
-- New UI strings from every phase need one `/translate` pass at the end of the run.
+- Re-applying a demo dataset over a company with contract invoice lines fails in the wipe (`customerContractInvoiceLine_parent_check`). This is a contracts issue, found in Phase 1a Task 45.
+- `projects.mdx` is over the docs skill's 1,500-word limit for an entity page, and Phase 3 added a *Planning groups* section.
+- Run `/translate` once for the whole branch before the PR. Every phase left new UI strings with an empty `msgstr` in the other locales.
 - `db:check:backups` fails only on `supplierPartPrice.unitPrice`, because it compares against GitHub `main`, which changed that column after this branch was cut. Commits since field service B use `CARBON_SKIP_BACKUP_CHECK=1`. It clears when `main` is merged.
-- Payback accounting (Phase 2a Task 16): the lender gets back the borrowed cost; the borrower takes the difference as Payback Variance. The plan's version would drift the inventory tie-out. Brad to confirm.
-- `POSTING_POLICY`: `Project Expense`, `Service Order` and `Project Transfer` journals are off external ledgers by default; `Timesheet` and `Project Issue` are on. Brad to confirm one rule for all five.
-- Field service: a technician without `service_update` can charge only their own open visit (Phase A Task 24). Brad to confirm.
-- Projects 2a: no void for a posted project stock transfer.
+- Projects 2a: a posted project stock transfer has no void.
+- Projects 3 Task 16: run `pnpm db:check:datasets` when the stack is up. Only its first layer (the validator) ran: the worktree's Postgres container no longer exists (its `pgdata` volume does), so the tier SQL that seeds the Star Tracker group has not run against a database.
+- Projects 3 Task 14: a group segment can get a Transfer from common stock with the group id as `toProjectId`. Applying it fails on the project FK.
+- Tree canvas: the browser check (Task 9) is deferred. The plan's execution notes list 2 visual risks:
+  1. the edges over the box tint: card-to-box edges should draw above the boxes (`getElevatedEdgeZIndex` adds the child's `internals.z`), and box-to-box edges have `zIndex: 1`. Nobody has seen it in a browser;
+  2. a `root` change skips only the Elements route's own loader. The parent layouts still run theirs, so Task 9 point 5 ("no loader request") can see those requests.
