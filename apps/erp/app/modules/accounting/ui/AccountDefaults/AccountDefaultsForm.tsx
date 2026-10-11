@@ -210,6 +210,55 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
         ]
       },
       {
+        id: "leases",
+        title: t`Leases (Lessee)`,
+        description: t`Default accounts for leases the company pays, under ASC 842`,
+        fields: [
+          {
+            name: "rightOfUseAssetAccount",
+            label: t`Right-of-Use Assets`,
+            description: t`Asset recognized at lease commencement for the right to use a leased asset`,
+            badgeType: "Asset"
+          },
+          {
+            name: "accumulatedRightOfUseAmortizationAccount",
+            label: t`Accumulated Amortization – Right-of-Use Assets`,
+            description: t`Contra-asset account for the amortization of right-of-use assets`,
+            badgeType: "Asset"
+          },
+          {
+            name: "leaseLiabilityAccount",
+            label: t`Lease Liabilities`,
+            description: t`Present value of the lease payments not yet paid, reduced by each lease invoice`,
+            badgeType: "Liability"
+          },
+          {
+            name: "operatingLeaseExpenseAccount",
+            label: t`Operating Lease Expense`,
+            description: t`Straight-line lease cost of operating leases, and the payments of short-term leases`,
+            badgeType: "Expense"
+          },
+          {
+            name: "variableLeaseExpenseAccount",
+            label: t`Variable Lease Expense`,
+            description: t`Lease charges that are not part of the fixed payments, such as usage or maintenance`,
+            badgeType: "Expense"
+          },
+          {
+            name: "rightOfUseAmortizationExpenseAccount",
+            label: t`Amortization – Right-of-Use Assets`,
+            description: t`Straight-line amortization of finance lease right-of-use assets`,
+            badgeType: "Expense"
+          },
+          {
+            name: "leaseInterestExpenseAccount",
+            label: t`Interest Expense – Leases`,
+            description: t`Interest on finance lease liabilities`,
+            badgeType: "Expense"
+          }
+        ]
+      },
+      {
         id: "payables",
         title: t`Accounts Payable`,
         description: t`Configure default accounts for supplier transactions`,

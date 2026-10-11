@@ -182,7 +182,8 @@ export default function RevenueRecognitionRunDetailRoute() {
   const sectionLabels: Record<RevenueScheduleType, string> = {
     Deferral: t`Deferrals`,
     Accrual: t`Accruals`,
-    Interest: t`Interest`
+    Interest: t`Interest`,
+    Amortization: t`Amortization`
   };
 
   const sections = revenueScheduleTypes

@@ -557,6 +557,13 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // Lease runs (lessee interest and amortization, rental deferrals, accruals
+  // and sales-type interest). Off by default, as 'Revenue Recognition'.
+  "Lease Run": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Non-Conformance": {
     representation: "journal",
     defaultEnabled: true,

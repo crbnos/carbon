@@ -322,6 +322,10 @@ const REVENUE_LINE_DESCRIPTIONS: Record<
   Interest: {
     debit: "Net investment interest",
     credit: "Lease interest income"
+  },
+  Amortization: {
+    debit: "Lease cost recognized",
+    credit: "Right-of-use asset amortized"
   }
 };
 
