@@ -373,7 +373,7 @@ Return to Inventory (post-asset-transfer `return`) refuses a unit on a live rent
 ### "Rental invoices need the Deferred Revenue, Contract Assets and Rental Income accounts mapped in the accounting defaults"
 post-sales-invoice needs `accountDefault.deferredRevenueAccount`, `contractAssetAccount` and `rentalIncomeAccount`. Also "… account is invalid; expected an active CLASS leaf in this company group" when the mapped account is the wrong class, inactive, or a group.
 
-### "Invoice has recognized revenue; reverse its revenue recognition run first"
+### "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first"
 Voiding an invoice whose Deferral rows were already posted. For a rental invoice the run that posted them is a lease run (Accounting → Lease Runs): reverse it, then void.
 
 ### "Set the Contract Assets and Rental Income account defaults before recognizing rental revenue"
