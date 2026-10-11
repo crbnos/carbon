@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { dilutionFactor } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
   type ProjectCostTreatment,
@@ -9,6 +10,7 @@ import {
   projectPostingKey
 } from "../lib/project-posting";
 import {
+  planDilution,
   planTimesheetPosting,
   type TimesheetLaborRate,
   type TimesheetPostingEntry
@@ -125,5 +127,75 @@ describe("planTimesheetPosting", () => {
     expect(plan.lines).toEqual([]);
     expect(plan.ledgerRows).toEqual([]);
     expect(plan.stamps).toHaveLength(1);
+  });
+});
+
+describe("dilution", () => {
+  const rate60: TimesheetLaborRate[] = [
+    { laborCategoryId: "lbc", effectiveFrom: "2026-01-01", costRate: 60 }
+  ];
+  // 50 h in one week: 10 h on each weekday.
+  const week: TimesheetPostingEntry[] = [5, 6, 7, 8, 9].map((day) => ({
+    ...entry,
+    id: `tse-${day}`,
+    entryDate: `2026-10-0${day}`,
+    hours: 10
+  }));
+
+  it("posts an exempt employee's 50 h week at 60.00 as 2,400.00, at 48.00 an hour", () => {
+    const factor = dilutionFactor(40, 50);
+    const plan = planTimesheetPosting(
+      week,
+      contexts("Expense"),
+      rate60,
+      new Map(),
+      {
+        ...options,
+        dilutionFactors: new Map(week.map((e) => [e.id, factor]))
+      }
+    );
+    const total = plan.ledgerRows.reduce((sum, row) => sum + row.amount, 0);
+    expect(total).toEqual(2400);
+    expect(plan.stamps.map((stamp) => stamp.costRate)).toEqual([
+      48, 48, 48, 48, 48
+    ]);
+    expect(plan.stamps.every((stamp) => stamp.dilutionFactor === 0.8)).toBe(
+      true
+    );
+  });
+
+  it("posts a Non-Exempt employee's 50 h at 60.00", () => {
+    const plan = planTimesheetPosting(
+      week,
+      contexts("Expense"),
+      rate60,
+      new Map(),
+      options
+    );
+    const total = plan.ledgerRows.reduce((sum, row) => sum + row.amount, 0);
+    expect(total).toEqual(3000);
+    expect(plan.stamps.map((stamp) => stamp.costRate)).toEqual([
+      60, 60, 60, 60, 60
+    ]);
+  });
+
+  it("re-dilutes the remaining 40 h to factor 1 when a correction removes 10 h", () => {
+    const posted = week.slice(1).map((e) => ({
+      id: e.id,
+      hours: 10,
+      costRate: 48,
+      dilutionFactor: 0.8,
+      postedAmount: 480
+    }));
+    const planned = planDilution([], posted, dilutionFactor(40, 40));
+    expect(
+      planned.adjustments.reduce((sum, row) => sum + row.amount, 0)
+    ).toEqual(480);
+    expect(planned.adjustments.map((row) => row.amount)).toEqual([
+      120, 120, 120, 120
+    ]);
+    expect(planned.stamps.map((stamp) => stamp.costRate)).toEqual([
+      60, 60, 60, 60
+    ]);
   });
 });

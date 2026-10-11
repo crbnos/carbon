@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
-import { projectPostingFixture } from "../lib/project-posting-test-fixture";
+import {
+  PROJECT_TEST_USER,
+  projectPostingFixture
+} from "../lib/project-posting-test-fixture";
 import { databaseTest } from "../local-database-test-fixture";
 import postTimesheet from "./index";
 
@@ -426,6 +429,188 @@ databaseTest(
         ["Billable", 170]
       ]);
       expect(ledger[0]!.reversalOfId).not.toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/**
+ * An Exempt employee job for the fixture's user, the timekeeping mode, and
+ * 5 Submitted entries of 10 h (50 h) in the week of 2026-10-05.
+ */
+async function exemptWeek(
+  f: Awaited<ReturnType<typeof projectPostingFixture>>,
+  mode: "Standard" | "DCAA"
+) {
+  const locationId = `${f.prefix}-location`;
+  await f.db
+    .updateTable("companySettings")
+    .set({ timekeepingControls: mode, standardWeeklyHours: 40 })
+    .where("id", "=", f.companyId)
+    .execute();
+  await f.db
+    .insertInto("location")
+    .values({
+      id: locationId,
+      name: "Plant",
+      addressLine1: "1 Main St",
+      city: "Springfield",
+      postalCode: "00000",
+      timezone: "America/New_York",
+      companyId: f.companyId,
+      createdBy: PROJECT_TEST_USER
+    })
+    .execute();
+  await f.db
+    .insertInto("employeeJob")
+    .values({
+      id: PROJECT_TEST_USER,
+      companyId: f.companyId,
+      locationId,
+      flsaStatus: "Exempt"
+    })
+    .execute();
+  const rows = await f.db
+    .insertInto("timesheetEntry")
+    .values(
+      [
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-07",
+        "2026-10-08",
+        "2026-10-09"
+      ].map((entryDate) => ({
+        employeeId: PROJECT_TEST_USER,
+        entryDate,
+        projectId: f.projectId,
+        projectElementId: f.elementId,
+        laborCategoryId: f.laborCategoryId,
+        hours: 10,
+        status: "Submitted" as const,
+        companyId: f.companyId,
+        createdBy: PROJECT_TEST_USER
+      }))
+    )
+    .returning("id")
+    .execute();
+  return rows.map((row) => row.id);
+}
+
+async function ledgerTotal(
+  f: Awaited<ReturnType<typeof projectPostingFixture>>
+) {
+  const rows = await f.db
+    .selectFrom("projectLedger")
+    .select("amount")
+    .where("companyId", "=", f.companyId)
+    .execute();
+  return rows.reduce((sum, row) => sum + Number(row.amount), 0);
+}
+
+databaseTest(
+  "Standard mode: an Exempt employee's 50 h week posts at the full rate",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const ids = await exemptWeek(f, "Standard");
+      const result = await postTimesheet(f.ctx, { timesheetEntryIds: ids });
+      expect(result.error).toBeNull();
+      expect(await ledgerTotal(f)).toEqual(50 * 85);
+      const entries = await f.db
+        .selectFrom("timesheetEntry")
+        .select(["costRate", "dilutionFactor"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(entries.every((entry) => Number(entry.costRate) === 85)).toBe(
+        true
+      );
+      expect(entries.every((entry) => entry.dilutionFactor === null)).toBe(
+        true
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "DCAA: an Exempt employee's 50 h week posts diluted, and a correction re-dilutes the week",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const ids = await exemptWeek(f, "DCAA");
+      const posted = await postTimesheet(f.ctx, { timesheetEntryIds: ids });
+      expect(posted.error).toBeNull();
+      // 40 h × 85.00, spread over 50 h at 68.00.
+      expect(await ledgerTotal(f)).toEqual(3400);
+      const stamped = await f.db
+        .selectFrom("timesheetEntry")
+        .select(["costRate", "dilutionFactor"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(stamped.every((entry) => Number(entry.costRate) === 68)).toBe(
+        true
+      );
+      expect(
+        stamped.every((entry) => Number(entry.dilutionFactor) === 0.8)
+      ).toBe(true);
+
+      // A correction removes the first day's 10 h: the week has 40 h.
+      const reversal = await f.db
+        .insertInto("timesheetEntry")
+        .values({
+          employeeId: PROJECT_TEST_USER,
+          entryDate: "2026-10-05",
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          laborCategoryId: f.laborCategoryId,
+          hours: -10,
+          reversalOfId: ids[0],
+          correctionReason: "Charged to the wrong week",
+          status: "Submitted",
+          companyId: f.companyId,
+          createdBy: PROJECT_TEST_USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const corrected = await postTimesheet(f.ctx, {
+        timesheetEntryIds: [reversal.id]
+      });
+      expect(corrected.error).toBeNull();
+
+      // The reversal takes back 680.00, and the 4 other days re-dilute to
+      // factor 1 (+170.00 each): the week costs 40 h × 85.00.
+      expect(await ledgerTotal(f)).toEqual(3400);
+      const adjustments = await f.db
+        .selectFrom("projectLedger")
+        .select(["amount", "quantity", "documentId"])
+        .where("companyId", "=", f.companyId)
+        .where("quantity", "=", 0)
+        .execute();
+      expect(adjustments).toHaveLength(4);
+      expect(adjustments.every((row) => Number(row.amount) === 170)).toBe(true);
+      const redilutedRates = await f.db
+        .selectFrom("timesheetEntry")
+        .select(["costRate", "dilutionFactor"])
+        .where("companyId", "=", f.companyId)
+        .where("id", "in", ids.slice(1))
+        .execute();
+      expect(
+        redilutedRates.every(
+          (entry) =>
+            Number(entry.costRate) === 85 && Number(entry.dilutionFactor) === 1
+        )
+      ).toBe(true);
+      // The adjustments post a balanced journal against labor absorption.
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select("amount")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(lines.reduce((sum, line) => sum + Number(line.amount), 0)).toEqual(
+        0
+      );
     } finally {
       await f.cleanup();
     }

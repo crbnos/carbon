@@ -1667,8 +1667,8 @@ function billableItemInsert(
 /**
  * The Time & Materials item of one ledger row under a billing line, or null:
  * a Cost Plus line (the commercial generator prices it, P1), an unallowable
- * row, or a cost type the bill rate already carries (machine, overhead,
- * burden). Labor is hours × the resolved bill rate, held when it has no hours
+ * row, a Labor row with 0 hours (a dilution adjustment), or a cost type the
+ * bill rate already carries (machine, overhead, burden). Labor is hours × the resolved bill rate, held when it has no hours
  * or no rate; every other cost is cost × (1 + handling).
  */
 export function buildContractBillableItem(args: {
@@ -1699,6 +1699,15 @@ export function buildContractBillableItem(args: {
   const { ledgerRow, line } = args;
   if (line.billingMethod !== "Time & Materials") return null;
   if (ledgerRow.unallowable) return null;
+  // A dilution adjustment (Labor with 0 hours) changes the cost, never the
+  // hours a Time & Materials line bills.
+  if (
+    ledgerRow.costType === "Labor" &&
+    ledgerRow.quantity !== null &&
+    Number(ledgerRow.quantity) === 0
+  ) {
+    return null;
+  }
 
   const rate =
     ledgerRow.costType === "Labor"

@@ -5,7 +5,13 @@
 import { journalReference } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { inOrder, single } from "@carbon/database/rows";
-import { datetime, type ServiceCoverage } from "@carbon/utils";
+import {
+  datetime,
+  dilutionFactor,
+  type ServiceCoverage,
+  weekStartOf
+} from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import {
   type Insertable,
   type Selectable,
@@ -33,10 +39,14 @@ import {
 } from "../lib/project-posting";
 import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import {
+  type DilutionPostedEntry,
+  planDilution,
+  planRedilutionPostings,
   planTimesheetPosting,
   type TimesheetJournalLine,
   type TimesheetLedgerRow,
-  type TimesheetOriginal
+  type TimesheetOriginal,
+  type TimesheetPostingEntry
 } from "./plan";
 
 export const postTimesheetInput = z.object({
@@ -75,9 +85,19 @@ const postTimesheet = defineServerFn({
       db,
       "companySettings",
       { id: companyId },
-      { columns: ["accountingEnabled"] }
+      {
+        columns: [
+          "accountingEnabled",
+          "timekeepingControls",
+          "standardWeeklyHours"
+        ]
+      }
     );
     const accountingEnabled = settings.data?.accountingEnabled ?? false;
+    const isDcaa = settings.data?.timekeepingControls === "DCAA";
+    const standardWeeklyHours = Number(
+      settings.data?.standardWeeklyHours ?? 40
+    );
 
     return db.transaction().execute(async (trx) => {
       // Row locks: two posts of one entry must not both post it.
@@ -147,7 +167,24 @@ const postTimesheet = defineServerFn({
         )
       ];
 
+      // DCAA mode: dilute each exempt employee's week (CAM 6-410.4a).
+      const dilution = isDcaa
+        ? await loadWeekDilution(trx, {
+            companyId,
+            standardWeeklyHours,
+            entries
+          })
+        : null;
+      const redilutedEntries = dilution?.posted ?? [];
+
       const serviceEntries = entries.filter((e) => e.isService);
+      const serviceRefs = [
+        ...serviceEntries,
+        ...redilutedEntries.filter((e) => e.isService)
+      ].map((e) => ({
+        projectId: e.projectId,
+        projectElementId: e.projectElementId
+      }));
       const [
         contexts,
         rates,
@@ -160,7 +197,7 @@ const postTimesheet = defineServerFn({
           loadProjectPostingContexts(
             trx,
             companyId,
-            entries.map((e) => ({
+            [...entries, ...redilutedEntries].map((e) => ({
               projectId: e.projectId,
               projectElementId: e.projectElementId
             }))
@@ -224,16 +261,16 @@ const postTimesheet = defineServerFn({
             .select(["laborAbsorptionAccount"])
             .where("companyId", "=", companyId)
             .executeTakeFirst(),
-        () =>
-          loadServicePostingContexts(
-            trx,
-            companyId,
-            serviceEntries.map((e) => ({
-              projectId: e.projectId,
-              projectElementId: e.projectElementId
-            }))
-          )
+        () => loadServicePostingContexts(trx, companyId, serviceRefs)
       ]);
+      // A re-diluted Service entry keeps its order's Customer dimension.
+      for (const entry of redilutedEntries) {
+        if (!entry.isService) continue;
+        entry.customerId =
+          services.get(
+            projectPostingKey(entry.projectId, entry.projectElementId)
+          )?.customerId ?? null;
+      }
 
       // A Service entry's coverage: a reversal posts to its original's
       // account, a stored coverage with a reason is the user's override, and
@@ -294,9 +331,34 @@ const postTimesheet = defineServerFn({
         {
           accountingEnabled,
           laborAbsorptionAccount:
-            accountDefaults?.laborAbsorptionAccount ?? null
+            accountDefaults?.laborAbsorptionAccount ?? null,
+          dilutionFactors: dilution?.factorByEntry,
+          restrictCharging: isDcaa
         }
       );
+
+      // Re-dilution: the week's posted entries post the difference to their
+      // new diluted cost, as ledger rows with quantity 0 and journal lines of
+      // their own account.
+      if (dilution && dilution.adjustments.length > 0) {
+        const redilutedById = new Map(
+          redilutedEntries.map((entry) => [entry.id, entry])
+        );
+        const redilution = planRedilutionPostings(
+          dilution.adjustments.map((adjustment) => ({
+            entry: redilutedById.get(adjustment.entryId)!,
+            amount: adjustment.amount
+          })),
+          contexts,
+          {
+            accountingEnabled,
+            laborAbsorptionAccount:
+              accountDefaults?.laborAbsorptionAccount ?? null
+          }
+        );
+        plan.lines.push(...redilution.lines);
+        plan.ledgerRows.push(...redilution.ledgerRows);
+      }
 
       // Journals: one per accounting period the entries fall in, dated the
       // period's latest entry date.
@@ -495,6 +557,7 @@ const postTimesheet = defineServerFn({
         SET "status" = 'Posted',
             "costRate" = v."costRate",
             "journalId" = v."journalId",
+            "dilutionFactor" = COALESCE(v."dilutionFactor", t."dilutionFactor"),
             "coverage" = COALESCE(v."coverage"::"serviceCoverage", t."coverage"),
             "coverageReason" = CASE WHEN v."coverage" IS NULL
               THEN t."coverageReason" ELSE v."coverageReason" END,
@@ -507,13 +570,32 @@ const postTimesheet = defineServerFn({
             const coverage = entry?.isService ? entry.coverage : null;
             return sql`(${stamp.entryId}, ${stamp.costRate}::numeric, ${
               journalIdByEntry.get(stamp.entryId) ?? null
-            }::text, ${coverage}::text, ${
+            }::text, ${stamp.dilutionFactor ?? null}::numeric, ${coverage}::text, ${
               coverage ? (entry?.coverageReason ?? null) : null
             }::text)`;
           })
-        )}) AS v("id", "costRate", "journalId", "coverage", "coverageReason")
+        )}) AS v("id", "costRate", "journalId", "dilutionFactor", "coverage", "coverageReason")
         WHERE t."id" = v."id" AND t."companyId" = ${companyId}
       `.execute(trx);
+
+      // A re-diluted entry carries its new rate and factor, so a later
+      // reversal nets exactly what it posted.
+      if (dilution && dilution.stamps.length > 0) {
+        await sql`
+          UPDATE "timesheetEntry" t
+          SET "costRate" = v."costRate",
+              "dilutionFactor" = v."dilutionFactor",
+              "updatedBy" = ${userId},
+              "updatedAt" = ${postedAt}::timestamptz
+          FROM (VALUES ${sql.join(
+            dilution.stamps.map(
+              (stamp) =>
+                sql`(${stamp.entryId}, ${stamp.costRate}::numeric, ${stamp.dilutionFactor}::numeric)`
+            )
+          )}) AS v("id", "costRate", "dilutionFactor")
+          WHERE t."id" = v."id" AND t."companyId" = ${companyId}
+        `.execute(trx);
+      }
 
       await startElementsOnFirstCharge(
         trx,
@@ -529,6 +611,198 @@ const postTimesheet = defineServerFn({
     });
   }
 });
+
+type PostingEntry = TimesheetPostingEntry & {
+  isService: boolean;
+  note: string | null;
+};
+
+/**
+ * The dilution of every (exempt employee, ISO week) the call touches, in DCAA
+ * mode, in at most 3 queries: the employees' FLSA status, the weeks'
+ * entries, and what each posted entry's ledger rows hold.
+ * - The week's hours are its Submitted, Approved and Posted entries plus the
+ *   entries of this call (a Service entry posts from Draft).
+ * - `factorByEntry`: the factor of each new entry of the call.
+ * - `posted`, `adjustments`, `stamps`: the week's other posted entries (not a
+ *   reversal, not reversed) and their re-dilution (`planDilution`).
+ */
+async function loadWeekDilution(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    standardWeeklyHours: number;
+    entries: PostingEntry[];
+  }
+): Promise<{
+  factorByEntry: Map<string, number>;
+  posted: PostingEntry[];
+  adjustments: { entryId: string; amount: number }[];
+  stamps: { entryId: string; costRate: number; dilutionFactor: number }[];
+} | null> {
+  const { companyId, entries } = args;
+  const employeeIds = [...new Set(entries.map((entry) => entry.employeeId))];
+  const jobs = await trx
+    .selectFrom("employeeJob")
+    .select(["id", "flsaStatus"])
+    .where("id", "in", employeeIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const exempt = new Set(
+    jobs.filter((job) => job.flsaStatus === "Exempt").map((job) => job.id)
+  );
+  const diluted = entries.filter((entry) => exempt.has(entry.employeeId));
+  if (diluted.length === 0) return null;
+
+  const pairOf = (employeeId: string, entryDate: string) =>
+    `${employeeId}\x1f${weekStartOf(entryDate)}`;
+  const pairs = new Set(
+    diluted.map((entry) => pairOf(entry.employeeId, entry.entryDate))
+  );
+  const weekStarts = diluted
+    .map((entry) => weekStartOf(entry.entryDate))
+    .sort();
+  const from = weekStarts[0]!;
+  const to = parseDate(weekStarts[weekStarts.length - 1]!)
+    .add({ days: 6 })
+    .toString();
+
+  const rows = await trx
+    .selectFrom("timesheetEntry")
+    .innerJoin("project", (join) =>
+      join
+        .onRef("project.id", "=", "timesheetEntry.projectId")
+        .onRef("project.companyId", "=", "timesheetEntry.companyId")
+    )
+    .select([
+      "timesheetEntry.id",
+      "timesheetEntry.employeeId",
+      "timesheetEntry.entryDate",
+      "timesheetEntry.projectId",
+      "timesheetEntry.projectElementId",
+      "timesheetEntry.laborCategoryId",
+      "timesheetEntry.hours",
+      "timesheetEntry.status",
+      "timesheetEntry.costRate",
+      "timesheetEntry.dilutionFactor",
+      "timesheetEntry.reversalOfId",
+      "timesheetEntry.note",
+      "timesheetEntry.coverage",
+      "timesheetEntry.coverageReason",
+      "project.projectType"
+    ])
+    .where("timesheetEntry.companyId", "=", companyId)
+    .where("timesheetEntry.employeeId", "in", [...exempt])
+    .where("timesheetEntry.entryDate", ">=", from)
+    .where("timesheetEntry.entryDate", "<=", to)
+    .execute();
+
+  const callIds = new Set(entries.map((entry) => entry.id));
+  const reversedIds = new Set(
+    [...rows, ...entries]
+      .map((row) => row.reversalOfId)
+      .filter((id): id is string => Boolean(id))
+  );
+  const hoursByPair = new Map<string, number>();
+  for (const row of rows) {
+    const pair = pairOf(row.employeeId, row.entryDate);
+    if (!pairs.has(pair)) continue;
+    const counts =
+      callIds.has(row.id) ||
+      row.status === "Submitted" ||
+      row.status === "Approved" ||
+      row.status === "Posted";
+    if (!counts) continue;
+    hoursByPair.set(pair, (hoursByPair.get(pair) ?? 0) + Number(row.hours));
+  }
+  const factorByPair = new Map(
+    [...pairs].map((pair) => [
+      pair,
+      dilutionFactor(args.standardWeeklyHours, hoursByPair.get(pair) ?? 0)
+    ])
+  );
+  const factorByEntry = new Map(
+    diluted
+      .filter((entry) => !entry.reversalOfId)
+      .map((entry) => [
+        entry.id,
+        factorByPair.get(pairOf(entry.employeeId, entry.entryDate))!
+      ])
+  );
+
+  const postedRows = rows.filter(
+    (row) =>
+      row.status === "Posted" &&
+      !callIds.has(row.id) &&
+      !row.reversalOfId &&
+      !reversedIds.has(row.id) &&
+      row.costRate !== null &&
+      pairs.has(pairOf(row.employeeId, row.entryDate))
+  );
+  if (postedRows.length === 0) {
+    return { factorByEntry, posted: [], adjustments: [], stamps: [] };
+  }
+
+  const amounts = await trx
+    .selectFrom("projectLedger")
+    .select(["documentId", (eb) => eb.fn.sum<string>("amount").as("amount")])
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", "Timesheet")
+    .where(
+      "documentId",
+      "in",
+      postedRows.map((row) => row.id)
+    )
+    .groupBy("documentId")
+    .execute();
+  const amountByEntry = new Map(
+    amounts.map((row) => [row.documentId, Number(row.amount)])
+  );
+
+  const adjustments: { entryId: string; amount: number }[] = [];
+  const stamps: {
+    entryId: string;
+    costRate: number;
+    dilutionFactor: number;
+  }[] = [];
+  for (const pair of pairs) {
+    const inWeek: DilutionPostedEntry[] = postedRows
+      .filter((row) => pairOf(row.employeeId, row.entryDate) === pair)
+      .map((row) => ({
+        id: row.id,
+        hours: Number(row.hours),
+        costRate: Number(row.costRate),
+        dilutionFactor:
+          row.dilutionFactor === null ? null : Number(row.dilutionFactor),
+        postedAmount: amountByEntry.get(row.id) ?? 0
+      }));
+    if (inWeek.length === 0) continue;
+    const planned = planDilution([], inWeek, factorByPair.get(pair)!);
+    adjustments.push(...planned.adjustments);
+    stamps.push(...planned.stamps);
+  }
+
+  return {
+    factorByEntry,
+    posted: postedRows.map((row) => ({
+      id: row.id,
+      employeeId: row.employeeId,
+      entryDate: row.entryDate,
+      projectId: row.projectId,
+      projectElementId: row.projectElementId,
+      laborCategoryId: row.laborCategoryId,
+      hours: Number(row.hours),
+      reversalOfId: null,
+      isService: row.projectType === "Service",
+      note: row.note,
+      coverage: row.coverage as ServiceCoverage | null,
+      coverageReason: row.coverageReason,
+      customerId: null
+    })),
+    adjustments,
+    stamps
+  };
+}
 
 /**
  * The billable items of the Service entries just posted: a new item per

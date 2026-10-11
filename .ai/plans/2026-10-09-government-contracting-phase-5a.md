@@ -71,7 +71,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 9: Set the unallowable flag and check charge restrictions at posting
 - [x] Task 10: Add the `save-timesheet-entry` server function
 - [x] Task 11: Add the `submit-timesheet-week` server function
-- [ ] Task 12: Apply dilution in `post-timesheet`
+- [x] Task 12: Apply dilution in `post-timesheet`
 - [ ] Task 13: Turn corrections into labor transfers
 - [ ] Task 14: Add the validators
 - [ ] Task 15: Add the service functions
@@ -1501,3 +1501,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   3. If the certification text for the employee's FLSA status is not set, DCAA mode refuses with "Set the certification text in Settings → Timekeeping before you submit". The plan does not say what happens with no text.
   4. The timecard hours count the closed `timeCardEntry` rows whose `clockIn` falls in the week on the company's calendar. The entry hours are the sum of every entry of the week, reversals included, so a correction nets out.
   5. The shortfall message rounds both figures with `round()`. `timecardShortfallMessage` and `certificationTextHash` are exported for the routes and the test.
+- Task 12:
+  1. `post-timesheet` passes the employee to `assertChargeable` only in DCAA mode and only for a new entry. Charge restrictions are a DCAA control, so Standard mode keeps Phase 1a. A reversal undoes posted time, so membership never refuses it.
+  2. The week's hours count the call's own entries as well as the Submitted, Approved and Posted entries. A Service entry posts from Draft, so a status filter alone would leave it out.
+  3. `planDilution` returns the new entries' costs and the posted entries' adjustments and stamps. `planTimesheetPosting` takes the factors as `options.dilutionFactors` and stamps `dilutionFactor` only on a diluted entry. `planRedilutionPostings` builds the adjustment rows and journal lines through the shared `pushCost`, the same code a new entry uses.
+  4. The adjustments are computed in the same transaction before any write, from the ledger sums of the week's other posted entries. The plan says "after the new entries post"; the result is the same, because the new rows belong to other entries.
+  5. A re-diluted Service entry gets its order's Customer dimension: the service contexts load for its node too.
+  6. `buildContractBillableItem` returns null for a Labor row with 0 hours. A dilution adjustment changes the cost, never the hours a Time & Materials line bills, so it must not add an empty billable item. The Cost Plus generator still bills the cost.
+  7. The stamp UPDATE sets `dilutionFactor` with `COALESCE`, so Standard mode never writes the column.
+  8. A second `databaseTest` covers DCAA end to end: 50 h post 3,400.00 at 68.00, then a reversal of 10 h re-dilutes the other 4 days by +170.00 each.
