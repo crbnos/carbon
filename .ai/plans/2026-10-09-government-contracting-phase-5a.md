@@ -91,7 +91,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 29: Add the daily missing-time check
 - [x] Task 30: Add the Timesheets complete close task
 - [x] Task 31: Add the report queries and the CSV route
-- [ ] Task 32: Add the Reports page
+- [x] Task 32: Add the Reports page
 - [ ] Task 33: Keep the demo datasets green
 - [ ] Task 34: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 35: Verify in the browser
@@ -1683,4 +1683,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   8. The route reads each report in one query and streams the encoded CSV in pages of 1,000 rows. The precedent pages its reads with a cursor; these reads are bounded by a date range or a period. A bad range (not `YYYY-MM-DD`, or start after end) returns 400; an unknown key returns 404 before the permission check.
   9. Verify: `projects-labor-distribution` 4 passed, `erp` typecheck green, `erp` tests 2,211 passed. Each report query ran against the local database with `ON_ERROR_STOP` and raised no error.
 - Fix after Task 31 (a conformance finding of Task 23): `getTimesheetWeekView` logged `Failed to load ${what}`, which the `no-interpolated-error-log` check refuses, so the `@carbon/checks` conformance gate failed. The message is now constant, and `what` is a field of the log context.
+- Task 32:
+  1. The page copies the frame of the accounting reports hub (`x+/accounting+/reports.tsx`: a `bg-card` page, an `h1` and `Subheading` sections). Each report is a `Card` with its description, its input and a secondary **Download CSV** button, an `<a download>` to `path.to.api.projectReport(reportKey, params)`, as the Sync Activity export does. The two sections are Timekeeping (late entries, missing time, labor distribution) and Audit and contracts (labor transfers, the auditor export, cost by CLIN).
+  2. A range card opens on the current month to date, on the company's calendar (`useCompanyToday`), with the `DateRangePicker`. Only the user's pick is state. The labor distribution card opens on the latest period that has started.
+  3. The periods are read with the Kysely client (`getLaborDistributionPeriods`). The `accountingPeriod` RLS asks for `accounting` view, and the report needs only `projects` and `people` view. With no period, the card says so and its button is disabled.
+  4. A card the user may not download is hidden (`usePermissions().can("view", …)` for each module of its permission), as step 3 says. The CSV route checks the same permissions.
+  5. **Reports** is the last entry of the Manage group, and `/x/projects/reports` joins the routes that the Projects entry does not claim.
+  6. The new strings reached the `.po` files in the commit before this task (`f02dedc5ec`, the log fix): the pre-commit hook extracts from the working tree, where this task's files already were. Their `msgstr` is empty in the other locales; the branch-wide `/translate` run fills them.
+  7. Browser verification deferred.
 

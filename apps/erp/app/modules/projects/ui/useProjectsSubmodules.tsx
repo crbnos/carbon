@@ -7,6 +7,7 @@ import {
   LuArrowLeftRight,
   LuBriefcaseBusiness,
   LuClipboardCheck,
+  LuFileSpreadsheet,
   LuFolderKanban,
   LuGroup,
   LuReceipt,
@@ -23,6 +24,7 @@ import { path } from "~/utils/path";
 const otherProjectsRoutes = [
   path.to.projectsBilling,
   path.to.projectTimesheetApprovals,
+  path.to.projectReports,
   path.to.projectStockTransfers,
   path.to.laborCategories,
   path.to.planningGroups
@@ -82,6 +84,14 @@ export default function useProjectsSubmodules() {
           setting: "timesheetApprovalRequired",
           isActive: (pathname: string) =>
             pathname.startsWith(path.to.projectTimesheetApprovals)
+        },
+        {
+          name: t`Reports`,
+          to: path.to.projectReports,
+          icon: <LuFileSpreadsheet />,
+          role: "employee",
+          isActive: (pathname: string) =>
+            pathname.startsWith(path.to.projectReports)
         }
       ]
     },

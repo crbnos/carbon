@@ -4590,6 +4590,23 @@ export async function getTimesheetAuditRows(
 }
 
 /**
+ * The accounting periods the labor distribution report offers, newest
+ * first. Read with the Kysely client: the report needs `projects` and
+ * `people` view, and the period list RLS asks for `accounting` view.
+ */
+export async function getLaborDistributionPeriods(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string }
+) {
+  return db
+    .selectFrom("accountingPeriod")
+    .select(["id", "startDate", "endDate"])
+    .where("companyId", "=", args.companyId)
+    .orderBy("startDate", "desc")
+    .execute();
+}
+
+/**
  * The inputs of the labor distribution of one accounting period
  * (`buildLaborDistribution`): `projectLedger` Labor rows posted in it, grouped
  * by employee, project and element; closed timecard hours with `clockIn` in

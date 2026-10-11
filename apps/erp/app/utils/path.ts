@@ -269,6 +269,8 @@ export const path = {
       projectBillingElements: (projectId: string) =>
         `${api}/projects/billing-elements?projectId=${encodeURIComponent(projectId)}`,
       projectChargeNumbers: `${api}/projects/charge-numbers`,
+      projectReport: (reportKey: string, params: Record<string, string>) =>
+        `${generatePath(`${api}/projects/reports/${reportKey}.csv`)}?${new URLSearchParams(params)}`,
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
       purchaseOrderFinalize: (id: string) =>
@@ -2087,6 +2089,7 @@ export const path = {
       generatePath(`${x}/project/${id}/pegging/manual`),
     projectPlaceInService: (id: string) =>
       generatePath(`${x}/project/${id}/place-in-service`),
+    projectReports: `${x}/projects/reports`,
     projectSettings: (id: string) =>
       generatePath(`${x}/project/${id}/settings`),
     projectStatus: (id: string) => generatePath(`${x}/project/${id}/status`),
