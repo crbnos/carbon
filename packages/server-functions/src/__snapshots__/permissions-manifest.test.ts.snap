@@ -375,6 +375,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "update": "projects",
   },
   "seed-company": "system",
+  "submit-timesheet-week": {
+    "update": "projects",
+  },
   "sync": {
     "update": "resources",
   },

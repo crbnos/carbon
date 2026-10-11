@@ -70,7 +70,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 8: Add the pure funding helpers
 - [x] Task 9: Set the unallowable flag and check charge restrictions at posting
 - [x] Task 10: Add the `save-timesheet-entry` server function
-- [ ] Task 11: Add the `submit-timesheet-week` server function
+- [x] Task 11: Add the `submit-timesheet-week` server function
 - [ ] Task 12: Apply dilution in `post-timesheet`
 - [ ] Task 13: Turn corrections into labor transfers
 - [ ] Task 14: Add the validators
@@ -1495,3 +1495,9 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   4. An owner's or a manager's change also clears `submittedAt`, `approvedBy`, `approvedAt` and `rejectionNote`, because the entry needs approval again.
   5. The refusal texts are exported constants. A supervisor entry on a day with no absence reads "You can enter time for another employee only on a day of recorded absence". A change with no reason reads "Give a reason for the change".
   6. The test creates a second user (the manager) with `session_replication_role = replica`, and deletes it the same way.
+- Task 11:
+  1. Both modes submit the Draft entries of Standard projects only, as Phase 1a `submitTimesheetEntries` does. Service time posts from Draft.
+  2. DCAA mode writes a certification row only when the week has a Draft entry to submit.
+  3. If the certification text for the employee's FLSA status is not set, DCAA mode refuses with "Set the certification text in Settings → Timekeeping before you submit". The plan does not say what happens with no text.
+  4. The timecard hours count the closed `timeCardEntry` rows whose `clockIn` falls in the week on the company's calendar. The entry hours are the sum of every entry of the week, reversals included, so a correction nets out.
+  5. The shortfall message rounds both figures with `round()`. `timecardShortfallMessage` and `certificationTextHash` are exported for the routes and the test.

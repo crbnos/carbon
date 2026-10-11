@@ -69,6 +69,7 @@ const registry = {
   reschedule: () => import("./reschedule"),
   "save-timesheet-entry": () => import("./save-timesheet-entry"),
   "seed-company": () => import("./seed-company"),
+  "submit-timesheet-week": () => import("./submit-timesheet-week"),
   sync: () => import("./sync"),
   "trigger-rework": () => import("./trigger-rework"),
   "update-purchased-prices": () => import("./update-purchased-prices")
