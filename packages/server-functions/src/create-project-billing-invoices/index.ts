@@ -14,6 +14,7 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { billingGrid } from "@carbon/database/contract-schedule";
 import {
   BILLABLE_REASON_FUNDING_LIMIT,
+  DEFAULT_CURRENCY_DECIMALS,
   datetime,
   effectiveInvoiceAutomation,
   type ProjectInvoicePlanItem,
@@ -41,6 +42,12 @@ import {
   type Scope,
   toTerms
 } from "../post-customer-contract/schedule-writes";
+import {
+  acrnPositions,
+  type ClinAllocation,
+  type ClinSection,
+  planClinSections
+} from "./clin";
 
 export type ProjectBillingInvoiceArgs = {
   companyId: string;
@@ -266,18 +273,21 @@ async function processContract(
   const itemIds = [...new Set(taken.map(({ line }) => line.itemId))];
   const catalog = await trx
     .selectFrom("item")
-    .select(["id", "unitOfMeasureCode", "defaultMethodType"])
+    .select(["id", "name", "unitOfMeasureCode", "defaultMethodType"])
     .where("id", "in", itemIds)
     .where("companyId", "=", companyId)
     .execute();
   const itemById = new Map(catalog.map((item) => [item.id, item]));
 
-  const invoiceLines: InvoiceLineValues[] = [];
-  const itemIdsByInvoiceLine: string[][] = [];
+  type PlannedLine = InvoiceLineValues & {
+    customerContractLineId: string;
+    billableItemIds: string[];
+  };
+  const plannedLines: PlannedLine[] = [];
   for (const { line, items: lineItems } of taken) {
     const item = itemById.get(line.itemId);
     for (const planned of planProjectInvoiceLines(lineItems)) {
-      invoiceLines.push({
+      plannedLines.push({
         itemId: line.itemId,
         description: planned.description,
         quantity: planned.quantity,
@@ -294,10 +304,105 @@ async function processContract(
         customerContractInvoiceLineId: null,
         projectId: line.projectId ?? contract.projectId,
         methodType: item?.defaultMethodType ?? "Pull from Inventory",
-        unitOfMeasureCode: item?.unitOfMeasureCode ?? "EA"
+        unitOfMeasureCode: item?.unitOfMeasureCode ?? "EA",
+        billableItemIds: planned.itemIds
       });
-      itemIdsByInvoiceLine.push(planned.itemIds);
     }
+  }
+
+  // 8a. Invoice by CLIN (Government Contracting 5a): a comment line heads
+  // each numbered line's lines, and its amount is allocated to its ACRNs.
+  // With no number on any line, the invoice is unchanged.
+  const numberedLineIds = taken
+    .filter(({ line }) => line.lineItemNumber !== null)
+    .map(({ line }) => line.id);
+  let sections: ClinSection<PlannedLine>[] = plannedLines.map((line) => ({
+    type: "line",
+    line
+  }));
+  let allocations: ClinAllocation[] = [];
+  if (numberedLineIds.length > 0) {
+    const fundingRows = await trx
+      .selectFrom("customerContractFunding")
+      .select([
+        "customerContractLineId",
+        "acrn",
+        "fundedDate",
+        "fundedCost",
+        "fundedFee"
+      ])
+      .where("companyId", "=", companyId)
+      .where("customerContractLineId", "in", numberedLineIds)
+      .execute();
+    const billedRows = await trx
+      .selectFrom("salesInvoiceFundingAllocation as a")
+      .innerJoin("salesInvoice as si", (join) =>
+        join
+          .onRef("si.id", "=", "a.salesInvoiceId")
+          .onRef("si.companyId", "=", "a.companyId")
+      )
+      .select(["a.customerContractLineId", "a.acrn", "a.amount"])
+      .where("a.companyId", "=", companyId)
+      .where("a.customerContractLineId", "in", numberedLineIds)
+      .where("si.status", "<>", "Voided")
+      .execute();
+    const currency = await trx
+      .selectFrom("currency")
+      .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+      .select("currency.decimalPlaces")
+      .where("company.id", "=", companyId)
+      .where("currency.code", "=", contract.currencyCode)
+      .executeTakeFirst();
+    const planned = planClinSections(
+      plannedLines,
+      taken.map(({ line }) => ({
+        id: line.id,
+        lineItemNumber: line.lineItemNumber,
+        description:
+          line.description || itemById.get(line.itemId)?.name || line.itemId
+      })),
+      acrnPositions(
+        fundingRows.map((row) => ({
+          ...row,
+          fundedCost: Number(row.fundedCost),
+          fundedFee: Number(row.fundedFee)
+        })),
+        billedRows.map((row) => ({ ...row, amount: Number(row.amount) }))
+      ),
+      // Only the comment's figures read it; the amounts stay unrounded.
+      { decimalPlaces: currency?.decimalPlaces ?? DEFAULT_CURRENCY_DECIMALS }
+    );
+    sections = planned.sections;
+    allocations = planned.allocations;
+  }
+
+  const invoiceLines: InvoiceLineValues[] = [];
+  const itemIdsByInvoiceLine: string[][] = [];
+  for (const section of sections) {
+    if (section.type === "comment") {
+      invoiceLines.push({
+        invoiceLineType: "Comment",
+        itemId: null,
+        description: section.description,
+        quantity: 0,
+        unitPrice: 0,
+        discountPercent: 0,
+        taxPercent: 0,
+        serviceStartDate: null,
+        serviceEndDate: null,
+        customerContractId: contract.id,
+        customerContractLineId: null,
+        customerContractInvoiceLineId: null,
+        projectId: null,
+        methodType: "Pull from Inventory",
+        unitOfMeasureCode: "EA"
+      });
+      itemIdsByInvoiceLine.push([]);
+      continue;
+    }
+    const { billableItemIds, ...values } = section.line;
+    invoiceLines.push(values);
+    itemIdsByInvoiceLine.push(billableItemIds);
   }
 
   // 9. The hold, from the effective invoice automation.
@@ -349,6 +454,22 @@ async function processContract(
       holdReason,
       lines: invoiceLines
     });
+
+  if (allocations.length > 0) {
+    await trx
+      .insertInto("salesInvoiceFundingAllocation")
+      .values(
+        allocations.map((allocation) => ({
+          salesInvoiceId: invoiceId,
+          customerContractLineId: allocation.customerContractLineId,
+          acrn: allocation.acrn,
+          amount: allocation.amount,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+  }
 
   const stamps = itemIdsByInvoiceLine.flatMap((billableItemIds, index) =>
     billableItemIds.map((billableItemId) => ({

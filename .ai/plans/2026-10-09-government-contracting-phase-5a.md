@@ -86,7 +86,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 24: Add labor transfers to the correction modal and approvals
 - [x] Task 25: Add allowable, unallowable and preproduction cost to the Costs tab
 - [x] Task 26: Add CLIN numbers and funding actions to the contract line
-- [ ] Task 27: Invoice by CLIN with ACRN allocation
+- [x] Task 27: Invoice by CLIN with ACRN allocation
 - [ ] Task 28: Add the payroll totals import and list
 - [ ] Task 29: Add the daily missing-time check
 - [ ] Task 30: Add the Timesheets complete close task
@@ -1635,4 +1635,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   5. The billing loader reads `getContractFundingActions` and `getCompanySettings` with the other reads. `ContractLineBillingFields` takes `fundedByActions`: in DCAA mode the funded amount and funded cost are read-only with the hint "Sum of the funding actions". The server already ignores both fields in DCAA mode (Task 15 point 6).
   6. The route catches the service's thrown refusal and returns `{ error: { message } }` with status 400, as `$lineId.labor-rates` does. Its path helper is `path.to.contractLineFundingActions`.
   7. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 27:
+  1. `planClinSections(lines, contractLines, acrnsByLine, { decimalPlaces })` is generic over the planned line, so `index.ts` passes its full invoice line values with each line's billable item ids and reads them back in the new order. The 4th argument formats the comment's figures in the contract currency (`en-US`, `moneyFormatOptions`, as "10,000.00"). The amounts themselves are not rounded to it: a group's amount is Σ `round(quantity × unitPrice)`, as `insertDraftContractInvoice` totals its lines.
+  2. The comment line reads "CLIN 0001 — <description>: 12,345.00 (ACRN AA 10,000.00; ACRN AB 2,345.00)". When the ACRNs do not cover the amount, it adds "Unallocated <amount>"; the plan does not say what to show. A line with no funding row gets the CLIN heading and no ACRN text. The description is the contract line's description, else its item's name.
+  3. Only numbered lines take allocation rows, because only they have a CLIN heading. With no number on any taken line, the function reads no funding and the invoice is unchanged (step 4).
+  4. `acrnPositions(funding, billed)` (in `clin.ts`) sums each ACRN's funding (cost + fee) and its first funded date, less the allocations of invoices that are not Voided. The funding read, the allocation read (joined to `salesInvoice` for its status) and the currency read are one query each.
+  5. `InvoiceLineValues` gains an optional `invoiceLineType` (`Service` by default, or `Comment`), and its `itemId` and `customerContractLineId` may be null. The comment line has quantity 0, price 0, tax 0 and no contract line, so posting, the contract position and the stamps skip it.
+  6. The allocation rows are inserted in the invoice's transaction, after the invoice. Deleting the Draft invoice deletes them (`ON DELETE CASCADE`).
+  7. Besides the 3 pure tests of the plan (and a 4th: earlier allocations count against an ACRN), a database test drafts an invoice for a numbered line with one ACRN of 500.00 and 1,000.00 of cost: a Comment line comes first, the subtotal stays 1,000.00 and one allocation row of 500.00 is written.
 

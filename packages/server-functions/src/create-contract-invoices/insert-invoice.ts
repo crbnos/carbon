@@ -19,9 +19,12 @@ import type {
 type Enums = Database["public"]["Enums"];
 
 /** One Service line of a contract invoice. A project billing line has no
- *  schedule row, so `customerContractInvoiceLineId` is null there. */
+ *  schedule row, so `customerContractInvoiceLineId` is null there. A Comment
+ *  line (a project billing invoice's CLIN heading) has no item, no contract
+ *  line and no amount. */
 export type InvoiceLineValues = {
-  itemId: string;
+  invoiceLineType?: "Service" | "Comment";
+  itemId: string | null;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -30,7 +33,7 @@ export type InvoiceLineValues = {
   serviceStartDate: string | null;
   serviceEndDate: string | null;
   customerContractId: string;
-  customerContractLineId: string;
+  customerContractLineId: string | null;
   customerContractInvoiceLineId: string | null;
   projectId: string | null;
   methodType: Enums["methodType"];
@@ -153,9 +156,9 @@ export async function insertDraftContractInvoice(
   const inserted = await trx
     .insertInto("salesInvoiceLine")
     .values(
-      lines.map((line, index) => ({
+      lines.map(({ invoiceLineType = "Service", ...line }, index) => ({
         invoiceId: invoice.id,
-        invoiceLineType: "Service" as const,
+        invoiceLineType,
         ...line,
         exchangeRate: contract.exchangeRate,
         locationId,

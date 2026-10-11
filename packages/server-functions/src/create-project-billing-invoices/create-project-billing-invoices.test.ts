@@ -218,3 +218,97 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "heads a CLIN's lines with a comment line and allocates it to the ACRNs",
+  async () => {
+    const f = await projectBillingTestFixture();
+    try {
+      const project = await f.addProject("clin", "CL");
+      const { lineId } = await f.addContract({
+        key: "tm",
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        materialHandlingPercent: 0
+      });
+      await f.db
+        .updateTable("customerContractLine")
+        .set({ lineItemNumber: "0001" })
+        .where("id", "=", lineId)
+        .execute();
+      await f.db
+        .insertInto("customerContractFunding")
+        .values({
+          customerContractLineId: lineId,
+          modificationNumber: "P00001",
+          fundedDate: "2026-01-01",
+          acrn: "AA",
+          fundedCost: 500,
+          fundedFee: 0,
+          companyId: f.companyId,
+          createdBy: f.userId
+        })
+        .execute();
+      await f.post([
+        {
+          projectId: project.projectId,
+          projectElementId: project.childId,
+          costType: "Material",
+          amount: 1000,
+          postingDate: "2026-02-10"
+        }
+      ]);
+
+      const result = await createProjectBillingInvoices(f.ctx, {
+        asOf: AS_OF
+      });
+      expect(result.error).toBeNull();
+      expect(result.data?.failures).toEqual([]);
+      const invoiceId = result.data!.invoiceIds[0]!;
+
+      const lines = await f.db
+        .selectFrom("salesInvoiceLine")
+        .select([
+          "invoiceLineType",
+          "description",
+          "quantity",
+          "unitPrice",
+          "customerContractLineId"
+        ])
+        .where("invoiceId", "=", invoiceId)
+        .orderBy("sortOrder")
+        .execute();
+      expect(lines.map((line) => line.invoiceLineType)).toEqual([
+        "Comment",
+        "Service"
+      ]);
+      expect(lines[0]!.description).toMatch(
+        /^CLIN 0001 — .+: 1,000\.00 \(ACRN AA 500\.00; Unallocated 500\.00\)$/
+      );
+      expect(lines[0]!.customerContractLineId).toBeNull();
+      expect(Number(lines[1]!.unitPrice)).toBe(1000);
+
+      const invoice = await f.db
+        .selectFrom("salesInvoice")
+        .select("subtotal")
+        .where("id", "=", invoiceId)
+        .executeTakeFirstOrThrow();
+      expect(Number(invoice.subtotal)).toBe(1000);
+
+      const allocations = await f.db
+        .selectFrom("salesInvoiceFundingAllocation")
+        .select(["customerContractLineId", "acrn", "amount"])
+        .where("salesInvoiceId", "=", invoiceId)
+        .execute();
+      expect(
+        allocations.map((row) => [
+          row.customerContractLineId,
+          row.acrn,
+          Number(row.amount)
+        ])
+      ).toEqual([[lineId, "AA", 500]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
