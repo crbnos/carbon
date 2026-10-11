@@ -18,7 +18,11 @@
 
 import type { PoolClient } from "pg";
 import { seedCompanyReferenceData } from "./bootstrap.ts";
-import { COVERAGE_FLOORS, COVERAGE_SCOPES } from "./coverage.ts";
+import {
+  COVERAGE_FLOORS,
+  COVERAGE_SCOPES,
+  DATASET_COVERAGE_FLOORS
+} from "./coverage.ts";
 import { applyDatasetTiers } from "./index.ts";
 import { quote } from "./sql.ts";
 import { type Dataset, resolveCompanyTimeZone } from "./types.ts";
@@ -63,12 +67,20 @@ export async function resolveCheckUserId(
   }
 }
 
-/** A tier that inserts nothing raises no error on its own. */
+/**
+ * A tier that inserts nothing raises no error on its own. `datasetKey` adds
+ * that dataset's own floors (`DATASET_COVERAGE_FLOORS`).
+ */
 export async function findCoverageShortfalls(
   client: PoolClient,
-  companyId: string
+  companyId: string,
+  datasetKey?: string
 ): Promise<string[]> {
-  const tables = Object.keys(COVERAGE_FLOORS);
+  const floors: Record<string, number> = {
+    ...COVERAGE_FLOORS,
+    ...(datasetKey ? DATASET_COVERAGE_FLOORS[datasetKey] : undefined)
+  };
+  const tables = Object.keys(floors);
   const union = tables
     .map(
       (t) =>
@@ -83,7 +95,7 @@ export async function findCoverageShortfalls(
   const counts = new Map(res.rows.map((r) => [r.table_name, r.count]));
   const shortfalls: string[] = [];
   for (const table of tables) {
-    const floor = COVERAGE_FLOORS[table]!;
+    const floor = floors[table]!;
     const count = counts.get(table) ?? 0;
     if (count < floor) {
       shortfalls.push(`${table}: expected ≥ ${floor}, got ${count}`);
@@ -129,7 +141,7 @@ export async function verifyDataset(
       log
     });
 
-    const shortfalls = await findCoverageShortfalls(client, companyId);
+    const shortfalls = await findCoverageShortfalls(client, companyId, key);
     if (shortfalls.length > 0) {
       return {
         key,

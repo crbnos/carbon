@@ -65,6 +65,7 @@ import type {
   JournalLineSpec,
   MakeMethodSpec,
   ProjectElementLinkSpec,
+  ProjectPegSpec,
   ProjectSpec,
   ReturnCreditSpec,
   RuleConditionValue,
@@ -1009,6 +1010,17 @@ export function onHandLedger(
         add(transfer.item, transfer.shelf, -transfer.qty);
       }
     }
+  }
+  // A grouped receipt lands in its members' stripes, not in common stock.
+  for (const group of dataset.accounting.planningGroups ?? []) {
+    const po = dataset.purchasing.purchaseOrders.find(
+      (p) => p.source === "direct" && p.ref === group.received.purchaseOrder
+    );
+    if (po?.source !== "direct" || po.receipt?.status !== "Posted") continue;
+    const line = po.receipt.lines.find((l) => l.item === group.item);
+    if (line?.toShelf === undefined || !shelves.has(line.toShelf)) continue;
+    const striped = group.received.pegs.reduce((sum, p) => sum + p.quantity, 0);
+    add(group.item, line.toShelf, -striped);
   }
   return onHand;
 }
@@ -1956,6 +1968,126 @@ export function projectStock(ctx: ValidationCtx): void {
     for (const row of project.projectStock.openingStock) {
       if (!(row.unitCost > 0)) {
         fail(`${where}.openingStock "${row.item}": unitCost must be positive`);
+      }
+    }
+  }
+}
+
+/** The statuses `openPurchaseOrderLines` reads as open supply. */
+const OPEN_SUPPLY_PO_STATUSES = new Set([
+  "Planned",
+  "To Receive",
+  "To Receive and Invoice"
+]);
+
+/**
+ * Planning groups (Projects Phase 3): the members are distinct Released
+ * projects; the item is untracked; the received line has a Posted receipt of
+ * exactly its Hard pegs; the open line is open supply that covers its Soft
+ * pegs; every peg names a member's plan-line material of the item, and no
+ * material is pegged beyond its quantity.
+ */
+export function planningGroups(ctx: ValidationCtx): void {
+  const { dataset, ix, fail, need } = ctx;
+  const names = new Set<string>();
+  for (const group of dataset.accounting.planningGroups ?? []) {
+    const where = `accounting.planningGroups "${group.name}"`;
+    if (names.has(group.name)) fail(`${where}: duplicate name`);
+    names.add(group.name);
+    need("item", where, group.item);
+    if (ix.isTracked(group.item)) fail(`${where}: a tracked item`);
+
+    const members = new Set<string>();
+    for (const member of group.members) {
+      const project = dataset.accounting.projects.find(
+        (p) => p.key === member.project
+      );
+      if (!project) fail(`${where}: unknown member "${member.project}"`);
+      else if (project.status !== "Released") {
+        fail(`${where}: member "${member.project}" is not Released`);
+      }
+      if (members.has(member.project)) {
+        fail(`${where}: member "${member.project}" listed twice`);
+      }
+      members.add(member.project);
+    }
+    if (members.size < 2) fail(`${where}: expected at least 2 members`);
+
+    const orderLine = (kind: string, ref: string) => {
+      const po = dataset.purchasing.purchaseOrders.find(
+        (p) => p.source === "direct" && p.ref === ref
+      );
+      if (!po || po.source !== "direct") {
+        fail(`${where}.${kind}: unknown direct purchase order "${ref}"`);
+        return null;
+      }
+      const lines = po.lines.filter((line) => line.item === group.item);
+      if (lines.length !== 1) {
+        fail(`${where}.${kind}: "${ref}" needs exactly one ${group.item} line`);
+        return null;
+      }
+      return { po, line: lines[0]! };
+    };
+    if (group.received.purchaseOrder === group.open.purchaseOrder) {
+      fail(`${where}: the received and open lines share one order`);
+    }
+
+    const pegged = new Map<string, number>();
+    const checkPegs = (kind: string, pegs: ProjectPegSpec[]): number => {
+      if (pegs.length === 0) fail(`${where}.${kind}: no pegs`);
+      let total = 0;
+      for (const peg of pegs) {
+        const at = `${where}.${kind} peg ${peg.project}:${peg.element}`;
+        if (!members.has(peg.project)) fail(`${at}: not a member`);
+        const material = dataset.accounting.projects
+          .find((p) => p.key === peg.project)
+          ?.elements.find((e) => e.key === peg.element)
+          ?.materials?.find((m) => m.item === group.item);
+        if (!material) {
+          fail(`${at}: no ${group.item} plan-line material`);
+        }
+        if (!(peg.quantity > 0)) fail(`${at}: quantity must be positive`);
+        total += peg.quantity;
+        const key = `${peg.project}:${peg.element}`;
+        const sum = (pegged.get(key) ?? 0) + peg.quantity;
+        pegged.set(key, sum);
+        if (material && sum > material.quantity) {
+          fail(
+            `${at}: pegs ${sum}, beyond the material's ${material.quantity}`
+          );
+        }
+      }
+      return total;
+    };
+
+    const hard = checkPegs("received", group.received.pegs);
+    const received = orderLine("received", group.received.purchaseOrder);
+    if (received) {
+      const receiptLine = received.po.receipt?.lines.find(
+        (line) => line.item === group.item
+      );
+      if (received.po.receipt?.status !== "Posted" || !receiptLine) {
+        fail(`${where}.received: no Posted receipt line of ${group.item}`);
+      } else if (receiptLine.receivedQuantity !== hard) {
+        fail(
+          `${where}.received: received ${receiptLine.receivedQuantity}, but the pegs sum to ${hard}`
+        );
+      }
+    }
+
+    const soft = checkPegs("open", group.open.pegs);
+    const open = orderLine("open", group.open.purchaseOrder);
+    if (open) {
+      if (!OPEN_SUPPLY_PO_STATUSES.has(open.po.status)) {
+        fail(`${where}.open: status "${open.po.status}" is not open supply`);
+      }
+      if (open.po.receipt?.status === "Posted") {
+        fail(`${where}.open: the order has a Posted receipt`);
+      }
+      if (soft > open.line.purchaseQuantity) {
+        fail(
+          `${where}.open: the pegs sum to ${soft}, beyond the line's ${open.line.purchaseQuantity}`
+        );
       }
     }
   }
@@ -5207,6 +5339,16 @@ function projectElementChecks(
     if (element.verdict && element.type !== "Test Case") {
       fail(`${at}: a verdict on a ${element.type}`);
     }
+    const materialItems = new Set<string>();
+    for (const material of element.materials ?? []) {
+      const where = `${at} material "${material.item}"`;
+      if (element.type === "Parameter") fail(`${where}: on a Parameter`);
+      if (!ix.refs.item.has(material.item)) fail(`${where}: unknown item`);
+      else if (ix.isTracked(material.item)) fail(`${where}: a tracked item`);
+      if (materialItems.has(material.item)) fail(`${where}: listed twice`);
+      materialItems.add(material.item);
+      if (!(material.quantity > 0)) fail(`${where}: quantity must be positive`);
+    }
     if (element.parameter && element.type !== "Parameter") {
       fail(`${at}: parameter fields on a ${element.type}`);
     }
@@ -7344,6 +7486,7 @@ const RULES: Rule[] = [
   items,
   openingStock,
   projectStock,
+  planningGroups,
   batchProperties,
   trackedStockAndMovements,
   uniqueDocumentRefs,

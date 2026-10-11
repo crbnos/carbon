@@ -412,6 +412,43 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [{ item: "ST-050", quantity: 1, supplierUnitPrice: 28000 }]
     }
   },
+  // Projects Phase 3: the Star Tracker planning group's supply (tier 09 sets
+  // the lines' group, splits the receipt into member stripes and pegs both).
+  {
+    source: "direct",
+    log: "purchase order — To Invoice, star trackers received for the Star Tracker group",
+    ref: "po:st-group-received",
+    supplier: "Deep Space RF",
+    purchaseOrderType: "Purchase",
+    status: "To Invoice",
+    orderDateOffset: -40,
+    lines: [{ item: "ST-050", purchaseQuantity: 4, supplierUnitPrice: 28000 }],
+    receipt: {
+      ref: "receipt:st-group",
+      status: "Posted",
+      postedOffset: -10,
+      lines: [
+        {
+          item: "ST-050",
+          orderQuantity: 4,
+          outstandingQuantity: 0,
+          receivedQuantity: 4,
+          unitPrice: 28000,
+          toShelf: "A2-L3"
+        }
+      ]
+    }
+  },
+  {
+    source: "direct",
+    log: "purchase order — To Receive, star trackers on order for the Star Tracker group",
+    ref: "po:st-group-open",
+    supplier: "Deep Space RF",
+    purchaseOrderType: "Purchase",
+    status: "To Receive",
+    orderDateOffset: -6,
+    lines: [{ item: "ST-050", purchaseQuantity: 2, supplierUnitPrice: 28000 }]
+  },
   {
     source: "direct",
     log: "purchase order — Completed, invoice overdue (Orbital Composites)",

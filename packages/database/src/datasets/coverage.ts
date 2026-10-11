@@ -285,6 +285,21 @@ export const COVERAGE_FLOORS: Record<string, number> = {
 };
 
 /**
+ * Floors for content only one dataset carries, added to `COVERAGE_FLOORS` for
+ * that dataset. The shared floors take the smallest count of any dataset, so a
+ * table only satellite seeds would floor at 0 there. Satellite's planning
+ * group (Projects Phase 3): 1 group, 4 plan-line materials, and 8 pegs (3
+ * Soft rows the receipt superseded, 3 Hard, 2 Soft on the open line).
+ */
+export const DATASET_COVERAGE_FLOORS: Record<string, Record<string, number>> = {
+  satellite: {
+    planningGroup: 1,
+    projectElementMaterial: 4,
+    projectPeg: 8
+  }
+};
+
+/**
  * `$1` = scratch company id. Group-scoped dimension rows are exact: the scratch
  * company gets a fresh group.
  */

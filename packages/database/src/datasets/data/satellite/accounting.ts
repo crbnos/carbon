@@ -10,6 +10,7 @@ import type {
   MemoSpec,
   PaymentSpec,
   PeriodCloseTaskSpec,
+  PlanningGroupSpec,
   ProjectSpec,
   TimesheetEntrySpec
 } from "../../types.ts";
@@ -538,7 +539,9 @@ export const PROJECTS: ProjectSpec[] = [
         parentKey: "req-pointing",
         state: "Backlog",
         milestone: "flight-acceptance",
-        estimatedHours: 20
+        estimatedHours: 20,
+        // Phase 3: the first two flight units' trackers, from the group.
+        materials: [{ item: "ST-050", quantity: 2, requiredOffset: 20 }]
       },
       {
         key: "tc-pointing",
@@ -546,7 +549,8 @@ export const PROJECTS: ProjectSpec[] = [
         name: "Pointing accuracy test on the air-bearing table",
         parentKey: "req-pointing",
         state: "Backlog",
-        estimatedHours: 10
+        estimatedHours: 10,
+        materials: [{ item: "ST-050", quantity: 1, requiredOffset: 60 }]
       }
     ]
   },
@@ -733,6 +737,17 @@ export const PROJECTS: ProjectSpec[] = [
           verificationMethod: "Analysis",
           actualParameter: "p-margin"
         }
+      },
+      {
+        // Phase 3: the qualification unit flies a tracker from the group.
+        key: "task-tracker",
+        type: "Task",
+        name: "Fit a star tracker to the qualification unit",
+        parentKey: "structure",
+        state: "Todo",
+        milestone: "qual-complete",
+        estimatedHours: 6,
+        materials: [{ item: "ST-050", quantity: 1, requiredOffset: 35 }]
       }
     ],
     links: [
@@ -838,6 +853,141 @@ export const PROJECTS: ProjectSpec[] = [
       { from: "tc-particle", to: "req-class", type: "verifies" },
       { from: "task-panels", to: "task-layout", type: "precedes" }
     ]
+  },
+  {
+    // Phase 3: the third member of the Star Tracker planning group.
+    key: "polarview-pathfinder",
+    name: "PolarView Imaging Pathfinder",
+    description: "Two-satellite imaging pathfinder for PolarView Earth",
+    identifier: "PVP",
+    costTreatment: "Contract",
+    status: "Released",
+    milestones: [
+      {
+        key: "pdr",
+        name: "Preliminary Design Review",
+        startOffset: -30,
+        endOffset: -2
+      },
+      {
+        key: "integration",
+        name: "Pathfinder Integration",
+        startOffset: -1,
+        endOffset: 90
+      }
+    ],
+    elements: [
+      {
+        key: "adcs",
+        type: "System",
+        name: "Attitude determination and control",
+        state: "In Progress",
+        budget: 120000
+      },
+      {
+        key: "req-knowledge",
+        type: "Requirement",
+        name: "Attitude knowledge within 2 arcseconds",
+        parentKey: "adcs",
+        state: "In Progress",
+        milestone: "pdr"
+      },
+      {
+        key: "task-trackers",
+        type: "Task",
+        name: "Fit one star tracker to each satellite",
+        parentKey: "req-knowledge",
+        state: "Todo",
+        milestone: "integration",
+        estimatedHours: 16,
+        materials: [{ item: "ST-050", quantity: 2, requiredOffset: 45 }]
+      },
+      {
+        key: "tc-sky",
+        type: "Test Case",
+        name: "Night-sky star tracker test",
+        parentKey: "req-knowledge",
+        state: "Backlog",
+        milestone: "integration",
+        estimatedHours: 8
+      },
+      {
+        key: "imager",
+        type: "System",
+        name: "Imaging payload",
+        state: "Todo",
+        budget: 160000
+      },
+      {
+        key: "req-gsd",
+        type: "Requirement",
+        name: "Ground sample distance under 3 m",
+        parentKey: "imager",
+        state: "Todo"
+      },
+      {
+        key: "task-focus",
+        type: "Task",
+        name: "Focus the telescope in thermal vacuum",
+        parentKey: "req-gsd",
+        state: "Backlog",
+        milestone: "integration",
+        estimatedHours: 12
+      },
+      {
+        key: "tc-mtf",
+        type: "Test Case",
+        name: "Modulation transfer function test",
+        parentKey: "req-gsd",
+        state: "Backlog",
+        estimatedHours: 6
+      }
+    ],
+    links: [
+      { from: "tc-sky", to: "req-knowledge", type: "verifies" },
+      { from: "tc-mtf", to: "req-gsd", type: "verifies" }
+    ]
+  }
+];
+
+/**
+ * Projects Phase 3: three programs pool their star trackers. Earliest Need
+ * pegs the 4 received trackers to OB2 (2), NSG3 (1) and PVP (1); the 2 on
+ * order go to PVP's second tracker and OB2's pointing test spare.
+ */
+export const PLANNING_GROUPS: PlanningGroupSpec[] = [
+  {
+    name: "Star Tracker",
+    priorityRule: "Earliest Need",
+    members: [
+      { project: "orbsec-block2", priority: 10 },
+      { project: "polarview-pathfinder", priority: 20 },
+      { project: "novasat-gen3", priority: 30 }
+    ],
+    item: "ST-050",
+    received: {
+      purchaseOrder: "po:st-group-received",
+      pegs: [
+        { project: "orbsec-block2", element: "task-alignment", quantity: 2 },
+        { project: "novasat-gen3", element: "task-tracker", quantity: 1 },
+        {
+          project: "polarview-pathfinder",
+          element: "task-trackers",
+          quantity: 1
+        }
+      ]
+    },
+    open: {
+      purchaseOrder: "po:st-group-open",
+      pegs: [
+        {
+          project: "polarview-pathfinder",
+          element: "task-trackers",
+          quantity: 1
+        },
+        { project: "orbsec-block2", element: "tc-pointing", quantity: 1 }
+      ]
+    }
   }
 ];
 
@@ -956,6 +1106,7 @@ export const satelliteAccounting: AccountingData = {
   payments: PAYMENTS,
   memos: MEMOS,
   projects: PROJECTS,
+  planningGroups: PLANNING_GROUPS,
   laborCategories: LABOR_CATEGORIES,
   timesheetEntries: TIMESHEET_ENTRIES,
   customDimension: {

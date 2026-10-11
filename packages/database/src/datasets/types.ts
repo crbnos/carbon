@@ -1971,6 +1971,12 @@ export type ProjectElementSpec = {
   item?: string;
   /** A Capitalize project's final asset. Never on a Parameter. */
   isFinalAsset?: boolean;
+  /**
+   * Plan-line materials, Pull from Inventory, each registered as
+   * `projectElementMaterial:<project>:<element>:<item>`. MRP reads them as
+   * Project Material demand (Projects Phase 2b). Never on a Parameter.
+   */
+  materials?: ProjectElementMaterialSpec[];
   /** Requirement only. */
   requirement?: {
     category: Database["public"]["Enums"]["requirementCategory"];
@@ -2066,6 +2072,50 @@ export type ProjectStockTransferSpec = {
   dateOffset: DayOffset;
 };
 
+/** A plan-line material (`projectElementMaterial`), Pull from Inventory. */
+export type ProjectElementMaterialSpec = {
+  /** An untracked item; one line per item on an element. */
+  item: string;
+  quantity: number;
+  /** The material's `requiredDate`, which MRP reads as the need date. */
+  requiredOffset: DayOffset;
+};
+
+/**
+ * A planning group (Projects Phase 3) at the plant. Tier 09 turns on each
+ * member's project stock, moves the member to the plant, sets its group and
+ * priority, then writes the grouped supply of one item:
+ * - `received`: a PO line with a Posted receipt. Each peg is a member stripe
+ *   of the receipt (its item ledger row and cost layer) and a Hard peg, which
+ *   replaces a Soft peg made at the order date.
+ * - `open`: a PO line with nothing received. Each peg is a Soft peg.
+ * Both lines get the group's `planningGroupId`.
+ */
+export type PlanningGroupSpec = {
+  /** Unique per company. */
+  name: string;
+  priorityRule: Database["public"]["Enums"]["planningGroupPriorityRule"];
+  /** Project keys; `priority` is `project.planningPriority` (lower first). */
+  members: { project: string; priority: number }[];
+  /** An untracked item; every peg's demand is a plan-line material of it. */
+  item: string;
+  received: GroupedPurchaseLineSpec;
+  open: GroupedPurchaseLineSpec;
+};
+
+export type GroupedPurchaseLineSpec = {
+  /** The `ref` of a direct purchase order with one line of the group's item. */
+  purchaseOrder: string;
+  pegs: ProjectPegSpec[];
+};
+
+/** The demand is the element's plan-line material of the group's item. */
+export type ProjectPegSpec = {
+  project: string;
+  element: string;
+  quantity: number;
+};
+
 /** One rate per category, effective from `LABOR_RATE_EFFECTIVE_OFFSET`. */
 export type LaborCategorySpec = {
   name: string;
@@ -2132,6 +2182,8 @@ export type AccountingData = {
   payments: PaymentSpec[];
   memos: MemoSpec[];
   projects: ProjectSpec[];
+  /** Projects Phase 3; the satellite dataset only. */
+  planningGroups?: PlanningGroupSpec[];
   /** The first is the applying user's `employeeJob.laborCategoryId`. */
   laborCategories: LaborCategorySpec[];
   timesheetEntries: TimesheetEntrySpec[];

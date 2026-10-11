@@ -235,6 +235,8 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   }
 
   await postInventoryDocuments(ctx, posting);
+  // After the receipt cost layers exist: a grouped receipt splits them.
+  await seedPlanningGroups(ctx);
   await postSalesInvoices(ctx, posting);
   await postPurchaseInvoices(ctx, posting);
 
@@ -1269,6 +1271,266 @@ async function seedProjectStock(ctx: Ctx): Promise<void> {
 }
 
 /**
+ * Planning groups (Projects Phase 3), after `postInventoryDocuments` wrote the
+ * receipt cost layers. Each group is at the plant. Its members get project
+ * stock, the plant, the group and their priority, as the project Details
+ * action requires. Then the group's 2 PO lines get `planningGroupId`:
+ * - the received line: its one receipt item ledger row and its one cost layer
+ *   split into a stripe per peg, as `post-receipt` splits a grouped receipt
+ *   (the journal stays one inventory debit per line). Each stripe gets a Hard
+ *   peg linked to its ledger row, which supersedes the Soft peg made at the
+ *   order date, as `harden_pegs_for_supply` does;
+ * - the open line: one Soft peg per peg.
+ * A seeded peg has no run id. The first MRP run keeps the Hard pegs and
+ * re-pegs the open supply.
+ */
+async function seedPlanningGroups(ctx: Ctx): Promise<void> {
+  const { companyId, userId, anchor } = ctx;
+  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
+  const { purchaseOrders } = ctx.dataset.purchasing;
+  const projectSpecs = ctx.dataset.accounting.projects;
+
+  for (const spec of ctx.dataset.accounting.planningGroups ?? []) {
+    ctx.log(`planning group ${spec.name}`);
+    const item = need(ctx.refs.items, spec.item, "item");
+    const groupId = await insertId(ctx, "planningGroup", {
+      name: spec.name,
+      locationId: plantId,
+      priorityRule: spec.priorityRule
+    });
+    const projectId = (key: string) =>
+      need(ctx.refs.misc, `project:${key}`, "project");
+    const directOrder = (ref: string) => {
+      const po = purchaseOrders.find(
+        (p) => p.source === "direct" && p.ref === ref
+      );
+      if (!po || po.source !== "direct") {
+        throw new Error(`Seed: planning group "${spec.name}": no order ${ref}`);
+      }
+      return po;
+    };
+    const lineId = (ref: string) =>
+      need(
+        ctx.refs.documents,
+        `poline:${ref}:${spec.item}`,
+        "purchase order line"
+      );
+    // The demand of a peg: the element's plan-line material of the item.
+    const demand = (peg: { project: string; element: string }) => {
+      const material = projectSpecs
+        .find((p) => p.key === peg.project)
+        ?.elements.find((e) => e.key === peg.element)
+        ?.materials?.find((m) => m.item === spec.item);
+      if (!material) {
+        throw new Error(
+          `Seed: planning group "${spec.name}": ${peg.project}:${peg.element} has no ${spec.item} material`
+        );
+      }
+      return {
+        planningGroupId: groupId,
+        itemId: item.id,
+        locationId: plantId,
+        supplyType: "Purchase Order Line",
+        projectId: projectId(peg.project),
+        projectElementId: need(
+          ctx.refs.misc,
+          `projectElement:${peg.project}:${peg.element}`,
+          "project element"
+        ),
+        demandSourceType: "Project Material",
+        demandSourceId: need(
+          ctx.refs.misc,
+          `projectElementMaterial:${peg.project}:${peg.element}:${spec.item}`,
+          "plan-line material"
+        ),
+        needDate: resolveDate(anchor, material.requiredOffset)
+      };
+    };
+
+    for (const member of spec.members) {
+      await ctx.client.query(
+        `UPDATE project SET "projectStock" = true, "planningGroupId" = $1,
+           "planningPriority" = $2, "locationId" = $3, "updatedBy" = $4
+         WHERE id = $5 AND "companyId" = $6`,
+        [
+          groupId,
+          member.priority,
+          plantId,
+          userId,
+          projectId(member.project),
+          companyId
+        ]
+      );
+    }
+    const receivedLineId = lineId(spec.received.purchaseOrder);
+    const openLineId = lineId(spec.open.purchaseOrder);
+    await ctx.client.query(
+      `UPDATE "purchaseOrderLine" SET "planningGroupId" = $1, "updatedBy" = $2
+       WHERE id = ANY($3) AND "companyId" = $4`,
+      [groupId, userId, [receivedLineId, openLineId], companyId]
+    );
+
+    // The received line: split the receipt into member stripes.
+    const receivedOrder = directOrder(spec.received.purchaseOrder);
+    const receipt = receivedOrder.receipt;
+    if (receipt?.status !== "Posted" || receipt.postedOffset === undefined) {
+      throw new Error(
+        `Seed: planning group "${spec.name}": ${spec.received.purchaseOrder} has no Posted receipt`
+      );
+    }
+    const receiptId = need(ctx.refs.documents, receipt.ref, "receipt");
+    const ledgerRows = await rows<{
+      id: string;
+      quantity: string;
+      entryType: string;
+      locationId: string;
+      storageUnitId: string | null;
+      postingDate: string;
+    }>(
+      ctx.client,
+      `SELECT id, quantity, "entryType", "locationId", "storageUnitId",
+              "postingDate"::text AS "postingDate"
+       FROM "itemLedger"
+       WHERE "documentType" = 'Purchase Receipt' AND "documentId" = $1
+         AND "itemId" = $2 AND "companyId" = $3`,
+      [receiptId, item.id, companyId]
+    );
+    const layers = await rows<{
+      id: string;
+      quantity: string;
+      cost: string;
+      remainingQuantity: string;
+      externalDocumentId: string | null;
+      supplierId: string | null;
+      postingDate: string;
+    }>(
+      ctx.client,
+      `SELECT id, quantity, cost, "remainingQuantity", "externalDocumentId",
+              "supplierId", "postingDate"::text AS "postingDate"
+       FROM "costLedger"
+       WHERE "documentType" = 'Purchase Receipt' AND "documentId" = $1
+         AND "itemId" = $2 AND "companyId" = $3`,
+      [receiptId, item.id, companyId]
+    );
+    const ledger = ledgerRows[0];
+    const layer = layers[0];
+    const pegs = spec.received.pegs;
+    const total = pegs.reduce((sum, peg) => sum + peg.quantity, 0);
+    if (
+      ledgerRows.length !== 1 ||
+      layers.length !== 1 ||
+      !ledger ||
+      !layer ||
+      Number(ledger.quantity) !== total ||
+      Number(layer.remainingQuantity) !== Number(layer.quantity)
+    ) {
+      throw new Error(
+        `Seed: planning group "${spec.name}": receipt ${receipt.ref} needs one untouched ledger row and layer of ${total} ${spec.item}`
+      );
+    }
+    const layerCost = Number(layer.cost);
+    const unitCost = layerCost / Number(layer.quantity);
+    const orderedAt = resolveTimestamp(
+      anchor,
+      receivedOrder.orderDateOffset,
+      "09:00:00"
+    );
+    const hardenedAt = resolveTimestamp(
+      anchor,
+      receipt.postedOffset,
+      "15:00:00"
+    );
+
+    let costSoFar = 0;
+    for (const [index, peg] of pegs.entries()) {
+      const stripeProjectId = projectId(peg.project);
+      const last = index === pegs.length - 1;
+      // The last stripe takes the rounding rest, so the pieces add up.
+      const cost = last
+        ? round(layerCost - costSoFar)
+        : round(peg.quantity * unitCost);
+      costSoFar += cost;
+      let itemLedgerId: string;
+      if (index === 0) {
+        itemLedgerId = ledger.id;
+        await ctx.client.query(
+          `UPDATE "itemLedger" SET quantity = $1, "projectId" = $2
+           WHERE id = $3 AND "companyId" = $4`,
+          [peg.quantity, stripeProjectId, ledger.id, companyId]
+        );
+        await ctx.client.query(
+          `UPDATE "costLedger" SET quantity = $1, "remainingQuantity" = $1,
+             cost = $2, "nominalCost" = $2, "projectId" = $3
+           WHERE id = $4 AND "companyId" = $5`,
+          [round(peg.quantity), cost, stripeProjectId, layer.id, companyId]
+        );
+      } else {
+        itemLedgerId = await insertId(ctx, "itemLedger", {
+          entryType: ledger.entryType,
+          documentType: "Purchase Receipt",
+          documentId: receiptId,
+          itemId: item.id,
+          locationId: ledger.locationId,
+          storageUnitId: ledger.storageUnitId,
+          quantity: peg.quantity,
+          projectId: stripeProjectId,
+          postingDate: ledger.postingDate
+        });
+        await insertRow(ctx, "costLedger", {
+          itemLedgerType: "Purchase",
+          costLedgerType: "Direct Cost",
+          adjustment: false,
+          documentType: "Purchase Receipt",
+          documentId: receiptId,
+          externalDocumentId: layer.externalDocumentId ?? undefined,
+          itemId: item.id,
+          quantity: round(peg.quantity),
+          nominalCost: cost,
+          cost,
+          remainingQuantity: round(peg.quantity),
+          supplierId: layer.supplierId ?? undefined,
+          projectId: stripeProjectId,
+          postingDate: layer.postingDate
+        });
+      }
+      await insertRow(ctx, "projectPeg", {
+        ...demand(peg),
+        supplyId: receivedLineId,
+        quantity: peg.quantity,
+        state: "Soft",
+        createdAt: orderedAt,
+        supersededAt: hardenedAt
+      });
+      await insertRow(ctx, "projectPeg", {
+        ...demand(peg),
+        supplyId: receivedLineId,
+        quantity: peg.quantity,
+        state: "Hard",
+        hardenedAt,
+        itemLedgerId,
+        createdAt: hardenedAt
+      });
+    }
+
+    // The open line: Soft pegs from its order date.
+    const openOrderedAt = resolveTimestamp(
+      anchor,
+      directOrder(spec.open.purchaseOrder).orderDateOffset,
+      "09:00:00"
+    );
+    for (const peg of spec.open.pegs) {
+      await insertRow(ctx, "projectPeg", {
+        ...demand(peg),
+        supplyId: openLineId,
+        quantity: peg.quantity,
+        state: "Soft",
+        createdAt: openOrderedAt
+      });
+    }
+  }
+}
+
+/**
  * Labor categories and their rates, then each project with its states,
  * milestones and elements, then the applying user's timesheet. An element's
  * `readableId` is `<identifier>-<n>` in list order, as `insertProjectElement`
@@ -1428,6 +1690,24 @@ async function seedProjects(ctx: Ctx): Promise<void> {
             : {})
         }
       );
+      const insertedId = elementIds[`${spec.key}:${element.key}`]!;
+      ctx.refs.misc[`projectElement:${spec.key}:${element.key}`] = insertedId;
+      // Plan-line materials: what MRP reads as Project Material demand.
+      for (const material of element.materials ?? []) {
+        const item = need(ctx.refs.items, material.item, "item");
+        ctx.refs.misc[
+          `projectElementMaterial:${spec.key}:${element.key}:${material.item}`
+        ] = await insertId(ctx, "projectElementMaterial", {
+          projectId,
+          projectElementId: insertedId,
+          itemId: item.id,
+          methodType: "Pull from Inventory",
+          quantity: material.quantity,
+          unitOfMeasureCode: item.unitOfMeasureCode,
+          unitCost: item.unitCost,
+          requiredDate: resolveDate(anchor, material.requiredOffset)
+        });
+      }
     }
 
     // Trace links, then the `feeds` link from each Parameter a formula names
