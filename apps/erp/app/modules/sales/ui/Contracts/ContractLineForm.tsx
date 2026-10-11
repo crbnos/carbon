@@ -35,7 +35,7 @@ import {
   Submit
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyDecimals, usePermissions } from "~/hooks";
+import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 import {
@@ -53,6 +53,7 @@ import {
   useBillingMethodLabels
 } from "./ContractLineBillingFields";
 import ContractProject from "./ContractProject";
+import type { ContractRouteData } from "./types";
 
 type ContractLineFormValues = z.infer<typeof customerContractLineValidator>;
 
@@ -98,6 +99,32 @@ const ContractLineForm = ({
   const [projectId, setProjectId] = useState(initialValues.projectId ?? "");
   const [revenueType, setRevenueType] = useState(initialValues.revenueType);
   const [startDate, setStartDate] = useState(initialValues.startDate);
+  const [lineItemNumber, setLineItemNumber] = useState(
+    initialValues.lineItemNumber ?? ""
+  );
+  // A SubCLIN's parent is a CLIN (4 digits) of the same contract. A line
+  // that a later amendment replaced is not a current line.
+  const routeData = useRouteData<ContractRouteData>(
+    path.to.contract(initialValues.customerContractId)
+  );
+  const contractLines = routeData?.lines ?? [];
+  const replacedLineIds = new Set(
+    contractLines.map((line) => line.amendsLineId).filter(Boolean)
+  );
+  const parentLineOptions = contractLines
+    .filter(
+      (line) =>
+        line.id !== initialValues.id &&
+        !replacedLineIds.has(line.id) &&
+        line.lineItemNumber?.length === 4
+    )
+    .map((line) => ({
+      value: line.id,
+      label: `${line.lineItemNumber} — ${
+        line.description || line.item?.name || line.itemId
+      }`
+    }));
+  const isSubClin = lineItemNumber.trim().length === 6;
   const [showRevenue, setShowRevenue] = useState(
     initialValues.revenueMethod !== "Daily" ||
       !!initialValues.revenueStartDate ||
@@ -264,6 +291,20 @@ const ContractLineForm = ({
                     label={t`Description`}
                     helperText={t`Shown to the customer on the invoice`}
                   />
+                  <Input
+                    name="lineItemNumber"
+                    label={t`CLIN / SLIN`}
+                    helperText={t`4 digits for a CLIN; 2 letters or digits more for a SubCLIN`}
+                    onChange={(event) => setLineItemNumber(event.target.value)}
+                  />
+                  {/* Unmounted for a CLIN: only a SubCLIN has a parent. */}
+                  {isSubClin && (
+                    <Select
+                      name="parentLineId"
+                      label={t`Parent CLIN`}
+                      options={parentLineOptions}
+                    />
+                  )}
                 </div>
 
                 {showUpgrade && billingMethod === "Cost Plus" && (

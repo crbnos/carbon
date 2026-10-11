@@ -843,6 +843,9 @@ msgstr "1. Negativer Bestand"
 msgid "1Y"
 msgstr "1 Jahr"
 
+msgid "2 capital letters or digits"
+msgstr ""
+
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr ""
 
@@ -869,6 +872,9 @@ msgstr "3D-Modell"
 
 msgid "3h"
 msgstr "3h"
+
+msgid "4 digits for a CLIN; 2 letters or digits more for a SubCLIN"
+msgstr ""
 
 msgid "4h"
 msgstr "4h"
@@ -1053,6 +1059,9 @@ msgstr "Eine Flotteneinheit, die an einen Kunden auf einen aktiven Mietvertrag g
 
 msgid "A formal acceptance / sign-off phase"
 msgstr "Eine formale Akzeptanz- / Abzeichnungsphase"
+
+msgid "A funding change applies from the next billing run."
+msgstr ""
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr ""
@@ -1781,6 +1790,9 @@ msgstr "Anschaffungskosten"
 msgid "Acquisition Date"
 msgstr "Anschaffungsdatum"
 
+msgid "ACRN"
+msgstr ""
+
 msgid "ACS URL"
 msgstr "ACS-URL"
 
@@ -2030,6 +2042,9 @@ msgstr "Aus Wareneingang hinzufügen"
 
 msgid "Add from shipment"
 msgstr "Aus Lieferung hinzufügen"
+
+msgid "Add Funding"
+msgstr ""
 
 msgid "Add Group"
 msgstr "Gruppe hinzufügen"
@@ -3316,6 +3331,9 @@ msgstr ""
 
 msgid "Are you sure you want to delete this change notice?"
 msgstr "Sind Sie sicher, dass Sie diese Änderungsmitteilung löschen möchten?"
+
+msgid "Are you sure you want to delete this funding action?"
+msgstr ""
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Sind Sie sicher, dass Sie dieses Prüfmittel löschen möchten?"
@@ -5189,6 +5207,9 @@ msgstr "Klicken Sie zum Umbenennen"
 
 msgid "Click to upload a PDF drawing"
 msgstr "Klicken Sie hier, um eine PDF-Zeichnung hochzuladen."
+
+msgid "CLIN / SLIN"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Einstempeln"
@@ -7684,6 +7705,9 @@ msgstr "Datei löschen"
 msgid "Delete Fixed Asset"
 msgstr "Anlagegut löschen"
 
+msgid "Delete Funding"
+msgstr ""
+
 msgid "Delete Group"
 msgstr "Gruppe löschen"
 
@@ -8668,6 +8692,9 @@ msgstr ""
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Jede Zelle zeigt die zugewiesenen Personen gegen die Personen, die die Tagesarbeit benötigt."
+
+msgid "Each contract modification that funds this line, by ACRN."
+msgstr ""
 
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
@@ -9934,6 +9961,9 @@ msgstr "Verfällt am (optional)"
 msgid "Expires in {0}d"
 msgstr "Verfällt in {0}d"
 
+msgid "Expires On"
+msgstr ""
+
 msgid "Expiring first"
 msgstr "Verfällt zuerst"
 
@@ -10357,6 +10387,9 @@ msgid "Failed to save the cost"
 msgstr "Kosten konnten nicht gespeichert werden"
 
 msgid "Failed to save the fixed price"
+msgstr ""
+
+msgid "Failed to save the funding action"
 msgstr ""
 
 msgid "Failed to save the rate"
@@ -10923,7 +10956,19 @@ msgstr ""
 msgid "Funded Cost"
 msgstr ""
 
+msgid "Funded Date"
+msgstr ""
+
+msgid "Funded Fee"
+msgstr ""
+
 msgid "Funding"
+msgstr ""
+
+msgid "Funding action actions"
+msgstr ""
+
+msgid "Funding Actions"
 msgstr ""
 
 msgid "Funding without the fee; the funding notices compare cost with it"
@@ -14180,6 +14225,12 @@ msgstr "Modell aus Zeile entfernt"
 msgid "Model upload"
 msgstr "Modell hochladen"
 
+msgid "Modification"
+msgstr ""
+
+msgid "Modification Number"
+msgstr ""
+
 msgid "Modified"
 msgstr "Geändert"
 
@@ -15294,6 +15345,9 @@ msgstr "Keine Flotteneinheiten verfügbar. Eine Einheit wird der Flotte hinzugef
 
 msgid "No forecast available for this job."
 msgstr "Keine Prognose für diesen Auftrag verfügbar."
+
+msgid "No funding actions yet."
+msgstr ""
 
 msgid "No Gauge Selected"
 msgstr "Kein Prüfmittel ausgewählt"
@@ -16985,6 +17039,9 @@ msgid "Params"
 msgstr "Parameter"
 
 msgid "Parent"
+msgstr ""
+
+msgid "Parent CLIN"
 msgstr ""
 
 msgid "Parent cost center"
@@ -22666,6 +22723,9 @@ msgid "Suggestions"
 msgstr "Vorschläge"
 
 msgid "Sum of children"
+msgstr ""
+
+msgid "Sum of the funding actions"
 msgstr ""
 
 msgid "Summary"

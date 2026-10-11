@@ -12,6 +12,7 @@ import { useLoaderData } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
 import { getContractBillableItems } from "~/modules/projects";
 import {
+  getContractFundingActions,
   getContractLaborRates,
   getContractLine,
   getContractLineFunding,
@@ -19,6 +20,7 @@ import {
 } from "~/modules/sales";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineBilling } from "~/modules/sales/ui/Contracts";
+import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
@@ -53,19 +55,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const asOf = datetime
     .today(await getCompanyTimeZone(client, companyId))
     .toString();
-  const [funding, laborRates, items] = await Promise.all([
-    getContractLineFunding(client, { companyId, lineIds: [lineId], asOf }),
-    getContractLaborRates(client, lineId, companyId),
-    getContractBillableItems(client, {
-      companyId,
-      customerContractLineId: lineId
-    })
-  ]);
-  if (funding.error || laborRates.error || items.error) {
+  const [funding, laborRates, items, fundingActions, settings] =
+    await Promise.all([
+      getContractLineFunding(client, { companyId, lineIds: [lineId], asOf }),
+      getContractLaborRates(client, lineId, companyId),
+      getContractBillableItems(client, {
+        companyId,
+        customerContractLineId: lineId
+      }),
+      getContractFundingActions(client, [lineId], companyId),
+      getCompanySettings(client, companyId)
+    ]);
+  if (
+    funding.error ||
+    laborRates.error ||
+    items.error ||
+    fundingActions.error ||
+    settings.error
+  ) {
     logger.error("Failed to load a contract line's billing", {
       companyId,
       lineId,
-      error: funding.error ?? laborRates.error ?? items.error
+      error:
+        funding.error ??
+        laborRates.error ??
+        items.error ??
+        fundingActions.error ??
+        settings.error
     });
   }
 
@@ -78,12 +94,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       incurred: Number(position?.incurred ?? 0)
     },
     laborRates: laborRates.data ?? [],
-    items: items.data ?? []
+    items: items.data ?? [],
+    fundingActions: fundingActions.data ?? [],
+    fundedByActions: settings.data?.timekeepingControls === "DCAA"
   };
 }
 
 export default function ContractLineBillingRoute() {
-  const { line, funding, laborRates, items } = useLoaderData<typeof loader>();
+  const { line, funding, laborRates, items, fundingActions, fundedByActions } =
+    useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const routeData = useRouteData<ContractRouteData>(
     path.to.contract(line.customerContractId)
@@ -100,6 +119,8 @@ export default function ContractLineBillingRoute() {
       funding={funding}
       laborRates={laborRates}
       items={items}
+      fundingActions={fundingActions}
+      fundedByActions={fundedByActions}
       canUpdate={
         permissions.can("update", "sales") &&
         (contract.status === "Draft" || contract.status === "Active")

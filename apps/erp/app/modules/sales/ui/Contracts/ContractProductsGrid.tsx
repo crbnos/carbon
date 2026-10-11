@@ -480,6 +480,8 @@ function contractLineFormValues(line: ContractLine) {
     revenueStartDate: line.revenueStartDate ?? undefined,
     revenueEndDate: line.revenueEndDate ?? undefined,
     projectId: line.projectId ?? undefined,
+    lineItemNumber: line.lineItemNumber ?? undefined,
+    parentLineId: line.parentLineId ?? undefined,
     ...contractLineBillingFormValues(line)
   };
 }

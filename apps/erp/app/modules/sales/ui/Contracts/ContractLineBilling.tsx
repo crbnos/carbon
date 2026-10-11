@@ -41,6 +41,9 @@ import type { ProjectCostType } from "~/modules/projects";
 import { BillableItemStatus } from "~/modules/service/ui/ServiceStatus";
 import { path } from "~/utils/path";
 import { contractLineFundingValidator } from "../../sales.models";
+import ContractFundingActions, {
+  type ContractFundingAction
+} from "./ContractFundingActions";
 import ContractLaborRates, {
   type ContractLaborRate
 } from "./ContractLaborRates";
@@ -76,6 +79,8 @@ export default function ContractLineBilling({
   funding,
   laborRates,
   items,
+  fundingActions,
+  fundedByActions,
   canUpdate
 }: {
   contractId: string;
@@ -84,6 +89,10 @@ export default function ContractLineBilling({
   funding: ContractLineFundingPosition;
   laborRates: ContractLaborRate[];
   items: ContractLineBillableItem[];
+  /** The line's funding actions (contract modifications), by funded date. */
+  fundingActions: ContractFundingAction[];
+  /** DCAA mode: the funding actions own the funded cost and amount. */
+  fundedByActions: boolean;
   canUpdate: boolean;
 }) {
   const { t } = useLingui();
@@ -150,6 +159,16 @@ export default function ContractLineBilling({
         </CardContent>
       </Card>
 
+      {(fundedByActions || fundingActions.length > 0) && (
+        <ContractFundingActions
+          lineId={line.id}
+          actions={fundingActions}
+          currencyCode={currencyCode}
+          action={path.to.contractLineFundingActions(contractId, line.id)}
+          isDisabled={!canUpdate}
+        />
+      )}
+
       {isTimeAndMaterials && (
         <ContractLaborRates
           lineId={line.id}
@@ -167,6 +186,7 @@ export default function ContractLineBilling({
           action={path.to.contractLineFunding(contractId, line.id)}
           line={line}
           currencyCode={currencyCode}
+          fundedByActions={fundedByActions}
           title={t`Edit Funding`}
           onClose={() => setEditingFunding(false)}
         />
@@ -317,12 +337,14 @@ function EditFundingModal({
   action,
   line,
   currencyCode,
+  fundedByActions,
   title,
   onClose
 }: {
   action: string;
   line: ContractLine;
   currencyCode: string;
+  fundedByActions: boolean;
   title: string;
   onClose: () => void;
 }) {
@@ -364,7 +386,11 @@ function EditFundingModal({
           <ModalBody>
             <Hidden name="id" />
             <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
-              <FundingFields line={line} currencyCode={currencyCode} />
+              <FundingFields
+                line={line}
+                currencyCode={currencyCode}
+                fundedByActions={fundedByActions}
+              />
             </div>
           </ModalBody>
           <ModalFooter>
@@ -385,10 +411,12 @@ function EditFundingModal({
  *  and the percent, which change through the line or Amend. */
 function FundingFields({
   line,
-  currencyCode
+  currencyCode,
+  fundedByActions
 }: {
   line: ContractLine;
   currencyCode: string;
+  fundedByActions: boolean;
 }) {
   return (
     <ContractLineBillingFields
@@ -396,6 +424,7 @@ function FundingFields({
       projectId={line.projectId ?? ""}
       currencyCode={currencyCode}
       fundingOnly
+      fundedByActions={fundedByActions}
     />
   );
 }

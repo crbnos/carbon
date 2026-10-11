@@ -843,6 +843,9 @@ msgstr "1ère Quantité Négative"
 msgid "1Y"
 msgstr "1 an"
 
+msgid "2 capital letters or digits"
+msgstr ""
+
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr ""
 
@@ -869,6 +872,9 @@ msgstr "Modèle 3D"
 
 msgid "3h"
 msgstr "3h"
+
+msgid "4 digits for a CLIN; 2 letters or digits more for a SubCLIN"
+msgstr ""
 
 msgid "4h"
 msgstr "4h"
@@ -1053,6 +1059,9 @@ msgstr "Une unité de parc livrée au client selon un contrat de location actif 
 
 msgid "A formal acceptance / sign-off phase"
 msgstr "Une phase d'acceptation formelle / de signature"
+
+msgid "A funding change applies from the next billing run."
+msgstr ""
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr ""
@@ -1781,6 +1790,9 @@ msgstr "Coût d'acquisition"
 msgid "Acquisition Date"
 msgstr "Date d'acquisition"
 
+msgid "ACRN"
+msgstr ""
+
 msgid "ACS URL"
 msgstr "URL ACS"
 
@@ -2030,6 +2042,9 @@ msgstr "Ajouter d'une réception"
 
 msgid "Add from shipment"
 msgstr "Ajouter depuis l'expédition"
+
+msgid "Add Funding"
+msgstr ""
 
 msgid "Add Group"
 msgstr "Ajouter un groupe"
@@ -3316,6 +3331,9 @@ msgstr ""
 
 msgid "Are you sure you want to delete this change notice?"
 msgstr "Êtes-vous sûr de vouloir supprimer cet avis de modification ?"
+
+msgid "Are you sure you want to delete this funding action?"
+msgstr ""
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Êtes-vous sûr de vouloir supprimer cet instrument de mesure ?"
@@ -5189,6 +5207,9 @@ msgstr "Cliquez pour renommer"
 
 msgid "Click to upload a PDF drawing"
 msgstr "Cliquer pour téléverser un dessin PDF"
+
+msgid "CLIN / SLIN"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Pointage début"
@@ -7684,6 +7705,9 @@ msgstr "Supprimer le fichier"
 msgid "Delete Fixed Asset"
 msgstr "Supprimer l'immobilisation"
 
+msgid "Delete Funding"
+msgstr ""
+
 msgid "Delete Group"
 msgstr "Supprimer le groupe"
 
@@ -8668,6 +8692,9 @@ msgstr ""
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
+
+msgid "Each contract modification that funds this line, by ACRN."
+msgstr ""
 
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr ""
@@ -9934,6 +9961,9 @@ msgstr "Expire le (optionnel)"
 msgid "Expires in {0}d"
 msgstr "Expire dans {0}j"
 
+msgid "Expires On"
+msgstr ""
+
 msgid "Expiring first"
 msgstr "Expiration en premier"
 
@@ -10357,6 +10387,9 @@ msgid "Failed to save the cost"
 msgstr "Impossible d'enregistrer le coût"
 
 msgid "Failed to save the fixed price"
+msgstr ""
+
+msgid "Failed to save the funding action"
 msgstr ""
 
 msgid "Failed to save the rate"
@@ -10923,7 +10956,19 @@ msgstr ""
 msgid "Funded Cost"
 msgstr ""
 
+msgid "Funded Date"
+msgstr ""
+
+msgid "Funded Fee"
+msgstr ""
+
 msgid "Funding"
+msgstr ""
+
+msgid "Funding action actions"
+msgstr ""
+
+msgid "Funding Actions"
 msgstr ""
 
 msgid "Funding without the fee; the funding notices compare cost with it"
@@ -14180,6 +14225,12 @@ msgstr "Modèle supprimé de la ligne"
 msgid "Model upload"
 msgstr "Téléversement de modèle"
 
+msgid "Modification"
+msgstr ""
+
+msgid "Modification Number"
+msgstr ""
+
 msgid "Modified"
 msgstr "Modifié"
 
@@ -15294,6 +15345,9 @@ msgstr "Aucune unité de flotte n'est disponible. Une unité rejoint la flotte l
 
 msgid "No forecast available for this job."
 msgstr "Aucune prévision disponible pour ce travail."
+
+msgid "No funding actions yet."
+msgstr ""
 
 msgid "No Gauge Selected"
 msgstr "Aucun instrument de mesure sélectionné"
@@ -16985,6 +17039,9 @@ msgid "Params"
 msgstr "Paramètres"
 
 msgid "Parent"
+msgstr ""
+
+msgid "Parent CLIN"
 msgstr ""
 
 msgid "Parent cost center"
@@ -22666,6 +22723,9 @@ msgid "Suggestions"
 msgstr "Suggestions"
 
 msgid "Sum of children"
+msgstr ""
+
+msgid "Sum of the funding actions"
 msgstr ""
 
 msgid "Summary"

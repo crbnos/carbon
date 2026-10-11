@@ -843,6 +843,9 @@ msgstr "1st Negative On Hand"
 msgid "1Y"
 msgstr "1Y"
 
+msgid "2 capital letters or digits"
+msgstr "2 capital letters or digits"
+
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr "2 to 6 capital letters or digits, such as SNS"
 
@@ -869,6 +872,9 @@ msgstr "3D Model"
 
 msgid "3h"
 msgstr "3h"
+
+msgid "4 digits for a CLIN; 2 letters or digits more for a SubCLIN"
+msgstr "4 digits for a CLIN; 2 letters or digits more for a SubCLIN"
 
 msgid "4h"
 msgstr "4h"
@@ -1053,6 +1059,9 @@ msgstr "A fleet unit delivered to the customer on an active rental agreement; be
 
 msgid "A formal acceptance / sign-off phase"
 msgstr "A formal acceptance / sign-off phase"
+
+msgid "A funding change applies from the next billing run."
+msgstr "A funding change applies from the next billing run."
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr "A funding change applies from the next billing run. Billing stops at the funded amount."
@@ -1781,6 +1790,9 @@ msgstr "Acquisition Cost"
 msgid "Acquisition Date"
 msgstr "Acquisition Date"
 
+msgid "ACRN"
+msgstr "ACRN"
+
 msgid "ACS URL"
 msgstr "ACS URL"
 
@@ -2030,6 +2042,9 @@ msgstr "Add from receipt"
 
 msgid "Add from shipment"
 msgstr "Add from shipment"
+
+msgid "Add Funding"
+msgstr "Add Funding"
 
 msgid "Add Group"
 msgstr "Add Group"
@@ -3316,6 +3331,9 @@ msgstr "Are you sure you want to delete this bill rate?"
 
 msgid "Are you sure you want to delete this change notice?"
 msgstr "Are you sure you want to delete this change notice?"
+
+msgid "Are you sure you want to delete this funding action?"
+msgstr "Are you sure you want to delete this funding action?"
 
 msgid "Are you sure you want to delete this gauge?"
 msgstr "Are you sure you want to delete this gauge?"
@@ -5189,6 +5207,9 @@ msgstr "Click to rename"
 
 msgid "Click to upload a PDF drawing"
 msgstr "Click to upload a PDF drawing"
+
+msgid "CLIN / SLIN"
+msgstr "CLIN / SLIN"
 
 msgid "Clock In"
 msgstr "Clock In"
@@ -7684,6 +7705,9 @@ msgstr "Delete file"
 msgid "Delete Fixed Asset"
 msgstr "Delete Fixed Asset"
 
+msgid "Delete Funding"
+msgstr "Delete Funding"
+
 msgid "Delete Group"
 msgstr "Delete Group"
 
@@ -8668,6 +8692,9 @@ msgstr "Each asset moves into its in-service class and starts depreciating from 
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
+
+msgid "Each contract modification that funds this line, by ACRN."
+msgstr "Each contract modification that funds this line, by ACRN."
 
 msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
 msgstr "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
@@ -9934,6 +9961,9 @@ msgstr "Expires At (optional)"
 msgid "Expires in {0}d"
 msgstr "Expires in {0}d"
 
+msgid "Expires On"
+msgstr "Expires On"
+
 msgid "Expiring first"
 msgstr "Expiring first"
 
@@ -10358,6 +10388,9 @@ msgstr "Failed to save the cost"
 
 msgid "Failed to save the fixed price"
 msgstr "Failed to save the fixed price"
+
+msgid "Failed to save the funding action"
+msgstr "Failed to save the funding action"
 
 msgid "Failed to save the rate"
 msgstr "Failed to save the rate"
@@ -10923,8 +10956,20 @@ msgstr "Funded Amount"
 msgid "Funded Cost"
 msgstr "Funded Cost"
 
+msgid "Funded Date"
+msgstr "Funded Date"
+
+msgid "Funded Fee"
+msgstr "Funded Fee"
+
 msgid "Funding"
 msgstr "Funding"
+
+msgid "Funding action actions"
+msgstr "Funding action actions"
+
+msgid "Funding Actions"
+msgstr "Funding Actions"
 
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "Funding without the fee; the funding notices compare cost with it"
@@ -14180,6 +14225,12 @@ msgstr "Model removed from line"
 msgid "Model upload"
 msgstr "Model upload"
 
+msgid "Modification"
+msgstr "Modification"
+
+msgid "Modification Number"
+msgstr "Modification Number"
+
 msgid "Modified"
 msgstr "Modified"
 
@@ -15294,6 +15345,9 @@ msgstr "No fleet units are available. A unit joins the fleet when a serialized i
 
 msgid "No forecast available for this job."
 msgstr "No forecast available for this job."
+
+msgid "No funding actions yet."
+msgstr "No funding actions yet."
 
 msgid "No Gauge Selected"
 msgstr "No Gauge Selected"
@@ -16986,6 +17040,9 @@ msgstr "Params"
 
 msgid "Parent"
 msgstr "Parent"
+
+msgid "Parent CLIN"
+msgstr "Parent CLIN"
 
 msgid "Parent cost center"
 msgstr "Parent cost center"
@@ -22667,6 +22724,9 @@ msgstr "Suggestions"
 
 msgid "Sum of children"
 msgstr "Sum of children"
+
+msgid "Sum of the funding actions"
+msgstr "Sum of the funding actions"
 
 msgid "Summary"
 msgstr "Summary"

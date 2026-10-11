@@ -36,13 +36,17 @@ export function ContractLineBillingFields({
   billingMethod,
   projectId,
   currencyCode,
-  fundingOnly = false
+  fundingOnly = false,
+  fundedByActions = false
 }: {
   billingMethod: BillingMethod;
   projectId: string;
   currencyCode: string;
   /** Only the funding and notice fields (Edit Funding). */
   fundingOnly?: boolean;
+  /** DCAA mode: the funding actions own the funded amount and cost, so
+   *  both show read-only. */
+  fundedByActions?: boolean;
 }) {
   const { t } = useLingui();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -87,13 +91,23 @@ export function ContractLineBillingFields({
       <Number
         name="fundedAmount"
         label={t`Funded Amount`}
-        helperText={t`Billing stops at this amount`}
+        helperText={
+          fundedByActions
+            ? t`Sum of the funding actions`
+            : t`Billing stops at this amount`
+        }
+        isReadOnly={fundedByActions}
         {...money}
       />
       <Number
         name="fundedCost"
         label={t`Funded Cost`}
-        helperText={t`Funding without the fee; the funding notices compare cost with it`}
+        helperText={
+          fundedByActions
+            ? t`Sum of the funding actions`
+            : t`Funding without the fee; the funding notices compare cost with it`
+        }
+        isReadOnly={fundedByActions}
         {...money}
       />
       {billingMethod === "Cost Plus" && (

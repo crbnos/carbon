@@ -85,7 +85,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 23: Add the employee timesheet page for managers
 - [x] Task 24: Add labor transfers to the correction modal and approvals
 - [x] Task 25: Add allowable, unallowable and preproduction cost to the Costs tab
-- [ ] Task 26: Add CLIN numbers and funding actions to the contract line
+- [x] Task 26: Add CLIN numbers and funding actions to the contract line
 - [ ] Task 27: Invoice by CLIN with ACRN allocation
 - [ ] Task 28: Add the payroll totals import and list
 - [ ] Task 29: Add the daily missing-time check
@@ -1627,4 +1627,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   3. The element view and the element table build `CostTotals` by hand (`NO_COST`, the own row), so both gain `unallowable`. `projects-cost-figures.test.ts` gains `actualUnallowable: 0` in its row fixture.
   4. The ledger's **Unallowable** column shows a check icon on an unallowable row and filters Yes / No through the generic filters (`unallowable:eq:true`), as `GaugeCalibrationRecordsTable` does for its boolean columns.
   5. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 26:
+  1. Step 6 needed no change. Every path that copies a contract line (renewal in `create-contract-invoices`, the amend `add`, the line copies of `post-customer-contract` and the discount-end split in `schedule-writes.ts`) builds the row with `copyLineValues`, and Task 6 already gave it `lineItemNumber` and `parentLineId`. A renewal copy therefore keeps the old parent line's id; the parent is a line of the same contract, and the plan does not ask to re-point it.
+  2. The line form did not pass the stored `lineItemNumber` and `parentLineId` as initial values, so a save would have cleared them (`upsertContractLine` writes `|| null`). The line page and the setup grid's modal now pass both.
+  3. **Parent CLIN** lists the contract's current lines with a 4-character number, read from the contract route data (`ContractRouteData.lines`, no new loader). A line that another line replaces (`amendsLineId`) is left out, as `checkContractLineNumber` does.
+  4. `ContractFundingActions` copies `ContractLaborRates` (a card, a plain `Table`, a row menu, an edit modal and `ConfirmDelete` with `fields`), the sibling on the same billing page, rather than the editable grid of `ContractProductsGrid`. Funding rows are few and each has 6 fields with validation, so a modal fits better than cell edits.
+  5. The billing loader reads `getContractFundingActions` and `getCompanySettings` with the other reads. `ContractLineBillingFields` takes `fundedByActions`: in DCAA mode the funded amount and funded cost are read-only with the hint "Sum of the funding actions". The server already ignores both fields in DCAA mode (Task 15 point 6).
+  6. The route catches the service's thrown refusal and returns `{ error: { message } }` with status 400, as `$lineId.labor-rates` does. Its path helper is `path.to.contractLineFundingActions`.
+  7. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
 
