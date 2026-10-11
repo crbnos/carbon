@@ -12,6 +12,7 @@ import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   resolveProjectLineCharges
 } from "../lib/project-posting";
 import { buildChargeJournal } from "./build-charge-journal";
@@ -414,7 +415,11 @@ export async function postChargeJournal(
       : []
   );
   if (projectRows.length) {
-    await trx.insertInto("projectLedger").values(projectRows).execute();
+    await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: projectRows
+    });
   }
 
   // A line charged to a Capitalize project builds its asset.

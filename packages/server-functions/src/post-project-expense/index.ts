@@ -20,6 +20,7 @@ import {
   assertChargeable,
   buildBillableItem,
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   loadProjectPostingContexts,
   loadServicePostingContext,
   ProjectChargeError,
@@ -239,29 +240,31 @@ const postProjectExpense = defineServerFn({
 
       let projectLedgerId: string | null = null;
       if (!isStatistical) {
-        const row = await trx
-          .insertInto("projectLedger")
-          .values(
-            buildProjectLedgerRow({
-              companyId,
-              projectId: entry.projectId,
-              projectElementId: entry.projectElementId,
-              postingDate: entry.entryDate,
-              costType: "Other Direct",
-              documentType: "Project Expense",
-              documentId: entry.id,
-              employeeId: entry.employeeId,
-              quantity: isReversal ? -1 : 1,
-              amount,
-              journalLineId: debitLineId,
-              reversalOfId: original?.id ?? null,
-              coverage,
-              coverageReason,
-              createdBy: userId
-            })
-          )
-          .returning("id")
-          .executeTakeFirstOrThrow();
+        const row = (
+          await insertProjectLedgerRows(trx, {
+            companyId,
+            userId,
+            rows: [
+              buildProjectLedgerRow({
+                companyId,
+                projectId: entry.projectId,
+                projectElementId: entry.projectElementId,
+                postingDate: entry.entryDate,
+                costType: "Other Direct",
+                documentType: "Project Expense",
+                documentId: entry.id,
+                employeeId: entry.employeeId,
+                quantity: isReversal ? -1 : 1,
+                amount,
+                journalLineId: debitLineId,
+                reversalOfId: original?.id ?? null,
+                coverage,
+                coverageReason,
+                createdBy: userId
+              })
+            ]
+          })
+        )[0]!;
         projectLedgerId = row.id;
 
         if (service && original) {

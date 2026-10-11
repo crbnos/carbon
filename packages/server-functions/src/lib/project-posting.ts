@@ -15,11 +15,14 @@ import { inOrder } from "@carbon/database/rows";
 import {
   type CoverageChargeType,
   datetime,
+  priceTimeAndMaterialsItem,
+  resolveBillRate,
   resolveCoverage,
   round,
-  type ServiceCoverage
+  type ServiceCoverage,
+  selectRowsToBill
 } from "@carbon/utils";
-import { type Kysely, sql, type Transaction } from "kysely";
+import { type Kysely, type Selectable, sql, type Transaction } from "kysely";
 
 export type ProjectCostTreatment =
   Database["public"]["Enums"]["projectCostTreatment"];
@@ -961,9 +964,11 @@ export async function reverseProjectLedgerRows(
         createdBy: args.userId
       })
     );
-  if (reversals.length > 0) {
-    await trx.insertInto("projectLedger").values(reversals).execute();
-  }
+  await insertProjectLedgerRows(trx, {
+    companyId: args.companyId,
+    userId: args.userId,
+    rows: reversals
+  });
 }
 
 // ─── Service projects: coverage inputs and billable items ────────────────────
@@ -1310,4 +1315,539 @@ export function reverseBillableItem(
       createdBy: reversal.createdBy ?? original.createdBy
     }
   };
+}
+
+// ─── Contract billing: Time & Materials items at posting ─────────────────────
+// Plan: .ai/plans/2026-10-09-project-billing-phase-4a.md (Task 8, P1, P8, P15).
+// Posting writes Time & Materials items only. Cost Plus items come from the
+// commercial generator (`@carbon/ee/project-revenue.server`), which this
+// package cannot import.
+
+type ProjectLedgerRow = Selectable<DB["projectLedger"]>;
+type ContractBillingMethod =
+  Database["public"]["Enums"]["contractBillingMethod"];
+
+/** A billing line (not Fixed) of an Active contract, with its subtree. */
+export type ContractBillingLine = {
+  id: string;
+  projectId: string;
+  projectElementId: string;
+  billingMethod: ContractBillingMethod;
+  materialHandlingPercent: number | null;
+  startDate: string;
+  endDate: string | null;
+  /** The billing element and every descendant. */
+  elementIds: Set<string>;
+};
+
+export type ContractLaborRate = {
+  customerContractLineId: string;
+  employeeId: string | null;
+  laborCategoryId: string | null;
+  billRate: number;
+  effectiveFrom: string;
+};
+
+export type LaborCategoryBillRate = {
+  laborCategoryId: string;
+  billRate: number | null;
+  effectiveFrom: string;
+};
+
+export type ContractBillingContext = {
+  lines: ContractBillingLine[];
+  contractRates: ContractLaborRate[];
+  categoryRates: LaborCategoryBillRate[];
+};
+
+type ContractLedgerRef = Pick<
+  ProjectLedgerRow,
+  "projectId" | "projectElementId" | "postingDate" | "laborCategoryId"
+> & { costType: ProjectLedgerRow["costType"] };
+
+/**
+ * The billing line a ledger row bills through: a line of the row's project
+ * whose subtree holds the row's element and that is live on the row's posting
+ * date (`startDate <= postingDate <= COALESCE(endDate, postingDate)`, P8).
+ * Confirm refuses nested billing elements (P7), so at most one line matches.
+ */
+export function contractLineForRow(
+  context: ContractBillingContext,
+  row: Pick<ProjectLedgerRow, "projectId" | "projectElementId" | "postingDate">
+): ContractBillingLine | null {
+  if (!row.projectElementId) return null;
+  return (
+    context.lines.find(
+      (line) =>
+        line.projectId === row.projectId &&
+        line.elementIds.has(row.projectElementId as string) &&
+        line.startDate <= row.postingDate &&
+        (line.endDate === null || row.postingDate <= line.endDate)
+    ) ?? null
+  );
+}
+
+/**
+ * The billing lines, subtrees and bill rates of a set of ledger rows, in at
+ * most 4 queries: the live billing lines of the rows' Contract-treatment
+ * projects, their subtrees, the lines' contract labor rates and the rows'
+ * labor category rates. Empty when no row sits under a billing line.
+ */
+export async function loadContractBillingContext(
+  trx: Kysely<DB>,
+  args: { companyId: string; rows: ContractLedgerRef[] }
+): Promise<ContractBillingContext> {
+  const empty: ContractBillingContext = {
+    lines: [],
+    contractRates: [],
+    categoryRates: []
+  };
+  const { companyId } = args;
+  const charged = args.rows.filter((row) => row.projectElementId);
+  if (charged.length === 0) return empty;
+  const projectIds = [...new Set(charged.map((row) => row.projectId))];
+
+  const lineRows = await trx
+    .selectFrom("customerContractLine as l")
+    .innerJoin("customerContract as c", (join) =>
+      join
+        .onRef("c.id", "=", "l.customerContractId")
+        .onRef("c.companyId", "=", "l.companyId")
+    )
+    .innerJoin("project as p", (join) =>
+      join
+        .onRef("p.id", "=", "l.projectId")
+        .onRef("p.companyId", "=", "l.companyId")
+    )
+    .select([
+      "l.id",
+      "l.projectId",
+      "l.projectElementId",
+      "l.billingMethod",
+      "l.materialHandlingPercent",
+      "l.startDate",
+      "l.endDate"
+    ])
+    .where("l.companyId", "=", companyId)
+    .where("l.projectId", "in", projectIds)
+    .where("l.billingMethod", "<>", "Fixed")
+    .where("l.projectElementId", "is not", null)
+    .where("c.status", "=", "Active")
+    .where("p.costTreatment", "=", "Contract")
+    .execute();
+  if (lineRows.length === 0) return empty;
+
+  const lineIds = lineRows.map((line) => line.id);
+  const { rows: subtree } = await sql<{
+    customerContractLineId: string;
+    projectElementId: string;
+  }>`
+    SELECT "customerContractLineId", "projectElementId"
+    FROM get_contract_line_subtree(${companyId}, ${lineIds}::text[])
+  `.execute(trx);
+  const elementsByLine = new Map<string, Set<string>>();
+  for (const row of subtree) {
+    const set = elementsByLine.get(row.customerContractLineId) ?? new Set();
+    set.add(row.projectElementId);
+    elementsByLine.set(row.customerContractLineId, set);
+  }
+
+  const lines: ContractBillingLine[] = lineRows.map((line) => ({
+    id: line.id,
+    projectId: line.projectId as string,
+    projectElementId: line.projectElementId as string,
+    billingMethod: line.billingMethod,
+    materialHandlingPercent:
+      line.materialHandlingPercent === null
+        ? null
+        : Number(line.materialHandlingPercent),
+    startDate: line.startDate,
+    endDate: line.endDate,
+    elementIds: elementsByLine.get(line.id) ?? new Set()
+  }));
+
+  // Rates only matter for labor under a line. The backfill bills rows posted
+  // before the line's start, so the date is not part of this test.
+  const labor = charged.filter(
+    (row) =>
+      row.costType === "Labor" &&
+      lines.some(
+        (line) =>
+          line.projectId === row.projectId &&
+          line.elementIds.has(row.projectElementId as string)
+      )
+  );
+  if (labor.length === 0) return { ...empty, lines };
+
+  const categoryIds = [
+    ...new Set(
+      labor
+        .map((row) => row.laborCategoryId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const [contractRates, categoryRates] = await inOrder([
+    () =>
+      trx
+        .selectFrom("customerContractLaborRate")
+        .select([
+          "customerContractLineId",
+          "employeeId",
+          "laborCategoryId",
+          "billRate",
+          "effectiveFrom"
+        ])
+        .where("companyId", "=", companyId)
+        .where("customerContractLineId", "in", lineIds)
+        .execute(),
+    () =>
+      categoryIds.length === 0
+        ? Promise.resolve([])
+        : trx
+            .selectFrom("laborCategoryRate")
+            .select(["laborCategoryId", "billRate", "effectiveFrom"])
+            .where("companyId", "=", companyId)
+            .where("laborCategoryId", "in", categoryIds)
+            .execute()
+  ]);
+
+  return {
+    lines,
+    contractRates: contractRates.map((rate) => ({
+      ...rate,
+      billRate: Number(rate.billRate)
+    })),
+    categoryRates: categoryRates.map((rate) => ({
+      ...rate,
+      billRate: rate.billRate === null ? null : Number(rate.billRate)
+    }))
+  };
+}
+
+/** Every column a contract billable item insert sets, so one multi-row
+ *  insert never writes NULL into a sibling's key (lesson "Kysely builds ONE
+ *  column list per multi-row insert"). */
+function billableItemInsert(
+  item: ProjectBillableItemInsert
+): ProjectBillableItemInsert {
+  return {
+    companyId: item.companyId,
+    projectId: item.projectId,
+    projectElementId: item.projectElementId ?? null,
+    projectLedgerId: item.projectLedgerId,
+    customerContractLineId: item.customerContractLineId ?? null,
+    itemId: item.itemId ?? null,
+    description: item.description,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    amount: item.amount,
+    coverage: item.coverage ?? null,
+    status: item.status ?? "Unbilled",
+    statusReason: item.statusReason ?? null,
+    reversalOfId: item.reversalOfId ?? null,
+    createdBy: item.createdBy
+  };
+}
+
+/**
+ * The Time & Materials item of one ledger row under a billing line, or null:
+ * a Cost Plus line (the commercial generator prices it, P1), an unallowable
+ * row, or a cost type the bill rate already carries (machine, overhead,
+ * burden). Labor is hours × the resolved bill rate, held when it has no hours
+ * or no rate; every other cost is cost × (1 + handling).
+ */
+export function buildContractBillableItem(args: {
+  ledgerRow: Pick<
+    ProjectLedgerRow,
+    | "id"
+    | "companyId"
+    | "projectId"
+    | "projectElementId"
+    | "postingDate"
+    | "costType"
+    | "quantity"
+    | "amount"
+    | "itemId"
+    | "employeeId"
+    | "laborCategoryId"
+    | "unallowable"
+  >;
+  line: Pick<
+    ContractBillingLine,
+    "id" | "billingMethod" | "materialHandlingPercent"
+  >;
+  contractRates: ContractLaborRate[];
+  categoryRates: LaborCategoryBillRate[];
+  description: string;
+  createdBy: string;
+}): ProjectBillableItemInsert | null {
+  const { ledgerRow, line } = args;
+  if (line.billingMethod !== "Time & Materials") return null;
+  if (ledgerRow.unallowable) return null;
+
+  const rate =
+    ledgerRow.costType === "Labor"
+      ? resolveBillRate({
+          date: ledgerRow.postingDate,
+          employeeId: ledgerRow.employeeId,
+          laborCategoryId: ledgerRow.laborCategoryId,
+          contractRates: args.contractRates.filter(
+            (r) => r.customerContractLineId === line.id
+          ),
+          categoryRates: args.categoryRates
+        })
+      : null;
+  const price = priceTimeAndMaterialsItem({
+    costType: ledgerRow.costType,
+    cost: Number(ledgerRow.amount),
+    hours: ledgerRow.quantity === null ? null : Number(ledgerRow.quantity),
+    rate,
+    materialHandlingPercent: line.materialHandlingPercent
+  });
+  if (!price) return null;
+
+  return billableItemInsert({
+    companyId: ledgerRow.companyId,
+    projectId: ledgerRow.projectId,
+    projectElementId: ledgerRow.projectElementId,
+    projectLedgerId: ledgerRow.id,
+    customerContractLineId: line.id,
+    itemId: ledgerRow.itemId,
+    description: args.description,
+    quantity: round(price.quantity),
+    unitPrice: round(price.unitPrice),
+    amount: round(price.amount),
+    status: price.status,
+    statusReason: price.statusReason,
+    createdBy: args.createdBy
+  });
+}
+
+function contractItemDescription(
+  row: Pick<ProjectLedgerRow, "costType" | "documentType">
+): string {
+  return `${row.costType} — ${row.documentType}`;
+}
+
+/**
+ * Writes the contract billable items of freshly inserted ledger rows:
+ * - a reversal (`reversalOfId`) whose original has a contract item reverses
+ *   that item (`reverseBillableItem`: written off while unbilled, else a
+ *   negative Unbilled copy on the reversal row);
+ * - any other row under a live Time & Materials line gets its item.
+ * Service projects (By Coverage) never match a billing line, and their items
+ * have no contract line, so the field service path is untouched.
+ */
+async function writeContractBillableItems(
+  trx: Kysely<DB>,
+  args: { companyId: string; userId: string; rows: ProjectLedgerRow[] }
+): Promise<void> {
+  const { companyId, userId } = args;
+  const reversals = args.rows.filter((row) => row.reversalOfId);
+  const originals = args.rows.filter((row) => !row.reversalOfId);
+
+  const writeOffIds: string[] = [];
+  const inserts: ProjectBillableItemInsert[] = [];
+
+  if (reversals.length > 0) {
+    const items = await trx
+      .selectFrom("projectBillableItem")
+      .selectAll()
+      .where("companyId", "=", companyId)
+      .where(
+        "projectLedgerId",
+        "in",
+        reversals.map((row) => row.reversalOfId as string)
+      )
+      .where("reversalOfId", "is", null)
+      .where("customerContractLineId", "is not", null)
+      .execute();
+    const itemByLedger = new Map(
+      items.map((item) => [item.projectLedgerId, item])
+    );
+    for (const row of reversals) {
+      const original = itemByLedger.get(row.reversalOfId as string);
+      if (!original) continue;
+      const undo = reverseBillableItem(
+        {
+          ...original,
+          quantity: Number(original.quantity),
+          unitPrice: Number(original.unitPrice),
+          amount: Number(original.amount)
+        },
+        { projectLedgerId: row.id, createdBy: userId }
+      );
+      if (undo.update) writeOffIds.push(original.id);
+      if (undo.insert) inserts.push(billableItemInsert(undo.insert));
+    }
+  }
+
+  if (originals.length > 0) {
+    const context = await loadContractBillingContext(trx, {
+      companyId,
+      rows: originals
+    });
+    for (const row of originals) {
+      const line = contractLineForRow(context, row);
+      if (!line) continue;
+      const item = buildContractBillableItem({
+        ledgerRow: row,
+        line,
+        contractRates: context.contractRates,
+        categoryRates: context.categoryRates,
+        description: contractItemDescription(row),
+        createdBy: userId
+      });
+      if (item) inserts.push(item);
+    }
+  }
+
+  if (writeOffIds.length > 0) {
+    await trx
+      .updateTable("projectBillableItem")
+      .set({
+        status: "Written Off",
+        statusReason: "Reversed",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("companyId", "=", companyId)
+      .where("id", "in", writeOffIds)
+      .execute();
+  }
+  if (inserts.length > 0) {
+    await trx.insertInto("projectBillableItem").values(inserts).execute();
+  }
+}
+
+/**
+ * The one way to write projectLedger rows from a server function: inserts
+ * the rows in one statement and writes their Time & Materials billable items
+ * (and reverses a reversed row's contract item) in the same transaction.
+ * Returns the inserted rows. Each row names its own `companyId`; `companyId`
+ * scopes the billing reads and writes.
+ */
+export async function insertProjectLedgerRows(
+  trx: Kysely<DB>,
+  args: { companyId: string; userId: string; rows: ProjectLedgerInsert[] }
+): Promise<ProjectLedgerRow[]> {
+  if (args.rows.length === 0) return [];
+  const inserted = await trx
+    .insertInto("projectLedger")
+    .values(args.rows)
+    .returningAll()
+    .execute();
+  await writeContractBillableItems(trx, {
+    companyId: args.companyId,
+    userId: args.userId,
+    rows: inserted
+  });
+  return inserted;
+}
+
+/**
+ * The T&M backfill of one line: items for the ledger rows of its billing
+ * element subtree posted on or before `through` that have none yet
+ * (`selectRowsToBill`). Returns 0 when the line is not a live Time &
+ * Materials line on `through` (P8). Confirm, an amend `add`, the line's
+ * Generate billable items and the project billing invoice source call it;
+ * the last one also catches rows the job-completion SQL writes, which skip
+ * `insertProjectLedgerRows`.
+ */
+export async function generateTimeAndMaterialsItems(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    customerContractLineId: string;
+    through: string;
+  }
+): Promise<number> {
+  const { companyId, userId, through } = args;
+  const line = await trx
+    .selectFrom("customerContractLine as l")
+    .innerJoin("customerContract as c", (join) =>
+      join
+        .onRef("c.id", "=", "l.customerContractId")
+        .onRef("c.companyId", "=", "l.companyId")
+    )
+    .select([
+      "l.id",
+      "l.projectId",
+      "l.projectElementId",
+      "l.billingMethod",
+      "l.materialHandlingPercent",
+      "l.startDate",
+      "l.endDate",
+      "c.status"
+    ])
+    .where("l.id", "=", args.customerContractLineId)
+    .where("l.companyId", "=", companyId)
+    .executeTakeFirst();
+  if (
+    !line ||
+    line.status !== "Active" ||
+    line.billingMethod !== "Time & Materials" ||
+    !line.projectElementId ||
+    line.startDate > through ||
+    (line.endDate !== null && line.endDate < through)
+  ) {
+    return 0;
+  }
+
+  const { rows } = await sql<ProjectLedgerRow>`
+    SELECT pl.*
+    FROM get_contract_line_subtree(${companyId}, ${[line.id]}::text[]) s
+    JOIN "projectLedger" pl
+      ON pl."projectElementId" = s."projectElementId" AND pl."companyId" = ${companyId}
+    JOIN "project" p ON p."id" = pl."projectId" AND p."companyId" = pl."companyId"
+    WHERE pl."postingDate" <= ${through}::date
+      AND pl."projectId" = ${line.projectId}
+      AND p."costTreatment" = 'Contract'
+    ORDER BY pl."postingDate", pl."id"
+  `.execute(trx);
+  if (rows.length === 0) return 0;
+
+  const withItem = await trx
+    .selectFrom("projectBillableItem")
+    .select("projectLedgerId")
+    .where("companyId", "=", companyId)
+    .where(
+      "projectLedgerId",
+      "=",
+      sql<string>`ANY(${rows.map((row) => row.id)}::text[])`
+    )
+    .where("reversalOfId", "is", null)
+    .execute();
+  const billed = new Set(withItem.map((item) => item.projectLedgerId));
+  const toBill = selectRowsToBill(rows, billed);
+  if (toBill.length === 0) return 0;
+
+  const context = await loadContractBillingContext(trx, {
+    companyId,
+    rows: toBill
+  });
+  const target = context.lines.find((l) => l.id === line.id);
+  if (!target) return 0;
+
+  const inserts = toBill
+    .map((row) =>
+      buildContractBillableItem({
+        ledgerRow: row,
+        line: target,
+        contractRates: context.contractRates,
+        categoryRates: context.categoryRates,
+        description: contractItemDescription(row),
+        createdBy: userId
+      })
+    )
+    .filter((item): item is ProjectBillableItemInsert => item !== null);
+
+  for (let i = 0; i < inserts.length; i += 1000) {
+    await trx
+      .insertInto("projectBillableItem")
+      .values(inserts.slice(i, i + 1000))
+      .execute();
+  }
+  return inserts.length;
 }

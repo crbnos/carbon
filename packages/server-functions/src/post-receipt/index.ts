@@ -57,6 +57,7 @@ import {
 } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   reverseProjectLedgerRows
 } from "../lib/project-posting";
 import { loadProjectStock, withStripe } from "../lib/stock-stripes";
@@ -2920,34 +2921,33 @@ const postReceipt = defineServerFn({
             }
 
             if (projectLedgerDrafts.length > 0) {
-              await trx
-                .insertInto("projectLedger")
-                .values(
-                  projectLedgerDrafts.map((draft) =>
-                    buildProjectLedgerRow({
-                      companyId,
-                      projectId: draft.projectId,
-                      projectElementId: draft.projectElementId,
-                      postingDate: today,
-                      costType: draft.costType,
-                      documentType: "Purchase Receipt",
-                      documentId: receiptId,
-                      documentLineId: draft.receiptLineId,
-                      jobId: draft.jobId,
-                      itemId: draft.itemId,
-                      supplierId: purchaseOrder.data.supplierId ?? null,
-                      quantity: draft.quantity,
-                      amount: draft.amount,
-                      journalLineId:
-                        draft.journalLineIndex === null
-                          ? null
-                          : (receiptJournalLineIds[draft.journalLineIndex] ??
-                            null),
-                      createdBy: userId
-                    })
-                  )
+              await insertProjectLedgerRows(trx, {
+                companyId,
+                userId,
+                rows: projectLedgerDrafts.map((draft) =>
+                  buildProjectLedgerRow({
+                    companyId,
+                    projectId: draft.projectId,
+                    projectElementId: draft.projectElementId,
+                    postingDate: today,
+                    costType: draft.costType,
+                    documentType: "Purchase Receipt",
+                    documentId: receiptId,
+                    documentLineId: draft.receiptLineId,
+                    jobId: draft.jobId,
+                    itemId: draft.itemId,
+                    supplierId: purchaseOrder.data.supplierId ?? null,
+                    quantity: draft.quantity,
+                    amount: draft.amount,
+                    journalLineId:
+                      draft.journalLineIndex === null
+                        ? null
+                        : (receiptJournalLineIds[draft.journalLineIndex] ??
+                          null),
+                    createdBy: userId
+                  })
                 )
-                .execute();
+              });
 
               // A line charged to a Capitalize project builds its asset.
               await writeProjectCipRows(trx, {

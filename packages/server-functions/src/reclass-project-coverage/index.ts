@@ -17,6 +17,7 @@ import {
   assertChargeable,
   buildBillableItem,
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   loadProjectPostingContexts,
   loadServicePostingContext,
   ProjectChargeError,
@@ -246,35 +247,39 @@ const reclassProjectCoverage = defineServerFn({
       };
       const quantity =
         source.quantity === null ? null : Number(source.quantity);
-      const reversal = await trx
-        .insertInto("projectLedger")
-        .values(
-          buildProjectLedgerRow({
-            ...shared,
-            quantity: quantity === null ? null : -quantity,
-            amount: -amount,
-            journalLineId: creditLineId,
-            reversalOfId: source.id,
-            coverage: source.coverage,
-            coverageReason: source.coverageReason
-          })
-        )
-        .returning("id")
-        .executeTakeFirstOrThrow();
-      const replacement = await trx
-        .insertInto("projectLedger")
-        .values(
-          buildProjectLedgerRow({
-            ...shared,
-            quantity,
-            amount,
-            journalLineId: debitLineId,
-            coverage,
-            coverageReason: reason
-          })
-        )
-        .returning("id")
-        .executeTakeFirstOrThrow();
+      const reversal = (
+        await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: [
+            buildProjectLedgerRow({
+              ...shared,
+              quantity: quantity === null ? null : -quantity,
+              amount: -amount,
+              journalLineId: creditLineId,
+              reversalOfId: source.id,
+              coverage: source.coverage,
+              coverageReason: source.coverageReason
+            })
+          ]
+        })
+      )[0]!;
+      const replacement = (
+        await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: [
+            buildProjectLedgerRow({
+              ...shared,
+              quantity,
+              amount,
+              journalLineId: debitLineId,
+              coverage,
+              coverageReason: reason
+            })
+          ]
+        })
+      )[0]!;
 
       const now = datetime.timestamp();
       if (billable) {

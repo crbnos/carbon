@@ -22,6 +22,7 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import {
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   loadJobProjectCharge
 } from "../lib/project-posting";
 
@@ -599,10 +600,11 @@ const postProductionEvent = defineServerFn({
           : [])
       ];
       if (projectLedgerInserts.length > 0) {
-        await trx
-          .insertInto("projectLedger")
-          .values(projectLedgerInserts)
-          .execute();
+        await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: projectLedgerInserts
+        });
       }
 
       await trx

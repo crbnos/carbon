@@ -21,6 +21,7 @@ import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   buildBillableItem,
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   loadProjectPostingContexts,
   loadServicePostingContexts,
   ProjectChargeError,
@@ -426,33 +427,31 @@ const postTimesheet = defineServerFn({
       }
 
       if (plan.ledgerRows.length > 0) {
-        const insertedLedger = await trx
-          .insertInto("projectLedger")
-          .values(
-            plan.ledgerRows.map((row) =>
-              buildProjectLedgerRow({
-                companyId,
-                projectId: row.projectId,
-                projectElementId: row.projectElementId,
-                postingDate: row.postingDate,
-                costType: "Labor",
-                documentType: "Timesheet",
-                documentId: row.entryId,
-                employeeId: row.employeeId,
-                laborCategoryId: row.laborCategoryId,
-                quantity: row.quantity,
-                unitOfMeasureCode: "HR",
-                amount: row.amount,
-                journalLineId: debitLineIdByEntry.get(row.entryId) ?? null,
-                reversalOfId: row.reversalOfId,
-                coverage: row.coverage,
-                coverageReason: row.coverageReason,
-                createdBy: userId
-              })
-            )
+        const insertedLedger = await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: plan.ledgerRows.map((row) =>
+            buildProjectLedgerRow({
+              companyId,
+              projectId: row.projectId,
+              projectElementId: row.projectElementId,
+              postingDate: row.postingDate,
+              costType: "Labor",
+              documentType: "Timesheet",
+              documentId: row.entryId,
+              employeeId: row.employeeId,
+              laborCategoryId: row.laborCategoryId,
+              quantity: row.quantity,
+              unitOfMeasureCode: "HR",
+              amount: row.amount,
+              journalLineId: debitLineIdByEntry.get(row.entryId) ?? null,
+              reversalOfId: row.reversalOfId,
+              coverage: row.coverage,
+              coverageReason: row.coverageReason,
+              createdBy: userId
+            })
           )
-          .returning(["id", "documentId"])
-          .execute();
+        });
 
         await writeServiceBillableItems(trx, {
           companyId,

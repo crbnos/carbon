@@ -24,6 +24,7 @@ import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   assertChargeable,
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   loadProjectPostingContexts,
   loadServicePostingContext,
   ProjectChargeError,
@@ -511,28 +512,30 @@ const postProjectIssue = defineServerFn({
 
       let projectLedgerId: string | null = null;
       if (!isStatistical) {
-        const row = await trx
-          .insertInto("projectLedger")
-          .values(
-            buildProjectLedgerRow({
-              companyId,
-              projectId,
-              projectElementId,
-              postingDate,
-              costType: "Material",
-              documentType: "Project Issue",
-              documentId: booked.itemLedgerId,
-              itemId,
-              quantity: isIssue ? quantity : -quantity,
-              amount: isIssue ? booked.cost : -booked.cost,
-              reversalOfId: returnedIssue?.id ?? null,
-              coverage,
-              coverageReason,
-              createdBy: userId
-            })
-          )
-          .returning("id")
-          .executeTakeFirstOrThrow();
+        const row = (
+          await insertProjectLedgerRows(trx, {
+            companyId,
+            userId,
+            rows: [
+              buildProjectLedgerRow({
+                companyId,
+                projectId,
+                projectElementId,
+                postingDate,
+                costType: "Material",
+                documentType: "Project Issue",
+                documentId: booked.itemLedgerId,
+                itemId,
+                quantity: isIssue ? quantity : -quantity,
+                amount: isIssue ? booked.cost : -booked.cost,
+                reversalOfId: returnedIssue?.id ?? null,
+                coverage,
+                coverageReason,
+                createdBy: userId
+              })
+            ]
+          })
+        )[0]!;
         projectLedgerId = row.id;
 
         if (service && isIssue && coverage) {

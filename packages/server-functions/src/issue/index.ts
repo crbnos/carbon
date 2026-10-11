@@ -65,6 +65,7 @@ import {
 } from "../lib/post-adjustment";
 import {
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   type JobProjectCharge,
   loadJobProjectCharge
 } from "../lib/project-posting";
@@ -778,28 +779,27 @@ async function insertJobProjectLedgerRows(
   }
 ) {
   if (args.rows.length === 0) return;
-  await trx
-    .insertInto("projectLedger")
-    .values(
-      args.rows.map((row) =>
-        buildProjectLedgerRow({
-          companyId: args.companyId,
-          projectId: args.charge.projectId,
-          projectElementId: args.charge.projectElementId,
-          postingDate: args.charge.postingDate,
-          costType: "Material",
-          documentType: args.documentType ?? "Job Consumption",
-          documentId: args.jobId,
-          jobId: args.jobId,
-          itemId: row.itemId,
-          quantity: row.quantity,
-          amount: row.amount,
-          journalLineId: row.journalLineId,
-          createdBy: args.userId
-        })
-      )
+  await insertProjectLedgerRows(trx, {
+    companyId: args.companyId,
+    userId: args.userId,
+    rows: args.rows.map((row) =>
+      buildProjectLedgerRow({
+        companyId: args.companyId,
+        projectId: args.charge.projectId,
+        projectElementId: args.charge.projectElementId,
+        postingDate: args.charge.postingDate,
+        costType: "Material",
+        documentType: args.documentType ?? "Job Consumption",
+        documentId: args.jobId,
+        jobId: args.jobId,
+        itemId: row.itemId,
+        quantity: row.quantity,
+        amount: row.amount,
+        journalLineId: row.journalLineId,
+        createdBy: args.userId
+      })
     )
-    .execute();
+  });
 }
 
 async function createMaterialWipEntries(

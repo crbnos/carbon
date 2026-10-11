@@ -18,7 +18,10 @@ import {
   buildJournalLineDimensions
 } from "../lib/plan-adjustment";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
-import { buildProjectLedgerRow } from "../lib/project-posting";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows
+} from "../lib/project-posting";
 import { paybackVariance, planBorrowMatching } from "./plan";
 
 export const postProjectStockTransferInput = z.object({
@@ -547,9 +550,10 @@ const postProjectStockTransfer = defineServerFn({
                   .execute();
               }
             }
-            await trx
-              .insertInto("projectLedger")
-              .values(
+            await insertProjectLedgerRows(trx, {
+              companyId,
+              userId,
+              rows: [
                 buildProjectLedgerRow({
                   companyId,
                   projectId: fromProjectId!,
@@ -565,8 +569,8 @@ const postProjectStockTransfer = defineServerFn({
                   journalLineId,
                   createdBy: userId
                 })
-              )
-              .execute();
+              ]
+            });
           }
         }
 

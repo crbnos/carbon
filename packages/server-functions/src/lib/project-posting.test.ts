@@ -3,9 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { databaseTest } from "../local-database-test-fixture";
+import { projectBillingTestFixture } from "./project-billing-test-fixture";
 import {
   assertChargeable,
   buildBillableItem,
+  buildContractBillableItem,
   buildProjectLedgerRow,
   ProjectChargeError,
   type ProjectPostingAsset,
@@ -493,3 +496,162 @@ describe("billable items", () => {
     });
   });
 });
+
+describe("contract billable items", () => {
+  const ledgerRow = {
+    id: "pl-1",
+    companyId: "co-1",
+    projectId: "prj-1",
+    projectElementId: "el-1",
+    postingDate: "2026-02-10",
+    costType: "Labor" as const,
+    quantity: 6,
+    amount: 600,
+    itemId: null,
+    employeeId: null,
+    laborCategoryId: "lc-eng-2",
+    unallowable: false
+  };
+  const categoryRates = [
+    { laborCategoryId: "lc-eng-2", billRate: 150, effectiveFrom: "2026-01-01" }
+  ];
+
+  it("returns null for a Cost Plus line: the commercial generator prices it", () => {
+    expect(
+      buildContractBillableItem({
+        ledgerRow,
+        line: {
+          id: "line-1",
+          billingMethod: "Cost Plus",
+          materialHandlingPercent: null
+        },
+        contractRates: [],
+        categoryRates,
+        description: "Labor",
+        createdBy: "user-1"
+      })
+    ).toBeNull();
+  });
+
+  it("prices 6 h of Engineer II at 150.00 on a Time & Materials line", () => {
+    expect(
+      buildContractBillableItem({
+        ledgerRow,
+        line: {
+          id: "line-1",
+          billingMethod: "Time & Materials",
+          materialHandlingPercent: 0.1
+        },
+        contractRates: [],
+        categoryRates,
+        description: "Labor",
+        createdBy: "user-1"
+      })
+    ).toMatchObject({
+      customerContractLineId: "line-1",
+      projectLedgerId: "pl-1",
+      quantity: 6,
+      unitPrice: 150,
+      amount: 900,
+      status: "Unbilled",
+      statusReason: null,
+      reversalOfId: null
+    });
+  });
+});
+
+databaseTest(
+  "posting under a live Time & Materials line writes its billable items",
+  async () => {
+    const f = await projectBillingTestFixture();
+    try {
+      const project = await f.addProject("p101", "P101");
+      await f.addContract({
+        key: "tm",
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        materialHandlingPercent: 0.1
+      });
+
+      await f.post([
+        {
+          projectId: project.projectId,
+          projectElementId: project.childId,
+          costType: "Labor",
+          quantity: 6,
+          amount: 600,
+          laborCategoryId: f.laborCategoryId
+        },
+        {
+          projectId: project.projectId,
+          projectElementId: project.childId,
+          costType: "Material",
+          quantity: 4,
+          amount: 200
+        },
+        {
+          projectId: project.projectId,
+          projectElementId: project.childId,
+          costType: "Overhead",
+          amount: 75
+        }
+      ]);
+
+      const items = await f.items(project.projectId);
+      expect(items.map((item) => [Number(item.amount), item.status])).toEqual([
+        [900, "Unbilled"],
+        [220, "Unbilled"]
+      ]);
+      expect(Number(items[0]!.quantity)).toBe(6);
+      expect(Number(items[0]!.unitPrice)).toBe(150);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a timesheet correction writes off its Unbilled contract item",
+  async () => {
+    const f = await projectBillingTestFixture();
+    try {
+      const project = await f.addProject("p102", "P102");
+      await f.addContract({
+        key: "tm",
+        projectId: project.projectId,
+        projectElementId: project.rootId
+      });
+
+      const [labor] = await f.post([
+        {
+          projectId: project.projectId,
+          projectElementId: project.childId,
+          costType: "Labor",
+          quantity: 6,
+          amount: 600,
+          laborCategoryId: f.laborCategoryId,
+          documentType: "Timesheet"
+        }
+      ]);
+      await f.post([
+        {
+          projectId: project.projectId,
+          projectElementId: project.childId,
+          costType: "Labor",
+          quantity: -6,
+          amount: -600,
+          laborCategoryId: f.laborCategoryId,
+          reversalOfId: labor!.id,
+          documentType: "Timesheet"
+        }
+      ]);
+
+      const items = await f.items(project.projectId);
+      expect(items).toHaveLength(1);
+      expect(items[0]!.status).toBe("Written Off");
+      expect(items[0]!.statusReason).toBe("Reversed");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

@@ -47,6 +47,7 @@ import {
 } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
+  insertProjectLedgerRows,
   reverseProjectLedgerRows
 } from "../lib/project-posting";
 import { loadInvoiceProjectCharges } from "./project-charges";
@@ -2819,32 +2820,31 @@ const postPurchaseInvoice = defineServerFn({
         }
 
         if (projectLedgerDrafts.length > 0) {
-          await trx
-            .insertInto("projectLedger")
-            .values(
-              projectLedgerDrafts.map((draft) =>
-                buildProjectLedgerRow({
-                  companyId,
-                  projectId: draft.projectId,
-                  projectElementId: draft.projectElementId,
-                  postingDate: today,
-                  costType: draft.costType,
-                  documentType: "Purchase Invoice",
-                  documentId: invoiceId,
-                  documentLineId: draft.invoiceLineId,
-                  itemId: draft.itemId,
-                  supplierId: purchaseInvoice.data?.supplierId ?? null,
-                  quantity: draft.quantity,
-                  amount: draft.amount,
-                  journalLineId:
-                    draft.journalLineIndex === null
-                      ? null
-                      : (invoiceJournalLineIds[draft.journalLineIndex] ?? null),
-                  createdBy: userId
-                })
-              )
+          await insertProjectLedgerRows(trx, {
+            companyId,
+            userId,
+            rows: projectLedgerDrafts.map((draft) =>
+              buildProjectLedgerRow({
+                companyId,
+                projectId: draft.projectId,
+                projectElementId: draft.projectElementId,
+                postingDate: today,
+                costType: draft.costType,
+                documentType: "Purchase Invoice",
+                documentId: invoiceId,
+                documentLineId: draft.invoiceLineId,
+                itemId: draft.itemId,
+                supplierId: purchaseInvoice.data?.supplierId ?? null,
+                quantity: draft.quantity,
+                amount: draft.amount,
+                journalLineId:
+                  draft.journalLineIndex === null
+                    ? null
+                    : (invoiceJournalLineIds[draft.journalLineIndex] ?? null),
+                createdBy: userId
+              })
             )
-            .execute();
+          });
 
           // A line charged to a Capitalize project builds its asset.
           await writeProjectCipRows(trx, {
