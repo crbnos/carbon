@@ -96,7 +96,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 9: Add the `post-project-burden` server function
 - [x] Task 10: Add `computeProjectBurden`, `computeBurdenBilling` and the period run
 - [x] Task 11: Teach the Phase 4 billing readers about burden
-- [ ] Task 12: Add the monthly job and the lock trigger
+- [x] Task 12: Add the monthly job and the lock trigger
 - [ ] Task 13: Add the close checklist task
 - [ ] Task 14: Add the ICE schedules and the CSV route
 - [ ] Task 15: Build the Indirect Pools pages
@@ -1371,3 +1371,7 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   5. The billing backup reader (`getProjectBillingBackup`) also selects the item's `postingDate`, `fiscalYear`, `burdenRate`, `burdenBase` and the pool (`name`, `baseType`). The route shows Pool (with the fiscal year), Rate and Base columns. A Direct Labor Hours pool shows the rate per hour and the base in hours.
   6. The new UI strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
   7. One full `@carbon/server-functions` run had 1 failed test. The next 2 full runs passed (795), and the failure did not repeat.
+- Task 12:
+  1. The lock intent counts the pools through the user's Supabase client (`head: true`, count only). A failed read takes the same `catch` as a failed send: it logs a warning and the lock still succeeds.
+  2. The job logs a failed run with `logger.error` and returns the result. The run row holds the error.
+  3. `@carbon/jobs` typecheck failed on `indirectRateRows` (Task 7): its untyped `const rows = []` became `never[]` under the jobs `tsconfig`. The array now has the `indirectRate` Insert type. `@carbon/ee` alone had passed.

@@ -17,6 +17,7 @@ export {
   companyTemplateFunction,
   companyTemplateRevertFunction
 } from "./company-template";
+export { indirectRatesFunction } from "./indirect-rates";
 export { invoiceAutomateFunction } from "./invoice-automate";
 export { modelCompactFunction } from "./model-compact";
 export { modelOptimizeFunction } from "./model-optimize";

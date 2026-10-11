@@ -233,7 +233,7 @@ export type IndirectRateEntry = {
 /** B12: a rate "from period N" is one row per period N to 12, period rate = YTD rate. */
 export function indirectRateRows(entry: IndirectRateEntry) {
   const timestamp = datetime.timestamp();
-  const rows = [];
+  const rows: Database["public"]["Tables"]["indirectRate"]["Insert"][] = [];
   for (
     let periodNumber = entry.fromPeriod;
     periodNumber <= 12;

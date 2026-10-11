@@ -7,6 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
@@ -79,6 +81,8 @@ import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Per
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "accounting-period-close");
 
 export const handle: Handle = {
   breadcrumb: msg`Close Period`,
@@ -195,6 +199,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
         {},
         await flash(request, error(result.error, "Failed to lock period"))
       );
+    }
+    // The lock is the monthly trigger of the indirect rate run
+    // (Government Contracting 5b). A failed send never fails the lock.
+    try {
+      const pools = await client
+        .from("indirectPool")
+        .select("id", { count: "exact", head: true })
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .eq("appliesToProjects", true);
+      if (pools.error) throw pools.error;
+      if ((pools.count ?? 0) > 0) {
+        await trigger("indirect-rates", {
+          companyId,
+          accountingPeriodId: periodId,
+          userId
+        });
+      }
+    } catch (e) {
+      logger.warn("Failed to send the indirect rate run", {
+        companyId,
+        periodId,
+        error: e
+      });
     }
     return data({}, await flash(request, success("Period locked")));
   }
