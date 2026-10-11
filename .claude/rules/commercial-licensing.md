@@ -188,6 +188,18 @@ Refactor one at a time; each PR should leave the tree green.
   generated `tool-metadata.json` STAY in the app (derive from `~/modules/*`) and are
   INJECTED as `deps`. Note: `server.ts` is `@ts-nocheck`, so the live endpoint needs a
   smoke test before merge (typecheck can't cover its body).
+- ✅ **Project revenue** (`PROJECT_REVENUE`) — Cost Plus pricing lives in
+  `packages/ee/src/project-revenue/` (`@carbon/ee/project-revenue` for the pure
+  `priceCostPlusItem`, `@carbon/ee/project-revenue.server` for
+  `generateCostPlusItems`, which degrades with `gated: true` via
+  `projectRevenueEnabledForCompany`). Posting cannot price Cost Plus
+  (`@carbon/server-functions` cannot import `@carbon/ee`), so a Cost Plus line bills
+  nothing without ee code — that is the lock. `requireProjectRevenueEntitlement` is the
+  authoring check for Cost Plus or Percent Complete; the contract line and amend routes
+  reach it through `projectRevenueRefusal` (`sales.server.ts`) and flash the upgrade
+  message. The forms keep both choices visible with an upgrade notice. Phase 4b adds
+  the Percent Complete synthesizer and the loss provision behind the same key. See
+  `project-billing.md`.
 - Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
   community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision

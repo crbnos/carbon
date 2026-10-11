@@ -76,6 +76,7 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 10-10 | Projects 2b | Tasks 1–15; 16 deferred | done (`1e210d03c9`…`e61caf22dc`, then `d51585c203`) — Phase 2b implemented |
 | 10-11 | Projects 3 | Tasks 1–17 + return fix; 18 deferred | done (`03b7c24044`…`16e1cb00da`) — Phase 3 implemented; Task 16's dataset check ran without its database layer |
 | 10-11 | Tree canvas (Flow-style) | Tasks 1–8; 9 deferred | done (`dbdaed7797`…`628fae0cbb`) |
+| 10-11 | Project billing 4a | Tasks 14–20; 21 deferred | done (`81265037b3`…`4a48f33082`, then the docs commit) — Phase 4a implemented |
 
 ## Follow-ups found during execution
 
@@ -102,3 +103,8 @@ Open:
   1. the edges over the box tint: card-to-box edges should draw above the boxes (`getElevatedEdgeZIndex` adds the child's `internals.z`), and box-to-box edges have `zIndex: 1`. Nobody has seen it in a browser;
   2. a `root` change skips only the Elements route's own loader. The parent layouts still run theirs, so Task 9 point 5 ("no loader request") can see those requests.
 - Audit log: 16 tables in `auditConfig` have no `events: true` entry in `attachments.ts`, so they have no event triggers and their changes never reach the audit log: `customerBankAccount`, `supplierBankAccount`, `rentalAgreement`, `rentalAgreementLine`, `projectElement`, `projectElementLabel`, `projectElementMaterial`, `projectElementLabor`, `projectElementCost`, `projectElementLink`, `changeOrder`, `changeOrderAffectedItem`, `changeOrderSupersession`, `changeOrderActionTask`, `pricingRule`, `accountingPeriod`. Project billing Task 14 fixed `projectBillableItem` only. A test that every audited table has `events: true` would stop this from coming back.
+- Project billing 4a: the contract line billing page already has **Generate Billable Items** (Task 16). A user does not have to wait for the invoice run to see items for rows that the job SQL wrote. No follow-up is needed for it.
+- Project billing 4a: in the Draft setup grid (`ContractProductsGrid`), the quantity and rate cells of a Time & Materials or Cost Plus line stay editable. `upsertContractLine` saves 1 and 0 whatever the cell says, so the cell shows a value that does not save.
+- Project billing 4a: an MCP `sales_upsertContractLine` can create a Cost Plus line without the `PROJECT_REVENUE` check. The ee generator still bills nothing for it (P1). Brad to decide if the service needs the check too.
+- Project billing 4a: the browser check (Task 21) is deferred. Check the points in the plan's Task 21, and the UI points in the 4a hand-off.
+- `projects.mdx` should link to the new `project-billing.mdx` page once the page is cut to its word limit.

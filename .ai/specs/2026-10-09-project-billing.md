@@ -1,6 +1,6 @@
 # Project Billing: time-and-materials and cost-plus contract lines, and revenue by progress
 
-> Status: draft. Every open question is resolved (Q1 answered 2026-10-09). Ready for /plan.
+> Status: Phase 4a implemented (2026-10-11, plan `.ai/plans/2026-10-09-project-billing-phase-4a.md`; browser check deferred). Phase 4b planned (`.ai/plans/2026-10-09-project-billing-phase-4b.md`).
 > Author: Brad (with Claude)
 > Date: 2026-10-09
 > Research: `.ai/research/projects-wbs-pmmo.md` (patterns 9 and 10, Answer 6, Recommendation 7)
@@ -63,7 +63,7 @@ A customer contract can now bill project work in three ways, chosen per contract
 
 ### Billable items
 
-A posting function writes one billable item per `projectLedger` row when 3 things are true:
+A posting function writes one Time & Materials billable item per `projectLedger` row when 3 things are true (Cost Plus items come from the commercial generator, decision P1):
 1. the row's project has treatment Contract;
 2. its element is the billing element of an Active T&M or Cost Plus line, or a descendant of it;
 3. the row is not `unallowable` (projects Phase 5 sets this flag; it is false until then).
@@ -75,7 +75,8 @@ The price depends on the line's method and the row's cost type:
 | T&M | hours × bill rate | cost × (1 + handling %) | not billed (included in the bill rate) |
 | Cost Plus | cost × (1 + fee %) | cost × (1 + fee %) | cost × (1 + fee %) |
 
-- `buildBillableItem` (`project-posting.ts`, field service Phase A) gains this contract branch. It runs in the posting transaction, as it does for Service projects.
+- `buildContractBillableItem` (`project-posting.ts`) is the contract branch beside the field service `buildBillableItem`. It runs in the posting transaction for T&M lines. Cost Plus items come from `generateCostPlusItems` in `packages/ee` (P1).
+- Rows that the SQL functions `complete_job_to_inventory` and `backflush_job_materials` insert into `projectLedger` get their T&M item from the backfill. `create-project-billing-invoices` runs that backfill before it reads items, so those rows reach the review list on the next invoice run, not at posting. **Generate Billable Items** on the line's billing page does it at once.
 - **Generate billable items** on the contract line creates items for older ledger rows. These rows posted before the line existed, or before the element became a billing element. It skips rows that already have an item.
 - A reversal of a ledger row reverses its item with `reverseBillableItem`. An Unbilled item is written off with the reason "Reversed". A Billed item gets a negative Unbilled item.
 - A user can change the unit price of an Unbilled item, put it On Hold, release it, or write it off with a reason. Each change goes to the audit log.
@@ -89,7 +90,7 @@ The price depends on the line's method and the row's cost type:
   2. contract line × labor category;
   3. the labor category's default `billRate`.
 
-  With no rate, the item is created On Hold with the reason "No bill rate".
+  With no rate, the item is created On Hold with the reason "No bill rate" (in `statusReason`, P3).
 
 ### Funding
 
@@ -205,7 +206,8 @@ CREATE TABLE "customerContractLaborRate" (
   -- UNIQUE ("customerContractLineId", "laborCategoryId", "employeeId", "effectiveFrom", "companyId")
 );
 
-ALTER TABLE "projectBillableItem" ADD COLUMN "holdReason" TEXT;   -- 'No bill rate', 'Funding limit', or a user's note
+-- No holdReason column (P3): the reasons ('No bill rate', 'No hours', 'Funding limit', a user's note)
+-- live in the existing projectBillableItem.statusReason. projectBillableItem gains voidedSalesInvoiceId (P4).
 
 CREATE TABLE "projectCostRelief" (                   -- append-only
   "id" TEXT NOT NULL DEFAULT id('pcr'),
@@ -235,7 +237,7 @@ ALTER TABLE "accountDefault" ADD COLUMN "contractLossProvisionAccount" TEXT;
   - `propose-revenue-recognition-run`: the `synthesizeProjectRevenue` synthesizer.
 - **Contract services** (`sales.service.ts`): `getContractLaborRates`, `upsertContractLaborRate`, `deleteContractLaborRate`, `getContractLineFunding`.
 - **Project services** (`projects.service.ts`): `getContractBillableItems(client, { companyId, customerContractLineId, status })`, `updateProjectBillableItems` (bulk hold, release, write-off, price).
-- **Jobs:** `recurring-billing` gains the project billing step; a funding check runs after each posting batch and sends `ContractFundingThreshold` once per threshold per line.
+- **Jobs:** `recurring-billing` gains the Cost Plus and project billing steps (before the contract step) and a daily funding check that sends `ContractFundingThreshold` once per threshold per funded cost (P12, P13).
 - **Invoice automation and stamps:** `releaseRecurringInvoiceStamps` and the VOID branch return billable items to Unbilled.
 
 ## UI Changes
@@ -290,8 +292,32 @@ Phase 4b: revenue
 
 ## Delivery phases
 
-1. **Phase 4a: billing.** Billing method, billing element, bill rates, billable items for contracts, review, funding and notices, the invoicing source.
+1. **Phase 4a: billing.** ✅ Implemented 2026-10-11. Billing method, billing element, bill rates, billable items for contracts, review, funding and notices, the invoicing source.
 2. **Phase 4b: revenue.** Right to Invoice, Percent Complete, cost relief, loss provision, the Billing tab's progress figures.
+
+## Plan decisions (Phase 4a)
+
+The plan corrected or added to this spec. Each is in the code; the plan's *Execution notes* record how.
+
+| # | Decision |
+|---|---|
+| P1 | `@carbon/server-functions` cannot import `@carbon/ee`, so Cost Plus pricing runs in the commercial `generateCostPlusItems`, not at posting. Posting writes T&M items only. The nightly job and **Generate Billable Items** call the generator. |
+| P2 | `requireProjectRevenueEntitlement` (ee) guards a Cost Plus line or Percent Complete in the routes. The real lock is P1. |
+| P3 | No `holdReason` column: `projectBillableItem.statusReason` holds "No bill rate", "No hours", "Funding limit" and a user's note. |
+| P4 | `projectBillableItem.voidedSalesInvoiceId`, stamped by a VOID. A re-bill of such an item, or an invoice with a negative item, is held. |
+| P5 | Billing lines and Percent Complete lines need the contract currency to equal the base currency. |
+| P6 | T&M uses Right to Invoice only; Cost Plus Percent Complete or Right to Invoice; Fixed Daily, Even Period or Percent Complete. CHECKs enforce it. |
+| P7 | Confirm and amend refuse a billing element equal to, above or below another live billing line's element. |
+| P8 | A live billing line: Active contract, billing method not Fixed, and `startDate <= postingDate <= COALESCE(endDate, postingDate)`. |
+| P9 | Amend refuses a `change` of a billing line and allows `add` and `end`. Funding changes through **Edit Funding**; labor rates change at any time. |
+| P10 | Every item is quantity 1 at its amount, except a T&M labor item (hours × rate). A Cost Plus labor item stores quantity = hours. |
+| P11 | Invoice lines: T&M labor by labor category and unit price, Cost Plus labor by category, other cost by cost type. |
+| P12 | The funding check runs once a day in the recurring billing job, not after each posting batch. |
+| P13 | `thresholdNoticeFundedCost` and `runOutNoticeFundedCost` record the funded cost each notice went out for; a changed `fundedCost` makes it due again. |
+| P14 | The plan's remaining cost caps the expected cost only when the subtree has a plan. |
+| P15 | Confirm and an amend `add` of a T&M line run the T&M backfill in their transaction. |
+| — | Rows that `complete_job_to_inventory` and `backflush_job_materials` insert into `projectLedger` get their T&M item from the backfill, which `create-project-billing-invoices` runs before it reads items. They reach the review list on the next invoice run, not at posting. |
+| — | Item review reaches the audit log: `projectBillableItem` is in `auditConfig` and has `events: true` in `event-system/attachments.ts`. |
 
 ## Out of scope
 
@@ -322,3 +348,4 @@ Resolved autonomously (2026-10-09), open to veto:
 
 - 2026-10-09: Created autonomously from `.ai/research/projects-wbs-pmmo.md`, the projects spec's Phase 4 outline, and a map of the contracts, recurring invoicing and revenue recognition code on main. Corrects the projects spec: the line's type is `revenueType`, not `kind`; `customerContractLine.projectId` already exists. Q1 (commercial gating) is open.
 - 2026-10-09: Q1 resolved (Brad): T&M and Right to Invoice community; Cost Plus, Percent Complete and the loss provision commercial behind `PROJECT_REVENUE`.
+- 2026-10-11: Phase 4a implemented. Recorded plan decisions P1–P15 and the SQL backfill decision; corrected the billable item, data model and jobs sections (P1, P3, P12).

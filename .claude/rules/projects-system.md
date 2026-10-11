@@ -14,13 +14,15 @@ paths:
 
 # Projects
 
-Phases 1a, 1b, 1c, 2a, 2b and 3 of `.ai/specs/2026-10-03-projects.md`; plans
+Phases 1a, 1b, 1c, 2a, 2b and 3 of `.ai/specs/2026-10-03-projects.md`, and
+Phase 4a of `.ai/specs/2026-10-09-project-billing.md`; plans
 `.ai/plans/2026-10-07-projects-phase-1a.md`,
 `.ai/plans/2026-10-08-projects-phase-1b.md`,
 `.ai/plans/2026-10-08-projects-phase-1c.md`,
 `.ai/plans/2026-10-08-projects-phase-2a.md`,
-`.ai/plans/2026-10-08-projects-phase-2b.md` and
-`.ai/plans/2026-10-08-projects-phase-3.md` (their *Execution notes* record every
+`.ai/plans/2026-10-08-projects-phase-2b.md`,
+`.ai/plans/2026-10-08-projects-phase-3.md` and
+`.ai/plans/2026-10-09-project-billing-phase-4a.md` (their *Execution notes* record every
 deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
@@ -153,9 +155,11 @@ and `parentProjectId` names a coverage contract's project. Field service owns th
   Statistical project: `indirectCostAccount`, no ledger row) / Cr GRNI. A Capitalize
   project is refused. The shared `postProjectJournal` (`lib/project-journal.ts`) posts
   it and the coverage reclass.
-- **Billable items.** `projectBillableItem` is what a charge will bill. Only Service
-  projects write them today (`buildBillableItem`, `reverseBillableItem`).
-  `projectElement.fixedPrice` bills a node's whole subtree as one line.
+- **Billable items.** `projectBillableItem` is what a charge will bill. Service
+  projects write them (`buildBillableItem`, `reverseBillableItem`), and so does a
+  Contract project under a Time & Materials contract line (`buildContractBillableItem`;
+  project billing, below). `projectElement.fixedPrice` bills a node's whole subtree as
+  one line.
 - **Parent roll-up** (field service Phase D). The Costs tab lists a project's child
   Service projects, one row per order, from `get_child_service_project_costs`; their
   actual adds to the project total only (`buildProjectCostFigures`, third argument). A
@@ -165,6 +169,27 @@ and `parentProjectId` names a coverage contract's project. Field service owns th
 - **Hidden outside Service.** The Projects lists, Copy from, Build from part's template
   list, the charge number pickers, the dimension picker and the Ramp sync filter
   `projectType = 'Standard'`. Never list a Service project in Projects.
+
+## Contract billing (Phase 4a)
+
+A customer contract line with billing method Time & Materials or Cost Plus bills a
+Contract project's billing element and its subtree. The whole subsystem is in
+`project-billing.md`; what it changes here:
+
+- `insertProjectLedgerRows` writes a T&M billable item for each row under a live T&M
+  line, in the posting transaction (`loadContractBillingContext`, one query for the
+  lines, then the subtrees and rates only when needed). A reversal reverses the item.
+  Cost Plus items come only from the commercial generator.
+- **Rows from the job SQL.** `complete_job_to_inventory` and `backflush_job_materials`
+  insert `projectLedger` rows in SQL, so posting writes no item for them. They get
+  their T&M item from the backfill (`generateTimeAndMaterialsItems`).
+  `create-project-billing-invoices` runs that backfill before it reads the items, so
+  those rows reach the review list on the next invoice run, not at posting. The
+  line's billing page has **Generate Billable Items** to do it at once.
+- Review: Projects → **Billing** and the project **Billing** tab (Contract projects
+  only), `update: projects`. Each change reaches the audit log ("Billable Item").
+- `laborCategoryRate.billRate` is a category's default price of an hour, beside its
+  cost rate.
 
 ## Project stock (Phase 2a)
 

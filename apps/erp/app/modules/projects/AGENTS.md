@@ -116,7 +116,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `projectState`, `projectLabel`, `projectMilestone` | Per-project workflow, labels, milestones |
 | `projectElement` (+ `projectElementLabel`, `projectElementComment`) | The element tree |
 | `projectElementMaterial` / `Labor` / `Cost` | Plan lines (budget) |
-| `laborCategory`, `laborCategoryRate` | Effective-dated cost rates (`rateOn`) |
+| `laborCategory`, `laborCategoryRate` | Effective-dated cost rates (`rateOn`) and the default `billRate` |
+| `projectBillableItem` (`customerContractLineId`) | Contract billable items of Time & Materials and Cost Plus lines (Phase 4a; `.claude/rules/project-billing.md`) |
 | `timesheetEntry` | Hours per employee, day, charge number, labor category |
 | `projectLedger` | Actual cost rows; a void writes a negative row with `reversalOfId` |
 | `projectElementLink` | Trace links with `suspectSince` / `reviewedAt` |
@@ -180,6 +181,12 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   Phase 3. The commercial writes live in `@carbon/ee/pegging.server`: `upsertPlanningGroup`
   and `createManualPeg` call `requireEntitlement` first; routes call `requireFeature` and turn
   an `EntitlementError` into a flash.
+- `getContractBillableItems` (rows typed `ContractBillableItemRow`), `getContractBillingLines`,
+  `getProjectBillingElements`, `updateProjectBillableItems` (hold, release, write off,
+  price; refuses Billed and Written Off items); `billableItemActionValidator` (models) —
+  contract billing review (Phase 4a): Projects → **Billing** (`projects+/billing.tsx`,
+  `billing.update.tsx`) and the project **Billing** tab (`$projectId.billing.tsx`,
+  Contract projects only), UI in `ui/Billing/`.
 - `getPlanningSegmentOwners`, `moveActionPegsToSupply` (`.server`) — the planning routes'
   Apply in a group segment: the owner of each segment, and one transaction that moves an
   action's pegs onto the PO line or job it created.
