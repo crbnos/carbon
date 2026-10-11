@@ -91,7 +91,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 4: Add the feature key and the ee package skeleton
 - [x] Task 5: Add the pure rate engine
 - [x] Task 6: Add the pure burden and billing engine
-- [ ] Task 7: Add the authoring functions
+- [x] Task 7: Add the authoring functions
 - [ ] Task 8: Add `computeIndirectRates`
 - [ ] Task 9: Add the `post-project-burden` server function
 - [ ] Task 10: Add `computeProjectBurden`, `computeBurdenBilling` and the period run
@@ -1334,3 +1334,9 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   2. A billing line's years are the years of its base and the years of its existing burden items, so a year whose base is gone still bills back to zero.
   3. The billing cascade carries the burden at the billing rate, before the fee, into a later TCI or Value Added base. A pool with no rate for the year carries nothing.
   4. `BillingInput` lines carry no cost objective, so the billing cascade has no IR&D or B&P skip. Cost Plus lines bill Direct projects.
+- Task 7:
+  1. A refusal returns `{ data: null, error: { message } }`, the shape the callers read from a PostgREST result. The 3 refusal texts are exported constants (`INDIRECT_POOL_IN_USE`, `INDIRECT_POOL_BASE_PROJECT_ACCOUNT`, `INDIRECT_RATE_ACTUAL_REFUSED`). The plan gives no text for the Actual refusal; it reads "Actual rates come from the rate run. Enter a Provisional, Target or Final rate."
+  2. `setIndirectRate` builds its rows with the exported pure `indirectRateRows`, then writes them in one `upsert` on `indirectRate_period_key`.
+  3. `companySettings` has no `updatedBy` or `updatedAt` column, so `updateBurdenSettings` writes only the 2 settings.
+  4. `getIndirectPool` and `getIndirectExpenseStatement` read with 2 queries each, not one embed. The statement has 2 foreign keys to `indirectPool`, so an embed of the pool name is ambiguous. The local PostgREST resolves every embed the readers use.
+  5. The test mocks `../plan.server` (`companyHasFeature`) and records the rows at the `upsert` boundary. The assertions check the written rows, not call counts.

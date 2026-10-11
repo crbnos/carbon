@@ -4,5 +4,5 @@
 
 // Server-only entry point (`@carbon/ee/indirect-rates.server`). Never import
 // it from a client module.
-// export * from "./service.server";
+export * from "./service.server";
 // export * from "./ice.server";
