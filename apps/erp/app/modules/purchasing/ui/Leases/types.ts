@@ -48,6 +48,8 @@ export type LeasePolicy = {
   majorPartPercent: number;
   substantiallyAllPercent: number;
   shortTermExpedient: boolean;
+  /** A lease commenced before it opens with an opening balance. */
+  accountingCutoverDate: string | null;
 };
 
 /** The purchase invoice behind each invoiced payment row, keyed by the

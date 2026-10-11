@@ -22701,6 +22701,10 @@ msgstr "यह नौकरी अब शॉप फ्लोर पर उपल
 msgid "This job's own required quantity for the material."
 msgstr "इस सामग्री के लिए इस कार्य की अपनी आवश्यक मात्रा।"
 
+#. placeholder {0}: formatDate(cutoverDate, undefined, locale)
+msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): the right-of-use asset, its amortization and the lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "इस पंक्ति के पास शेड्यूल करने के लिए कोई रूटिंग नहीं है।"
 

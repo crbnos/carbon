@@ -22701,6 +22701,10 @@ msgstr "이 작업 지시는 현장에서 더 이상 가용하지 않을 것입�
 msgid "This job's own required quantity for the material."
 msgstr "이 작업 자체의 자재 소요 수량입니다."
 
+#. placeholder {0}: formatDate(cutoverDate, undefined, locale)
+msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): the right-of-use asset, its amortization and the lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "이 라인은 일정 계획을 위한 라우팅이 없습니다."
 

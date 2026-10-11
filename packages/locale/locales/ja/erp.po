@@ -22701,6 +22701,10 @@ msgstr "この製造指図は製造現場で利用できなくなります。"
 msgid "This job's own required quantity for the material."
 msgstr "この材料に対するこのジョブ自体の必要数量。"
 
+#. placeholder {0}: formatDate(cutoverDate, undefined, locale)
+msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): the right-of-use asset, its amortization and the lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "この明細にはスケジュール対象の工順がありません。"
 

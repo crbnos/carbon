@@ -28,7 +28,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatPercent } from "@carbon/utils";
+import { formatDate, formatPercent } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
@@ -403,7 +403,16 @@ export function LeaseCommencementPreview({
 }: LeaseCommencementPreviewProps) {
   const { t } = useLingui();
   const { company } = useUser();
+  const { locale } = useLocale();
   const preview = previewLesseeClassification({ lease, payments, policy });
+  // A lease that started before accounting was set up posts an opening
+  // balance on the cutover (or the first open period after it), not a
+  // commencement journal (post-lease, spec Q8).
+  const cutoverDate = policy.accountingCutoverDate;
+  const opensAtCutover =
+    !!cutoverDate &&
+    !!lease.commencementDate &&
+    lease.commencementDate < cutoverDate;
 
   const isForeignCurrency =
     !!company.baseCurrencyCode &&
@@ -437,6 +446,18 @@ export function LeaseCommencementPreview({
               <Trans>
                 A short-term lease posts no journal at activation. Each invoice
                 is expensed when it posts.
+              </Trans>
+            </p>
+          ) : opensAtCutover ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                This lease started before accounting was set up. Activating it
+                posts an opening balance on{" "}
+                {formatDate(cutoverDate, undefined, locale)} (or the start of
+                the first open period after it): the right-of-use asset, its
+                amortization and the lease liability as of that date, with the
+                difference to retained earnings. The months before are marked as
+                posted.
               </Trans>
             </p>
           ) : (

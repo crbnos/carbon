@@ -72,7 +72,7 @@ export async function loader({
     client
       .from("companySettings")
       .select(
-        "leaseMajorPartThresholdPercent, leaseSubstantiallyAllThresholdPercent, leaseShortTermExpedient"
+        "leaseMajorPartThresholdPercent, leaseSubstantiallyAllThresholdPercent, leaseShortTermExpedient, accountingCutoverDate"
       )
       .eq("id", companyId)
       .maybeSingle()
@@ -171,7 +171,8 @@ export async function loader({
       substantiallyAllPercent: Number(
         settings.data?.leaseSubstantiallyAllThresholdPercent ?? 90
       ),
-      shortTermExpedient: settings.data?.leaseShortTermExpedient ?? true
+      shortTermExpedient: settings.data?.leaseShortTermExpedient ?? true,
+      accountingCutoverDate: settings.data?.accountingCutoverDate ?? null
     }
   };
 }

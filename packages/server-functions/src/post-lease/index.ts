@@ -4,15 +4,18 @@
 
 import { getCompanyTimeZone, type Json } from "@carbon/database";
 import { readAccountingCutoverDate } from "@carbon/database/journal-posting-status";
+import { round } from "@carbon/database/precision";
 import {
   buildLesseeSchedule,
   classifyLesseeLease,
   datetime,
+  type LesseeScheduleLine,
   presentValueOfPayments
 } from "@carbon/utils";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError } from "../errors";
 import { refuseVoidBeforeCutover } from "../lib/cutover-void";
+import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import {
   amortizationMonths,
   heldByRun,
@@ -27,7 +30,11 @@ import {
   voidLeaseJournal,
   writeSchedule
 } from "./lease";
-import { commencementLines } from "./lessee";
+import {
+  commencementLines,
+  type LeaseAccount,
+  openingBalanceLines
+} from "./lessee";
 import { modify, purchase, terminate } from "./lifecycle";
 import {
   activateBlocker,
@@ -42,7 +49,9 @@ import {
 //              election), measure the liability at the PV of the payment
 //              rows, post the commencement journal and write the monthly
 //              schedule with its lease run rows. A Short-Term lease posts
-//              nothing: its invoices go to lease expense.
+//              nothing: its invoices go to lease expense. A lease that
+//              started before the accounting cutover posts an opening
+//              balance instead (spec Q8).
 //   cancel     Draft → deleted; Active with nothing invoiced or posted →
 //              Cancelled, the commencement journal voided.
 //   modify     remeasure from an effective date (lifecycle.ts).
@@ -51,6 +60,48 @@ import {
 //
 // Business-validation failures are 400s (InvalidInputError) with the message
 // the app shows; a record the caller's company does not own is a 404.
+
+/** The carrying liability and the accumulated ROU amortization a schedule
+ *  reaches before `asOf`: the last line's closing liability (the initial
+ *  liability when no line falls before it) and every earlier line's
+ *  amortization. */
+export function balancesBefore(
+  lines: LesseeScheduleLine[],
+  asOf: string,
+  initialLiability: number
+): { carryingLiability: number; accumulated: number } {
+  const before = lines.filter((line) => line.periodDate < asOf);
+  return {
+    carryingLiability: before.at(-1)?.closingLiability ?? initialLiability,
+    accumulated: round(
+      before.reduce((sum, line) => sum + line.rouAmortization, 0)
+    )
+  };
+}
+
+/** The retained earnings account default, with its class: an opening
+ *  balance's difference goes there. */
+async function retainedEarningsAccount(
+  trx: Trx,
+  companyId: string
+): Promise<LeaseAccount> {
+  const row = await trx
+    .selectFrom("accountDefault")
+    .innerJoin(
+      "account",
+      "account.id",
+      "accountDefault.retainedEarningsAccount"
+    )
+    .select(["account.id", "account.class"])
+    .where("accountDefault.companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!row?.class) {
+    throw new InvalidInputError(
+      "Set the retained earnings account in Accounting → Default Accounts before activating a lease that started before accounting was set up"
+    );
+  }
+  return { id: row.id, class: row.class };
+}
 
 async function activate(
   scope: Scope,
@@ -146,30 +197,10 @@ async function activate(
       return { id: lease.id };
     }
 
-    // A lease that started before the accounting cutover would put its
-    // commencement journal before the cutover; its opening balance needs
-    // the as-of path (plan Task 30).
-    const cutoverDate = await readAccountingCutoverDate(trx, companyId);
-    if (cutoverDate && lease.commencementDate < cutoverDate) {
-      throw new InvalidInputError(
-        "This lease started before accounting was set up. Opening balances for it are not supported yet."
-      );
-    }
-
     const accounting = await loadLesseeAccounting(trx, {
       companyId,
       companyGroupId: company.companyGroupId
     });
-    const commencementJournalId = await postLesseeJournal(trx, {
-      accounting,
-      companyId,
-      userId,
-      postingDate: lease.commencementDate,
-      description: `Lease Commencement ${lease.leaseId}`,
-      lines: commencementLines({ liability, accounts: accounting.accounts }),
-      lease
-    });
-
     const lines = buildLesseeSchedule({
       openingLiability: liability,
       openingRouAsset: liability,
@@ -181,6 +212,52 @@ async function activate(
       amortizationMonths: amortizationMonths(lease, span.months),
       periodDates: span.periodDates
     });
+
+    // A lease that started before the accounting cutover opens with the
+    // balances its schedule reaches on the as-of date (spec Q8) — the
+    // cutover, or the first open period after it — and the months before
+    // that are already in the opening equity: written Posted with no journal.
+    const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+    const openingAsOf =
+      cutoverDate && lease.commencementDate < cutoverDate
+        ? (
+            await resolveAccountingPeriod(
+              trx,
+              companyId,
+              cutoverDate,
+              "historical-with-shift"
+            )
+          ).postingDate
+        : null;
+
+    const commencementJournalId = openingAsOf
+      ? await postLesseeJournal(trx, {
+          accounting,
+          companyId,
+          userId,
+          postingDate: openingAsOf,
+          description: `Lease Opening Balance ${lease.leaseId}`,
+          lines: openingBalanceLines({
+            ...balancesBefore(lines, openingAsOf, liability),
+            rouAssetCost: liability,
+            retainedEarnings: await retainedEarningsAccount(trx, companyId),
+            accounts: accounting.accounts
+          }),
+          lease
+        })
+      : await postLesseeJournal(trx, {
+          accounting,
+          companyId,
+          userId,
+          postingDate: lease.commencementDate,
+          description: `Lease Commencement ${lease.leaseId}`,
+          lines: commencementLines({
+            liability,
+            accounts: accounting.accounts
+          }),
+          lease
+        });
+
     await writeSchedule(trx, {
       lease,
       lines,
@@ -188,7 +265,8 @@ async function activate(
       classification,
       accounts: accounting.accounts,
       companyId,
-      userId
+      userId,
+      postedBefore: openingAsOf ?? undefined
     });
 
     await trx
@@ -253,12 +331,15 @@ async function cancel(
         `${run} holds this lease's entries; delete or recalculate it first`
       );
     }
+    // Rows an opening balance wrote Posted carry no run line; voiding the
+    // opening journal takes them back out with the rest.
     const posted = await trx
       .selectFrom("revenueRecognitionSchedule")
       .select("id")
       .where("leaseId", "=", lease.id)
       .where("companyId", "=", companyId)
       .where("status", "=", "Posted")
+      .where("runLineId", "is not", null)
       .executeTakeFirst();
     if (posted) {
       throw new InvalidInputError(

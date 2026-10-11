@@ -22701,6 +22701,10 @@ msgstr "Dieser Auftrag ist auf der Werkstatt nicht mehr verfügbar."
 msgid "This job's own required quantity for the material."
 msgstr "Die für dieses Material benötigte Menge dieses Auftrags."
 
+#. placeholder {0}: formatDate(cutoverDate, undefined, locale)
+msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): the right-of-use asset, its amortization and the lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
+msgstr ""
+
 msgid "This line has no routing to schedule."
 msgstr "Diese Position hat keinen Arbeitsplan zum Terminieren."
 

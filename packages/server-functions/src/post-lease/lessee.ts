@@ -89,6 +89,55 @@ export function commencementLines(args: {
   );
 }
 
+/** Opening balance of a lease that commenced before the accounting cutover
+ *  (spec Q8): the balances its schedule reaches on the as-of date, with the
+ *  difference — the lease cost of the months before it, already in the
+ *  opening equity — to retained earnings.
+ *
+ *   Dr ROU asset                       cost
+ *       Cr Accumulated ROU amortization        amortization before the date
+ *       Cr Lease liability                     carrying liability on the date
+ *       Cr / Dr Retained earnings              the difference
+ */
+export function openingBalanceLines(args: {
+  rouAssetCost: number;
+  accumulated: number;
+  carryingLiability: number;
+  retainedEarnings: LeaseAccount;
+  accounts: LesseeAccounts;
+}): PostingLine[] {
+  const { rouAssetCost, accumulated, carryingLiability, accounts } = args;
+  return toPostingLines(
+    [
+      {
+        side: "debit",
+        account: accounts.rightOfUseAsset,
+        description: "Right-of-use asset",
+        amount: rouAssetCost
+      },
+      {
+        side: "credit",
+        account: accounts.accumulatedRightOfUseAmortization,
+        description: "Accumulated right-of-use amortization",
+        amount: accumulated
+      },
+      {
+        side: "credit",
+        account: accounts.leaseLiability,
+        description: "Lease liability",
+        amount: carryingLiability
+      },
+      {
+        side: "credit",
+        account: args.retainedEarnings,
+        description: "Lease cost before the opening date",
+        amount: round(rouAssetCost - accumulated - carryingLiability)
+      }
+    ],
+    "Lease opening balance journal"
+  );
+}
+
 /** Remeasurement (Modify): the ROU asset moves by the liability change; a
  *  decrease larger than the ROU asset leaves it at zero and the rest is a
  *  gain. `adjustment` = new liability − carrying liability. */

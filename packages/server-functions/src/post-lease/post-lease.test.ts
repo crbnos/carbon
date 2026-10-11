@@ -365,3 +365,95 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a lease that started before the cutover opens with its balances on the cutover and the earlier months posted",
+  async () => {
+    // A finance lease: front-loaded interest plus straight-line amortization
+    // costs more than the payments early on, so the opening equity differs.
+    // (An operating lease's straight-line cost equals its payments, so its
+    // retained earnings line is zero and is not written.)
+    const f = await leaseFixture({ fairValue: 340000 });
+    try {
+      // Accounting was set up six months into the lease.
+      await f.db
+        .updateTable("companySettings")
+        .set({ accountingCutoverDate: "2027-07-01" })
+        .where("id", "=", f.companyId)
+        .execute();
+      await f.db
+        .updateTable("accountDefault")
+        .set({ retainedEarningsAccount: f.accounts.gain })
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      expect(
+        (await run(f, { type: "activate", leaseId: f.leaseId })).error
+      ).toBeNull();
+
+      const lines = await scheduleLines(f);
+      expect(lines).toHaveLength(36);
+      const before = lines.slice(0, 6);
+      expect(before.at(-1)!.periodDate).toBe("2027-06-30");
+      const carrying = Number(before.at(-1)!.closingLiability);
+      const accumulated = before.reduce(
+        (sum, line) => sum + Number(line.rouAmortization),
+        0
+      );
+
+      const rows = await f.db
+        .selectFrom("revenueRecognitionSchedule")
+        .select([
+          sql<string>`"scheduledDate"::text`.as("scheduledDate"),
+          "status",
+          "journalId"
+        ])
+        .where("leaseId", "=", f.leaseId)
+        .execute();
+      for (const row of rows) {
+        expect(row.status).toBe(
+          row.scheduledDate < "2027-07-01" ? "Posted" : "Planned"
+        );
+        expect(row.journalId).toBeNull();
+      }
+
+      const journal = await f.db
+        .selectFrom("journal")
+        .innerJoin("journalLine", "journalLine.journalId", "journal.id")
+        .select([
+          sql<string>`"journal"."postingDate"::text`.as("postingDate"),
+          "journal.description",
+          "journalLine.accountId",
+          "journalLine.amount"
+        ])
+        .where("journal.companyId", "=", f.companyId)
+        .where("journal.sourceType", "=", "Lease")
+        .execute();
+      expect(new Set(journal.map((line) => line.postingDate))).toEqual(
+        new Set(["2027-07-01"])
+      );
+      expect(journal[0]!.description).toBe("Lease Opening Balance LSE-TEST");
+      const amounts = Object.fromEntries(
+        journal.map((line) => [line.accountId, Number(line.amount)])
+      );
+      expect(amounts[f.accounts.rou]).toBeCloseTo(328710.16, 2);
+      expect(amounts[f.accounts.liability]).toBeCloseTo(carrying, 2);
+      // A credit on an Asset-class account stores negative.
+      expect(amounts[f.accounts.accumulated]).toBeCloseTo(-accumulated, 2);
+      // Retained earnings (a Revenue-class account here, so a debit stores
+      // negative): the six months' cost above the payments sits in equity.
+      const difference = 328710.16 - accumulated - carrying;
+      expect(difference).toBeLessThan(-1000);
+      expect(amounts[f.accounts.gain]).toBeCloseTo(difference, 2);
+
+      // Nothing has been invoiced or run, so the activation can still be
+      // undone: the opening journal is voided.
+      expect(
+        (await run(f, { type: "cancel", leaseId: f.leaseId })).error
+      ).toBeNull();
+      expect((await lease(f)).status).toBe("Cancelled");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
