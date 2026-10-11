@@ -49,6 +49,19 @@ type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 type JournalLineInsert = Database["public"]["Tables"]["journalLine"]["Insert"];
 type ProjectLedgerRow = Database["public"]["Tables"]["projectLedger"]["Row"];
 
+/**
+ * Why the enable refuses a project stock payback whose cost the re-cost
+ * changes: a payback returns the lender's cost at the borrowed unit cost and
+ * books the difference as Payback Variance, and the re-cost cannot move that
+ * variance with it.
+ */
+export function paybackRecostRefusal(
+  transferId: string,
+  postingDate: string
+): string {
+  return `The cutover changes the cost of project stock payback ${transferId}, posted ${postingDate}. Carbon cannot re-cost a payback. Pick a cutover date after ${postingDate}.`;
+}
+
 /** Sets each row's `column` to its value, one statement per chunk. */
 async function setCostLedger(
   trx: KyselyTx,
@@ -263,21 +276,21 @@ export async function resetAndRecostInventory(
       )
     )
   ];
-  const transferTypeById = new Map(
+  const transferById = new Map(
     (
       await readByIds(transferIds, (ids) =>
         trx
           .selectFrom("projectStockTransfer")
-          .select(["id", "type"])
+          .select(["id", "type", "projectStockTransferId"])
           .where("companyId", "=", companyId)
           .where("id", "in", ids)
           .execute()
       )
-    ).map((transfer) => [transfer.id, transfer.type])
+    ).map((transfer) => [transfer.id, transfer])
   );
   const transferType = (row: (typeof ledger)[number]) =>
     row.documentType === "Project Transfer" && row.documentId
-      ? transferTypeById.get(row.documentId)
+      ? transferById.get(row.documentId)?.type
       : undefined;
   const movesAtCost = (row: (typeof ledger)[number]) => {
     const type = transferType(row);
@@ -432,10 +445,13 @@ export async function resetAndRecostInventory(
       transferType(ledgerById.get(movement.costLedgerId)!) === "Payback"
   );
   if (payback) {
+    const row = ledgerById.get(payback.costLedgerId)!;
+    const transfer = transferById.get(row.documentId!);
     throw new ServerFnError(
-      `The cutover re-cost changed the cost of project stock payback ${
-        ledgerById.get(payback.costLedgerId)!.documentId
-      }. Pick a cutover date after the payback.`,
+      paybackRecostRefusal(
+        transfer?.projectStockTransferId ?? row.documentId!,
+        String(row.postingDate)
+      ),
       409
     );
   }

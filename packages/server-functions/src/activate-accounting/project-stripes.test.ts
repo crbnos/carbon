@@ -19,6 +19,7 @@ import {
   receiveFiveParts,
   USER
 } from "./activation-test-fixture";
+import { paybackRecostRefusal } from "./recost";
 
 async function addProject(f: Fixture) {
   const project = await f.db
@@ -29,21 +30,34 @@ async function addProject(f: Fixture) {
   return project.id;
 }
 
-/** Moves `quantity` parts from common stock to `projectId` at `cost`. */
+/** Moves `quantity` parts from common stock to `projectId` at `cost`. A
+ *  Payback names a borrow that is not there: only its type matters to the
+ *  re-cost, so its foreign keys are not checked. */
 async function transferToProject(
   f: Fixture,
-  args: { projectId: string; quantity: number; cost: number; date: string }
+  args: {
+    projectId: string;
+    quantity: number;
+    cost: number;
+    date: string;
+    type?: "Transfer" | "Payback";
+  }
 ) {
+  const type = args.type ?? "Transfer";
   return f.db.transaction().execute(async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+    if (type === "Payback") {
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+    }
     const transfer = await trx
       .insertInto("projectStockTransfer")
       .values({
         projectStockTransferId: `${f.prefix}-PST`,
-        type: "Transfer",
+        type,
         status: "Posted",
         fromProjectId: null,
         toProjectId: args.projectId,
+        settlesBorrowId: type === "Payback" ? `${f.prefix}-borrow` : null,
         locationId: f.locationId,
         reason: "Test",
         companyId: f.companyId,
@@ -51,6 +65,7 @@ async function transferToProject(
       })
       .returning("id")
       .executeTakeFirstOrThrow();
+    await sql`SET LOCAL session_replication_role = origin`.execute(trx);
     const base = {
       postingDate: args.date,
       entryType: "Transfer" as const,
@@ -212,6 +227,41 @@ databaseTest(
         .where("description", "=", "Cutover recost")
         .execute();
       expect(recost).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the enable refuses a payback after the cutover whose cost the re-cost changes, and names it",
+  async () => {
+    const f = await activationFixture();
+    try {
+      await receiveFiveParts(f, { id: "po-1", unitPrice: 8 });
+      await receiveFiveParts(f, { id: "po-2", unitPrice: 12 });
+      await moveBeforeCutover(f);
+      const projectId = await addProject(f);
+      // Posted after the cutover from the first receipt's layer, at 8.00;
+      // against the opening layer at 10.00 its cost changes.
+      await transferToProject(f, {
+        projectId,
+        quantity: 3,
+        cost: 24,
+        date: f.today,
+        type: "Payback"
+      });
+
+      await expect(enableWithStockAtTen(f)).rejects.toThrow(
+        paybackRecostRefusal(`${f.prefix}-PST`, f.today)
+      );
+      // Nothing was written: the company still has no cutover.
+      const settings = await f.db
+        .selectFrom("companySettings")
+        .select("accountingCutoverDate")
+        .where("id", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(settings.accountingCutoverDate).toBeNull();
     } finally {
       await f.cleanup();
     }
