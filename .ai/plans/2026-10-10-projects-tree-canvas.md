@@ -65,7 +65,7 @@ Make the Tree layout of the project Elements page look and work like Flow's tree
 - [x] Task 5: Draw the Tree layout as boxes
 - [x] Task 6: Add the breadcrumb root
 - [x] Task 7: Add the change request picker
-- [ ] Task 8: Update the rules, AGENTS.md and the docs page
+- [x] Task 8: Update the rules, AGENTS.md and the docs page
 - [ ] Task 9: Verify in the browser
 
 ## Dependencies
@@ -791,3 +791,5 @@ ls .ai/playbooks/ | grep -i tree
 - Task 6 (risk, not a deviation): the new `shouldRevalidate` skips only the Elements route's own loader on a `root` change. The parent layouts (`x+/project+/$projectId.tsx` and above) export no skip, so React Router still runs their loaders. Task 9 point 5 ("no loader request") can see those requests. `BreadcrumbLink` uses `PrefetchLink`, so a crumb prefetches on pointer down.
 - Task 7: `useUrlParams()` returns a tuple, so the picker takes `const [, setParams] = useUrlParams()`. "Focus on {label}" and "# items" were already in the catalogs from the Task 4 and Task 5 commits (the pre-commit hook extracts). This commit adds the 5 picker strings to every `erp.po`.
 - Task 7 (deviation): `/translate` did not run. The new strings have an empty `msgstr` in the 12 other locales, like the rest of the projects module on this branch (723 erp strings are missing per locale). Run `/translate` once for the whole branch before the PR.
+- Task 8: the new rule text is 2 paragraphs, not 1, because 9 sentences break the STE-80 limit of 6. No docs dev server answered on port 3002, so the docs page was checked with `pnpm --filter docs typecheck` only (exit 0). The 2 docs edits add no link.
+- Task 9: Browser verification deferred. Do not use localhost:3000: it is a different product, not Carbon.

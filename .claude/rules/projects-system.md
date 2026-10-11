@@ -321,10 +321,23 @@ and Requirement from the rows the page loads; there is no SQL function.
 
 ## Layouts, views and the Reader PDF
 
-Six layouts (`projectLayouts`): List, Board, Table, Tree (React Flow + dagre),
+Six layouts (`projectLayouts`): List, Board, Table, Tree (React Flow boxes + dagre),
 Timeline (own component, `timeline-geometry.ts`), Reader. The Reader PDF
 (`file+/project+/$id[.]pdf.tsx`, `ProjectReaderPDF` in `@carbon/documents`) reads the
 same filters (`parseElementFilters`) and outline (`buildReaderOutline`).
+
+The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
+pure, tested) gives a box to each parent that has matching descendants. Dagre places the
+boxes, left to right only, and the cards stack in their box at fixed offsets. The type
+filter is a lens on the Tree: the loader drops `type` for the Tree, and a box stays while
+a card below it matches. `?root=` shows one subtree under a breadcrumb, and the Elements
+route skips its own reload when only `root` changes.
+
+`countTraceLinks` and `highlightTraceLinks` give the "N tests" and "N reqs" counts
+and their highlight. `elementTypeColors` (`ElementTypeIcon.tsx`) is the one colour map
+of the types, on every layout. `getProjectElementCommentCounts` reads the comment counts
+in one paged read. `ChangeRequestPicker` in the Elements header lists
+`openChangeRequestStatuses` and sets `?cr=`.
 
 `projectView` (saved views; shared ones readable with `projects_view`) and
 `projectUserPreference` (one per user and project) hold layout, filters and display
