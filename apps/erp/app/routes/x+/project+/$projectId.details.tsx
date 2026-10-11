@@ -14,12 +14,14 @@ import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Project, ProjectMilestone } from "~/modules/projects";
 import {
+  COST_OBJECTIVE_REQUIRED,
   getProject,
   projectValidator,
   updateProject
 } from "~/modules/projects";
 import { ensureCapitalAssets } from "~/modules/projects/projects.server";
 import { ProjectForm } from "~/modules/projects/ui/Projects";
+import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -44,6 +46,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The identifier is fixed once the project exists: every element's stored
   // readable id starts with it.
   const { id: _id, identifier: _identifier, ...fields } = validation.data;
+
+  // DCAA timekeeping: every project needs a cost objective.
+  if (!fields.costObjective) {
+    const settings = await getCompanySettings(client, companyId);
+    if (settings.data?.timekeepingControls === "DCAA") {
+      return validationError({
+        fieldErrors: { costObjective: COST_OBJECTIVE_REQUIRED }
+      });
+    }
+  }
 
   // The lock milestone must be one of this project's milestones.
   if (fields.lockPlanAfterMilestoneId) {
@@ -203,7 +215,9 @@ export default function ProjectDetailsRoute() {
           chargeAtReceipt: project.chargeAtReceipt,
           governmentFurnished: project.governmentFurnished,
           planningGroupId: project.planningGroupId ?? undefined,
-          planningPriority: project.planningPriority
+          planningPriority: project.planningPriority,
+          costObjective: project.costObjective ?? undefined,
+          restrictCharging: project.restrictCharging
         }}
         isProjectStockLocked={project.status !== "Draft"}
         milestones={(routeData?.milestones ?? []).map((milestone) => ({

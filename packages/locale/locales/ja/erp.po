@@ -2069,6 +2069,9 @@ msgstr "マッチを追加"
 msgid "Add Material"
 msgstr ""
 
+msgid "Add Member"
+msgstr ""
+
 msgid "Add Model"
 msgstr "モデルを追加"
 
@@ -6285,6 +6288,9 @@ msgstr ""
 
 msgid "Cost ledger"
 msgstr "原価元帳"
+
+msgid "Cost Objective"
+msgstr ""
 
 msgid "Cost of Goods Sold"
 msgstr "売上原価"
@@ -11779,6 +11785,9 @@ msgstr ""
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
 msgstr ""
 
+msgid "In DCAA timekeeping, only the project's members can charge time to it"
+msgstr ""
+
 msgid "In Maintenance"
 msgstr "保全中"
 
@@ -15350,6 +15359,9 @@ msgstr "品目はまだありません"
 msgid "No members yet. A project with project stock joins the group on its Details tab."
 msgstr ""
 
+msgid "No members yet. Nobody can charge time to the project."
+msgstr ""
+
 msgid "No method"
 msgstr ""
 
@@ -16236,6 +16248,9 @@ msgstr "資格のある従業員のみがこのプロセスをスケジュール
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "シリアル化された個のうち、固定資産として資本化されたもののみレンタルできます。追加するには、部品の在庫管理タブを開き、保管ユニット内でシリアル番号を見つけて、「固定資産として資本化」を選択してください。"
+
+msgid "Only these employees can charge time to the project in DCAA timekeeping."
+msgstr ""
 
 msgid "Only this project's demand draws its stock. Another project needs a transfer or a borrow first."
 msgstr ""
@@ -19237,6 +19252,9 @@ msgstr "{1} から {memberCount} 工程中 {0} 個を除去しますか？"
 msgid "Remove {label}"
 msgstr "{label}を除去"
 
+msgid "Remove {name}"
+msgstr ""
+
 msgid "Remove authenticator app"
 msgstr "認証アプリを除去"
 
@@ -19735,6 +19753,9 @@ msgstr "ファイルを復元中"
 
 msgid "restoring…"
 msgstr "復元中…"
+
+msgid "Restrict charging to members"
+msgstr ""
 
 msgid "Result"
 msgstr "結果"
@@ -26791,6 +26812,9 @@ msgstr "在庫がどこに保管され、どのように出荷されるか。"
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "影響を受けるアイテムがシステム全体でどこで使用されているか。情報提供 - ここに何もリリースをブロックしません。"
+
+msgid "Where the project's cost lands for government contract reporting"
+msgstr ""
 
 msgid "Where the service is delivered"
 msgstr "外注サービスが提供される場所"

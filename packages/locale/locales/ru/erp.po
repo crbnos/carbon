@@ -2069,6 +2069,9 @@ msgstr "Добавить совпадение"
 msgid "Add Material"
 msgstr ""
 
+msgid "Add Member"
+msgstr ""
+
 msgid "Add Model"
 msgstr "Добавить модель"
 
@@ -6285,6 +6288,9 @@ msgstr ""
 
 msgid "Cost ledger"
 msgstr "Ведомость себестоимости"
+
+msgid "Cost Objective"
+msgstr ""
 
 msgid "Cost of Goods Sold"
 msgstr "Себестоимость реализованной продукции"
@@ -11779,6 +11785,9 @@ msgstr ""
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
 msgstr ""
 
+msgid "In DCAA timekeeping, only the project's members can charge time to it"
+msgstr ""
+
 msgid "In Maintenance"
 msgstr "На техническом обслуживании"
 
@@ -15350,6 +15359,9 @@ msgstr "Нет материалов ещё"
 msgid "No members yet. A project with project stock joins the group on its Details tab."
 msgstr ""
 
+msgid "No members yet. Nobody can charge time to the project."
+msgstr ""
+
 msgid "No method"
 msgstr ""
 
@@ -16236,6 +16248,9 @@ msgstr "Только квалифицированные сотрудники м�
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Только сериализованные единицы, оформленные как основные средства, можно сдавать в аренду. Чтобы добавить один, откройте вкладку «Запасы» детали, найдите серийный номер в Единицах хранения и выберите «Оформить как основное средство»."
+
+msgid "Only these employees can charge time to the project in DCAA timekeeping."
+msgstr ""
 
 msgid "Only this project's demand draws its stock. Another project needs a transfer or a borrow first."
 msgstr ""
@@ -19237,6 +19252,9 @@ msgstr "Убрать {0} из {memberCount} операций из {1}?"
 msgid "Remove {label}"
 msgstr "Убрать {label}"
 
+msgid "Remove {name}"
+msgstr ""
+
 msgid "Remove authenticator app"
 msgstr "Удалить приложение аутентификации"
 
@@ -19735,6 +19753,9 @@ msgstr "Восстановление файлов"
 
 msgid "restoring…"
 msgstr "восстановление…"
+
+msgid "Restrict charging to members"
+msgstr ""
 
 msgid "Result"
 msgstr "Результат"
@@ -26791,6 +26812,9 @@ msgstr "Где находится запас и как он отправляет
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Где затронутые элементы используются по всей системе. Информационно — ничто здесь не блокирует выпуск."
+
+msgid "Where the project's cost lands for government contract reporting"
+msgstr ""
 
 msgid "Where the service is delivered"
 msgstr "Где предоставляется услуга"

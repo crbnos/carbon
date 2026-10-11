@@ -2069,6 +2069,9 @@ msgstr "添加匹配"
 msgid "Add Material"
 msgstr ""
 
+msgid "Add Member"
+msgstr ""
+
 msgid "Add Model"
 msgstr "添加模型"
 
@@ -6285,6 +6288,9 @@ msgstr ""
 
 msgid "Cost ledger"
 msgstr "成本分类账"
+
+msgid "Cost Objective"
+msgstr ""
 
 msgid "Cost of Goods Sold"
 msgstr "销售成本"
@@ -11779,6 +11785,9 @@ msgstr ""
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
 msgstr ""
 
+msgid "In DCAA timekeeping, only the project's members can charge time to it"
+msgstr ""
+
 msgid "In Maintenance"
 msgstr "维护中"
 
@@ -15350,6 +15359,9 @@ msgstr "暂无原材料"
 msgid "No members yet. A project with project stock joins the group on its Details tab."
 msgstr ""
 
+msgid "No members yet. Nobody can charge time to the project."
+msgstr ""
+
 msgid "No method"
 msgstr ""
 
@@ -16236,6 +16248,9 @@ msgstr "只有合格的员工才能被安排和运行此流程"
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "仅具有序列号且已作为固定资产资本化的件才能出租。要添加一个，请打开该零件的库存管理选项卡，在存储单元下查找序列号，然后选择作为固定资产资本化。"
+
+msgid "Only these employees can charge time to the project in DCAA timekeeping."
+msgstr ""
 
 msgid "Only this project's demand draws its stock. Another project needs a transfer or a borrow first."
 msgstr ""
@@ -19237,6 +19252,9 @@ msgstr "从 {1} 中移除 {0} 个（共 {memberCount} 个）工序？"
 msgid "Remove {label}"
 msgstr "移除 {label}"
 
+msgid "Remove {name}"
+msgstr ""
+
 msgid "Remove authenticator app"
 msgstr "移除身份验证器应用"
 
@@ -19735,6 +19753,9 @@ msgstr "正在恢复文件"
 
 msgid "restoring…"
 msgstr "恢复中…"
+
+msgid "Restrict charging to members"
+msgstr ""
 
 msgid "Result"
 msgstr "结果"
@@ -26791,6 +26812,9 @@ msgstr "库存存放位置及其发货方式。"
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "受影响的物料在整个系统中的使用位置。仅供参考——此处没有任何内容阻止已下达。"
+
+msgid "Where the project's cost lands for government contract reporting"
+msgstr ""
 
 msgid "Where the service is delivered"
 msgstr "服务交付的位置"

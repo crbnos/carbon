@@ -12,9 +12,10 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
-import { projectValidator } from "~/modules/projects";
+import { COST_OBJECTIVE_REQUIRED, projectValidator } from "~/modules/projects";
 import { copyProject, createProject } from "~/modules/projects/projects.server";
 import { ProjectForm } from "~/modules/projects/ui/Projects";
+import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -59,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "projects"
   });
 
@@ -68,6 +69,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // DCAA timekeeping: every project needs a cost objective.
+  if (!validation.data.costObjective) {
+    const settings = await getCompanySettings(client, companyId);
+    if (settings.data?.timekeepingControls === "DCAA") {
+      return validationError({
+        fieldErrors: { costObjective: COST_OBJECTIVE_REQUIRED }
+      });
+    }
   }
 
   const { id: _id, ...project } = validation.data;

@@ -43,6 +43,7 @@ import {
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
+  costObjectivesForTreatment,
   projectCostTreatments,
   projectElementPriorities,
   projectValidator,
@@ -108,6 +109,23 @@ const ProjectForm = ({
   const [costTreatment, setCostTreatment] = useState<string>(
     initialValues.costTreatment
   );
+  // Only the user's pick is state. Until they pick, the saved objective shows,
+  // and a new Contract project starts on Direct.
+  const [pickedCostObjective, setCostObjective] = useState<string | null>(null);
+  const costObjectiveOptions = costObjectivesForTreatment(costTreatment).map(
+    (objective) => ({ label: objective, value: objective })
+  );
+  const proposedCostObjective =
+    pickedCostObjective ??
+    initialValues.costObjective ??
+    (!isEditing && costTreatment === "Contract" ? "Direct" : "");
+  // A treatment change can rule the objective out (Expense takes only IR&D,
+  // B&P or Indirect): then the field is empty.
+  const costObjective = costObjectiveOptions.some(
+    (option) => option.value === proposedCostObjective
+  )
+    ? proposedCostObjective
+    : "";
   const cipClasses = useCipClasses(costTreatment === "Capitalize");
   const [projectStock, setProjectStock] = useState(
     initialValues.projectStock ?? false
@@ -189,6 +207,15 @@ const ProjectForm = ({
             helperText={t`Leave empty to use the account default`}
           />
         )}
+        <SelectControlled
+          name="costObjective"
+          label={t`Cost Objective`}
+          isOptional
+          helperText={t`Where the project's cost lands for government contract reporting`}
+          options={costObjectiveOptions}
+          value={costObjective}
+          onChange={(option) => setCostObjective(option?.value ?? "")}
+        />
         <Customer name="customerId" label={t`Customer`} />
         <Employee name="ownerId" label={t`Owner`} />
         <Location name="locationId" label={t`Location`} />
@@ -196,6 +223,11 @@ const ProjectForm = ({
         <DatePicker name="startDate" label={t`Start Date`} />
         <DatePicker name="endDate" label={t`End Date`} />
         <div className="flex flex-col gap-4 @xl:col-span-2">
+          <BooleanField
+            name="restrictCharging"
+            label={t`Restrict charging to members`}
+            description={t`In DCAA timekeeping, only the project's members can charge time to it`}
+          />
           <BooleanField
             name="projectStock"
             label={t`Project stock`}

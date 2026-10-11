@@ -6,33 +6,62 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
-import type { ActionFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Project, ProjectLabel, ProjectState } from "~/modules/projects";
 import {
+  addProjectMember,
   deleteProjectLabel,
   deleteProjectState,
+  getProjectMembers,
   projectLabelValidator,
+  projectMemberValidator,
   projectStateValidator,
+  removeProjectMember,
   setProjectStateDefault,
   upsertProjectLabel,
   upsertProjectState
 } from "~/modules/projects";
 import ProjectLabels from "~/modules/projects/ui/Project/ProjectLabels";
+import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectStates from "~/modules/projects/ui/Project/ProjectStates";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "project-settings");
 
 const intents = [
   "upsertState",
   "deleteState",
   "setDefaultState",
   "upsertLabel",
-  "deleteLabel"
+  "deleteLabel",
+  "addMember",
+  "removeMember"
 ] as const;
 type Intent = (typeof intents)[number];
+
+/** The project's members: who may charge time when charging is restricted. */
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "projects"
+  });
+  const { projectId } = params;
+  if (!projectId) throw new Error("Could not find projectId");
+
+  const members = await getProjectMembers(client, projectId, companyId);
+  if (members.error) {
+    logger.error("Failed to load the project members", {
+      companyId,
+      projectId,
+      error: members.error
+    });
+  }
+  return { members: members.data ?? [] };
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -134,12 +163,56 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
       return done("Label deleted");
     }
+    case "addMember":
+    case "removeMember": {
+      const validation = await validator(projectMemberValidator).validate(
+        formData
+      );
+      if (validation.error) return validationError(validation.error);
+      if (validation.data.projectId !== projectId) {
+        return refuse(null, "The member is not for this project");
+      }
+      if (intent === "removeMember") {
+        const result = await removeProjectMember(client, {
+          projectId,
+          userId: validation.data.userId,
+          companyId
+        });
+        if (result.error) {
+          return refuse(result.error, "Failed to remove the member");
+        }
+        return done("Member removed");
+      }
+      // A member must be an employee of this company.
+      const employee = await client
+        .from("employee")
+        .select("id")
+        .eq("id", validation.data.userId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (employee.error || !employee.data) {
+        return validationError({
+          fieldErrors: { userId: "Choose an employee of this company" }
+        });
+      }
+      const result = await addProjectMember(client, {
+        projectId,
+        userId: validation.data.userId,
+        companyId,
+        createdBy: userId
+      });
+      if (result.error) {
+        return refuse(result.error, "Failed to add the member");
+      }
+      return done("Member added");
+    }
     default:
       return refuse(null, "Unknown action");
   }
 }
 
 export default function ProjectSettingsRoute() {
+  const { members } = useLoaderData<typeof loader>();
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
 
@@ -165,6 +238,14 @@ export default function ProjectSettingsRoute() {
         action={action}
         isDisabled={isDisabled}
       />
+      {routeData.project.restrictCharging && (
+        <ProjectMembers
+          projectId={projectId}
+          members={members}
+          action={action}
+          isDisabled={isDisabled}
+        />
+      )}
     </VStack>
   );
 }

@@ -78,7 +78,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 16: Route every timesheet write through the server functions
 - [x] Task 17: Add Settings → Timekeeping
 - [x] Task 18: Add allowability to the account drawer
-- [ ] Task 19: Add the cost objective, restrict charging and members to the project
+- [x] Task 19: Add the cost objective, restrict charging and members to the project
 - [ ] Task 20: Add the element flags
 - [ ] Task 21: Add the FLSA status to the employee job
 - [ ] Task 22: Build the DCAA controls on My Timesheet
@@ -1572,3 +1572,11 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   2. While the allowability is Allowable, the form sends an empty `unallowableReason`. The update then clears a reason that an earlier unallowable setting left.
   3. Both actions spread the validated data into `upsertAccount`, so they needed no change. The edit route's initial values now carry the 3 stored values, and the new route defaults to Allowable.
   4. Browser verification deferred.
+- Task 19:
+  1. `projectValidator` gains a refine: an Expense project's cost objective is IR&D, B&P or Indirect. The pure `costObjectivesForTreatment` gives the options to the form and to the refine. The database CHECK refused the other values with a raw error. `pnpm run generate:mcp` changes nothing, because a refine adds no field.
+  2. The form keeps only the user's pick of the cost objective as state. A new Contract project starts on Direct. If a treatment change rules out the shown objective, the field becomes empty.
+  3. The DCAA check lives in both actions that save the form: `projects+/new.tsx` and `$projectId.details.tsx`. Each reads `timekeepingControls` only when the objective is empty, and returns a field error (`COST_OBJECTIVE_REQUIRED`).
+  4. The project Settings tab had no loader. It now loads the members with `getProjectMembers`. The members card renders only while the project restricts charging, as step 4 says.
+  5. `addMember` refuses a user who is not an employee of the company, because `projectMember.userId` references the global `user` table. Both intents refuse a form whose `projectId` is not the route's project.
+  6. A member row shows the user's name and avatar from the embed in `getProjectMembers`, so a former employee still shows a name. Remove is one click with no confirm: it changes no posted data, and Add puts the member back.
+  7. Browser verification deferred.

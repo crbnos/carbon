@@ -2069,6 +2069,9 @@ msgstr "Aggiungi corrispondenza"
 msgid "Add Material"
 msgstr ""
 
+msgid "Add Member"
+msgstr ""
+
 msgid "Add Model"
 msgstr "Aggiungi modello"
 
@@ -6285,6 +6288,9 @@ msgstr ""
 
 msgid "Cost ledger"
 msgstr "Libro dei costi"
+
+msgid "Cost Objective"
+msgstr ""
 
 msgid "Cost of Goods Sold"
 msgstr "Costo del venduto"
@@ -11779,6 +11785,9 @@ msgstr ""
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
 msgstr ""
 
+msgid "In DCAA timekeeping, only the project's members can charge time to it"
+msgstr ""
+
 msgid "In Maintenance"
 msgstr "In manutenzione"
 
@@ -15350,6 +15359,9 @@ msgstr "Nessun materiale ancora"
 msgid "No members yet. A project with project stock joins the group on its Details tab."
 msgstr ""
 
+msgid "No members yet. Nobody can charge time to the project."
+msgstr ""
+
 msgid "No method"
 msgstr ""
 
@@ -16236,6 +16248,9 @@ msgstr "Solo i dipendenti qualificati possono essere programmati e eseguire ques
 
 msgid "Only serialized units capitalized as fixed assets can be rented. To add one, open the part's Inventory tab, find the serial number under Storage Units, and choose Capitalize as Fixed Asset."
 msgstr "Solo le unità serializzate capitalizzate come cespiti possono essere noleggiate. Per aggiungerne una, apri la scheda Magazzino della componente, trova il numero di serie sotto Unità di stoccaggio e scegli Capitalizza come cespite."
+
+msgid "Only these employees can charge time to the project in DCAA timekeeping."
+msgstr ""
 
 msgid "Only this project's demand draws its stock. Another project needs a transfer or a borrow first."
 msgstr ""
@@ -19237,6 +19252,9 @@ msgstr "Rimuovi {0} su {memberCount} operazioni da {1}?"
 msgid "Remove {label}"
 msgstr "Rimuovi {label}"
 
+msgid "Remove {name}"
+msgstr ""
+
 msgid "Remove authenticator app"
 msgstr "Rimuovi app autenticatore"
 
@@ -19735,6 +19753,9 @@ msgstr "Ripristino dei file"
 
 msgid "restoring…"
 msgstr "ripristino in corso…"
+
+msgid "Restrict charging to members"
+msgstr ""
 
 msgid "Result"
 msgstr "Risultato"
@@ -26791,6 +26812,9 @@ msgstr "Dove il magazzino risiede e come viene spedito."
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Dove gli elementi interessati sono utilizzati in tutto il sistema. Informativo — niente qui blocca il rilascio."
+
+msgid "Where the project's cost lands for government contract reporting"
+msgstr ""
 
 msgid "Where the service is delivered"
 msgstr "Dove il servizio viene erogato"

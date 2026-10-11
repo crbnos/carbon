@@ -56,6 +56,23 @@ export const projectCostObjectives = [
   "Commercial"
 ] as const satisfies readonly ProjectCostObjective[];
 
+/**
+ * The cost objectives a project of this cost treatment may take. An Expense
+ * project is an indirect or independent research project, never a contract
+ * (`project_costObjective_treatment_check`).
+ */
+export function costObjectivesForTreatment(
+  costTreatment: string
+): readonly ProjectCostObjective[] {
+  return costTreatment === "Expense"
+    ? ["IR&D", "B&P", "Indirect"]
+    : projectCostObjectives;
+}
+
+/** DCAA mode: every project needs a cost objective. */
+export const COST_OBJECTIVE_REQUIRED =
+  "Set a cost objective. DCAA timekeeping requires one";
+
 export const projectElementTypes = [
   "Folder",
   "System",
@@ -201,6 +218,17 @@ export const projectValidator = z
     {
       message: "A capital project needs a Construction in Progress class",
       path: ["fixedAssetClassId"]
+    }
+  )
+  .refine(
+    (data) =>
+      !data.costObjective ||
+      costObjectivesForTreatment(data.costTreatment).includes(
+        data.costObjective
+      ),
+    {
+      message: "An Expense project's cost objective is IR&D, B&P or Indirect",
+      path: ["costObjective"]
     }
   );
 
