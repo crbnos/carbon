@@ -92,7 +92,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 5: Add the ee package skeleton
 - [x] Task 6: Add the pure budget engine
 - [x] Task 7: Add the pure earned value engine
-- [ ] Task 8: Add `checkBudgetAvailability` and the budget notice
+- [x] Task 8: Add `checkBudgetAvailability` and the budget notice
 - [ ] Task 9: Check the budget at PO line save and PO finalize
 - [ ] Task 10: Check the budget at Issue to Project and job charge
 - [ ] Task 11: Warn on timesheets
@@ -1137,3 +1137,11 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   5. `holdUntilIssued` also leaves out the receipts after `periodEnd`. It returns a `Map` keyed by element id; a receipt with no element has the key null. Each element's amount is rounded once, after the sum.
   6. `acwpElementFor` takes the `projectCostType` enum. `rollUpControlAccounts` returns the control accounts in the order of their first work package.
   7. The compute test covers both engines: 13 tests pass (`pnpm exec vitest run src/project-control`).
+- Task 8:
+  1. The 4 reads (projects, elements, commitments, actual cost) all go through the Kysely `db`, each scoped by `companyId`. A purchasing user may have no `projects_view`, and the check must still see the budget. The plan's ".in" wording is met by one `where … in` query per read.
+  2. The budget types (`BudgetCharge`, `BudgetCheckInput`, `BudgetCheckResult`, `BudgetOverrun`, `BudgetCheckSource`) live in `models.ts`, because the client-safe `budgetOverrunMessage` needs the result type.
+  3. When the new amounts of a budgeted element sum to 0 or less, the check skips that element. A PO line edit that lowers cost is then never refused, even on an element that is already over budget.
+  4. The commitments leave out open grouped supply (`projectPeg` rows on planning group PO lines), which `get_project_cost_summary` counts. A grouped PO line has no `projectId`, so C2's PO line query cannot see it. The Costs tab can therefore show more committed cost than the budget check counts.
+  5. The check returns ok before any read when there are no charges, and without the feature.
+  6. `ProjectBudgetExceeded` is payload-carried, like `TimesheetMissing`: `title` is "Budget exceeded on <project>", `body` is the overrun message, `documentId` is the project. It has the General topic, InApp and Email destinations, the email heading "Budget exceeded" and the CTA "View costs". The topbar row and `api+/link.ts` open `path.to.projectCosts`. `weekly.ts` only sends `TrainingReminder`, so it needs no branch.
+  7. The test's `db` is a chainable stand-in that records each table it reads. `pnpm exec vitest run src/project-control` runs 16 tests (13 compute, 3 service).

@@ -395,6 +395,14 @@ function GenericNotification({
       return (
         <Notification icon={<LuClock />} to={path.to.timesheet} {...props} />
       );
+    case NotificationEvent.ProjectBudgetExceeded:
+      return (
+        <Notification
+          icon={<LuDollarSign />}
+          to={path.to.projectCosts(id)}
+          {...props}
+        />
+      );
     case NotificationEvent.JobCompleted:
     case NotificationEvent.JobAssignment:
       return (

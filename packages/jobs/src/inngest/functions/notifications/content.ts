@@ -1424,6 +1424,16 @@ async function buildEventContent(
       };
     }
 
+    // Payload-carried: the timesheet budget check sends "Budget exceeded on
+    // <project>" as `title` and the overruns as `body`; documentId is the
+    // project.
+    case NotificationEvent.ProjectBudgetExceeded: {
+      return {
+        description: opts?.title ?? "Budget exceeded",
+        details: opts?.body ? [{ label: "Overrun", value: opts.body }] : []
+      };
+    }
+
     default:
       return null;
   }

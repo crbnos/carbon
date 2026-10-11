@@ -103,6 +103,8 @@ function resolve(
       return path.to.contractDetails(documentId);
     case NotificationEvent.TimesheetMissing:
       return path.to.timesheet;
+    case NotificationEvent.ProjectBudgetExceeded:
+      return path.to.projectCosts(documentId);
     case NotificationEvent.Workflow:
       return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:

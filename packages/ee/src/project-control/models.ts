@@ -96,3 +96,56 @@ export const stopWorkValidator = z.object({
     .string()
     .regex(ISO_DATE, { message: "Order date must be YYYY-MM-DD" })
 });
+
+// ── Budget availability (decisions C2–C5) ──────────────────────────────────
+
+/** One amount a document charges to a project element. */
+export type BudgetCharge = {
+  projectId: string;
+  projectElementId: string | null;
+  amount: number;
+  /** The saved PO lines the charge replaces, so their commitment is not counted twice (C2). */
+  excludePurchaseOrderLineIds?: string[];
+};
+
+export type BudgetCheckSource = "purchase" | "issue" | "job" | "timesheet";
+
+export type BudgetCheckInput = {
+  companyId: string;
+  source: BudgetCheckSource;
+  charges: BudgetCharge[];
+};
+
+export type BudgetOverrun = {
+  projectId: string;
+  projectName: string;
+  elementId: string;
+  readableId: string;
+  elementName: string;
+  budget: number;
+  projected: number;
+  overBy: number;
+  budgetControl: BudgetControl;
+  ownerId: string | null;
+};
+
+export type BudgetCheckResult = {
+  status: "ok" | "warn" | "block";
+  overruns: BudgetOverrun[];
+};
+
+/**
+ * The overrun text a flash or a notice shows. Each overrun reads
+ * "<readableId> <elementName> goes over its budget of <budget> by <overBy>."
+ */
+export function budgetOverrunMessage(
+  result: Pick<BudgetCheckResult, "overruns">,
+  formatMoney: (n: number) => string
+): string {
+  return result.overruns
+    .map(
+      (overrun) =>
+        `${overrun.readableId} ${overrun.elementName} goes over its budget of ${formatMoney(overrun.budget)} by ${formatMoney(overrun.overBy)}.`
+    )
+    .join(" ");
+}

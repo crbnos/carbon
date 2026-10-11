@@ -4,5 +4,4 @@
 
 // Server-only entry point (`@carbon/ee/project-control.server`). Never import
 // it from a client module.
-// export * from "./service.server";
-export {};
+export * from "./service.server";

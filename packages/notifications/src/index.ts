@@ -51,6 +51,10 @@ export enum NotificationEvent {
   // Payload-carried like RecurringInvoicing: the daily missing-time check
   // sends the text as `body`; `documentId` is the missed date.
   TimesheetMissing = "timesheet-missing",
+  // Payload-carried like TimesheetMissing: the budget check of a timesheet
+  // sends "Budget exceeded on <project>" as `title` and the overruns as
+  // `body`; `documentId` is the project.
+  ProjectBudgetExceeded = "project-budget-exceeded",
   RiskAssignment = "risk-assignment",
   SalesOrderAssignment = "sales-order-assignment",
   SalesRfqAssignment = "sales-rfq-assignment",
@@ -227,6 +231,7 @@ export function getNotificationTopic(
     case NotificationEvent.Workflow:
     case NotificationEvent.IntegrationSync:
     case NotificationEvent.TimesheetMissing:
+    case NotificationEvent.ProjectBudgetExceeded:
       return NotificationTopic.General;
     default:
       return NotificationTopic.General;
@@ -319,6 +324,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Contract funding notice";
     case NotificationEvent.TimesheetMissing:
       return "Missing time";
+    case NotificationEvent.ProjectBudgetExceeded:
+      return "Budget exceeded";
     default:
       return "You have a new notification";
   }
@@ -363,6 +370,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View contract";
     case NotificationEvent.TimesheetMissing:
       return "Open timesheet";
+    case NotificationEvent.ProjectBudgetExceeded:
+      return "View costs";
     default:
       return "View details";
   }
