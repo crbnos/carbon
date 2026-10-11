@@ -95,14 +95,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
 
+  const db = getDatabaseClient();
   const [checklist, periods] = await Promise.all([
     // `getPeriodCloseChecklist` with the project revenue synthesizers, which
     // the browser-bundled service cannot import.
     loadPeriodCloseChecklist(
       client,
+      db,
       companyId,
       periodId,
-      runPreviewer(client, getDatabaseClient(), {
+      runPreviewer(client, db, {
         companyId,
         companyGroupId,
         userId,

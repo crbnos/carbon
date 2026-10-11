@@ -182,6 +182,7 @@ function makeKyselyRecorder() {
     getExecutor: () => executor
   };
   const db: any = {
+    ...standardTimekeepingDb,
     transaction: () => ({
       execute: async (fn: (t: unknown) => Promise<unknown>) => {
         await fn(tx);
@@ -190,6 +191,19 @@ function makeKyselyRecorder() {
   };
   return { db, updates, rawExecutions };
 }
+
+// The Timesheets complete check reads `companySettings` through the Kysely
+// client. No settings row reads as Standard timekeeping, so the check passes.
+const standardTimekeepingDb = {
+  selectFrom: () => {
+    const builder: any = {
+      select: () => builder,
+      where: () => builder,
+      executeTakeFirst: async () => undefined
+    };
+    return builder;
+  }
+};
 
 const args = {
   periodId: "P2",
@@ -1047,6 +1061,7 @@ describe("computePeriodReadiness — run checks", () => {
   const readiness = (client: unknown, runPreview: PeriodRunPreview) =>
     computePeriodReadiness(
       client as any,
+      standardTimekeepingDb as any,
       "C1",
       "2026-10-01",
       "2026-10-31",

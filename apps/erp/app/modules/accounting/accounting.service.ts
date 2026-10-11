@@ -10,6 +10,7 @@ import {
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
+import { getTimesheetCloseReadiness } from "@carbon/database/timesheet-readiness";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { RunRowSynthesizer } from "@carbon/server-functions/propose-revenue-recognition-run";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
@@ -2829,6 +2830,7 @@ export async function closeAccountingPeriod(
   // idempotent, so this both materializes and evaluates the checklist.
   const checklist = await loadPeriodCloseChecklist(
     client,
+    db,
     args.companyId,
     args.periodId,
     previewRuns
@@ -3380,56 +3382,27 @@ export function runPreviewer(
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
 }
 
-/** A timesheet entry in one of these is not posted yet. */
-const OPEN_TIMESHEET_STATUSES = [
-  "Draft",
-  "Submitted",
-  "Approved",
-  "Rejected",
-  "Pending Employee Review"
-] as const;
-
 /**
- * The "Timesheets complete" close check (Government Contracting 5a). In
- * Standard timekeeping it always passes. In DCAA mode it counts the entries
- * dated in the period that are not Posted, plus the scheduled work days in it
- * with no entry (`get_missing_timesheet_days`). A failed read counts as one,
+ * The "Timesheets complete" close check (Government Contracting 5a). It reads
+ * with the privileged Kysely client, so the count does not depend on the
+ * closing user's `people` or `projects` access. A failed read counts as one,
  * so the warning shows rather than a false pass.
  */
 async function getPeriodTimesheetReadiness(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   startDate: string,
   endDate: string
 ): Promise<{ failing: boolean; count: number }> {
-  const settings = await client
-    .from("companySettings")
-    .select("timekeepingControls")
-    .eq("id", companyId)
-    .maybeSingle();
-  if (settings.error) return { failing: true, count: 1 };
-  if (settings.data?.timekeepingControls !== "DCAA") {
-    return { failing: false, count: 0 };
+  try {
+    return await getTimesheetCloseReadiness(db, {
+      companyId,
+      startDate,
+      endDate
+    });
+  } catch {
+    return { failing: true, count: 1 };
   }
-
-  const [openEntries, missingDays] = await Promise.all([
-    client
-      .from("timesheetEntry")
-      .select("id", { count: "exact", head: true })
-      .eq("companyId", companyId)
-      .in("status", [...OPEN_TIMESHEET_STATUSES])
-      .gte("entryDate", startDate)
-      .lte("entryDate", endDate),
-    client.rpc(
-      "get_missing_timesheet_days",
-      { p_company_id: companyId, p_from: startDate, p_to: endDate },
-      { count: "exact", head: true }
-    )
-  ]);
-  const count =
-    (openEntries.error ? 1 : (openEntries.count ?? 0)) +
-    (missingDays.error ? 1 : (missingDays.count ?? 0));
-  return { failing: count > 0, count };
 }
 
 /**
@@ -3439,6 +3412,7 @@ async function getPeriodTimesheetReadiness(
  */
 export async function computePeriodReadiness(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   startDate: string,
   endDate: string,
@@ -3619,7 +3593,7 @@ export async function computePeriodReadiness(
 
   // Read last, and only in DCAA mode (see the helper).
   const timesheets = await getPeriodTimesheetReadiness(
-    client,
+    db,
     companyId,
     startDate,
     endDate
@@ -3808,6 +3782,7 @@ export async function getPeriodCloseReadiness(
   }
   const { checks, blockers, warnings } = await computePeriodReadiness(
     client,
+    db,
     companyId,
     period.data.startDate,
     period.data.endDate,
@@ -3991,6 +3966,7 @@ export async function getPeriodCloseChecklist(
   // `loadPeriodCloseChecklist` with the project revenue synthesizers instead.
   return loadPeriodCloseChecklist(
     client,
+    db,
     args.companyId,
     args.periodId,
     runPreviewer(client, db, { ...args, revenueRunSynthesizers: [] })
@@ -4000,6 +3976,7 @@ export async function getPeriodCloseChecklist(
 /** `getPeriodCloseChecklist` with the run previewer passed in. */
 export async function loadPeriodCloseChecklist(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   periodId: string,
   previewRuns: PeriodRunPreviewer
@@ -4069,6 +4046,7 @@ export async function loadPeriodCloseChecklist(
 
   const readiness = await computePeriodReadiness(
     client,
+    db,
     companyId,
     period.data.startDate,
     period.data.endDate,
