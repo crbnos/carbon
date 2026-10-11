@@ -17797,6 +17797,9 @@ msgstr "前払金 (デフォルト)"
 msgid "Preproduction"
 msgstr ""
 
+msgid "Preproduction: {preproductionAmount}"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "支払の現在価値は公正価値の{threshold}以上です({actual})"
 

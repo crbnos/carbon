@@ -17797,6 +17797,9 @@ msgstr "Anzahlungen (Standard)"
 msgid "Preproduction"
 msgstr ""
 
+msgid "Preproduction: {preproductionAmount}"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Der Barwert der Zahlungen ist mindestens {threshold} des beizulegenden Zeitwertes ({actual})"
 

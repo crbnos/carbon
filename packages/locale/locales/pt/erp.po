@@ -17797,6 +17797,9 @@ msgstr "Adiantamentos (padrão)"
 msgid "Preproduction"
 msgstr ""
 
+msgid "Preproduction: {preproductionAmount}"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "O valor presente dos pagamentos é pelo menos {threshold} do valor justo ({actual})"
 

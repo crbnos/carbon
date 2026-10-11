@@ -11,7 +11,8 @@ import {
   buildProjectCostFigures,
   getChildServiceProjectCosts,
   getProjectCostSummary,
-  getProjectElementCosts
+  getProjectElementCosts,
+  preproductionActual
 } from "~/modules/projects";
 import type { ProjectCostRow } from "~/modules/projects/ui/Costs/ProjectCostsTree";
 import ProjectCostsTree from "~/modules/projects/ui/Costs/ProjectCostsTree";
@@ -86,16 +87,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     readableId: element.readableId,
     name: element.name,
     type: element.type,
+    isPreproduction: element.isPreproduction,
     figures: byElement.get(element.id)!
   }));
 
-  return { rows, project, serviceOrders, serviceActual };
+  // Shown only when the project has a preproduction element.
+  const preproduction = elementRows.some((element) => element.isPreproduction)
+    ? preproductionActual(elementRows, byElement)
+    : null;
+
+  return { rows, project, serviceOrders, serviceActual, preproduction };
 }
 
 export default function ProjectCostsRoute() {
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
-  const { rows, project, serviceOrders, serviceActual } =
+  const { rows, project, serviceOrders, serviceActual, preproduction } =
     useLoaderData<typeof loader>();
 
   return (
@@ -106,6 +113,7 @@ export default function ProjectCostsRoute() {
         project={project}
         serviceOrders={serviceOrders}
         serviceActual={serviceActual}
+        preproduction={preproduction}
       />
       <RecordOutlet />
     </div>

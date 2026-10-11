@@ -21,6 +21,7 @@ const row = (
   planOther: 0,
   committed,
   actual,
+  actualUnallowable: 0,
   actualHours: 0
 });
 

@@ -17797,6 +17797,9 @@ msgstr "Prepayments (default)"
 msgid "Preproduction"
 msgstr "Preproduction"
 
+msgid "Preproduction: {preproductionAmount}"
+msgstr "Preproduction: {preproductionAmount}"
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Present value of payments is at least {threshold} of fair value ({actual})"
 

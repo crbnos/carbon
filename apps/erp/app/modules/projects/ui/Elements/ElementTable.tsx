@@ -67,7 +67,13 @@ type ElementTableRow = {
   remaining: number | null;
 };
 
-const NO_COST: CostTotals = { plan: 0, committed: 0, actual: 0, hours: 0 };
+const NO_COST: CostTotals = {
+  plan: 0,
+  committed: 0,
+  actual: 0,
+  unallowable: 0,
+  hours: 0
+};
 const DASH = <span className="text-muted-foreground">—</span>;
 
 type ElementTableProps = ElementLayoutProps & {

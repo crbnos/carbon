@@ -3751,7 +3751,7 @@ export async function getProjectLedger(
 }
 
 const PROJECT_ELEMENT_COST_COLUMNS =
-  "id, parentId, sortOrder, readableId, name, type, budget, estimateAtCompletion" as const;
+  "id, parentId, sortOrder, readableId, name, type, budget, estimateAtCompletion, isPreproduction" as const;
 
 function projectElementCostsQuery(
   client: Client,

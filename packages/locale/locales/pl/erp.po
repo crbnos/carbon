@@ -17797,6 +17797,9 @@ msgstr "Zaliczki (domyślnie)"
 msgid "Preproduction"
 msgstr ""
 
+msgid "Preproduction: {preproductionAmount}"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Wartość obecna płatności wynosi co najmniej {threshold} wartości godziwej ({actual})"
 

@@ -84,7 +84,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 22: Build the DCAA controls on My Timesheet
 - [x] Task 23: Add the employee timesheet page for managers
 - [x] Task 24: Add labor transfers to the correction modal and approvals
-- [ ] Task 25: Add allowable, unallowable and preproduction cost to the Costs tab
+- [x] Task 25: Add allowable, unallowable and preproduction cost to the Costs tab
 - [ ] Task 26: Add CLIN numbers and funding actions to the contract line
 - [ ] Task 27: Invoice by CLIN with ACRN allocation
 - [ ] Task 28: Add the payroll totals import and list
@@ -1621,3 +1621,10 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   4. The approve action checks every entry before it changes a status (`laborTransferRefusal`). It counts a transfer's reversal as part of the transfer. `assertCanApprove` reads `correctionOfId`, which only the replacement carries, so without this the requester could approve the reversal half alone.
   5. The `isLeave` edit of Task 22 also reached the approvals select, which has the same element embed text. It is harmless. `pnpm run generate:mcp` changes the response digest of `projects_getTimesheetApprovals` again here.
   6. Browser verification deferred.
+- Task 25:
+  1. The rolled-up field is `unallowable` on `CostTotals` and `ProjectCostFigures`, beside `actual` and `hours` (the summary row's `actualHours` is `hours` there too). The test checks `byElement.get("parent").unallowable` = 100.
+  2. The preproduction total is the pure `preproductionActual(elements, byElement)`: a preproduction element under another preproduction element adds nothing. `PROJECT_ELEMENT_COST_COLUMNS` selects `isPreproduction`, so `pnpm run generate:mcp` changes the response digest of `projects_getProjectElementCosts`. The total row shows "Preproduction: <amount>" next to the service-order note, only when the project has a preproduction element. A second test pins the counted-once rule.
+  3. The element view and the element table build `CostTotals` by hand (`NO_COST`, the own row), so both gain `unallowable`. `projects-cost-figures.test.ts` gains `actualUnallowable: 0` in its row fixture.
+  4. The ledger's **Unallowable** column shows a check icon on an unallowable row and filters Yes / No through the generic filters (`unallowable:eq:true`), as `GaugeCalibrationRecordsTable` does for its boolean columns.
+  5. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+

@@ -6,7 +6,9 @@ import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
+  LuBan,
   LuCalendar,
+  LuCheck,
   LuCoins,
   LuFileText,
   LuHash,
@@ -209,6 +211,28 @@ const ProjectLedgerTable = memo(
             </span>
           ),
           meta: { icon: <LuCoins /> }
+        },
+        {
+          accessorKey: "unallowable",
+          header: t`Unallowable`,
+          cell: ({ row }) =>
+            row.original.unallowable ? (
+              <LuCheck
+                className="size-4"
+                aria-label={t`Unallowable`}
+                role="img"
+              />
+            ) : null,
+          meta: {
+            icon: <LuBan />,
+            filter: {
+              type: "static",
+              options: [
+                { value: "true", label: t`Yes` },
+                { value: "false", label: t`No` }
+              ]
+            }
+          }
         }
       ],
       [

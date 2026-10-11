@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn } from "@carbon/react";
+import { Badge, cn } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useRef } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
@@ -27,6 +27,7 @@ export type ProjectCostRow = {
   readableId: string;
   name: string;
   type: ProjectElementType;
+  isPreproduction: boolean;
   figures: ProjectCostFigures;
 };
 
@@ -37,21 +38,25 @@ type ProjectCostsTreeProps = {
   project: ProjectCostFigures;
   serviceOrders: ServiceOrderCostRow[];
   serviceActual: number;
+  /** The actual cost of the preproduction elements, or null with none. */
+  preproduction: number | null;
 };
 
 const ROW_HEIGHT = 36;
 const FIGURE_CELL = "w-28 shrink-0 px-2 text-right tabular-nums";
 
 /**
- * The element tree with plan, budget, committed, actual, remaining and
- * estimate at completion. Each row is its subtree. A row opens its ledger.
+ * The element tree with plan, budget, committed, allowable and unallowable
+ * actual, remaining and estimate at completion. Each row is its subtree. A
+ * row opens its ledger.
  */
 export default function ProjectCostsTree({
   projectId,
   rows,
   project,
   serviceOrders,
-  serviceActual
+  serviceActual,
+  preproduction
 }: ProjectCostsTreeProps) {
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -71,13 +76,17 @@ export default function ProjectCostsTree({
   const money = (value: number | null) =>
     value === null ? "—" : formatMoney.format(value);
   const serviceAmount = money(serviceActual);
+  const preproductionAmount = money(preproduction);
 
   const figureCells = (figures: ProjectCostFigures) => (
     <>
       <span className={FIGURE_CELL}>{money(figures.plan)}</span>
       <span className={FIGURE_CELL}>{money(figures.budget)}</span>
       <span className={FIGURE_CELL}>{money(figures.committed)}</span>
-      <span className={FIGURE_CELL}>{money(figures.actual)}</span>
+      <span className={FIGURE_CELL}>
+        {money(figures.actual - figures.unallowable)}
+      </span>
+      <span className={FIGURE_CELL}>{money(figures.unallowable)}</span>
       <span
         className={cn(
           FIGURE_CELL,
@@ -92,7 +101,7 @@ export default function ProjectCostsTree({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-x-auto">
-      <div className="flex h-full min-h-0 min-w-[56rem] flex-col">
+      <div className="flex h-full min-h-0 min-w-[63rem] flex-col">
         <div className="sticky top-0 z-10 flex h-10 shrink-0 items-center border-b border-border bg-card pr-4 text-xs font-medium text-muted-foreground">
           <div className="min-w-0 flex-1 px-4">
             <Trans>Element</Trans>
@@ -107,7 +116,10 @@ export default function ProjectCostsTree({
             <Trans>Committed</Trans>
           </span>
           <span className={FIGURE_CELL}>
-            <Trans>Actual</Trans>
+            <Trans>Allowable</Trans>
+          </span>
+          <span className={FIGURE_CELL}>
+            <Trans>Unallowable</Trans>
           </span>
           <span className={FIGURE_CELL}>
             <Trans>Remaining</Trans>
@@ -124,6 +136,11 @@ export default function ProjectCostsTree({
             {serviceOrders.length > 0 && (
               <span className="truncate text-xs font-normal text-muted-foreground">
                 <Trans>Actual includes service orders: {serviceAmount}</Trans>
+              </span>
+            )}
+            {preproduction !== null && (
+              <span className="truncate text-xs font-normal text-muted-foreground">
+                <Trans>Preproduction: {preproductionAmount}</Trans>
               </span>
             )}
           </div>
@@ -189,6 +206,11 @@ export default function ProjectCostsTree({
                       {row.readableId}
                     </span>
                     <span className="truncate">{row.name}</span>
+                    {row.isPreproduction && (
+                      <Badge variant="secondary" className="shrink-0">
+                        <Trans>Preproduction</Trans>
+                      </Badge>
+                    )}
                   </div>
                   {figureCells(row.figures)}
                 </div>

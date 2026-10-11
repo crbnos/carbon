@@ -17797,6 +17797,9 @@ msgstr "선급금(기본값)"
 msgid "Preproduction"
 msgstr ""
 
+msgid "Preproduction: {preproductionAmount}"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "지불의 현재가치는 공정가치의 최소 {threshold}입니다 ({actual})"
 

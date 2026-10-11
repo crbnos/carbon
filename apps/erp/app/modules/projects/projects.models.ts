@@ -1158,6 +1158,8 @@ export type CostTotals = {
   plan: number;
   committed: number;
   actual: number;
+  /** The part of `actual` posted as unallowable. */
+  unallowable: number;
   hours: number;
 };
 
@@ -1176,21 +1178,30 @@ export function rollUpCostSummary(
     planOther: number;
     committed: number;
     actual: number;
+    actualUnallowable: number;
     actualHours: number;
   }[]
 ): { byElement: Map<string, CostTotals>; project: CostTotals } {
   const parentOf = new Map<string, string | null>();
   const byElement = new Map<string, CostTotals>();
+  const empty = (): CostTotals => ({
+    plan: 0,
+    committed: 0,
+    actual: 0,
+    unallowable: 0,
+    hours: 0
+  });
   for (const element of tree) {
     parentOf.set(element.id, element.parentId ?? null);
-    byElement.set(element.id, { plan: 0, committed: 0, actual: 0, hours: 0 });
+    byElement.set(element.id, empty());
   }
 
-  const project: CostTotals = { plan: 0, committed: 0, actual: 0, hours: 0 };
+  const project: CostTotals = empty();
   const add = (into: CostTotals, from: CostTotals) => {
     into.plan += from.plan;
     into.committed += from.committed;
     into.actual += from.actual;
+    into.unallowable += from.unallowable;
     into.hours += from.hours;
   };
 
@@ -1202,6 +1213,7 @@ export function rollUpCostSummary(
         Number(row.planOther),
       committed: Number(row.committed),
       actual: Number(row.actual),
+      unallowable: Number(row.actualUnallowable),
       hours: Number(row.actualHours)
     };
     add(project, own);
@@ -1383,6 +1395,8 @@ export type ProjectCostFigures = {
   budget: number | null;
   committed: number;
   actual: number;
+  /** The part of `actual` posted as unallowable. */
+  unallowable: number;
   hours: number;
   /** Budget less committed and actual, or null with no budget. */
   remaining: number | null;
@@ -1449,6 +1463,7 @@ export function buildProjectCostFigures(
     budget,
     committed: total.committed,
     actual: total.actual,
+    unallowable: total.unallowable,
     hours: total.hours,
     remaining: budget === null ? null : budget - total.committed - total.actual,
     estimateAtCompletion: estimateAtCompletion({
@@ -1468,6 +1483,7 @@ export function buildProjectCostFigures(
           plan: 0,
           committed: 0,
           actual: 0,
+          unallowable: 0,
           hours: 0
         },
         budgets.get(element.id) ?? null,
@@ -1484,6 +1500,37 @@ export function buildProjectCostFigures(
       null
     )
   };
+}
+
+/**
+ * The actual cost of the preproduction elements: each preproduction element's
+ * subtree, counted once. A preproduction element under another preproduction
+ * element is already in its ancestor's subtree, so it adds nothing.
+ */
+export function preproductionActual(
+  elements: { id: string; parentId: string | null; isPreproduction: boolean }[],
+  byElement: Map<string, { actual: number }>
+): number {
+  const byId = new Map(elements.map((element) => [element.id, element]));
+  let total = 0;
+  for (const element of elements) {
+    if (!element.isPreproduction) continue;
+    const seen = new Set<string>([element.id]);
+    let parentId = element.parentId;
+    let underPreproduction = false;
+    while (parentId && !seen.has(parentId)) {
+      seen.add(parentId);
+      const parent = byId.get(parentId);
+      if (!parent) break;
+      if (parent.isPreproduction) {
+        underPreproduction = true;
+        break;
+      }
+      parentId = parent.parentId;
+    }
+    if (!underPreproduction) total += byElement.get(element.id)?.actual ?? 0;
+  }
+  return total;
 }
 
 // --- Requirements, Test Cases and Parameters ---------------------------------

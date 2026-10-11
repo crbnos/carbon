@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   groupTimesheetRows,
   rateOn,
+  preproductionActual,
   rollUpCostSummary
 } from "~/modules/projects/projects.models";
 
@@ -59,6 +60,7 @@ describe("rollUpCostSummary", () => {
       planOther: 0,
       committed: 0,
       actual,
+      actualUnallowable: 0,
       actualHours: 0
     });
     const { byElement, project } = rollUpCostSummary(
@@ -72,5 +74,50 @@ describe("rollUpCostSummary", () => {
     expect(byElement.get("parent")?.actual).toBe(60);
     expect(byElement.get("a")?.actual).toBe(20);
     expect(project.actual).toBe(65);
+  });
+
+  it("gives a parent the unallowable actual of its child", () => {
+    const row = (
+      projectElementId: string,
+      actual: number,
+      actualUnallowable: number
+    ) => ({
+      projectElementId,
+      planMaterial: 0,
+      planLabor: 0,
+      planOther: 0,
+      committed: 0,
+      actual,
+      actualUnallowable,
+      actualHours: 0
+    });
+    const { byElement, project } = rollUpCostSummary(
+      [
+        { id: "parent", parentId: null },
+        { id: "child", parentId: "parent" }
+      ],
+      [row("parent", 40, 0), row("child", 100, 100)]
+    );
+    expect(byElement.get("parent")?.unallowable).toBe(100);
+    expect(byElement.get("parent")?.actual).toBe(140);
+    expect(project.unallowable).toBe(100);
+  });
+});
+
+describe("preproductionActual", () => {
+  it("counts a preproduction subtree once", () => {
+    const elements = [
+      { id: "root", parentId: null, isPreproduction: false },
+      { id: "pre", parentId: "root", isPreproduction: true },
+      { id: "pre-child", parentId: "pre", isPreproduction: true },
+      { id: "other", parentId: "root", isPreproduction: false }
+    ];
+    const byElement = new Map([
+      ["root", { actual: 100 }],
+      ["pre", { actual: 60 }],
+      ["pre-child", { actual: 25 }],
+      ["other", { actual: 40 }]
+    ]);
+    expect(preproductionActual(elements, byElement)).toBe(60);
   });
 });

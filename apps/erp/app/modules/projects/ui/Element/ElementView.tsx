@@ -93,7 +93,13 @@ type ElementViewProps = ProjectElementPage & {
   variant: "peek" | "page";
 };
 
-const NO_COST: CostTotals = { plan: 0, committed: 0, actual: 0, hours: 0 };
+const NO_COST: CostTotals = {
+  plan: 0,
+  committed: 0,
+  actual: 0,
+  unallowable: 0,
+  hours: 0
+};
 
 export function ElementView({
   projectId,
@@ -528,6 +534,7 @@ function ElementBudget({
             Number(ownRow.planOther),
           committed: Number(ownRow.committed),
           actual: Number(ownRow.actual),
+          unallowable: Number(ownRow.actualUnallowable),
           hours: Number(ownRow.actualHours)
         }
       : NO_COST;

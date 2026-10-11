@@ -17797,6 +17797,9 @@ msgstr "Avanslar (varsayılan)"
 msgid "Preproduction"
 msgstr ""
 
+msgid "Preproduction: {preproductionAmount}"
+msgstr ""
+
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Ödemelerin bugünkü değeri adil değerin en azından {threshold}'idir ({actual})"
 
