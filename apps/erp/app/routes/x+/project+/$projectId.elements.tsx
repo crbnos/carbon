@@ -352,6 +352,7 @@ export default function ProjectElementsRoute() {
     verification,
     descriptions,
     commentCounts,
+    openChangeRequests,
     layout,
     type,
     views,
@@ -607,6 +608,8 @@ export default function ProjectElementsRoute() {
           grouping={layout === "table" ? grouping : undefined}
           onGroupingChange={layout === "table" ? setGrouping : undefined}
           projectId={projectId}
+          changeRequests={openChangeRequests}
+          activeChangeRequest={changeRequest}
           views={views}
           activeViewId={activeViewId}
           currentState={currentState}

@@ -2267,6 +2267,9 @@ msgstr "모든 고급 기능 사용 가능"
 msgid "All Audit Logs"
 msgstr "모든 감사 로그"
 
+msgid "All change requests"
+msgstr ""
+
 msgid "All changes to auditable entities are being recorded."
 msgstr "감사 대상 개체에 대한 모든 변경 사항이 기록되고 있습니다."
 
@@ -12678,6 +12681,9 @@ msgstr "{0}과 {1} 모두에 목록이 연결되어 있어서 이 단계에서 �
 msgid "Live on Carbon"
 msgstr "Carbon 도입 완료"
 
+msgid "Live plan"
+msgstr ""
+
 msgid "Live reloading"
 msgstr "실시간 새로고침"
 
@@ -14374,6 +14380,9 @@ msgstr "시각화할 용량 예약이 없습니다. 작업을 예약하여 작�
 msgid "No category"
 msgstr ""
 
+msgid "No change request"
+msgstr ""
+
 msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr ""
 
@@ -14694,6 +14703,9 @@ msgstr "배치된 사람이 없습니다"
 
 msgid "No one to assign"
 msgstr "할당할 사람이 없습니다"
+
+msgid "No open change requests"
+msgstr ""
 
 msgid "No open invoices"
 msgstr "미결 송장이 없습니다."
@@ -15584,6 +15596,9 @@ msgid "Open batch"
 msgstr "미결 배치"
 
 msgid "Open Change Request"
+msgstr ""
+
+msgid "Open change requests"
 msgstr ""
 
 msgid "Open date"

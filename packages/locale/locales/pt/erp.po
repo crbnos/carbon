@@ -2267,6 +2267,9 @@ msgstr "Todos os recursos avançados disponíveis"
 msgid "All Audit Logs"
 msgstr "Todos os logs de auditoria"
 
+msgid "All change requests"
+msgstr ""
+
 msgid "All changes to auditable entities are being recorded."
 msgstr "Todas as alterações em entidades auditáveis estão sendo registradas."
 
@@ -12678,6 +12681,9 @@ msgstr "Listas estão conectadas em ambos {0} e {1}, então esta etapa não pode
 msgid "Live on Carbon"
 msgstr "Ao vivo no Carbon"
 
+msgid "Live plan"
+msgstr ""
+
 msgid "Live reloading"
 msgstr "Recarregamento ao vivo"
 
@@ -14374,6 +14380,9 @@ msgstr "Nenhuma reserva de capacidade para visualizar. Agende um trabalho para v
 msgid "No category"
 msgstr ""
 
+msgid "No change request"
+msgstr ""
+
 msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr ""
 
@@ -14694,6 +14703,9 @@ msgstr "Ninguém na equipe"
 
 msgid "No one to assign"
 msgstr "Ninguém para atribuir"
+
+msgid "No open change requests"
+msgstr ""
 
 msgid "No open invoices"
 msgstr "Nenhuma fatura aberta"
@@ -15584,6 +15596,9 @@ msgid "Open batch"
 msgstr "Lote de produção aberto"
 
 msgid "Open Change Request"
+msgstr ""
+
+msgid "Open change requests"
 msgstr ""
 
 msgid "Open date"

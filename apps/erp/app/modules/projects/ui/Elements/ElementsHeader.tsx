@@ -86,6 +86,8 @@ import {
   projectLayouts,
   projectViewValidator
 } from "../../projects.models";
+import type { ActiveChangeRequest } from "../ChangeRequests/ChangeRequestBanner";
+import { ChangeRequestPicker } from "../ChangeRequests/ChangeRequestPicker";
 import type {
   ElementDisplay,
   ElementDisplayProperty,
@@ -151,6 +153,10 @@ type ElementsHeaderProps = {
    * message, and the change requests page that opens one.
    */
   planLock?: { message: string; changeRequestsHref: string } | null;
+  /** The open change requests the picker lists. */
+  changeRequests: ActiveChangeRequest[];
+  /** The change request on screen (`?cr=`), else null for the live plan. */
+  activeChangeRequest: ActiveChangeRequest | null;
 };
 
 export function ElementsHeader({
@@ -168,6 +174,8 @@ export function ElementsHeader({
   exportHref,
   planLock,
   projectId,
+  changeRequests,
+  activeChangeRequest,
   views,
   activeViewId,
   currentState,
@@ -257,6 +265,11 @@ export function ElementsHeader({
             </>
           )}
           <SearchFilter param="search" size="sm" placeholder={t`Search`} />
+          <ChangeRequestPicker
+            projectId={projectId}
+            changeRequests={changeRequests}
+            active={activeChangeRequest}
+          />
           <ElementViewsMenu
             projectId={projectId}
             views={views}

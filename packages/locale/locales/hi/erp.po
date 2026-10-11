@@ -2267,6 +2267,9 @@ msgstr "सभी उन्नत विशेषताएं उपलब्ध
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
 
+msgid "All change requests"
+msgstr ""
+
 msgid "All changes to auditable entities are being recorded."
 msgstr "सभी ऑडिट योग्य संस्थाओं में किए गए परिवर्तन रिकॉर्ड किए जा रहे हैं।"
 
@@ -12678,6 +12681,9 @@ msgstr "सूचियां दोनों {0} और {1} में वाय
 msgid "Live on Carbon"
 msgstr "Carbon पर लाइव"
 
+msgid "Live plan"
+msgstr ""
+
 msgid "Live reloading"
 msgstr "लाइव रीलोडिंग"
 
@@ -14374,6 +14380,9 @@ msgstr "कोई क्षमता आरक्षण नहीं है ज�
 msgid "No category"
 msgstr ""
 
+msgid "No change request"
+msgstr ""
+
 msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr ""
 
@@ -14694,6 +14703,9 @@ msgstr "कोई क्रू नहीं"
 
 msgid "No one to assign"
 msgstr "असाइन करने के लिए कोई नहीं"
+
+msgid "No open change requests"
+msgstr ""
 
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
@@ -15584,6 +15596,9 @@ msgid "Open batch"
 msgstr "खुली बैच"
 
 msgid "Open Change Request"
+msgstr ""
+
+msgid "Open change requests"
 msgstr ""
 
 msgid "Open date"

@@ -2267,6 +2267,9 @@ msgstr "Tüm gelişmiş özellikler kullanılabilir"
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Günlükleri"
 
+msgid "All change requests"
+msgstr ""
+
 msgid "All changes to auditable entities are being recorded."
 msgstr "Denetlenebilir varlıklardaki tüm değişiklikler kaydediliyor."
 
@@ -12678,6 +12681,9 @@ msgstr "Listeler hem {0} hem de {1} öğelerine bağlıdır, bu nedenle bu adım
 msgid "Live on Carbon"
 msgstr "Carbon'da Canlı"
 
+msgid "Live plan"
+msgstr ""
+
 msgid "Live reloading"
 msgstr "Canlı yeniden yükleniyor"
 
@@ -14374,6 +14380,9 @@ msgstr "Görselleştirilecek kapasite rezervasyonu yok. İş merkezi yükünü g
 msgid "No category"
 msgstr ""
 
+msgid "No change request"
+msgstr ""
+
 msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr ""
 
@@ -14694,6 +14703,9 @@ msgstr "Hiç kimse ekiplendirilmedi"
 
 msgid "No one to assign"
 msgstr "Atanacak kimse yok"
+
+msgid "No open change requests"
+msgstr ""
 
 msgid "No open invoices"
 msgstr "Açık fatura yok"
@@ -15584,6 +15596,9 @@ msgid "Open batch"
 msgstr "Açık Parti"
 
 msgid "Open Change Request"
+msgstr ""
+
+msgid "Open change requests"
 msgstr ""
 
 msgid "Open date"

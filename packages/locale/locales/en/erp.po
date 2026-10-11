@@ -2267,6 +2267,9 @@ msgstr "All advanced features available"
 msgid "All Audit Logs"
 msgstr "All Audit Logs"
 
+msgid "All change requests"
+msgstr "All change requests"
+
 msgid "All changes to auditable entities are being recorded."
 msgstr "All changes to auditable entities are being recorded."
 
@@ -12678,6 +12681,9 @@ msgstr "Lists are wired into both {0} and {1}, so this step cannot tell which on
 msgid "Live on Carbon"
 msgstr "Live on Carbon"
 
+msgid "Live plan"
+msgstr "Live plan"
+
 msgid "Live reloading"
 msgstr "Live reloading"
 
@@ -14374,6 +14380,9 @@ msgstr "No capacity reservations to visualize. Schedule a job to see work-center
 msgid "No category"
 msgstr "No category"
 
+msgid "No change request"
+msgstr "No change request"
+
 msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
 
@@ -14694,6 +14703,9 @@ msgstr "No one assigned"
 
 msgid "No one to assign"
 msgstr "No one to assign"
+
+msgid "No open change requests"
+msgstr "No open change requests"
 
 msgid "No open invoices"
 msgstr "No open invoices"
@@ -15585,6 +15597,9 @@ msgstr "Open batch"
 
 msgid "Open Change Request"
 msgstr "Open Change Request"
+
+msgid "Open change requests"
+msgstr "Open change requests"
 
 msgid "Open date"
 msgstr "Open date"
