@@ -10866,6 +10866,9 @@ msgstr "От <0/>"
 msgid "From <0/> to <1/>"
 msgstr ""
 
+msgid "from <0>{fromReadableId}</0>"
+msgstr ""
+
 msgid "From customer"
 msgstr "От покупателя"
 
@@ -14303,6 +14306,9 @@ msgstr "Переместить часть количества в новую с�
 
 msgid "Move to"
 msgstr "Переместить в"
+
+msgid "Move to another charge number"
+msgstr ""
 
 msgid "Move to Group"
 msgstr "Переместить в группу"

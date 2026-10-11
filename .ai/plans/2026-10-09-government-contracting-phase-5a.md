@@ -83,7 +83,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 21: Add the FLSA status to the employee job
 - [x] Task 22: Build the DCAA controls on My Timesheet
 - [x] Task 23: Add the employee timesheet page for managers
-- [ ] Task 24: Add labor transfers to the correction modal and approvals
+- [x] Task 24: Add labor transfers to the correction modal and approvals
 - [ ] Task 25: Add allowable, unallowable and preproduction cost to the Costs tab
 - [ ] Task 26: Add CLIN numbers and funding actions to the contract line
 - [ ] Task 27: Invoice by CLIN with ACRN allocation
@@ -1614,3 +1614,10 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   6. A manager changes any entry that is not Posted (`MANAGER_EDITABLE_STATUSES`), because the server sends each such change to Pending Employee Review.
   7. The **Open timesheet** link on each approval card computes the week offset from the company's today.
   8. Browser verification deferred.
+- Task 24:
+  1. The correction modal's **Move to another charge number** switch shows `ChargeNumber` and a labor category select, defaulted to the original's. With the switch off, the fields are not rendered, so the form sends none and the service keeps the original's (Task 13 point 2).
+  2. `timesheet.correct.tsx` reads `isTransfer`. In DCAA mode a transfer never posts, even with approvals off, and the flash says "The transfer waits for approval". Standard mode keeps Phase 1a.
+  3. `getTimesheetApprovals` selects `correctionOfId` and `createdBy`, and reads the corrected entries with one `.in()` query. An embed on the self foreign key failed the typecheck with TS2589. A transfer row shows a **Transfer** badge and "from" its old charge number. The reason shows in the Note column, as for every correction.
+  4. The approve action checks every entry before it changes a status (`laborTransferRefusal`). It counts a transfer's reversal as part of the transfer. `assertCanApprove` reads `correctionOfId`, which only the replacement carries, so without this the requester could approve the reversal half alone.
+  5. The `isLeave` edit of Task 22 also reached the approvals select, which has the same element embed text. It is harmless. `pnpm run generate:mcp` changes the response digest of `projects_getTimesheetApprovals` again here.
+  6. Browser verification deferred.

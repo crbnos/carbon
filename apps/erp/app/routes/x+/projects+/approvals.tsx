@@ -5,12 +5,15 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { msg } from "@lingui/core/macro";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import {
   approveTimesheetEntries,
+  assertCanApprove,
   getTimesheetApprovals,
   rejectTimesheetEntries
 } from "~/modules/projects";
@@ -66,6 +69,20 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "approve") {
+    // DCAA mode: a labor transfer needs an approver other than the
+    // requester. Checked for every entry before any status changes.
+    const refusal = await laborTransferRefusal(client, {
+      companyId,
+      approverId: userId,
+      ids
+    });
+    if (refusal) {
+      return data(
+        { success: false },
+        await flash(request, error(null, refusal))
+      );
+    }
+
     const approved = await approveTimesheetEntries(client, {
       ids,
       companyId,
@@ -141,6 +158,80 @@ export async function action({ request }: ActionFunctionArgs) {
     { success: false },
     await flash(request, error(null, "Unknown action"))
   );
+}
+
+/**
+ * The refusal of `assertCanApprove` for the first entry the approver may not
+ * approve, else null. A transfer's reversal counts as part of the transfer:
+ * its original is the entry a replacement corrects (`correctionOfId`).
+ */
+async function laborTransferRefusal(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; approverId: string; ids: string[] }
+): Promise<string | null> {
+  const [settings, entries] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("timekeepingControls")
+      .eq("id", args.companyId)
+      .single(),
+    client
+      .from("timesheetEntry")
+      .select("id, correctionOfId, reversalOfId, createdBy")
+      .eq("companyId", args.companyId)
+      .in("id", args.ids)
+  ]);
+  if (settings.error || entries.error) {
+    logger.error("Failed to load the entries to approve", {
+      companyId: args.companyId,
+      error: settings.error ?? entries.error
+    });
+    return "Failed to load the entries to approve";
+  }
+  const mode = settings.data.timekeepingControls;
+  if (mode !== "DCAA") return null;
+
+  const reversedIds = entries.data.flatMap((entry) =>
+    entry.reversalOfId ? [entry.reversalOfId] : []
+  );
+  let transferredIds = new Set<string>();
+  if (reversedIds.length > 0) {
+    const replacements = await client
+      .from("timesheetEntry")
+      .select("correctionOfId")
+      .eq("companyId", args.companyId)
+      .in("correctionOfId", reversedIds);
+    if (replacements.error) {
+      logger.error("Failed to load the labor transfers", {
+        companyId: args.companyId,
+        error: replacements.error
+      });
+      return "Failed to load the entries to approve";
+    }
+    transferredIds = new Set(
+      replacements.data.flatMap((row) =>
+        row.correctionOfId ? [row.correctionOfId] : []
+      )
+    );
+  }
+
+  for (const entry of entries.data) {
+    const correctionOfId =
+      entry.correctionOfId ??
+      (entry.reversalOfId && transferredIds.has(entry.reversalOfId)
+        ? entry.reversalOfId
+        : null);
+    try {
+      assertCanApprove({
+        mode,
+        approverId: args.approverId,
+        entry: { correctionOfId, createdBy: entry.createdBy }
+      });
+    } catch (err) {
+      return err instanceof Error ? err.message : String(err);
+    }
+  }
+  return null;
 }
 
 export default function ProjectTimesheetApprovalsRoute() {

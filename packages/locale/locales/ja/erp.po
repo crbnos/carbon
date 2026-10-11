@@ -10866,6 +10866,9 @@ msgstr "から <0/>"
 msgid "From <0/> to <1/>"
 msgstr ""
 
+msgid "from <0>{fromReadableId}</0>"
+msgstr ""
+
 msgid "From customer"
 msgstr "得意先から"
 
@@ -14303,6 +14306,9 @@ msgstr "数量の一部を新しい処置行に移動して、MRBが各部分を
 
 msgid "Move to"
 msgstr "移動先"
+
+msgid "Move to another charge number"
+msgstr ""
 
 msgid "Move to Group"
 msgstr "グループに移動"

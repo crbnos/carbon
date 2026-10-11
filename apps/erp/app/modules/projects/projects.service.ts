@@ -3640,6 +3640,29 @@ export async function getTimesheetApprovals(
     return { data: null, error: entries.error as unknown as PostgrestError };
   }
 
+  // The entries the corrections replace, for a labor transfer's "from".
+  const correctedIds = [
+    ...new Set(
+      (entries.data ?? []).flatMap((entry) =>
+        entry.correctionOfId ? [entry.correctionOfId] : []
+      )
+    )
+  ];
+  const originals =
+    correctedIds.length > 0
+      ? await client
+          .from("timesheetEntry")
+          .select(
+            "id, projectId, projectElementId, project:project!timesheetEntry_project_fkey(identifier, name), element:projectElement!timesheetEntry_element_fkey(readableId, name)"
+          )
+          .eq("companyId", companyId)
+          .in("id", correctedIds)
+      : { data: [], error: null };
+  if (originals.error) return { data: null, error: originals.error };
+  const originalById = new Map(
+    (originals.data ?? []).map((original) => [original.id, original])
+  );
+
   const groups = new Map<
     string,
     {
@@ -3647,11 +3670,19 @@ export async function getTimesheetApprovals(
       employeeId: string;
       employee: TimesheetApprovalEntry["employee"];
       weekStart: string;
-      entries: TimesheetApprovalEntry[];
+      entries: (TimesheetApprovalEntry & {
+        correctionOf: (typeof originals.data)[number] | null;
+      })[];
       totalHours: number;
     }
   >();
-  for (const entry of entries.data ?? []) {
+  for (const row of entries.data ?? []) {
+    const entry = {
+      ...row,
+      correctionOf: row.correctionOfId
+        ? (originalById.get(row.correctionOfId) ?? null)
+        : null
+    };
     const weekStart = weekStartOf(entry.entryDate);
     const key = `${entry.employeeId}:${weekStart}`;
     let group = groups.get(key);
@@ -3674,7 +3705,7 @@ export async function getTimesheetApprovals(
 }
 
 const TIMESHEET_APPROVAL_COLUMNS =
-  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, reversalOfId, correctionReason, employee:user!timesheetEntry_employeeId_fkey(id, fullName, avatarUrl), project:project!timesheetEntry_project_fkey!inner(id, identifier, name, ownerId), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, reversalOfId, correctionOfId, correctionReason, createdBy, employee:user!timesheetEntry_employeeId_fkey(id, fullName, avatarUrl), project:project!timesheetEntry_project_fkey!inner(id, identifier, name, ownerId), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 function timesheetApprovalsQuery(client: Client) {
   return client.from("timesheetEntry").select(TIMESHEET_APPROVAL_COLUMNS);

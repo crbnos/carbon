@@ -10866,6 +10866,9 @@ msgstr "से <0/>"
 msgid "From <0/> to <1/>"
 msgstr ""
 
+msgid "from <0>{fromReadableId}</0>"
+msgstr ""
+
 msgid "From customer"
 msgstr "ग्राहक से"
 
@@ -14303,6 +14306,9 @@ msgstr "कुछ मात्रा को एक नई निपटान प
 
 msgid "Move to"
 msgstr "को स्थानांतरित करें"
+
+msgid "Move to another charge number"
+msgstr ""
 
 msgid "Move to Group"
 msgstr "समूह में ले जाएँ"

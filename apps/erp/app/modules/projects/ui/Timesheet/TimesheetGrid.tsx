@@ -27,6 +27,7 @@ import {
   ModalTitle,
   NumberField,
   NumberInput,
+  Switch,
   Table as TableBase,
   Tbody,
   Td,
@@ -220,6 +221,9 @@ export default function TimesheetGrid({
     entryId: string;
     hours: number;
     label: string;
+    projectId: string;
+    projectElementId: string | null;
+    laborCategoryId: string;
   } | null>(null);
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(
     null
@@ -500,7 +504,10 @@ export default function TimesheetGrid({
                                       setCorrecting({
                                         entryId: cell.entryId,
                                         hours: cell.hours,
-                                        label: cellLabel
+                                        label: cellLabel,
+                                        projectId: row.projectId,
+                                        projectElementId: row.projectElementId,
+                                        laborCategoryId: row.laborCategoryId
                                       })
                               }
                             />
@@ -635,6 +642,8 @@ export default function TimesheetGrid({
           entryId={correcting.entryId}
           hours={correcting.hours}
           label={correcting.label}
+          original={correcting}
+          laborCategories={laborCategories}
           onClose={() => setCorrecting(null)}
         />
       )}
@@ -899,18 +908,32 @@ function AddRowModal({
   );
 }
 
+/**
+ * Corrects posted time: a reversal and the new hours. **Move to another
+ * charge number** makes it a labor transfer, with the new charge number and
+ * labor category defaulted to the original's.
+ */
 function CorrectionModal({
   entryId,
   hours,
   label,
+  original,
+  laborCategories,
   onClose
 }: {
   entryId: string;
   hours: number;
   label: string;
+  original: {
+    projectId: string;
+    projectElementId: string | null;
+    laborCategoryId: string;
+  };
+  laborCategories: { id: string; name: string }[];
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  const [moving, setMoving] = useState(false);
   const fetcher = useAction<{
     success?: boolean;
     error?: { message: string } | null;
@@ -930,7 +953,10 @@ function CorrectionModal({
           defaultValues={{
             timesheetEntryId: entryId,
             hours,
-            correctionReason: ""
+            correctionReason: "",
+            projectId: original.projectId,
+            projectElementId: original.projectElementId ?? "",
+            laborCategoryId: original.laborCategoryId
           }}
         >
           <ModalHeader>
@@ -957,6 +983,26 @@ function CorrectionModal({
                 step={INPUT_STEP.quantity}
                 helperText={t`The posted hours are reversed and these hours are charged instead`}
               />
+              <Switch
+                variant="small"
+                label={t`Move to another charge number`}
+                checked={moving}
+                onCheckedChange={setMoving}
+              />
+              {/* Unrendered, the fields send nothing: the original's stay. */}
+              {moving && (
+                <>
+                  <ChargeNumber label={t`Charge Number`} />
+                  <Select
+                    name="laborCategoryId"
+                    label={t`Labor Category`}
+                    options={laborCategories.map((category) => ({
+                      value: category.id,
+                      label: category.name
+                    }))}
+                  />
+                </>
+              )}
               <TextArea name="correctionReason" label={t`Reason`} />
             </VStack>
           </ModalBody>

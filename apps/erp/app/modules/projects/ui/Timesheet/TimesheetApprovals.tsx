@@ -4,6 +4,7 @@
 
 import { useAction } from "@carbon/query";
 import {
+  Badge,
   Button,
   Card,
   CardAction,
@@ -198,6 +199,16 @@ function ApprovalCard({
                 const readableId =
                   entry.element?.readableId ?? entry.project?.identifier ?? "";
                 const name = entry.element?.name ?? entry.project?.name ?? "";
+                // A labor transfer: a correction on another charge number.
+                const original = entry.correctionOf;
+                const isTransfer =
+                  !!original &&
+                  (original.projectId !== entry.projectId ||
+                    original.projectElementId !== entry.projectElementId);
+                const fromReadableId =
+                  original?.element?.readableId ??
+                  original?.project?.identifier ??
+                  "";
                 const label = `${employeeName} · ${readableId} · ${formatDate(entry.entryDate)}`;
                 return (
                   <Tr key={entry.id}>
@@ -205,11 +216,28 @@ function ApprovalCard({
                       {formatDate(entry.entryDate)}
                     </Td>
                     <Td>
-                      <div className="flex max-w-[22rem] items-center gap-2">
-                        <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
-                          {readableId}
-                        </span>
-                        <span className="truncate">{name}</span>
+                      <div className="flex max-w-[22rem] flex-col">
+                        <div className="flex min-w-0 items-center gap-2">
+                          {isTransfer && (
+                            <Badge variant="secondary" className="shrink-0">
+                              <Trans>Transfer</Trans>
+                            </Badge>
+                          )}
+                          <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
+                            {readableId}
+                          </span>
+                          <span className="truncate">{name}</span>
+                        </div>
+                        {isTransfer && (
+                          <span className="truncate text-xs text-muted-foreground">
+                            <Trans>
+                              from{" "}
+                              <span className="font-mono">
+                                {fromReadableId}
+                              </span>
+                            </Trans>
+                          </span>
+                        )}
                       </div>
                     </Td>
                     <Td className="whitespace-nowrap">

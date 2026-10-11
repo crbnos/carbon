@@ -10866,6 +10866,9 @@ msgstr "From <0/>"
 msgid "From <0/> to <1/>"
 msgstr "From <0/> to <1/>"
 
+msgid "from <0>{fromReadableId}</0>"
+msgstr "from <0>{fromReadableId}</0>"
+
 msgid "From customer"
 msgstr "From customer"
 
@@ -14303,6 +14306,9 @@ msgstr "Move some of the quantity into a new disposition row so MRB can decide e
 
 msgid "Move to"
 msgstr "Move to"
+
+msgid "Move to another charge number"
+msgstr "Move to another charge number"
 
 msgid "Move to Group"
 msgstr "Move to Group"

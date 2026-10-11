@@ -21,8 +21,11 @@ const logger = getLogger("erp", "project-timesheet-correct");
 
 /**
  * Corrects one of the signed-in user's posted entries: a reversal of the
- * posted hours and the new hours, both Submitted. With approvals off both
- * post at once. A refusal is returned as fetcher data, so the modal shows it.
+ * posted hours and the new hours, both Submitted. The new hours can move to
+ * another charge number and labor category (a labor transfer). With
+ * approvals off both post at once, except a labor transfer in DCAA mode,
+ * which always waits for another user's approval. A refusal is returned as
+ * fetcher data, so the modal shows it.
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -51,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  let correction: { reversalId: string; replacementId: string | null };
+  let correction: Awaited<ReturnType<typeof createTimesheetCorrection>>;
   try {
     correction = await createTimesheetCorrection(getDatabaseClient(), {
       ...validation.data,
@@ -78,6 +81,14 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       error: settings.error
     });
+  }
+  // DCAA mode: a labor transfer needs an approver other than the requester
+  // (`assertCanApprove`), so it never posts on its own.
+  if (correction.isTransfer && settings.data?.timekeepingControls === "DCAA") {
+    return data(
+      { success: true, error: null },
+      await flash(request, success("The transfer waits for approval"))
+    );
   }
   if (settings.data?.timesheetApprovalRequired ?? true) {
     return data(

@@ -10866,6 +10866,9 @@ msgstr "<0/>'den"
 msgid "From <0/> to <1/>"
 msgstr ""
 
+msgid "from <0>{fromReadableId}</0>"
+msgstr ""
+
 msgid "From customer"
 msgstr "Müşteriden"
 
@@ -14303,6 +14306,9 @@ msgstr "Miktarın bir kısmını yeni bir karar satırına taşıyın, böylece 
 
 msgid "Move to"
 msgstr "Taşış"
+
+msgid "Move to another charge number"
+msgstr ""
 
 msgid "Move to Group"
 msgstr "Gruba Taşı"

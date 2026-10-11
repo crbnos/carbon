@@ -10866,6 +10866,9 @@ msgstr "De <0/>"
 msgid "From <0/> to <1/>"
 msgstr ""
 
+msgid "from <0>{fromReadableId}</0>"
+msgstr ""
+
 msgid "From customer"
 msgstr "Do cliente"
 
@@ -14303,6 +14306,9 @@ msgstr "Mover parte da quantidade para uma nova linha de disposição para que o
 
 msgid "Move to"
 msgstr "Mover para"
+
+msgid "Move to another charge number"
+msgstr ""
 
 msgid "Move to Group"
 msgstr "Mover para Grupo"
