@@ -1516,6 +1516,7 @@ export const path = {
     kanban: (id: string) => generatePath(`${x}/inventory/kanbans/${id}`),
     kanbans: `${x}/inventory/kanbans`,
     leaseNetInvestment: `${x}/reports/lease-net-investment`,
+    leaseRuns: `${x}/accounting/lease-runs`,
     legal: {
       privacyPolicy: "https://carbon.ms/privacy",
       termsAndConditions: "https://carbon.ms/terms"
@@ -1727,6 +1728,7 @@ export const path = {
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
+    newLeaseRun: `${x}/accounting/lease-runs/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaintenanceDispatch: `${x}/maintenance/new`,
     newMaintenanceDispatchEvent: (dispatchId: string) =>
