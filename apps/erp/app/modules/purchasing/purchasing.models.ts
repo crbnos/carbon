@@ -975,3 +975,203 @@ export const purchaseReturnOrderCreditValidator = z.object({
         .min(1, { message: "At least one line is required" })
     )
 });
+
+// -- Leases (lessee, ASC 842) -------------------------------------------------
+// Spec: `.ai/specs/2026-10-11-lessee-leases.md`. Every enum value comes from
+// these arrays — the DB enums of the same name.
+
+export const leaseStatuses = [
+  "Draft",
+  "Active",
+  "Expired",
+  "Terminated",
+  "Purchased",
+  "Cancelled"
+] as const;
+
+export const lesseeClassifications = [
+  "Operating",
+  "Finance",
+  "Short-Term"
+] as const;
+
+export const leasePaymentFrequencies = [
+  "Monthly",
+  "Quarterly",
+  "Annual"
+] as const;
+
+export const leasePaymentTimings = ["Advance", "Arrears"] as const;
+
+export const leasePaymentStatuses = ["Pending", "Invoiced", "Skipped"] as const;
+
+export const leasePaymentTypes = [
+  "Rent",
+  "Purchase Option",
+  "Termination Penalty"
+] as const;
+
+/** Whether `later` is on or after `earlier`; both `YYYY-MM-DD`. A malformed
+ *  date fails the check instead of throwing out of the refine. */
+function isOnOrAfter(later: string, earlier: string): boolean {
+  try {
+    return parseDate(later).compare(parseDate(earlier)) >= 0;
+  } catch {
+    return false;
+  }
+}
+
+export const leaseValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    leaseId: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    description: zfd.text(z.string().optional()),
+    supplierId: z.string().min(1, { message: "Supplier is required" }),
+    supplierLocationId: zfd.text(z.string().optional()),
+    supplierContactId: zfd.text(z.string().optional()),
+    locationId: zfd.text(z.string().optional()),
+    assignee: zfd.text(z.string().optional()),
+    commencementDate: z
+      .string()
+      .min(1, { message: "Commencement date is required" }),
+    endDate: z.string().min(1, { message: "End date is required" }),
+    noticeDate: zfd.text(z.string().optional()),
+    invoiceFromDate: zfd.text(z.string().optional()),
+    paymentAmount: zfd.numeric(
+      z.number().min(0, { message: "Payment cannot be negative" })
+    ),
+    paymentFrequency: z.enum(leasePaymentFrequencies, {
+      error: "Payment frequency is required"
+    }),
+    paymentTiming: z.enum(leasePaymentTimings, {
+      error: "Payment timing is required"
+    }),
+    annualEscalationPercent: zfd.numeric(
+      z.number().min(0, { message: "Escalation cannot be negative" }).default(0)
+    ),
+    discountRate: zfd.numeric(
+      z.number().min(0, { message: "Discount rate cannot be negative" })
+    ),
+    currencyCode: z.string().min(1, { message: "Currency is required" }),
+    fairValue: zfd.numeric(
+      z.number().min(0, { message: "Fair value cannot be negative" }).optional()
+    ),
+    economicLifeMonths: zfd.numeric(
+      z
+        .number()
+        .int()
+        .min(1, { message: "Economic life must be at least one month" })
+        .optional()
+    ),
+    ownershipTransfers: zfd.checkbox(),
+    specializedAsset: zfd.checkbox(),
+    purchaseOptionAmount: zfd.numeric(
+      z
+        .number()
+        .min(0, { message: "Purchase option cannot be negative" })
+        .optional()
+    ),
+    purchaseOptionReasonablyCertain: zfd.checkbox()
+  })
+  .refine((data) => isOnOrAfter(data.endDate, data.commencementDate), {
+    message: "End date must be on or after the commencement date",
+    path: ["endDate"]
+  })
+  .refine(
+    (data) => !data.noticeDate || isOnOrAfter(data.endDate, data.noticeDate),
+    {
+      message: "The notice date must be on or before the end date",
+      path: ["noticeDate"]
+    }
+  )
+  .refine(
+    (data) =>
+      !data.invoiceFromDate ||
+      isOnOrAfter(data.invoiceFromDate, data.commencementDate),
+    {
+      message: "Invoicing cannot start before the commencement date",
+      path: ["invoiceFromDate"]
+    }
+  )
+  .refine(
+    (data) =>
+      !data.purchaseOptionReasonablyCertain ||
+      (data.purchaseOptionAmount ?? 0) > 0,
+    {
+      message: "A purchase option that is reasonably certain needs an amount",
+      path: ["purchaseOptionAmount"]
+    }
+  );
+
+export const leasePaymentValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    leaseId: z.string().min(1, { message: "Lease is required" }),
+    paymentType: z.enum(leasePaymentTypes).default("Rent"),
+    periodStart: z.string().min(1, { message: "Period start is required" }),
+    periodEnd: z.string().min(1, { message: "Period end is required" }),
+    dueDate: z.string().min(1, { message: "Due date is required" }),
+    amount: zfd.numeric(
+      z.number().min(0, { message: "Amount cannot be negative" })
+    )
+  })
+  .refine((data) => isOnOrAfter(data.periodEnd, data.periodStart), {
+    message: "The period must end on or after it starts",
+    path: ["periodEnd"]
+  });
+
+/** A manual lessee classification, audit-logged with its reason. */
+export const leaseClassificationValidator = z.object({
+  classification: z.enum(["Operating", "Finance"], {
+    error: "Classification is required"
+  }),
+  reason: z.string().trim().min(1, { message: "A reason is required" })
+});
+
+/** Modify (remeasure) a lease from an effective date: the remaining
+ *  payments are cut again from these terms. */
+export const leaseModifyValidator = z
+  .object({
+    effectiveDate: z.string().min(1, { message: "Effective date is required" }),
+    endDate: z.string().min(1, { message: "End date is required" }),
+    discountRate: zfd.numeric(
+      z.number().min(0, { message: "Discount rate cannot be negative" })
+    ),
+    paymentAmount: zfd.numeric(
+      z.number().min(0, { message: "Payment cannot be negative" })
+    ),
+    paymentFrequency: z.enum(leasePaymentFrequencies, {
+      error: "Payment frequency is required"
+    }),
+    annualEscalationPercent: zfd.numeric(
+      z.number().min(0, { message: "Escalation cannot be negative" }).default(0)
+    ),
+    notes: zfd.text(z.string().optional())
+  })
+  .refine((data) => isOnOrAfter(data.endDate, data.effectiveDate), {
+    message: "The end date must be on or after the effective date",
+    path: ["endDate"]
+  });
+
+export const leaseTerminateValidator = z.object({
+  terminationDate: z
+    .string()
+    .min(1, { message: "Termination date is required" }),
+  penaltyAmount: zfd.numeric(
+    z.number().min(0, { message: "Penalty cannot be negative" }).default(0)
+  ),
+  notes: zfd.text(z.string().optional())
+});
+
+export const leasePurchaseValidator = z.object({
+  exerciseDate: z.string().min(1, { message: "Exercise date is required" }),
+  purchasePrice: zfd.numeric(
+    z.number().min(0, { message: "Price cannot be negative" })
+  ),
+  fixedAssetClassId: z
+    .string()
+    .min(1, { message: "Fixed asset class is required" }),
+  name: z.string().trim().min(1, { message: "Asset name is required" }),
+  notes: zfd.text(z.string().optional())
+});

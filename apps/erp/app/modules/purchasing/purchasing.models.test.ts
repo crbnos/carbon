@@ -23,6 +23,9 @@ import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
+  leaseModifyValidator,
+  leasePaymentValidator,
+  leaseValidator,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderStatusType,
   purchaseOrderValidator,
@@ -169,5 +172,80 @@ describe("the document validators carry no contact requirement (D-2)", () => {
         supplierReference: "RFQ-9"
       }).success
     ).toBe(true);
+  });
+});
+
+describe("leaseValidator", () => {
+  const base = {
+    name: "Forklift FL-12",
+    supplierId: "supplier-1",
+    commencementDate: "2027-01-01",
+    endDate: "2029-12-31",
+    paymentAmount: "10000",
+    paymentFrequency: "Monthly",
+    paymentTiming: "Arrears",
+    discountRate: "6",
+    currencyCode: "USD"
+  };
+  const parse = (overrides: Record<string, string>) =>
+    leaseValidator.safeParse({ ...base, ...overrides });
+
+  it("accepts a lease with only the required terms", () => {
+    const result = parse({});
+    expect(result.success).toBe(true);
+    expect(result.data?.annualEscalationPercent).toBe(0);
+  });
+
+  it("refuses an end date before the commencement date", () => {
+    expect(parse({ endDate: "2026-12-31" }).success).toBe(false);
+  });
+
+  it("refuses a notice date after the end date", () => {
+    expect(parse({ noticeDate: "2030-01-31" }).success).toBe(false);
+    expect(parse({ noticeDate: "2029-09-30" }).success).toBe(true);
+  });
+
+  it("refuses invoicing that starts before commencement", () => {
+    expect(parse({ invoiceFromDate: "2026-12-01" }).success).toBe(false);
+  });
+
+  it("needs an amount for a reasonably certain purchase option", () => {
+    expect(parse({ purchaseOptionReasonablyCertain: "on" }).success).toBe(
+      false
+    );
+    expect(
+      parse({
+        purchaseOptionReasonablyCertain: "on",
+        purchaseOptionAmount: "20000"
+      }).success
+    ).toBe(true);
+  });
+});
+
+describe("leasePaymentValidator", () => {
+  it("refuses a period that ends before it starts", () => {
+    expect(
+      leasePaymentValidator.safeParse({
+        leaseId: "lease-1",
+        periodStart: "2027-02-01",
+        periodEnd: "2027-01-31",
+        dueDate: "2027-01-31",
+        amount: "100"
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("leaseModifyValidator", () => {
+  it("refuses an end date before the effective date", () => {
+    expect(
+      leaseModifyValidator.safeParse({
+        effectiveDate: "2028-01-01",
+        endDate: "2027-12-31",
+        discountRate: "7",
+        paymentAmount: "10000",
+        paymentFrequency: "Monthly"
+      }).success
+    ).toBe(false);
   });
 });
