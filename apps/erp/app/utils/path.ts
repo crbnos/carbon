@@ -147,6 +147,10 @@ export const path = {
       digitalSupplierQuote: (id: string) =>
         generatePath(`${api}/purchasing/digital-quote/${id}`),
       docs: `${api}/docs?${build}`,
+      earnedValueAcwpCsv: (periodId: string, projectId?: string) =>
+        `${api}/earned-value/acwp.csv?${new URLSearchParams(
+          projectId ? { periodId, projectId } : { periodId }
+        )}`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,

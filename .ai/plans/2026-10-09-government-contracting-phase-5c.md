@@ -99,7 +99,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 12: Add the ACWP loader and the material point of measurement
 - [x] Task 13: Add `getEarnedValue` and `closeEarnedValuePeriod`
 - [x] Task 14: Add the close checklist task
-- [ ] Task 15: Add the ACWP export
+- [x] Task 15: Add the ACWP export
 - [ ] Task 16: Add stop-work orders
 - [ ] Task 17: Add the control fields to project settings and the element page
 - [ ] Task 18: Add earned value to the Costs tab
@@ -1190,3 +1190,8 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   5. The close route's `close-earned-value` intent calls `requireFeature`, then `closeEarnedValuePeriod`. A refusal or an `EntitlementError` flashes its message. Warnings flash as an error after "Earned value closed for <n> projects". The **Close Earned Value** button shows on the failing task once the period is Locked, like **Compute Burden**.
   6. Tests: 3 cases of `earnedValueClosedCheck` and 1 of `computePeriodReadiness` (not applicable with the feature off or not passed, and no raw SQL runs). `accounting.periods.test.ts`: 50 pass.
   7. The new task tooltip and button strings get empty `msgstr` in the catalogs, as in 5b. A `/translate` pass is still due.
+- Task 15:
+  1. `buildAcwpExport` returns `{ data, error }` (a refusal is a message, as in Task 13) with `fields`, `rows` as arrays in the field order, and the fiscal year and period for the file name. Rows sort by project identifier, then charge number, then the element of cost in `ACWP_ELEMENTS` order.
+  2. "Control Account" is the element's own `readableId` when it is a control account, else its nearest control account's; a project-level row has none. A project-level row uses the project identifier as the charge number and the project name as the element.
+  3. `path.to.api.earnedValueAcwpCsv` builds `/api/earned-value/acwp.csv?periodId=…&projectId=…`. The route logs each refusal before it answers 400 or 402.
+  4. Test: `buildAcwpExport` refuses an Open period before it reads any cost. The fake `db` gained `executeTakeFirst` for `loadRatePeriod`. 21 project-control tests pass.

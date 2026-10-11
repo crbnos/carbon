@@ -942,3 +942,136 @@ export async function updateElementEarnedValue(
     .select("id")
     .single();
 }
+
+// ── The ACWP export (Task 15, C15) ─────────────────────────────────────────
+
+export const ACWP_PERIOD_NOT_CLOSED =
+  "Close the period before you export its actual cost.";
+
+/** The columns of the ACWP export, in order. Cobra maps them on import. */
+export const ACWP_EXPORT_FIELDS = [
+  "Project",
+  "Charge Number",
+  "Element",
+  "Control Account",
+  "Fiscal Year",
+  "Period",
+  "Element of Cost",
+  "Cost Class",
+  "Hours",
+  "Amount"
+];
+
+/**
+ * The period-closed ACWP for Cobra (C15): one row per charge number × element
+ * of cost with a non-zero amount, in hours (Labor rows only) and dollars,
+ * marked Direct or Burden. The projects are the Direct cost objective ones,
+ * or only `projectId` when it is set. Refuses unless the period is Closed.
+ */
+export async function buildAcwpExport(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { companyId: string; accountingPeriodId: string; projectId?: string }
+): Promise<
+  | {
+      data: {
+        fields: string[];
+        rows: (string | number)[][];
+        fiscalYear: number;
+        periodNumber: number;
+      };
+      error: null;
+    }
+  | { data: null; error: { message: string } }
+> {
+  const { companyId, accountingPeriodId, projectId } = args;
+  await requireEntitlement(client, companyId, FEATURE);
+
+  const period = await loadRatePeriod(db, { companyId, accountingPeriodId });
+  if (period.period.closeStatus !== "Closed") {
+    return refuse(ACWP_PERIOD_NOT_CLOSED);
+  }
+
+  const projects = await db
+    .selectFrom("project")
+    .select(["id", "identifier", "name"])
+    .where("companyId", "=", companyId)
+    .$if(!!projectId, (qb) => qb.where("id", "=", projectId as string))
+    .$if(!projectId, (qb) => qb.where("costObjective", "=", "Direct"))
+    .orderBy("identifier")
+    .execute();
+  const projectIds = projects.map((p) => p.id);
+  const result = {
+    fields: ACWP_EXPORT_FIELDS,
+    rows: [] as (string | number)[][],
+    fiscalYear: period.fiscalYear,
+    periodNumber: period.periodNumber
+  };
+  if (projectIds.length === 0) return { data: result, error: null };
+
+  const [acwp, elements] = await Promise.all([
+    loadAcwp(db, {
+      companyId,
+      projectIds,
+      from: period.period.startDate,
+      to: period.period.endDate
+    }),
+    db
+      .selectFrom("projectElement")
+      .select(["id", "parentId", "readableId", "name", "isControlAccount"])
+      .where("companyId", "=", companyId)
+      .where("projectId", "in", projectIds)
+      .execute()
+  ]);
+  const elementById = new Map(elements.map((e) => [e.id, e]));
+  const nearestControlAccount = (elementId: string): string => {
+    const seen = new Set<string>();
+    let current = elementById.get(elementId);
+    while (current && !seen.has(current.id)) {
+      if (current.isControlAccount) return current.readableId;
+      seen.add(current.id);
+      current = current.parentId
+        ? elementById.get(current.parentId)
+        : undefined;
+    }
+    return "";
+  };
+
+  for (const project of projects) {
+    const byElement = acwp.get(project.id);
+    if (!byElement) continue;
+    const identifier = project.identifier ?? project.name;
+    const lines = [...byElement.entries()]
+      .map(([elementId, totals]) => {
+        const element = elementId ? elementById.get(elementId) : undefined;
+        return {
+          chargeNumber: element?.readableId ?? identifier,
+          name: element?.name ?? project.name,
+          controlAccount: elementId ? nearestControlAccount(elementId) : "",
+          totals
+        };
+      })
+      .sort((a, b) => a.chargeNumber.localeCompare(b.chargeNumber));
+    for (const line of lines) {
+      for (const elementOfCost of ACWP_ELEMENTS) {
+        const amount = line.totals.byElement[elementOfCost];
+        if (!amount) continue;
+        result.rows.push([
+          identifier,
+          line.chargeNumber,
+          line.name,
+          line.controlAccount,
+          period.fiscalYear,
+          period.periodNumber,
+          elementOfCost,
+          elementOfCost === "Overhead" || elementOfCost === "G&A"
+            ? "Burden"
+            : "Direct",
+          elementOfCost === "Labor" ? line.totals.hours : "",
+          amount
+        ]);
+      }
+    }
+  }
+  return { data: result, error: null };
+}

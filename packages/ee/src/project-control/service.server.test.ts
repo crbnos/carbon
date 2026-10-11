@@ -13,6 +13,8 @@ import {
 } from "./loaders.server";
 import { budgetNotices, budgetOverrunMessage } from "./models";
 import {
+  ACWP_PERIOD_NOT_CLOSED,
+  buildAcwpExport,
   checkBudgetAvailability,
   computeProjectEarnedValue
 } from "./service.server";
@@ -40,6 +42,10 @@ function fakeDb(rowsByTable: Record<string, Record<string, unknown>[]>) {
       chain.execute = async () => {
         reads.push(table);
         return rowsByTable[table] ?? [];
+      };
+      chain.executeTakeFirst = async () => {
+        reads.push(table);
+        return (rowsByTable[table] ?? [])[0];
       };
       return chain;
     }
@@ -357,5 +363,39 @@ describe("computeProjectEarnedValue", () => {
       controlAccounts: [],
       warnings: ["Take a baseline first"]
     });
+  });
+});
+
+describe("buildAcwpExport", () => {
+  beforeEach(() => {
+    companyHasFeature.mockReset();
+  });
+
+  it("refuses a period that is not Closed, before it reads any cost", async () => {
+    companyHasFeature.mockResolvedValue(true);
+    const { db, reads } = fakeDb({
+      accountingPeriod: [
+        {
+          id: "ap1",
+          startDate: "2026-10-01",
+          endDate: "2026-10-31",
+          status: "Active",
+          closeStatus: "Open",
+          fiscalYear: 2026,
+          periodNumber: 10
+        }
+      ]
+    });
+
+    const result = await buildAcwpExport(db, {} as never, {
+      companyId: "c1",
+      accountingPeriodId: "ap1"
+    });
+
+    expect(result).toEqual({
+      data: null,
+      error: { message: ACWP_PERIOD_NOT_CLOSED }
+    });
+    expect(reads).not.toContain("projectLedger");
   });
 });
