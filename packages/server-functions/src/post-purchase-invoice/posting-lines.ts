@@ -27,6 +27,10 @@ import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { OptionalDefaultRole } from "@carbon/database/journal-posting-status";
 import {
+  type AccountClass,
+  accountTypeFromClass
+} from "@carbon/database/ledger";
+import {
   allocateVarianceAcrossLayers,
   credit,
   debit,
@@ -148,6 +152,14 @@ export type PurchaseInvoicePostingLine = LineBase &
         account: { id: string; name: string };
         costCenterId: string | null;
         projectId: string | null;
+      }
+    | {
+        /** A lessee lease's line: a fixed payment debits the lease liability
+         *  (lease expense for a short-term lease), a variable charge the
+         *  variable lease expense. Never a project or cost center cost. */
+        kind: "lease";
+        leaseId: string;
+        account: { id: string; name: string; class: AccountClass };
       }
   );
 
@@ -669,6 +681,39 @@ export function buildPurchaseInvoicePostingLines(
             accountId: line.account.id,
             description: line.account.name,
             amount: round(debit("asset", total)),
+            ...keys
+          },
+          meta
+        );
+        push(payable(total, quantity, keys), meta);
+        break;
+      }
+
+      case "lease": {
+        const meta: Dimensions = {
+          supplierTypeId: null,
+          itemPostingGroupId: null,
+          itemId: null,
+          locationId: line.locationId,
+          costCenterId: null,
+          projectId: null,
+          processId: null,
+          fixedAssetClassId: null
+        };
+        const keys = {
+          quantity: round(quantity),
+          documentLineReference: null,
+          journalLineReference: nanoid()
+        };
+        // Signed by the account's class: a debit to the Liability-class lease
+        // liability stores a negative amount, to an expense a positive one.
+        push(
+          {
+            accountId: line.account.id,
+            description: line.account.name,
+            amount: round(
+              debit(accountTypeFromClass(line.account.class), total)
+            ),
             ...keys
           },
           meta

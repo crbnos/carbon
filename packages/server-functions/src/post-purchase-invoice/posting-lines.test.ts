@@ -236,6 +236,50 @@ describe("buildPurchaseInvoicePostingLines", () => {
     ).toThrow("Item item-1 on a purchase invoice has no cost record");
   });
 
+  it("posts a lease payment to the liability and a variable charge to expense", () => {
+    const base = { invoiceLineType: "Lease" as const, locationId: null };
+    const { lines } = build([
+      {
+        ...base,
+        id: "rent",
+        amounts: amounts(1, 10000),
+        kind: "lease",
+        leaseId: "lease-1",
+        account: {
+          id: "lease-liability",
+          name: "Lease Liabilities",
+          class: "Liability"
+        }
+      },
+      {
+        ...base,
+        id: "cam",
+        amounts: amounts(1, 250),
+        kind: "lease",
+        leaseId: "lease-1",
+        account: {
+          id: "variable",
+          name: "Variable Lease Expense",
+          class: "Expense"
+        }
+      }
+    ]);
+
+    expect(
+      lines.map(({ accountId, amount }) => ({ accountId, amount }))
+    ).toEqual([
+      { accountId: "lease-liability", amount: debit("liability", 10000) },
+      { accountId: "ap", amount: credit("liability", 10000) },
+      { accountId: "variable", amount: debit("expense", 250) },
+      { accountId: "ap", amount: credit("liability", 250) }
+    ]);
+    // Liability debit stores negative, AP credit positive: the pair nets out.
+    expect(lines[0]!.amount + lines[1]!.amount).toBe(0);
+    expect(lines.every((line) => line.dimensions.CostCenter == null)).toBe(
+      true
+    );
+  });
+
   it("posts G/L and fixed asset lines", () => {
     const base = { invoiceLineType: "G/L Account" as const, locationId: null };
     const { lines, receivedVariances } = build([

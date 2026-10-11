@@ -288,6 +288,37 @@ export async function buildLegacyPurchaseInvoiceJournals(
   );
   const assetById = new Map(assets.map((row) => [row.id, row]));
   const glAccountById = new Map(glAccounts.map((row) => [row.id, row]));
+
+  // Lease lines take the account their lease's classification picks, as at
+  // posting (post-purchase-invoice).
+  const leases = await readByIds(
+    lines.map((line) => line.leaseId),
+    (ids) =>
+      trx
+        .selectFrom("lease")
+        .select(["id", "lesseeClassification"])
+        .where("companyId", "=", companyId)
+        .where("id", "in", ids)
+        .execute()
+  );
+  const leaseById = new Map(leases.map((row) => [row.id, row]));
+  const leaseAccountRows = await readByIds(
+    [
+      defaults.leaseLiabilityAccount,
+      defaults.operatingLeaseExpenseAccount,
+      defaults.variableLeaseExpenseAccount
+    ],
+    (ids) =>
+      trx
+        .selectFrom("account")
+        .select(["id", "name", "class"])
+        .where("companyGroupId", "=", companyGroupId)
+        .where("id", "in", ids)
+        .execute()
+  );
+  const leaseAccountById = new Map(
+    leaseAccountRows.map((row) => [row.id, row])
+  );
   const receivedWithInvoiceKeys = new Set(
     receivedWithInvoice.map((row) => `${row.documentId}:${row.itemId}`)
   );
@@ -491,6 +522,38 @@ export async function buildLegacyPurchaseInvoiceJournals(
             account: glAccount,
             costCenterId: invoiceLine.costCenterId ?? null,
             projectId: invoiceLine.projectId ?? null
+          });
+          break;
+        }
+        case "Lease": {
+          const lease = invoiceLine.leaseId
+            ? leaseById.get(invoiceLine.leaseId)
+            : undefined;
+          if (!lease?.lesseeClassification) {
+            throw new InvalidInputError(
+              `Purchase invoice ${invoice.invoiceId} has a lease line whose lease is not active.`
+            );
+          }
+          const accountId = !invoiceLine.leasePaymentId
+            ? defaults.variableLeaseExpenseAccount
+            : lease.lesseeClassification === "Short-Term"
+              ? defaults.operatingLeaseExpenseAccount
+              : defaults.leaseLiabilityAccount;
+          const account = accountId ? leaseAccountById.get(accountId) : null;
+          if (!account?.class) {
+            throw new InvalidInputError(
+              "Set the lease (lessee) accounts in Accounting → Default Accounts."
+            );
+          }
+          postingLines.push({
+            ...base,
+            kind: "lease",
+            leaseId: invoiceLine.leaseId!,
+            account: {
+              id: account.id,
+              name: account.name,
+              class: account.class
+            }
           });
           break;
         }

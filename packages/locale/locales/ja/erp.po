@@ -227,6 +227,7 @@ msgstr "{0}件のラインをマップします"
 
 #. placeholder {0}: (asset as any).taxUsefulLifeMonths
 #. placeholder {0}: asset.usefulLifeMonths
+#. placeholder {0}: preview.termMonths
 msgid "{0} months"
 msgstr "{0} ヶ月"
 
@@ -696,6 +697,9 @@ msgstr "1件のジョブが作成されました"
 msgid "1 line"
 msgstr "1明細"
 
+msgid "1 month"
+msgstr ""
+
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"
 
@@ -913,6 +917,9 @@ msgstr "下書きの明細は直接編集されます。確定済みになると
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "ファイル {0} は既に存在します — 削除するか先に名前を変更してください"
 
+msgid "A finance lease when any of these is true, and an operating lease when none is."
+msgstr ""
+
 msgid "A firm customer commitment to deliver; fulfillment status splits across ship and invoice before reaching Completed."
 msgstr "得意先からの確定的な納期承諾；充足状況は出荷と請求書にわたって分散され、完了に達する前に処理されます。"
 
@@ -978,6 +985,12 @@ msgstr "ジョブの開始日が変更されました"
 
 msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
+
+msgid "A lease must be in the company's base currency to be activated."
+msgstr ""
+
+msgid "A lease of 12 months or less with no purchase option reasonably certain is short-term. Otherwise it is a finance lease when any of these is true, and an operating lease when none is."
+msgstr ""
 
 msgid "A line settles more than its invoice's open balance"
 msgstr "明細が請求書の未払い残高を超えて消込しています"
@@ -1329,6 +1342,12 @@ msgstr "出荷のステータスが変更される"
 msgid "A shipment's tracking number changes"
 msgstr "出荷の追跡番号が変更される"
 
+msgid "A short-term lease has no schedule: only its payment rows change, and no journal is posted."
+msgstr ""
+
+msgid "A short-term lease posts no journal at activation. Each invoice is expensed when it posts."
+msgstr ""
+
 msgid "A step needs a name."
 msgstr "ステップには名前が必要です。"
 
@@ -1667,6 +1686,9 @@ msgstr "作業区を有効にする"
 msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
 msgstr "有効化時に全ての個が利用可能であることを確認し、各個の会計処理を分類して、各個のレートで最初の請求期間を切り分けます。その後、条件および明細は固定されます。"
 
+msgid "Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards."
+msgstr ""
+
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "活性化により条件と個数が確定され、各個が分類され、最初の請求期間が開始されます。その後、期間が来るたびに請求書が自動的に作成されます。"
 
@@ -1792,6 +1814,9 @@ msgstr "承認要求事項を追加"
 
 msgid "Add Asset Class"
 msgstr "資産クラスを追加"
+
+msgid "Add at least one payment row before activating."
+msgstr ""
 
 msgid "Add at least one service."
 msgstr "少なくとも1つの外注サービスを追加してください。"
@@ -2110,6 +2135,9 @@ msgstr "管理者"
 
 msgid "Advance"
 msgstr "前払い"
+
+msgid "Advance (start of each period)"
+msgstr ""
 
 msgid "Advance to {nextStatus}"
 msgstr "{nextStatus}に進む"
@@ -2504,8 +2532,17 @@ msgstr "注釈テキストが必要です"
 msgid "Annotation updated"
 msgstr "注釈が更新されました"
 
+msgid "Annual"
+msgstr ""
+
+msgid "Annual Escalation (%)"
+msgstr ""
+
 msgid "Annual rate the rent is discounted at"
 msgstr "レンタル料が割引される年間レート"
+
+msgid "Annual. Starts from the company's incremental borrowing rate"
+msgstr ""
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "このコストセンターがロールアップされる別の原価センター。親の下に部門をネストさせて、階層的なコスト報告を実現します"
@@ -3212,6 +3249,9 @@ msgstr "本当ですか？"
 
 msgid "Arrears"
 msgstr "延滞"
+
+msgid "Arrears (end of each period)"
+msgstr ""
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "工場の処理待ちキューの最前列に割り込むように。"
@@ -4161,6 +4201,9 @@ msgstr "ジョブをキャンセル"
 msgid "Cancel job {target}"
 msgstr "製造指図{target}をキャンセル"
 
+msgid "Cancel Lease"
+msgstr ""
+
 msgid "Cancel Order"
 msgstr "注文をキャンセル"
 
@@ -4205,6 +4248,9 @@ msgstr "キャンセル済み"
 
 msgid "Cancelling voids the agreement and releases its units. An agreement with a unit on rent or an invoiced period cannot be cancelled."
 msgstr "キャンセルすると契約が取消になり、そのユニットが解放されます。レンタル中のユニットを持つ契約または請求済みの期間を持つ契約はキャンセルできません。"
+
+msgid "Cancelling voids the commencement journal and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate it instead."
+msgstr ""
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "保存されていない操作にパラメータを追加できません"
@@ -4432,6 +4478,9 @@ msgstr "変更文書"
 msgid "Change Inspection Plan"
 msgstr "検査計画を変更"
 
+msgid "Change Lease"
+msgstr ""
+
 msgid "Change lines with Amend."
 msgstr "修正で明細を変更"
 
@@ -4637,6 +4686,9 @@ msgstr "クラス（継承）"
 msgid "Classification"
 msgstr "分類"
 
+msgid "Classification:"
+msgstr ""
+
 msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
 msgstr "工順工程を分類します：工法、組立、検査工程は独自の製造現場でMESで実行されます。組立は案内付き組立ビューを取得し、検査は品質チェックを実行します。一方、外注加工工程は仕入先に外注され、発注書を作成します。プロセスは同じタイプを持ち、新しい工程でそれをデフォルト設定します。"
 
@@ -4833,6 +4885,9 @@ msgid "comma-separated values"
 msgstr "カンマ区切りの値"
 
 msgid "Commencement"
+msgstr ""
+
+msgid "Commencement Date"
 msgstr ""
 
 msgid "Comment"
@@ -6979,6 +7034,9 @@ msgstr "製造指図を削除"
 msgid "Delete Journal Entry"
 msgstr "仕訳行を削除"
 
+msgid "Delete Lease"
+msgstr ""
+
 msgid "Delete line"
 msgstr "行を削除"
 
@@ -7476,6 +7534,9 @@ msgstr "値引率"
 msgid "Discount Percentage"
 msgstr "値引パーセント"
 
+msgid "Discount Rate"
+msgstr ""
+
 msgid "Discount Rate (%)"
 msgstr "値引率（%）"
 
@@ -7669,6 +7730,9 @@ msgstr "下書き仕訳"
 
 msgid "Draft only"
 msgstr "下書きのみ"
+
+msgid "Draft purchase invoices are created every day for the payments that are due. Use this to draft the due payments right away."
+msgstr ""
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "終了日後に既に請求された時間のクレジットメモを下書きします。"
@@ -8318,6 +8382,9 @@ msgstr "編集済み"
 msgid "edited <0/>"
 msgstr "編集済 <0/>"
 
+msgid "Effective Date"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "削除済み"
 
@@ -8655,6 +8722,9 @@ msgstr "エントリータイプ"
 msgid "EORI"
 msgstr "EORI"
 
+msgid "Equipment, vehicles or buildings the company rents from a supplier. Payment rows are cut from the payment terms and can be edited until the lease is activated."
+msgstr ""
+
 msgid "Equity"
 msgstr "純資産"
 
@@ -8883,6 +8953,9 @@ msgstr "免除証明書"
 
 msgid "Exemption Reason"
 msgstr "免除理由"
+
+msgid "Exercise Purchase Option"
+msgstr ""
 
 msgid "Existing"
 msgstr "既存"
@@ -9624,6 +9697,9 @@ msgstr "確定"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "会計月をオープン → ロック中 → クローズ済のライフサイクルを通じて確定します。クローズ済期間は固定され、残高はスナップショットされ、明示的な再オープンでのみ取り消し可能です。"
 
+msgid "Finance"
+msgstr ""
+
 msgid "Financial Statements"
 msgstr "財務諸表"
 
@@ -9795,6 +9871,9 @@ msgstr "用<0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
 
+msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
+msgstr ""
+
 msgid "Forecast"
 msgstr "予測"
 
@@ -9917,6 +9996,9 @@ msgstr "除却益（デフォルト）"
 
 msgid "Gain on Disposal Account"
 msgstr "除却益勘定科目"
+
+msgid "Gain on Lease Modification"
+msgstr ""
 
 msgid "Gain/Loss"
 msgstr "利益/損失"
@@ -11178,11 +11260,17 @@ msgstr "請求書得意先拠点"
 msgid "Invoice Date"
 msgstr "請求日"
 
+msgid "Invoice From"
+msgstr ""
+
 msgid "Invoice ID"
 msgstr "請求書ID"
 
 msgid "Invoice Location"
 msgstr "請求書の場所"
+
+msgid "Invoice Now"
+msgstr ""
 
 msgid "Invoice Number"
 msgstr "請求書番号"
@@ -11802,6 +11890,9 @@ msgstr "リース分類"
 msgid "Lease Liabilities"
 msgstr ""
 
+msgid "Lease Liability"
+msgstr ""
+
 msgid "Lease Revenue"
 msgstr "リース売上高"
 
@@ -11812,6 +11903,9 @@ msgid "Lease Run"
 msgstr ""
 
 msgid "Lease Runs"
+msgstr ""
+
+msgid "Leased Asset"
 msgstr ""
 
 msgid "Leases"
@@ -11861,6 +11955,9 @@ msgstr "手作業を減らし、エラーを削減"
 
 msgid "Less overtime"
 msgstr "残業を減らす"
+
+msgid "Lessor"
+msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサインインできるようにします。"
@@ -12887,6 +12984,16 @@ msgstr "モデルアップロード"
 msgid "Modified"
 msgstr "修正済み"
 
+msgid "Modify"
+msgstr ""
+
+#. placeholder {0}: lease.leaseId
+msgid "Modify {0}"
+msgstr ""
+
+msgid "Modify Lease"
+msgstr ""
+
 msgid "Module"
 msgstr "モジュール"
 
@@ -13294,6 +13401,9 @@ msgstr "新しいアイテムグループ"
 
 msgid "New Kanban"
 msgstr "新規かんばん"
+
+msgid "New Lease"
+msgstr ""
 
 msgid "New line"
 msgstr "新規明細"
@@ -13785,6 +13895,9 @@ msgstr "利用可能な下書きバージョンはありません"
 msgid "No due date"
 msgstr "期日なし"
 
+msgid "No economic life entered, counts as not met"
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "このアイテムの編集可能なプロパティはありません。"
 
@@ -13826,6 +13939,9 @@ msgstr "追加のセットアップ項目はまだありません。この得意
 
 msgid "No failure path — the run stops here and is marked failed"
 msgstr "失敗パスなし — 実行がここで停止し失敗とマークされます"
+
+msgid "No fair value entered, counts as not met"
+msgstr ""
 
 msgid "No fields found."
 msgstr "フィールドが見つかりません。"
@@ -14444,6 +14560,9 @@ msgstr "まだ認識するものがありません。売上高は請求書が請
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
 
+msgid "Notice Date"
+msgstr ""
+
 msgid "Notification"
 msgstr "通知"
 
@@ -14879,6 +14998,9 @@ msgstr "～の期首残高"
 msgid "Opening Value"
 msgstr "期首価額"
 
+msgid "Operating"
+msgstr ""
+
 msgid "Operating Expenses"
 msgstr "営業費用"
 
@@ -15208,6 +15330,10 @@ msgstr "単一の得意先の価格を上書きする"
 msgid "Override price for all customers of a type"
 msgstr "得意先タイプのすべての得意先の価格を上書きする"
 
+#. placeholder {0}: lease.classificationOverrideReason
+msgid "Override reason: {0}"
+msgstr ""
+
 msgid "Override reason: {overrideReason}"
 msgstr "上書き理由: {overrideReason}"
 
@@ -15244,8 +15370,14 @@ msgstr "所有権"
 msgid "Ownership transfers"
 msgstr "所有権移転"
 
+msgid "Ownership transfers at the end of the term"
+msgstr ""
+
 msgid "Ownership transfers to the customer"
 msgstr "所有権が得意先に移転"
+
+msgid "Ownership transfers to you by the end of the term"
+msgstr ""
 
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
@@ -15434,11 +15566,17 @@ msgstr "買掛金経過日数"
 msgid "Payment"
 msgstr "支払い"
 
+msgid "Payment Amount"
+msgstr ""
+
 msgid "Payment Applications"
 msgstr "支払い適用"
 
 msgid "Payment Date"
 msgstr "支払日"
+
+msgid "Payment Frequency"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "得意先からの支払"
@@ -15467,6 +15605,9 @@ msgstr "支払条件"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Net 30のような支払条件または領収時に支払い"
 
+msgid "Payment Timing"
+msgstr ""
+
 msgid "Payment to Supplier"
 msgstr "仕入先への支払"
 
@@ -15475,6 +15616,9 @@ msgstr "支払い"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
+
+msgid "Payments due before this date are marked paid outside Carbon"
+msgstr ""
 
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "この文書の前受金を顧客の前払金から返金します。"
@@ -15995,6 +16139,9 @@ msgid "Present value of payments is at least {threshold} of fair value ({actual}
 msgstr "支払の現在価値は公正価値の{threshold}以上です({actual})"
 
 msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr ""
+
+msgid "Present value of the payments is at least {threshold} of the fair value"
 msgstr ""
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
@@ -17081,6 +17228,9 @@ msgstr "受け取り数量"
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "入荷数量がまだクレジットされていません。クレジットメモは下書きとして作成されます"
 
+msgid "Receives the invoice digest and the reminders"
+msgstr ""
+
 msgid "Receives the invoice email"
 msgstr "請求書メールを受け取ります"
 
@@ -17369,6 +17519,9 @@ msgstr "残高"
 
 msgid "Remaining after split stays on the original row."
 msgstr "分割後の残りは元の行に留まります。"
+
+msgid "Remeasurement journal (the effective date and the classification are checked when you confirm):"
+msgstr ""
 
 msgid "Remove"
 msgstr "除去"
@@ -18199,6 +18352,9 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右側の項目"
+
+msgid "Right-of-Use Asset"
+msgstr ""
 
 msgid "Right-of-Use Assets"
 msgstr ""
@@ -19356,6 +19512,9 @@ msgstr "契約の開始日を設定して会計処理を表示してください
 msgid "Set the base currency."
 msgstr "基本通貨を設定してください。"
 
+msgid "Set the commencement date, the end date and the payment terms to see the accounting treatment."
+msgstr ""
+
 msgid "Set the fiscal year settings."
 msgstr "会計年度を設定してください。"
 
@@ -19652,6 +19811,9 @@ msgstr "短い説明"
 
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
+
+msgid "Short-Term"
+msgstr ""
 
 msgid "Shortcuts"
 msgstr "ショートカット"
@@ -20996,8 +21158,14 @@ msgstr "契約期間"
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "契約期間は単位の経済的寿命の少なくとも{threshold}である"
 
+msgid "Term is at least {threshold} of the economic life"
+msgstr ""
+
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "期間は経済的耐用年数の少なくとも{threshold}です({actual})"
+
+msgid "Terminate"
+msgstr ""
 
 msgid "Terminated"
 msgstr ""
@@ -21316,6 +21484,9 @@ msgstr "得意先の見積および販売注文明細に適用される既定の
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
 
+msgid "The discount rate values the payments. The inputs below decide whether this is an operating or a finance lease."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
 
@@ -21328,6 +21499,9 @@ msgstr "この原価センターの責任者である従業員 — 発注書承�
 msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
 msgstr "有効化により、各品目の在庫がカットオーバー日時点の手持数量にリセットされます（以下の単価で）。すべての平均原価品目の原価を見直してください。"
 
+msgid "The end date is the last day of the term, including renewals that are reasonably certain."
+msgstr ""
+
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "得意先への見積から支払い回収までのエンドツーエンドの商業フロー：見積依頼から見積から受注、その後出荷、請求書、決済支払い。"
 
@@ -21336,6 +21510,9 @@ msgstr "テーブルが更新されたときに、更新されたデータを含
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "この検査計画が関連付けられているエンジニアリング図面。このパーツに対して記録された検査はこの図面を参照します。"
+
+msgid "The escalation applies on each anniversary of the commencement date."
+msgstr ""
 
 msgid "The evening hours, {name}."
 msgstr "夜間のようですね、{name}さん。"
@@ -21357,6 +21534,9 @@ msgstr "最初の3～4週間"
 
 msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
 msgstr "会社がCarbonで帳簿の記録を始める最初の日であり、会計設定時に一度だけ設定され、その後は変更されません。この日以降、転記するたびに転記済の仕訳が作成されます。"
+
+msgid "The first day of a lease month (day {commencementDay}), after the last posted lease run"
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "ロットサイズに関係なく、各ロットの前面から検査する固定単位数。"
@@ -21477,6 +21657,9 @@ msgstr "この属性が受け入れる値の種類（テキスト、数字、日
 
 msgid "The label and document printers your company prints to"
 msgstr "あなたの会社が印刷するラベルおよび文書プリンター"
+
+msgid "The last day to give renewal or termination notice"
+msgstr ""
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "仕入先のリードタイムを考慮して、この発注書が必要日までに到着するように発注書を出すべき最後の日付。"
@@ -21739,6 +21922,9 @@ msgstr "見積はリビジョンサフィックス付きでコピーされます
 msgid "The Ramp connection expired"
 msgstr "Ramp 接続が期限切れになりました"
 
+msgid "The rate at the effective date"
+msgstr ""
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "購入して消費する原材料とマテリアルマスター"
 
@@ -21770,6 +21956,9 @@ msgstr "残りの{0}{1}は再び期待され、入荷供給としてカウント
 msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged."
 msgstr "残り {0} {1} は予想されなくなります。発注済の供給と MRP はそれをカウントしなくなります。発注数量と価格設定は変更されません。"
 
+msgid "The remaining payments are cut again from these terms and discounted at the revised rate. The right-of-use asset moves by the same amount as the liability."
+msgstr ""
+
 msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr "ワークフロー変数が置き換えられた後、JSON コンテンツ タイプで逐語的に送信されるリクエスト本文。これを含むメソッドで送信されます。"
 
@@ -21793,6 +21982,9 @@ msgstr "結果は実行ページに表示されません。"
 
 msgid "The revision number of the part"
 msgstr "部品のリビジョン番号"
+
+msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
+msgstr ""
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
@@ -22984,6 +23176,9 @@ msgstr "火曜日"
 
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
+
+msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
+msgstr ""
 
 msgid "Two-Factor"
 msgstr "2要素認証"
@@ -24191,6 +24386,9 @@ msgstr "この材料用にラインサイドに実際にピッキングされた
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"
 
+msgid "What is leased and where it is used."
+msgstr ""
+
 msgid "What it is"
 msgstr "それが何であるか"
 
@@ -24539,6 +24737,9 @@ msgstr "誰がそれを販売したか、請求する通貨、そしてメモ。
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "販売者、対象、クローズ日。"
 
+msgid "Who the company leases from, and who owns it here."
+msgstr ""
+
 msgid "Who the contract is with and what it is called."
 msgstr "契約の相手先と名称"
 
@@ -24761,6 +24962,9 @@ msgstr "あなたには履歴を表示する権限がありません。"
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "あなたが主導し、私たちはそれが正しく完了することを確認します。あなたの環境設定、データ、およびゴーライブに関する専門家の目。"
+
+msgid "You effectively buy the asset. Interest and amortization of the right-of-use asset are booked separately each month."
+msgstr ""
 
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."

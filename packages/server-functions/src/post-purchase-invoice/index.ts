@@ -13,6 +13,7 @@ import {
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
+import type { AccountClass } from "@carbon/database/ledger";
 import {
   inOrder,
   many,
@@ -34,7 +35,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError } from "../errors";
 import {
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   refuseVoidBeforeCutover
@@ -691,6 +692,26 @@ const postPurchaseInvoice = defineServerFn({
             }
           }
 
+          // The lease payment rows this invoice billed are owed again: the
+          // next run of the daily job drafts them anew.
+          const leaseLineIds = invoiceLinesVoid.data
+            .filter((line) => line.invoiceLineType === "Lease")
+            .map((line) => line.id);
+          if (leaseLineIds.length > 0) {
+            await trx
+              .updateTable("leasePayment")
+              .set({
+                status: "Pending",
+                purchaseInvoiceLineId: null,
+                voidedPurchaseInvoiceId: invoiceId,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("purchaseInvoiceLineId", "in", leaseLineIds)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
           await trx
             .updateTable("purchaseInvoice")
             .set({
@@ -1238,6 +1259,76 @@ const postPurchaseInvoice = defineServerFn({
         fixedAssets.map((asset) => [asset.id, asset])
       );
 
+      // Lease lines: the lease's classification picks the account (spec
+      // §5) — a fixed payment of a capitalized lease debits the lease
+      // liability, of a short-term lease the operating lease expense; a
+      // variable charge (no payment row) debits the variable lease expense.
+      const leaseLines = purchaseInvoiceLines.data.filter(
+        (line) => line.invoiceLineType === "Lease"
+      );
+      const leaseById = new Map<
+        string,
+        { lesseeClassification: string | null; status: string }
+      >();
+      const leaseAccounts = new Map<
+        string,
+        { id: string; name: string; class: AccountClass }
+      >();
+      if (leaseLines.length > 0) {
+        const leaseIds = [
+          ...new Set(
+            leaseLines.flatMap((line) => (line.leaseId ? [line.leaseId] : []))
+          )
+        ];
+        const leases =
+          leaseIds.length > 0
+            ? await db
+                .selectFrom("lease")
+                .select(["id", "lesseeClassification", "status"])
+                .where("id", "in", leaseIds)
+                .where("companyId", "=", companyId)
+                .execute()
+            : [];
+        for (const lease of leases) leaseById.set(lease.id, lease);
+
+        const defaults = await db
+          .selectFrom("accountDefault")
+          .select([
+            "leaseLiabilityAccount",
+            "operatingLeaseExpenseAccount",
+            "variableLeaseExpenseAccount"
+          ])
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        const ids = [
+          defaults?.leaseLiabilityAccount,
+          defaults?.operatingLeaseExpenseAccount,
+          defaults?.variableLeaseExpenseAccount
+        ].filter((id): id is string => Boolean(id));
+        const rows =
+          ids.length > 0
+            ? await db
+                .selectFrom("account")
+                .select(["id", "name", "class"])
+                .where("id", "in", ids)
+                .execute()
+            : [];
+        const accountOf = (id: string | null | undefined) => {
+          const row = rows.find((account) => account.id === id);
+          return row?.class
+            ? { id: row.id, name: row.name, class: row.class }
+            : null;
+        };
+        for (const [role, id] of [
+          ["liability", defaults?.leaseLiabilityAccount],
+          ["operating", defaults?.operatingLeaseExpenseAccount],
+          ["variable", defaults?.variableLeaseExpenseAccount]
+        ] as const) {
+          const account = accountOf(id);
+          if (account) leaseAccounts.set(role, account);
+        }
+      }
+
       // The facts of each line, in order. A line the journal cannot be built
       // from is refused here.
       const postingLines: PurchaseInvoicePostingLine[] = [];
@@ -1346,6 +1437,44 @@ const postPurchaseInvoice = defineServerFn({
               account,
               costCenterId: invoiceLine.costCenterId ?? null,
               projectId: invoiceLine.projectId ?? null
+            });
+            break;
+          }
+          case "Lease": {
+            const lease = invoiceLine.leaseId
+              ? leaseById.get(invoiceLine.leaseId)
+              : undefined;
+            if (!lease) {
+              throw new InvalidInputError(
+                `Lease invoice line ${invoiceLine.id} has no lease selected`
+              );
+            }
+            if (!lease.lesseeClassification) {
+              throw new InvalidInputError(
+                "Activate the lease before invoicing it"
+              );
+            }
+            if ((invoiceLine as { projectId?: string | null }).projectId) {
+              throw new InvalidInputError(
+                "A lease line cannot be charged to a project"
+              );
+            }
+            const role = !invoiceLine.leasePaymentId
+              ? "variable"
+              : lease.lesseeClassification === "Short-Term"
+                ? "operating"
+                : "liability";
+            const account = leaseAccounts.get(role);
+            if (!account) {
+              throw new InvalidInputError(
+                "Set the lease (lessee) accounts in Accounting → Default Accounts"
+              );
+            }
+            postingLines.push({
+              ...base,
+              kind: "lease",
+              leaseId: invoiceLine.leaseId!,
+              account
             });
             break;
           }
