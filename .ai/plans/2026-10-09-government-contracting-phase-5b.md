@@ -88,7 +88,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 1: Create the Phase 5b enum migration
 - [x] Task 2: Create the indirect rates tables migration
 - [x] Task 3: Apply migrations, regenerate types, ship RLS
-- [ ] Task 4: Add the feature key and the ee package skeleton
+- [x] Task 4: Add the feature key and the ee package skeleton
 - [ ] Task 5: Add the pure rate engine
 - [ ] Task 6: Add the pure burden and billing engine
 - [ ] Task 7: Add the authoring functions
@@ -1316,3 +1316,8 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   3. The new journal source type `Burden` joins `POSTING_POLICY` with `defaultEnabled: false` (Brad's rule for journal types added after the returns types), `journalEntrySourceTypes` in `accounting.models.ts` and `JournalEntrySourceTypeIcon` (the project icon). Without them `@carbon/ee` and `erp` fail the typecheck. The posting-policy test comment names `Burden` with the other off-by-default types.
   4. The generated RLS migration is `20261011204730_indirect-rates-rls.sql`. `pnpm db:migrate` ran a second time to record it. `authz check` reports no drift.
   5. The regenerated types change the MCP digest (`tool-manifest.digest.json`); the commit carries it.
+- Task 4:
+  1. `packages/ee/src/rules/sales/models.ts` does not exist. The validators follow `packages/ee/src/approvals/models.ts`, the one ee models file that uses `zfd`.
+  2. `models.ts` also exports the enum value lists (`indirectPoolTypes`, `indirectBaseTypes`, `indirectRateTypes`, `indirectPoolAccountRoles` from `Constants`), `enteredIndirectRateTypes` (Provisional, Target, Final) and `burdenRateTypes` (Provisional, Actual). The validators and the Task 15–16 forms use them.
+  3. `indirectPoolAccountValidator` and `contractRateCeilingValidator` have an optional `id`, because their service functions are upserts.
+  4. The license fixer scans files that git knows. New files need `git add -N` before `pnpm --filter @carbon/checks license-headers` writes their header.
