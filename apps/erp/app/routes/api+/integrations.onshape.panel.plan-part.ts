@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type {
   OnshapePropertyValue,
   PartPlan,
@@ -108,6 +109,7 @@ export async function action({ request }: ActionFunctionArgs) {
     )
   ];
 
+  const serviceRole = getCarbonServiceRole();
   const [mappings, matches, options] = await Promise.all([
     client
       .from("externalIntegrationMapping")
@@ -124,7 +126,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .in("readableId", batch)
         .order("revision")
     ),
-    loadPlanOptions(client, companyId)
+    loadPlanOptions(serviceRole, companyId)
   ]);
 
   if (mappings.error) {
@@ -182,7 +184,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let mapping: PlanMappingContext;
   try {
     mapping = await loadPlanMapping(
-      client,
+      serviceRole,
       companyId,
       candidates.map((item) => item.readableId)
     );

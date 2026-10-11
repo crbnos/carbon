@@ -218,7 +218,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
   const [options, methods, links, itemLinks] = await Promise.all([
-    loadPlanOptions(client, companyId),
+    loadPlanOptions(serviceRole, companyId),
     // Settled so a failure answers 500 instead of planning methods as missing.
     loadActiveMakeMethods(client, companyId, parentItemIds).then(
       (byItemId) => ({ byItemId, error: null }),
@@ -309,7 +309,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let mapping: PlanMappingContext;
   try {
     mapping = await loadPlanMapping(
-      client,
+      serviceRole,
       companyId,
       items.map((item) => item.readableId)
     );

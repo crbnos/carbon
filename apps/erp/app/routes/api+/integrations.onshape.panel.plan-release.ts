@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type {
   OnshapeBomNode,
   OnshapePropertyValue,
@@ -169,6 +170,7 @@ export async function action({ request }: ActionFunctionArgs) {
         )
         .map((row) => row.id)
     );
+  const serviceRole = getCarbonServiceRole();
   const [methods, options] = await Promise.all([
     // A failure must answer 500, not read as "no method": that would plan a
     // BOM write over a released method.
@@ -176,7 +178,7 @@ export async function action({ request }: ActionFunctionArgs) {
       (byItemId) => ({ byItemId, error: null }),
       (error: unknown) => ({ byItemId: null, error })
     ),
-    loadPlanOptions(client, companyId)
+    loadPlanOptions(serviceRole, companyId)
   ]);
   if (!methods.byItemId) {
     return data(
@@ -274,7 +276,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let mapping: PlanMappingContext;
   try {
     mapping = await loadPlanMapping(
-      client,
+      serviceRole,
       companyId,
       items.map((item) => item.readableId)
     );

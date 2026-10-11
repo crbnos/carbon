@@ -42,6 +42,10 @@ type Client = SupabaseClient<Database>;
  * planners need that is neither Onshape's nor the user's. Both reads are
  * fail-soft: no units yields the "EA" fallback, and unreadable settings yield
  * the documented defaults, because a plan must always build.
+ *
+ * Takes the service role. `companyIntegration` is visible only to users with
+ * settings view, so through a user's client the row reads as absent and every
+ * push silently takes the built-in defaults. Both reads are scoped by company.
  */
 export async function loadPlanOptions(
   client: Client,
@@ -420,6 +424,8 @@ export async function loadPartCustomFieldDefinitions(
  *
  * Throws on a failed read, like `loadPartCustomFieldDefinitions`: planning
  * against an unread map would skip every "everyPush" value. Callers answer 500.
+ * Takes the service role for the reason `loadPlanOptions` gives: without
+ * settings view the map reads as empty, not as an error.
  */
 export async function loadPlanMapping(
   client: Client,
