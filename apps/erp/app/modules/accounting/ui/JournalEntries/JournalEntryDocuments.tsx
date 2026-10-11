@@ -120,6 +120,11 @@ const JournalEntryDocuments = () => {
       label: t`Revenue Recognition Run`,
       to: path.to.revenueRecognitionRun,
       icon: "Revenue Recognition"
+    },
+    leaseRun: {
+      label: t`Lease Run`,
+      to: path.to.revenueRecognitionRun,
+      icon: "Lease Run"
     }
   };
   const closeStatusLabels: Record<PeriodCloseStatus, string> = {

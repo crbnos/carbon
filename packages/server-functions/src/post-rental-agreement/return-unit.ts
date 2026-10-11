@@ -319,7 +319,7 @@ async function returnResidual(
     .executeTakeFirstOrThrow();
   if (Number(claimed.count) > 0) {
     throw new InvalidInputError(
-      "A draft revenue recognition run includes this lease's interest; post or delete the run before returning the unit"
+      "A draft lease run includes this lease's interest; post or delete the run before returning the unit"
     );
   }
 

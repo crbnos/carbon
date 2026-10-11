@@ -3253,6 +3253,7 @@ export type RunPreview = {
  */
 export type PeriodRunPreview = {
   revenue: RunPreview;
+  lease: RunPreview;
   depreciation: RunPreview;
 };
 
@@ -3292,20 +3293,20 @@ export async function getPeriodRunPreview(
   }
 ): Promise<PeriodRunPreview> {
   const { companyId, companyGroupId, userId, periodEnd } = args;
-  const [revenue, depreciation] = await Promise.all([
+  const previewRun = (
+    type: "Revenue Recognition" | "Lease",
+    fallback: string
+  ): Promise<RunPreview> =>
     serverFns
       .system({ db, companyId, userId })
-      .invoke("preview-revenue-recognition-run", { periodEnd })
+      .invoke("preview-revenue-recognition-run", { periodEnd, type })
       .then(
         (result): RunPreview =>
           result.error
             ? {
                 count: 0,
                 amount: 0,
-                error: previewError(
-                  result.error,
-                  "Failed to preview revenue recognition"
-                )
+                error: previewError(result.error, fallback)
               }
             : { ...result.data, error: null }
       )
@@ -3313,9 +3314,12 @@ export async function getPeriodRunPreview(
         (error): RunPreview => ({
           count: 0,
           amount: 0,
-          error: previewError(error, "Failed to preview revenue recognition")
+          error: previewError(error, fallback)
         })
-      ),
+      );
+  const [revenue, lease, depreciation] = await Promise.all([
+    previewRun("Revenue Recognition", "Failed to preview revenue recognition"),
+    previewRun("Lease", "Failed to preview the lease run"),
     buildDepreciationRunLines(client, { companyId, companyGroupId, periodEnd })
       .then((result): RunPreview => {
         if (!result.data) {
@@ -3346,7 +3350,7 @@ export async function getPeriodRunPreview(
         })
       )
   ]);
-  return { revenue, depreciation };
+  return { revenue, lease, depreciation };
 }
 
 /** The previewer the close checklist uses outside tests. */
@@ -3493,13 +3497,18 @@ export async function computePeriodReadiness(
   // Planned rows due on or before the period end that a Draft run holds.
   // The preview counts only the rows no run holds. Not bounded below: an
   // overdue row from an earlier period is still unrecognized revenue.
-  const heldRevenueRows = await fetchAllFromTable<{
+  const heldRunRows = await fetchAllFromTable<{
     amount: number;
-    run: { id: string; runId: string; periodEnd: string };
+    run: {
+      id: string;
+      runId: string;
+      periodEnd: string;
+      type: "Revenue Recognition" | "Lease";
+    };
   }>(
     client,
     "revenueRecognitionRunLine",
-    "amount, run:revenueRecognitionRun!revenueRecognitionRunLine_run_fkey!inner(id, runId, periodEnd, status), schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey!inner(scheduledDate, status)",
+    "amount, run:revenueRecognitionRun!revenueRecognitionRunLine_run_fkey!inner(id, runId, periodEnd, status, type), schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey!inner(scheduledDate, status)",
     (query: any) =>
       query
         .eq("companyId", companyId)
@@ -3509,24 +3518,33 @@ export async function computePeriodReadiness(
         .order("id")
   );
 
-  // Revenue: what a new run would claim, plus what Draft runs hold.
-  const revenueDraftRuns = new Map<
-    string,
-    { id: string; readableId: string; periodEnd: string }
-  >();
-  let heldRevenueAmount = 0;
-  for (const line of heldRevenueRows.data ?? []) {
-    revenueDraftRuns.set(line.run.id, {
-      id: line.run.id,
-      readableId: line.run.runId,
-      periodEnd: line.run.periodEnd
-    });
-    heldRevenueAmount += Number(line.amount);
-  }
-  const heldRevenueCount = heldRevenueRows.error
-    ? 1
-    : (heldRevenueRows.data ?? []).length;
-  const revenueCount = runPreview.revenue.count + heldRevenueCount;
+  // Each run type: what a new run would claim, plus what its Draft runs hold.
+  const heldByType = (type: "Revenue Recognition" | "Lease") => {
+    const draftRuns = new Map<
+      string,
+      { id: string; readableId: string; periodEnd: string }
+    >();
+    let amount = 0;
+    let count = 0;
+    for (const line of heldRunRows.data ?? []) {
+      if (line.run.type !== type) continue;
+      draftRuns.set(line.run.id, {
+        id: line.run.id,
+        readableId: line.run.runId,
+        periodEnd: line.run.periodEnd
+      });
+      amount += Number(line.amount);
+      count += 1;
+    }
+    // A failed read fails both checks closed.
+    return { draftRuns, amount, count: heldRunRows.error ? 1 : count };
+  };
+  const heldRevenue = heldByType("Revenue Recognition");
+  const revenueDraftRuns = heldRevenue.draftRuns;
+  const heldRevenueAmount = heldRevenue.amount;
+  const revenueCount = runPreview.revenue.count + heldRevenue.count;
+  const heldLease = heldByType("Lease");
+  const leaseCount = runPreview.lease.count + heldLease.count;
 
   // Depreciation: the assets a new run would depreciate, plus Draft runs.
   const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
@@ -3675,6 +3693,17 @@ export async function computePeriodReadiness(
       amount: round(runPreview.revenue.amount + heldRevenueAmount),
       due: runPreview.revenue,
       draftRuns: [...revenueDraftRuns.values()]
+    },
+    {
+      autoCheckKey: "unposted-lease-schedules",
+      severity: "Warning",
+      label:
+        "Lease and rental entries a lease run would post by this period end, and lease Draft runs hold",
+      failing: leaseCount > 0 || runPreview.lease.error !== null,
+      count: leaseCount,
+      amount: round(runPreview.lease.amount + heldLease.amount),
+      due: runPreview.lease,
+      draftRuns: [...heldLease.draftRuns.values()]
     },
     {
       autoCheckKey: "unmatched-ic",
@@ -5804,7 +5833,8 @@ export type JournalSourceDocument = {
     | "payment"
     | "memo"
     | "depreciationRun"
-    | "revenueRecognitionRun";
+    | "revenueRecognitionRun"
+    | "leaseRun";
   id: string;
   readableId: string;
 };
@@ -6167,7 +6197,8 @@ export async function getJournalEntryRelatedItems(
       : none,
     // A run posts one journal per month, so the run is found through the
     // schedule rows the journal posted, not the run's own journalId.
-    journal.sourceType === "Revenue Recognition"
+    journal.sourceType === "Revenue Recognition" ||
+    journal.sourceType === "Lease Run"
       ? client
           .from("revenueRecognitionSchedule")
           .select(
@@ -6188,7 +6219,10 @@ export async function getJournalEntryRelatedItems(
               }
             }
             return [...runs].map(([id, runId]) => ({
-              kind: "revenueRecognitionRun" as const,
+              kind:
+                journal.sourceType === "Lease Run"
+                  ? ("leaseRun" as const)
+                  : ("revenueRecognitionRun" as const),
               id,
               readableId: runId
             }));

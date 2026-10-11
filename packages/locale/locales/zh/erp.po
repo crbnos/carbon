@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} 项待确认分录 · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 天"
 
 msgid "1 draft journal entry"
 msgstr "1个草稿分录"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 项待确认分录 · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "向折旧查询本期的新运行现在会折旧什么，并检查本期
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "向收入确认查询本期的新运行现在会确认什么——递延发票收入、应计租金和合同收入——并检查本期结束前应收收入的草稿运行。创建运行并过账，以便收入进入账簿。如果不应确认任何内容，请跳过并说明理由。"
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "装配件"
@@ -10155,6 +10165,9 @@ msgstr "转到折旧运行"
 msgid "Go to implementation hub"
 msgstr "前往实施中心"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "转到模块"
 
@@ -11788,6 +11801,9 @@ msgstr "租赁收入"
 
 msgid "Lease Revenue (default)"
 msgstr "租赁收入（默认）"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

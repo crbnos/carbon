@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0} bozze di prima nota"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} scritture da riconoscere · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 giorno"
 
 msgid "1 draft journal entry"
 msgstr "1 riga di registrazione in bozza"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 scrittura da riconoscere · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "Chiede all'ammortamento cosa verrebbe ammortizzato ora per una nuova ese
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Chiede al riconoscimento dei ricavi cosa verrebbe riconosciuto ora per una nuova esecuzione in questo periodo — ricavi su fattura differiti, affitto da maturare e ricavi da contratto — e verifica le esecuzioni in Bozza che hanno ricavi dovuti entro la fine del periodo. Crea l'esecuzione e registrala in modo che i ricavi raggiungano il registro. Salta con una ragione se non c'è niente da riconoscere."
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "Assiemi"
@@ -10155,6 +10165,9 @@ msgstr "Vai alle esecuzioni di ammortamento"
 msgid "Go to implementation hub"
 msgstr "Vai all'hub di implementazione"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "Vai al modulo"
 
@@ -11788,6 +11801,9 @@ msgstr "Ricavi da noleggio"
 
 msgid "Lease Revenue (default)"
 msgstr "Ricavi da noleggio (predefinito)"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

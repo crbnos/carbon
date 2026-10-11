@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0} wpisów z wersji roboczej dowodu księgowego"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} wpisów do rozpoznania · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 dzień"
 
 msgid "1 draft journal entry"
 msgstr "1 wersja robocza zapisu księgowego"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 wpis do rozpoznania · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "Pyta amortyzację, co nowy przebieg w tym okresie amortyzowałby teraz, 
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Pyta rozpoznanie przychodu, co nowy przebieg w tym okresie rozpoznałby teraz — odroczony przychód z faktury, czysz do naliczenia i przychód z umowy — i sprawdza przebiegi w wersji roboczej zawierające przychód należny do końca okresu. Utwórz przebieg i zaksięguj go, aby przychód dotarł do księgi. Pomiń z powodem, jeśli nic nie powinno być rozpoznane."
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "Zespoły"
@@ -10155,6 +10165,9 @@ msgstr "Przejdź do przebiegów amortyzacji"
 msgid "Go to implementation hub"
 msgstr "Przejdź do centrum wdrożeniowego"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "Przejdź do modułu"
 
@@ -11788,6 +11801,9 @@ msgstr "Przychód z dzierżawy"
 
 msgid "Lease Revenue (default)"
 msgstr "Przychód z dzierżawy (domyślnie)"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

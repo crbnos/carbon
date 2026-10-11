@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}件の認識対象明細 · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1日"
 
 msgid "1 draft journal entry"
 msgstr "1 件の下書き仕訳行"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1件の認識対象明細 · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "この期間の新しい実行が現在減価償却する内容を確認
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "この期間の新しい実行が現在認識する売上高（繰延請求書売上、計上予定賃貸料、契約売上高）を確認し、期間終了までに計上予定の下書き実行を確認します。実行を作成して転記し、売上高が元帳に反映されるようにします。何も認識する必要がない場合は、理由を指定してスキップしてください。"
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "アセンブリ"
@@ -10155,6 +10165,9 @@ msgstr "減価償却実行に移動"
 msgid "Go to implementation hub"
 msgstr "実施ハブに移動"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "モジュールに移動"
 
@@ -11788,6 +11801,9 @@ msgstr "リース売上高"
 
 msgid "Lease Revenue (default)"
 msgstr "リース売上高（デフォルト）"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

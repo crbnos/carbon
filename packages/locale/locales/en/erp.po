@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0} draft journal entries"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr "{0} entries to post · {amount}"
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} entries to recognize · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 day"
 
 msgid "1 draft journal entry"
 msgstr "1 draft journal entry"
+
+msgid "1 entry to post · {amount}"
+msgstr "1 entry to post · {amount}"
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 entry to recognize · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "Asks depreciation what a new run for this period would depreciate now, a
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 
 msgid "Assemblies"
 msgstr "Assemblies"
@@ -10155,6 +10165,9 @@ msgstr "Go to depreciation runs"
 msgid "Go to implementation hub"
 msgstr "Go to implementation hub"
 
+msgid "Go to lease runs"
+msgstr "Go to lease runs"
+
 msgid "Go to module"
 msgstr "Go to module"
 
@@ -11788,6 +11801,9 @@ msgstr "Lease Revenue"
 
 msgid "Lease Revenue (default)"
 msgstr "Lease Revenue (default)"
+
+msgid "Lease Run"
+msgstr "Lease Run"
 
 msgid "Lease Runs"
 msgstr "Lease Runs"

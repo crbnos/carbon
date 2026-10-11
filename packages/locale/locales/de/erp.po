@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0} Entwurfs-Buchungszeilen"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} Einträge zur Erfassung · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 Tag"
 
 msgid "1 draft journal entry"
 msgstr "1 Entwurfs-Buchungszeile"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 Eintrag zur Erfassung · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "Fragt die Abschreibung, was ein neuer Lauf für diesen Zeitraum jetzt ab
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Fragt die Umsatzerfassung, was ein neuer Lauf für diesen Zeitraum jetzt erfassen würde – aufgeschobene Rechnungsumsatzerlöse, aufgelaufene Miete und Vertragserlöse – und prüft auf Entwurfläufe, die bis zum Ende des Zeitraums fällige Umsatzerlöse halten. Erstellen Sie den Lauf und buchen Sie ihn, damit die Umsatzerlöse zum Ledger gelangen. Überspringen Sie mit einem Grund, wenn nichts erfasst werden sollte."
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "Montagen"
@@ -10155,6 +10165,9 @@ msgstr "Gehen Sie zu Abschreibungsläufen"
 msgid "Go to implementation hub"
 msgstr "Zum Umsetzungs-Hub gehen"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "Zum Modul wechseln"
 
@@ -11788,6 +11801,9 @@ msgstr "Leasing-Erträge"
 
 msgid "Lease Revenue (default)"
 msgstr "Leasing-Erträge (Standard)"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

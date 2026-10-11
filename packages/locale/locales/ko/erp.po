@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0}개의 초안 전표"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}개의 인식할 항목 · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1일"
 
 msgid "1 draft journal entry"
 msgstr "1개의 초안 분개"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1개의 인식할 항목 · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "이 기간에 새로운 실행이 지금 감가상각할 항목을 요�
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "이 기간에 새로운 실행이 지금 인식할 항목을 요청합니다 — 이연 송장 매출, 발생할 임차료, 계약 매출 — 그리고 기간 말까지 인식할 매출을 보유하는 초안 실행을 확인합니다. 실행을 생성하고 전기하여 매출이 원장에 도달하도록 합니다. 인식할 항목이 없으면 이유와 함께 건너뜁니다."
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "조립품"
@@ -10155,6 +10165,9 @@ msgstr "감가상각 실행으로 이동"
 msgid "Go to implementation hub"
 msgstr "실행 허브로 이동"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "모듈로 이동"
 
@@ -11788,6 +11801,9 @@ msgstr "리스 매출"
 
 msgid "Lease Revenue (default)"
 msgstr "리스 매출 (기본값)"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

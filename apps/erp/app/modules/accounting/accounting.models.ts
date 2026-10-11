@@ -1209,5 +1209,6 @@ export const JOURNAL_BALANCE_TOLERANCE = 0.001;
 
 export const RUN_JOURNAL_SOURCES: Record<string, string> = {
   "Revenue Recognition": "revenue recognition",
+  "Lease Run": "lease",
   "Asset Depreciation": "depreciation"
 };

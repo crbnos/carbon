@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0} écritures de journal brouillon"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} écritures à reconnaître · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 jour"
 
 msgid "1 draft journal entry"
 msgstr "1 ligne d'écriture en brouillon"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 écriture à reconnaître · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "Demande à l'Amortissement ce qu'une nouvelle exécution pour cette pér
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Demande à la reconnaissance des Revenus ce qu'une nouvelle exécution pour cette période reconnaîtrait maintenant — Revenus de Facture différés, loyer à accumuler, et Revenus de contrat — et vérifie les exécutions en Brouillon contenant les Revenus dus d'ici la fin de la période. Créez l'exécution et comptabilisez-la pour que les Revenus atteignent le grand livre. Ignorez avec une raison si rien ne devrait être reconnu."
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "Assemblages"
@@ -10155,6 +10165,9 @@ msgstr "Aller aux exécutions d'amortissement"
 msgid "Go to implementation hub"
 msgstr "Aller au centre de mise en œuvre"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "Aller au module"
 
@@ -11788,6 +11801,9 @@ msgstr "Revenus de location"
 
 msgid "Lease Revenue (default)"
 msgstr "Revenus de location (par défaut)"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

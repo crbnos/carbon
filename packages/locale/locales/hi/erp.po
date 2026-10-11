@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0} ड्राफ्ट जर्नल प्रविष्टियाँ"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} प्रविष्टियों को पहचानने के लिए · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 दिन"
 
 msgid "1 draft journal entry"
 msgstr "1 ड्राफ्ट जर्नल प्रविष्टि"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 प्रविष्टि को पहचानने के लिए · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "मूल्यह्रास से पूछता है कि इ�
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "राजस्व मान्यता से पूछता है कि इस अवधि के लिए एक नया रन अब क्या मान्य करेगा — आस्थगित चालान राजस्व, देय किराया, और अनुबंध राजस्व — और अवधि के अंत तक देय राजस्व धारण करने वाले ड्राफ्ट रन की जांच करता है। रन बनाएँ और पोस्ट करें ताकि राजस्व बहीखाता तक पहुंचे। यदि कुछ भी मान्य नहीं होना चाहिए तो कारण के साथ छोड़ दें।"
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "असेंबलीज"
@@ -10155,6 +10165,9 @@ msgstr "मूल्यह्रास चलाता है पर जाए�
 msgid "Go to implementation hub"
 msgstr "कार्यान्वयन हब पर जाएं"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "मॉड्यूल पर जाएं"
 
@@ -11788,6 +11801,9 @@ msgstr "पट्टा राजस्व"
 
 msgid "Lease Revenue (default)"
 msgstr "पट्टा राजस्व (डिफ़ॉल्ट)"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0} lançamentos de diário em rascunho"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} lançamentos para reconhecer · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 dia"
 
 msgid "1 draft journal entry"
 msgstr "1 lançamento de diário em rascunho"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 lançamento para reconhecer · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "Pergunta à depreciação o que um novo lançamento para este período d
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Pergunta ao reconhecimento de receita o que um novo lançamento para este período reconheceria agora — receita diferida de fatura, aluguel a acumular e receita do contrato — e verifica se há lançamentos em Rascunho segurando receita devida até o final do período. Crie o lançamento e contabilize-o para que a receita chegue ao razão. Pule com um motivo se nada deve ser reconhecido."
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "Montagens"
@@ -10155,6 +10165,9 @@ msgstr "Ir para execuções de depreciação"
 msgid "Go to implementation hub"
 msgstr "Ir para o hub de implementação"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "Ir para o módulo"
 
@@ -11788,6 +11801,9 @@ msgstr "Receita de Arrendamento"
 
 msgid "Lease Revenue (default)"
 msgstr "Receita de Arrendamento (padrão)"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""

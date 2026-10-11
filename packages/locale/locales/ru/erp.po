@@ -173,6 +173,10 @@ msgid "{0} draft journal entries"
 msgstr "{0} черновых операций"
 
 #. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr ""
+
+#. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} записей к признанию · {amount}"
 
@@ -676,6 +680,9 @@ msgstr "1 день"
 
 msgid "1 draft journal entry"
 msgstr "1 черновая проводка"
+
+msgid "1 entry to post · {amount}"
+msgstr ""
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 запись к признанию · {amount}"
@@ -3238,6 +3245,9 @@ msgstr "Запрашивает амортизацию, что новый рас�
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Запрашивает признание выручки, что новый расчет для этого периода должен признать сейчас — отложенная выручка счета-фактуры, арендная плата к начислению и выручка по контракту — и проверяет наличие черновых расчетов с выручкой, подлежащей получению к концу периода. Создайте расчет и проведите его, чтобы выручка попала в главную книгу. Пропустите с причиной, если ничего не должно быть признано."
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "Сборки"
@@ -10155,6 +10165,9 @@ msgstr "Перейти к запускам амортизации"
 msgid "Go to implementation hub"
 msgstr "Перейти в центр внедрения"
 
+msgid "Go to lease runs"
+msgstr ""
+
 msgid "Go to module"
 msgstr "Перейти в модуль"
 
@@ -11788,6 +11801,9 @@ msgstr "Выручка от лизинга"
 
 msgid "Lease Revenue (default)"
 msgstr "Выручка от лизинга (по умолчанию)"
+
+msgid "Lease Run"
+msgstr ""
 
 msgid "Lease Runs"
 msgstr ""
