@@ -36,6 +36,8 @@
     "./pegging.server": "./src/pegging/server.ts",
     "./indirect-rates": "./src/indirect-rates/index.ts",
     "./indirect-rates.server": "./src/indirect-rates/server.ts",
+    "./project-control": "./src/project-control/index.ts",
+    "./project-control.server": "./src/project-control/server.ts",
     "./project-revenue": "./src/project-revenue/index.ts",
     "./project-revenue.server": "./src/project-revenue/service.server.ts",
     "./permissions.server": "./src/permissions.server.ts",

@@ -89,7 +89,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 2: Create the project control migration
 - [x] Task 3: Apply migrations, regenerate types, ship RLS
 - [x] Task 4: Add the schedule to the baseline snapshot
-- [ ] Task 5: Add the ee package skeleton
+- [x] Task 5: Add the ee package skeleton
 - [ ] Task 6: Add the pure budget engine
 - [ ] Task 7: Add the pure earned value engine
 - [ ] Task 8: Add `checkBudgetAvailability` and the budget notice
@@ -1119,3 +1119,9 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   3. `loadPlanSnapshot` also selects `startDate` and `targetDate` for `projectElement`. `toPlanSnapshot` builds `schedule` from the element rows. The element rows of the snapshot still hold only the plan-layer columns.
   4. `parsePlanSnapshot` also returns a stored `schedule`, so Task 13 can read it from a baseline. A version 1 baseline has none.
   5. A restore into another company does not rewrite the ids in `schedule`, the same open gap as the rest of the snapshot (run log follow-up, Phase 1c).
+- Task 5:
+  1. `BUDGET_COMMITMENT_STATUSES` equals the status list of the live `get_project_cost_summary` (last defined in `20261011151313_government-contracting-functions.sql`).
+  2. `models.ts` also exports the enum value lists `budgetControls` and `earnedValueTechniques` (from `Constants`) and `MATERIAL_MEASUREMENT_POINTS` with its type. The validators use them. The validators follow `indirect-rates/models.ts` (`zfd` for form fields).
+  3. `budgetTolerancePercent` is optional in `projectControlSettingsValidator`, because null reads as 0.
+  4. `server.ts` holds `export {};` until Task 8, so the empty module is valid TypeScript.
+  5. A dev server that is already running needs a restart before it resolves the 2 new export paths (lesson "A new package `exports` subpath 500s").
