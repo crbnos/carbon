@@ -94,7 +94,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 7: Add the authoring functions
 - [x] Task 8: Add `computeIndirectRates`
 - [x] Task 9: Add the `post-project-burden` server function
-- [ ] Task 10: Add `computeProjectBurden`, `computeBurdenBilling` and the period run
+- [x] Task 10: Add `computeProjectBurden`, `computeBurdenBilling` and the period run
 - [ ] Task 11: Teach the Phase 4 billing readers about burden
 - [ ] Task 12: Add the monthly job and the lock trigger
 - [ ] Task 13: Add the close checklist task
@@ -1354,3 +1354,12 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   4. The function drops rows whose rounded amount is 0, and checks that the `indirectRateRun` and the pools belong to the company.
   5. The test has a fifth case: before the cutover the journal is Provisional with no period.
   6. The permissions snapshot also gains `payrollPeriodTotal` (`update: people`) in the `import-csv` map. Phase 5a added that import key without updating the snapshot.
+- Task 10:
+  1. `computeProjectBurden` takes an optional `fiscalYear`. The Final true-up reads period 12 of that year and burdens the whole year, and the posting period can sit in the next fiscal year. `runFinalTrueUp` passes its `fiscalYear`. `loadRatePeriod` also returns `startMonth`, so the run can build the full-year range.
+  2. An element with posted burden and no cost in the range still catches up to zero. The run adds it with empty buckets, so its delta takes the posted burden back.
+  3. The run sends at most 10,000 rows per `post-project-burden` call (the input limit), in order. Each call is its own transaction. A later re-run recomputes the catch-up, so a failed call leaves nothing to repair.
+  4. The run row keeps the posting period's own fiscal year and period number, also for a true-up.
+  5. The billing run reads the Cost Plus lines of Active contracts with no date filter, so a line that has ended still gets its true-up. The fiscal year of a ledger row comes from SQL with the fiscal start month as a literal, so the SELECT and the GROUP BY use one expression.
+  6. The rate in a burden item description uses `formatPercent`. A Direct Labor Hours pool shows the rate per hour with `formatQuantity` ("<pool> FY<year> at 12.5 per hour").
+  7. `runIndirectRatePeriod` and `runFinalTrueUp` catch a thrown error and write it to `indirectRateRun.error`, as a returned error. An `EntitlementError` propagates, so the caller can answer with the upgrade message.
+  8. A database test (`compute-project-burden.test.ts`) covers the catch-up (5,000.00 once, then nothing), burden billing (5,400.00 with an 8% fee) and a Final rate (−540.00), plus the 2 refusals (period not Locked, no rate). The `@carbon/ee` suite passes (2,018).

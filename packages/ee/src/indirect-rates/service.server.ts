@@ -14,28 +14,40 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/utils";
+import { serverFns } from "@carbon/server-functions";
+import { datetime, formatPercent, formatQuantity } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import type { z } from "zod";
-import { requireEntitlement } from "../entitlements.server";
+import { EntitlementError, requireEntitlement } from "../entitlements.server";
 import {
+  type BurdenBillingAdjustment,
+  burdenBillingAdjustments,
+  burdenCatchUp,
   computePoolRates,
+  fiscalYearRange,
+  type PoolDef,
   type PoolMapping,
   type PoolRateResult,
-  periodRateFrom
+  periodRateFrom,
+  projectBurdenTargets
 } from "./compute";
 import {
   loadAbsorbedOverhead,
+  loadElementCells,
   loadGlCells,
+  loadPostedBurden,
   loadProjectCells,
   loadRatePeriod
 } from "./loaders.server";
-import type {
-  burdenSettingsValidator,
-  contractRateCeilingValidator,
-  IndirectRateType,
-  indirectPoolAccountValidator,
-  indirectPoolValidator
+import {
+  type BaseBucket,
+  type burdenSettingsValidator,
+  type contractRateCeilingValidator,
+  type IndirectRateType,
+  type indirectPoolAccountValidator,
+  type indirectPoolValidator,
+  PROJECT_BASE_BUCKETS
 } from "./models";
 
 type Client = SupabaseClient<Database>;
@@ -536,6 +548,618 @@ export async function computeIndirectRates(
   });
 
   return { data: results, error: null };
+}
+
+// -----------------------------------------------------------------------------
+// Burden and burden billing (Task 10)
+// -----------------------------------------------------------------------------
+
+export const BURDEN_PERIOD_NOT_LOCKED =
+  "Lock the period before you compute burden.";
+
+/** The most rows one `post-project-burden` call accepts. */
+const BURDEN_ROWS_PER_CALL = 10000;
+const BILLABLE_INSERT_BATCH = 1000;
+
+type BurdenRateType = Exclude<IndirectRateType, "Target">;
+
+type AppliedPool = PoolDef & { appliedAccountId: string | null };
+
+/** The active pools that apply to projects, in sequence order. */
+async function loadAppliedPools(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<AppliedPool[]> {
+  const pools = await db
+    .selectFrom("indirectPool")
+    .select([
+      "id",
+      "name",
+      "poolType",
+      "sequence",
+      "baseType",
+      "appliesToProjects",
+      "offsetAbsorbedOverhead",
+      "appliedAccountId"
+    ])
+    .where("companyId", "=", companyId)
+    .where("active", "=", true)
+    .where("appliesToProjects", "=", true)
+    .orderBy("sequence")
+    .execute();
+  return pools;
+}
+
+/** Inserts or updates the period's run row and returns its id. */
+async function upsertRateRun(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    accountingPeriodId,
+    fiscalYear,
+    periodNumber
+  }: {
+    companyId: string;
+    userId: string;
+    accountingPeriodId: string;
+    fiscalYear: number;
+    periodNumber: number;
+  }
+): Promise<string> {
+  const run = await db
+    .insertInto("indirectRateRun")
+    .values({
+      companyId,
+      accountingPeriodId,
+      fiscalYear,
+      periodNumber,
+      createdBy: userId
+    })
+    .onConflict((oc) =>
+      oc.columns(["accountingPeriodId", "companyId"]).doUpdateSet({
+        fiscalYear,
+        periodNumber,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+    )
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return run.id;
+}
+
+/**
+ * Posts the YTD burden catch-up of one Locked period (B8, B10): for each
+ * element of a burdened project, the target burden at the period's YTD rate
+ * less the Burden rows the fiscal year already holds. The rows go through
+ * the `post-project-burden` server function, which writes them and, when
+ * `postAppliedBurden` is set, the applied burden journal.
+ *
+ * `rateType` defaults to `companySettings.burdenRateType`. A `rateType` of
+ * Final is the year-end true-up: it reads the Final rate of period 12 of
+ * `fiscalYear` (default: the period's own year), burdens the full fiscal year,
+ * and posts into the given Locked period.
+ */
+export async function computeProjectBurden(
+  db: Kysely<KyselyDatabase>,
+  client: Client,
+  {
+    companyId,
+    userId,
+    accountingPeriodId,
+    rateType,
+    fiscalYear: trueUpYear
+  }: {
+    companyId: string;
+    userId: string;
+    accountingPeriodId: string;
+    rateType?: BurdenRateType;
+    fiscalYear?: number;
+  }
+): Promise<
+  | {
+      data: { indirectRateRunId: string; burdenRowCount: number };
+      error: null;
+    }
+  | { data: null; error: { message: string } }
+> {
+  await requireEntitlement(client, companyId, FEATURE);
+
+  const ratePeriod = await loadRatePeriod(db, {
+    companyId,
+    accountingPeriodId
+  });
+  if (ratePeriod.period.closeStatus !== "Locked") {
+    return refuse(BURDEN_PERIOD_NOT_LOCKED);
+  }
+
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["burdenRateType", "postAppliedBurden"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  const type: BurdenRateType =
+    rateType ?? (settings?.burdenRateType as BurdenRateType) ?? "Provisional";
+  const isTrueUp = type === "Final";
+  const fiscalYear = isTrueUp
+    ? (trueUpYear ?? ratePeriod.fiscalYear)
+    : ratePeriod.fiscalYear;
+  const periodNumber = isTrueUp ? 12 : ratePeriod.periodNumber;
+
+  const pools = await loadAppliedPools(db, companyId);
+  const rateRows =
+    pools.length === 0
+      ? []
+      : await db
+          .selectFrom("indirectRate")
+          .select(["indirectPoolId", "ytdRate"])
+          .where("companyId", "=", companyId)
+          .where("fiscalYear", "=", fiscalYear)
+          .where("periodNumber", "=", periodNumber)
+          .where("rateType", "=", type)
+          .where(
+            "indirectPoolId",
+            "in",
+            pools.map((pool) => pool.id)
+          )
+          .execute();
+  const rates = new Map(
+    rateRows.map((row) => [row.indirectPoolId, Number(row.ytdRate)])
+  );
+  const missing = pools.find((pool) => !rates.has(pool.id));
+  if (missing) {
+    return refuse(
+      `No ${type} rate for ${missing.name} in FY${fiscalYear} period ${periodNumber}`
+    );
+  }
+
+  // The true-up burdens the whole fiscal year; a period run burdens YTD.
+  const fullYear = fiscalYearRange(fiscalYear, 12, ratePeriod.startMonth);
+  const range = isTrueUp
+    ? { from: fullYear.start, to: fullYear.periodEnd }
+    : { from: ratePeriod.fyStart, to: ratePeriod.periodEnd };
+
+  const [elements, posted] = await Promise.all([
+    loadElementCells(db, { companyId, ...range }),
+    loadPostedBurden(db, { companyId, fiscalYear })
+  ]);
+
+  // An element with posted burden and no cost in the range still catches up
+  // to zero.
+  const elementKey = (row: {
+    projectId: string;
+    projectElementId: string | null;
+  }) => `${row.projectId}|${row.projectElementId ?? ""}`;
+  const allElements = new Map(elements.map((e) => [elementKey(e), e]));
+  for (const row of posted) {
+    if (allElements.has(elementKey(row))) continue;
+    allElements.set(elementKey(row), {
+      projectId: row.projectId,
+      projectElementId: row.projectElementId,
+      costObjective: "Direct",
+      buckets: {},
+      absorbedOverhead: 0
+    });
+  }
+
+  const rows = [...allElements.values()].flatMap((element) =>
+    burdenCatchUp(
+      projectBurdenTargets(pools, rates, element),
+      posted,
+      element
+    ).map((row) => ({
+      ...row,
+      indirectRateType: type,
+      burdenFiscalYear: fiscalYear
+    }))
+  );
+
+  const indirectRateRunId = await upsertRateRun(db, {
+    companyId,
+    userId,
+    accountingPeriodId,
+    fiscalYear: ratePeriod.fiscalYear,
+    periodNumber: ratePeriod.periodNumber
+  });
+
+  const fns = serverFns.system({ db, companyId, userId });
+  for (let i = 0; i < rows.length; i += BURDEN_ROWS_PER_CALL) {
+    const result = await fns.invoke("post-project-burden", {
+      indirectRateRunId,
+      accountingPeriodId,
+      postingDate: ratePeriod.periodEnd,
+      postApplied: settings?.postAppliedBurden ?? false,
+      rows: rows.slice(i, i + BURDEN_ROWS_PER_CALL)
+    });
+    if (result.error) {
+      return refuse(result.error.message || "The burden could not be posted");
+    }
+  }
+
+  await db
+    .updateTable("indirectRateRun")
+    .set({
+      burdenComputedAt: datetime.timestamp(),
+      burdenRateType: type,
+      burdenRowCount: rows.length,
+      error: null,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", indirectRateRunId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  return {
+    data: { indirectRateRunId, burdenRowCount: rows.length },
+    error: null
+  };
+}
+
+/**
+ * The fiscal year of a date column, in SQL (`fiscalYearAndPeriodFor`). The
+ * month is a literal, so the expression is identical in SELECT and GROUP BY.
+ */
+function fiscalYearSql(column: string, startMonth: number) {
+  return startMonth === 1
+    ? sql<number>`EXTRACT(YEAR FROM ${sql.ref(column)})::int`
+    : sql<number>`(EXTRACT(YEAR FROM ${sql.ref(column)})
+        + CASE WHEN EXTRACT(MONTH FROM ${sql.ref(column)}) >= ${sql.lit(startMonth)} THEN 1 ELSE 0 END)::int`;
+}
+
+function burdenItemDescription(
+  pool: Pick<PoolDef, "name" | "baseType">,
+  fiscalYear: number,
+  rate: number
+): string {
+  const shown =
+    pool.baseType === "Direct Labor Hours"
+      ? `${formatQuantity(rate, "en-US")} per hour`
+      : formatPercent(rate, "en-US");
+  return `${pool.name} FY${fiscalYear} at ${shown}`;
+}
+
+/**
+ * B5: bills burden by difference for every Cost Plus line of an Active
+ * contract. Per line, pool and fiscal year, the target is the line's billable
+ * base × the billing rate (Final, else Provisional, capped by the line's
+ * ceiling) × (1 + fee), less every burden item the line already has. Each
+ * difference becomes one Unbilled burden item dated the period end.
+ */
+export async function computeBurdenBilling(
+  db: Kysely<KyselyDatabase>,
+  client: Client,
+  {
+    companyId,
+    userId,
+    accountingPeriodId
+  }: { companyId: string; userId: string; accountingPeriodId: string }
+): Promise<
+  | {
+      data: { billableItemCount: number; warnings: string[] };
+      error: null;
+    }
+  | { data: null; error: { message: string } }
+> {
+  await requireEntitlement(client, companyId, FEATURE);
+
+  const ratePeriod = await loadRatePeriod(db, {
+    companyId,
+    accountingPeriodId
+  });
+  const pools = await loadAppliedPools(db, companyId);
+  const indirectRateRunId = await upsertRateRun(db, {
+    companyId,
+    userId,
+    accountingPeriodId,
+    fiscalYear: ratePeriod.fiscalYear,
+    periodNumber: ratePeriod.periodNumber
+  });
+
+  const lines = await db
+    .selectFrom("customerContractLine as l")
+    .innerJoin("customerContract as c", (join) =>
+      join
+        .onRef("c.id", "=", "l.customerContractId")
+        .onRef("c.companyId", "=", "l.companyId")
+    )
+    .select(["l.id", "l.projectId", "l.projectElementId", "l.feePercent"])
+    .where("l.companyId", "=", companyId)
+    .where("l.billingMethod", "=", "Cost Plus")
+    .where("c.status", "=", "Active")
+    .where("l.projectId", "is not", null)
+    .where("l.projectElementId", "is not", null)
+    .execute();
+
+  let adjustments: BurdenBillingAdjustment[] = [];
+  let warnings: string[] = [];
+  if (lines.length > 0 && pools.length > 0) {
+    const lineIds = lines.map((line) => line.id);
+    const poolIds = pools.map((pool) => pool.id);
+    const fy = fiscalYearSql("pl.postingDate", ratePeriod.startMonth);
+
+    const [baseRows, existingRows, ceilingRows] = await Promise.all([
+      sql<{
+        customerContractLineId: string;
+        fiscalYear: number;
+        costType: keyof typeof PROJECT_BASE_BUCKETS;
+        amount: number;
+        quantity: number;
+      }>`
+        SELECT bi."customerContractLineId", ${fy} AS "fiscalYear", pl."costType",
+               SUM(pl."amount") AS "amount",
+               SUM(COALESCE(pl."quantity", 0)) AS "quantity"
+        FROM "projectBillableItem" bi
+        INNER JOIN "projectLedger" pl
+          ON pl."id" = bi."projectLedgerId" AND pl."companyId" = bi."companyId"
+        WHERE bi."companyId" = ${companyId}
+          AND bi."customerContractLineId" = ANY(${lineIds}::text[])
+          AND bi."status" <> 'Written Off'
+          AND pl."costType" <> 'Burden'
+        GROUP BY bi."customerContractLineId", ${fy}, pl."costType"
+      `.execute(db),
+      db
+        .selectFrom("projectBillableItem")
+        .select([
+          "customerContractLineId",
+          "indirectPoolId",
+          "fiscalYear",
+          sql<number>`SUM("amount")`.as("amount")
+        ])
+        .where("companyId", "=", companyId)
+        .where("customerContractLineId", "in", lineIds)
+        .where("indirectPoolId", "is not", null)
+        .groupBy(["customerContractLineId", "indirectPoolId", "fiscalYear"])
+        .execute(),
+      db
+        .selectFrom("customerContractRateCeiling")
+        .select(["customerContractLineId", "indirectPoolId", "ceilingRate"])
+        .where("companyId", "=", companyId)
+        .where("customerContractLineId", "in", lineIds)
+        .execute()
+    ]);
+
+    const years = new Set<number>(baseRows.rows.map((r) => r.fiscalYear));
+    for (const row of existingRows) {
+      if (row.fiscalYear !== null) years.add(row.fiscalYear);
+    }
+    // The latest Final and Provisional rate of each pool and year, up to the
+    // run's period.
+    const rateRows =
+      years.size === 0
+        ? []
+        : await db
+            .selectFrom("indirectRate")
+            .select([
+              "indirectPoolId",
+              "fiscalYear",
+              "periodNumber",
+              "rateType",
+              "ytdRate"
+            ])
+            .where("companyId", "=", companyId)
+            .where("indirectPoolId", "in", poolIds)
+            .where("fiscalYear", "in", [...years])
+            .where("rateType", "in", ["Final", "Provisional"])
+            .where((eb) =>
+              eb.or([
+                eb("fiscalYear", "<", ratePeriod.fiscalYear),
+                eb.and([
+                  eb("fiscalYear", "=", ratePeriod.fiscalYear),
+                  eb("periodNumber", "<=", ratePeriod.periodNumber)
+                ])
+              ])
+            )
+            .orderBy("periodNumber", "desc")
+            .execute();
+    const rates = new Map<
+      string,
+      { final: number | null; provisional: number | null }
+    >();
+    for (const row of rateRows) {
+      const key = `${row.indirectPoolId}|${row.fiscalYear}`;
+      const entry = rates.get(key) ?? { final: null, provisional: null };
+      if (row.rateType === "Final" && entry.final === null) {
+        entry.final = Number(row.ytdRate);
+      }
+      if (row.rateType === "Provisional" && entry.provisional === null) {
+        entry.provisional = Number(row.ytdRate);
+      }
+      rates.set(key, entry);
+    }
+
+    const result = burdenBillingAdjustments({
+      pools,
+      rates,
+      lines: lines.map((line) => {
+        const baseByYear = new Map<
+          number,
+          Partial<Record<BaseBucket, number>>
+        >();
+        for (const row of baseRows.rows) {
+          if (row.customerContractLineId !== line.id) continue;
+          const buckets = baseByYear.get(row.fiscalYear) ?? {};
+          for (const bucket of PROJECT_BASE_BUCKETS[row.costType] ?? []) {
+            const value = Number(
+              bucket === "LaborHours" ? row.quantity : row.amount
+            );
+            buckets[bucket] = (buckets[bucket] ?? 0) + value;
+          }
+          baseByYear.set(row.fiscalYear, buckets);
+        }
+        return {
+          customerContractLineId: line.id,
+          projectId: line.projectId!,
+          projectElementId: line.projectElementId!,
+          feePercent: Number(line.feePercent ?? 0),
+          baseByYear,
+          ceilings: new Map(
+            ceilingRows
+              .filter((row) => row.customerContractLineId === line.id)
+              .map((row) => [row.indirectPoolId, Number(row.ceilingRate)])
+          ),
+          existing: new Map(
+            existingRows
+              .filter((row) => row.customerContractLineId === line.id)
+              .map((row) => [
+                `${row.indirectPoolId}|${row.fiscalYear}`,
+                Number(row.amount)
+              ])
+          )
+        };
+      })
+    });
+    adjustments = result.adjustments;
+    warnings = result.warnings;
+  }
+
+  const poolById = new Map(pools.map((pool) => [pool.id, pool]));
+  const inserts = adjustments.map((adjustment) => ({
+    companyId,
+    projectId: adjustment.projectId,
+    projectElementId: adjustment.projectElementId,
+    projectLedgerId: null,
+    customerContractLineId: adjustment.customerContractLineId,
+    indirectPoolId: adjustment.indirectPoolId,
+    fiscalYear: adjustment.fiscalYear,
+    burdenRate: adjustment.burdenRate,
+    burdenBase: adjustment.burdenBase,
+    postingDate: ratePeriod.periodEnd,
+    description: burdenItemDescription(
+      poolById.get(adjustment.indirectPoolId)!,
+      adjustment.fiscalYear,
+      adjustment.burdenRate
+    ),
+    quantity: 1,
+    unitPrice: adjustment.amount,
+    amount: adjustment.amount,
+    status: "Unbilled" as const,
+    createdBy: userId
+  }));
+
+  await db.transaction().execute(async (trx) => {
+    for (let i = 0; i < inserts.length; i += BILLABLE_INSERT_BATCH) {
+      await trx
+        .insertInto("projectBillableItem")
+        .values(inserts.slice(i, i + BILLABLE_INSERT_BATCH))
+        .execute();
+    }
+    await trx
+      .updateTable("indirectRateRun")
+      .set({
+        billingComputedAt: datetime.timestamp(),
+        billableItemCount: inserts.length,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", indirectRateRunId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+
+  return { data: { billableItemCount: inserts.length, warnings }, error: null };
+}
+
+type RunStepResult = { error: { message: string } | null };
+
+/**
+ * Runs the steps in order and stops at the first error, which it writes to
+ * the period's `indirectRateRun.error`. An `EntitlementError` propagates.
+ */
+async function runSteps(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    accountingPeriodId
+  }: { companyId: string; userId: string; accountingPeriodId: string },
+  steps: (() => Promise<RunStepResult>)[]
+): Promise<{
+  data: { completed: true } | null;
+  error: { message: string } | null;
+}> {
+  for (const step of steps) {
+    let message: string | null = null;
+    try {
+      const result = await step();
+      message = result.error?.message ?? null;
+    } catch (error) {
+      if (error instanceof EntitlementError) throw error;
+      message =
+        error instanceof Error && error.message
+          ? error.message
+          : "The indirect rate run failed";
+    }
+    if (message !== null) {
+      const ratePeriod = await loadRatePeriod(db, {
+        companyId,
+        accountingPeriodId
+      });
+      const indirectRateRunId = await upsertRateRun(db, {
+        companyId,
+        userId,
+        accountingPeriodId,
+        fiscalYear: ratePeriod.fiscalYear,
+        periodNumber: ratePeriod.periodNumber
+      });
+      await db
+        .updateTable("indirectRateRun")
+        .set({ error: message, updatedBy: userId })
+        .where("id", "=", indirectRateRunId)
+        .where("companyId", "=", companyId)
+        .execute();
+      return { data: null, error: { message } };
+    }
+  }
+  return { data: { completed: true }, error: null };
+}
+
+/**
+ * The period run, after the period locks: the Actual rates, the burden
+ * catch-up, then the burden billing. The first error stops the run and is
+ * written to `indirectRateRun.error`.
+ */
+export async function runIndirectRatePeriod(
+  db: Kysely<KyselyDatabase>,
+  client: Client,
+  args: { companyId: string; userId: string; accountingPeriodId: string }
+) {
+  await requireEntitlement(client, args.companyId, FEATURE);
+  return runSteps(db, args, [
+    () => computeIndirectRates(db, client, args),
+    () => computeProjectBurden(db, client, args),
+    () => computeBurdenBilling(db, client, args)
+  ]);
+}
+
+/**
+ * The year-end true-up at Final rates: the burden catch-up of `fiscalYear`
+ * at the Final rate of period 12, posted into the given Locked period, then
+ * the burden billing.
+ */
+export async function runFinalTrueUp(
+  db: Kysely<KyselyDatabase>,
+  client: Client,
+  args: {
+    companyId: string;
+    userId: string;
+    fiscalYear: number;
+    accountingPeriodId: string;
+  }
+) {
+  await requireEntitlement(client, args.companyId, FEATURE);
+  return runSteps(db, args, [
+    () =>
+      computeProjectBurden(db, client, {
+        companyId: args.companyId,
+        userId: args.userId,
+        accountingPeriodId: args.accountingPeriodId,
+        rateType: "Final",
+        fiscalYear: args.fiscalYear
+      }),
+    () => computeBurdenBilling(db, client, args)
+  ]);
 }
 
 // -----------------------------------------------------------------------------

@@ -13,9 +13,11 @@ import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import {
   type BurdenedCostObjective,
+  type ElementCells,
   fiscalYearRange,
   type GlCell,
   type PoolMapping,
+  type PostedBurden,
   type ProjectCell
 } from "./compute";
 import {
@@ -41,6 +43,8 @@ export type RatePeriod = {
   };
   fiscalYear: number;
   periodNumber: number;
+  /** The fiscal year's first month, 1–12. */
+  startMonth: number;
   fyStart: string;
   periodStart: string;
   periodEnd: string;
@@ -99,6 +103,7 @@ export async function loadRatePeriod(
     },
     fiscalYear,
     periodNumber,
+    startMonth,
     fyStart: range.start,
     periodStart: range.periodStart,
     periodEnd: range.periodEnd
@@ -284,4 +289,102 @@ export async function loadAbsorbedOverhead(
     accountId: row?.accountId ?? null,
     amount: Number(row?.amount ?? 0)
   };
+}
+
+type ElementGroup = {
+  projectId: string;
+  projectElementId: string | null;
+  costObjective: BurdenedCostObjective;
+  costType: keyof typeof PROJECT_BASE_BUCKETS;
+  amount: number;
+  quantity: number;
+  unallowableAmount: number;
+  unallowableQuantity: number;
+};
+
+/**
+ * YTD project ledger cost of each element (null = project level) of the
+ * burdened cost objectives, by base bucket (B8). Burden rows feed no base.
+ * `absorbedOverhead` is the element's Overhead rows (B7).
+ */
+export async function loadElementCells(
+  db: Db,
+  { companyId, from, to }: { companyId: string; from: string; to: string }
+): Promise<ElementCells[]> {
+  const result = await sql<ElementGroup>`
+    SELECT
+      pl."projectId",
+      pl."projectElementId",
+      p."costObjective",
+      pl."costType",
+      SUM(pl."amount") AS "amount",
+      SUM(COALESCE(pl."quantity", 0)) AS "quantity",
+      SUM(CASE WHEN pl."unallowable" THEN pl."amount" ELSE 0 END) AS "unallowableAmount",
+      SUM(CASE WHEN pl."unallowable" THEN COALESCE(pl."quantity", 0) ELSE 0 END) AS "unallowableQuantity"
+    FROM "projectLedger" pl
+    INNER JOIN "project" p
+      ON p."id" = pl."projectId" AND p."companyId" = pl."companyId"
+    WHERE pl."companyId" = ${companyId}
+      AND pl."postingDate" >= ${from}::date
+      AND pl."postingDate" <= ${to}::date
+      AND pl."costType" <> 'Burden'
+      AND p."costObjective"::text = ANY(${[...BURDENED_COST_OBJECTIVES]}::text[])
+    GROUP BY pl."projectId", pl."projectElementId", p."costObjective", pl."costType"
+  `.execute(db);
+
+  return toElementCells(result.rows);
+}
+
+/** Groups ledger sums into one `ElementCells` per project and element. */
+export function toElementCells(groups: ElementGroup[]): ElementCells[] {
+  const elements = new Map<string, ElementCells>();
+  for (const group of groups) {
+    const key = `${group.projectId}|${group.projectElementId ?? ""}`;
+    const element = elements.get(key) ?? {
+      projectId: group.projectId,
+      projectElementId: group.projectElementId,
+      costObjective: group.costObjective,
+      buckets: {},
+      absorbedOverhead: 0
+    };
+    for (const bucket of PROJECT_BASE_BUCKETS[group.costType] ?? []) {
+      const hours = bucket === "LaborHours";
+      const cell = element.buckets[bucket] ?? {
+        amount: 0,
+        unallowableAmount: 0
+      };
+      cell.amount += Number(hours ? group.quantity : group.amount);
+      cell.unallowableAmount += Number(
+        hours ? group.unallowableQuantity : group.unallowableAmount
+      );
+      element.buckets[bucket] = cell;
+    }
+    if (group.costType === "Overhead") {
+      element.absorbedOverhead += Number(group.amount);
+    }
+    elements.set(key, element);
+  }
+  return [...elements.values()];
+}
+
+/** Σ Burden rows of the fiscal year by project, element, pool and flag (B8). */
+export async function loadPostedBurden(
+  db: Db,
+  { companyId, fiscalYear }: { companyId: string; fiscalYear: number }
+): Promise<PostedBurden[]> {
+  const result = await sql<PostedBurden>`
+    SELECT
+      pl."projectId",
+      pl."projectElementId",
+      pl."indirectPoolId",
+      pl."unallowable",
+      SUM(pl."amount") AS "amount"
+    FROM "projectLedger" pl
+    WHERE pl."companyId" = ${companyId}
+      AND pl."costType" = 'Burden'
+      AND pl."burdenFiscalYear" = ${fiscalYear}
+    GROUP BY pl."projectId", pl."projectElementId", pl."indirectPoolId", pl."unallowable"
+  `.execute(db);
+
+  return result.rows.map((row) => ({ ...row, amount: Number(row.amount) }));
 }
