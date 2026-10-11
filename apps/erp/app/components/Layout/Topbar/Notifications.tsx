@@ -31,6 +31,7 @@ import {
   LuCircleGauge,
   LuCirclePlay,
   LuClipboardCheck,
+  LuClock,
   LuDollarSign,
   LuGauge,
   LuGitPullRequestArrow,
@@ -388,6 +389,11 @@ function GenericNotification({
           to={path.to.contractDetails(id)}
           {...props}
         />
+      );
+    case NotificationEvent.TimesheetMissing:
+      // id is the missed date; the timesheet opens on the current week.
+      return (
+        <Notification icon={<LuClock />} to={path.to.timesheet} {...props} />
       );
     case NotificationEvent.JobCompleted:
     case NotificationEvent.JobAssignment:

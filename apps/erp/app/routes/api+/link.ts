@@ -101,6 +101,8 @@ function resolve(
       return `${path.to.invoicingSales}?filter=needsReview:eq:true`;
     case NotificationEvent.ContractFundingThreshold:
       return path.to.contractDetails(documentId);
+    case NotificationEvent.TimesheetMissing:
+      return path.to.timesheet;
     case NotificationEvent.Workflow:
       return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:

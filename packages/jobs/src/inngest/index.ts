@@ -78,6 +78,7 @@ import {
   recurringBillingFunction,
   revenueRecognitionProposalFunction,
   scheduleReplanWaveFunction,
+  timesheetMissingTimeFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
   workflowRunRetentionFunction
@@ -174,6 +175,7 @@ export const functions = [
     ? [purgeInactiveCompaniesFunction]
     : []),
   workflowRunRetentionFunction,
+  timesheetMissingTimeFunction,
   revenueRecognitionProposalFunction,
   recurringBillingFunction,
   // Integrations

@@ -583,6 +583,11 @@ export type Events = {
   "carbon/workflow-run-retention.process": {
     data: Record<string, never>;
   };
+  // `util.sweep_timesheet_missing_time`, daily while a company runs DCAA
+  // timekeeping.
+  "carbon/timesheet-missing-time.process": {
+    data: Record<string, never>;
+  };
 
   // Weekly tasks
   "carbon/weekly": {

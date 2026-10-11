@@ -229,6 +229,11 @@ const defaultDestinations: Partial<
     NotificationDestination.InApp,
     NotificationDestination.Email
   ],
+  // At most one per employee and one per manager per daily check.
+  [NotificationEvent.TimesheetMissing]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
+  ],
   // In-app only: the outbound sweep re-fires while failures persist, and an
   // email per sweep cycle would be noise. Browser push still follows in-app,
   // so the integration's last editor gets a push every sweep (30 min) until

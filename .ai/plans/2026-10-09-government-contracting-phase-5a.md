@@ -88,7 +88,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 26: Add CLIN numbers and funding actions to the contract line
 - [x] Task 27: Invoice by CLIN with ACRN allocation
 - [x] Task 28: Add the payroll totals import and list
-- [ ] Task 29: Add the daily missing-time check
+- [x] Task 29: Add the daily missing-time check
 - [ ] Task 30: Add the Timesheets complete close task
 - [ ] Task 31: Add the report queries and the CSV route
 - [ ] Task 32: Add the Reports page
@@ -1651,4 +1651,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   5. `importPermissions` is `people` (`update`), as the plan says and as `department` does. The table's RLS rule is `company("people")`, so the INSERT policy is `people_create`; the import does not also require `create`, the same as every other import that only creates rows.
   6. The list page has no detail drawer and no New button: rows come only from Bulk Import. **Payroll Totals** sits after Timecards and shows with Timecards off too, because labor distribution needs it either way. `getPayrollPeriodTotals` is an `@mcp read` tool, so `pnpm run generate:mcp` adds `people_getPayrollPeriodTotals` to the digest.
   7. The database test also checks that an unknown employee is a row error and a repeated row is skipped. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 29:
+  1. Steps 3.1 to 3.3 are one query, not one call per company: `companySettings` with `timekeepingControls = 'DCAA'`, `CROSS JOIN LATERAL get_missing_timesheet_days(company, company_today(company) - 1, …)`, and the employee's `user.fullName`. `company_today` is yesterday's base on the company's calendar in SQL, so the job reads no timezone and makes no query per company (the rule for the executor bans a query in a loop).
+  2. The events go out with `step.sendEvent` in chunks of 500 (`notify-missing-time-<n>`), not in one call. One send carries at most 512 KB (`.ai/lessons.md`), and a large company could exceed it in one send.
+  3. A manager gets one notice per company and date that lists the names of their employees, sorted. An employee who is their own manager, or has no manager, gets only their own notice. `documentId` is the missed date. The text is the `body` ("No time entered for Oct 9, 2026"), and the content case reads nothing.
+  4. `carbon/timesheet-missing-time.process` is declared in `packages/lib/src/events.ts`, beside the other pg_cron events. The plan does not list that file, but `inngest.createFunction` needs the event in the schema.
+  5. The topic is General, the destinations are in-app and email (as `ContractFundingThreshold`), the topbar row has a clock icon, and both links open `path.to.timesheet`.
+  6. Verify: the SQL test ran through `/tmp/kpsql -X -v ON_ERROR_STOP=1 < …` (there is no `psql` binary) and raised no error. It covers a Monday shift with no entry (listed), a Tuesday (not a shift day), a holiday, an absence and an entry (each removes the day), and the has-work function with no DCAA company and with one. `buildMissingTimeEvents` has a unit test. `@carbon/notifications` 16 and `@carbon/jobs` 951 pass.
+  7. `pnpm run generate:types` changed nothing: the 2 new functions are in the `util` schema.
 

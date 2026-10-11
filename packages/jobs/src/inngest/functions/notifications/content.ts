@@ -1415,6 +1415,15 @@ async function buildEventContent(
       };
     }
 
+    // Payload-carried: the daily missing-time check sends the text as `body`;
+    // documentId is the missed date, so there is nothing to read.
+    case NotificationEvent.TimesheetMissing: {
+      return {
+        description: opts?.body ?? "No time entered",
+        details: []
+      };
+    }
+
     default:
       return null;
   }

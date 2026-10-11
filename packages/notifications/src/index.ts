@@ -48,6 +48,9 @@ export enum NotificationEvent {
   // Payload-carried like RecurringInvoicing: the figures arrive as `title` and
   // `body`; `documentId` is the contract.
   ContractFundingThreshold = "contract-funding-threshold",
+  // Payload-carried like RecurringInvoicing: the daily missing-time check
+  // sends the text as `body`; `documentId` is the missed date.
+  TimesheetMissing = "timesheet-missing",
   RiskAssignment = "risk-assignment",
   SalesOrderAssignment = "sales-order-assignment",
   SalesRfqAssignment = "sales-rfq-assignment",
@@ -223,6 +226,7 @@ export function getNotificationTopic(
     // exhaustive Record<NotificationTopic, string>.
     case NotificationEvent.Workflow:
     case NotificationEvent.IntegrationSync:
+    case NotificationEvent.TimesheetMissing:
       return NotificationTopic.General;
     default:
       return NotificationTopic.General;
@@ -313,6 +317,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Recurring invoicing summary";
     case NotificationEvent.ContractFundingThreshold:
       return "Contract funding notice";
+    case NotificationEvent.TimesheetMissing:
+      return "Missing time";
     default:
       return "You have a new notification";
   }
@@ -355,6 +361,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "Review invoices";
     case NotificationEvent.ContractFundingThreshold:
       return "View contract";
+    case NotificationEvent.TimesheetMissing:
+      return "Open timesheet";
     default:
       return "View details";
   }
