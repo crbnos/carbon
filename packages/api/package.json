@@ -5,6 +5,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./rich-text": "./src/rich-text.ts",
     "./schema": "./src/schema.ts"
   },
   "scripts": {

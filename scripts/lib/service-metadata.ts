@@ -29,6 +29,7 @@ import type {
   PermissionAction,
   ToolPermission,
 } from "@carbon/api";
+import { publishRichTextFields } from "@carbon/api/rich-text";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
 import {
   MCP_DESTRUCTIVE,
@@ -104,7 +105,7 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
   sales_updateQuote:
     "Update an existing quote - handles exchange rate updates when currency changes, syncs customer to opportunity",
   sales_upsertQuoteLine:
-    "Create or update a quote line. Keep description to a short one-line label - it is truncated on the digital quote. Long specifications belong in externalNotes (TipTap doc JSON, rendered in full under the line on the digital quote and PDF); internalNotes takes the same shape and is never shown to the customer.",
+    "Create or update a quote line. Keep description to a short one-line label - it is truncated on the digital quote. Long specifications belong in externalNotes (Markdown or a TipTap document, rendered in full under the line on the digital quote and PDF); internalNotes takes the same shape and is never shown to the customer.",
   sales_insertSalesOrder:
     "Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a sales order with just customerId.",
   sales_updateSalesOrder:
@@ -1880,6 +1881,9 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       });
       describeUntypedArguments(schema, func, contextParams);
       stripRedundantPatterns(schema);
+      // Notes, work instructions and document bodies take a TipTap document OR
+      // Markdown; the dispatcher converts a string wherever this marks one.
+      publishRichTextFields(schema);
       // A service that picks insert-vs-update by testing for an audit field on
       // the payload needs exactly ONE of them stamped. BOTH directions count:
       // `"createdBy" in` (create-branch first, upsertQuoteOperation) and

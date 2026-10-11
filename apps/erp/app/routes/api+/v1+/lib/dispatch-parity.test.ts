@@ -1676,6 +1676,37 @@ describe("the HTTP spec and the MCP tools are one contract", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("an MCP call's Markdown notes reach the service as a TipTap document", async () => {
+    spies.insertPurchaseOrder.mockResolvedValue({
+      data: { id: "po_1" },
+      error: null
+    });
+    const result = await callOperation("purchasing_insertPurchaseOrder", ctx, {
+      supplierId: "sup_1",
+      notes: "Ship **before** Friday",
+      supplierReference: "**not rich text**"
+    });
+    expect(result.success).toBe(true);
+    const payload = spies.insertPurchaseOrder.mock.calls[0]?.[1];
+    expect(payload).toMatchObject({
+      supplierReference: "**not rich text**",
+      notes: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              { type: "text", text: "Ship " },
+              { type: "text", text: "before", marks: [{ type: "bold" }] },
+              { type: "text", text: " Friday" }
+            ]
+          }
+        ]
+      }
+    });
+    spies.insertPurchaseOrder.mockClear();
+  });
 });
 
 // Services match the row they write by its id, and a signed-in user's client

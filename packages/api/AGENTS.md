@@ -45,6 +45,7 @@ pnpm run check:manifest        # digest current?
 |---------|----------|
 | `.` (index) | Manifest types: `ManifestEntry`, `ToolPermission`, `Classification`, `AuthField`, `PermissionAction` (re-exports `./schema` too) |
 | `./schema` | `jsonSchema()` pass-through Standard Schema wrapper, `CarbonJsonSchemaConverter` (OpenAPI generator plugin), `CARBON_VENDOR` |
+| `./rich-text` | Which input fields are rich text and how they are published: `publishRichTextFields` (generator — rewrites a `notes`/`internalNotes`/`content`/… property whose schema is a document slot to `string (format: "markdown") \| object`), `acceptsMarkdown` (dispatcher — converts a string only where that mark is), `RICH_TEXT_FIELD_NAMES`, `isDocumentSlot` |
 
 ## Consumers
 
@@ -52,6 +53,11 @@ pnpm run check:manifest        # digest current?
   `ManifestEntry` and build procedures with `jsonSchema()`.
 - `scripts/lib/service-metadata.ts` + `scripts/lib/manifest-digest.ts` — the
   generator emits entries in this shape and hashes them for the digest.
+- `apps/erp/app/routes/api+/v1+/lib/rich-text.server.ts` — the dispatcher turns
+  Markdown sent for a field marked by `./rich-text` into a TipTap document
+  (`@carbon/tiptap/markdown`) before the service runs. The dispatcher validates
+  against the JSON Schema and never runs the form validators' zod transforms, so
+  this is the only place an API/MCP string becomes a document.
 
 ## Cross-References
 

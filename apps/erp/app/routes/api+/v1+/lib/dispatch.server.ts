@@ -20,6 +20,7 @@ import type { AuthedContext } from "./base.server";
 import { scopedToCompany } from "./company-scope.server";
 import { COMPANY_TABLES } from "./operations.server";
 import { functionRegistry } from "./registry.server";
+import { withRichTextDocuments } from "./rich-text.server";
 import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
 export interface DispatchResult {
@@ -505,8 +506,13 @@ export async function dispatchOperation(
   const fills =
     meta.defaults === "always" ||
     (meta.defaults === "create" && operation === "create");
+  // Markdown sent for a rich-text field becomes a TipTap document here too,
+  // against the same schema, so every payload argument gets both.
   const filled = (schema: unknown, value: unknown) =>
-    fills ? withSchemaDefaults(schema, value) : value;
+    withRichTextDocuments(
+      schema,
+      fills ? withSchemaDefaults(schema, value) : value
+    );
   const declared = (meta.schema as { properties?: Record<string, unknown> })
     ?.properties;
 

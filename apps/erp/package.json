@@ -30,6 +30,7 @@
     "@carbon/query": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/stripe": "workspace:*",
+    "@carbon/tiptap": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@carbon/viewer": "workspace:*",
     "@dagrejs/dagre": "^1.1.4",
