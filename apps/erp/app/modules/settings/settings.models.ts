@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -305,6 +306,49 @@ export const expiredEntityPolicies = [
   "Block",
   "BlockWithOverride"
 ] as const;
+
+// Government Contracting 5a: Settings → Timekeeping.
+export const timekeepingControlsModes = [
+  "Standard",
+  "DCAA"
+] as const satisfies readonly Database["public"]["Enums"]["timekeepingControls"][];
+
+export const timesheetTimecardChecks = ["Off", "Warn", "Block"] as const;
+
+export const timekeepingSettingsValidator = z
+  .object({
+    timekeepingControls: z.enum(timekeepingControlsModes, {
+      error: "Timekeeping controls are required"
+    }),
+    timesheetEntryWindowDays: zfd.numeric(
+      z.number().int().min(0, { message: "The window cannot be negative" })
+    ),
+    timesheetTimecardCheck: z.enum(timesheetTimecardChecks, {
+      error: "The timecard check is required"
+    }),
+    certificationTextExempt: zfd.text(z.string().trim().optional()),
+    certificationTextNonExempt: zfd.text(z.string().trim().optional()),
+    standardWeeklyHours: zfd.numeric(
+      z.number().gt(0, { message: "Weekly hours must be greater than 0" })
+    )
+  })
+  .superRefine((data, ctx) => {
+    if (data.timekeepingControls !== "DCAA") return;
+    if (!data.certificationTextExempt) {
+      ctx.addIssue({
+        code: "custom",
+        message: "DCAA mode needs the certification text for exempt staff",
+        path: ["certificationTextExempt"]
+      });
+    }
+    if (!data.certificationTextNonExempt) {
+      ctx.addIssue({
+        code: "custom",
+        message: "DCAA mode needs the certification text for non-exempt staff",
+        path: ["certificationTextNonExempt"]
+      });
+    }
+  });
 
 // Planning settings (MRP suggestions). Whole days / whole weekly buckets.
 export const rescheduleToleranceValidator = z.object({

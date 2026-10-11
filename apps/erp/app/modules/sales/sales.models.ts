@@ -2141,13 +2141,51 @@ function checkContractLine(
   }
 }
 
+/** A CLIN (`0001`), or a SubCLIN (`0001AA` or `000101`). */
+export const CONTRACT_LINE_ITEM_NUMBER_PATTERN =
+  /^[0-9]{4}([A-Z]{2}|[0-9]{2})?$/;
+
 export const customerContractLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     customerContractId: z.string().min(1, { message: "Contract is required" }),
-    ...contractLineFields
+    ...contractLineFields,
+    // Government Contracting 5a: the CLIN or SubCLIN number, and the CLIN a
+    // SubCLIN belongs to.
+    lineItemNumber: zfd.text(
+      z
+        .string()
+        .trim()
+        .regex(CONTRACT_LINE_ITEM_NUMBER_PATTERN, {
+          message: "Use 4 digits, then 2 letters or 2 digits for a SubCLIN"
+        })
+        .optional()
+    ),
+    parentLineId: zfd.text(z.string().optional())
   })
   .superRefine(checkContractLine);
+
+/** One funding action (a contract modification) on a billing line. */
+export const customerContractFundingValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  customerContractLineId: z.string().min(1, { message: "Line is required" }),
+  modificationNumber: z
+    .string()
+    .trim()
+    .min(1, { message: "Modification number is required" }),
+  fundedDate: z.string().min(1, { message: "Funded date is required" }),
+  acrn: z
+    .string()
+    .trim()
+    .regex(/^[A-Z0-9]{2}$/, { message: "Use 2 capital letters or digits" }),
+  fundedCost: zfd.numeric(
+    z.number().min(0, { message: "Funded cost cannot be negative" })
+  ),
+  fundedFee: zfd.numeric(
+    z.number().min(0, { message: "Funded fee cannot be negative" })
+  ),
+  expiresOn: zfd.text(z.string().optional())
+});
 
 /** One amount per contract line, JSON-encoded: an added invoice or month.
  *  At least one must be above zero. */

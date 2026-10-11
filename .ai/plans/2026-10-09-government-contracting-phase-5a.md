@@ -73,7 +73,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 11: Add the `submit-timesheet-week` server function
 - [x] Task 12: Apply dilution in `post-timesheet`
 - [x] Task 13: Turn corrections into labor transfers
-- [ ] Task 14: Add the validators
+- [x] Task 14: Add the validators
 - [ ] Task 15: Add the service functions
 - [ ] Task 16: Route every timesheet write through the server functions
 - [ ] Task 17: Add Settings → Timekeeping
@@ -1518,3 +1518,8 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   5. The composite foreign keys on `timesheetEntry` keep the new project and category in the company, and the element in the project. The service adds no separate check.
   6. The ERP has no database test harness, so the Standard-mode path of `createTimesheetCorrection` has no database test. In Standard mode the only change is `correctionOfId` on the replacement; the function writes no revision.
   7. `pnpm run generate:mcp` changes only the digest of `projects_createTimesheetCorrection` (3 new parameters).
+- Task 14:
+  1. `allowability` is optional, with no zod default. An account form or an MCP call without the field would otherwise reset an unallowable account to Allowable on update. A new account still gets Allowable, from the column default.
+  2. `restrictCharging` is `zfd.checkbox().optional()`, the shape of the other project checkboxes (`projectStock`). A bare `zfd.checkbox()` made the field required in 3 callers that build the type (`ProjectsTable`, `projects+/new`, `$projectId.details`).
+  3. The settings validator exports `timekeepingControlsModes` and `timesheetTimecardChecks`, and the sales validator exports `CONTRACT_LINE_ITEM_NUMBER_PATTERN`. The forms in Tasks 17 and 26 use them.
+  4. `pnpm run generate:mcp` changes the digest of the 7 tools whose validators changed.

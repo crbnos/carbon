@@ -45,6 +45,17 @@ export const projectCostTreatments = [
   "Capitalize"
 ] as const satisfies readonly ProjectCostTreatment[];
 
+export type ProjectCostObjective = Enums["projectCostObjective"];
+
+/** Government Contracting 5a: the cost objective a project charges. */
+export const projectCostObjectives = [
+  "Direct",
+  "IR&D",
+  "B&P",
+  "Indirect",
+  "Commercial"
+] as const satisfies readonly ProjectCostObjective[];
+
 export const projectElementTypes = [
   "Folder",
   "System",
@@ -179,7 +190,11 @@ export const projectValidator = z
         .int()
         .min(0, { message: "Priority cannot be negative" })
         .optional()
-    )
+    ),
+    // Government Contracting 5a: the cost objective, and whether only the
+    // project's members may charge time to it (DCAA mode).
+    costObjective: zfd.text(z.enum(projectCostObjectives).optional()),
+    restrictCharging: zfd.checkbox().optional()
   })
   .refine(
     (data) => data.costTreatment !== "Capitalize" || !!data.fixedAssetClassId,
@@ -313,7 +328,11 @@ export const projectElementEditableFields = [
   "parameterSource",
   "parameterItemField",
   "parameterContingencyPercent",
-  "allocationPercent"
+  "allocationPercent",
+  // Government Contracting 5a element flags.
+  "isUnallowable",
+  "isPreproduction",
+  "isLeave"
 ] as const;
 
 export type ProjectElementEditableField =
@@ -653,6 +672,28 @@ export const timesheetCellValidator = z.object({
       .number()
       .min(0, { message: "Hours cannot be negative" })
       .max(24, { message: "A day has 24 hours" })
+  ),
+  // DCAA mode: the reason for a late entry, and for a change to a saved one.
+  lateReason: zfd.text(z.string().trim().optional()),
+  reason: zfd.text(z.string().trim().optional())
+});
+
+/** A project member: who may charge time to a project that restricts it. */
+export const projectMemberValidator = z.object({
+  projectId: z.string().min(1, { message: "Project is required" }),
+  userId: z.string().min(1, { message: "Employee is required" })
+});
+
+/** Submits a week of the timesheet. DCAA mode also certifies it. */
+export const timesheetWeekSubmitValidator = z.object({
+  weekStart: z.string().min(1, { message: "Week is required" }),
+  certificationText: zfd.text(z.string().optional())
+});
+
+/** The employee accepts the entries that another user changed. */
+export const timesheetReviewAcceptValidator = z.object({
+  ids: zfd.repeatable(
+    z.array(z.string().min(1)).min(1, { message: "No entries selected" })
   )
 });
 

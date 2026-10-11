@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -13,6 +14,23 @@ import {
 import { macrsConventions, macrsPropertyClasses } from "./accounting.utils";
 
 export { macrsConventions, macrsPropertyClasses };
+
+/** Government Contracting 5a: FAR 31.201-6 allowability of an account. */
+export const accountAllowabilities = [
+  "Allowable",
+  "Expressly Unallowable",
+  "Mutually Agreed Unallowable",
+  "Directly Associated Unallowable"
+] as const satisfies readonly Database["public"]["Enums"]["accountAllowability"][];
+
+/** Government Contracting 5a: the element of cost an account reports in. */
+export const elementsOfCost = [
+  "Labor",
+  "Material",
+  "Subcontract",
+  "Other Direct",
+  "Travel"
+] as const satisfies readonly Database["public"]["Enums"]["elementOfCost"][];
 
 export const accountTypes = [
   "Bank",
@@ -344,7 +362,12 @@ export const accountValidator = z
     class: z.enum(accountClassTypes, {
       error: "Class is required"
     }),
-    consolidatedRate: z.enum(consolidatedRateTypes)
+    consolidatedRate: z.enum(consolidatedRateTypes),
+    // Empty keeps the stored value; a new account takes the column default,
+    // Allowable.
+    allowability: zfd.text(z.enum(accountAllowabilities).optional()),
+    unallowableReason: zfd.text(z.string().trim().optional()),
+    elementOfCost: zfd.text(z.enum(elementsOfCost).optional())
   })
   .refine(
     (data) => {

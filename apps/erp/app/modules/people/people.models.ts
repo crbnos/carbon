@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { DataType } from "~/modules/shared";
@@ -46,6 +47,11 @@ export const departmentValidator = z.object({
   parentDepartmentId: zfd.text(z.string().optional())
 });
 
+export const flsaStatuses = [
+  "Exempt",
+  "Non-Exempt"
+] as const satisfies readonly Database["public"]["Enums"]["flsaStatus"][];
+
 export const employeeJobValidator = z.object({
   title: zfd.text(z.string().optional()),
   startDate: zfd.text(z.string().optional()),
@@ -55,7 +61,9 @@ export const employeeJobValidator = z.object({
   managerId: zfd.text(z.string().optional()),
   laborCategoryId: zfd.text(z.string().optional()),
   /** The technician's van: where a service part is issued from first. */
-  defaultStorageUnitId: zfd.text(z.string().optional())
+  defaultStorageUnitId: zfd.text(z.string().optional()),
+  /** Government Contracting 5a: dilution applies to Exempt staff. */
+  flsaStatus: zfd.text(z.enum(flsaStatuses).optional())
 });
 
 export const holidayValidator = z.object({
