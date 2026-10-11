@@ -100,8 +100,8 @@ failed the typecheck. It now uses `CREATE_SHORTCUTS.serviceOrder = "v"`.
 
 | File | Fix |
 |---|---|
-| `packages/database/src/accounting-cutover/shared.ts` | `ACCOUNT_DEFAULT_COLUMNS` lists the branch's 4 accounts: `projectWorkInProgressAccount`, `projectExpenseAccount`, `warrantyExpenseAccount`, `contractLossProvisionAccount`. The readiness check now requires them. |
-| `post-project-issue`, `post-project-stock-transfer`, `post-timesheet`, `complete-service-order`, `lib/project-journal.ts` | Main's `createAdjustmentJournal` requires `status`. These paths still test `accountingEnabled`, so they pass `"Posted"`. Phase 2b replaces this. |
+| `packages/database/src/accounting-cutover/shared.ts` | `ACCOUNT_DEFAULT_COLUMNS` lists the branch's 4 accounts: `projectWorkInProgressAccount`, `projectExpenseAccount`, `warrantyExpenseAccount`, `contractLossProvisionAccount`. Phase 2b lets the readiness check skip them when empty (`1397e61049`). |
+| `post-project-issue`, `post-project-stock-transfer`, `post-timesheet`, `complete-service-order`, `lib/project-journal.ts` | Main's `createAdjustmentJournal` requires `status`. These paths tested `accountingEnabled`, so they passed `"Posted"`. Phase 2b replaced this with `journalPostingStatus` (`344624656d`). |
 | `$projectId.elements.$elementId.create-po-line.tsx` | Reads `supplierUnitPrice` and converts it into the order's currency with `getSupplierPartPricing` and `resolveSupplierPrice`, as main's kanban route does. The line gets the order's `exchangeRate`. |
 | `$supplierId.parts.$supplierPartId.tsx` | The `purchaseOrder` embed names `purchaseOrderLine_purchaseOrderId_fkey` (TS2589 after the branch's new FKs). |
 
@@ -126,19 +126,55 @@ failed the typecheck. It now uses `CREATE_SHORTCUTS.serviceOrder = "v"`.
   `CLOBBER_BASE_REF=11a7a60999` reports nothing, because it compares the
   merge base with itself.
 
-## Phase 2b to-do
+## Phase 2b: done
 
-1. Move the branch's TS posting paths from `accountingEnabled` to
-   `journalPostingStatus`: `post-project-issue`, `post-project-expense`,
-   `post-project-stock-transfer`, `post-timesheet` and its `plan.ts`,
-   `reclass-project-coverage`, `complete-service-order`, and the revenue
-   Cost Relief and Loss Provision rows.
-2. Remove the `status: "Posted"` stand-ins listed above.
-3. Make main's accounting setup backfill (`activate-accounting/legacy/*`)
-   aware of project charges and stock stripes.
-4. Make the cutover re-cost aware of project charges and stock stripes.
-5. Run the full test suites.
-6. Run `pnpm db:check:datasets` and `pnpm db:check:backups`.
+Phase 2b is done. Each step has its own commit.
+
+| Step | Commit | Result |
+|---|---|---|
+| 1. The TS posting paths use `journalPostingStatus` | `344624656d` | `post-project-issue`, `post-project-expense`, `post-project-stock-transfer` (Payback variance), `post-timesheet` and its `plan.ts`, `reclass-project-coverage`, `complete-service-order` and `lib/project-journal.ts` read no `accountingEnabled`. Each writes its journal for every company: Provisional with no period before the cutover, Posted after it. |
+| 2. No `status: "Posted"` stand-ins | `344624656d` | The 5 stand-ins in the table above are gone. |
+| 3. The cutover handles this branch's data | `b39ead1e74` | See the next section. |
+| 4. The readiness check and the 4 branch defaults | `1397e61049` | See "The 4 branch account defaults" below. |
+| 5. The full test suites | `63e77ba0bc` | 3 merge breaks fixed. See "Checks after Phase 2b". |
+| 6. `pnpm db:check:datasets` and `pnpm db:check:backups` | — | Both pass. The backup check needs no `CARBON_SKIP_BACKUP_CHECK`. |
+
+Notes on step 1:
+
+- The revenue Cost Relief and Loss Provision rows needed no change. They post
+  only through a revenue recognition run, and main refuses a run before the
+  cutover (`assertAccountingCutover`).
+- A timesheet with an empty `laborAbsorptionAccount` takes a stand-in line on
+  retained earnings before the cutover (`resolveDefaultAccount`), and refuses
+  after it. Before this change it threw "laborAbsorptionAccount not
+  configured".
+- The branch's journal readers needed no status filter. Each one reads a line
+  by its id to learn its account (`reclass-project-coverage`,
+  `post-purchase-invoice/project-charges.ts`, `selectUnrelievedCost`). None
+  sums journal amounts. The cost summary, the WIP relief, CIP and project
+  billing read `projectLedger`, `fixedAssetCipCost` and the billable items.
+- `lib/project-posting-test-fixture.ts` sets a cutover, so the project tests
+  post Posted journals. `lib/project-always-post.test.ts` covers a company
+  before its cutover.
+
+### The 4 branch account defaults
+
+The merge added `projectWorkInProgressAccount`, `projectExpenseAccount`,
+`warrantyExpenseAccount` and `contractLossProvisionAccount` to
+`ACCOUNT_DEFAULT_COLUMNS`. So the readiness check required them.
+
+Decision: they are optional in the readiness check (`FEATURE_ACCOUNT_DEFAULTS`,
+`accounting-cutover/shared.ts`). A set one must still name an active account.
+The reasons:
+
+1. Main requires a default with no fallback so that the enable can re-point
+   its stand-in lines. A posting that needs one of these 4 defaults refuses
+   when it is empty (`ProjectChargeError`, or the Contract Loss Provision
+   refusal), in every company state. It never writes a stand-in line.
+2. The migrations fill them by account number (`7080`, `6120`, `2165`), or
+   from the WIP account. A company with its own chart can keep them empty.
+   Such a company never posts to them unless it uses Projects or Field
+   Service, and the enable must not block it.
 
 ## Phase 2b: the cutover and this branch's data
 
@@ -173,10 +209,10 @@ and a Transfer re-costed at cost) and the `splitOpeningLayersByStripe` and
      `workInProgressAccount` for each existing company. So Contract
      project costs post there too.
 
-   Such costs before the cutover are missing from the opening WIP. Migration
-   Clearing then shows the difference, and the enable refuses. If the user
-   forces Migration Clearing to zero, a completion after the cutover credits
-   WIP below zero. Recommendation: add one opening item for these lines. Its
+   Such costs before the cutover are missing from the opening WIP. If the
+   trial balance holds them, Migration Clearing shows the difference and the
+   enable refuses. If it does not, a completion or a Cost Relief after the
+   cutover credits WIP below zero. Recommendation: add one opening item for these lines. Its
    amount is the sum of the WIP-account lines dated before the cutover whose
    document is not a job, minus the Cost Relief rows dated before the
    cutover that credit the WIP account (step 5 posts them with no journal).
@@ -199,3 +235,30 @@ and a Transfer re-costed at cost) and the `splitOpeningLayersByStripe` and
    A re-cost would have to move the lender layers, the variance journal and
    the Payback Variance ledger row. The enable now refuses instead. Is a
    refusal right, or should the re-cost rebuild the payback?
+5. **A Project Issue is never relieved.** `post-project-issue` writes its
+   `projectLedger` row with no `journalLineId`. `selectUnrelievedCost` joins
+   the journal line to find a WIP (Asset) account. So a material issue to a
+   Contract project never gets a Cost Relief row. This gap is older than the
+   merge. Should `bookAdjustment` return the offset line id, so the issue can
+   store it?
+
+## Checks after Phase 2b
+
+| Check | Result |
+|---|---|
+| Typecheck: `@carbon/database`, `@carbon/utils`, `@carbon/ee`, `@carbon/server-functions`, `@carbon/jobs`, `@carbon/planning`, `erp`, `mes` | Green |
+| `@carbon/server-functions` | 769 tests, 121 files: pass. 1 shared-database flake in one full run (`calculate-cogs.test.ts`, "a stamped layer relieves every child"); it passed in the other full run and 3 times alone. |
+| `@carbon/ee` | 1,993 tests: pass |
+| `@carbon/jobs` | 951 pass, 31 skipped |
+| `erp` | 2,201 tests: pass |
+| `@carbon/utils` | 702 tests: pass |
+| `@carbon/database` | 514 tests: pass |
+| `@carbon/planning` | 338 tests: pass, `plan-company.basic` snapshot included and unchanged |
+| `pnpm db:check:datasets` | All 4 datasets pass |
+| `pnpm db:check:backups` | Restorable against GitHub `main` |
+
+The 3 merge breaks that `63e77ba0bc` fixed:
+
+1. `post-purchase-invoice/posting-lines.test.ts` (main's test) did not expect the branch's `ProjectElement` dimension.
+2. `run-journals.test.ts` (main's test) had the same gap.
+3. `lib/project-billing-test-fixture.ts` had no cutover, so main refused its revenue recognition runs.

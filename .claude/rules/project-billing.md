@@ -209,8 +209,9 @@ The math is pure in `packages/ee/src/project-revenue/progress.ts`.
 
 **Cost relief (R2–R4).** Both methods relieve every subtree ledger row posted on or
 before the period end that has no `projectCostRelief` row and whose journal debit line
-is on an Asset account. A row posted with accounting off, or an expensed row, is never
-relieved. One `Cost Relief` schedule row per line and account: Dr
+is on an Asset account. A row with no journal line, or an expensed row, is never
+relieved. Every charge writes its journal for every company (Provisional before the
+accounting cutover, Posted after it), but a Project Issue row carries no `journalLineId`. One `Cost Relief` schedule row per line and account: Dr
 `costOfGoodsSoldAccount` / Cr that account. `projectCostRelief` records each ledger row
 with its schedule row (`UNIQUE (projectLedgerId, companyId)`, FK to the schedule row
 `ON DELETE CASCADE`), so a rebuilt month frees its rows and none is relieved twice.

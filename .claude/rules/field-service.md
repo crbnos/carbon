@@ -151,6 +151,11 @@ Every charge goes through the order's charge route (`$id.charge.tsx`, `intent` =
 `part`, `expense`, `reclass`, `reverse`) and a server function. Never insert ledger rows, billable
 items or components directly.
 
+Each server function below, and the Refurbishment completion, writes its journal for every
+company, as main's always-post rule says: Provisional with no accounting period before the
+company's accounting cutover, Posted after it (`journalPostingStatus`). None reads
+`accountingEnabled`.
+
 | Charge | Server function | Notes |
 |---|---|---|
 | Time | `post-timesheet` | `logServiceTime` writes a Draft entry with the visit; a Service project's Draft entry posts at once. Journal line "Service Labor" with the Customer dimension. |

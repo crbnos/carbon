@@ -87,9 +87,16 @@ Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
   only stamped Posted, with no journal (`post-timesheet/plan.ts`).
 - A void or repost writes negative rows with `reversalOfId`
   (`reverseProjectLedgerRows`). Never delete or update a row.
-- Rows written inside an accounting gate exist only with accounting on: `issue`,
-  `post-production-event`, job completion and the purchase invoice. Receipts, charges
-  and reimbursements write rows with accounting off too.
+- Every poster writes its rows and its journal for every company. The journal follows
+  main's always-post rule (`.ai/specs/implemented/2026-10-08-accounting-cutover.md`):
+  `journalPostingStatus` makes it Provisional, with no accounting period, before the
+  company's accounting cutover, and Posted after it. No project path reads
+  `accountingEnabled`. `postProjectJournal` (`lib/project-journal.ts`) decides the status
+  and the period for the expense and reclass journals.
+- An empty `laborAbsorptionAccount` on a timesheet becomes a stand-in line on retained
+  earnings before the cutover (`resolveDefaultAccount`) and refuses the posting after it.
+  An empty project or warranty default refuses in every state (`ProjectChargeError`), so
+  the cutover readiness lets those stay empty (`FEATURE_ACCOUNT_DEFAULTS`).
 
 ## Charge gates
 
@@ -213,6 +220,11 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   without project stock) receives the output into the project's stripe
   (`complete_job_to_inventory`, `20261010030228`). A job of a project with project stock
   draws that project's stock, then common stock, in `issue`, the backflush and picking.
+- **The accounting cutover.** The enable's inventory reset opens one layer per item and
+  stripe at the item's unit cost (`splitOpeningLayersByStripe`), and the re-cost replays
+  each stripe as its own pool. A Transfer or Borrow after the cutover opens its layer at
+  the re-costed cost of the stock it drew, with no journal. A Payback whose cost changes
+  refuses the enable (`activate-accounting/recost.ts`).
 - **Issue to Project.** `post-project-issue` splits an untracked issue across the project's
   stripes at the bin (`splitAcrossStripes`), one `bookAdjustment` per stripe sharing one
   journal and one `projectLedger` row. A Return goes back to the project's stock.
@@ -356,7 +368,8 @@ Service project's Draft entry.
 
 `post-timesheet` costs hours × the labor category's rate on the entry date
 (`laborCategoryRate.effectiveFrom`), Dr the project account / Cr
-`laborAbsorptionAccount`. It writes one journal per accounting period. A reversal uses
+`laborAbsorptionAccount`. After the cutover it writes one journal per accounting period;
+before it, one Provisional journal with no period. A reversal uses
 its original's `costRate`. The ERP and the MES call it with `serverFns.system`, because
 it requires `projects_update` and an operator does not hold it; the routes check
 ownership first.
@@ -377,8 +390,7 @@ form reads CIP classes with `getCipFixedAssetClasses`, because
   numbers in one statement. The status route calls it before every change to
   Released; the element update route calls it when `isFinalAsset` turns on past Draft.
 - Each poster writes a CIP row right after its `projectLedger` row
-  (`writeProjectCipRows`, `server-functions/src/lib/project-cip.ts`), with accounting
-  off too where the ledger row is written then.
+  (`writeProjectCipRows`, `server-functions/src/lib/project-cip.ts`), for every company.
 - A capital job (`loadJobProjectCharge` returns `keepsWip: true`) keeps its WIP lines
   and builds `job.fixedAssetId` through the job-to-CIP sweep; SQL
   `project_cost_treatment` mirrors `resolveProjectTreatment`

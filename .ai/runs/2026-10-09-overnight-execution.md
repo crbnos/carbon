@@ -78,6 +78,7 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 10-11 | Tree canvas (Flow-style) | Tasks 1–8; 9 deferred | done (`dbdaed7797`…`628fae0cbb`) |
 | 10-11 | Project billing 4a | Tasks 14–20; 21 deferred | done (`81265037b3`…`4a48f33082`, then the docs commit) — Phase 4a implemented |
 | 10-11 | Project billing 4a, 4b | 4a Tasks 1–20, 21 deferred; 4b Tasks 1–13, 14 deferred | done (4a from `3d42be0094`; 4b `129e0b9dc7`…`1223834483`, then the docs commit) — Phase 4 implemented, spec moved to `implemented/` |
+| 10-11 | Merge origin/main (`a4a1e15ba2`) + always-post | Phase 2b of `.ai/runs/2026-10-11-merge-origin-main.md` | done (`344624656d`, `1397e61049`, `b39ead1e74`, `63e77ba0bc`, then the docs commit) — the project and service journals follow main's always-post rule; `db:check:backups` passes with no skip |
 
 ## Follow-ups found during execution
 
@@ -89,14 +90,14 @@ Brad resolved 4 items on 2026-10-10, so they are gone from this list:
 
 Open:
 - A receipt still makes an inspection lot for a stocked item that the project consumes at receipt (Phase 1a Task 21).
-- Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts` and `get-accounting-period.test.ts` fail sometimes in full runs and pass alone.
+- Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts`, `get-accounting-period.test.ts` and `calculate-cogs.test.ts` fail sometimes in full runs and pass alone.
+- The merge with main left 5 open questions on the accounting cutover. `.ai/runs/2026-10-11-merge-origin-main.md` → *Open questions for Brad* lists them.
 - `shouldRevalidate` on the Elements route skips the reload after a preference save (Phase 1b Task 21), and the Tree canvas adds a skip on a `root` change (Task 6). Brad to confirm both against `coding-conventions.md`.
 - `Template.tsx` in `packages/documents` (Ask First) now passes its font to children, so italic text cannot crash a PDF (Phase 1b Task 20).
 - Restoring a backup into another company does not rewrite ids inside the baseline snapshot and change request JSON columns (Phase 1c).
 - Re-applying a demo dataset over a company with contract invoice lines fails in the wipe (`customerContractInvoiceLine_parent_check`). This is a contracts issue, found in Phase 1a Task 45.
 - `projects.mdx` is over the docs skill's 1,500-word limit for an entity page, and Phase 3 added a *Planning groups* section.
 - Run `/translate` once for the whole branch before the PR. Every phase left new UI strings with an empty `msgstr` in the other locales.
-- `db:check:backups` fails only on `supplierPartPrice.unitPrice`, because it compares against GitHub `main`, which changed that column after this branch was cut. Commits since field service B use `CARBON_SKIP_BACKUP_CHECK=1`. It clears when `main` is merged.
 - Projects 2a: a posted project stock transfer has no void.
 - Projects 3 Task 16: run `pnpm db:check:datasets` when the stack is up. Only its first layer (the validator) ran: the worktree's Postgres container no longer exists (its `pgdata` volume does), so the tier SQL that seeds the Star Tracker group has not run against a database.
 - Projects 3 Task 14: a group segment can get a Transfer from common stock with the group id as `toProjectId`. Applying it fails on the project FK.
