@@ -1215,6 +1215,14 @@ const REVENUE_LINE_DESCRIPTIONS: Record<
   Interest: {
     debit: "Net investment interest",
     credit: "Lease interest income"
+  },
+  "Cost Relief": {
+    debit: "Contract cost recognized",
+    credit: "Project WIP relieved"
+  },
+  "Loss Provision": {
+    debit: "Contract loss provided",
+    credit: "Contract loss provision"
   }
 };
 

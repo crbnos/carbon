@@ -6024,6 +6024,9 @@ msgstr ""
 msgid "Cost rates"
 msgstr ""
 
+msgid "Cost Relief"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -12820,6 +12823,9 @@ msgstr "처분 손실 (기본값)"
 msgid "Loss on Disposal Account"
 msgstr "처분 손실 계정"
 
+msgid "Loss Provision"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 손실"
 
@@ -16467,6 +16473,9 @@ msgstr "주문 헤더의 출하 사업장에 대한 라인별 재정의; 분할 
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "구매주문 헤더의 납품 위치를 라인별로 재정의한 값으로, 여러 창고로의 분할 납품이나 직송에 사용됩니다."
 
+msgid "Percent Complete"
+msgstr ""
+
 msgid "Percentage"
 msgstr "비율"
 
@@ -19250,6 +19259,9 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "올바른 품목"
+
+msgid "Right to Invoice"
+msgstr ""
 
 msgid "Risk"
 msgstr "리스크"

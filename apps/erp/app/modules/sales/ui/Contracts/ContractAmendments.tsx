@@ -131,7 +131,9 @@ function AmendmentEntry({
   };
   const revenueMethodLabels: Record<ContractLine["revenueMethod"], string> = {
     Daily: t`Daily`,
-    "Even Period": t`Even Period`
+    "Even Period": t`Even Period`,
+    "Right to Invoice": t`Right to Invoice`,
+    "Percent Complete": t`Percent Complete`
   };
   const effectLabel =
     amendment.effect === "Next Period"

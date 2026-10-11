@@ -1704,10 +1704,21 @@ export const contractRenewals = [
   "Renew"
 ] as const satisfies readonly Enums["contractRenewal"][];
 
+export const contractBillingMethods = [
+  "Fixed",
+  "Time & Materials",
+  "Cost Plus"
+] as const satisfies readonly Enums["contractBillingMethod"][];
+
 export const contractRevenueMethods = [
   "Daily",
-  "Even Period"
+  "Even Period",
+  "Right to Invoice",
+  "Percent Complete"
 ] as const satisfies readonly Enums["contractRevenueMethod"][];
+
+/** Revenue methods a Fixed line plans on a schedule. */
+export const contractScheduleRevenueMethods = ["Daily", "Even Period"] as const;
 
 export const contractAmendmentEffects = [
   "Change Date",

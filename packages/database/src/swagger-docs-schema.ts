@@ -238,6 +238,39 @@ export default {
             $ref: "#/parameters/rowFilter.customerContractLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContractLine.billingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.materialHandlingPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.feePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.fundedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.fundedCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.noticePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.noticeWindowDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.ceilingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.thresholdNoticeFundedCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.runOutNoticeFundedCost"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -381,6 +414,39 @@ export default {
             $ref: "#/parameters/rowFilter.customerContractLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContractLine.billingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.materialHandlingPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.feePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.fundedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.fundedCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.noticePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.noticeWindowDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.ceilingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.thresholdNoticeFundedCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.runOutNoticeFundedCost"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -476,6 +542,39 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerContractLine.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.billingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.projectElementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.materialHandlingPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.feePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.fundedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.fundedCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.noticePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.noticeWindowDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.ceilingAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.thresholdNoticeFundedCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLine.runOutNoticeFundedCost"
           },
           {
             $ref: "#/parameters/body.customerContractLine"
@@ -27667,6 +27766,195 @@ export default {
           }
         },
         tags: ["salesOrderPayment"]
+      }
+    },
+    "/customerContractLaborRate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.billRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.effectiveFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/customerContractLaborRate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["customerContractLaborRate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.customerContractLaborRate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["customerContractLaborRate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.billRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.effectiveFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerContractLaborRate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.laborCategoryId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.billRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.effectiveFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLaborRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.customerContractLaborRate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerContractLaborRate"]
       }
     },
     "/salesInvoice": {
@@ -70375,6 +70663,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectBillableItem.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.projectBillableItem.voidedSalesInvoiceId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -70494,6 +70785,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectBillableItem.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.projectBillableItem.voidedSalesInvoiceId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -70565,6 +70859,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectBillableItem.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.voidedSalesInvoiceId"
           },
           {
             $ref: "#/parameters/body.projectBillableItem"
@@ -79618,6 +79915,9 @@ export default {
             $ref: "#/parameters/rowFilter.laborCategoryRate.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.billRate"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -79704,6 +80004,9 @@ export default {
             $ref: "#/parameters/rowFilter.laborCategoryRate.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.billRate"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -79742,6 +80045,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.laborCategoryRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategoryRate.billRate"
           },
           {
             $ref: "#/parameters/body.laborCategoryRate"
@@ -111051,6 +111357,88 @@ export default {
         tags: ["(rpc) sync_update_job_operation_quantities"]
       }
     },
+    "/rpc/get_contract_line_funding": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "p_line_ids",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "p_as_of",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_contract_line_funding"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_as_of: {
+                  format: "date",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_line_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["p_company_id", "p_line_ids", "p_as_of"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_contract_line_funding"]
+      }
+    },
     "/rpc/insert_audit_log_batch": {
       post: {
         parameters: [
@@ -121529,6 +121917,77 @@ export default {
         tags: ["(rpc) harden_pegs_for_supply"]
       }
     },
+    "/rpc/get_contract_line_subtree": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "p_line_ids",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_contract_line_subtree"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_line_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["p_company_id", "p_line_ids"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_contract_line_subtree"]
+      }
+    },
     "/rpc/get_next_prefixed_sequence": {
       post: {
         parameters: [
@@ -123562,7 +124021,10 @@ export default {
         "startDate",
         "revenueMethod",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "billingMethod",
+        "noticePercent",
+        "noticeWindowDays"
       ],
       properties: {
         id: {
@@ -123638,7 +124100,12 @@ export default {
         },
         revenueMethod: {
           default: "Daily",
-          enum: ["Daily", "Even Period"],
+          enum: [
+            "Daily",
+            "Even Period",
+            "Right to Invoice",
+            "Percent Complete"
+          ],
           format: 'public."contractRevenueMethod"',
           type: "string"
         },
@@ -123695,6 +124162,54 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        billingMethod: {
+          default: "Fixed",
+          enum: ["Fixed", "Time & Materials", "Cost Plus"],
+          format: 'public."contractBillingMethod"',
+          type: "string"
+        },
+        projectElementId: {
+          format: "text",
+          type: "string"
+        },
+        materialHandlingPercent: {
+          format: "numeric",
+          type: "number"
+        },
+        feePercent: {
+          format: "numeric",
+          type: "number"
+        },
+        fundedAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        fundedCost: {
+          format: "numeric",
+          type: "number"
+        },
+        noticePercent: {
+          default: 0.75,
+          format: "numeric",
+          type: "number"
+        },
+        noticeWindowDays: {
+          default: 60,
+          format: "integer",
+          type: "integer"
+        },
+        ceilingAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        thresholdNoticeFundedCost: {
+          format: "numeric",
+          type: "number"
+        },
+        runOutNoticeFundedCost: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -124454,7 +124969,13 @@ export default {
           type: "string"
         },
         type: {
-          enum: ["Deferral", "Accrual", "Interest"],
+          enum: [
+            "Deferral",
+            "Accrual",
+            "Interest",
+            "Cost Relief",
+            "Loss Provision"
+          ],
           format: 'public."revenueScheduleType"',
           type: "string"
         },
@@ -136453,6 +136974,75 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    customerContractLaborRate: {
+      required: [
+        "id",
+        "companyId",
+        "customerContractLineId",
+        "billRate",
+        "effectiveFrom",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('conlr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerContractLineId: {
+          format: "text",
+          type: "string"
+        },
+        laborCategoryId: {
+          format: "text",
+          type: "string"
+        },
+        employeeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        billRate: {
+          format: "numeric",
+          type: "number"
+        },
+        effectiveFrom: {
+          format: "date",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -156293,6 +156883,10 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        voidedSalesInvoiceId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -160912,6 +161506,10 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        billRate: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -175702,6 +176300,72 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.customerContractLine.billingMethod": {
+      name: "billingMethod",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.projectElementId": {
+      name: "projectElementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.materialHandlingPercent": {
+      name: "materialHandlingPercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.feePercent": {
+      name: "feePercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.fundedAmount": {
+      name: "fundedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.fundedCost": {
+      name: "fundedCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.noticePercent": {
+      name: "noticePercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.noticeWindowDays": {
+      name: "noticeWindowDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.ceilingAmount": {
+      name: "ceilingAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.thresholdNoticeFundedCost": {
+      name: "thresholdNoticeFundedCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLine.runOutNoticeFundedCost": {
+      name: "runOutNoticeFundedCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.procedures": {
       name: "procedures",
       description: "procedures",
@@ -190065,6 +190729,81 @@ export default {
     },
     "rowFilter.salesOrderPayment.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.customerContractLaborRate": {
+      name: "customerContractLaborRate",
+      description: "customerContractLaborRate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/customerContractLaborRate"
+      }
+    },
+    "rowFilter.customerContractLaborRate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.customerContractLineId": {
+      name: "customerContractLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.laborCategoryId": {
+      name: "laborCategoryId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.billRate": {
+      name: "billRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.effectiveFrom": {
+      name: "effectiveFrom",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLaborRate.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -212148,6 +212887,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.projectBillableItem.voidedSalesInvoiceId": {
+      name: "voidedSalesInvoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.assemblyInstructionStepTool": {
       name: "assemblyInstructionStepTool",
       description: "assemblyInstructionStepTool",
@@ -217284,6 +218029,12 @@ export default {
     },
     "rowFilter.laborCategoryRate.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.laborCategoryRate.billRate": {
+      name: "billRate",
       required: false,
       in: "query",
       type: "string"

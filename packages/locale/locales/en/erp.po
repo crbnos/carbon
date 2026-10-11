@@ -6024,6 +6024,9 @@ msgstr "Cost Rate per Hour"
 msgid "Cost rates"
 msgstr "Cost rates"
 
+msgid "Cost Relief"
+msgstr "Cost Relief"
+
 msgid "Cost treatment"
 msgstr "Cost treatment"
 
@@ -12820,6 +12823,9 @@ msgstr "Loss on Disposal (default)"
 msgid "Loss on Disposal Account"
 msgstr "Loss on Disposal Account"
 
+msgid "Loss Provision"
+msgstr "Loss Provision"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Losses recognized on disposal of fixed assets"
 
@@ -16467,6 +16473,9 @@ msgstr "Per-line override of the order header's fulfillment Location; used for s
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 
+msgid "Percent Complete"
+msgstr "Percent Complete"
+
 msgid "Percentage"
 msgstr "Percentage"
 
@@ -19250,6 +19259,9 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Right item"
+
+msgid "Right to Invoice"
+msgstr "Right to Invoice"
 
 msgid "Risk"
 msgstr "Risk"

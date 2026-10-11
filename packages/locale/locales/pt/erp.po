@@ -6024,6 +6024,9 @@ msgstr ""
 msgid "Cost rates"
 msgstr ""
 
+msgid "Cost Relief"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -12820,6 +12823,9 @@ msgstr "Perda em Baixa (padrão)"
 msgid "Loss on Disposal Account"
 msgstr "Conta de Perda em Baixa"
 
+msgid "Loss Provision"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Perdas reconhecidas em baixa de ativos fixos"
 
@@ -16467,6 +16473,9 @@ msgstr "Sobrescrita por linha do local de expedição do cabeçalho do pedido; u
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "Sobrescrita por linha do local de entrega do cabeçalho da OC; usada para entregas divididas a múltiplos armazéns ou entregas diretas."
 
+msgid "Percent Complete"
+msgstr ""
+
 msgid "Percentage"
 msgstr "Percentual"
 
@@ -19250,6 +19259,9 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Item direito"
+
+msgid "Right to Invoice"
+msgstr ""
 
 msgid "Risk"
 msgstr "Risco"

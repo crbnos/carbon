@@ -351,6 +351,7 @@ export const manifest = {
   customerContractAmendment: company("sales", { read: "sales_view" }),
   customerContractInvoice: company("sales", { read: "sales_view" }),
   customerContractInvoiceLine: company("sales", { read: "sales_view" }),
+  customerContractLaborRate: company("sales", { read: "sales_view" }),
   customerContractLedgerEntry: company("sales", { read: "sales_view" }),
   customerContractLine: company("sales", { read: "sales_view" }),
   customerContractRevenue: company("sales", { read: "sales_view" }),

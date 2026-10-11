@@ -6024,6 +6024,9 @@ msgstr ""
 msgid "Cost rates"
 msgstr ""
 
+msgid "Cost Relief"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -12820,6 +12823,9 @@ msgstr "Убыток от выбытия (по умолчанию)"
 msgid "Loss on Disposal Account"
 msgstr "Счёт убытков от выбытия"
 
+msgid "Loss Provision"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Убытки, признаваемые при выбытии основных средств"
 
@@ -16467,6 +16473,9 @@ msgstr "Переопределение на уровне строки площа
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "Переопределение по строкам местоположения доставки заголовка ПО; используется для разделенных доставок на несколько складов или дроп-шипов."
 
+msgid "Percent Complete"
+msgstr ""
+
 msgid "Percentage"
 msgstr "Процент"
 
@@ -19250,6 +19259,9 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Правый элемент"
+
+msgid "Right to Invoice"
+msgstr ""
 
 msgid "Risk"
 msgstr "Риск"

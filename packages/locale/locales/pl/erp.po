@@ -6024,6 +6024,9 @@ msgstr ""
 msgid "Cost rates"
 msgstr ""
 
+msgid "Cost Relief"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -12820,6 +12823,9 @@ msgstr "Strata na likwidacji (domyślnie)"
 msgid "Loss on Disposal Account"
 msgstr "Konto straty na likwidacji"
 
+msgid "Loss Provision"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Straty ujęte przy likwidacji środków trwałych"
 
@@ -16467,6 +16473,9 @@ msgstr "Nadpisanie na poziomie pozycji lokalizacji realizacji z nagłówka zamó
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "Nadpisanie na poziomie pozycji lokalizacji dostawy z nagłówka zamówienia zakupu; używane dla podzielonych dostaw do wielu magazynów lub dostaw bezpośrednich."
 
+msgid "Percent Complete"
+msgstr ""
+
 msgid "Percentage"
 msgstr "Procent"
 
@@ -19250,6 +19259,9 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Prawy element"
+
+msgid "Right to Invoice"
+msgstr ""
 
 msgid "Risk"
 msgstr "Ryzyko"

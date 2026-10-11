@@ -122,7 +122,9 @@ const contractRevenueTypes = [
 ] as const satisfies readonly Enums["contractRevenueType"][];
 const contractRevenueMethods = [
   "Daily",
-  "Even Period"
+  "Even Period",
+  "Right to Invoice",
+  "Percent Complete"
 ] as const satisfies readonly Enums["contractRevenueMethod"][];
 const contractAmendmentEffects = [
   "Change Date",
@@ -1418,7 +1420,18 @@ async function amend(
               amendsLineId: null,
               projectId: line.projectId || null,
               sortOrder: null,
-              customFields: null
+              customFields: null,
+              billingMethod: "Fixed",
+              projectElementId: null,
+              materialHandlingPercent: null,
+              feePercent: null,
+              fundedAmount: null,
+              fundedCost: null,
+              noticePercent: 0.75,
+              noticeWindowDays: 60,
+              ceilingAmount: null,
+              thresholdNoticeFundedCost: null,
+              runOutNoticeFundedCost: null
             },
             overrides: {}
           });

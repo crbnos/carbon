@@ -101,6 +101,17 @@ export function copyLineValues(
     projectId: merged.projectId,
     sortOrder: merged.sortOrder,
     customFields: toJson(merged.customFields) ?? null,
+    billingMethod: merged.billingMethod,
+    projectElementId: merged.projectElementId,
+    materialHandlingPercent: merged.materialHandlingPercent,
+    feePercent: merged.feePercent,
+    fundedAmount: merged.fundedAmount,
+    fundedCost: merged.fundedCost,
+    noticePercent: merged.noticePercent,
+    noticeWindowDays: merged.noticeWindowDays,
+    ceilingAmount: merged.ceilingAmount,
+    thresholdNoticeFundedCost: merged.thresholdNoticeFundedCost,
+    runOutNoticeFundedCost: merged.runOutNoticeFundedCost,
     companyId: scope.companyId,
     createdBy: scope.userId
   };

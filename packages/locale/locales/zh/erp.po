@@ -6024,6 +6024,9 @@ msgstr ""
 msgid "Cost rates"
 msgstr ""
 
+msgid "Cost Relief"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -12820,6 +12823,9 @@ msgstr "处置亏损（默认）"
 msgid "Loss on Disposal Account"
 msgstr "处置亏损账户"
 
+msgid "Loss Provision"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的亏损"
 
@@ -16467,6 +16473,9 @@ msgstr "对订单标题的发货地点的按行覆盖；用于分批发货和直
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "对采购订单标题的交货地点的按行覆盖；用于分批交货到多个仓库或直发。"
 
+msgid "Percent Complete"
+msgstr ""
+
 msgid "Percentage"
 msgstr "百分比"
 
@@ -19250,6 +19259,9 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右项"
+
+msgid "Right to Invoice"
+msgstr ""
 
 msgid "Risk"
 msgstr "风险"

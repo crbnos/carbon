@@ -12090,6 +12090,196 @@ export type Database = {
           }
         ]
       }
+      customerContractLaborRate: {
+        Row: {
+          billRate: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractLineId: string
+          effectiveFrom: string
+          employeeId: string | null
+          id: string
+          laborCategoryId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          billRate: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractLineId: string
+          effectiveFrom: string
+          employeeId?: string | null
+          id?: string
+          laborCategoryId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          billRate?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractLineId?: string
+          effectiveFrom?: string
+          employeeId?: string | null
+          id?: string
+          laborCategoryId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractLaborRate_category_fkey"
+            columns: ["laborCategoryId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "laborCategory"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_line_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLaborRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       customerContractLedgerEntry: {
         Row: {
           assetAmount: number
@@ -12301,6 +12491,8 @@ export type Database = {
         Row: {
           amendmentId: string | null
           amendsLineId: string | null
+          billingMethod: Database["public"]["Enums"]["contractBillingMethod"]
+          ceilingAmount: number | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -12310,9 +12502,16 @@ export type Database = {
           discountEndsOn: string | null
           discountPercent: number
           endDate: string | null
+          feePercent: number | null
+          fundedAmount: number | null
+          fundedCost: number | null
           goLiveDate: string | null
           id: string
           itemId: string
+          materialHandlingPercent: number | null
+          noticePercent: number
+          noticeWindowDays: number
+          projectElementId: string | null
           projectId: string | null
           quantity: number
           rate: number
@@ -12321,16 +12520,20 @@ export type Database = {
           revenueMethod: Database["public"]["Enums"]["contractRevenueMethod"]
           revenueStartDate: string | null
           revenueType: Database["public"]["Enums"]["contractRevenueType"]
+          runOutNoticeFundedCost: number | null
           salesOrderLineId: string | null
           sortOrder: number | null
           startDate: string
           taxPercent: number
+          thresholdNoticeFundedCost: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
           amendmentId?: string | null
           amendsLineId?: string | null
+          billingMethod?: Database["public"]["Enums"]["contractBillingMethod"]
+          ceilingAmount?: number | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -12340,9 +12543,16 @@ export type Database = {
           discountEndsOn?: string | null
           discountPercent?: number
           endDate?: string | null
+          feePercent?: number | null
+          fundedAmount?: number | null
+          fundedCost?: number | null
           goLiveDate?: string | null
           id?: string
           itemId: string
+          materialHandlingPercent?: number | null
+          noticePercent?: number
+          noticeWindowDays?: number
+          projectElementId?: string | null
           projectId?: string | null
           quantity?: number
           rate: number
@@ -12351,16 +12561,20 @@ export type Database = {
           revenueMethod?: Database["public"]["Enums"]["contractRevenueMethod"]
           revenueStartDate?: string | null
           revenueType: Database["public"]["Enums"]["contractRevenueType"]
+          runOutNoticeFundedCost?: number | null
           salesOrderLineId?: string | null
           sortOrder?: number | null
           startDate: string
           taxPercent?: number
+          thresholdNoticeFundedCost?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
           amendmentId?: string | null
           amendsLineId?: string | null
+          billingMethod?: Database["public"]["Enums"]["contractBillingMethod"]
+          ceilingAmount?: number | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -12370,9 +12584,16 @@ export type Database = {
           discountEndsOn?: string | null
           discountPercent?: number
           endDate?: string | null
+          feePercent?: number | null
+          fundedAmount?: number | null
+          fundedCost?: number | null
           goLiveDate?: string | null
           id?: string
           itemId?: string
+          materialHandlingPercent?: number | null
+          noticePercent?: number
+          noticeWindowDays?: number
+          projectElementId?: string | null
           projectId?: string | null
           quantity?: number
           rate?: number
@@ -12381,10 +12602,12 @@ export type Database = {
           revenueMethod?: Database["public"]["Enums"]["contractRevenueMethod"]
           revenueStartDate?: string | null
           revenueType?: Database["public"]["Enums"]["contractRevenueType"]
+          runOutNoticeFundedCost?: number | null
           salesOrderLineId?: string | null
           sortOrder?: number | null
           startDate?: string
           taxPercent?: number
+          thresholdNoticeFundedCost?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12521,6 +12744,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_projectElement_fkey"
+            columns: ["projectElementId", "projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectElement"
+            referencedColumns: ["id", "projectId", "companyId"]
           },
           {
             foreignKeyName: "customerContractLine_project_fkey"
@@ -31756,6 +31986,7 @@ export type Database = {
       }
       laborCategoryRate: {
         Row: {
+          billRate: number | null
           companyId: string
           costRate: number
           createdAt: string
@@ -31767,6 +31998,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          billRate?: number | null
           companyId: string
           costRate: number
           createdAt?: string
@@ -31778,6 +32010,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          billRate?: number | null
           companyId?: string
           costRate?: number
           createdAt?: string
@@ -46540,6 +46773,7 @@ export type Database = {
           unitPrice: number
           updatedAt: string | null
           updatedBy: string | null
+          voidedSalesInvoiceId: string | null
         }
         Insert: {
           amount: number
@@ -46562,6 +46796,7 @@ export type Database = {
           unitPrice: number
           updatedAt?: string | null
           updatedBy?: string | null
+          voidedSalesInvoiceId?: string | null
         }
         Update: {
           amount?: number
@@ -46584,6 +46819,7 @@ export type Database = {
           unitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
+          voidedSalesInvoiceId?: string | null
         }
         Relationships: [
           {
@@ -96952,6 +97188,23 @@ export type Database = {
           updatedBy: string
         }[]
       }
+      get_contract_line_funding: {
+        Args: { p_as_of: string; p_company_id: string; p_line_ids: string[] }
+        Returns: {
+          billed: number
+          customerContractLineId: string
+          incurred: number
+          recentCost: number
+          unbilled: number
+        }[]
+      }
+      get_contract_line_subtree: {
+        Args: { p_company_id: string; p_line_ids: string[] }
+        Returns: {
+          customerContractLineId: string
+          projectElementId: string
+        }[]
+      }
       get_current_training_period: {
         Args: { frequency: Database["public"]["Enums"]["trainingFrequency"] }
         Returns: string
@@ -99586,6 +99839,7 @@ export type Database = {
       contractAmendmentEffect: "Change Date" | "Next Period"
       contractBillingAlignment: "Anniversary" | "Calendar"
       contractBillingFrequency: "Week" | "Month" | "Quarter" | "Year"
+      contractBillingMethod: "Fixed" | "Time & Materials" | "Cost Plus"
       contractBillingTiming: "Advance" | "Arrears"
       contractInvoiceStatus: "Planned" | "Invoiced" | "Billed Externally"
       contractLedgerEntryType:
@@ -99596,7 +99850,11 @@ export type Database = {
         | "Void"
       contractRateUnit: "Day" | "Week" | "Month" | "Quarter" | "Year"
       contractRenewal: "Renew" | "End"
-      contractRevenueMethod: "Daily" | "Even Period"
+      contractRevenueMethod:
+        | "Daily"
+        | "Even Period"
+        | "Right to Invoice"
+        | "Percent Complete"
       contractRevenueStatus: "Planned" | "Recognized" | "Recognized Externally"
       contractRevenueType: "One-time" | "Recurring"
       costLedgerType:
@@ -100291,7 +100549,12 @@ export type Database = {
         | "Inspection"
         | "Demonstration"
       revenueScheduleStatus: "Planned" | "Posted"
-      revenueScheduleType: "Deferral" | "Accrual" | "Interest"
+      revenueScheduleType:
+        | "Deferral"
+        | "Accrual"
+        | "Interest"
+        | "Cost Relief"
+        | "Loss Provision"
       riskRegisterType: "Risk" | "Opportunity"
       riskSource:
         | "Customer"
@@ -101202,6 +101465,7 @@ export const Constants = {
       contractAmendmentEffect: ["Change Date", "Next Period"],
       contractBillingAlignment: ["Anniversary", "Calendar"],
       contractBillingFrequency: ["Week", "Month", "Quarter", "Year"],
+      contractBillingMethod: ["Fixed", "Time & Materials", "Cost Plus"],
       contractBillingTiming: ["Advance", "Arrears"],
       contractInvoiceStatus: ["Planned", "Invoiced", "Billed Externally"],
       contractLedgerEntryType: [
@@ -101213,7 +101477,12 @@ export const Constants = {
       ],
       contractRateUnit: ["Day", "Week", "Month", "Quarter", "Year"],
       contractRenewal: ["Renew", "End"],
-      contractRevenueMethod: ["Daily", "Even Period"],
+      contractRevenueMethod: [
+        "Daily",
+        "Even Period",
+        "Right to Invoice",
+        "Percent Complete",
+      ],
       contractRevenueStatus: ["Planned", "Recognized", "Recognized Externally"],
       contractRevenueType: ["One-time", "Recurring"],
       costLedgerType: [
@@ -101973,7 +102242,13 @@ export const Constants = {
         "Demonstration",
       ],
       revenueScheduleStatus: ["Planned", "Posted"],
-      revenueScheduleType: ["Deferral", "Accrual", "Interest"],
+      revenueScheduleType: [
+        "Deferral",
+        "Accrual",
+        "Interest",
+        "Cost Relief",
+        "Loss Provision",
+      ],
       riskRegisterType: ["Risk", "Opportunity"],
       riskSource: [
         "Customer",

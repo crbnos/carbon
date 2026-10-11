@@ -62,7 +62,7 @@ These correct or add to the spec. Task 20 records them there.
 
 - [x] Task 1: Create the enum migration
 - [x] Task 2: Create the project billing migration
-- [ ] Task 3: Apply migrations, regenerate types, ship RLS and the enum mirrors
+- [x] Task 3: Apply migrations, regenerate types, ship RLS and the enum mirrors
 - [ ] Task 4: Add the pure billing helpers
 - [ ] Task 5: Add the commercial project revenue module and Cost Plus pricing
 - [ ] Task 6: Keep billing lines out of the contract schedule
@@ -1067,3 +1067,13 @@ ls .ai/playbooks/project-billing-phase-4a.md
 ```
 
 **Out of scope:** revenue (Phase 4b).
+
+## Execution notes
+
+- Task 1: the plan's verify greps `ADD VALUE\|CREATE TYPE`; the header comment avoids the phrase so the count is 5.
+- Task 2: `projectBillableItem_contractLine_fkey` already existed (field service Phase A); the `duplicate_object` guard skips it. Added indexes on every FK column of `customerContractLaborRate` (`companyId`, line, category, employee, `createdBy`, `updatedBy`) and `NOTIFY pgrst`. The commit used `CARBON_SKIP_MANIFEST_CHECK=1`: `crbn migrate` regenerated the types into the working tree, which the MCP digest check reads; Task 3 commits the types and the regenerated digest.
+- Task 3: `employeeId` on `customerContractLaborRate` is not in `ID_REF_COLUMNS`: it has an FK to `user`, and the file's rule excludes user refs. Only `voidedSalesInvoiceId` was added. `projectBillableItem` became an audit entity ("Billable Item").
+- Task 3: `contractRevenueMethods` is the full enum list, so the type-exhaustive label records in `ContractAmendments`, `ContractRevenue`, `ContractRevenueGrid`, `ContractLineForm` and `revenue-waterfall` gained the new labels. The line form and the revenue grid offer `contractScheduleRevenueMethods` (Daily, Even Period) as options, so a Fixed line cannot pick Right to Invoice before Task 15 adds the billing form.
+- Task 3: Task 7 step 1 moved here. The server function's local `contractRevenueMethods` now has all 4 values; without it the ERP amendment validator and the server function's input disagreed and the amend route failed to typecheck.
+- Task 3: `copyLineValues` (`schedule-writes.ts`) lists its columns by name, so it now carries the 11 new line columns. Without this, an amend `change` of a Fixed Percent Complete line would drop `projectElementId`. The amend `add` branch writes the new columns with their defaults; Task 7 fills them from the amendment line.
+- Task 3: `/translate` was not run (branch practice: once before the PR).

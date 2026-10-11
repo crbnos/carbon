@@ -440,6 +440,15 @@ export const auditConfig = {
       }
     },
 
+    // Billing review (hold, release, write off, edit price) on a project's
+    // billable items.
+    projectBillableItem: {
+      label: "Billable Item",
+      tables: {
+        projectBillableItem: { role: "root" }
+      }
+    },
+
     employee: {
       label: "Employee",
       tables: {

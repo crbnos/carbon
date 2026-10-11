@@ -6024,6 +6024,9 @@ msgstr ""
 msgid "Cost rates"
 msgstr ""
 
+msgid "Cost Relief"
+msgstr ""
+
 msgid "Cost treatment"
 msgstr ""
 
@@ -12820,6 +12823,9 @@ msgstr "निपटान पर हानि (डिफ़ॉल्ट)"
 msgid "Loss on Disposal Account"
 msgstr "निपटान पर हानि खाता"
 
+msgid "Loss Provision"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "अचल संपत्ति के निपटान पर मान्यता प्राप्त हानियाँ"
 
@@ -16467,6 +16473,9 @@ msgstr "ऑर्डर हेडर के पूर्ति स्थान �
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "PO हेडर के डिलीवरी स्थान का प्रति-पंक्ति ओवरराइड; एकाधिक गोदाम या ड्रॉप-शिपमेंट के लिए विभाजित डिलीवरी के लिए उपयोग किया जाता है।"
 
+msgid "Percent Complete"
+msgstr ""
+
 msgid "Percentage"
 msgstr "प्रतिशत"
 
@@ -19250,6 +19259,9 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "दाहिनी वस्तु"
+
+msgid "Right to Invoice"
+msgstr ""
 
 msgid "Risk"
 msgstr "जोखिम"

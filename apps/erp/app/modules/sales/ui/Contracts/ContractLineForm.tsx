@@ -37,8 +37,9 @@ import { useCurrencyDecimals, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   contractRateUnits,
-  contractRevenueMethods,
+  type contractRevenueMethods,
   contractRevenueTypes,
+  contractScheduleRevenueMethods,
   customerContractLineValidator
 } from "../../sales.models";
 import ContractProject from "./ContractProject";
@@ -112,7 +113,9 @@ const ContractLineForm = ({
     string
   > = {
     Daily: t`Daily`,
-    "Even Period": t`Even Period`
+    "Even Period": t`Even Period`,
+    "Right to Invoice": t`Right to Invoice`,
+    "Percent Complete": t`Percent Complete`
   };
 
   const isDisabled =
@@ -291,7 +294,7 @@ const ContractLineForm = ({
                     <Select
                       name="revenueMethod"
                       label={t`Revenue Method`}
-                      options={contractRevenueMethods.map((value) => ({
+                      options={contractScheduleRevenueMethods.map((value) => ({
                         value,
                         label: revenueMethodLabels[value]
                       }))}
