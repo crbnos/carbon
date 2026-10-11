@@ -1200,3 +1200,4 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   2. The stop-work route sets `projectId` from the URL before it validates the form with `stopWorkValidator`, and redirects back to the referrer with a flash in every case.
   3. The status route guard (C16) refuses any status but On Hold while `stopWorkDate` is set. Other writers of `project.status` (the `updateProjectStatus` MCP tool) meet the CHECK `project_stopWork_check` instead, which raises a database error.
   4. Tests: an order on 2026-10-01 ends on 2026-12-30; on 2026-10-11 it has 80 days left; after its end it has 0. 23 project-control tests pass.
+- After Task 16: `pnpm --filter erp build` passes with no "Server-only module referenced by client"; `pnpm --filter mes build` passes too (Task 11 changed the MES). The erp suite: 2,221 tests pass; `test/mcp-upsert-job-material.test.ts` fails at import, a failure that `d06d673703` introduced before this session (see the run log follow-ups).
