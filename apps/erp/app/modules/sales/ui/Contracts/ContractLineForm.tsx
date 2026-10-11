@@ -51,7 +51,7 @@ import {
   ContractLineBillingFields,
   ProjectRevenueUpgrade,
   useBillingMethodLabels
-} from "./ContractLineBilling";
+} from "./ContractLineBillingFields";
 import ContractProject from "./ContractProject";
 
 type ContractLineFormValues = z.infer<typeof customerContractLineValidator>;

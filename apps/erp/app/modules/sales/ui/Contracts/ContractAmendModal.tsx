@@ -94,7 +94,7 @@ import {
   ContractLineBillingFields,
   ProjectRevenueUpgrade,
   useBillingMethodLabels
-} from "./ContractLineBilling";
+} from "./ContractLineBillingFields";
 import ContractMoney from "./ContractMoney";
 import ContractProject from "./ContractProject";
 import type {

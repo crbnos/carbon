@@ -991,6 +991,9 @@ msgstr "활성 임차 계약상 고객에게 인도된 차량 단위로, 인도 
 msgid "A formal acceptance / sign-off phase"
 msgstr "공식 승인/서명 단계"
 
+msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
+msgstr ""
+
 msgid "A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks."
 msgstr "역할이 표준기인 계측기 — 정기적인 확인에 사용되는 계측기가 아니라 다른 계측기를 교정하는 데 사용되는 참조 표준입니다."
 
@@ -2444,6 +2447,9 @@ msgstr "자산의 취득원가에서 감가상각누계액을 뺀 값 — 장부
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "캔버스에서 빌드하는 자동화: 하나의 트리거와 조건을 확인하고 레코드를 조회한 후 누군가에게 알림을 보내거나 레코드를 생성 또는 업데이트하거나 외부 URL을 호출하는 단계들."
 
+msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
+msgstr ""
+
 msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
 msgstr ""
 
@@ -3166,6 +3172,9 @@ msgstr "이 승인 규칙을 삭제하시겠습니까? 이 작업은 되돌릴 �
 
 msgid "Are you sure you want to delete this bank account?"
 msgstr "이 은행 계좌를 삭제하시겠습니까?"
+
+msgid "Are you sure you want to delete this bill rate?"
+msgstr ""
 
 msgid "Are you sure you want to delete this change notice?"
 msgstr "이 변경 통지를 삭제하시겠습니까?"
@@ -3891,6 +3900,9 @@ msgstr "자재 명세서"
 msgid "Bill of Process"
 msgstr "공정 목록"
 
+msgid "Bill Rate"
+msgstr ""
+
 msgid "Bill To"
 msgstr "청구 대상"
 
@@ -3898,6 +3910,9 @@ msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "월, 분기, 연도 단위로 청구합니다(처음에 부분 기간 포함 가능)."
 
 msgid "Billable"
+msgstr ""
+
+msgid "Billable Items"
 msgstr ""
 
 msgid "Billed"
@@ -6015,6 +6030,12 @@ msgstr ""
 msgid "Cost History"
 msgstr "원가 이력"
 
+msgid "Cost Incurred"
+msgstr ""
+
+msgid "Cost incurred is past the notice point."
+msgstr ""
+
 msgid "Cost ledger"
 msgstr "원가 원장"
 
@@ -7479,6 +7500,9 @@ msgstr "질문 삭제"
 msgid "Delete Quote"
 msgstr "견적 삭제"
 
+msgid "Delete Rate"
+msgstr ""
+
 msgid "Delete Reason"
 msgstr "사유 삭제"
 
@@ -8536,6 +8560,9 @@ msgstr "고장 모드 편집"
 
 msgid "Edit Fixed Asset"
 msgstr "고정자산 편집"
+
+msgid "Edit Funding"
+msgstr ""
 
 msgid "Edit Gauge Calibration Record"
 msgstr "계측기 교정 기록 편집"
@@ -9914,6 +9941,9 @@ msgstr ""
 msgid "Failed to save configuration rule"
 msgstr "설정 규칙을 저장하지 못했습니다"
 
+msgid "Failed to save funding"
+msgstr ""
+
 msgid "Failed to save inspection plan"
 msgstr "검사 계획 저장에 실패했습니다"
 
@@ -9933,6 +9963,9 @@ msgid "Failed to save the change"
 msgstr "변경 사항을 저장하지 못했습니다."
 
 msgid "Failed to save the fixed price"
+msgstr ""
+
+msgid "Failed to save the rate"
 msgstr ""
 
 msgid "Failed to save the signature"
@@ -10460,6 +10493,9 @@ msgstr ""
 msgid "Funded Cost"
 msgstr ""
 
+msgid "Funding"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr ""
 
@@ -10537,6 +10573,9 @@ msgstr "새로운 4자리 PIN을 발급하세요. 작업자의 현재 PIN은 즉
 
 msgid "Generate and send customer invoices"
 msgstr "고객 송장 생성 및 발송"
+
+msgid "Generate Billable Items"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "회계연도 생성"
@@ -10940,6 +10979,9 @@ msgstr ""
 
 msgid "Hold the journal as a warning to fix."
 msgstr "수정할 경고로 전표를 보류하세요."
+
+msgid "Hold, release, write off or reprice items in Projects → Billing."
+msgstr ""
 
 msgid "Holiday"
 msgstr "휴일"
@@ -12322,6 +12364,9 @@ msgstr ""
 msgid "Labor Category"
 msgstr ""
 
+msgid "Labor Category or Employee"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "노무 비용"
 
@@ -12339,6 +12384,9 @@ msgstr "노무 단가"
 
 msgid "Labor Rate (Hourly)"
 msgstr "노무 단가(시간당)"
+
+msgid "Labor Rates"
+msgstr ""
 
 msgid "Labor time"
 msgstr "노무 시간"
@@ -12616,6 +12664,9 @@ msgstr "라인 {0}"
 
 msgid "Line description (optional)"
 msgstr "행 설명 (선택 사항)"
+
+msgid "Line Details"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "라인 항목 비교"
@@ -14419,6 +14470,9 @@ msgstr "배치 없음"
 msgid "No batches selected yet."
 msgstr "아직 선택된 배치가 없습니다."
 
+msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
+msgstr ""
+
 msgid "No billing periods."
 msgstr "청구 기간이 없습니다."
 
@@ -14487,6 +14541,9 @@ msgstr "아직 구성 요소 없음"
 
 msgid "No condition may match"
 msgstr "조건이 하나도 일치하지 않을 수 있습니다"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr ""
 
 msgid "No conversion is required"
 msgstr "변환이 필요하지 않습니다"
@@ -17944,6 +18001,9 @@ msgstr "환율"
 
 msgid "rate {was} → {now}"
 msgstr "요율 {was} → {now}"
+
+msgid "Rate actions"
+msgstr ""
 
 msgid "Rate frequency"
 msgstr "요금 주기"
@@ -22799,6 +22859,9 @@ msgstr "이 공급업체가 수량과 관계없이 이 공법에 대해 청구�
 msgid "The machines, cells, and stations your work runs through"
 msgstr "작업이 거쳐가는 기계, 셀, 스테이션"
 
+msgid "The mark is the notice point on the funded cost."
+msgstr ""
+
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Carbon을 처음 설정할 때 구성해야 하는 마스터 데이터로, 모듈별로 그룹화되어 있습니다. 진행하면서 각 항목을 설정 완료로 표시하세요."
 
@@ -22953,6 +23016,9 @@ msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "이 이슈에 적용되는 사전 정의된 작업 및 승인 요구사항 묶음입니다. 설정 시 이슈 유형의 기본 워크플로를 재정의합니다."
+
+msgid "The price of one hour on this line."
+msgstr ""
 
 msgid "The principle:"
 msgstr "원칙:"

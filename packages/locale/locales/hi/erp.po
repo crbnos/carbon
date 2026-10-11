@@ -991,6 +991,9 @@ msgstr "एक बेड़े की इकाई जो चलू किरा
 msgid "A formal acceptance / sign-off phase"
 msgstr "एक औपचारिक स्वीकृति / साइन-ऑफ चरण"
 
+msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
+msgstr ""
+
 msgid "A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks."
 msgstr "एक गेज जिसकी भूमिका मास्टर है — संदर्भ मानक जिसके विरुद्ध अन्य गेज को कैलिब्रेट किया जाता है, बजाय नियमित जांच के लिए उपयोग किए जाने वाले।"
 
@@ -2444,6 +2447,9 @@ msgstr "किसी संपत्ति की अधिग्रहण ल�
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "एक स्वचालन जो आप कैनवास पर बनाते हैं: एक ट्रिगर, फिर चरण जो शर्तों की जांच करते हैं, रिकॉर्ड देखते हैं, और कार्य करते हैं — किसी को सूचित करना, एक रिकॉर्ड बनाना या अपडेट करना, या बाहरी URL को कॉल करना।"
 
+msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
+msgstr ""
+
 msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
 msgstr ""
 
@@ -3166,6 +3172,9 @@ msgstr "क्या आप इस अनुमोदन नियम को ह
 
 msgid "Are you sure you want to delete this bank account?"
 msgstr "क्या आप वाकई इस बैंक खाते को हटाना चाहते हैं?"
+
+msgid "Are you sure you want to delete this bill rate?"
+msgstr ""
 
 msgid "Are you sure you want to delete this change notice?"
 msgstr "क्या आप इस परिवर्तन सूचना को हटाना चाहते हैं?"
@@ -3891,6 +3900,9 @@ msgstr "सामग्री की सूची"
 msgid "Bill of Process"
 msgstr "प्रक्रिया सूची"
 
+msgid "Bill Rate"
+msgstr ""
+
 msgid "Bill To"
 msgstr "बिल प्राप्तकर्ता"
 
@@ -3898,6 +3910,9 @@ msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "पूरे महीने, त्रैमासिक या वर्षों का बिल करें, पहले आंशिक अवधि के साथ।"
 
 msgid "Billable"
+msgstr ""
+
+msgid "Billable Items"
 msgstr ""
 
 msgid "Billed"
@@ -6015,6 +6030,12 @@ msgstr ""
 msgid "Cost History"
 msgstr "लागत इतिहास"
 
+msgid "Cost Incurred"
+msgstr ""
+
+msgid "Cost incurred is past the notice point."
+msgstr ""
+
 msgid "Cost ledger"
 msgstr "लागत खाता"
 
@@ -7479,6 +7500,9 @@ msgstr "प्रश्न हटाएं"
 msgid "Delete Quote"
 msgstr "उद्धरण हटाएं"
 
+msgid "Delete Rate"
+msgstr ""
+
 msgid "Delete Reason"
 msgstr "कारण हटाएं"
 
@@ -8536,6 +8560,9 @@ msgstr "विफलता मोड संपादित करें"
 
 msgid "Edit Fixed Asset"
 msgstr "अचल संपत्ति संपादित करें"
+
+msgid "Edit Funding"
+msgstr ""
 
 msgid "Edit Gauge Calibration Record"
 msgstr "गेज अंशांकन रिकॉर्ड संपादित करें"
@@ -9914,6 +9941,9 @@ msgstr ""
 msgid "Failed to save configuration rule"
 msgstr "कॉन्फ़िगरेशन नियम सहेजने में विफल"
 
+msgid "Failed to save funding"
+msgstr ""
+
 msgid "Failed to save inspection plan"
 msgstr "निरीक्षण योजना को सहेजने में विफल"
 
@@ -9933,6 +9963,9 @@ msgid "Failed to save the change"
 msgstr "परिवर्तन को सहेजने में विफल"
 
 msgid "Failed to save the fixed price"
+msgstr ""
+
+msgid "Failed to save the rate"
 msgstr ""
 
 msgid "Failed to save the signature"
@@ -10460,6 +10493,9 @@ msgstr ""
 msgid "Funded Cost"
 msgstr ""
 
+msgid "Funding"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr ""
 
@@ -10537,6 +10573,9 @@ msgstr "एक नया 4-अंकीय PIN बनाएँ। ऑपरे�
 
 msgid "Generate and send customer invoices"
 msgstr "ग्राहक चालान उत्पन्न करें और भेजें"
+
+msgid "Generate Billable Items"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "वित्तीय वर्ष उत्पन्न करें"
@@ -10940,6 +10979,9 @@ msgstr ""
 
 msgid "Hold the journal as a warning to fix."
 msgstr "जर्नल को ठीक करने के लिए एक चेतावनी के रूप में रखें।"
+
+msgid "Hold, release, write off or reprice items in Projects → Billing."
+msgstr ""
 
 msgid "Holiday"
 msgstr "छुट्टी"
@@ -12322,6 +12364,9 @@ msgstr ""
 msgid "Labor Category"
 msgstr ""
 
+msgid "Labor Category or Employee"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "श्रम लागत"
 
@@ -12339,6 +12384,9 @@ msgstr "श्रम दर"
 
 msgid "Labor Rate (Hourly)"
 msgstr "श्रम दर (प्रति घंटा)"
+
+msgid "Labor Rates"
+msgstr ""
 
 msgid "Labor time"
 msgstr "श्रम समय"
@@ -12616,6 +12664,9 @@ msgstr "लाइन {0}"
 
 msgid "Line description (optional)"
 msgstr "पंक्ति विवरण (वैकल्पिक)"
+
+msgid "Line Details"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "लाइन आइटम तुलना"
@@ -14419,6 +14470,9 @@ msgstr "कोई बैच नहीं"
 msgid "No batches selected yet."
 msgstr "अभी तक कोई बैच चयनित नहीं।"
 
+msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
+msgstr ""
+
 msgid "No billing periods."
 msgstr "कोई बिलिंग अवधि नहीं।"
 
@@ -14487,6 +14541,9 @@ msgstr "अभी कोई घटक नहीं"
 
 msgid "No condition may match"
 msgstr "कोई भी शर्त मेल नहीं खा सकती"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr ""
 
 msgid "No conversion is required"
 msgstr "कोई रूपांतरण आवश्यक नहीं है"
@@ -17944,6 +18001,9 @@ msgstr "दर"
 
 msgid "rate {was} → {now}"
 msgstr "दर {was} → {now}"
+
+msgid "Rate actions"
+msgstr ""
 
 msgid "Rate frequency"
 msgstr "दर आवृत्ति"
@@ -22799,6 +22859,9 @@ msgstr "यह न्यूनतम राशि जो यह आपूर्�
 msgid "The machines, cells, and stations your work runs through"
 msgstr "वे मशीनें, सेल और स्टेशन जिनके माध्यम से आपका काम चलता है"
 
+msgid "The mark is the notice point on the funded cost."
+msgstr ""
+
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Carbon को पहली बार कॉन्फ़िगर करते समय सेट अप करने के लिए मास्टर डेटा, मॉड्यूल द्वारा समूहीकृत। जैसे-जैसे आप आगे बढ़ें, प्रत्येक को कॉन्फ़िगर किए गए के रूप में चिह्नित करें।"
 
@@ -22953,6 +23016,9 @@ msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "कार्यों और अनुमोदन आवश्यकताओं का पूर्वनिर्धारित बंडल इस समस्या पर लागू होता है; जब सेट किया जाता है तो समस्या प्रकार के डिफ़ॉल्ट वर्कफ़्लो को ओवरराइड करता है।"
+
+msgid "The price of one hour on this line."
+msgstr ""
 
 msgid "The principle:"
 msgstr "सिद्धांत:"

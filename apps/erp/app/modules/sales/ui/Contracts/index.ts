@@ -12,6 +12,7 @@ import ContractExplorer from "./ContractExplorer";
 import ContractHeader from "./ContractHeader";
 import ContractInvoiceGrid from "./ContractInvoiceGrid";
 import ContractInvoices from "./ContractInvoices";
+import ContractLineBilling from "./ContractLineBilling";
 import ContractLineForm from "./ContractLineForm";
 import ContractMoney from "./ContractMoney";
 import ContractProductsGrid from "./ContractProductsGrid";
@@ -31,6 +32,7 @@ import {
   toContractLineTerms,
   toContractTerms
 } from "./contractTerms";
+import FundingBar from "./FundingBar";
 import { contractDurationOf, useContractLabels } from "./useContractLabels";
 
 export type { ContractSetupStep } from "./ContractSetupSteps";
@@ -48,6 +50,7 @@ export {
   ContractHeader,
   ContractInvoiceGrid,
   ContractInvoices,
+  ContractLineBilling,
   ContractLineForm,
   ContractMoney,
   ContractProductsGrid,
@@ -61,6 +64,7 @@ export {
   ContractStatus,
   ContractSummary,
   ContractsTable,
+  FundingBar,
   contractDurationOf,
   contractLineName,
   contractSetupSteps,

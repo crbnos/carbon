@@ -991,6 +991,9 @@ msgstr "Jednostka floty dostarczona klientowi na podstawie aktywnej umowy wynajm
 msgid "A formal acceptance / sign-off phase"
 msgstr "Formalna faza akceptacji / podpisania"
 
+msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
+msgstr ""
+
 msgid "A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks."
 msgstr "Przyrząd pomiarowy, którego rola to Standard — standard referencyjny, względem którego kalibrują się inne przyrządy, a nie taki, który jest używany do rutynowych kontroli."
 
@@ -2444,6 +2447,9 @@ msgstr "Cena nabycia aktywa pomniejszona o umorzenie — jego wartość netto w 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Automatyzacja, którą budujesz na kanwie: jeden wyzwalacz, a następnie kroki, które sprawdzają warunki, wyszukują rekordy i działają — powiadamiając kogoś, tworząc lub aktualizując rekord, lub wywołując zewnętrzny adres URL."
 
+msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
+msgstr ""
+
 msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
 msgstr ""
 
@@ -3166,6 +3172,9 @@ msgstr "Czy na pewno chcesz usunąć tę regułę zatwierdzania? Tej operacji ni
 
 msgid "Are you sure you want to delete this bank account?"
 msgstr "Czy na pewno chcesz usunąć to konto bankowe?"
+
+msgid "Are you sure you want to delete this bill rate?"
+msgstr ""
 
 msgid "Are you sure you want to delete this change notice?"
 msgstr "Czy chcesz usunąć to zawiadomienie o zmianie?"
@@ -3891,6 +3900,9 @@ msgstr "Lista materiałowa"
 msgid "Bill of Process"
 msgstr "Lista operacji"
 
+msgid "Bill Rate"
+msgstr ""
+
 msgid "Bill To"
 msgstr "Rachunek dla"
 
@@ -3898,6 +3910,9 @@ msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Fakturuj całe miesiące, kwartały lub lata, z okresem częściowym na pierwszym miejscu."
 
 msgid "Billable"
+msgstr ""
+
+msgid "Billable Items"
 msgstr ""
 
 msgid "Billed"
@@ -6015,6 +6030,12 @@ msgstr ""
 msgid "Cost History"
 msgstr "Historia kosztów"
 
+msgid "Cost Incurred"
+msgstr ""
+
+msgid "Cost incurred is past the notice point."
+msgstr ""
+
 msgid "Cost ledger"
 msgstr "Księga kosztów"
 
@@ -7479,6 +7500,9 @@ msgstr "Usuń pytanie"
 msgid "Delete Quote"
 msgstr "Usuń Ofertę"
 
+msgid "Delete Rate"
+msgstr ""
+
 msgid "Delete Reason"
 msgstr "Usuń przyczynę"
 
@@ -8536,6 +8560,9 @@ msgstr "Edytuj tryb awarii"
 
 msgid "Edit Fixed Asset"
 msgstr "Edytuj środek trwały"
+
+msgid "Edit Funding"
+msgstr ""
 
 msgid "Edit Gauge Calibration Record"
 msgstr "Edytuj zapis wzorcowania przyrządu pomiarowego"
@@ -9914,6 +9941,9 @@ msgstr ""
 msgid "Failed to save configuration rule"
 msgstr "Nie udało się zapisać reguły konfiguracji"
 
+msgid "Failed to save funding"
+msgstr ""
+
 msgid "Failed to save inspection plan"
 msgstr "Nie udało się zapisać planu kontroli"
 
@@ -9933,6 +9963,9 @@ msgid "Failed to save the change"
 msgstr "Nie udało się zapisać zmiany"
 
 msgid "Failed to save the fixed price"
+msgstr ""
+
+msgid "Failed to save the rate"
 msgstr ""
 
 msgid "Failed to save the signature"
@@ -10460,6 +10493,9 @@ msgstr ""
 msgid "Funded Cost"
 msgstr ""
 
+msgid "Funding"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr ""
 
@@ -10537,6 +10573,9 @@ msgstr "Wygeneruj nowy 4-cyfrowy PIN. Obecny PIN operatora przestaje działać n
 
 msgid "Generate and send customer invoices"
 msgstr "Generuj i wysyłaj faktury dla klientów"
+
+msgid "Generate Billable Items"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "Generuj rok obrotowy"
@@ -10940,6 +10979,9 @@ msgstr ""
 
 msgid "Hold the journal as a warning to fix."
 msgstr "Wstrzymaj dowód księgowy jako ostrzeżenie do naprawy."
+
+msgid "Hold, release, write off or reprice items in Projects → Billing."
+msgstr ""
 
 msgid "Holiday"
 msgstr "Święto"
@@ -12322,6 +12364,9 @@ msgstr ""
 msgid "Labor Category"
 msgstr ""
 
+msgid "Labor Category or Employee"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Koszty robocizny"
 
@@ -12339,6 +12384,9 @@ msgstr "Stawka robocizny"
 
 msgid "Labor Rate (Hourly)"
 msgstr "Stawka robocizny (godzinowa)"
+
+msgid "Labor Rates"
+msgstr ""
 
 msgid "Labor time"
 msgstr "Czas robocizny"
@@ -12616,6 +12664,9 @@ msgstr "Linia {0}"
 
 msgid "Line description (optional)"
 msgstr "Opis linii (opcjonalnie)"
+
+msgid "Line Details"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "Porównanie pozycji"
@@ -14419,6 +14470,9 @@ msgstr "Brak partii produkcyjnych"
 msgid "No batches selected yet."
 msgstr "Żadne partie nie zostały jeszcze zaznaczone."
 
+msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
+msgstr ""
+
 msgid "No billing periods."
 msgstr "Brak okresów rozliczeniowych."
 
@@ -14487,6 +14541,9 @@ msgstr "Brak komponentów"
 
 msgid "No condition may match"
 msgstr "Żaden warunek nie może się zgadzać"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr ""
 
 msgid "No conversion is required"
 msgstr "Konwersja nie jest wymagana"
@@ -17944,6 +18001,9 @@ msgstr "Kurs"
 
 msgid "rate {was} → {now}"
 msgstr "stawka {was} → {now}"
+
+msgid "Rate actions"
+msgstr ""
 
 msgid "Rate frequency"
 msgstr "Częstotliwość stawki"
@@ -22799,6 +22859,9 @@ msgstr "Najniższa kwota, którą dostawca będzie pobierać za ten proces, niez
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Maszyny, komórki i stanowiska, przez które przechodzi Twoja praca"
 
+msgid "The mark is the notice point on the funded cost."
+msgstr ""
+
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Główne dane do skonfigurowania podczas pierwszej konfiguracji Carbon, pogrupowane według modułu. Oznacz każdy moduł jako skonfigurowany w miarę postępu."
 
@@ -22953,6 +23016,9 @@ msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Wstępnie ustawiony pakiet zadań i wymagań zatwierdzenia stosowany do tego problemu; zastępuje domyślny przepływ pracy typu problemu, jeśli jest ustawiony."
+
+msgid "The price of one hour on this line."
+msgstr ""
 
 msgid "The principle:"
 msgstr "Zasada:"

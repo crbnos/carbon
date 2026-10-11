@@ -991,6 +991,9 @@ msgstr "Müşteriye aktif bir kiralama sözleşmesine göre teslim edilen bir fi
 msgid "A formal acceptance / sign-off phase"
 msgstr "Resmi bir kabul / imza aşaması"
 
+msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
+msgstr ""
+
 msgid "A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks."
 msgstr "Mastar rolü taşıyan bir ölçüm aleti — diğer ölçüm aletlerinin kalibrasyonunun yapıldığı referans standart, rutin kontroller için kullanılan değil."
 
@@ -2444,6 +2447,9 @@ msgstr "Bir varlığın edinme maliyeti eksi birikmiş amortisman — defterler 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Bir kanvas üzerinde oluşturduğunuz bir otomasyon: bir tetikleyici, ardından koşulları kontrol eden, kayıtları arayan ve hareket eden adımlar — birini bilgilendiren, bir kaydı oluşturan veya güncelleyen veya dış bir URL çağırma."
 
+msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
+msgstr ""
+
 msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
 msgstr ""
 
@@ -3166,6 +3172,9 @@ msgstr "Bu onay kuralını silmek istediğinizden emin misiniz? Bu geri alınama
 
 msgid "Are you sure you want to delete this bank account?"
 msgstr "Bu banka hesabını silmek istediğinizden emin misiniz?"
+
+msgid "Are you sure you want to delete this bill rate?"
+msgstr ""
 
 msgid "Are you sure you want to delete this change notice?"
 msgstr "Bu değişiklik bildirisini silmek istediğinizden emin misiniz?"
@@ -3891,6 +3900,9 @@ msgstr "Ürün ağacı"
 msgid "Bill of Process"
 msgstr "Operasyon listesi"
 
+msgid "Bill Rate"
+msgstr ""
+
 msgid "Bill To"
 msgstr "Fatura Adresi"
 
@@ -3898,6 +3910,9 @@ msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Bir kısmi dönem ilk olarak olmak üzere, tam ayları, çeyrekleri veya yılları faturala."
 
 msgid "Billable"
+msgstr ""
+
+msgid "Billable Items"
 msgstr ""
 
 msgid "Billed"
@@ -6015,6 +6030,12 @@ msgstr ""
 msgid "Cost History"
 msgstr "Maliyet Geçmişi"
 
+msgid "Cost Incurred"
+msgstr ""
+
+msgid "Cost incurred is past the notice point."
+msgstr ""
+
 msgid "Cost ledger"
 msgstr "Maliyet defteri"
 
@@ -7479,6 +7500,9 @@ msgstr "Soruyu Sil"
 msgid "Delete Quote"
 msgstr "Teklifi Sil"
 
+msgid "Delete Rate"
+msgstr ""
+
 msgid "Delete Reason"
 msgstr "Nedeni Sil"
 
@@ -8536,6 +8560,9 @@ msgstr "Hata Modunu Düzenle"
 
 msgid "Edit Fixed Asset"
 msgstr "Sabit Kıymet Düzenle"
+
+msgid "Edit Funding"
+msgstr ""
 
 msgid "Edit Gauge Calibration Record"
 msgstr "Ölçüm Aleti Kalibrasyon Kaydı Düzenle"
@@ -9914,6 +9941,9 @@ msgstr ""
 msgid "Failed to save configuration rule"
 msgstr "Yapılandırma kuralını kaydetme başarısız oldu"
 
+msgid "Failed to save funding"
+msgstr ""
+
 msgid "Failed to save inspection plan"
 msgstr "Kontrol planı kaydedilemedi"
 
@@ -9933,6 +9963,9 @@ msgid "Failed to save the change"
 msgstr "Değişikliği kaydetme başarısız oldu"
 
 msgid "Failed to save the fixed price"
+msgstr ""
+
+msgid "Failed to save the rate"
 msgstr ""
 
 msgid "Failed to save the signature"
@@ -10460,6 +10493,9 @@ msgstr ""
 msgid "Funded Cost"
 msgstr ""
 
+msgid "Funding"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr ""
 
@@ -10537,6 +10573,9 @@ msgstr "Yeni bir 4 haneli PIN oluştur. Operatörün mevcut PIN'i hemen çalış
 
 msgid "Generate and send customer invoices"
 msgstr "Müşteri faturalarını oluştur ve gönder"
+
+msgid "Generate Billable Items"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "Mali yıl oluştur"
@@ -10940,6 +10979,9 @@ msgstr ""
 
 msgid "Hold the journal as a warning to fix."
 msgstr "Düzeltilmesi için uyarı olarak muhasebe fişini beklet."
+
+msgid "Hold, release, write off or reprice items in Projects → Billing."
+msgstr ""
 
 msgid "Holiday"
 msgstr "Tatil"
@@ -12322,6 +12364,9 @@ msgstr ""
 msgid "Labor Category"
 msgstr ""
 
+msgid "Labor Category or Employee"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "İşçilik Maliyetleri"
 
@@ -12339,6 +12384,9 @@ msgstr "İşçilik Ücreti"
 
 msgid "Labor Rate (Hourly)"
 msgstr "Saatlik İşçilik Ücreti"
+
+msgid "Labor Rates"
+msgstr ""
 
 msgid "Labor time"
 msgstr "İşçilik süresi"
@@ -12616,6 +12664,9 @@ msgstr "Satır {0}"
 
 msgid "Line description (optional)"
 msgstr "Satır açıklaması (isteğe bağlı)"
+
+msgid "Line Details"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "Satır Kalemi Karşılaştırması"
@@ -14419,6 +14470,9 @@ msgstr "Parti yok"
 msgid "No batches selected yet."
 msgstr "Henüz hiçbir parti seçilmemiştir."
 
+msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
+msgstr ""
+
 msgid "No billing periods."
 msgstr "Fatura dönemi yok."
 
@@ -14487,6 +14541,9 @@ msgstr "Henüz bileşen yok"
 
 msgid "No condition may match"
 msgstr "Hiçbir koşul eşleşemez"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr ""
 
 msgid "No conversion is required"
 msgstr "Dönüşüm gerekmiyor"
@@ -17944,6 +18001,9 @@ msgstr "Kur"
 
 msgid "rate {was} → {now}"
 msgstr "oran {was} → {now}"
+
+msgid "Rate actions"
+msgstr ""
 
 msgid "Rate frequency"
 msgstr "Oran Sıklığı"
@@ -22799,6 +22859,9 @@ msgstr "Bu Tedarikçinin bu Proses için Miktar ne olursa olsun talep edebilece�
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Çalışmanızın geçtiği makineler, hücreler ve istasyonlar"
 
+msgid "The mark is the notice point on the funded cost."
+msgstr ""
+
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Carbon'ı ilk kez yapılandırırken ayarlanacak ana veriler, modüle göre gruplandırılmış. Her birini yapılandırıldığında işaretleyin."
 
@@ -22953,6 +23016,9 @@ msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Bu sorun türüne uygulanan Görev ve Onay gereksinimlerinin önceden ayarlanmış kümesi; ayarlandığında sorun türünün varsayılan İş akışını geçersiz kılar."
+
+msgid "The price of one hour on this line."
+msgstr ""
 
 msgid "The principle:"
 msgstr "İlke:"

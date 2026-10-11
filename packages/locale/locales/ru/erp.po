@@ -991,6 +991,9 @@ msgstr "Единица флота, доставленная Покупателю
 msgid "A formal acceptance / sign-off phase"
 msgstr "Формальная фаза принятия / подписания"
 
+msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
+msgstr ""
+
 msgid "A gauge whose role is Master — the reference standard other gauges are calibrated against, rather than one used for routine checks."
 msgstr "Средство измерения, роль которого — Эталон — эталонный стандарт, по которому калибруются другие средства измерения, а не используется при текущих проверках."
 
@@ -2444,6 +2447,9 @@ msgstr "Стоимость приобретения основного сред�
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "Автоматизация, которую вы создаете на холсте: один триггер, затем шаги, которые проверяют условия, ищут записи и действуют — уведомляя кого-то, создавая или обновляя запись или вызывая внешний URL."
 
+msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
+msgstr ""
+
 msgid "An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction."
 msgstr ""
 
@@ -3166,6 +3172,9 @@ msgstr "Вы уверены, что хотите удалить это прав�
 
 msgid "Are you sure you want to delete this bank account?"
 msgstr "Вы уверены, что хотите удалить этот банковский счёт?"
+
+msgid "Are you sure you want to delete this bill rate?"
+msgstr ""
 
 msgid "Are you sure you want to delete this change notice?"
 msgstr "Вы уверены, что хотите удалить это извещение об изменении?"
@@ -3891,6 +3900,9 @@ msgstr "Спецификация материалов"
 msgid "Bill of Process"
 msgstr "Перечень операций"
 
+msgid "Bill Rate"
+msgstr ""
+
 msgid "Bill To"
 msgstr "Счет для"
 
@@ -3898,6 +3910,9 @@ msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Счета выставляются целыми месяцами, кварталами или годами, с частичным периодом в начале."
 
 msgid "Billable"
+msgstr ""
+
+msgid "Billable Items"
 msgstr ""
 
 msgid "Billed"
@@ -6015,6 +6030,12 @@ msgstr ""
 msgid "Cost History"
 msgstr "История себестоимости"
 
+msgid "Cost Incurred"
+msgstr ""
+
+msgid "Cost incurred is past the notice point."
+msgstr ""
+
 msgid "Cost ledger"
 msgstr "Ведомость себестоимости"
 
@@ -7479,6 +7500,9 @@ msgstr "Удалить вопрос"
 msgid "Delete Quote"
 msgstr "Удалить предложение"
 
+msgid "Delete Rate"
+msgstr ""
+
 msgid "Delete Reason"
 msgstr "Удалить причину"
 
@@ -8536,6 +8560,9 @@ msgstr "Изменить вид отказа"
 
 msgid "Edit Fixed Asset"
 msgstr "Изменить основное средство"
+
+msgid "Edit Funding"
+msgstr ""
 
 msgid "Edit Gauge Calibration Record"
 msgstr "Изменить запись о калибровке средства измерения"
@@ -9914,6 +9941,9 @@ msgstr ""
 msgid "Failed to save configuration rule"
 msgstr "Ошибка при сохранении правила конфигурации"
 
+msgid "Failed to save funding"
+msgstr ""
+
 msgid "Failed to save inspection plan"
 msgstr "Не удалось сохранить план контроля"
 
@@ -9933,6 +9963,9 @@ msgid "Failed to save the change"
 msgstr "Не удалось сохранить изменение"
 
 msgid "Failed to save the fixed price"
+msgstr ""
+
+msgid "Failed to save the rate"
 msgstr ""
 
 msgid "Failed to save the signature"
@@ -10460,6 +10493,9 @@ msgstr ""
 msgid "Funded Cost"
 msgstr ""
 
+msgid "Funding"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr ""
 
@@ -10537,6 +10573,9 @@ msgstr "Создайте новый 4-значный PIN. Текущий PIN о�
 
 msgid "Generate and send customer invoices"
 msgstr "Создавать и отправлять счета-фактуры покупателей"
+
+msgid "Generate Billable Items"
+msgstr ""
 
 msgid "Generate fiscal year"
 msgstr "Генерировать финансовый год"
@@ -10940,6 +10979,9 @@ msgstr ""
 
 msgid "Hold the journal as a warning to fix."
 msgstr "Удержать операцию как предупреждение для исправления."
+
+msgid "Hold, release, write off or reprice items in Projects → Billing."
+msgstr ""
 
 msgid "Holiday"
 msgstr "Праздник"
@@ -12322,6 +12364,9 @@ msgstr ""
 msgid "Labor Category"
 msgstr ""
 
+msgid "Labor Category or Employee"
+msgstr ""
+
 msgid "Labor Costs"
 msgstr "Стоимость труда"
 
@@ -12339,6 +12384,9 @@ msgstr "Ставка оплаты труда"
 
 msgid "Labor Rate (Hourly)"
 msgstr "Почасовая ставка труда"
+
+msgid "Labor Rates"
+msgstr ""
 
 msgid "Labor time"
 msgstr "Трудозатраты"
@@ -12616,6 +12664,9 @@ msgstr "Строка {0}"
 
 msgid "Line description (optional)"
 msgstr "Описание строки (необязательно)"
+
+msgid "Line Details"
+msgstr ""
 
 msgid "Line Item Comparison"
 msgstr "Сравнение позиций"
@@ -14419,6 +14470,9 @@ msgstr "Нет серий"
 msgid "No batches selected yet."
 msgstr "Серии ещё не выбраны."
 
+msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
+msgstr ""
+
 msgid "No billing periods."
 msgstr "Нет периодов выставления счетов."
 
@@ -14487,6 +14541,9 @@ msgstr "Компонентов еще нет"
 
 msgid "No condition may match"
 msgstr "Ни одно условие не должно совпадать"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr ""
 
 msgid "No conversion is required"
 msgstr "Преобразование не требуется"
@@ -17944,6 +18001,9 @@ msgstr "Курс"
 
 msgid "rate {was} → {now}"
 msgstr "ставка {was} → {now}"
+
+msgid "Rate actions"
+msgstr ""
 
 msgid "Rate frequency"
 msgstr "Частота ставки"
@@ -22799,6 +22859,9 @@ msgstr "Минимальная сумма, которую этот постав�
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Машины, ячейки и станции, через которые проходит ваша работа"
 
+msgid "The mark is the notice point on the funded cost."
+msgstr ""
+
 msgid "The master data to set up when first configuring Carbon, grouped by module. Mark each one configured as you go."
 msgstr "Основные данные для настройки при первоначальной конфигурации Carbon, сгруппированные по модулям. Отмечайте каждый модуль как настроенный по мере продвижения."
 
@@ -22953,6 +23016,9 @@ msgstr ""
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
+
+msgid "The price of one hour on this line."
+msgstr ""
 
 msgid "The principle:"
 msgstr "Принцип:"
