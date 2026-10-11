@@ -40,7 +40,8 @@ import type {
   projectSettingsValidator,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
-  subsidiaryValidator
+  subsidiaryValidator,
+  timekeepingSettingsValidator
 } from "./settings.models";
 import { companyValidator } from "./settings.models";
 
@@ -1404,6 +1405,29 @@ export async function updateQuoteLineCategoryMarkups(
   return client
     .from("companySettings")
     .update(sanitize({ quoteLineCategoryMarkups }))
+    .eq("id", companyId);
+}
+
+/**
+ * Sets the timekeeping controls (Standard or DCAA), the entry window, the
+ * timecard check, the certification texts and the standard weekly hours.
+ * @mcp update
+ */
+export async function updateTimekeepingSettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  values: z.infer<typeof timekeepingSettingsValidator>
+) {
+  return client
+    .from("companySettings")
+    .update({
+      timekeepingControls: values.timekeepingControls,
+      timesheetEntryWindowDays: values.timesheetEntryWindowDays,
+      timesheetTimecardCheck: values.timesheetTimecardCheck,
+      certificationTextExempt: values.certificationTextExempt || null,
+      certificationTextNonExempt: values.certificationTextNonExempt || null,
+      standardWeeklyHours: values.standardWeeklyHours
+    })
     .eq("id", companyId);
 }
 

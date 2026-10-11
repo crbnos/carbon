@@ -1383,6 +1383,34 @@ export async function updateProjectElementField(
       update.isFinalAsset = value;
       break;
     }
+    case "isUnallowable":
+    case "isPreproduction":
+      update[args.field] = raw === "true" || raw === "on";
+      break;
+    case "isLeave": {
+      // Leave is an indirect cost: only an Indirect project has leave elements.
+      const value = raw === "true" || raw === "on";
+      if (value) {
+        const elements = await client
+          .from("projectElement")
+          .select(
+            "readableId, project:project!projectElement_project_fkey!inner(costObjective)"
+          )
+          .in("id", args.ids)
+          .eq("companyId", args.companyId);
+        if (elements.error) return { data: null, error: elements.error };
+        const direct = elements.data.find(
+          (element) => element.project?.costObjective !== "Indirect"
+        );
+        if (direct) {
+          return refusal(
+            `${direct.readableId} is not on an Indirect project. Only an Indirect project has leave elements.`
+          );
+        }
+      }
+      update.isLeave = value;
+      break;
+    }
     case "description": {
       try {
         update.description = raw === null ? null : (JSON.parse(raw) as Json);
@@ -3508,6 +3536,212 @@ export async function createTimesheetCorrection(
     }
 
     return { reversalId: reversal.id, replacementId, isTransfer };
+  });
+}
+
+// --- Government Contracting 5a: members and the correction trail ---------------
+
+/**
+ * Lists the members of a project: the employees who may charge time to it
+ * when it restricts charging.
+ * @mcp read
+ */
+export async function getProjectMembers(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("projectMember")
+    .select(
+      "projectId, userId, createdAt, user:user!projectMember_userId_fkey(id, fullName, avatarUrl)"
+    )
+    .eq("projectId", projectId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+}
+
+/**
+ * Adds an employee to a project's members.
+ * @mcp action
+ */
+export async function addProjectMember(
+  client: Client,
+  args: {
+    projectId: string;
+    userId: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client
+    .from("projectMember")
+    .upsert(
+      [
+        {
+          projectId: args.projectId,
+          userId: args.userId,
+          companyId: args.companyId,
+          createdBy: args.createdBy
+        }
+      ],
+      { onConflict: "projectId,userId,companyId", ignoreDuplicates: true }
+    )
+    .select("projectId, userId");
+}
+
+/**
+ * Removes an employee from a project's members.
+ * @mcp action destructive
+ */
+export async function removeProjectMember(
+  client: Client,
+  args: { projectId: string; userId: string; companyId: string }
+) {
+  return client
+    .from("projectMember")
+    .delete()
+    .eq("projectId", args.projectId)
+    .eq("userId", args.userId)
+    .eq("companyId", args.companyId);
+}
+
+const TIMESHEET_REVISION_COLUMNS =
+  "id, timesheetEntryId, employeeId, revisedBy, revisedAt, reason, before, after, reviser:user!timesheetEntryRevision_revisedBy_fkey(id, fullName, avatarUrl)" as const;
+
+/**
+ * Lists the revisions of one timesheet entry, oldest first: who changed it,
+ * when, why, and the fields before and after.
+ * @mcp read
+ */
+export async function getTimesheetRevisions(
+  client: Client,
+  args: { companyId: string; timesheetEntryId: string }
+) {
+  return client
+    .from("timesheetEntryRevision")
+    .select(TIMESHEET_REVISION_COLUMNS)
+    .eq("companyId", args.companyId)
+    .eq("timesheetEntryId", args.timesheetEntryId)
+    .order("revisedAt", { ascending: true });
+}
+
+/**
+ * Lists an employee's entries in Pending Employee Review, each with its
+ * latest revision (the change the employee must accept).
+ * @mcp read
+ */
+export async function getPendingReviewEntries(
+  client: Client,
+  args: { companyId: string; employeeId: string }
+) {
+  const entries = await client
+    .from("timesheetEntry")
+    .select(
+      "id, entryDate, hours, projectId, projectElementId, laborCategoryId, note, project:project!timesheetEntry_project_fkey(id, name, identifier), element:projectElement!timesheetEntry_element_fkey(id, readableId, name)"
+    )
+    .eq("companyId", args.companyId)
+    .eq("employeeId", args.employeeId)
+    .eq("status", "Pending Employee Review")
+    .order("entryDate", { ascending: true });
+  if (entries.error) return { data: null, error: entries.error };
+  if (entries.data.length === 0) return { data: [], error: null };
+
+  const revisions = await client
+    .from("timesheetEntryRevision")
+    .select(TIMESHEET_REVISION_COLUMNS)
+    .eq("companyId", args.companyId)
+    .in(
+      "timesheetEntryId",
+      entries.data.map((entry) => entry.id)
+    )
+    .order("revisedAt", { ascending: false });
+  if (revisions.error) return { data: null, error: revisions.error };
+
+  const latest = new Map<string, (typeof revisions.data)[number]>();
+  for (const revision of revisions.data) {
+    if (!latest.has(revision.timesheetEntryId)) {
+      latest.set(revision.timesheetEntryId, revision);
+    }
+  }
+  return {
+    data: entries.data.map((entry) => ({
+      ...entry,
+      revision: latest.get(entry.id) ?? null
+    })),
+    error: null
+  };
+}
+
+/**
+ * The employee accepts entries that another user changed: each goes back to
+ * Draft, with one revision "Accepted by employee". Refuses an entry that is
+ * not the employee's or not in Pending Employee Review. Kysely bypasses RLS:
+ * the caller passes the signed-in employee as `employeeId`.
+ */
+export async function acceptTimesheetReview(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; employeeId: string; ids: string[]; userId: string }
+) {
+  if (args.ids.length === 0) return [];
+  return db.transaction().execute(async (trx) => {
+    const entries = await trx
+      .selectFrom("timesheetEntry")
+      .select([
+        "id",
+        "employeeId",
+        "status",
+        "hours",
+        "projectElementId",
+        "laborCategoryId",
+        "entryDate"
+      ])
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .execute();
+    if (entries.length !== new Set(args.ids).size) {
+      throw new Error("A timesheet entry does not exist");
+    }
+    if (entries.some((entry) => entry.employeeId !== args.employeeId)) {
+      throw new Error("You can accept changes to your own timesheet only");
+    }
+    if (entries.some((entry) => entry.status !== "Pending Employee Review")) {
+      throw new Error(
+        "Only an entry in Pending Employee Review can be accepted"
+      );
+    }
+
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("timesheetEntry")
+      .set({ status: "Draft", updatedBy: args.userId, updatedAt: now })
+      .where("id", "in", args.ids)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    await trx
+      .insertInto("timesheetEntryRevision")
+      .values(
+        entries.map((entry) => {
+          const fields = toJson({
+            hours: Number(entry.hours),
+            projectElementId: entry.projectElementId,
+            laborCategoryId: entry.laborCategoryId,
+            entryDate: entry.entryDate
+          });
+          return {
+            companyId: args.companyId,
+            timesheetEntryId: entry.id,
+            employeeId: entry.employeeId,
+            revisedBy: args.userId,
+            reason: "Accepted by employee",
+            before: fields ?? null,
+            after: fields ?? null
+          };
+        })
+      )
+      .execute();
+    return entries.map((entry) => entry.id);
   });
 }
 

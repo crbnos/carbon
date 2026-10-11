@@ -4470,10 +4470,18 @@ export async function upsertAccount(
   if ("createdBy" in account) {
     return client.from("account").insert([account]).select("*").single();
   }
-  const { companyGroupId: _companyGroupId, ...accountUpdate } = account;
+  // `allowability` is NOT NULL: an update without it keeps the stored value.
+  const {
+    companyGroupId: _companyGroupId,
+    allowability,
+    ...accountUpdate
+  } = account;
   return client
     .from("account")
-    .update(sanitize(accountUpdate))
+    .update({
+      ...sanitize(accountUpdate),
+      ...(allowability ? { allowability } : {})
+    })
     .eq("id", account.id)
     .select("id")
     .single();

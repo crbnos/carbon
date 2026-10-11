@@ -74,7 +74,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 12: Apply dilution in `post-timesheet`
 - [x] Task 13: Turn corrections into labor transfers
 - [x] Task 14: Add the validators
-- [ ] Task 15: Add the service functions
+- [x] Task 15: Add the service functions
 - [ ] Task 16: Route every timesheet write through the server functions
 - [ ] Task 17: Add Settings → Timekeeping
 - [ ] Task 18: Add allowability to the account drawer
@@ -1523,3 +1523,13 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   2. `restrictCharging` is `zfd.checkbox().optional()`, the shape of the other project checkboxes (`projectStock`). A bare `zfd.checkbox()` made the field required in 3 callers that build the type (`ProjectsTable`, `projects+/new`, `$projectId.details`).
   3. The settings validator exports `timekeepingControlsModes` and `timesheetTimecardChecks`, and the sales validator exports `CONTRACT_LINE_ITEM_NUMBER_PATTERN`. The forms in Tasks 17 and 26 use them.
   4. `pnpm run generate:mcp` changes the digest of the 7 tools whose validators changed.
+- Task 15:
+  1. The project inserts live in `projects.server.ts` (`createProject` and the project copy), not in `projects.service.ts`. Both now write `costObjective` and `restrictCharging`. `updateProject` and `upsertProject` already spread the validator's fields, so they needed no change.
+  2. `acceptTimesheetReview` also refuses an entry that is not in Pending Employee Review. Without it, the function could send a Posted entry back to Draft. Its revision stores the entry's fields as both `before` and `after`, because the table's check needs one of them and acceptance changes no field.
+  3. `upsertAccount` drops an empty `allowability` from the update. The column is NOT NULL, and `sanitize` turns an empty value into null.
+  4. `syncContractLineFunding` takes `(trx, { lineId, companyId, userId })`, not `(trx, lineId)`, so each query filters on `companyId` and the line update stamps `updatedBy`.
+  5. `upsertContractFunding` and `deleteContractFunding` throw on a refusal, as `createTimesheetCorrection` does. They lock the line with `FOR UPDATE`, and an update of a funding action filters on its line, so the action never moves to another line. They have no `@mcp` tag: they take `db`, and the route's permission check is the auth gate.
+  6. In DCAA mode, `upsertContractLine` also stops writing `fundedCost` and `fundedAmount` on an update. The plan names only `updateContractLineFunding`, but a line edit would otherwise overwrite the totals that the funding actions write.
+  7. A `parentLineId` needs the line's own number to be a SubCLIN. The parent must be a CLIN of the same contract with the same first 4 digits.
+  8. `saveTimesheetEntry` and `submitTimesheetWeek` return `{ data, error }`, with the refusal message as `error`.
+  9. `pnpm run generate:mcp` adds 7 tools: `projects_getProjectMembers`, `projects_addProjectMember`, `projects_removeProjectMember`, `projects_getTimesheetRevisions`, `projects_getPendingReviewEntries`, `sales_getContractFundingActions` and `settings_updateTimekeepingSettings`.

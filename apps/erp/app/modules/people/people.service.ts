@@ -660,6 +660,7 @@ export async function updateEmployeeJob(
       managerId: sanitized.managerId,
       laborCategoryId: sanitized.laborCategoryId,
       defaultStorageUnitId: sanitized.defaultStorageUnitId,
+      flsaStatus: sanitized.flsaStatus,
       ...("customFields" in sanitized
         ? { customFields: sanitized.customFields }
         : {}),

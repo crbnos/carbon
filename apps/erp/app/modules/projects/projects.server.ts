@@ -10,6 +10,8 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
+import type { SaveTimesheetEntryResult } from "@carbon/server-functions/save-timesheet-entry";
+import type { SubmitTimesheetWeekResult } from "@carbon/server-functions/submit-timesheet-week";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
@@ -129,6 +131,8 @@ export async function createProject(
         projectStock: args.projectStock ?? false,
         chargeAtReceipt: args.chargeAtReceipt ?? false,
         governmentFurnished: args.governmentFurnished ?? false,
+        costObjective: args.costObjective ?? null,
+        restrictCharging: args.restrictCharging ?? false,
         active: true,
         companyId: args.companyId,
         createdBy: args.userId
@@ -290,6 +294,8 @@ export async function copyProject(
         projectStock: args.projectStock ?? false,
         chargeAtReceipt: args.chargeAtReceipt ?? false,
         governmentFurnished: args.governmentFurnished ?? false,
+        costObjective: args.costObjective ?? null,
+        restrictCharging: args.restrictCharging ?? false,
         nextElementSequence: plan.nextElementSequence,
         active: true,
         companyId,
@@ -3661,6 +3667,83 @@ export async function postTimesheetEntries(args: {
     return posting.error.message || "Failed to post the time";
   }
   return null;
+}
+
+/**
+ * Saves one timesheet entry through the `save-timesheet-entry` server
+ * function, which applies the DCAA rules in one place for the ERP and the
+ * MES. Returns the saved entry, or the refusal message.
+ * System: the caller has already authorized the change.
+ */
+export async function saveTimesheetEntry(args: {
+  employeeId: string;
+  entryDate: string;
+  projectId: string;
+  projectElementId?: string | null;
+  laborCategoryId: string;
+  hours: number;
+  note?: string;
+  lateReason?: string;
+  reason?: string;
+  companyId: string;
+  userId: string;
+}): Promise<
+  | { data: SaveTimesheetEntryResult; error: null }
+  | { data: null; error: string }
+> {
+  const { companyId, userId, ...input } = args;
+  const saved = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("save-timesheet-entry", {
+      ...input,
+      projectElementId: input.projectElementId || null
+    });
+  if (saved.error || !saved.data) {
+    logger.error("Failed to save a timesheet entry", {
+      companyId,
+      employeeId: input.employeeId,
+      error: saved.error
+    });
+    return {
+      data: null,
+      error: saved.error?.message || "Failed to save the time"
+    };
+  }
+  return { data: saved.data, error: null };
+}
+
+/**
+ * Submits a week of an employee's timesheet through the
+ * `submit-timesheet-week` server function. DCAA mode also certifies it.
+ * Returns the submitted entry ids and the warnings, or the refusal message.
+ * System: the caller has already authorized the change.
+ */
+export async function submitTimesheetWeek(args: {
+  employeeId: string;
+  weekStart: string;
+  certificationText?: string;
+  companyId: string;
+  userId: string;
+}): Promise<
+  | { data: SubmitTimesheetWeekResult; error: null }
+  | { data: null; error: string }
+> {
+  const { companyId, userId, ...input } = args;
+  const submitted = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("submit-timesheet-week", input);
+  if (submitted.error || !submitted.data) {
+    logger.error("Failed to submit a timesheet week", {
+      companyId,
+      employeeId: input.employeeId,
+      error: submitted.error
+    });
+    return {
+      data: null,
+      error: submitted.error?.message || "Failed to submit the week"
+    };
+  }
+  return { data: submitted.data, error: null };
 }
 
 /**

@@ -20,7 +20,9 @@ import {
   defaultRentalRates,
   EPSILON,
   getSalesReturnOrderStatus,
-  round
+  parseLineItemNumber,
+  round,
+  sumFunding
 } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
 import type {
@@ -56,6 +58,7 @@ import type {
   customerAccountingValidator,
   customerBankAccountValidator,
   customerContactValidator,
+  customerContractFundingValidator,
   customerContractInvoiceAutomationValidator,
   customerContractLineValidator,
   customerContractValidator,
@@ -10210,6 +10213,15 @@ export async function upsertContractLine(
     );
   }
 
+  const numbering = await checkContractLineNumber(client, {
+    companyId,
+    customerContractId: line.customerContractId,
+    lineId: "id" in line ? line.id : null,
+    lineItemNumber: line.lineItemNumber || null,
+    parentLineId: line.parentLineId || null
+  });
+  if (numbering) return numbering;
+
   // A billing line has no schedule: quantity 1 at rate 0, One-time
   // (`customerContractLine_billing_check`). Its price comes from the items.
   const isBilling = isProjectBillingMethod(line.billingMethod);
@@ -10249,14 +10261,24 @@ export async function upsertContractLine(
       line.billingMethod === "Cost Plus" && line.feePercent !== undefined
         ? percentToFraction(line.feePercent)
         : null,
+    lineItemNumber: line.lineItemNumber || null,
+    parentLineId: line.parentLineId || null,
     ...contractLineFundingValues(isBilling ? line : {})
   };
 
   if ("id" in line) {
+    // In DCAA mode the funding actions own a line's funded cost and amount.
+    const fundedByActions = await isDcaaMode(client, companyId);
+    if (fundedByActions.error) return fundedByActions;
+    const {
+      fundedCost: _fundedCost,
+      fundedAmount: _fundedAmount,
+      ...rest
+    } = values;
     return client
       .from("customerContractLine")
       .update({
-        ...values,
+        ...(fundedByActions.data ? rest : values),
         updatedBy: line.updatedBy,
         updatedAt: datetime.timestamp()
       })
@@ -10294,6 +10316,274 @@ function contractLineFundingValues(funding: ContractLineFunding) {
     noticePercent: percentToFraction(funding.noticePercent ?? 75),
     noticeWindowDays: funding.noticeWindowDays ?? 60
   };
+}
+
+/** Whether the company runs DCAA timekeeping controls. */
+async function isDcaaMode(client: SupabaseClient<Database>, companyId: string) {
+  const settings = await client
+    .from("companySettings")
+    .select("timekeepingControls")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return { data: null, error: settings.error };
+  return {
+    data: settings.data?.timekeepingControls === "DCAA",
+    error: null
+  };
+}
+
+/**
+ * Checks a line's CLIN number and parent (Government Contracting 5a). A
+ * number is unique among the contract's current lines: a line that no other
+ * line names in `amendsLineId`. A SubCLIN's parent must be a CLIN with the
+ * same first 4 digits. Returns a refusal, or null.
+ */
+async function checkContractLineNumber(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    customerContractId: string;
+    lineId: string | null;
+    lineItemNumber: string | null;
+    parentLineId: string | null;
+  }
+) {
+  if (args.lineItemNumber) {
+    const sameNumber = await client
+      .from("customerContractLine")
+      .select("id")
+      .eq("companyId", args.companyId)
+      .eq("customerContractId", args.customerContractId)
+      .eq("lineItemNumber", args.lineItemNumber);
+    if (sameNumber.error) return { data: null, error: sameNumber.error };
+    const others = sameNumber.data
+      .map((row) => row.id)
+      .filter((id) => id !== args.lineId);
+    if (others.length > 0) {
+      const amended = await client
+        .from("customerContractLine")
+        .select("amendsLineId")
+        .eq("companyId", args.companyId)
+        .in("amendsLineId", others);
+      if (amended.error) return { data: null, error: amended.error };
+      const replaced = new Set(amended.data.map((row) => row.amendsLineId));
+      if (others.some((id) => !replaced.has(id))) {
+        return contractRefusal(
+          "CONTRACT_LINE_NUMBER_TAKEN",
+          `Another line of this contract has the number ${args.lineItemNumber}`
+        );
+      }
+    }
+  }
+
+  if (args.parentLineId) {
+    const own = args.lineItemNumber
+      ? parseLineItemNumber(args.lineItemNumber)
+      : null;
+    if (!own || own.type === "CLIN") {
+      return contractRefusal(
+        "CONTRACT_LINE_PARENT_NEEDS_SLIN",
+        "Only a SubCLIN has a parent line. Give the line a SubCLIN number"
+      );
+    }
+    const parent = await client
+      .from("customerContractLine")
+      .select("lineItemNumber")
+      .eq("id", args.parentLineId)
+      .eq("companyId", args.companyId)
+      .eq("customerContractId", args.customerContractId)
+      .maybeSingle();
+    if (parent.error) return { data: null, error: parent.error };
+    const parentNumber = parent.data?.lineItemNumber
+      ? parseLineItemNumber(parent.data.lineItemNumber)
+      : null;
+    if (parentNumber?.type !== "CLIN" || parentNumber.clin !== own.clin) {
+      return contractRefusal(
+        "CONTRACT_LINE_PARENT_NOT_CLIN",
+        `The parent line must be CLIN ${own.clin} of this contract`
+      );
+    }
+  }
+  return null;
+}
+
+/**
+ * Lists the funding actions (contract modifications) of billing lines, by
+ * funded date.
+ * @mcp read
+ */
+export async function getContractFundingActions(
+  client: SupabaseClient<Database>,
+  lineIds: string[],
+  companyId: string
+) {
+  if (lineIds.length === 0) return { data: [], error: null };
+  return client
+    .from("customerContractFunding")
+    .select("*")
+    .in("customerContractLineId", lineIds)
+    .eq("companyId", companyId)
+    .order("fundedDate", { ascending: true })
+    .order("acrn", { ascending: true });
+}
+
+/**
+ * Writes a line's `fundedCost` and `fundedAmount` from the sum of its
+ * funding actions (`sumFunding`). Runs in the caller's transaction.
+ */
+export async function syncContractLineFunding(
+  trx: KyselyTx,
+  args: { lineId: string; companyId: string; userId: string }
+) {
+  const rows = await trx
+    .selectFrom("customerContractFunding")
+    .select(["fundedCost", "fundedFee"])
+    .where("customerContractLineId", "=", args.lineId)
+    .where("companyId", "=", args.companyId)
+    .execute();
+  const totals = sumFunding(
+    rows.map((row) => ({
+      fundedCost: Number(row.fundedCost),
+      fundedFee: Number(row.fundedFee)
+    }))
+  );
+  await trx
+    .updateTable("customerContractLine")
+    .set({
+      fundedCost: totals.fundedCost,
+      fundedAmount: totals.fundedAmount,
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", args.lineId)
+    .where("companyId", "=", args.companyId)
+    .execute();
+}
+
+const CONTRACT_FUNDING_NOT_BILLING =
+  "Only a Time & Materials or Cost Plus line has funding actions";
+
+/** The line's billing method, read in the transaction; null if no line. */
+async function lockBillingLine(
+  trx: KyselyTx,
+  args: { lineId: string; companyId: string }
+) {
+  return trx
+    .selectFrom("customerContractLine")
+    .select(["id", "billingMethod"])
+    .where("id", "=", args.lineId)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+}
+
+/**
+ * Adds or changes a funding action on a billing line, then writes the line's
+ * funded totals, in one transaction. Refuses a Fixed line (decision P10). A
+ * funding action never moves to another line. Kysely bypasses RLS: the
+ * route's `sales_update` check is the auth gate.
+ */
+export async function upsertContractFunding(
+  db: Kysely<KyselyDatabase>,
+  args: z.infer<typeof customerContractFundingValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const line = await lockBillingLine(trx, {
+      lineId: args.customerContractLineId,
+      companyId: args.companyId
+    });
+    if (!line) throw new Error("The contract line does not exist");
+    if (!isProjectBillingMethod(line.billingMethod)) {
+      throw new Error(CONTRACT_FUNDING_NOT_BILLING);
+    }
+
+    const values = {
+      modificationNumber: args.modificationNumber,
+      fundedDate: args.fundedDate,
+      acrn: args.acrn,
+      fundedCost: args.fundedCost,
+      fundedFee: args.fundedFee,
+      expiresOn: args.expiresOn || null
+    };
+    let id: string;
+    if (args.id) {
+      const updated = await trx
+        .updateTable("customerContractFunding")
+        .set({
+          ...values,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.id)
+        .where("companyId", "=", args.companyId)
+        .where("customerContractLineId", "=", args.customerContractLineId)
+        .returning("id")
+        .executeTakeFirst();
+      if (!updated) throw new Error("The funding action does not exist");
+      id = updated.id;
+    } else {
+      const inserted = await trx
+        .insertInto("customerContractFunding")
+        .values({
+          ...values,
+          customerContractLineId: args.customerContractLineId,
+          companyId: args.companyId,
+          createdBy: args.userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      id = inserted.id;
+    }
+
+    await syncContractLineFunding(trx, {
+      lineId: args.customerContractLineId,
+      companyId: args.companyId,
+      userId: args.userId
+    });
+    return { id };
+  });
+}
+
+/**
+ * Deletes a funding action, then writes the line's funded totals, in one
+ * transaction. Refuses a Fixed line (decision P10). Kysely bypasses RLS: the
+ * route's `sales_delete` check is the auth gate.
+ */
+export async function deleteContractFunding(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const funding = await trx
+      .selectFrom("customerContractFunding")
+      .select("customerContractLineId")
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!funding) throw new Error("The funding action does not exist");
+    const line = await lockBillingLine(trx, {
+      lineId: funding.customerContractLineId,
+      companyId: args.companyId
+    });
+    if (!line || !isProjectBillingMethod(line.billingMethod)) {
+      throw new Error(CONTRACT_FUNDING_NOT_BILLING);
+    }
+
+    await trx
+      .deleteFrom("customerContractFunding")
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    await syncContractLineFunding(trx, {
+      lineId: funding.customerContractLineId,
+      companyId: args.companyId,
+      userId: args.userId
+    });
+    return { id: args.id };
+  });
 }
 
 /**
@@ -10454,10 +10744,20 @@ export async function updateContractLineFunding(
     );
   }
 
+  // In DCAA mode the funding actions own the funded cost and amount; this
+  // still writes the ceiling and the notice terms.
+  const fundedByActions = await isDcaaMode(client, args.companyId);
+  if (fundedByActions.error) return fundedByActions;
+  const {
+    fundedCost: _fundedCost,
+    fundedAmount: _fundedAmount,
+    ...terms
+  } = contractLineFundingValues(args);
+
   return client
     .from("customerContractLine")
     .update({
-      ...contractLineFundingValues(args),
+      ...(fundedByActions.data ? terms : contractLineFundingValues(args)),
       updatedBy: args.updatedBy,
       updatedAt: datetime.timestamp()
     })
