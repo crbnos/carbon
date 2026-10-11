@@ -200,6 +200,9 @@ and a Transfer re-costed at cost) and the `splitOpeningLayersByStripe` and
 
 ### Open questions for Brad
 
+Brad, 2026-10-11: recommendations accepted. Questions 1 to 4 are resolved
+below, each with its commit and its test. Question 5 was fixed before.
+
 1. **Project and service WIP on the WIP control account.** The WIP account
    is a control account. Its opening reads only per-job lines
    (`getWorkInProgressItems`). Two kinds of project cost also post to it:
@@ -216,6 +219,15 @@ and a Transfer re-costed at cost) and the `splitOpeningLayersByStripe` and
    amount is the sum of the WIP-account lines dated before the cutover whose
    document is not a job, minus the Cost Relief rows dated before the
    cutover that credit the WIP account (step 5 posts them with no journal).
+   **Resolved (Brad, 2026-10-11: recommendations accepted).** `getWorkInProgressItems`
+   (`accounting-cutover/open-items.ts`) adds one "Work in Progress" item with no
+   document, description "WIP Account (projects and service)": the WIP-account lines
+   dated before the cutover whose `documentId` is not a job, less the Planned (or
+   Posted with no journal) Cost Relief rows dated before the cutover that credit the
+   WIP account. No job reader sums a line with no document. Commit `b5cf4c65a8`.
+   Test: `activate-accounting/project-wip.test.ts` (the enable balances with no
+   Migration Clearing difference, and a Cost Relief after the cutover leaves WIP at
+   zero).
 2. **Fixed asset cost at the cutover.** `getCutoverFixedAssets` reads
    today's `acquisitionCost` and today's class. A CIP cost dated on or after
    the cutover raises `acquisitionCost`, and its promoted journal posts it
@@ -224,17 +236,44 @@ and a Transfer re-costed at cost) and the `splitOpeningLayersByStripe` and
    cost charged to a Capitalize project after the cutover shows this. Main's
    job CIP shows it too. Recommendation: subtract the `fixedAssetCipCost`
    rows dated on or after the cutover, and use the class at the cutover.
+   **Resolved (Brad, 2026-10-11: recommendations accepted).** `getCutoverFixedAssets`
+   takes the `fixedAssetCipCost` rows with `costDate` on or after the cutover out of
+   `acquisitionCost`, reads the class (and its two accounts) from the `fromClassId` of
+   the first Posted capitalization transfer dated on or after the cutover, and keeps
+   an asset capitalized on or after the cutover (a capitalization moves
+   `acquisitionDate` to the in-service date, which dropped the asset). This covers
+   main's job CIP too. Commit `81392d3d0c`. Test:
+   `activate-accounting/fixed-asset-cip.test.ts`.
 3. **Re-cost of a project issue.** The re-cost adjusts the issue's journal
    (the project account against inventory). It changes no `projectLedger`
    row, billable item or `fixedAssetCipCost` row. So Cost Plus billing, the
    project cost summary and CIP capitalization keep the old cost. Should the
    re-cost also write a `projectLedger` adjustment row (quantity 0) and a CIP
    row?
+   **Resolved (Brad, 2026-10-11: recommendations accepted).** `recostProjectIssues`
+   (`activate-accounting/recost.ts`) writes one `projectLedger` row per re-costed
+   issue: quantity 0, the cost difference, the issue's project, element, cost type
+   and `documentId`, and `journalLineId` = the re-cost journal's project-account
+   line (`postRecostJournals` now returns it). It goes through
+   `insertProjectLedgerRows`, so a Time & Materials line bills it; the Cost Plus
+   generator reads it like any row. A Capitalize issue also gets a
+   `fixedAssetCipCost` row on the same asset (`writeProjectCipRows` raises
+   `acquisitionCost`). The issue's cost rows and its ledger row share `createdAt`
+   (one transaction), which with the project, item and date finds the ledger row of
+   each cost row. Commit `c008470da5`. Tests:
+   `activate-accounting/project-recost.test.ts` (Capitalize: the ledger row and the
+   CIP row) and `packages/ee/src/project-revenue/cutover-recost.test.ts` (Cost Plus
+   items and `get_project_cost_summary` show 50.00, not 40.00).
 4. **Re-cost of a project stock Payback.** A Payback returns the lender's
    cost at `borrowedUnitCost` and books the difference as Payback Variance.
    A re-cost would have to move the lender layers, the variance journal and
    the Payback Variance ledger row. The enable now refuses instead. Is a
    refusal right, or should the re-cost rebuild the payback?
+   **Resolved (Brad, 2026-10-11: recommendations accepted).** The refusal stays. The
+   409 (`paybackRecostRefusal`) names the transfer by its readable id and posting
+   date, says that a payback cannot be re-costed, and asks for a cutover date after
+   it. Commit `014cf941cd`. Test: `activate-accounting/project-stripes.test.ts`
+   ("the enable refuses a payback after the cutover …").
 5. **A Project Issue is never relieved.** `post-project-issue` writes its
    `projectLedger` row with no `journalLineId`. `selectUnrelievedCost` joins
    the journal line to find a WIP (Asset) account. So a material issue to a

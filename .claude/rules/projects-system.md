@@ -98,6 +98,26 @@ Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
   An empty project or warranty default refuses in every state (`ProjectChargeError`), so
   the cutover readiness lets those stay empty (`FEATURE_ACCOUNT_DEFAULTS`).
 
+## The accounting cutover
+
+Brad's decisions of 2026-10-11 (`.ai/runs/2026-10-11-merge-origin-main.md`,
+*Open questions for Brad*):
+
+- **Opening WIP.** Project and service cost on `workInProgressAccount` that is not a
+  job's (a Contract project whose Project WIP is the WIP account, a Refurbishment
+  charge with Capitalized coverage) opens as ONE "Work in Progress" item with no
+  document (`getWorkInProgressItems`, `accounting-cutover/open-items.ts`): the
+  non-job WIP lines before the cutover, less the Cost Relief rows before it that
+  credit the WIP account (the enable's step 5 posts those with no journal).
+- **Fixed assets.** `getCutoverFixedAssets` values an asset as it stood at the
+  cutover: less its `fixedAssetCipCost` rows dated on or after it, in the class the
+  first capitalization on or after it moved the asset from (`fromClassId`).
+- **Re-cost of a project issue.** `recostProjectIssues` (`activate-accounting/recost.ts`)
+  writes a `projectLedger` adjustment row (quantity 0, the cost difference,
+  `journalLineId` = the re-cost's project line) through `insertProjectLedgerRows`,
+  and a `fixedAssetCipCost` row for a Capitalize project.
+- **Payback.** Still refused (see *Project stock*).
+
 ## Charge gates
 
 `assertChargeable(ctx, mode)` refuses with a `ProjectChargeError` (status 422):
@@ -224,7 +244,9 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   stripe at the item's unit cost (`splitOpeningLayersByStripe`), and the re-cost replays
   each stripe as its own pool. A Transfer or Borrow after the cutover opens its layer at
   the re-costed cost of the stock it drew, with no journal. A Payback whose cost changes
-  refuses the enable (`activate-accounting/recost.ts`).
+  refuses the enable with a 409 that names the transfer and its date
+  (`paybackRecostRefusal`, `activate-accounting/recost.ts`): the lender layers, the
+  variance journal and the Payback Variance row cannot move with it.
 - **Issue to Project.** `post-project-issue` splits an untracked issue across the project's
   stripes at the bin (`splitAcrossStripes`), one `bookAdjustment` per stripe sharing one
   journal and one `projectLedger` row. A Return goes back to the project's stock.

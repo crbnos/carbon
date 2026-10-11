@@ -93,7 +93,7 @@ Brad resolved 4 items on 2026-10-10, so they are gone from this list:
 Open:
 - A receipt still makes an inspection lot for a stocked item that the project consumes at receipt (Phase 1a Task 21).
 - Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts`, `get-accounting-period.test.ts` and `calculate-cogs.test.ts` fail sometimes in full runs and pass alone.
-- The merge with main left 5 open questions on the accounting cutover. `.ai/runs/2026-10-11-merge-origin-main.md` → *Open questions for Brad* lists them.
+- ~~The merge with main left 5 open questions on the accounting cutover.~~ Resolved: question 5 was fixed earlier, and Brad accepted the recommendations for 1 to 4 on 2026-10-11 (`b5cf4c65a8`, `81392d3d0c`, `c008470da5`, `014cf941cd`). `.ai/runs/2026-10-11-merge-origin-main.md` → *Open questions for Brad* records each one.
 - `shouldRevalidate` on the Elements route skips the reload after a preference save (Phase 1b Task 21), and the Tree canvas adds a skip on a `root` change (Task 6). Brad to confirm both against `coding-conventions.md`.
 - `Template.tsx` in `packages/documents` (Ask First) now passes its font to children, so italic text cannot crash a PDF (Phase 1b Task 20).
 - Restoring a backup into another company does not rewrite ids inside the baseline snapshot and change request JSON columns (Phase 1c).
