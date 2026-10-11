@@ -80,8 +80,11 @@ export async function projectBillingTestFixture(
       .execute();
     await trx
       .insertInto("companySettings")
-      .values({ id: companyId })
-      .onConflict((oc) => oc.column("id").doNothing())
+      // Revenue recognition runs need an accounting cutover.
+      .values({ id: companyId, accountingCutoverDate: "2000-01-01" })
+      .onConflict((oc) =>
+        oc.column("id").doUpdateSet({ accountingCutoverDate: "2000-01-01" })
+      )
       .execute();
     await trx
       .insertInto("sequence")

@@ -128,6 +128,7 @@ describe("buildPurchaseInvoicePostingLines", () => {
         Location: "loc-1",
         CostCenter: null,
         Project: null,
+        ProjectElement: null,
         Process: null,
         FixedAssetClass: null
       });
