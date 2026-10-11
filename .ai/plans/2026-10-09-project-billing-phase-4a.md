@@ -64,7 +64,7 @@ These correct or add to the spec. Task 20 records them there.
 - [x] Task 2: Create the project billing migration
 - [x] Task 3: Apply migrations, regenerate types, ship RLS and the enum mirrors
 - [x] Task 4: Add the pure billing helpers
-- [ ] Task 5: Add the commercial project revenue module and Cost Plus pricing
+- [x] Task 5: Add the commercial project revenue module and Cost Plus pricing
 - [ ] Task 6: Keep billing lines out of the contract schedule
 - [ ] Task 7: Validate billing lines at confirm and amend
 - [ ] Task 8: Write T&M billable items at posting
@@ -1079,3 +1079,4 @@ ls .ai/playbooks/project-billing-phase-4a.md
 - Task 3: `/translate` was not run (branch practice: once before the PR).
 - Task 4: `ProjectCostsTree` no longer computes the estimate; `buildProjectCostFigures` in `projects.models.ts` does, through its own `estimateAtCompletion`. That function moved to `@carbon/utils` unchanged, and `projects.models.ts` imports and re-exports it, so the Costs tab and the funding notice share one copy. `ProjectCostsTree.tsx` is unchanged.
 - Task 4: `priceTimeAndMaterialsItem` takes `{ costType, cost, hours, rate, materialHandlingPercent }` (the rate already resolved by `resolveBillRate`). `planProjectInvoiceLines` applies rule 4 (0 hours → quantity 1 at the amount) to every hourly group, which also covers a group whose items net to 0. `selectRowsToBill` takes any `{ has(id) }` (a `Set` or a `Map`). `PROJECT_COST_TYPE_ORDER` is exported for the line order.
+- Task 5: `generateCostPlusItems` takes `Kysely<KyselyDatabase>` (a `KyselyTx` is one) and uses `db.isTransaction` to decide whether to open a transaction. It reads the subtree ledger rows with one SQL join through `get_contract_line_subtree` (lines, rows, items: 3 reads), and inserts in batches of 1,000 rows. An item's description is `<cost type> — <document type>`, and its `itemId` is the ledger row's. A Labor row with 0 hours prices as quantity 1. No database test: the generator's gate reads the plan through the service role, which needs the server env in a test process; Tasks 9 and 13 exercise it.

@@ -37,7 +37,9 @@ export const FEATURE_PLANS = {
   BACKUPS: [Plan.Business, Plan.Partner],
   // Projects Phase 3: planning groups pool projects with project stock into
   // one MRP netting segment, with live pegging and distribution at receipt.
-  PLANNING_GROUPS: [Plan.Business, Plan.Partner]
+  PLANNING_GROUPS: [Plan.Business, Plan.Partner],
+  // Cost Plus billing, Percent Complete revenue and the contract loss provision.
+  PROJECT_REVENUE: [Plan.Business, Plan.Partner]
 } as const satisfies Record<string, Plan[]>;
 
 export type Feature = keyof typeof FEATURE_PLANS;
