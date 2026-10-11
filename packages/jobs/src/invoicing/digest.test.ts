@@ -75,6 +75,36 @@ describe("buildRecurringInvoicingDigests", () => {
     ]);
   });
 
+  it("counts lease drafts apart from posted invoices and links them", () => {
+    expect(
+      buildRecurringInvoicingDigests(
+        [
+          { invoiceId: "pi-1", sourceId: "lease-1", outcome: "drafted" },
+          { invoiceId: "pi-2", sourceId: "lease-1", outcome: "drafted" },
+          { invoiceId: "inv-9", sourceId: "ra-1", outcome: "posted" }
+        ],
+        owners,
+        ["group-ap"]
+      ).at(-1)
+    ).toEqual({
+      recipient: { type: "group", groupIds: ["group-ap"] },
+      body: "1 posted, 0 emailed, 0 need review, 2 drafted",
+      documentIds: ["pi-1", "pi-2"]
+    });
+  });
+
+  it("still leads with what needs review when drafts are waiting too", () => {
+    const [digest] = buildRecurringInvoicingDigests(
+      [
+        { invoiceId: "pi-1", sourceId: "ra-1", outcome: "drafted" },
+        { invoiceId: "inv-2", sourceId: "ra-1", outcome: "held" }
+      ],
+      owners,
+      []
+    );
+    expect(digest!.documentIds).toEqual(["inv-2"]);
+  });
+
   it("sends nothing when there is nothing to report", () => {
     expect(buildRecurringInvoicingDigests([], owners, ["group-ar"])).toEqual(
       []

@@ -989,6 +989,9 @@ msgstr "작업 지시의 시작일이 변경됨"
 msgid "A job's status changes"
 msgstr "작업의 상태가 변경됨"
 
+msgid "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
+msgstr ""
+
 msgid "A lease must be in the company's base currency to be activated."
 msgstr ""
 
@@ -1221,9 +1224,6 @@ msgstr "입고의 공급업체가 변경됩니다."
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "임차 계약을 활성화하려면 회사의 기본 통화여야 합니다. 먼저 계약 통화를 변경하세요."
-
-msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
-msgstr "임차 라인은 ASC 842 테스트 중 하나라도 충족되면 판매-유형 리스입니다. 이 임계값들은 테스트 (c)와 (d)를 설정합니다. 할인율은 새로운 임차료 계약의 기본값입니다."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "5개의 ASC 842 리스 테스트 중 하나라도 충족하는 임차로, 계약이 발효될 때 판매로 기록됩니다. 장비가 함대를 떠나고, 임차 매출과 매출원가가 전기되며, 리스에 대한 순투자가 그 자리를 차지합니다."
@@ -6647,6 +6647,9 @@ msgstr "도입 후 일상적인 질문 대응 및 하이퍼케어"
 msgid "Days"
 msgstr "일"
 
+msgid "Days before a lease's notice or end date that its owner is reminded."
+msgstr ""
+
 msgid "Days Discount"
 msgstr "할인 일수"
 
@@ -6808,9 +6811,6 @@ msgstr "기본 참조자"
 
 msgid "Default CC Recipients"
 msgstr "기본 참조(CC) 수신자"
-
-msgid "Default Discount Rate (%)"
-msgstr "기본 할인율 (%)"
 
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "고정자산 처분으로 이익이 발생할 때 입금되는 기본 GL 계정입니다."
@@ -11013,6 +11013,9 @@ msgstr "작업 지시 {target}을(를) {amount}로 증가"
 msgid "Increase purchase order {target} to {amount}"
 msgstr "발주서 {target}을(를) {amount}로 증가"
 
+msgid "Incremental Borrowing Rate (%)"
+msgstr ""
+
 msgid "Indirect"
 msgstr "간접"
 
@@ -11980,6 +11983,9 @@ msgstr ""
 msgid "Lease Liability:"
 msgstr ""
 
+msgid "Lease Reminder Days"
+msgstr ""
+
 msgid "Lease Revenue"
 msgstr "리스 매출"
 
@@ -11999,6 +12005,9 @@ msgid "Leases"
 msgstr ""
 
 msgid "Leases (Lessee)"
+msgstr ""
+
+msgid "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
 msgstr ""
 
 msgid "Leave any related receipts untouched"
@@ -12044,6 +12053,9 @@ msgid "Less overtime"
 msgstr "초과 근무 감소"
 
 msgid "Lessor"
+msgstr ""
+
+msgid "Lessor Discount Rate (%)"
 msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
@@ -19969,6 +19981,9 @@ msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
 msgid "Short-Term"
+msgstr ""
+
+msgid "Short-Term Lease Expedient"
 msgstr ""
 
 msgid "Shortcuts"

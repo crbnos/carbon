@@ -989,6 +989,9 @@ msgstr "İş emrinin başlangıç tarihi değişiyor"
 msgid "A job's status changes"
 msgstr "Bir işin durumu değiştirildi"
 
+msgid "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
+msgstr ""
+
 msgid "A lease must be in the company's base currency to be activated."
 msgstr ""
 
@@ -1221,9 +1224,6 @@ msgstr "Makbuzun tedarikçisi değişti"
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Bir kira sözleşmesi, etkinleştirilmek için şirketin temel para biriminde olmalıdır. Önce sözleşmenin para birimini değiştirin."
-
-msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
-msgstr "Bir kiralama satırı, herhangi bir ASC 842 testi karşılandığında satış tipi kiralama olur. Bu eşikler testleri (c) ve (d) ayarlar; iskonto oranı yeni kiralama sözleşmeleri için varsayılandır."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Beş ASC 842 kira testinden herhangi birini karşılayan bir kiralama, sözleşmesi etkinleştirildiğinde satış olarak muhasebeleştirilen: birim filo ayrılır, kira hasılatı ve satılan malın maliyeti muhasebeleştirilir ve kiralamada net yatırım yerini alır."
@@ -6647,6 +6647,9 @@ msgstr "Günlük sorular ve başlatmadan sonra hiper bakım"
 msgid "Days"
 msgstr "Günler"
 
+msgid "Days before a lease's notice or end date that its owner is reminded."
+msgstr ""
+
 msgid "Days Discount"
 msgstr "İskonto Günleri"
 
@@ -6808,9 +6811,6 @@ msgstr "Varsayılan cc"
 
 msgid "Default CC Recipients"
 msgstr "Varsayılan Bilgi Ekleyicileri"
-
-msgid "Default Discount Rate (%)"
-msgstr "Varsayılan İskonto Oranı (%)"
 
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Sabit bir varlığın elden çıkarılması sonucunda kar elde edildiğinde alacak kaydedilen varsayılan GL hesabı."
@@ -11013,6 +11013,9 @@ msgstr "{target} iş emrini {amount}'ye artır"
 msgid "Increase purchase order {target} to {amount}"
 msgstr "{target} satın alma siparişini {amount}'ye artır"
 
+msgid "Incremental Borrowing Rate (%)"
+msgstr ""
+
 msgid "Indirect"
 msgstr "Dolaylı"
 
@@ -11980,6 +11983,9 @@ msgstr ""
 msgid "Lease Liability:"
 msgstr ""
 
+msgid "Lease Reminder Days"
+msgstr ""
+
 msgid "Lease Revenue"
 msgstr "Finansal Kiralama Hasılat"
 
@@ -11999,6 +12005,9 @@ msgid "Leases"
 msgstr ""
 
 msgid "Leases (Lessee)"
+msgstr ""
+
+msgid "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
 msgstr ""
 
 msgid "Leave any related receipts untouched"
@@ -12044,6 +12053,9 @@ msgid "Less overtime"
 msgstr "Daha az fazla mesai"
 
 msgid "Lessor"
+msgstr ""
+
+msgid "Lessor Discount Rate (%)"
 msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
@@ -19969,6 +19981,9 @@ msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
 msgid "Short-Term"
+msgstr ""
+
+msgid "Short-Term Lease Expedient"
 msgstr ""
 
 msgid "Shortcuts"

@@ -989,6 +989,9 @@ msgstr "Data rozpoczęcia zadania zmienia się"
 msgid "A job's status changes"
 msgstr "Status zadania zmienia się"
 
+msgid "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
+msgstr ""
+
 msgid "A lease must be in the company's base currency to be activated."
 msgstr ""
 
@@ -1221,9 +1224,6 @@ msgstr "Dostawca rachunku zmienia się"
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Umowa wynajmu musi być w bazowej walucie firmy, aby mogła być aktywowana. Najpierw zmień walutę umowy."
-
-msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
-msgstr "Pozycja wynajmu jest leasingiem sprzedażowym, gdy spełniony jest którykolwiek test ASC 842. Te progi ustawiają testy (c) i (d); stopa dyskontowa jest wartością domyślną dla nowych umów wynajmu."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Wynajem spełniający którykolwiek z pięciu testów leasingu ASC 842, zaksięgowany jako sprzedaż, gdy jego umowa się aktywuje: jednostka opuszcza flotę, przychody ze sprzedaży i koszt własny sprzedaży są zaksięgowane, a na ich miejsce pojawia się inwestycja netto w leasing."
@@ -6647,6 +6647,9 @@ msgstr "Codzienne pytania i wsparcie po uruchomieniu"
 msgid "Days"
 msgstr "Dni"
 
+msgid "Days before a lease's notice or end date that its owner is reminded."
+msgstr ""
+
 msgid "Days Discount"
 msgstr "Dni rabatu"
 
@@ -6808,9 +6811,6 @@ msgstr "Domyślny CC"
 
 msgid "Default CC Recipients"
 msgstr "Domyślni odbiorcy DW"
-
-msgid "Default Discount Rate (%)"
-msgstr "Domyślna stopa dyskontowa (%)"
 
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Domyślne Konto księgowe kredytowane, gdy Likwidacja środka trwałego skutkuje zyskiem."
@@ -11013,6 +11013,9 @@ msgstr "Zwiększ zlecenie produkcyjne {target} do {amount}"
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Zwiększ zamówienie zakupu {target} do {amount}"
 
+msgid "Incremental Borrowing Rate (%)"
+msgstr ""
+
 msgid "Indirect"
 msgstr "Pośredni"
 
@@ -11980,6 +11983,9 @@ msgstr ""
 msgid "Lease Liability:"
 msgstr ""
 
+msgid "Lease Reminder Days"
+msgstr ""
+
 msgid "Lease Revenue"
 msgstr "Przychód z dzierżawy"
 
@@ -11999,6 +12005,9 @@ msgid "Leases"
 msgstr ""
 
 msgid "Leases (Lessee)"
+msgstr ""
+
+msgid "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
 msgstr ""
 
 msgid "Leave any related receipts untouched"
@@ -12044,6 +12053,9 @@ msgid "Less overtime"
 msgstr "Mniej nadgodzin"
 
 msgid "Lessor"
+msgstr ""
+
+msgid "Lessor Discount Rate (%)"
 msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
@@ -19969,6 +19981,9 @@ msgid "Short pick {itemName}"
 msgstr "Niedozbór {itemName}"
 
 msgid "Short-Term"
+msgstr ""
+
+msgid "Short-Term Lease Expedient"
 msgstr ""
 
 msgid "Shortcuts"

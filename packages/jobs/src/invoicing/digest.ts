@@ -4,12 +4,20 @@
 
 // Who hears about a recurring-billing run, and what they hear. Every source
 // document's owner (an agreement's salesperson, else its creator) gets one
-// digest over THEIR invoices with no setup; the company's "Also notify" group
+// digest over THEIR invoices with no setup (a lease's owner is its assignee,
+// else its creator); the company's "Also notify" group
 // gets one digest over all of them. An owner who is also in that group gets
 // only the company digest, never both.
 // Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II (plan decision 9)
 
-export type InvoiceRunOutcome = "posted" | "emailed" | "held" | "unsent";
+/** `drafted`: a lease's purchase invoice, left Draft for the buyer to add the
+ *  supplier's invoice number and post. */
+export type InvoiceRunOutcome =
+  | "posted"
+  | "emailed"
+  | "held"
+  | "unsent"
+  | "drafted";
 
 export type InvoiceRunResult = {
   invoiceId: string;
@@ -28,15 +36,25 @@ export type RecurringInvoicingDigest = {
 
 function summarize(results: InvoiceRunResult[]) {
   // An emailed or unsent invoice was posted too.
-  const posted = results.filter((r) => r.outcome !== "held");
+  const posted = results.filter(
+    (r) => r.outcome !== "held" && r.outcome !== "drafted"
+  );
   const emailed = results.filter((r) => r.outcome === "emailed");
   const review = results.filter(
     (r) => r.outcome === "held" || r.outcome === "unsent"
   );
+  const drafted = results.filter((r) => r.outcome === "drafted");
+  const counts = `${posted.length} posted, ${emailed.length} emailed, ${review.length} need review`;
   return {
-    body: `${posted.length} posted, ${emailed.length} emailed, ${review.length} need review`,
-    // What needs a person first; else what was posted (notify needs an id).
-    documentIds: (review.length > 0 ? review : posted).map((r) => r.invoiceId)
+    body: drafted.length > 0 ? `${counts}, ${drafted.length} drafted` : counts,
+    // What needs a person first, then the drafts waiting for one; else what
+    // was posted (notify needs an id).
+    documentIds: (review.length > 0
+      ? review
+      : drafted.length > 0
+        ? drafted
+        : posted
+    ).map((r) => r.invoiceId)
   };
 }
 

@@ -989,6 +989,9 @@ msgstr "ジョブの開始日が変更されました"
 msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
 
+msgid "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
+msgstr ""
+
 msgid "A lease must be in the company's base currency to be activated."
 msgstr ""
 
@@ -1221,9 +1224,6 @@ msgstr "領収書の仕入先が変更される"
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "レンタル契約を有効化するには、会社の基本通貨である必要があります。契約通貨を先に変更してください。"
-
-msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
-msgstr "リース明細は、いずれかのASC 842テストが満たされた場合にセールスタイプリースとなります。これらの閾値はテスト(c)および(d)を設定します。割引率は新規賃貸借契約のデフォルト値です。"
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "5つのASC 842リーステストのいずれかを満たし、その契約が開始する際に販売としてブックされたリース。資産はフリートから除外され、リース売上高および売上原価が転記され、そのリースに対する純投資がその場所に記入されます。"
@@ -6647,6 +6647,9 @@ msgstr "日々の質問とローンチ後のハイパーケア"
 msgid "Days"
 msgstr "日数"
 
+msgid "Days before a lease's notice or end date that its owner is reminded."
+msgstr ""
+
 msgid "Days Discount"
 msgstr "値引日数"
 
@@ -6808,9 +6811,6 @@ msgstr "デフォルトCC"
 
 msgid "Default CC Recipients"
 msgstr "デフォルトCC受信者"
-
-msgid "Default Discount Rate (%)"
-msgstr "デフォルト割引率 (%)"
 
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "固定資産の除却により利益が生じた場合にクレジットされるデフォルト勘定科目"
@@ -11013,6 +11013,9 @@ msgstr "製造指図{target}を{amount}に増加"
 msgid "Increase purchase order {target} to {amount}"
 msgstr "発注書{target}を{amount}に増加"
 
+msgid "Incremental Borrowing Rate (%)"
+msgstr ""
+
 msgid "Indirect"
 msgstr "間接"
 
@@ -11980,6 +11983,9 @@ msgstr ""
 msgid "Lease Liability:"
 msgstr ""
 
+msgid "Lease Reminder Days"
+msgstr ""
+
 msgid "Lease Revenue"
 msgstr "リース売上高"
 
@@ -11999,6 +12005,9 @@ msgid "Leases"
 msgstr ""
 
 msgid "Leases (Lessee)"
+msgstr ""
+
+msgid "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
 msgstr ""
 
 msgid "Leave any related receipts untouched"
@@ -12044,6 +12053,9 @@ msgid "Less overtime"
 msgstr "残業を減らす"
 
 msgid "Lessor"
+msgstr ""
+
+msgid "Lessor Discount Rate (%)"
 msgstr ""
 
 msgid "Let members sign in through your identity provider with SAML."
@@ -19969,6 +19981,9 @@ msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
 msgid "Short-Term"
+msgstr ""
+
+msgid "Short-Term Lease Expedient"
 msgstr ""
 
 msgid "Shortcuts"

@@ -1362,6 +1362,36 @@ async function buildEventContent(
       };
     }
 
+    // The recurring-billing job says which date is coming up in `body`
+    // ("notice must be given by Jun 30, 2027"); the lease names the rest.
+    case NotificationEvent.LeaseCriticalDate: {
+      const lease = await client
+        .from("lease")
+        .select("leaseId, name, noticeDate, endDate, supplier(name)")
+        .eq("id", documentId)
+        .eq("companyId", opts.companyId)
+        .single();
+      if (lease.error) {
+        console.error("Failed to get lease", lease.error);
+        throw documentLookupError(lease.error);
+      }
+      return {
+        description: opts?.body
+          ? `Lease ${lease.data.leaseId}: ${opts.body}`
+          : `Lease ${lease.data.leaseId} has a date coming up`,
+        reference: lease.data.leaseId ?? undefined,
+        details: buildDetails([
+          { label: "Lease", value: lease.data.name },
+          { label: "Supplier", value: lease.data.supplier?.name },
+          {
+            label: "Notice by",
+            value: formatDetailDate(lease.data.noticeDate)
+          },
+          { label: "Ends", value: formatDetailDate(lease.data.endDate) }
+        ])
+      };
+    }
+
     // Payload-carried digest: the recurring-billing job sends the counts as
     // `body`; documentIds are the invoices it touched, but nothing is read.
     case NotificationEvent.RecurringInvoicing: {

@@ -97,8 +97,14 @@ function resolve(
       return path.to.suggestion(documentId);
     case NotificationEvent.RecurringInvoicing:
       // documentId is only the digest's first invoice; land on the list of
-      // invoices that need review (same target as the topbar row).
-      return `${path.to.invoicingSales}?filter=needsReview:eq:true`;
+      // invoices that need review (same target as the topbar row). The digest
+      // leads with what needs review, so a purchase invoice first means only
+      // lease drafts are waiting.
+      return documentId.startsWith("pi_")
+        ? `${path.to.invoicingPurchasing}?filter=status:eq:Draft`
+        : `${path.to.invoicingSales}?filter=needsReview:eq:true`;
+    case NotificationEvent.LeaseCriticalDate:
+      return path.to.leaseDetails(documentId);
     case NotificationEvent.Workflow:
       return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:

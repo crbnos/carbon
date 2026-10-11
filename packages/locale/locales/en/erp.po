@@ -989,6 +989,9 @@ msgstr "A job's start date changes"
 msgid "A job's status changes"
 msgstr "A job's status changes"
 
+msgid "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
+msgstr "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
+
 msgid "A lease must be in the company's base currency to be activated."
 msgstr "A lease must be in the company's base currency to be activated."
 
@@ -1221,9 +1224,6 @@ msgstr "A receipt's supplier changes"
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
-
-msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
-msgstr "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
@@ -6647,6 +6647,9 @@ msgstr "Day-to-day questions and hypercare after launch"
 msgid "Days"
 msgstr "Days"
 
+msgid "Days before a lease's notice or end date that its owner is reminded."
+msgstr "Days before a lease's notice or end date that its owner is reminded."
+
 msgid "Days Discount"
 msgstr "Days Discount"
 
@@ -6808,9 +6811,6 @@ msgstr "Default cc"
 
 msgid "Default CC Recipients"
 msgstr "Default CC Recipients"
-
-msgid "Default Discount Rate (%)"
-msgstr "Default Discount Rate (%)"
 
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "Default GL account credited when a fixed-asset disposal results in a gain."
@@ -11013,6 +11013,9 @@ msgstr "Increase job {target} to {amount}"
 msgid "Increase purchase order {target} to {amount}"
 msgstr "Increase purchase order {target} to {amount}"
 
+msgid "Incremental Borrowing Rate (%)"
+msgstr "Incremental Borrowing Rate (%)"
+
 msgid "Indirect"
 msgstr "Indirect"
 
@@ -11980,6 +11983,9 @@ msgstr "Lease Liability"
 msgid "Lease Liability:"
 msgstr "Lease Liability:"
 
+msgid "Lease Reminder Days"
+msgstr "Lease Reminder Days"
+
 msgid "Lease Revenue"
 msgstr "Lease Revenue"
 
@@ -12000,6 +12006,9 @@ msgstr "Leases"
 
 msgid "Leases (Lessee)"
 msgstr "Leases (Lessee)"
+
+msgid "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
+msgstr "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
 
 msgid "Leave any related receipts untouched"
 msgstr "Leave any related receipts untouched"
@@ -12045,6 +12054,9 @@ msgstr "Less overtime"
 
 msgid "Lessor"
 msgstr "Lessor"
+
+msgid "Lessor Discount Rate (%)"
+msgstr "Lessor Discount Rate (%)"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "Let members sign in through your identity provider with SAML."
@@ -19970,6 +19982,9 @@ msgstr "Short pick {itemName}"
 
 msgid "Short-Term"
 msgstr "Short-Term"
+
+msgid "Short-Term Lease Expedient"
+msgstr "Short-Term Lease Expedient"
 
 msgid "Shortcuts"
 msgstr "Shortcuts"

@@ -25,6 +25,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
   LuBell,
+  LuCalendarClock,
   LuCalendarX,
   LuChevronDown,
   LuChevronUp,
@@ -354,11 +355,24 @@ function GenericNotification({
       );
     case NotificationEvent.RecurringInvoicing:
       // The description carries the digest's counts; id is only the first
-      // invoice, so land on the invoices that need review instead.
+      // invoice, so land on the invoices that need review instead. A purchase
+      // invoice first means only lease drafts are waiting (see api+/link).
       return (
         <Notification
           icon={<LuDollarSign />}
-          to={`${path.to.invoicingSales}?filter=needsReview:eq:true`}
+          to={
+            id.startsWith("pi_")
+              ? `${path.to.invoicingPurchasing}?filter=status:eq:Draft`
+              : `${path.to.invoicingSales}?filter=needsReview:eq:true`
+          }
+          {...props}
+        />
+      );
+    case NotificationEvent.LeaseCriticalDate:
+      return (
+        <Notification
+          icon={<LuCalendarClock />}
+          to={path.to.leaseDetails(id)}
           {...props}
         />
       );
