@@ -5560,6 +5560,9 @@ msgstr "Bileşenler"
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "Bu adım oynarken yalnızca gizli bileşenler, yolda bir bağlama aparatı gibi; birini gizlemek için Bileşenler sekmesindeki gözü kullanın."
 
+msgid "Compute Burden"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "hesaplanan {0}"
@@ -5571,6 +5574,9 @@ msgid "Computed from the saved terms and rates. Activation classifies the lease 
 msgstr "Kaydedilen şartlar ve oranlardan hesaplanır. Aktivasyon kira sözleşmesini sınıflandırır ve sonucu depolar."
 
 msgid "Computed value"
+msgstr ""
+
+msgid "Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period."
 msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"

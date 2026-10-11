@@ -5560,6 +5560,9 @@ msgstr "Composants"
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "Composants masqués uniquement pendant que cette étape joue, comme un montage d'usinage dans le chemin ; utilisez l'œil dans l'onglet Composants pour en masquer un."
 
+msgid "Compute Burden"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "calculé {0}"
@@ -5571,6 +5574,9 @@ msgid "Computed from the saved terms and rates. Activation classifies the lease 
 msgstr "Calculé à partir des conditions et taux enregistrés. L'activation classifie le bail et enregistre le résultat."
 
 msgid "Computed value"
+msgstr ""
+
+msgid "Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period."
 msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"

@@ -5560,6 +5560,9 @@ msgstr "구성품"
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "지그와 같이 방해가 되는 구성품은 이 단계가 재생되는 동안만 숨김됩니다. 구성품 탭의 눈 아이콘을 사용하여 구성품을 숨길 수 있습니다."
 
+msgid "Compute Burden"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
 msgstr "{0}에 계산됨"
@@ -5571,6 +5574,9 @@ msgid "Computed from the saved terms and rates. Activation classifies the lease 
 msgstr "저장된 조건 및 요금에서 계산됩니다. 활성화하면 임차료를 분류하고 결과를 저장합니다."
 
 msgid "Computed value"
+msgstr ""
+
+msgid "Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period."
 msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"

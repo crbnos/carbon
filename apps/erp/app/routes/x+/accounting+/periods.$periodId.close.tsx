@@ -5,6 +5,9 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { runIndirectRatePeriod } from "@carbon/ee/indirect-rates.server";
+import { companyHasFeature, requireFeature } from "@carbon/ee/plan.server";
 import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
@@ -39,6 +42,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
+  LuCalculator,
   LuCheck,
   LuInfo,
   LuLock,
@@ -59,6 +63,7 @@ import {
 import { EmployeeAvatar } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
 import type {
+  PeriodCloseEntitlements,
   PeriodCloseStatus,
   PeriodCloseTaskView
 } from "~/modules/accounting";
@@ -84,6 +89,19 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "accounting-period-close");
 
+/** The commercial features the close checks depend on (Government
+ *  Contracting 5b: the burden check). */
+async function closeEntitlements(
+  client: Parameters<typeof companyHasFeature>[0],
+  companyId: string
+): Promise<PeriodCloseEntitlements> {
+  return {
+    governmentContracting: await companyHasFeature(client, companyId, {
+      feature: "GOVERNMENT_CONTRACTING"
+    })
+  };
+}
+
 export const handle: Handle = {
   breadcrumb: msg`Close Period`,
   to: path.to.accountingPeriods
@@ -100,9 +118,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!periodId) throw notFound("periodId not found");
 
   const db = getDatabaseClient();
+  const entitlements = await closeEntitlements(client, companyId);
   const [checklist, periods] = await Promise.all([
-    // `getPeriodCloseChecklist` with the project revenue synthesizers, which
-    // the browser-bundled service cannot import.
+    // `getPeriodCloseChecklist` with the project revenue synthesizers and the
+    // entitlements, which the browser-bundled service cannot import.
     loadPeriodCloseChecklist(
       client,
       db,
@@ -113,7 +132,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         companyGroupId,
         userId,
         revenueRunSynthesizers: projectRevenueSynthesizers
-      })
+      }),
+      entitlements
     ),
     getAccountingPeriods(client, companyId)
   ]);
@@ -363,6 +383,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  if (intent === "compute-burden") {
+    await requirePermissions(request, { create: "accounting" });
+    await requireFeature({
+      request,
+      client,
+      companyId,
+      redirectTo: path.to.accountingPeriodClose(periodId),
+      feature: "GOVERNMENT_CONTRACTING"
+    });
+    try {
+      const result = await runIndirectRatePeriod(getDatabaseClient(), client, {
+        companyId,
+        userId,
+        accountingPeriodId: periodId
+      });
+      if (result.error) {
+        return data(
+          {},
+          await flash(request, error(result.error, result.error.message))
+        );
+      }
+    } catch (e) {
+      if (e instanceof EntitlementError) {
+        return data({}, await flash(request, error(e, e.message)));
+      }
+      logger.error("Failed to compute burden", {
+        companyId,
+        periodId,
+        error: e
+      });
+      return data(
+        {},
+        await flash(request, error(e, "Failed to compute burden"))
+      );
+    }
+    return data({}, await flash(request, success("Burden computed")));
+  }
+
   if (intent === "close") {
     // `closePeriodWithChecklist` with a previewer that holds the project
     // revenue synthesizers, which the browser-bundled service cannot import.
@@ -375,7 +433,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       runPreviewer(client, db, {
         ...args,
         revenueRunSynthesizers: projectRevenueSynthesizers
-      })
+      }),
+      await closeEntitlements(client, companyId)
     );
     if (result.error) {
       return data(
@@ -525,6 +584,8 @@ function PeriodCloseTaskRow({
         return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
+      case "burden-computed":
+        return t`Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period.`;
       case "timesheets-complete":
         return t`In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known.`;
     }
@@ -560,6 +621,13 @@ function PeriodCloseTaskRow({
       : task.autoCheckKey === "draft-depreciation"
         ? "create-depreciation-run"
         : null;
+  // The burden check offers to run the period's indirect rates, once the
+  // period is locked (Government Contracting 5b).
+  const canComputeBurden =
+    task.autoCheckKey === "burden-computed" &&
+    status === "Open" &&
+    task.autoCheck?.failing === true &&
+    closeStatus === "Locked";
   const due = task.autoCheck?.due;
   const canCreateRun =
     createRunIntent !== null &&
@@ -729,6 +797,20 @@ function PeriodCloseTaskRow({
                   isLoading={isBusy}
                 >
                   <Trans>Create Run</Trans>
+                </Button>
+              </fetcher.Form>
+            )}
+            {canComputeBurden && (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value="compute-burden" />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<LuCalculator />}
+                  isLoading={isBusy}
+                >
+                  <Trans>Compute Burden</Trans>
                 </Button>
               </fetcher.Form>
             )}

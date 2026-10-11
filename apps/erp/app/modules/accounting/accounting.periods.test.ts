@@ -34,6 +34,7 @@ import type {
 } from "./accounting.service";
 import {
   ACCOUNTING_NOT_STARTED,
+  burdenComputedCheck,
   checklistTasksToCreate,
   closeAccountingPeriod,
   computePeriodReadiness,
@@ -1203,5 +1204,109 @@ describe("requireAccountingCutover", () => {
     });
     expect(result.data).toBeNull();
     expect(result.error?.message).toBe(ACCOUNTING_NOT_STARTED);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The "Compute burden for the period" check (Government Contracting 5b). The
+// task is required for every company, so it must pass when it does not apply.
+// ---------------------------------------------------------------------------
+
+describe("burdenComputedCheck", () => {
+  it("passes, not applicable, without GOVERNMENT_CONTRACTING", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: false,
+        poolCount: 1,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("fails with one pool and no run", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 1,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: true, count: 1 });
+  });
+
+  it("passes when the period's run computed burden", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 1,
+        burdenComputedAt: "2026-10-31T12:00:00Z"
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("passes, not applicable, with no pool", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 0,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+});
+
+describe("computePeriodReadiness — burden check", () => {
+  const script: Scripted[] = [
+    { data: { timezone: "America/New_York" } },
+    { data: [] }, // external GL readiness: no active integrations
+    { count: 0 }, // draft journals
+    { data: [] }, // posted journals in period
+    { data: [] }, // draft depreciation runs
+    { count: 0 }, // unmatched intercompany
+    { count: 0 }, // pending receipts
+    { count: 0 }, // pending shipments
+    { count: 0 }, // pending sales invoices
+    { count: 0 }, // pending purchase invoices
+    { count: 0 }, // draft payments
+    { count: 0 }, // draft memos
+    { data: [] } // Planned rows held by Draft revenue runs
+  ];
+  // The Kysely reads by table: Standard timekeeping, one active pool that
+  // applies to projects, and no run for the period.
+  const onePoolNoRunDb = {
+    selectFrom: (table: string) => {
+      const builder: any = {
+        select: () => builder,
+        where: () => builder,
+        executeTakeFirst: async () =>
+          table === "indirectPool" ? { count: 1 } : undefined
+      };
+      return builder;
+    }
+  };
+  const burden = async (governmentContracting: boolean | undefined) => {
+    const result = await computePeriodReadiness(
+      makeClient(script) as any,
+      onePoolNoRunDb as any,
+      "C1",
+      "2026-10-01",
+      "2026-10-31",
+      nothingDue,
+      { governmentContracting }
+    );
+    return result.checks.find((c) => c.autoCheckKey === "burden-computed");
+  };
+
+  it("passes, not applicable, for a company without GOVERNMENT_CONTRACTING that still has a pool", async () => {
+    expect(await burden(false)).toMatchObject({ failing: false, count: 0 });
+    // MCP and the API pass no entitlements.
+    expect(await burden(undefined)).toMatchObject({ failing: false, count: 0 });
+  });
+
+  it("fails for an entitled company with a pool and no run", async () => {
+    expect(await burden(true)).toMatchObject({
+      severity: "Warning",
+      failing: true,
+      count: 1
+    });
   });
 });

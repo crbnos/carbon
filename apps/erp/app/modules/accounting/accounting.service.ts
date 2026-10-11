@@ -2781,7 +2781,8 @@ export async function closeAccountingPeriod(
   previewRuns: PeriodRunPreviewer = runPreviewer(client, db, {
     ...args,
     revenueRunSynthesizers: []
-  })
+  }),
+  entitlements: PeriodCloseEntitlements = {}
 ) {
   const cutover = await requireAccountingCutover(client, args.companyId);
   if (cutover.error) return { data: null, error: cutover.error };
@@ -2833,7 +2834,8 @@ export async function closeAccountingPeriod(
     db,
     args.companyId,
     args.periodId,
-    previewRuns
+    previewRuns,
+    entitlements
   );
   if (checklist.error || !checklist.data) {
     return {
@@ -3406,9 +3408,99 @@ async function getPeriodTimesheetReadiness(
 }
 
 /**
+ * The commercial features the close checks depend on. The close route reads
+ * them with `companyHasFeature`, which this browser-bundled service cannot
+ * import. MCP and the API pass none, so those checks are not applicable there.
+ */
+export type PeriodCloseEntitlements = {
+  /** GOVERNMENT_CONTRACTING: the "Compute burden for the period" check. */
+  governmentContracting?: boolean;
+};
+
+/**
+ * The "Compute burden for the period" decision (Government Contracting 5b).
+ * Not applicable, so passing, when the company lacks GOVERNMENT_CONTRACTING
+ * or has no active indirect pool that applies to projects. Otherwise it fails
+ * until the period's indirect rate run has computed burden.
+ */
+export function burdenComputedCheck({
+  entitled,
+  poolCount,
+  burdenComputedAt
+}: {
+  entitled: boolean;
+  poolCount: number;
+  burdenComputedAt: string | null;
+}): { failing: boolean; count: number } {
+  const failing = entitled && poolCount > 0 && !burdenComputedAt;
+  return { failing, count: failing ? 1 : 0 };
+}
+
+/**
+ * The "Compute burden for the period" close check. It reads with the
+ * privileged Kysely client, as the Timesheets complete check does, and only
+ * when the company has GOVERNMENT_CONTRACTING. A failed read counts as one,
+ * so the warning shows rather than a false pass.
+ */
+async function getPeriodBurdenReadiness(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  entitled: boolean
+): Promise<{ failing: boolean; count: number }> {
+  if (!entitled) {
+    return burdenComputedCheck({
+      entitled,
+      poolCount: 0,
+      burdenComputedAt: null
+    });
+  }
+  try {
+    const pools = await db
+      .selectFrom("indirectPool")
+      .select((eb) => eb.fn.countAll<number>().as("count"))
+      .where("companyId", "=", companyId)
+      .where("active", "=", true)
+      .where("appliesToProjects", "=", true)
+      .executeTakeFirst();
+    const poolCount = Number(pools?.count ?? 0);
+    if (poolCount === 0) {
+      return burdenComputedCheck({
+        entitled,
+        poolCount,
+        burdenComputedAt: null
+      });
+    }
+    const run = await db
+      .selectFrom("indirectRateRun")
+      .select("burdenComputedAt")
+      .where("companyId", "=", companyId)
+      .where(
+        "accountingPeriodId",
+        "in",
+        db
+          .selectFrom("accountingPeriod")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("startDate", "=", startDate)
+          .where("endDate", "=", endDate)
+      )
+      .executeTakeFirst();
+    return burdenComputedCheck({
+      entitled,
+      poolCount,
+      burdenComputedAt: run?.burdenComputedAt ?? null
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
  * Evaluates every Auto close check for the period. `runPreview` is what new
  * revenue recognition and depreciation runs for `endDate` would hold
- * (`getPeriodRunPreview`).
+ * (`getPeriodRunPreview`). `entitlements` gates the commercial checks.
  */
 export async function computePeriodReadiness(
   client: SupabaseClient<Database>,
@@ -3416,7 +3508,8 @@ export async function computePeriodReadiness(
   companyId: string,
   startDate: string,
   endDate: string,
-  runPreview: PeriodRunPreview
+  runPreview: PeriodRunPreview,
+  entitlements: PeriodCloseEntitlements = {}
 ): Promise<{
   checks: PeriodReadinessCheck[];
   blockers: { key: string; label: string; count: number }[];
@@ -3598,6 +3691,14 @@ export async function computePeriodReadiness(
     startDate,
     endDate
   );
+  // Read last, and only with GOVERNMENT_CONTRACTING (see the helper).
+  const burden = await getPeriodBurdenReadiness(
+    db,
+    companyId,
+    startDate,
+    endDate,
+    entitlements.governmentContracting === true
+  );
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
@@ -3748,6 +3849,16 @@ export async function computePeriodReadiness(
         "Timesheet entries dated in this period that are not posted, and scheduled work days with no time entered",
       failing: timesheets.failing,
       count: timesheets.count
+    },
+    // This evaluator MUST exist for the seeded "Compute burden for the
+    // period" task (Government Contracting 5b), and it MUST pass when the
+    // check is not applicable: the task is required for every company.
+    {
+      autoCheckKey: "burden-computed",
+      severity: "Warning",
+      label: "Burden not yet computed for this period",
+      failing: burden.failing,
+      count: burden.count
     }
   ];
 
@@ -3973,13 +4084,15 @@ export async function getPeriodCloseChecklist(
   );
 }
 
-/** `getPeriodCloseChecklist` with the run previewer passed in. */
+/** `getPeriodCloseChecklist` with the run previewer and the entitlements
+ *  passed in. */
 export async function loadPeriodCloseChecklist(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   companyId: string,
   periodId: string,
-  previewRuns: PeriodRunPreviewer
+  previewRuns: PeriodRunPreviewer,
+  entitlements: PeriodCloseEntitlements = {}
 ) {
   const period = await getAccountingPeriodById(client, periodId, companyId);
   if (period.error || !period.data) {
@@ -4050,7 +4163,8 @@ export async function loadPeriodCloseChecklist(
     companyId,
     period.data.startDate,
     period.data.endDate,
-    await previewRuns(period.data.endDate)
+    await previewRuns(period.data.endDate),
+    entitlements
   );
 
   const evaluated = evaluateCloseChecklist(

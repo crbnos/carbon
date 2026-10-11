@@ -97,7 +97,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 10: Add `computeProjectBurden`, `computeBurdenBilling` and the period run
 - [x] Task 11: Teach the Phase 4 billing readers about burden
 - [x] Task 12: Add the monthly job and the lock trigger
-- [ ] Task 13: Add the close checklist task
+- [x] Task 13: Add the close checklist task
 - [ ] Task 14: Add the ICE schedules and the CSV route
 - [ ] Task 15: Build the Indirect Pools pages
 - [ ] Task 16: Build the Indirect Rates, Statement and ICE pages
@@ -1375,3 +1375,9 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   1. The lock intent counts the pools through the user's Supabase client (`head: true`, count only). A failed read takes the same `catch` as a failed send: it logs a warning and the lock still succeeds.
   2. The job logs a failed run with `logger.error` and returns the result. The run row holds the error.
   3. `@carbon/jobs` typecheck failed on `indirectRateRows` (Task 7): its untyped `const rows = []` became `never[]` under the jobs `tsconfig`. The array now has the `indirectRate` Insert type. `@carbon/ee` alone had passed.
+- Task 13:
+  1. 🛑 The task row is required for every company, so the check passes, marked not applicable, when the company lacks GOVERNMENT_CONTRACTING or has no active pool that applies to projects. `burdenComputedCheck` (exported, pure) holds the rule.
+  2. The browser-bundled service cannot import `companyHasFeature`. So `computePeriodReadiness`, `loadPeriodCloseChecklist` and `closeAccountingPeriod` take an optional `entitlements: PeriodCloseEntitlements` (`{ governmentContracting? }`), the same way they take the run previewer. The close route's loader and its `close` intent read the feature with `companyHasFeature` and pass it. MCP and the API pass none, so the check does not apply there, as the revenue synthesizers do not.
+  3. The check reads with the privileged Kysely client, after the Timesheets complete check, as 5a Task 30 (`9efe6a2846`) does. It reads the pool count and the run in 2 queries, and only when the company has the feature. The run read matches the period by `startDate` and `endDate` through a subquery. A failed read counts as one, as the timesheet check does.
+  4. The plan names 3 test cases. The test has 4 for `burdenComputedCheck` (with the not-applicable case) and 2 for `computePeriodReadiness`: a company without the feature that still has a pool passes (also with no entitlements passed), and an entitled company with a pool and no run fails.
+  5. The **Compute Burden** button shows only while the period is Locked: `computeProjectBurden` refuses any other period. The task's tooltip explains the check. The intent logs and flashes an error that is not an `EntitlementError`.
