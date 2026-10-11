@@ -11323,6 +11323,9 @@ msgstr "Yetkinlik Verir"
 msgid "Gross Profit"
 msgstr "Brüt Kar"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "Grup"
 
@@ -11528,6 +11531,9 @@ msgstr "Henüz atanmayan saatler"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "İçe Aktarma Sonuçları"
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "Ödemeler"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Bu faturaya uygulanan ödemeler ve alacaklar. Uygulanan tutarlar ve kur farkları şirketin temel para birimi cinsindendir. Kaynak belgeyi açmak için bir satıra tıklayın."
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Bu belge için tutulan depozitöyü müşteri avanslarından geri öde."
 
@@ -17374,6 +17389,9 @@ msgstr "Dönem Sonu"
 
 msgid "Period lock policy"
 msgstr "Dönem kilit politikası"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Sabit kıymetler için dönemsel amortisman gideri"

@@ -11323,6 +11323,9 @@ msgstr "Grants Ability"
 msgid "Gross Profit"
 msgstr "Gross Profit"
 
+msgid "Gross Wages"
+msgstr "Gross Wages"
+
 msgid "Group"
 msgstr "Group"
 
@@ -11529,6 +11532,9 @@ msgstr "Hours not yet assigned"
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
 msgstr "Hours on {0} for {1}"
+
+msgid "Hours Paid"
+msgstr "Hours Paid"
 
 msgid "Hours per Week"
 msgstr "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "Import results"
 
 msgid "Import your BOM"
 msgstr "Import your BOM"
+
+msgid "Imported"
+msgstr "Imported"
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "Payments"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 
+msgid "Payroll totals"
+msgstr "Payroll totals"
+
+msgid "Payroll Totals"
+msgstr "Payroll Totals"
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Pays the deposit held for this document back out of customer prepayments."
 
@@ -17374,6 +17389,9 @@ msgstr "Period End"
 
 msgid "Period lock policy"
 msgstr "Period lock policy"
+
+msgid "Period Start"
+msgstr "Period Start"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Periodic depreciation expense for fixed assets"

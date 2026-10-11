@@ -11323,6 +11323,9 @@ msgstr "역량 부여"
 msgid "Gross Profit"
 msgstr "매출총이익"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "그룹"
 
@@ -11528,6 +11531,9 @@ msgstr "아직 배정되지 않은 시간"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "가져오기 결과"
 
 msgid "Import your BOM"
 msgstr "BOM 가져오기"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "지불"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "이 송장에 적용된 지불 및 크레딧입니다. 적용된 금액과 외환 손익 금액은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "이 문서에 대해 보유한 보증금을 고객 선급금에서 다시 지급합니다."
 
@@ -17374,6 +17389,9 @@ msgstr "기간 종료"
 
 msgid "Period lock policy"
 msgstr "기간 잠금 정책"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "고정자산에 대한 정기적인 감가상각 비용"

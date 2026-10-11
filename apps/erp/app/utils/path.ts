@@ -1967,6 +1967,7 @@ export const path = {
       generatePath(`${x}/accounting/payment-terms/${id}`),
     paymentTerms: `${x}/accounting/payment-terms`,
     paymentVoid: (id: string) => generatePath(`${x}/payments/${id}/void`),
+    payrollTotals: `${x}/people/payroll-totals`,
     people: `${x}/people/employee`,
     peopleSettings: `${x}/settings/people`,
     peopleTimecard: `${x}/people/timecard`,

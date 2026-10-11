@@ -11323,6 +11323,9 @@ msgstr "Przyznaje Umiejętność"
 msgid "Gross Profit"
 msgstr "Zysk brutto"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "Grupa"
 
@@ -11528,6 +11531,9 @@ msgstr "Godziny jeszcze nieprzydzielone"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "Wyniki Importu"
 
 msgid "Import your BOM"
 msgstr "Zaimportuj swoją BOM"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "Płatności"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Płatności i uznania rozliczone z tą fakturą. Kwoty rozliczeń i różnice kursowe są wyrażone w walucie bazowej firmy. Kliknij wiersz, aby otworzyć dokument źródłowy."
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Zwraca zaliczkę zatrzymaną dla tego dokumentu z zaliczek klienta."
 
@@ -17374,6 +17389,9 @@ msgstr "Koniec okresu"
 
 msgid "Period lock policy"
 msgstr "Polityka blokady okresu"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Okresowy wydatek amortyzacyjny dla środków trwałych"

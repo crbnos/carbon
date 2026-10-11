@@ -11323,6 +11323,9 @@ msgstr "Verleiht Qualifikation"
 msgid "Gross Profit"
 msgstr "Bruttogewinn"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "Gruppe"
 
@@ -11528,6 +11531,9 @@ msgstr "Noch nicht zugewiesene Stunden"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "Importergebnisse"
 
 msgid "Import your BOM"
 msgstr "Importieren Sie Ihre BOM"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "Zahlungen"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Mit dieser Rechnung verrechnete Zahlungen und Guthaben. Verrechnete Beträge und Kursdifferenzen werden in der Basiswährung des Unternehmens angegeben. Klicken Sie auf eine Zeile, um den Ursprungsbeleg zu öffnen."
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Zahlt die für dieses Dokument gehaltene Anzahlung aus Kundenanzahlungen zurück."
 
@@ -17374,6 +17389,9 @@ msgstr "Periodenende"
 
 msgid "Period lock policy"
 msgstr "Zeitraumsperrrichtlinie"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Periodischer Abschreibungsaufwand für Anlagegüter"

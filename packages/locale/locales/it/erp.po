@@ -11323,6 +11323,9 @@ msgstr "Assegna Competenza"
 msgid "Gross Profit"
 msgstr "Margine lordo"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "Gruppo"
 
@@ -11528,6 +11531,9 @@ msgstr "Ore non ancora assegnate"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "Risultati dell'Importazione"
 
 msgid "Import your BOM"
 msgstr "Importa il tuo BOM"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "Pagamenti"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Pagamenti e crediti applicati a questa fattura. Gli importi applicati e le differenze di cambio sono espressi nella valuta di base dell'azienda. Fai clic su una riga per aprire il documento di origine."
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Rimborsa il deposito trattenuto per questo documento dai pagamenti anticipati del cliente."
 
@@ -17374,6 +17389,9 @@ msgstr "Fine Periodo"
 
 msgid "Period lock policy"
 msgstr "Politica di blocco del periodo"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Spesa di ammortamento periodico per i cespiti"

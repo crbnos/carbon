@@ -87,7 +87,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 25: Add allowable, unallowable and preproduction cost to the Costs tab
 - [x] Task 26: Add CLIN numbers and funding actions to the contract line
 - [x] Task 27: Invoice by CLIN with ACRN allocation
-- [ ] Task 28: Add the payroll totals import and list
+- [x] Task 28: Add the payroll totals import and list
 - [ ] Task 29: Add the daily missing-time check
 - [ ] Task 30: Add the Timesheets complete close task
 - [ ] Task 31: Add the report queries and the CSV route
@@ -1643,4 +1643,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   5. `InvoiceLineValues` gains an optional `invoiceLineType` (`Service` by default, or `Comment`), and its `itemId` and `customerContractLineId` may be null. The comment line has quantity 0, price 0, tax 0 and no contract line, so posting, the contract position and the stamps skip it.
   6. The allocation rows are inserted in the invoice's transaction, after the invoice. Deleting the Draft invoice deletes them (`ON DELETE CASCADE`).
   7. Besides the 3 pure tests of the plan (and a 4th: earlier allocations count against an ACRN), a database test drafts an invoice for a numbered line with one ACRN of 500.00 and 1,000.00 of cost: a Comment line comes first, the subtotal stays 1,000.00 and one allocation row of 500.00 is written.
+- Task 28:
+  1. The wizard sends column names, so `importSchemas.payrollPeriodTotal` declares each field as a required column string, as the stock imports do. The date and number rules run in the importer: the pure `readPayrollTotalRow` checks a real `YYYY-MM-DD` (with `parseDate`), `periodEnd >= periodStart`, and wages and hours of 0 or more. It reads "4,200.00" and "$4,200.00" as 4200, because payroll exports often carry them.
+  2. The employee is checked against the company's `employee` rows with one query. The employee fetcher reads the `employees` view (id, name), as the customer import's account manager does.
+  3. A second row in the file for the same employee and period is skipped ("Repeats the employee and period of row N"). One `INSERT … ON CONFLICT DO UPDATE` cannot touch the same row twice, so the plan's statement would otherwise fail the whole file.
+  4. The upsert returns `(xmax = 0)` to count inserted and updated rows in one statement. An update sets `grossWages`, `hoursPaid`, `updatedBy` and `updatedAt`, and keeps `importedBy` and `importedAt`.
+  5. `importPermissions` is `people` (`update`), as the plan says and as `department` does. The table's RLS rule is `company("people")`, so the INSERT policy is `people_create`; the import does not also require `create`, the same as every other import that only creates rows.
+  6. The list page has no detail drawer and no New button: rows come only from Bulk Import. **Payroll Totals** sits after Timecards and shows with Timecards off too, because labor distribution needs it either way. `getPayrollPeriodTotals` is an `@mcp read` tool, so `pnpm run generate:mcp` adds `people_getPayrollPeriodTotals` to the digest.
+  7. The database test also checks that an unknown employee is a row error and a repeated row is skipped. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
 

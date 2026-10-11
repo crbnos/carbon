@@ -11323,6 +11323,9 @@ msgstr "スキルを付与"
 msgid "Gross Profit"
 msgstr "総利益"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "グループ"
 
@@ -11528,6 +11531,9 @@ msgstr "未配置の時間"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "インポート結果"
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "支払い"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "この文書の前受金を顧客の前払金から返金します。"
 
@@ -17374,6 +17389,9 @@ msgstr "期間終了"
 
 msgid "Period lock policy"
 msgstr "期間ロックポリシー"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "固定資産の定期的な減価償却費用"

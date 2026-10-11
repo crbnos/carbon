@@ -17,6 +17,7 @@ import { classifyImportRow } from "./classify-import-row";
 import { importConfigLookups } from "./config-lookup-import";
 import { importMaterialProperties } from "./material-property-import";
 import { importMethods } from "./method-import";
+import { importPayrollTotals } from "./payroll-total-import";
 import { importStockQuantities } from "./stock-quantity-import";
 
 const logger = getLogger("server-functions", "import-csv");
@@ -52,7 +53,8 @@ export const importCsvInput = z.object({
     "materialDimension",
     "inventoryQuantity",
     "batchQuantity",
-    "serialQuantity"
+    "serialQuantity",
+    "payrollPeriodTotal"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -97,7 +99,8 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
   materialDimension: "parts",
   inventoryQuantity: "inventory",
   batchQuantity: "inventory",
-  serialQuantity: "inventory"
+  serialQuantity: "inventory",
+  payrollPeriodTotal: "people"
 };
 
 // Imports that post new records also need `create`, as the ERP's import route
@@ -3357,6 +3360,15 @@ const importCsv = defineServerFn({
       case "serialQuantity": {
         await importStockQuantities(db, client, {
           table,
+          mappedRecords,
+          companyId,
+          userId,
+          summary
+        });
+        break;
+      }
+      case "payrollPeriodTotal": {
+        await importPayrollTotals(db, {
           mappedRecords,
           companyId,
           userId,

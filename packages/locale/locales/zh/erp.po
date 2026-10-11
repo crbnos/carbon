@@ -11323,6 +11323,9 @@ msgstr "授予能力"
 msgid "Gross Profit"
 msgstr "毛利润"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "组"
 
@@ -11528,6 +11531,9 @@ msgstr "未分配的小时数"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "导入结果"
 
 msgid "Import your BOM"
 msgstr "导入您的BOM"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "付款"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "从客户预付款中支付为此文件持有的押金。"
 
@@ -17374,6 +17389,9 @@ msgstr "期末"
 
 msgid "Period lock policy"
 msgstr "期间锁定政策"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "固定资产的定期折旧费用"

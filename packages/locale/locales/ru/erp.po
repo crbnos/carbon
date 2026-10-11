@@ -11323,6 +11323,9 @@ msgstr "Предоставляет Навык"
 msgid "Gross Profit"
 msgstr "Валовая прибыль"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "Группа"
 
@@ -11528,6 +11531,9 @@ msgstr "Часы, ещё не назначенные"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "Импортировать результаты"
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "Платежи"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Платежи и авансы, применённые к этому счету. Применённые суммы и обменные курсы указаны в базовой валюте организации. Нажмите строку, чтобы открыть документ-основание."
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Возвращает авансовый платеж, удерживаемый по этому документу, из предоплат покупателя."
 
@@ -17374,6 +17389,9 @@ msgstr "Конец периода"
 
 msgid "Period lock policy"
 msgstr "Политика блокировки периода"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Периодический расход амортизации основных средств"

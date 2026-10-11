@@ -1091,6 +1091,31 @@ export async function getTimecardEntries(
   return query;
 }
 
+/**
+ * Lists the imported payroll totals: one row per employee and pay period,
+ * newest period first.
+ * @mcp read
+ */
+export async function getPayrollPeriodTotals(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters
+) {
+  let query = client
+    .from("payrollPeriodTotal")
+    .select(
+      "id, employeeId, periodStart, periodEnd, grossWages, hoursPaid, importedAt",
+      { count: LIST_COUNT }
+    )
+    .eq("companyId", companyId);
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "periodEnd", ascending: false }
+  ]);
+
+  return query;
+}
+
 /** @mcp read */
 export async function getWeeklyHoursForEmployees(
   client: SupabaseClient<Database>,

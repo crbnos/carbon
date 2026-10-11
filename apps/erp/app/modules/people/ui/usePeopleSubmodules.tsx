@@ -4,6 +4,7 @@
 
 import { useLingui } from "@lingui/react/macro";
 import {
+  LuBanknote,
   LuCalendarClock,
   LuCalendarHeart,
   LuClock,
@@ -35,6 +36,11 @@ export default function usePeopleSubmodules() {
           icon: <LuClock />,
           setting: "timeCardEnabled",
           table: "timeCardEntry"
+        },
+        {
+          name: t`Payroll Totals`,
+          to: path.to.payrollTotals,
+          icon: <LuBanknote />
         }
       ]
     },

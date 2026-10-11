@@ -11323,6 +11323,9 @@ msgstr "कौशल प्रदान करता है"
 msgid "Gross Profit"
 msgstr "सकल लाभ"
 
+msgid "Gross Wages"
+msgstr ""
+
 msgid "Group"
 msgstr "समूह"
 
@@ -11528,6 +11531,9 @@ msgstr "अभी तक असाइन न किए गए घंटे"
 #. placeholder {0}: formatDate(day)
 #. placeholder {1}: row.readableId
 msgid "Hours on {0} for {1}"
+msgstr ""
+
+msgid "Hours Paid"
 msgstr ""
 
 msgid "Hours per Week"
@@ -11847,6 +11853,9 @@ msgstr "आयात परिणाम"
 
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
+
+msgid "Imported"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -17272,6 +17281,12 @@ msgstr "भुगतान"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "इस चालान के लिए आवंटित भुगतान और क्रेडिट। आवंटित राशियाँ और विनिमय अंतर की राशियाँ कंपनी की आधार मुद्रा में हैं। स्रोत दस्तावेज़ खोलने के लिए किसी पंक्ति पर क्लिक करें।"
 
+msgid "Payroll totals"
+msgstr ""
+
+msgid "Payroll Totals"
+msgstr ""
+
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "इस दस्तावेज़ के लिए रखी गई जमा राशि को ग्राहक की अग्रिम भुगतान से वापस करता है।"
 
@@ -17374,6 +17389,9 @@ msgstr "अवधि का अंत"
 
 msgid "Period lock policy"
 msgstr "अवधि लॉक नीति"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "अचल संपत्ति के लिए आवधिक मूल्यह्रास व्यय"
