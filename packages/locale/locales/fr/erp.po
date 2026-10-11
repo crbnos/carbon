@@ -16609,6 +16609,9 @@ msgstr ""
 msgid "Pending"
 msgstr "En attente"
 
+msgid "Pending Employee Review"
+msgstr ""
+
 msgid "people"
 msgstr "personnel"
 

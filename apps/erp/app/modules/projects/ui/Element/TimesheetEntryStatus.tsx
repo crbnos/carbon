@@ -22,7 +22,8 @@ export function TimesheetEntryStatus({
     Submitted: t`Submitted`,
     Approved: t`Approved`,
     Posted: t`Posted`,
-    Rejected: t`Rejected`
+    Rejected: t`Rejected`,
+    "Pending Employee Review": t`Pending Employee Review`
   };
   return (
     <Status

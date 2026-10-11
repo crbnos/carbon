@@ -277,13 +277,15 @@ export const BILLABLE_ITEM_STATUS_COLOR_MAP = {
 
 // A timesheet entry: Draft is open, Submitted waits on approval like a
 // pending review, Approved is accepted but not yet costed, Posted is done and
-// Rejected goes back to its owner.
+// Rejected goes back to its owner. Pending Employee Review (DCAA mode) waits on
+// the owner to accept a change someone else made.
 export const TIMESHEET_ENTRY_STATUS_COLOR_MAP = {
   Draft: "gray",
   Submitted: "yellow",
   Approved: "blue",
   Posted: "green",
-  Rejected: "red"
+  Rejected: "red",
+  "Pending Employee Review": "orange"
 } as const satisfies Record<string, StatusColor>;
 
 // Mirrors RentalStatus.tsx (sales/ui/Rentals) — the agreement header statuses.

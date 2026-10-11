@@ -16609,6 +16609,9 @@ msgstr ""
 msgid "Pending"
 msgstr "लंबित"
 
+msgid "Pending Employee Review"
+msgstr ""
+
 msgid "people"
 msgstr "लोग"
 

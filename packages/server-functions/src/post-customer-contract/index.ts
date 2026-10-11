@@ -1675,7 +1675,9 @@ async function amend(
               noticeWindowDays: line.noticeWindowDays ?? 60,
               ceilingAmount: line.ceilingAmount ?? null,
               thresholdNoticeFundedCost: null,
-              runOutNoticeFundedCost: null
+              runOutNoticeFundedCost: null,
+              lineItemNumber: null,
+              parentLineId: null
             },
             overrides: {}
           });

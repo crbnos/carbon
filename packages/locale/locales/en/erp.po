@@ -16609,6 +16609,9 @@ msgstr "Pegging"
 msgid "Pending"
 msgstr "Pending"
 
+msgid "Pending Employee Review"
+msgstr "Pending Employee Review"
+
 msgid "people"
 msgstr "people"
 

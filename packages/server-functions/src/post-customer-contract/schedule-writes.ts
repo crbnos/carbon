@@ -112,6 +112,8 @@ export function copyLineValues(
     ceilingAmount: merged.ceilingAmount,
     thresholdNoticeFundedCost: merged.thresholdNoticeFundedCost,
     runOutNoticeFundedCost: merged.runOutNoticeFundedCost,
+    lineItemNumber: merged.lineItemNumber,
+    parentLineId: merged.parentLineId,
     companyId: scope.companyId,
     createdBy: scope.userId
   };

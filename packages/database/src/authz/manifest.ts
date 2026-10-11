@@ -349,6 +349,8 @@ export const manifest = {
   }),
   customerContract: company("sales", { read: "sales_view" }),
   customerContractAmendment: company("sales", { read: "sales_view" }),
+  // Government contracting Phase 5a: ACRN funding actions on a contract line.
+  customerContractFunding: company("sales", { read: "sales_view" }),
   customerContractInvoice: company("sales", { read: "sales_view" }),
   customerContractInvoiceLine: company("sales", { read: "sales_view" }),
   customerContractLaborRate: company("sales", { read: "sales_view" }),
@@ -1079,6 +1081,8 @@ export const manifest = {
   paymentTerm: company("accounting", {
     read: anyOf("accounting_view", "sales_view", "purchasing_view")
   }),
+  // Government contracting Phase 5a: payroll totals imported from CSV.
+  payrollPeriodTotal: company("people", { read: "people_view" }),
   peopleAbsence: company("production"),
   peopleAssignment: company("production"),
   period: policies({ select: authenticated }),
@@ -1176,6 +1180,9 @@ export const manifest = {
     update: false,
     delete: false
   }),
+  // Government contracting Phase 5a: who may charge time to a project with
+  // restrictCharging.
+  projectMember: projectTable(),
   projectMilestone: projectTable(),
   // MRP writes pegs with the service role; a manual peg goes through a server
   // action that checks update: projects first.
@@ -1429,6 +1436,14 @@ export const manifest = {
   riskRegister: company("quality", { create: "employee" }),
   salesInvoice: company("invoicing", { read: "invoicing_view" }),
   salesInvoiceLine: company("invoicing", { read: "invoicing_view" }),
+  // Government contracting Phase 5a: the ACRN split of an invoice. Only the
+  // invoice server function writes it, with Kysely.
+  salesInvoiceFundingAllocation: company("invoicing", {
+    read: "invoicing_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   salesInvoiceShipment: company("invoicing", { read: "invoicing_view" }),
   salesOrder: company("sales", {
     read: anyOf("sales_view", "inventory_view", "invoicing_view")
@@ -1657,6 +1672,18 @@ export const manifest = {
     ),
     delete: inCompany("companyId", "people_delete")
   }),
+  // Government contracting Phase 5a: weekly certification and the DCAA
+  // correction trail. Only the timesheet server functions write them, with
+  // Kysely. The owner reads their own rows; projects_view reads every row.
+  timesheetCertification: company("projects", {
+    read: or(
+      and(owner("employeeId"), inCompany("companyId", "employee")),
+      inCompany("companyId", "projects_view")
+    ),
+    create: false,
+    update: false,
+    delete: false
+  }),
   timesheetEntry: policies({
     select: or(owner("employeeId"), projectModule("projectId", "view")),
     insert: and(
@@ -1685,6 +1712,15 @@ export const manifest = {
       owner("employeeId"),
       where<"timesheetEntry">((eb) => eb("status", "=", "Draft"))
     )
+  }),
+  timesheetEntryRevision: company("projects", {
+    read: or(
+      and(owner("employeeId"), inCompany("companyId", "employee")),
+      inCompany("companyId", "projects_view")
+    ),
+    create: false,
+    update: false,
+    delete: false
   }),
   tool: company("parts"),
   trackedActivity: company("inventory", { create: "employee" }),

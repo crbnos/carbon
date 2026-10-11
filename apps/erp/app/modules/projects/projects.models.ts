@@ -89,7 +89,8 @@ export const timesheetEntryStatuses = [
   "Submitted",
   "Approved",
   "Posted",
-  "Rejected"
+  "Rejected",
+  "Pending Employee Review"
 ] as const satisfies readonly TimesheetEntryStatus[];
 
 /** Whether a new element of each type takes charges when the user does not say. */

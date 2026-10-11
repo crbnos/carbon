@@ -16609,6 +16609,9 @@ msgstr ""
 msgid "Pending"
 msgstr "대기 중"
 
+msgid "Pending Employee Review"
+msgstr ""
+
 msgid "people"
 msgstr "인원"
 

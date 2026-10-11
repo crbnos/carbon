@@ -65,7 +65,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 3: Create the columns migration
 - [x] Task 4: Create the timekeeping and funding tables migration
 - [x] Task 5: Create the SQL functions migration
-- [ ] Task 6: Apply migrations, regenerate types, ship RLS
+- [x] Task 6: Apply migrations, regenerate types, ship RLS
 - [ ] Task 7: Add the pure timekeeping helpers
 - [ ] Task 8: Add the pure funding helpers
 - [ ] Task 9: Set the unallowable flag and check charge restrictions at posting
@@ -1469,3 +1469,12 @@ ls .ai/playbooks/government-contracting-phase-5a.md
 - Task 3: the columns migration also indexes the two new self FKs, `timesheetEntry ("correctionOfId", "companyId")` and `customerContractLine ("parentLineId", "companyId")` (step 3). Tasks 2 and 3 ran together in a `BEGIN … ROLLBACK` dry run against the local database before the commit.
 - Task 4: `projectMember` and `salesInvoiceFundingAllocation` also get `updatedBy` and `updatedAt`. The migration rules require `updatedBy` on every table with `createdBy`, because the shared audit-injection path stamps it on each write. `timesheetEntryRevision` and `timesheetCertification` get no separate `companyId` index: their composite indexes start with `companyId`. Each table has an index on every FK column, except `updatedBy` (the table template indexes `createdBy` only).
 - Task 5: the fork base is `20261010161720_project-commitments-pegs.sql`. A diff of the new body against it shows only the 4 intended hunks. The migration ends with `NOTIFY pgrst, 'reload schema'`, as its fork base does. `pnpm --filter @carbon/checks clobbers` reports no finding for `get_project_cost_summary`. It exits 1 on 2 earlier findings that this plan does not touch: `complete_job_to_inventory` and `backflush_job_materials` (`20261009071629` on this branch against `20261009010412` on main).
+- Task 6, manifest:
+  1. `projectMember` uses `projectTable()`, not `company("projects")`. Every project table uses `projectTable`, so the members of a Service project follow the Service module (`authz-manifest.md`).
+  2. `customerContractFunding` reads with `sales_view`, and `salesInvoiceFundingAllocation` reads with `invoicing_view`. Every other contract table and invoice table reads that way, so a funding row is not visible to an employee who cannot see its line or its invoice.
+  3. The entries were added before the first `pnpm db:migrate`, because `authz sync` fails on a public table with no rule. The generated migration is `20261011151539_government-contracting-rls.sql`.
+- Task 6, compile fallout of the new types (the Phase 4a precedent `013bdfa4a3` did the same in its types task):
+  1. `copyLineValues` (`post-customer-contract/schedule-writes.ts`) carries `lineItemNumber` and `parentLineId` to a line copy, and an added line sets both to null. An amendment of a Fixed line therefore keeps its CLIN number, as Task 3 step 4 expects.
+  2. `Pending Employee Review` joins `TIMESHEET_ENTRY_STATUS_COLOR_MAP` (orange), `timesheetEntryStatuses` and the labels of `TimesheetEntryStatus.tsx`. The MES timesheet indexes the color map by status.
+  3. The `balance-sheet.test.ts` account fixture gains the 3 new account columns.
+- Task 6: `pnpm --filter @carbon/database authz check` reports no drift, the authz tests pass (35), and `erp`, `mes`, `@carbon/utils`, `@carbon/ee`, `@carbon/server-functions`, `@carbon/database` and `@carbon/jobs` typecheck. The workflow catalog is current. The new UI string has an empty `msgstr` in the other locales; the branch-wide `/translate` run fills it.

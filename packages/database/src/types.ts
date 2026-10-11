@@ -193,12 +193,14 @@ export type Database = {
         Row: {
           accountType: Database["public"]["Enums"]["accountType"] | null
           active: boolean
+          allowability: Database["public"]["Enums"]["accountAllowability"]
           class: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId: string
           consolidatedRate: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt: string
           createdBy: string
           customFields: Json | null
+          elementOfCost: Database["public"]["Enums"]["elementOfCost"] | null
           id: string
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"]
           isGroup: boolean
@@ -207,18 +209,21 @@ export type Database = {
           number: string | null
           parentId: string | null
           tags: string[] | null
+          unallowableReason: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
           accountType?: Database["public"]["Enums"]["accountType"] | null
           active?: boolean
+          allowability?: Database["public"]["Enums"]["accountAllowability"]
           class?: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId: string
           consolidatedRate?: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          elementOfCost?: Database["public"]["Enums"]["elementOfCost"] | null
           id?: string
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"]
           isGroup?: boolean
@@ -227,18 +232,21 @@ export type Database = {
           number?: string | null
           parentId?: string | null
           tags?: string[] | null
+          unallowableReason?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
           accountType?: Database["public"]["Enums"]["accountType"] | null
           active?: boolean
+          allowability?: Database["public"]["Enums"]["accountAllowability"]
           class?: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId?: string
           consolidatedRate?: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          elementOfCost?: Database["public"]["Enums"]["elementOfCost"] | null
           id?: string
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"]
           isGroup?: boolean
@@ -247,6 +255,7 @@ export type Database = {
           number?: string | null
           parentId?: string | null
           tags?: string[] | null
+          unallowableReason?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8141,6 +8150,8 @@ export type Database = {
           assetTaxRate: number | null
           autoSelectMaterialWithoutPickingList: boolean
           autoStartOperationTimer: boolean
+          certificationTextExempt: string | null
+          certificationTextNonExempt: string | null
           consoleEnabled: boolean
           defaultCustomerCc: string[] | null
           defaultPlanningHorizonDays: number | null
@@ -8194,9 +8205,13 @@ export type Database = {
           showCustomerReadableId: boolean
           showSupplierReadableId: boolean
           skipApprovalForPlanningPurchaseOrders: boolean
+          standardWeeklyHours: number
           supplierQuoteNotificationGroup: string[]
           timeCardEnabled: boolean
+          timekeepingControls: Database["public"]["Enums"]["timekeepingControls"]
           timesheetApprovalRequired: boolean
+          timesheetEntryWindowDays: number
+          timesheetTimecardCheck: string
           updateLeadTimesOnReceipt: boolean
           useMetric: boolean
         }
@@ -8211,6 +8226,8 @@ export type Database = {
           assetTaxRate?: number | null
           autoSelectMaterialWithoutPickingList?: boolean
           autoStartOperationTimer?: boolean
+          certificationTextExempt?: string | null
+          certificationTextNonExempt?: string | null
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
           defaultPlanningHorizonDays?: number | null
@@ -8264,9 +8281,13 @@ export type Database = {
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
           skipApprovalForPlanningPurchaseOrders?: boolean
+          standardWeeklyHours?: number
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
+          timekeepingControls?: Database["public"]["Enums"]["timekeepingControls"]
           timesheetApprovalRequired?: boolean
+          timesheetEntryWindowDays?: number
+          timesheetTimecardCheck?: string
           updateLeadTimesOnReceipt?: boolean
           useMetric?: boolean
         }
@@ -8281,6 +8302,8 @@ export type Database = {
           assetTaxRate?: number | null
           autoSelectMaterialWithoutPickingList?: boolean
           autoStartOperationTimer?: boolean
+          certificationTextExempt?: string | null
+          certificationTextNonExempt?: string | null
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
           defaultPlanningHorizonDays?: number | null
@@ -8334,9 +8357,13 @@ export type Database = {
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
           skipApprovalForPlanningPurchaseOrders?: boolean
+          standardWeeklyHours?: number
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
+          timekeepingControls?: Database["public"]["Enums"]["timekeepingControls"]
           timesheetApprovalRequired?: boolean
+          timesheetEntryWindowDays?: number
+          timesheetTimecardCheck?: string
           updateLeadTimesOnReceipt?: boolean
           useMetric?: boolean
         }
@@ -11762,6 +11789,160 @@ export type Database = {
           }
         ]
       }
+      customerContractFunding: {
+        Row: {
+          acrn: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractLineId: string
+          expiresOn: string | null
+          fundedCost: number
+          fundedDate: string
+          fundedFee: number
+          id: string
+          modificationNumber: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          acrn: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractLineId: string
+          expiresOn?: string | null
+          fundedCost: number
+          fundedDate: string
+          fundedFee?: number
+          id?: string
+          modificationNumber: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          acrn?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractLineId?: string
+          expiresOn?: string | null
+          fundedCost?: number
+          fundedDate?: string
+          fundedFee?: number
+          id?: string
+          modificationNumber?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractFunding_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_line_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFunding_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       customerContractInvoice: {
         Row: {
           companyId: string
@@ -12525,9 +12706,11 @@ export type Database = {
           goLiveDate: string | null
           id: string
           itemId: string
+          lineItemNumber: string | null
           materialHandlingPercent: number | null
           noticePercent: number
           noticeWindowDays: number
+          parentLineId: string | null
           projectElementId: string | null
           projectId: string | null
           quantity: number
@@ -12566,9 +12749,11 @@ export type Database = {
           goLiveDate?: string | null
           id?: string
           itemId: string
+          lineItemNumber?: string | null
           materialHandlingPercent?: number | null
           noticePercent?: number
           noticeWindowDays?: number
+          parentLineId?: string | null
           projectElementId?: string | null
           projectId?: string | null
           quantity?: number
@@ -12607,9 +12792,11 @@ export type Database = {
           goLiveDate?: string | null
           id?: string
           itemId?: string
+          lineItemNumber?: string | null
           materialHandlingPercent?: number | null
           noticePercent?: number
           noticeWindowDays?: number
+          parentLineId?: string | null
           projectElementId?: string | null
           projectId?: string | null
           quantity?: number
@@ -12761,6 +12948,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_parentLine_fkey"
+            columns: ["parentLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "customerContractLine_projectElement_fkey"
@@ -17146,6 +17340,7 @@ export type Database = {
           customFields: Json | null
           defaultStorageUnitId: string | null
           departmentId: string | null
+          flsaStatus: Database["public"]["Enums"]["flsaStatus"] | null
           id: string
           laborCategoryId: string | null
           locationId: string
@@ -17162,6 +17357,7 @@ export type Database = {
           customFields?: Json | null
           defaultStorageUnitId?: string | null
           departmentId?: string | null
+          flsaStatus?: Database["public"]["Enums"]["flsaStatus"] | null
           id: string
           laborCategoryId?: string | null
           locationId: string
@@ -17178,6 +17374,7 @@ export type Database = {
           customFields?: Json | null
           defaultStorageUnitId?: string | null
           departmentId?: string | null
+          flsaStatus?: Database["public"]["Enums"]["flsaStatus"] | null
           id?: string
           laborCategoryId?: string | null
           locationId?: string
@@ -42644,6 +42841,182 @@ export type Database = {
           }
         ]
       }
+      payrollPeriodTotal: {
+        Row: {
+          companyId: string
+          employeeId: string
+          grossWages: number
+          hoursPaid: number
+          id: string
+          importedAt: string
+          importedBy: string
+          periodEnd: string
+          periodStart: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          employeeId: string
+          grossWages: number
+          hoursPaid: number
+          id?: string
+          importedAt?: string
+          importedBy: string
+          periodEnd: string
+          periodStart: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          employeeId?: string
+          grossWages?: number
+          hoursPaid?: number
+          id?: string
+          importedAt?: string
+          importedBy?: string
+          periodEnd?: string
+          periodStart?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payrollPeriodTotal_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_importedBy_fkey"
+            columns: ["importedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_importedBy_fkey"
+            columns: ["importedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_importedBy_fkey"
+            columns: ["importedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_importedBy_fkey"
+            columns: ["importedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_importedBy_fkey"
+            columns: ["importedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payrollPeriodTotal_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       peopleAbsence: {
         Row: {
           companyId: string
@@ -46321,6 +46694,9 @@ export type Database = {
           chargeAtReceipt: boolean
           companyId: string
           costAccountId: string | null
+          costObjective:
+            | Database["public"]["Enums"]["projectCostObjective"]
+            | null
           costTreatment: Database["public"]["Enums"]["projectCostTreatment"]
           createdAt: string
           createdBy: string
@@ -46347,6 +46723,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["projectElementPriority"]
           projectStock: boolean
           projectType: Database["public"]["Enums"]["projectType"]
+          restrictCharging: boolean
           startDate: string | null
           status: Database["public"]["Enums"]["projectStatus"]
           updatedAt: string | null
@@ -46357,6 +46734,9 @@ export type Database = {
           chargeAtReceipt?: boolean
           companyId: string
           costAccountId?: string | null
+          costObjective?:
+            | Database["public"]["Enums"]["projectCostObjective"]
+            | null
           costTreatment?: Database["public"]["Enums"]["projectCostTreatment"]
           createdAt?: string
           createdBy: string
@@ -46383,6 +46763,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["projectElementPriority"]
           projectStock?: boolean
           projectType?: Database["public"]["Enums"]["projectType"]
+          restrictCharging?: boolean
           startDate?: string | null
           status?: Database["public"]["Enums"]["projectStatus"]
           updatedAt?: string | null
@@ -46393,6 +46774,9 @@ export type Database = {
           chargeAtReceipt?: boolean
           companyId?: string
           costAccountId?: string | null
+          costObjective?:
+            | Database["public"]["Enums"]["projectCostObjective"]
+            | null
           costTreatment?: Database["public"]["Enums"]["projectCostTreatment"]
           createdAt?: string
           createdBy?: string
@@ -46419,6 +46803,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["projectElementPriority"]
           projectStock?: boolean
           projectType?: Database["public"]["Enums"]["projectType"]
+          restrictCharging?: boolean
           startDate?: string | null
           status?: Database["public"]["Enums"]["projectStatus"]
           updatedAt?: string | null
@@ -48018,6 +48403,9 @@ export type Database = {
           isBilling: boolean
           isChargeable: boolean
           isFinalAsset: boolean
+          isLeave: boolean
+          isPreproduction: boolean
+          isUnallowable: boolean
           itemId: string | null
           milestoneId: string | null
           name: string
@@ -48081,6 +48469,9 @@ export type Database = {
           isBilling?: boolean
           isChargeable?: boolean
           isFinalAsset?: boolean
+          isLeave?: boolean
+          isPreproduction?: boolean
+          isUnallowable?: boolean
           itemId?: string | null
           milestoneId?: string | null
           name: string
@@ -48146,6 +48537,9 @@ export type Database = {
           isBilling?: boolean
           isChargeable?: boolean
           isFinalAsset?: boolean
+          isLeave?: boolean
+          isPreproduction?: boolean
+          isUnallowable?: boolean
           itemId?: string | null
           milestoneId?: string | null
           name?: string
@@ -50022,6 +50416,177 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projectLedger"
             referencedColumns: ["id", "companyId"]
+          }
+        ]
+      }
+      projectMember: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          projectId: string
+          updatedAt: string | null
+          updatedBy: string | null
+          userId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          projectId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          projectId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectMember_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectMember_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "projectMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectMember_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -62744,6 +63309,172 @@ export type Database = {
           }
         ]
       }
+      salesInvoiceFundingAllocation: {
+        Row: {
+          acrn: string
+          amount: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractLineId: string
+          id: string
+          salesInvoiceId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          acrn: string
+          amount: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractLineId: string
+          id?: string
+          salesInvoiceId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          acrn?: string
+          amount?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractLineId?: string
+          id?: string
+          salesInvoiceId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_line_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoiceLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceFundingAllocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       salesInvoiceLine: {
         Row: {
           accountId: string | null
@@ -73768,23 +74499,120 @@ export type Database = {
           }
         ]
       }
+      timesheetCertification: {
+        Row: {
+          certifiedAt: string
+          companyId: string
+          employeeId: string
+          flsaStatus: Database["public"]["Enums"]["flsaStatus"] | null
+          id: string
+          textHash: string
+          weekStart: string
+        }
+        Insert: {
+          certifiedAt?: string
+          companyId: string
+          employeeId: string
+          flsaStatus?: Database["public"]["Enums"]["flsaStatus"] | null
+          id?: string
+          textHash: string
+          weekStart: string
+        }
+        Update: {
+          certifiedAt?: string
+          companyId?: string
+          employeeId?: string
+          flsaStatus?: Database["public"]["Enums"]["flsaStatus"] | null
+          id?: string
+          textHash?: string
+          weekStart?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheetCertification_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetCertification_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetCertification_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "timesheetCertification_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "timesheetCertification_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetCertification_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetCertification_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetCertification_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetCertification_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       timesheetEntry: {
         Row: {
           approvedAt: string | null
           approvedBy: string | null
           companyId: string
+          correctionOfId: string | null
           correctionReason: string | null
           costRate: number | null
           coverage: Database["public"]["Enums"]["serviceCoverage"] | null
           coverageReason: string | null
           createdAt: string
           createdBy: string
+          dilutionFactor: number | null
           employeeId: string
           entryDate: string
           hours: number
           id: string
           journalId: string | null
           laborCategoryId: string
+          lateReason: string | null
           note: string | null
           postedAt: string | null
           projectElementId: string | null
@@ -73801,18 +74629,21 @@ export type Database = {
           approvedAt?: string | null
           approvedBy?: string | null
           companyId: string
+          correctionOfId?: string | null
           correctionReason?: string | null
           costRate?: number | null
           coverage?: Database["public"]["Enums"]["serviceCoverage"] | null
           coverageReason?: string | null
           createdAt?: string
           createdBy: string
+          dilutionFactor?: number | null
           employeeId: string
           entryDate: string
           hours: number
           id?: string
           journalId?: string | null
           laborCategoryId: string
+          lateReason?: string | null
           note?: string | null
           postedAt?: string | null
           projectElementId?: string | null
@@ -73829,18 +74660,21 @@ export type Database = {
           approvedAt?: string | null
           approvedBy?: string | null
           companyId?: string
+          correctionOfId?: string | null
           correctionReason?: string | null
           costRate?: number | null
           coverage?: Database["public"]["Enums"]["serviceCoverage"] | null
           coverageReason?: string | null
           createdAt?: string
           createdBy?: string
+          dilutionFactor?: number | null
           employeeId?: string
           entryDate?: string
           hours?: number
           id?: string
           journalId?: string | null
           laborCategoryId?: string
+          lateReason?: string | null
           note?: string | null
           postedAt?: string | null
           projectElementId?: string | null
@@ -73923,6 +74757,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_correctionOf_fkey"
+            columns: ["correctionOfId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "timesheetEntry"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "timesheetEntry_createdBy_fkey"
@@ -74070,6 +74911,141 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "serviceVisit"
             referencedColumns: ["id", "companyId"]
+          }
+        ]
+      }
+      timesheetEntryRevision: {
+        Row: {
+          after: Json | null
+          before: Json | null
+          companyId: string
+          employeeId: string
+          id: string
+          reason: string
+          revisedAt: string
+          revisedBy: string
+          timesheetEntryId: string
+        }
+        Insert: {
+          after?: Json | null
+          before?: Json | null
+          companyId: string
+          employeeId: string
+          id?: string
+          reason: string
+          revisedAt?: string
+          revisedBy: string
+          timesheetEntryId: string
+        }
+        Update: {
+          after?: Json | null
+          before?: Json | null
+          companyId?: string
+          employeeId?: string
+          id?: string
+          reason?: string
+          revisedAt?: string
+          revisedBy?: string
+          timesheetEntryId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheetEntryRevision_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_revisedBy_fkey"
+            columns: ["revisedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_revisedBy_fkey"
+            columns: ["revisedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_revisedBy_fkey"
+            columns: ["revisedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_revisedBy_fkey"
+            columns: ["revisedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntryRevision_revisedBy_fkey"
+            columns: ["revisedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -98033,6 +99009,14 @@ export type Database = {
           version: number
         }[]
       }
+      get_missing_timesheet_days: {
+        Args: { p_company_id: string; p_from: string; p_to: string }
+        Returns: {
+          date: string
+          employeeId: string
+          managerId: string
+        }[]
+      }
       get_my_claim: { Args: { claim: string }; Returns: Json }
       get_my_permission: { Args: { claim: string }; Returns: Json }
       get_next_numeric_sequence: {
@@ -98444,6 +99428,7 @@ export type Database = {
         Returns: {
           actual: number
           actualHours: number
+          actualUnallowable: number
           committed: number
           planLabor: number
           planMaterial: number
@@ -99879,6 +100864,11 @@ export type Database = {
       xid_time: { Args: { _xid: unknown }; Returns: string }
     }
     Enums: {
+      accountAllowability:
+        | "Allowable"
+        | "Expressly Unallowable"
+        | "Mutually Agreed Unallowable"
+        | "Directly Associated Unallowable"
       accountingPeriodStatus: "Inactive" | "Active"
       accountType:
         | "Bank"
@@ -100076,6 +101066,12 @@ export type Database = {
         | "Audio"
         | "Other"
         | "Model"
+      elementOfCost:
+        | "Labor"
+        | "Material"
+        | "Subcontract"
+        | "Other Direct"
+        | "Travel"
       eliminationKind: "IC Balance" | "IC Revenue"
       employeeTypeSystemType: "Admin" | "Console Operator"
       enforcementRuleFamily: "storage" | "sales"
@@ -100123,6 +101119,7 @@ export type Database = {
         | "Job"
         | "Construction in Progress"
       fixedAssetTransferType: "Capitalization" | "Return to Inventory"
+      flsaStatus: "Exempt" | "Non-Exempt"
       fulfillmentType: "Inventory" | "Job"
       gaugeCalibrationStatus:
         | "Pending"
@@ -100501,6 +101498,12 @@ export type Database = {
         | "Rejected"
         | "Applied"
         | "Cancelled"
+      projectCostObjective:
+        | "Direct"
+        | "IR&D"
+        | "B&P"
+        | "Indirect"
+        | "Commercial"
       projectCostTreatment:
         | "Statistical"
         | "Expense"
@@ -100795,12 +101798,14 @@ export type Database = {
         | "Religious"
         | "Other"
       testCaseVerdict: "Not Run" | "Pass" | "Fail" | "Inconclusive"
+      timekeepingControls: "Standard" | "DCAA"
       timesheetEntryStatus:
         | "Draft"
         | "Submitted"
         | "Approved"
         | "Posted"
         | "Rejected"
+        | "Pending Employee Review"
       trackedEntityStatus:
         | "Available"
         | "Reserved"
@@ -101500,6 +102505,12 @@ export const Constants = {
   },
   public: {
     Enums: {
+      accountAllowability: [
+        "Allowable",
+        "Expressly Unallowable",
+        "Mutually Agreed Unallowable",
+        "Directly Associated Unallowable",
+      ],
       accountingPeriodStatus: ["Inactive", "Active"],
       accountType: [
         "Bank",
@@ -101716,6 +102727,13 @@ export const Constants = {
         "Other",
         "Model",
       ],
+      elementOfCost: [
+        "Labor",
+        "Material",
+        "Subcontract",
+        "Other Direct",
+        "Travel",
+      ],
       eliminationKind: ["IC Balance", "IC Revenue"],
       employeeTypeSystemType: ["Admin", "Console Operator"],
       enforcementRuleFamily: ["storage", "sales"],
@@ -101768,6 +102786,7 @@ export const Constants = {
         "Construction in Progress",
       ],
       fixedAssetTransferType: ["Capitalization", "Return to Inventory"],
+      flsaStatus: ["Exempt", "Non-Exempt"],
       fulfillmentType: ["Inventory", "Job"],
       gaugeCalibrationStatus: [
         "Pending",
@@ -102178,6 +103197,7 @@ export const Constants = {
         "Applied",
         "Cancelled",
       ],
+      projectCostObjective: ["Direct", "IR&D", "B&P", "Indirect", "Commercial"],
       projectCostTreatment: [
         "Statistical",
         "Expense",
@@ -102507,12 +103527,14 @@ export const Constants = {
         "Other",
       ],
       testCaseVerdict: ["Not Run", "Pass", "Fail", "Inconclusive"],
+      timekeepingControls: ["Standard", "DCAA"],
       timesheetEntryStatus: [
         "Draft",
         "Submitted",
         "Approved",
         "Posted",
         "Rejected",
+        "Pending Employee Review",
       ],
       trackedEntityStatus: [
         "Available",
