@@ -62,6 +62,9 @@ export async function voidReimbursement(
     throw new Error("Cannot void a paid reimbursement; void its payment first");
   }
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (reimbursement.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -152,9 +155,9 @@ export async function voidReimbursement(
         originalLines.map((line) => line.id)
       )
       .execute();
-    const reversalByOriginal = new Map(
-      originalLines.map((line, index) => [line.id, reversalLineIds[index]])
-    );
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
     if (dimensions.length) {
       const reversedDimensions = dimensions.map((dimension) => {
         const journalLineId = reversalByOriginal.get(dimension.journalLineId);
@@ -179,7 +182,8 @@ export async function voidReimbursement(
     documentType: "Reimbursement",
     documentId: reimbursement.id,
     postingDate: today,
-    userId
+    userId,
+    reversalLineIds: reversalByOriginal
   });
   await reverseProjectCipRows(trx, {
     companyId,

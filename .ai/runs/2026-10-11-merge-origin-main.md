@@ -246,8 +246,9 @@ and a Transfer re-costed at cost) and the `splitOpeningLayersByStripe` and
    or Posted. Test: `percent-complete.test.ts` ("a material issue to the
    Contract project is relieved from Project WIP"). The other paths that post
    a project charge already store their line. A void's reversal row
-   (`reverseProjectLedgerRows`, the Production Event reversal) still has no
-   line: see the follow-ups in `2026-10-09-overnight-execution.md`.
+   (`reverseProjectLedgerRows`, the Production Event reversal) now stores
+   the void journal's line too. Test: `right-to-invoice.test.ts` ("a void
+   after the run relieved a cost relieves its reversal in the next run").
 
 ## Checks after Phase 2b
 

@@ -30,6 +30,9 @@ export async function voidCharge(
     CHARGE_VOID_BEFORE_CUTOVER_ERROR
   );
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (charge.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -119,9 +122,9 @@ export async function voidCharge(
         originalLines.map((line) => line.id)
       )
       .execute();
-    const reversalByOriginal = new Map(
-      originalLines.map((line, index) => [line.id, reversalLineIds[index]])
-    );
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
     if (dimensions.length) {
       const reversedDimensions = dimensions.map((dimension) => {
         const journalLineId = reversalByOriginal.get(dimension.journalLineId);
@@ -146,7 +149,8 @@ export async function voidCharge(
     documentType: "Charge",
     documentId: charge.id,
     postingDate: today,
-    userId
+    userId,
+    reversalLineIds: reversalByOriginal
   });
   await reverseProjectCipRows(trx, {
     companyId,

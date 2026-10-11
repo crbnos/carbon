@@ -69,6 +69,7 @@ import {
   reverseProjectLedgerRows
 } from "../lib/project-posting";
 import { loadProjectStock, withStripe } from "../lib/stock-stripes";
+import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import {
   hardenPegsForSupply,
   linkPegsToItemLedger,
@@ -1073,6 +1074,7 @@ const postReceipt = defineServerFn({
               .execute();
           }
 
+          const reversalByOriginal = new Map<string, string>();
           if (reversingJournalLines.length > 0) {
             const voidJournalEntryId = await getNextSequence(
               trx,
@@ -1100,15 +1102,25 @@ const postReceipt = defineServerFn({
             const journalId = journal[0]!.id;
             if (!journalId) throw new Error("Failed to insert journal");
 
+            // Ids allocated first, so each project ledger reversal row can
+            // name the line that negates its original line.
+            const reversingLineIds = await allocateJournalLineIds(
+              trx,
+              reversingJournalLines.length
+            );
             await trx
               .insertInto("journalLine")
               .values(
-                reversingJournalLines.map((journalLine) => ({
+                reversingJournalLines.map((journalLine, index) => ({
                   ...journalLine,
+                  id: reversingLineIds[index],
                   journalId
                 }))
               )
               .execute();
+            for (const [index, line] of originalJournalLines.entries()) {
+              reversalByOriginal.set(line.id, reversingLineIds[index]!);
+            }
           }
 
           if (reversingItemLedger.length > 0) {
@@ -1136,7 +1148,8 @@ const postReceipt = defineServerFn({
             documentType: "Purchase Receipt",
             documentId: receiptId,
             postingDate: today,
-            userId
+            userId,
+            reversalLineIds: reversalByOriginal
           });
           await reverseProjectCipRows(trx, {
             companyId,

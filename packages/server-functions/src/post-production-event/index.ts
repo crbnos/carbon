@@ -610,6 +610,34 @@ const postProductionEvent = defineServerFn({
       const openProjectRows = priorProjectRows.filter(
         (row) => !row.reversalOfId && !reversedIds.has(row.id)
       );
+      // A reversal row names this journal's reversal line on its original
+      // line's account, so the revenue run relieves it like the original.
+      // The reversal lines net per account, so rows on one account share it.
+      const originalLineIds = openProjectRows
+        .map((row) => row.journalLineId)
+        .filter((id): id is string => Boolean(id));
+      const originalLineAccounts = new Map(
+        originalLineIds.length > 0
+          ? (
+              await trx
+                .selectFrom("journalLine")
+                .select(["id", "accountId"])
+                .where("id", "in", originalLineIds)
+                .where("companyId", "=", companyId)
+                .execute()
+            ).map((line) => [line.id, line.accountId])
+          : []
+      );
+      const reversalLineFor = (journalLineId: string | null) => {
+        const accountId = journalLineId
+          ? originalLineAccounts.get(journalLineId)
+          : undefined;
+        if (!accountId) return null;
+        const index = reversalLines.findIndex(
+          (line) => line.accountId === accountId
+        );
+        return index < 0 ? null : (journalLineResults[index]?.id ?? null);
+      };
       const hours = (event.duration ?? 0) / 3600;
       const projectLedgerInserts = [
         ...openProjectRows.map((row) =>
@@ -626,6 +654,7 @@ const postProductionEvent = defineServerFn({
             quantity: row.quantity === null ? null : -Number(row.quantity),
             amount: -Number(row.amount),
             reversalOfId: row.id,
+            journalLineId: reversalLineFor(row.journalLineId),
             unallowable: row.unallowable,
             createdBy: userId
           })

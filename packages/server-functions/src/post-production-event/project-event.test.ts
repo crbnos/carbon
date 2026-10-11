@@ -111,6 +111,12 @@ databaseTest(
       ]);
       expect(ledger[0]!.journalLineId).toEqual(afterFirst[0]!.id);
       expect(ledger[2]!.reversalOfId).toEqual(ledger[0]!.id);
+      // The reversal row names the repost's reversal line on the project
+      // account (−100), so the revenue run can relieve it.
+      const reversalLine = (await projectLines()).find(
+        (line) => line.id === ledger[2]!.journalLineId
+      );
+      expect(Number(reversalLine?.amount)).toEqual(-100);
 
       const netProject = (await projectLines()).reduce(
         (sum, line) => sum + Number(line.amount),

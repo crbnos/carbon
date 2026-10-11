@@ -116,6 +116,24 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .executeTakeFirst();
       expect(Number(net?.amount ?? 0)).toEqual(0);
+
+      // The reversal row names the void journal's line that negates the
+      // project line, so the revenue run can relieve it.
+      const reversal = await f.db
+        .selectFrom("projectLedger")
+        .innerJoin("journalLine", (join) =>
+          join
+            .onRef("journalLine.id", "=", "projectLedger.journalLineId")
+            .onRef("journalLine.companyId", "=", "projectLedger.companyId")
+        )
+        .select(["journalLine.accountId", "journalLine.amount"])
+        .where("projectLedger.companyId", "=", f.companyId)
+        .where("projectLedger.reversalOfId", "is not", null)
+        .executeTakeFirstOrThrow();
+      expect([reversal.accountId, Number(reversal.amount)]).toEqual([
+        f.account("project-expense"),
+        -200
+      ]);
     } finally {
       await f.cleanup();
     }

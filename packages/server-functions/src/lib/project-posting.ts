@@ -1029,6 +1029,12 @@ export async function resolveProjectLineAccounts(
  * Reverses every open projectLedger row of a document, for a void: one
  * negative row per row that is not a reversal and has none, with
  * `reversalOfId` set.
+ *
+ * `reversalLineIds` maps each original journal line id to the void
+ * journal's line that negates it. A reversal row stores that line as its
+ * `journalLineId`, so the revenue run finds its WIP account and relieves it
+ * (`selectUnrelievedCost`). Without it, a reversal of a row the run had
+ * already relieved stays unrelieved, and WIP stays credited.
  */
 export async function reverseProjectLedgerRows(
   trx: Transaction<DB>,
@@ -1038,6 +1044,7 @@ export async function reverseProjectLedgerRows(
     documentId: string;
     postingDate: string;
     userId: string;
+    reversalLineIds?: ReadonlyMap<string, string>;
   }
 ): Promise<void> {
   const rows = await trx
@@ -1073,6 +1080,9 @@ export async function reverseProjectLedgerRows(
         unitOfMeasureCode: row.unitOfMeasureCode,
         amount: -Number(row.amount),
         reversalOfId: row.id,
+        journalLineId: row.journalLineId
+          ? (args.reversalLineIds?.get(row.journalLineId) ?? null)
+          : null,
         coverage: row.coverage,
         coverageReason: row.coverageReason,
         unallowable: row.unallowable,

@@ -9,6 +9,7 @@ import { databaseTest } from "../local-database-test-fixture";
 import proposeRevenueRecognitionRun from "../propose-revenue-recognition-run";
 import { dropRecognitionRuns } from "../propose-revenue-recognition-run/run-test-fixture";
 import { projectBillingTestFixture } from "./project-billing-test-fixture";
+import { reverseProjectLedgerRows } from "./project-posting";
 
 type Fixture = Awaited<ReturnType<typeof projectBillingTestFixture>>;
 
@@ -306,6 +307,92 @@ databaseTest(
         .executeTakeFirstOrThrow();
       expect(Number(month.amount)).toBe(-1000);
       expect(Number(month.earnedToDate)).toBe(8000);
+    } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a void after the run relieved a cost relieves its reversal in the next run",
+  async () => {
+    const f = await projectBillingTestFixture();
+    try {
+      await f.addAccounting();
+      const project = await f.addProject("rtv", "P102");
+      await f.addContract({
+        key: "rtv",
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        materialHandlingPercent: 0.25
+      });
+      const [original] = await f.addJournalLines(
+        [{ account: "wip", amount: 1600 }],
+        "2026-09-10"
+      );
+      const [row] = await f.post([
+        {
+          projectId: project.projectId,
+          projectElementId: project.rootId,
+          costType: "Material",
+          amount: 1600,
+          postingDate: "2026-09-10",
+          journalLineId: original
+        }
+      ]);
+
+      // September relieves the cost from WIP.
+      await propose(f, "2026-09-30");
+      expect(
+        (await reliefs(f)).map((r) => [r.projectLedgerId, Number(r.amount)])
+      ).toEqual([[row!.id, 1600]]);
+
+      // The void: its journal negates the line, and the reversal row names it.
+      const [voidLine] = await f.addJournalLines(
+        [{ account: "wip", amount: -1600 }],
+        "2026-10-05"
+      );
+      await f.db.transaction().execute((trx) =>
+        reverseProjectLedgerRows(trx, {
+          companyId: f.companyId,
+          documentType: row!.documentType,
+          documentId: row!.documentId,
+          postingDate: "2026-10-05",
+          userId: f.userId,
+          reversalLineIds: new Map([[original!, voidLine!]])
+        })
+      );
+      const reversal = await f.db
+        .selectFrom("projectLedger")
+        .select(["id", "journalLineId"])
+        .where("companyId", "=", f.companyId)
+        .where("reversalOfId", "=", row!.id)
+        .executeTakeFirstOrThrow();
+      expect(reversal.journalLineId).toBe(voidLine);
+
+      // October relieves the reversal: WIP gets the 1,600.00 back.
+      const october = await propose(f, "2026-10-31");
+      expect(
+        (await runRows(f, october)).filter((r) => r.type === "Cost Relief")
+      ).toEqual([
+        {
+          type: "Cost Relief",
+          amount: -1600,
+          debitAccountId: f.account("cogs"),
+          creditAccountId: f.account("wip")
+        }
+      ]);
+      expect(
+        (await reliefs(f))
+          .map((r) => [r.projectLedgerId, Number(r.amount)])
+          .sort()
+      ).toEqual(
+        [
+          [row!.id, 1600],
+          [reversal.id, -1600]
+        ].sort()
+      );
     } finally {
       await dropRecognitionRuns(f.db, f.companyId);
       await f.cleanup();
