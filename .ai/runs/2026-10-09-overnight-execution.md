@@ -84,6 +84,7 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 10-11 | Cutover fixes + Government contracting 5a | Brad's 4 cutover decisions (opening project WIP, fixed assets at the cutover, project issue re-cost, payback refusal message); Log time Draft in DCAA mode; 5a Tasks 21–24 | done (`b5cf4c65a8`, `81392d3d0c`, `c008470da5`, `014cf941cd`, `c6affee4d3`, `87ad9a777e`, `518b2bb84b`, `e2d19401d6`, `9641b0017e`, `90add5b7ad`) — server-functions 778, erp 2,204, ee project-revenue 16 pass; browser checks deferred |
 | 10-11 | Government contracting 5a | Tasks 25–30 | done (`f4610cf5a4`, `f0f2f483b0`, `0e6acb255e`, `43291cb094`, `21eeb14335`, `3ff3865649`) — server-functions 782+, erp 2,207, jobs 951 pass; browser checks deferred |
 | 10-11 | Government contracting 5a | Tasks 1–34 complete (this session: the close check fix, Tasks 31–34, a conformance log fix); Task 35 deferred | done (`9efe6a2846`, `b8317f52ca`, `f02dedc5ec`, `73367da2b7`, `38e2432b8a`, `8cadcd27de`) — Phase 5a implemented; database 518 (incl. the new live-database close-count test), erp 2,211, checks 300 pass; `db:check:datasets` 4/4, `db:check:backups` restorable; browser verification deferred |
+| 10-11 | Government contracting 5b | Tasks 1–21; Task 22 deferred | done (Tasks 1–14 `8c9c33f586`…`fd019340f6`; Tasks 15–21 `d326c0cfad`, `b2bc052f67`, `8a58013837`, `e256e61b57`, `4435b43e32`, `bfd9c9f921`, `4c7b364f84`) — Phase 5b implemented; ee 2,023, server-functions 795, checks 300 pass; `db:check:datasets` all four and `db:check:backups` pass. 🛑 `pnpm --filter erp build` fails on 2 Phase 3 imports in `packages/planning` (`@carbon/ee/plan.server`, `@carbon/ee/pegging.server`), not on 5b; see the 5b plan's Task 20 note |
 
 ## Follow-ups found during execution
 
@@ -94,6 +95,7 @@ Brad resolved 4 items on 2026-10-10, so they are gone from this list:
 4. A technician without `service_update` charges only their own open visit: it stays as built.
 
 Open:
+- 🛑 `pnpm --filter erp build` fails with "Server-only module referenced by client". `packages/planning/src/mrp/mrp.ts` imports `@carbon/ee/plan.server` and `planning-actions.ts` imports `@carbon/ee/pegging.server` (dynamic imports, Projects Phase 3, `1b80ed58f5`). The ERP's client graph reaches `@carbon/planning` through `purchasing.service.ts` and `production.service.ts`. With the 2 imports bypassed, the build passes.
 - A receipt still makes an inspection lot for a stocked item that the project consumes at receipt (Phase 1a Task 21).
 - Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts`, `get-accounting-period.test.ts` and `calculate-cogs.test.ts` fail sometimes in full runs and pass alone.
 - ~~The merge with main left 5 open questions on the accounting cutover.~~ Resolved: question 5 was fixed earlier, and Brad accepted the recommendations for 1 to 4 on 2026-10-11 (`b5cf4c65a8`, `81392d3d0c`, `c008470da5`, `014cf941cd`). `.ai/runs/2026-10-11-merge-origin-main.md` → *Open questions for Brad* records each one.
