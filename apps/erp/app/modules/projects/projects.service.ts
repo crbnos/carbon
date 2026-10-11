@@ -8,6 +8,7 @@ import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson } from "@carbon/database/json";
 import { BILLABLE_REASON_NO_BILL_RATE, datetime, round } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
@@ -16,6 +17,7 @@ import { updateSortOrder } from "../shared/sort-order";
 import type {
   BillableItemAction,
   ItemValues,
+  LaborDistributionLaborRow,
   laborCategoryRateValidator,
   laborCategoryValidator,
   ProjectBorrowStatus,
@@ -4384,4 +4386,353 @@ export async function getStockOwnerProjects(client: Client, companyId: string) {
     .eq("projectStock", true)
     .eq("active", true)
     .order("identifier");
+}
+
+// ---------------------------------------------------------------------------
+// Government Contracting 5a reports. Each read takes the Kysely client from
+// the route, which checks the report's permissions first (Kysely applies no
+// RLS), and filters every table on `companyId`. Timestamps are read as text
+// on the company's calendar, so no JavaScript `Date` reaches the CSV.
+// ---------------------------------------------------------------------------
+
+type ReportRange = { companyId: string; from: string; to: string };
+
+/** The charge number columns of a report row (`reportChargeNumber`). */
+type ReportChargeColumns = {
+  projectIdentifier: string | null;
+  projectName: string | null;
+  elementReadableId: string | null;
+  elementName: string | null;
+};
+
+/** Entries dated in the range that carry a late reason. */
+export async function getLateTimesheetEntries(
+  db: Kysely<KyselyDatabase>,
+  args: ReportRange
+) {
+  const result = await sql<
+    ReportChargeColumns & {
+      id: string;
+      employeeName: string | null;
+      entryDate: string;
+      createdDate: string;
+      hours: number;
+      status: string;
+      lateReason: string;
+    }
+  >`
+    SELECT t."id", u."fullName" AS "employeeName", t."entryDate",
+      (t."createdAt" AT TIME ZONE c."timezone")::date AS "createdDate",
+      t."hours", t."status"::text AS "status", t."lateReason",
+      p."identifier" AS "projectIdentifier", p."name" AS "projectName",
+      e."readableId" AS "elementReadableId", e."name" AS "elementName"
+    FROM "timesheetEntry" t
+    JOIN "company" c ON c."id" = t."companyId"
+    JOIN "project" p ON p."id" = t."projectId" AND p."companyId" = t."companyId"
+    LEFT JOIN "projectElement" e
+      ON e."id" = t."projectElementId" AND e."companyId" = t."companyId"
+    LEFT JOIN "user" u ON u."id" = t."employeeId"
+    WHERE t."companyId" = ${args.companyId}
+      AND t."lateReason" IS NOT NULL
+      AND t."entryDate" BETWEEN ${args.from}::date AND ${args.to}::date
+    ORDER BY t."entryDate", u."fullName", t."createdAt"
+  `.execute(db);
+  return result.rows;
+}
+
+/** The scheduled work days in the range with no entry, with the manager. */
+export async function getMissingTimesheetDays(
+  db: Kysely<KyselyDatabase>,
+  args: ReportRange
+) {
+  const result = await sql<{
+    employeeId: string;
+    employeeName: string | null;
+    date: string;
+    managerName: string | null;
+  }>`
+    SELECT m."employeeId", u."fullName" AS "employeeName", m."date",
+      mu."fullName" AS "managerName"
+    FROM get_missing_timesheet_days(${args.companyId}, ${args.from}::date, ${args.to}::date) m
+    LEFT JOIN "user" u ON u."id" = m."employeeId"
+    LEFT JOIN "user" mu ON mu."id" = m."managerId"
+    ORDER BY m."date", u."fullName", m."employeeId"
+  `.execute(db);
+  return result.rows;
+}
+
+/**
+ * Labor transfers made in the range: replacement entries (`correctionOfId`)
+ * whose project or element differs from the entry they correct.
+ */
+export async function getLaborTransfers(
+  db: Kysely<KyselyDatabase>,
+  args: ReportRange
+) {
+  const result = await sql<{
+    id: string;
+    transferDate: string;
+    employeeName: string | null;
+    entryDate: string;
+    hours: number;
+    fromProjectIdentifier: string | null;
+    fromElementReadableId: string | null;
+    toProjectIdentifier: string | null;
+    toElementReadableId: string | null;
+    reason: string | null;
+    requesterName: string | null;
+    approverName: string | null;
+    approvedDate: string | null;
+    daysAfterEntry: number;
+  }>`
+    SELECT r."id",
+      (r."createdAt" AT TIME ZONE c."timezone")::date AS "transferDate",
+      u."fullName" AS "employeeName", r."entryDate", r."hours",
+      op."identifier" AS "fromProjectIdentifier",
+      oe."readableId" AS "fromElementReadableId",
+      np."identifier" AS "toProjectIdentifier",
+      ne."readableId" AS "toElementReadableId",
+      r."correctionReason" AS "reason",
+      ru."fullName" AS "requesterName", au."fullName" AS "approverName",
+      (r."approvedAt" AT TIME ZONE c."timezone")::date AS "approvedDate",
+      (r."createdAt" AT TIME ZONE c."timezone")::date - r."entryDate" AS "daysAfterEntry"
+    FROM "timesheetEntry" r
+    JOIN "timesheetEntry" o
+      ON o."id" = r."correctionOfId" AND o."companyId" = r."companyId"
+    JOIN "company" c ON c."id" = r."companyId"
+    LEFT JOIN "project" op ON op."id" = o."projectId" AND op."companyId" = o."companyId"
+    LEFT JOIN "projectElement" oe
+      ON oe."id" = o."projectElementId" AND oe."companyId" = o."companyId"
+    LEFT JOIN "project" np ON np."id" = r."projectId" AND np."companyId" = r."companyId"
+    LEFT JOIN "projectElement" ne
+      ON ne."id" = r."projectElementId" AND ne."companyId" = r."companyId"
+    LEFT JOIN "user" u ON u."id" = r."employeeId"
+    LEFT JOIN "user" ru ON ru."id" = r."createdBy"
+    LEFT JOIN "user" au ON au."id" = r."approvedBy"
+    WHERE r."companyId" = ${args.companyId}
+      AND r."correctionOfId" IS NOT NULL
+      AND (r."projectId" <> o."projectId"
+        OR r."projectElementId" IS DISTINCT FROM o."projectElementId")
+      AND (r."createdAt" AT TIME ZONE c."timezone")::date
+        BETWEEN ${args.from}::date AND ${args.to}::date
+    ORDER BY "transferDate", u."fullName", r."createdAt"
+  `.execute(db);
+  return result.rows;
+}
+
+/**
+ * The auditor's timesheet export: every entry dated in the range and every
+ * revision of those entries, as one list by employee and time. A revision
+ * of a deleted Draft entry is found by the entry date it records.
+ */
+export async function getTimesheetAuditRows(
+  db: Kysely<KyselyDatabase>,
+  args: ReportRange
+) {
+  const result = await sql<
+    ReportChargeColumns & {
+      rowType: "Entry" | "Revision";
+      timesheetEntryId: string;
+      employeeName: string | null;
+      recordedAt: string;
+      entryDate: string | null;
+      hours: number | null;
+      status: string | null;
+      recordedBy: string | null;
+      lateReason: string | null;
+      reason: string | null;
+      before: string | null;
+      after: string | null;
+    }
+  >`
+    WITH entries AS (
+      SELECT t.* FROM "timesheetEntry" t
+      WHERE t."companyId" = ${args.companyId}
+        AND t."entryDate" BETWEEN ${args.from}::date AND ${args.to}::date
+    ),
+    rows AS (
+      SELECT 'Entry' AS "rowType", t."id" AS "timesheetEntryId", t."employeeId",
+        t."createdAt" AS "sortAt", t."entryDate", t."projectId", t."projectElementId",
+        t."hours", t."status"::text AS "status", t."createdBy" AS "recordedById",
+        t."lateReason", t."correctionReason" AS "reason",
+        NULL::text AS "before", NULL::text AS "after"
+      FROM entries t
+      UNION ALL
+      SELECT 'Revision', r."timesheetEntryId", r."employeeId", r."revisedAt",
+        COALESCE(t."entryDate", (r."after"->>'entryDate')::date, (r."before"->>'entryDate')::date),
+        t."projectId", COALESCE(r."after"->>'projectElementId', t."projectElementId"),
+        (r."after"->>'hours')::numeric, NULL, r."revisedBy", NULL, r."reason",
+        r."before"::text, r."after"::text
+      FROM "timesheetEntryRevision" r
+      LEFT JOIN "timesheetEntry" t
+        ON t."id" = r."timesheetEntryId" AND t."companyId" = r."companyId"
+      WHERE r."companyId" = ${args.companyId}
+        AND (r."timesheetEntryId" IN (SELECT "id" FROM entries)
+          OR (t."id" IS NULL AND (
+            (r."after"->>'entryDate') BETWEEN ${args.from} AND ${args.to}
+            OR (r."before"->>'entryDate') BETWEEN ${args.from} AND ${args.to})))
+    )
+    SELECT x."rowType", x."timesheetEntryId", u."fullName" AS "employeeName",
+      to_char(x."sortAt" AT TIME ZONE c."timezone", 'YYYY-MM-DD HH24:MI:SS') AS "recordedAt",
+      x."entryDate", x."hours", x."status", ru."fullName" AS "recordedBy",
+      x."lateReason", x."reason", x."before", x."after",
+      p."identifier" AS "projectIdentifier", p."name" AS "projectName",
+      e."readableId" AS "elementReadableId", e."name" AS "elementName"
+    FROM rows x
+    JOIN "company" c ON c."id" = ${args.companyId}
+    LEFT JOIN "project" p ON p."id" = x."projectId" AND p."companyId" = c."id"
+    LEFT JOIN "projectElement" e ON e."id" = x."projectElementId" AND e."companyId" = c."id"
+    LEFT JOIN "user" u ON u."id" = x."employeeId"
+    LEFT JOIN "user" ru ON ru."id" = x."recordedById"
+    ORDER BY u."fullName", x."employeeId", x."sortAt", x."rowType"
+  `.execute(db);
+  return result.rows;
+}
+
+/**
+ * The inputs of the labor distribution of one accounting period
+ * (`buildLaborDistribution`): `projectLedger` Labor rows posted in it, grouped
+ * by employee, project and element; closed timecard hours with `clockIn` in
+ * it on the company's calendar; and payroll totals with `periodEnd` in it.
+ * Returns null when the period is not the company's.
+ */
+export async function getLaborDistributionRows(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; periodId: string }
+) {
+  const period = await db
+    .selectFrom("accountingPeriod")
+    .select(["id", "startDate", "endDate"])
+    .where("id", "=", args.periodId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (!period) return null;
+  const { startDate, endDate } = period;
+
+  const [labor, timecards, payroll] = await Promise.all([
+    sql<LaborDistributionLaborRow>`
+      SELECT pl."employeeId", u."fullName" AS "employeeName",
+        pl."projectId", p."identifier" AS "projectIdentifier", p."name" AS "projectName",
+        p."costObjective", pl."projectElementId",
+        e."readableId" AS "elementReadableId", e."name" AS "elementName",
+        COALESCE(SUM(pl."quantity"), 0) AS "hours",
+        COALESCE(SUM(pl."amount"), 0) AS "amount",
+        COALESCE(SUM(pl."amount") FILTER (WHERE pl."unallowable"), 0) AS "unallowableAmount"
+      FROM "projectLedger" pl
+      JOIN "project" p ON p."id" = pl."projectId" AND p."companyId" = pl."companyId"
+      LEFT JOIN "projectElement" e
+        ON e."id" = pl."projectElementId" AND e."companyId" = pl."companyId"
+      LEFT JOIN "user" u ON u."id" = pl."employeeId"
+      WHERE pl."companyId" = ${args.companyId}
+        AND pl."costType" = 'Labor'
+        AND pl."postingDate" BETWEEN ${startDate}::date AND ${endDate}::date
+      GROUP BY pl."employeeId", u."fullName", pl."projectId", p."identifier", p."name",
+        p."costObjective", pl."projectElementId", e."readableId", e."name"
+      ORDER BY u."fullName", p."identifier", e."readableId"
+    `.execute(db),
+    sql<{ employeeId: string; employeeName: string | null; hours: number }>`
+      SELECT tc."employeeId", u."fullName" AS "employeeName",
+        SUM(EXTRACT(EPOCH FROM tc."clockOut" - tc."clockIn") / 3600) AS "hours"
+      FROM "timeCardEntry" tc
+      JOIN "company" c ON c."id" = tc."companyId"
+      LEFT JOIN "user" u ON u."id" = tc."employeeId"
+      WHERE tc."companyId" = ${args.companyId}
+        AND tc."clockOut" IS NOT NULL
+        AND (tc."clockIn" AT TIME ZONE c."timezone")::date
+          BETWEEN ${startDate}::date AND ${endDate}::date
+      GROUP BY tc."employeeId", u."fullName"
+    `.execute(db),
+    sql<{
+      employeeId: string;
+      employeeName: string | null;
+      grossWages: number;
+      hoursPaid: number;
+    }>`
+      SELECT pt."employeeId", u."fullName" AS "employeeName",
+        SUM(pt."grossWages") AS "grossWages", SUM(pt."hoursPaid") AS "hoursPaid"
+      FROM "payrollPeriodTotal" pt
+      LEFT JOIN "user" u ON u."id" = pt."employeeId"
+      WHERE pt."companyId" = ${args.companyId}
+        AND pt."periodEnd" BETWEEN ${startDate}::date AND ${endDate}::date
+      GROUP BY pt."employeeId", u."fullName"
+    `.execute(db)
+  ]);
+
+  return {
+    period,
+    labor: labor.rows,
+    timecards: timecards.rows,
+    payroll: payroll.rows
+  };
+}
+
+/**
+ * Cost by CLIN: per current contract line with a `lineItemNumber`, the cost
+ * posted in the range to its billing element's subtree, allowable and
+ * unallowable apart. Funded cost, funded amount and the billed amount are
+ * the line's totals.
+ */
+export async function getCostByClin(
+  db: Kysely<KyselyDatabase>,
+  args: ReportRange
+) {
+  const result = await sql<{
+    contractReadableId: string;
+    contractName: string | null;
+    customerName: string | null;
+    lineItemNumber: string;
+    description: string | null;
+    elementReadableId: string | null;
+    allowableCost: number;
+    unallowableCost: number;
+    fundedCost: number | null;
+    fundedAmount: number | null;
+    billedAmount: number;
+  }>`
+    WITH lines AS (
+      SELECT l.* FROM "customerContractLine" l
+      WHERE l."companyId" = ${args.companyId}
+        AND l."lineItemNumber" IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM "customerContractLine" n
+          WHERE n."amendsLineId" = l."id" AND n."companyId" = l."companyId"
+        )
+    ),
+    costs AS (
+      SELECT s."customerContractLineId" AS "lineId",
+        COALESCE(SUM(pl."amount") FILTER (WHERE NOT pl."unallowable"), 0) AS "allowable",
+        COALESCE(SUM(pl."amount") FILTER (WHERE pl."unallowable"), 0) AS "unallowable"
+      FROM get_contract_line_subtree(${args.companyId}, ARRAY(SELECT "id" FROM lines)) s
+      JOIN "projectLedger" pl
+        ON pl."projectElementId" = s."projectElementId" AND pl."companyId" = ${args.companyId}
+      WHERE pl."postingDate" BETWEEN ${args.from}::date AND ${args.to}::date
+      GROUP BY s."customerContractLineId"
+    ),
+    billed AS (
+      SELECT b."customerContractLineId" AS "lineId", SUM(b."amount") AS "billed"
+      FROM "projectBillableItem" b
+      WHERE b."companyId" = ${args.companyId}
+        AND b."status" = 'Billed'
+        AND b."customerContractLineId" IN (SELECT "id" FROM lines)
+      GROUP BY b."customerContractLineId"
+    )
+    SELECT cc."customerContractId" AS "contractReadableId", cc."name" AS "contractName",
+      cu."name" AS "customerName", l."lineItemNumber",
+      COALESCE(l."description", i."name") AS "description",
+      e."readableId" AS "elementReadableId",
+      COALESCE(co."allowable", 0) AS "allowableCost",
+      COALESCE(co."unallowable", 0) AS "unallowableCost",
+      l."fundedCost", l."fundedAmount", COALESCE(b."billed", 0) AS "billedAmount"
+    FROM lines l
+    JOIN "customerContract" cc
+      ON cc."id" = l."customerContractId" AND cc."companyId" = l."companyId"
+    LEFT JOIN "customer" cu ON cu."id" = cc."customerId" AND cu."companyId" = cc."companyId"
+    LEFT JOIN "item" i ON i."id" = l."itemId" AND i."companyId" = l."companyId"
+    LEFT JOIN "projectElement" e
+      ON e."id" = l."projectElementId" AND e."companyId" = l."companyId"
+    LEFT JOIN costs co ON co."lineId" = l."id"
+    LEFT JOIN billed b ON b."lineId" = l."id"
+    ORDER BY cc."customerContractId", l."lineItemNumber"
+  `.execute(db);
+  return result.rows;
 }

@@ -90,7 +90,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 28: Add the payroll totals import and list
 - [x] Task 29: Add the daily missing-time check
 - [x] Task 30: Add the Timesheets complete close task
-- [ ] Task 31: Add the report queries and the CSV route
+- [x] Task 31: Add the report queries and the CSV route
 - [ ] Task 32: Add the Reports page
 - [ ] Task 33: Keep the demo datasets green
 - [ ] Task 34: Update the rules, AGENTS.md, docs and spec
@@ -1672,4 +1672,14 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   3. The helper lives in `@carbon/database`, not in `accounting.service.ts`, because the ERP vitest config overrides `SUPABASE_DB_URL` with `postgresql://localhost`, so an ERP test cannot reach the running database. `@carbon/database` already tests Kysely helpers against it (`sequence.test.ts`).
   4. `timesheet-readiness.test.ts` runs against the local database in a rolled-back transaction: DCAA counts 1 open entry and 1 missing day; a closing user with `accounting_view` only sees 0 under its own RLS, and the check still counts 2; Standard mode passes; a Posted entry neither counts nor leaves its day missing. 4 passed.
   5. `accounting.periods.test.ts`: its Kysely recorder gains `selectFrom` that finds no settings row (Standard mode), so the scripted close tests keep their behavior. 40 passed.
+- Task 31:
+  1. The queries are raw `sql` over the Kysely client, each filtered on `companyId` in every table. Timestamps are read as text or `::date` on the company's calendar (`company.timezone`), so no JavaScript `Date` reaches the CSV. They have no `@mcp` tag (they take `db`, and the route's permission check is the gate), so `pnpm run generate:mcp` changes nothing.
+  2. `getLaborDistributionRows` takes `{ companyId, periodId }`, not `{ from, to }`: the route reads `periodId` (step 3), and the period's own dates bound all 3 reads. It returns null for a period of another company (404). It returns the period and 3 row sets (`labor`, `timecards`, `payroll`); the labor rows group by employee, project and element inside the one period.
+  3. `buildLaborDistribution` puts a line's ALLOWABLE dollars in Direct, Indirect or Unclassified, and its unallowable dollars in Unallowable, so the 4 columns add up to the line's total (the spec: allowable and unallowable cost in separate columns). The differences are labor less timecards and labor less gross wages, so 3,900.00 against 4,000.00 is −100.00. An employee with payroll or timecards but no labor still gets a total row. Labor with no employee gets no "No payroll imported" note.
+  4. The labor distribution CSV lists each employee's lines, then a **Total** row with timecard hours, the hours difference, gross wages, the dollars difference and the note.
+  5. `getCostByClin` leaves out a line that another line replaces (`amendsLineId`), as Task 26 point 3 does, and reuses `get_contract_line_subtree`. The cost is the cost posted in the range; funded cost, funded amount and billed (Billed billable items) are the line's totals. The plan does not say which range applies to the funding columns.
+  6. `getTimesheetAuditRows` also lists a revision of a deleted Draft entry (P5) when the entry date in its `before` or `after` is in the range. The CSV has a **Record** column (Entry or Revision) and the revision's `before` and `after` as JSON text.
+  7. `getLaborTransfers` filters on the transfer date (the replacement's `createdAt` on the company's calendar). "Days After Entry" is that date less the entry date.
+  8. The route reads each report in one query and streams the encoded CSV in pages of 1,000 rows. The precedent pages its reads with a cursor; these reads are bounded by a date range or a period. A bad range (not `YYYY-MM-DD`, or start after end) returns 400; an unknown key returns 404 before the permission check.
+  9. Verify: `projects-labor-distribution` 4 passed, `erp` typecheck green, `erp` tests 2,211 passed. Each report query ran against the local database with `ON_ERROR_STOP` and raised no error.
 

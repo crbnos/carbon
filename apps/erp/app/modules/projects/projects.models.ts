@@ -8,7 +8,8 @@ import {
   equals,
   estimateAtCompletion,
   formatPercent,
-  formatQuantity
+  formatQuantity,
+  round
 } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
@@ -3960,4 +3961,209 @@ export function isProjectPlanLocked(args: {
 /** The refusal a plan-layer write gets on a locked plan. */
 export function projectPlanLockedMessage(milestoneName: string) {
   return `The plan is locked after ${milestoneName}. Open a change request to change it.`;
+}
+
+// ---------------------------------------------------------------------------
+// Government Contracting 5a reports
+// ---------------------------------------------------------------------------
+
+/** The CSV reports of Projects → Reports, by URL key. */
+export const projectReportKeys = [
+  "late-entries",
+  "missing-time",
+  "labor-distribution",
+  "labor-transfers",
+  "timesheet-audit",
+  "cost-by-clin"
+] as const;
+
+export type ProjectReportKey = (typeof projectReportKeys)[number];
+
+export function isProjectReportKey(value: string): value is ProjectReportKey {
+  return (projectReportKeys as readonly string[]).includes(value);
+}
+
+/** A report row's charge number: the element's id, else the project's. */
+export function reportChargeNumber(row: {
+  projectIdentifier: string | null;
+  elementReadableId: string | null;
+}): string {
+  return row.elementReadableId ?? row.projectIdentifier ?? "";
+}
+
+/** One group of `projectLedger` Labor rows: employee × project × element. */
+export type LaborDistributionLaborRow = {
+  employeeId: string | null;
+  employeeName: string | null;
+  projectId: string;
+  projectIdentifier: string | null;
+  projectName: string | null;
+  costObjective: ProjectCostObjective | null;
+  projectElementId: string | null;
+  elementReadableId: string | null;
+  elementName: string | null;
+  hours: number;
+  amount: number;
+  unallowableAmount: number;
+};
+
+export type LaborDistributionInput = {
+  labor: LaborDistributionLaborRow[];
+  /** Closed timecard hours per employee in the period. */
+  timecards: {
+    employeeId: string;
+    employeeName: string | null;
+    hours: number;
+  }[];
+  /** Imported payroll totals per employee, `periodEnd` in the period. */
+  payroll: {
+    employeeId: string;
+    employeeName: string | null;
+    grossWages: number;
+    hoursPaid: number;
+  }[];
+};
+
+export type LaborDistributionColumns = {
+  hours: number;
+  direct: number;
+  indirect: number;
+  unclassified: number;
+  unallowable: number;
+  total: number;
+};
+
+export type LaborDistributionEmployee = {
+  employeeId: string | null;
+  employeeName: string | null;
+  lines: (LaborDistributionColumns & {
+    chargeNumber: string;
+    projectName: string | null;
+    elementName: string | null;
+    costObjective: ProjectCostObjective | null;
+  })[];
+  total: LaborDistributionColumns & {
+    timecardHours: number;
+    /** Labor hours less timecard hours. */
+    hoursDifference: number;
+    /** Null when no payroll total is imported for the period. */
+    grossWages: number | null;
+    /** Labor dollars less gross wages; null with no payroll. */
+    dollarsDifference: number | null;
+    note: string | null;
+  };
+};
+
+export const NO_PAYROLL_IMPORTED = "No payroll imported";
+
+const DIRECT_OBJECTIVES: readonly ProjectCostObjective[] = [
+  "Direct",
+  "Commercial"
+];
+
+/**
+ * The labor distribution of one period (DFARS criterion 10). Each line puts
+ * its allowable dollars in one column by the project's cost objective:
+ * Direct (Direct, Commercial), Indirect (Indirect, IR&D, B&P) or
+ * Unclassified (none). Unallowable dollars of any project go to Unallowable.
+ * Per employee, the total reconciles hours to timecards and dollars to the
+ * imported payroll totals.
+ */
+export function buildLaborDistribution(
+  input: LaborDistributionInput
+): LaborDistributionEmployee[] {
+  const employees = new Map<string, LaborDistributionEmployee>();
+  const keyOf = (employeeId: string | null) => employeeId ?? "";
+  const employeeFor = (employeeId: string | null, name: string | null) => {
+    const key = keyOf(employeeId);
+    let employee = employees.get(key);
+    if (!employee) {
+      employee = {
+        employeeId,
+        employeeName: name,
+        lines: [],
+        total: {
+          hours: 0,
+          direct: 0,
+          indirect: 0,
+          unclassified: 0,
+          unallowable: 0,
+          total: 0,
+          timecardHours: 0,
+          hoursDifference: 0,
+          grossWages: null,
+          dollarsDifference: null,
+          note: null
+        }
+      };
+      employees.set(key, employee);
+    }
+    if (!employee.employeeName && name) employee.employeeName = name;
+    return employee;
+  };
+
+  for (const row of input.labor) {
+    const employee = employeeFor(row.employeeId, row.employeeName);
+    const unallowable = Number(row.unallowableAmount);
+    const allowable = Number(row.amount) - unallowable;
+    const objective = row.costObjective;
+    const line = {
+      chargeNumber: reportChargeNumber(row),
+      projectName: row.projectName,
+      elementName: row.elementName,
+      costObjective: objective,
+      hours: round(Number(row.hours)),
+      direct:
+        objective && DIRECT_OBJECTIVES.includes(objective)
+          ? round(allowable)
+          : 0,
+      indirect:
+        objective && !DIRECT_OBJECTIVES.includes(objective)
+          ? round(allowable)
+          : 0,
+      unclassified: objective ? 0 : round(allowable),
+      unallowable: round(unallowable),
+      total: round(Number(row.amount))
+    };
+    employee.lines.push(line);
+    const total = employee.total;
+    total.hours += line.hours;
+    total.direct += line.direct;
+    total.indirect += line.indirect;
+    total.unclassified += line.unclassified;
+    total.unallowable += line.unallowable;
+    total.total += line.total;
+  }
+
+  for (const row of input.timecards) {
+    employeeFor(row.employeeId, row.employeeName).total.timecardHours += Number(
+      row.hours
+    );
+  }
+  for (const row of input.payroll) {
+    const total = employeeFor(row.employeeId, row.employeeName).total;
+    total.grossWages = (total.grossWages ?? 0) + Number(row.grossWages);
+  }
+
+  const result = [...employees.values()];
+  for (const { employeeId, total } of result) {
+    total.hours = round(total.hours);
+    total.direct = round(total.direct);
+    total.indirect = round(total.indirect);
+    total.unclassified = round(total.unclassified);
+    total.unallowable = round(total.unallowable);
+    total.total = round(total.total);
+    total.timecardHours = round(total.timecardHours);
+    total.hoursDifference = round(total.hours - total.timecardHours);
+    if (total.grossWages === null) {
+      // Labor with no employee (a job's machine labor) has no payroll.
+      total.note = employeeId ? NO_PAYROLL_IMPORTED : null;
+    } else {
+      total.grossWages = round(total.grossWages);
+      total.dollarsDifference = round(total.total - total.grossWages);
+    }
+  }
+  return result.sort((a, b) =>
+    (a.employeeName ?? "￿").localeCompare(b.employeeName ?? "￿")
+  );
 }
