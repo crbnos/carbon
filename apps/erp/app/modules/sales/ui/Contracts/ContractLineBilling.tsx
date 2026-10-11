@@ -88,7 +88,7 @@ export default function ContractLineBilling({
 }) {
   const { t } = useLingui();
   const billingLabels = useBillingMethodLabels();
-  const generate = useFetcher();
+  const generateFetcher = useFetcher();
   const [editingFunding, setEditingFunding] = useState(false);
   const isTimeAndMaterials = line.billingMethod === "Time & Materials";
   const title = line.description || line.item?.name || line.itemId;
@@ -108,7 +108,7 @@ export default function ContractLineBilling({
               <Trans>Line Details</Trans>
             </Link>
           </Button>
-          <generate.Form
+          <generateFetcher.Form
             method="post"
             action={path.to.contractLineGenerate(contractId, line.id)}
           >
@@ -116,12 +116,12 @@ export default function ContractLineBilling({
               type="submit"
               variant="secondary"
               leftIcon={<LuRefreshCw />}
-              isLoading={generate.state !== "idle"}
-              isDisabled={!canUpdate || generate.state !== "idle"}
+              isLoading={generateFetcher.state !== "idle"}
+              isDisabled={!canUpdate || generateFetcher.state !== "idle"}
             >
               <Trans>Generate Billable Items</Trans>
             </Button>
-          </generate.Form>
+          </generateFetcher.Form>
         </HStack>
       </HStack>
 
