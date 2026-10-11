@@ -2386,6 +2386,9 @@ msgstr "An alert that something needs a person's attention, fanned out from a ca
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 
+msgid "An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization."
+msgstr "An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization."
+
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 
@@ -11980,6 +11983,9 @@ msgstr "Learn more"
 msgid "Lease"
 msgstr "Lease"
 
+msgid "Lease (lessee)"
+msgstr "Lease (lessee)"
+
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 
@@ -12009,6 +12015,9 @@ msgstr "Lease Revenue"
 
 msgid "Lease Revenue (default)"
 msgstr "Lease Revenue (default)"
+
+msgid "Lease run"
+msgstr "Lease run"
 
 msgid "Lease Run"
 msgstr "Lease Run"
@@ -18560,6 +18569,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Right item"
 
+msgid "Right-of-use asset"
+msgstr "Right-of-use asset"
+
 msgid "Right-of-Use Asset"
 msgstr "Right-of-Use Asset"
 
@@ -21923,6 +21935,9 @@ msgstr "The legal entity to bill, when different from the customer who receives 
 msgid "The legal entity to bill, when different from the supplier who delivers the goods — for parent / subsidiary or factoring arrangements."
 msgstr "The legal entity to bill, when different from the supplier who delivers the goods — for parent / subsidiary or factoring arrangements."
 
+msgid "The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run."
+msgstr "The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run."
+
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 
@@ -21997,6 +22012,9 @@ msgstr "The month your financial year begins; periods are numbered from this mon
 
 msgid "The month your tax year begins; may differ from the fiscal year in some jurisdictions."
 msgstr "The month your tax year begins; may differ from the fiscal year in some jurisdictions."
+
+msgid "The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals."
+msgstr "The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals."
 
 msgid "The monthly periods you post into and close"
 msgstr "The monthly periods you post into and close"
@@ -24702,6 +24720,9 @@ msgstr "What the customer pays up front, the tax on rent, and when invoices are 
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "What the due-date countdown starts from (invoice date, end of month, etc.)."
+
+msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
+msgstr "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 
 msgid "What these rows mean"
 msgstr "What these rows mean"

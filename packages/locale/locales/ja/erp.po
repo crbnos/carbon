@@ -58,7 +58,7 @@ msgid "(not an Equity posting account)"
 msgstr "(純資産転記勘定科目ではありません)"
 
 msgid "(reasonably certain)"
-msgstr ""
+msgstr "（合理的に確実である）"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
@@ -177,7 +177,7 @@ msgstr "{0}件の下書き仕訳"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to post · {amount}"
-msgstr ""
+msgstr "{0}件の仕訳を転記 · {amount}"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
@@ -686,7 +686,7 @@ msgid "1 draft journal entry"
 msgstr "1 件の下書き仕訳行"
 
 msgid "1 entry to post · {amount}"
-msgstr ""
+msgstr "1件の仕訳を転記 · {amount}"
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1件の認識対象明細 · {amount}"
@@ -701,7 +701,7 @@ msgid "1 line"
 msgstr "1明細"
 
 msgid "1 month"
-msgstr ""
+msgstr "1ヶ月"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -921,7 +921,7 @@ msgid "A file named {0} already exists — delete or rename it first"
 msgstr "ファイル {0} は既に存在します — 削除するか先に名前を変更してください"
 
 msgid "A finance lease when any of these is true, and an operating lease when none is."
-msgstr ""
+msgstr "これらのいずれかが当てはまる場合はファイナンスリース、いずれも当てはまらない場合は運用リースです。"
 
 msgid "A firm customer commitment to deliver; fulfillment status splits across ship and invoice before reaching Completed."
 msgstr "得意先からの確定的な納期承諾；充足状況は出荷と請求書にわたって分散され、完了に達する前に処理されます。"
@@ -990,13 +990,13 @@ msgid "A job's status changes"
 msgstr "ジョブのステータスが変更されました"
 
 msgid "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
-msgstr ""
+msgstr "リースはASC 842のいずれかのテストが満たされる場合、売上型（貸手）またはファイナンス（借手）リースです。これらのしきい値はテスト（c）と（d）を設定します。貸手割引率は新規レンタル契約の既定値です。増分借入金利は新規リースの既定値です。"
 
 msgid "A lease must be in the company's base currency to be activated."
-msgstr ""
+msgstr "リースを有効化するには、会社の基本通貨である必要があります。"
 
 msgid "A lease of 12 months or less with no purchase option reasonably certain is short-term. Otherwise it is a finance lease when any of these is true, and an operating lease when none is."
-msgstr ""
+msgstr "12ヶ月以下で購入オプションが合理的に確実でないリースは短期リースです。それ以外の場合、これらのいずれかが当てはまる場合はファイナンスリース、いずれも当てはまらない場合は運用リースです。"
 
 msgid "A line settles more than its invoice's open balance"
 msgstr "明細が請求書の未払い残高を超えて消込しています"
@@ -1100,7 +1100,7 @@ msgid "A purchase invoice is a document that specifies the products or services 
 msgstr "仕入先請求書は、得意先によって購入された製品またはサービス、および対応する原価を指定する文書です。"
 
 msgid "A purchase invoice is drafted for each payment on its due date."
-msgstr ""
+msgstr "支払期日ごとに仕入先請求書が下書きで作成されます。"
 
 msgid "A purchase invoice is posted"
 msgstr "仕入先請求書が転記されました"
@@ -1349,13 +1349,13 @@ msgid "A shipment's tracking number changes"
 msgstr "出荷の追跡番号が変更される"
 
 msgid "A short-term lease has no schedule: only its payment rows change, and no journal is posted."
-msgstr ""
+msgstr "短期リースにはスケジュールがありません。支払行のみが変更され、仕訳は転記されません。"
 
 msgid "A short-term lease has no schedule. Each invoice is expensed."
-msgstr ""
+msgstr "短期リースにはスケジュールがありません。各請求書は費用計上されます。"
 
 msgid "A short-term lease posts no journal at activation. Each invoice is expensed when it posts."
-msgstr ""
+msgstr "短期リースは有効化時に仕訳を転記しません。各請求書は転記時に費用計上されます。"
 
 msgid "A step needs a name."
 msgstr "ステップには名前が必要です。"
@@ -1611,7 +1611,7 @@ msgid "Accum. Tax Depr."
 msgstr "税務減価償却累計額"
 
 msgid "Accumulated Amortization – Right-of-Use Assets"
-msgstr ""
+msgstr "累計償却 – 使用権資産"
 
 msgid "Accumulated Depreciation"
 msgstr "減価償却累計額"
@@ -1636,7 +1636,7 @@ msgid "Accumulated Depreciation on Disposal (default)"
 msgstr "除却時の減価償却累計額 (デフォルト)"
 
 msgid "Accumulated ROU Amortization"
-msgstr ""
+msgstr "使用権資産累計償却"
 
 msgid "Accumulation Period (Weeks)"
 msgstr "蓄積期間（週）"
@@ -1699,7 +1699,7 @@ msgid "Activating checks every unit is available, classifies each unit's account
 msgstr "有効化時に全ての個が利用可能であることを確認し、各個の会計処理を分類して、各個のレートで最初の請求期間を切り分けます。その後、条件および明細は固定されます。"
 
 msgid "Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards."
-msgstr ""
+msgstr "有効化するとリースが分類され、使用権資産とリース負債が計上され、月間スケジュールが作成されます。条件と支払行はその後固定されます。"
 
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "活性化により条件と個数が確定され、各個が分類され、最初の請求期間が開始されます。その後、期間が来るたびに請求書が自動的に作成されます。"
@@ -1828,7 +1828,7 @@ msgid "Add Asset Class"
 msgstr "資産クラスを追加"
 
 msgid "Add at least one payment row before activating."
-msgstr ""
+msgstr "有効化する前に少なくとも1つの支払行を追加してください。"
 
 msgid "Add at least one service."
 msgstr "少なくとも1つの外注サービスを追加してください。"
@@ -1973,7 +1973,7 @@ msgid "Add path"
 msgstr "パスを追加"
 
 msgid "Add Payment"
-msgstr ""
+msgstr "支払を追加"
 
 msgid "Add Permissions"
 msgstr "権限を追加"
@@ -2152,7 +2152,7 @@ msgid "Advance"
 msgstr "前払い"
 
 msgid "Advance (start of each period)"
-msgstr ""
+msgstr "前払（各期間の開始）"
 
 msgid "Advance to {nextStatus}"
 msgstr "{nextStatus}に進む"
@@ -2341,10 +2341,10 @@ msgid "Amendments"
 msgstr "修正"
 
 msgid "Amortization"
-msgstr ""
+msgstr "償却"
 
 msgid "Amortization – Right-of-Use Assets"
-msgstr ""
+msgstr "償却 – 使用権資産"
 
 msgid "Amount"
 msgstr "金額"
@@ -2385,6 +2385,9 @@ msgstr "何かが人の注意が必要であることを示すアラート。car
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "不適合への承認要件。レビュアー（事前設定されたエンジニアリングと品質部門）が問題をクローズする前に署名する必要があります。"
+
+msgid "An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization."
+msgstr ""
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "資産の取得原価から減価償却累計額を差し引いた額。帳簿上の現在価値であり、除却時の計上額です"
@@ -2548,19 +2551,19 @@ msgid "Annotation updated"
 msgstr "注釈が更新されました"
 
 msgid "Annual"
-msgstr ""
+msgstr "年間"
 
 msgid "Annual Escalation"
-msgstr ""
+msgstr "年間エスカレーション"
 
 msgid "Annual Escalation (%)"
-msgstr ""
+msgstr "年間エスカレーション（%）"
 
 msgid "Annual rate the rent is discounted at"
 msgstr "レンタル料が割引される年間レート"
 
 msgid "Annual. Starts from the company's incremental borrowing rate"
-msgstr ""
+msgstr "年間。会社の増分借入金利から開始します"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "このコストセンターがロールアップされる別の原価センター。親の下に部門をネストさせて、階層的なコスト報告を実現します"
@@ -3132,7 +3135,7 @@ msgid "Are you sure you want to delete this passkey? You won't be able to use it
 msgstr "このパスキーを削除してもよろしいですか？サインインに使用できなくなります。"
 
 msgid "Are you sure you want to delete this payment row?"
-msgstr ""
+msgstr "この支払行を削除してもよろしいですか？"
 
 msgid "Are you sure you want to delete this quality document?"
 msgstr "この品質文書を削除してもよろしいですか?"
@@ -3272,7 +3275,7 @@ msgid "Arrears"
 msgstr "延滞"
 
 msgid "Arrears (end of each period)"
-msgstr ""
+msgstr "後払（各期間の終了）"
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "工場の処理待ちキューの最前列に割り込むように。"
@@ -3288,7 +3291,7 @@ msgid "As of {0}"
 msgstr "{0}時点で"
 
 msgid "As of <0/>, the last month a lease run posted."
-msgstr ""
+msgstr "<0/>現在、リース実行が最後に転記された月です。"
 
 msgid "As of:"
 msgstr "以下の日付時点:"
@@ -3311,7 +3314,7 @@ msgid "Asks revenue recognition what a new run for this period would recognize n
 msgstr "この期間の新しい実行が現在認識する売上高（繰延請求書売上、計上予定賃貸料、契約売上高）を確認し、期間終了までに計上予定の下書き実行を確認します。実行を作成して転記し、売上高が元帳に反映されるようにします。何も認識する必要がない場合は、理由を指定してスキップしてください。"
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
-msgstr ""
+msgstr "このリース実行に対し、この期間の新規実行が今どのような転記を行うかを確認します—リース利息と使用権資産の償却、レンタル賃料の繰延または発生計上、売上型リース利息です。また、期間終了時点で期限が到来する仕訳を保有する下書きリース実行がないかを確認します。実行を作成して転記し、仕訳が台帳に転記されるようにしてください。何も転記する必要がない場合は理由を付けてスキップしてください。"
 
 msgid "Assemblies"
 msgstr "アセンブリ"
@@ -3380,10 +3383,10 @@ msgid "Asset ID"
 msgstr "資産 ID"
 
 msgid "Asset Name"
-msgstr ""
+msgstr "資産名"
 
 msgid "Asset recognized at lease commencement for the right to use a leased asset"
-msgstr ""
+msgstr "リース開始時に認識された、リース資産を使用する権利の資産"
 
 msgid "Asset scrap disposals"
 msgstr "資産スクラップ除却"
@@ -3449,7 +3452,7 @@ msgid "At Commencement"
 msgstr "開始時に"
 
 msgid "At commencement. No lease run has posted yet."
-msgstr ""
+msgstr "開始時。リース実行はまだ転記されていません。"
 
 msgid "At each gate"
 msgstr "各ゲートで"
@@ -4232,7 +4235,7 @@ msgid "Cancel job {target}"
 msgstr "製造指図{target}をキャンセル"
 
 msgid "Cancel Lease"
-msgstr ""
+msgstr "リースをキャンセル"
 
 msgid "Cancel Order"
 msgstr "注文をキャンセル"
@@ -4280,7 +4283,7 @@ msgid "Cancelling voids the agreement and releases its units. An agreement with 
 msgstr "キャンセルすると契約が取消になり、そのユニットが解放されます。レンタル中のユニットを持つ契約または請求済みの期間を持つ契約はキャンセルできません。"
 
 msgid "Cancelling voids the commencement journal and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate it instead."
-msgstr ""
+msgstr "キャンセルすると開始仕訳が取消され、スケジュールが削除されます。請求済支払または転記済リース実行のあるリースはキャンセルできません。代わりに終了してください。"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "保存されていない操作にパラメータを追加できません"
@@ -4449,10 +4452,10 @@ msgid "Cash & Banking"
 msgstr "現金と銀行"
 
 msgid "Cash paid: finance leases"
-msgstr ""
+msgstr "支払現金：ファイナンスリース"
 
 msgid "Cash paid: operating leases"
-msgstr ""
+msgstr "支払現金：運用リース"
 
 msgid "Categories that classify how stock is stored"
 msgstr "在庫がどのように保管されるかを分類するカテゴリ"
@@ -4515,7 +4518,7 @@ msgid "Change Inspection Plan"
 msgstr "検査計画を変更"
 
 msgid "Change Lease"
-msgstr ""
+msgstr "リースを変更"
 
 msgid "Change lines with Amend."
 msgstr "修正で明細を変更"
@@ -4575,7 +4578,7 @@ msgid "Changes"
 msgstr "変更"
 
 msgid "Changing a payment term or a date cuts the payment rows again. Edited rows are replaced."
-msgstr ""
+msgstr "支払条件または日付を変更すると、支払行が再度生成されます。編集した行は置き換えられます。"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "コンポーネントを変更するとグループが再定義されます。モーション計画を再実行してステップに変更を適用してください。"
@@ -4726,7 +4729,7 @@ msgid "Classification"
 msgstr "分類"
 
 msgid "Classification:"
-msgstr ""
+msgstr "分類："
 
 msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
 msgstr "工順工程を分類します：工法、組立、検査工程は独自の製造現場でMESで実行されます。組立は案内付き組立ビューを取得し、検査は品質チェックを実行します。一方、外注加工工程は仕入先に外注され、発注書を作成します。プロセスは同じタイプを持ち、新しい工程でそれをデフォルト設定します。"
@@ -4846,7 +4849,7 @@ msgid "Closing finishes the agreement. Every unit must be returned or sold and e
 msgstr "クローズにより契約が完了します。すべてのユニットは返却または売却され、すべての請求期間は請求済でなければなりません。"
 
 msgid "Closing Liability"
-msgstr ""
+msgstr "期末負債"
 
 msgid "Closure blocked"
 msgstr "完了がブロックされています"
@@ -4927,10 +4930,10 @@ msgid "comma-separated values"
 msgstr "カンマ区切りの値"
 
 msgid "Commencement"
-msgstr ""
+msgstr "開始"
 
 msgid "Commencement Date"
-msgstr ""
+msgstr "開始日"
 
 msgid "Comment"
 msgstr "コメント"
@@ -5361,7 +5364,7 @@ msgid "Continue Setup"
 msgstr "セットアップを続行"
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
-msgstr ""
+msgstr "使用権資産償却累計額"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定資産の総減価償却費の逆資産勘定"
@@ -5568,7 +5571,7 @@ msgid "Copy job unique identifier"
 msgstr "製造指図の一意識別子をコピー"
 
 msgid "Copy lease number"
-msgstr ""
+msgstr "リース番号をコピー"
 
 msgid "Copy link"
 msgstr "リンクをコピー"
@@ -5598,7 +5601,7 @@ msgid "Copy link to Job"
 msgstr "ジョブへのリンクをコピー"
 
 msgid "Copy link to lease"
-msgstr ""
+msgstr "リースへのリンクをコピー"
 
 msgid "Copy link to material"
 msgstr "材料へのリンクをコピー"
@@ -6329,7 +6332,7 @@ msgid "Current Password"
 msgstr "現在のパスワード"
 
 msgid "Current portion"
-msgstr ""
+msgstr "流動負債部分"
 
 msgid "Current projection"
 msgstr "現在の予測"
@@ -6530,7 +6533,7 @@ msgid "Customize the layout of your PDF documents — reorder sections, hide wha
 msgstr "PDFドキュメントのレイアウトをカスタマイズ — セクションを並べ替え、不要な部分を非表示にし、独自のブロックを追加できます。"
 
 msgid "Cut from the payment terms. Change a row, add one or delete one before activating."
-msgstr ""
+msgstr "支払条件からカット。有効化する前に行を変更、追加、または削除してください。"
 
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "Carbonに切り替えて古いシステムを凍結する"
@@ -6657,7 +6660,7 @@ msgid "Days"
 msgstr "日数"
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
-msgstr ""
+msgstr "リースの通知または終了日の何日前に責任者に通知するか。"
 
 msgid "Days Discount"
 msgstr "値引日数"
@@ -6750,7 +6753,7 @@ msgid "Decide when material picked to a work center but not consumed flows back 
 msgstr "作業区にピッキングされたが消費済みでない材料がいつ倉庫に戻されるかを決定"
 
 msgid "Decided when the lease is activated, from the payment rows and the classification inputs."
-msgstr ""
+msgstr "リース有効化時に支払行と分類入力から決定"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -6789,7 +6792,7 @@ msgid "Default accounts for customer transactions and receivables"
 msgstr "得意先取引と売掛金のデフォルト勘定科目"
 
 msgid "Default accounts for leases the company pays, under ASC 842"
-msgstr ""
+msgstr "会社が支払うリースのデフォルト勘定（ASC 842）"
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "長期資産と減価償却のデフォルト口座"
@@ -7092,7 +7095,7 @@ msgid "Delete Journal Entry"
 msgstr "仕訳行を削除"
 
 msgid "Delete Lease"
-msgstr ""
+msgstr "リース削除"
 
 msgid "Delete line"
 msgstr "行を削除"
@@ -7592,7 +7595,7 @@ msgid "Discount Percentage"
 msgstr "値引パーセント"
 
 msgid "Discount Rate"
-msgstr ""
+msgstr "割引率"
 
 msgid "Discount Rate (%)"
 msgstr "値引率（%）"
@@ -7789,7 +7792,7 @@ msgid "Draft only"
 msgstr "下書きのみ"
 
 msgid "Draft purchase invoices are created every day for the payments that are due. Use this to draft the due payments right away."
-msgstr ""
+msgstr "支払期日の仕入先請求書は毎日下書きで作成されます。この機能を使用して、期日の支払を即座に下書きしてください。"
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "終了日後に既に請求された時間のクレジットメモを下書きします。"
@@ -8028,7 +8031,7 @@ msgid "Each line shows its item ID and revision."
 msgstr "各明細はアイテムIDとリビジョンを表示します。"
 
 msgid "Each month the lease run posts the interest and the right-of-use amortization."
-msgstr ""
+msgstr "毎月、リース実行により利息と使用権資産償却が転記されます。"
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "各操作の未使用材料は操作が完了するとすぐに戻されます。"
@@ -8443,10 +8446,10 @@ msgid "edited <0/>"
 msgstr "編集済 <0/>"
 
 msgid "Effective"
-msgstr ""
+msgstr "有効"
 
 msgid "Effective Date"
-msgstr ""
+msgstr "有効日"
 
 msgid "Eliminated"
 msgstr "削除済み"
@@ -8786,7 +8789,7 @@ msgid "EORI"
 msgstr "EORI"
 
 msgid "Equipment, vehicles or buildings the company rents from a supplier. Payment rows are cut from the payment terms and can be edited until the lease is activated."
-msgstr ""
+msgstr "会社が仕入先からレンタルする設備、車両、または建物。支払行は支払条件からカットされ、リース有効化まで編集できます。"
 
 msgid "Equity"
 msgstr "純資産"
@@ -8928,7 +8931,7 @@ msgid "Every account default is set"
 msgstr "すべてのアカウントのデフォルトが設定されています"
 
 msgid "Every change to an active lease, with the amounts before and after."
-msgstr ""
+msgstr "有効リースのすべての変更。変更前後の金額付き。"
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "会計を有効にする前に、すべてのチェックに合格する必要があります。"
@@ -8955,7 +8958,7 @@ msgid "Every match"
 msgstr "すべてのマッチ"
 
 msgid "Every payment row is cut again from the payment terms. Rows you edited, added or deleted are replaced."
-msgstr ""
+msgstr "すべての支払行が支払条件から再びカットされます。編集、追加、または削除した行は置き換えられます。"
 
 msgid "Every required action has already been added."
 msgstr "すべての必須アクションが既に追加されています。"
@@ -9024,10 +9027,10 @@ msgid "Exemption Reason"
 msgstr "免除理由"
 
 msgid "Exercise Date"
-msgstr ""
+msgstr "行使日"
 
 msgid "Exercise Purchase Option"
-msgstr ""
+msgstr "購入オプション行使"
 
 msgid "Existing"
 msgstr "既存"
@@ -9770,13 +9773,13 @@ msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycl
 msgstr "会計月をオープン → ロック中 → クローズ済のライフサイクルを通じて確定します。クローズ済期間は固定され、残高はスナップショットされ、明示的な再オープンでのみ取り消し可能です。"
 
 msgid "Finance"
-msgstr ""
+msgstr "ファイナンス"
 
 msgid "Finance lease: amortization of ROU assets"
-msgstr ""
+msgstr "ファイナンスリース：使用権資産の償却"
 
 msgid "Finance lease: interest on lease liabilities"
-msgstr ""
+msgstr "ファイナンスリース：リース債務の利息"
 
 msgid "Financial Statements"
 msgstr "財務諸表"
@@ -9950,7 +9953,7 @@ msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
 
 msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr ""
+msgstr "例：「フォークリフトFL-12」または「プラント2建物」"
 
 msgid "Forecast"
 msgstr "予測"
@@ -10067,7 +10070,7 @@ msgid "FY {year}"
 msgstr "FY {year}"
 
 msgid "Gain (Loss)"
-msgstr ""
+msgstr "利得（損失）"
 
 msgid "Gain on Disposal"
 msgstr "除却益"
@@ -10079,10 +10082,10 @@ msgid "Gain on Disposal Account"
 msgstr "除却益勘定科目"
 
 msgid "Gain on Lease Modification"
-msgstr ""
+msgstr "リース変更利得"
 
 msgid "Gain on Lease Termination"
-msgstr ""
+msgstr "リース終了利得"
 
 msgid "Gain/Loss"
 msgstr "利益/損失"
@@ -10335,7 +10338,7 @@ msgid "Go to implementation hub"
 msgstr "実施ハブに移動"
 
 msgid "Go to lease runs"
-msgstr ""
+msgstr "リース実行に移動"
 
 msgid "Go to module"
 msgstr "モジュールに移動"
@@ -10879,13 +10882,13 @@ msgid "in {0}"
 msgstr "{0}以内に"
 
 msgid "in advance"
-msgstr ""
+msgstr "前払い"
 
 msgid "In an open menu"
 msgstr "開いているメニュー内"
 
 msgid "in arrears"
-msgstr ""
+msgstr "後払い"
 
 msgid "In Maintenance"
 msgstr "保全中"
@@ -11029,7 +11032,7 @@ msgid "Increase purchase order {target} to {amount}"
 msgstr "発注書{target}を{amount}に増加"
 
 msgid "Incremental Borrowing Rate (%)"
-msgstr ""
+msgstr "増分借入金利（％）"
 
 msgid "Indirect"
 msgstr "間接"
@@ -11074,7 +11077,7 @@ msgid "inherits {inheritedName}"
 msgstr "継承 {inheritedName}"
 
 msgid "Initial Liability:"
-msgstr ""
+msgstr "初期リース債務："
 
 msgid "Input"
 msgstr "入力"
@@ -11198,7 +11201,7 @@ msgid "Interest (default)"
 msgstr "利息 (デフォルト)"
 
 msgid "Interest Expense – Leases"
-msgstr ""
+msgstr "リース利息費用"
 
 msgid "Interest Income – Leases"
 msgstr "利息収入 – リース"
@@ -11210,7 +11213,7 @@ msgid "Interest income or expense from banking activities"
 msgstr "銀行業務からの利息収益または利息費用"
 
 msgid "Interest on finance lease liabilities"
-msgstr ""
+msgstr "ファイナンスリース債務の利息"
 
 msgid "Internal"
 msgstr "社内"
@@ -11357,7 +11360,7 @@ msgid "Invoice Date"
 msgstr "請求日"
 
 msgid "Invoice From"
-msgstr ""
+msgstr "請求書発行元"
 
 msgid "Invoice ID"
 msgstr "請求書ID"
@@ -11366,7 +11369,7 @@ msgid "Invoice Location"
 msgstr "請求書の場所"
 
 msgid "Invoice Now"
-msgstr ""
+msgstr "今すぐ請求する"
 
 msgid "Invoice Number"
 msgstr "請求書番号"
@@ -11742,7 +11745,7 @@ msgid "Journal Preview"
 msgstr "仕訳プレビュー"
 
 msgid "Journals"
-msgstr ""
+msgstr "仕訳"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "この日付以前の仕訳はロック中として扱われます。両方が存在する場合、プロバイダーが報告したロック日付とマージされます。"
@@ -11978,31 +11981,34 @@ msgid "Learn more"
 msgstr "詳細情報"
 
 msgid "Lease"
+msgstr "リース"
+
+msgid "Lease (lessee)"
 msgstr ""
 
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
-msgstr ""
+msgstr "使用料や保全など、固定支払の一部ではないリース手数料"
 
 msgid "Lease Classification"
 msgstr "リース分類"
 
 msgid "Lease Cost"
-msgstr ""
+msgstr "リース原価"
 
 msgid "Lease Liabilities"
-msgstr ""
+msgstr "リース負債"
 
 msgid "Lease liability"
-msgstr ""
+msgstr "リース負債"
 
 msgid "Lease Liability"
-msgstr ""
+msgstr "リース負債"
 
 msgid "Lease Liability:"
-msgstr ""
+msgstr "リース負債:"
 
 msgid "Lease Reminder Days"
-msgstr ""
+msgstr "リース通知日数"
 
 msgid "Lease Revenue"
 msgstr "リース売上高"
@@ -12010,26 +12016,29 @@ msgstr "リース売上高"
 msgid "Lease Revenue (default)"
 msgstr "リース売上高（デフォルト）"
 
-msgid "Lease Run"
+msgid "Lease run"
 msgstr ""
+
+msgid "Lease Run"
+msgstr "リース処理"
 
 msgid "Lease run entries and posted lease invoice lines in the period."
-msgstr ""
+msgstr "当期のリース処理仕訳及び転記済みリース請求書明細。"
 
 msgid "Lease Runs"
-msgstr ""
+msgstr "リース処理"
 
 msgid "Leased Asset"
-msgstr ""
+msgstr "リース資産"
 
 msgid "Leases"
-msgstr ""
+msgstr "リース"
 
 msgid "Leases (Lessee)"
-msgstr ""
+msgstr "リース(借手)"
 
 msgid "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
-msgstr ""
+msgstr "購入選択権がない12ヶ月以下のリースは支払賃料として費用化される。"
 
 msgid "Leave any related receipts untouched"
 msgstr "関連するすべての領収書はそのままにしておく"
@@ -12065,7 +12074,7 @@ msgid "Leftover staged material returns when the whole job completes."
 msgstr "ジョブ全体が完了したときに、ステージングされたままの材料が戻されます。"
 
 msgid "Less imputed interest"
-msgstr ""
+msgstr "控除 補填利息"
 
 msgid "Less manual work"
 msgstr "手作業を減らす"
@@ -12077,13 +12086,13 @@ msgid "Less overtime"
 msgstr "残業を減らす"
 
 msgid "Lessee lease balances, maturity analysis and lease cost"
-msgstr ""
+msgstr "借手リース残高、満期分析及びリース原価"
 
 msgid "Lessor"
-msgstr ""
+msgstr "貸手"
 
 msgid "Lessor Discount Rate (%)"
-msgstr ""
+msgstr "貸手割引率(%)"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサインインできるようにします。"
@@ -12107,7 +12116,7 @@ msgid "Letter"
 msgstr "文字"
 
 msgid "Liability"
-msgstr ""
+msgstr "負債"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "従業員への費用払戻に対する負債勘定です。未設定の場合は買掛金にフォールバックします。"
@@ -12413,7 +12422,7 @@ msgid "Loss on Disposal Account"
 msgstr "除却損勘定"
 
 msgid "Loss on Lease Termination"
-msgstr ""
+msgstr "リース終了損"
 
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定資産の除却時に認識される損失"
@@ -12886,7 +12895,7 @@ msgid "Matrix"
 msgstr "マトリックス"
 
 msgid "Maturity Analysis"
-msgstr ""
+msgstr "満期分析"
 
 msgid "Max Qty"
 msgstr "最大数量"
@@ -13114,20 +13123,20 @@ msgid "Model upload"
 msgstr "モデルアップロード"
 
 msgid "Modification"
-msgstr ""
+msgstr "修正"
 
 msgid "Modified"
 msgstr "修正済み"
 
 msgid "Modify"
-msgstr ""
+msgstr "修正する"
 
 #. placeholder {0}: lease.leaseId
 msgid "Modify {0}"
-msgstr ""
+msgstr "修正 {0}"
 
 msgid "Modify Lease"
-msgstr ""
+msgstr "リース修正"
 
 msgid "Module"
 msgstr "モジュール"
@@ -13157,7 +13166,7 @@ msgid "Month"
 msgstr "月"
 
 msgid "Month Ending"
-msgstr ""
+msgstr "月末"
 
 msgid "Month Rate"
 msgstr "月額レート"
@@ -13175,7 +13184,7 @@ msgid "Monthly Rent:"
 msgstr "月額レンタル料:"
 
 msgid "Months Left"
-msgstr ""
+msgstr "残月数"
 
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "このアセットが税務上償却される月数（MACRS使用時以外）。"
@@ -13400,13 +13409,13 @@ msgid "Net Investment in Leases (default)"
 msgstr "リース投資純額（デフォルト）"
 
 msgid "Net right-of-use asset"
-msgstr ""
+msgstr "純使用権資産"
 
 msgid "Net Right-of-Use Asset:"
-msgstr ""
+msgstr "純使用権資産:"
 
 msgid "Net ROU Asset"
-msgstr ""
+msgstr "純ROU資産"
 
 msgid "Net Unit Price"
 msgstr "純単価"
@@ -13553,7 +13562,7 @@ msgid "New Kanban"
 msgstr "新規かんばん"
 
 msgid "New Lease"
-msgstr ""
+msgstr "新規リース"
 
 msgid "New line"
 msgstr "新規明細"
@@ -13817,7 +13826,7 @@ msgid "Next page"
 msgstr "次のページ"
 
 msgid "Next Payment:"
-msgstr ""
+msgstr "次の支払い:"
 
 msgid "Next Sequence"
 msgstr "次の採番"
@@ -13950,7 +13959,7 @@ msgid "No changes yet."
 msgstr "まだ変更がありません。"
 
 msgid "No changes yet. Modify, Terminate and Purchase are in the header once the lease is active."
-msgstr ""
+msgstr "まだ変更がありません。リースが有効になると、修正、終了、購入がヘッダーに表示されます。"
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "請求がありません。走行距離、損傷、配送、クリーニング料金は次の請求書に含まれます。"
@@ -14052,7 +14061,7 @@ msgid "No due date"
 msgstr "期日なし"
 
 msgid "No economic life entered, counts as not met"
-msgstr ""
+msgstr "耐用年数が入力されていません。未達と見なされます。"
 
 msgid "No editable properties for this item."
 msgstr "このアイテムの編集可能なプロパティはありません。"
@@ -14097,7 +14106,7 @@ msgid "No failure path — the run stops here and is marked failed"
 msgstr "失敗パスなし — 実行がここで停止し失敗とマークされます"
 
 msgid "No fair value entered, counts as not met"
-msgstr ""
+msgstr "公正価値が入力されていません。未達と見なされます。"
 
 msgid "No fields found."
 msgstr "フィールドが見つかりません。"
@@ -14314,7 +14323,7 @@ msgid "No payables"
 msgstr "買掛金がありません"
 
 msgid "No payment rows. Regenerate them from the terms or add one."
-msgstr ""
+msgstr "支払明細がありません。条件から再生成するか、追加してください。"
 
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
@@ -14425,7 +14434,7 @@ msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
 
 msgid "No schedule lines."
-msgstr ""
+msgstr "スケジュール明細がありません。"
 
 msgid "No scheduled work in this window"
 msgstr "このウィンドウにはスケジュール済みの作業がありません"
@@ -14581,10 +14590,10 @@ msgid "Non-conformances"
 msgstr "不適合"
 
 msgid "Non-Current"
-msgstr ""
+msgstr "非流動"
 
 msgid "Non-current portion"
-msgstr ""
+msgstr "非流動部分"
 
 msgid "Non-Inventory"
 msgstr "非在庫"
@@ -14605,7 +14614,7 @@ msgid "None"
 msgstr "なし"
 
 msgid "None yet"
-msgstr ""
+msgstr "まだなし"
 
 msgid "Normal"
 msgstr "通常"
@@ -14723,7 +14732,7 @@ msgid "Nothing selected yet"
 msgstr "まだ選択されていません"
 
 msgid "Nothing to post for this period."
-msgstr ""
+msgstr "この期間の転記対象がありません。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "まだ認識するものがありません。売上高は請求書が請求する金額に従います。"
@@ -14732,7 +14741,7 @@ msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
 
 msgid "Notice Date"
-msgstr ""
+msgstr "通知日"
 
 msgid "Notification"
 msgstr "通知"
@@ -15167,13 +15176,13 @@ msgid "Opening balances as of"
 msgstr "～の期首残高"
 
 msgid "Opening Liability"
-msgstr ""
+msgstr "初期負債"
 
 msgid "Opening Value"
 msgstr "期首価額"
 
 msgid "Operating"
-msgstr ""
+msgstr "運用"
 
 msgid "Operating Expenses"
 msgstr "営業費用"
@@ -15188,10 +15197,10 @@ msgid "Operating lease"
 msgstr "リース契約"
 
 msgid "Operating lease cost"
-msgstr ""
+msgstr "運用リース費用"
 
 msgid "Operating Lease Expense"
-msgstr ""
+msgstr "運用リース費用"
 
 msgid "operation"
 msgstr "工程"
@@ -15509,7 +15518,7 @@ msgstr "得意先タイプのすべての得意先の価格を上書きする"
 
 #. placeholder {0}: lease.classificationOverrideReason
 msgid "Override reason: {0}"
-msgstr ""
+msgstr "上書き理由: {0}"
 
 msgid "Override reason: {overrideReason}"
 msgstr "上書き理由: {overrideReason}"
@@ -15548,13 +15557,13 @@ msgid "Ownership transfers"
 msgstr "所有権移転"
 
 msgid "Ownership transfers at the end of the term"
-msgstr ""
+msgstr "リース期間終了時に所有権が移転する"
 
 msgid "Ownership transfers to the customer"
 msgstr "所有権が得意先に移転"
 
 msgid "Ownership transfers to you by the end of the term"
-msgstr ""
+msgstr "リース期間終了までに所有権があなたに移転する"
 
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
@@ -15579,7 +15588,7 @@ msgid "Paid Date"
 msgstr "支払日"
 
 msgid "Paid outside Carbon"
-msgstr ""
+msgstr "Carbonの外で支払済み"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "前払いされ、受け取ったら支払として記録してください。"
@@ -15744,10 +15753,10 @@ msgid "Payment"
 msgstr "支払い"
 
 msgid "Payment actions"
-msgstr ""
+msgstr "支払操作"
 
 msgid "Payment Amount"
-msgstr ""
+msgstr "支払額"
 
 msgid "Payment Applications"
 msgstr "支払い適用"
@@ -15756,7 +15765,7 @@ msgid "Payment Date"
 msgstr "支払日"
 
 msgid "Payment Frequency"
-msgstr ""
+msgstr "支払頻度"
 
 msgid "Payment from Customer"
 msgstr "得意先からの支払"
@@ -15786,7 +15795,7 @@ msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Net 30のような支払条件または領収時に支払い"
 
 msgid "Payment Timing"
-msgstr ""
+msgstr "支払タイミング"
 
 msgid "Payment to Supplier"
 msgstr "仕入先への支払"
@@ -15798,10 +15807,10 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
 
 msgid "Payments due after the termination date are removed. Invoiced payments stay."
-msgstr ""
+msgstr "終了日以降の支払は削除されます。請求済の支払は残ります。"
 
 msgid "Payments due before this date are marked paid outside Carbon"
-msgstr ""
+msgstr "この日付前の支払はCarbonの外で支払済みとしてマークされます"
 
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "この文書の前受金を顧客の前払金から返金します。"
@@ -15888,7 +15897,7 @@ msgid "Period lock policy"
 msgstr "期間ロックポリシー"
 
 msgid "Period Start"
-msgstr ""
+msgstr "期間開始"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "固定資産の定期的な減価償却費用"
@@ -16325,10 +16334,10 @@ msgid "Present value of payments is at least {threshold} of fair value ({actual}
 msgstr "支払の現在価値は公正価値の{threshold}以上です({actual})"
 
 msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
-msgstr ""
+msgstr "支払済のリース請求書を差し引いた、未払いのリース支払の現在価値"
 
 msgid "Present value of the payments is at least {threshold} of the fair value"
-msgstr ""
+msgstr "支払の現在価値は公正価値の{threshold}以上です"
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "リース料金の現在価値は、個の公正価値の少なくとも {threshold} です"
@@ -16449,7 +16458,7 @@ msgid "Primary cash account for bank transactions"
 msgstr "銀行取引の主要な現金勘定"
 
 msgid "Principal"
-msgstr ""
+msgstr "元本"
 
 msgid "Principal Collected"
 msgstr "元本回収済み"
@@ -16763,7 +16772,7 @@ msgid "Purchase & manufacture from MRP"
 msgstr "MRPから購入・製造"
 
 msgid "Purchase Asset"
-msgstr ""
+msgstr "購入資産"
 
 msgid "Purchase History"
 msgstr "購入履歴"
@@ -16787,10 +16796,10 @@ msgid "Purchase Invoices"
 msgstr "仕入先請求書"
 
 msgid "Purchase invoices are drafted automatically for each payment once the lease is active."
-msgstr ""
+msgstr "リースが有効になると、各支払に対して購入請求書が自動的にドラフトされます。"
 
 msgid "Purchase journal (the asset account comes from the asset class):"
-msgstr ""
+msgstr "購入仕訳（資産勘定は資産クラスから取得されます）:"
 
 msgid "Purchase option"
 msgstr "購入オプション"
@@ -16850,7 +16859,7 @@ msgid "Purchase planning"
 msgstr "購買計画"
 
 msgid "Purchase Price"
-msgstr ""
+msgstr "購入価格"
 
 msgid "Purchase price variance"
 msgstr "購買価格差異"
@@ -17430,7 +17439,7 @@ msgid "Received quantity not yet credited. The credit memo is created as a draft
 msgstr "入荷数量がまだクレジットされていません。クレジットメモは下書きとして作成されます"
 
 msgid "Receives the invoice digest and the reminders"
-msgstr ""
+msgstr "請求書ダイジェストとリマインダーを受け取ります"
 
 msgid "Receives the invoice email"
 msgstr "請求書メールを受け取ります"
@@ -17590,10 +17599,10 @@ msgid "Regenerate"
 msgstr "再生成"
 
 msgid "Regenerate from Terms"
-msgstr ""
+msgstr "支払条件から再生成"
 
 msgid "Regenerate payments from the terms?"
-msgstr ""
+msgstr "支払条件から支払を再生成しますか？"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "この拠点のスケジュールを今すぐ再生成してください。最後のスケジュール変更から約30秒後に自動的にも実行されます（編集はバッチ処理されるため、いくつかの迅速な変更により1つの再生成がトリガーされます）。"
@@ -17728,7 +17737,7 @@ msgid "Remaining after split stays on the original row."
 msgstr "分割後の残りは元の行に留まります。"
 
 msgid "Remeasurement journal (the effective date and the classification are checked when you confirm):"
-msgstr ""
+msgstr "再測定仕訳（有効日と分類は確認時にチェックされます）:"
 
 msgid "Remove"
 msgstr "除去"
@@ -18560,11 +18569,14 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "右側の項目"
 
-msgid "Right-of-Use Asset"
+msgid "Right-of-use asset"
 msgstr ""
 
+msgid "Right-of-Use Asset"
+msgstr "使用権資産"
+
 msgid "Right-of-Use Assets"
-msgstr ""
+msgstr "使用権資産"
 
 msgid "Risk"
 msgstr "リスク"
@@ -18615,7 +18627,7 @@ msgid "Room to grow without bolting on more tools"
 msgstr "さらに多くのツールを追加することなく成長する余地"
 
 msgid "ROU Amortization"
-msgstr ""
+msgstr "ROU償却"
 
 msgid "Rounding Account"
 msgstr "丸めアカウント"
@@ -19693,7 +19705,7 @@ msgid "Set a target"
 msgstr "ターゲットを設定"
 
 msgid "Set at activation"
-msgstr ""
+msgstr "有効化時に設定"
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Carbonを会社の運営方法に合わせてセットアップします：サイト、部品、BOM、工程表、および使用するワークフロー。"
@@ -19726,7 +19738,7 @@ msgid "Set the base currency."
 msgstr "基本通貨を設定してください。"
 
 msgid "Set the commencement date, the end date and the payment terms to see the accounting treatment."
-msgstr ""
+msgstr "開始日、終了日、および支払条件を設定して、会計処理を確認してください。"
 
 msgid "Set the fiscal year settings."
 msgstr "会計年度を設定してください。"
@@ -20026,13 +20038,13 @@ msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
 msgid "Short-Term"
-msgstr ""
+msgstr "短期"
 
 msgid "Short-term lease cost"
-msgstr ""
+msgstr "短期リース費用"
 
 msgid "Short-Term Lease Expedient"
-msgstr ""
+msgstr "短期リース特例"
 
 msgid "Shortcuts"
 msgstr "ショートカット"
@@ -20708,10 +20720,10 @@ msgid "Straight line"
 msgstr "定額法"
 
 msgid "Straight-line amortization of finance lease right-of-use assets"
-msgstr ""
+msgstr "ファイナンスリース使用権資産の定額償却"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
-msgstr ""
+msgstr "運用リースの定額リース費用および短期リースの支払"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -21378,35 +21390,35 @@ msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "契約期間は単位の経済的寿命の少なくとも{threshold}である"
 
 msgid "Term is at least {threshold} of the economic life"
-msgstr ""
+msgstr "期間は経済生活の{threshold}以上です"
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "期間は経済的耐用年数の少なくとも{threshold}です({actual})"
 
 msgid "Terminate"
-msgstr ""
+msgstr "終了"
 
 #. placeholder {0}: lease.leaseId
 msgid "Terminate {0}"
-msgstr ""
+msgstr "{0}を終了"
 
 msgid "Terminate Lease"
-msgstr ""
+msgstr "リースを終了"
 
 msgid "Terminated"
-msgstr ""
+msgstr "終了"
 
 msgid "Termination"
-msgstr ""
+msgstr "終了"
 
 msgid "Termination Date"
-msgstr ""
+msgstr "終了日"
 
 msgid "Termination journal:"
-msgstr ""
+msgstr "終了仕訳:"
 
 msgid "Termination Penalty"
-msgstr ""
+msgstr "解約違約金"
 
 msgid "Terms"
 msgstr "条件"
@@ -21482,7 +21494,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "資産が使用中クラスに移動され、使用開始日から減価償却が開始されます。"
 
 msgid "The asset would have a negative cost. Check the purchase price."
-msgstr ""
+msgstr "資産の原価がマイナスになります。購買価格を確認してください。"
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshapeで認可が拒否されました。連携設定を保存して再度試してください。"
@@ -21726,7 +21738,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
 
 msgid "The discount rate values the payments. The inputs below decide whether this is an operating or a finance lease."
-msgstr ""
+msgstr "割引率が支払額を評価します。以下の入力値が、これが営業リースか金融リースかを決定します。"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
@@ -21741,7 +21753,7 @@ msgid "The enable resets each item's stock to its on-hand quantity at the cutove
 msgstr "有効化により、各品目の在庫がカットオーバー日時点の手持数量にリセットされます（以下の単価で）。すべての平均原価品目の原価を見直してください。"
 
 msgid "The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr ""
+msgstr "終了日は契約期間の最後の日であり、合理的に確実な更新を含みます。"
 
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "得意先への見積から支払い回収までのエンドツーエンドの商業フロー：見積依頼から見積から受注、その後出荷、請求書、決済支払い。"
@@ -21753,7 +21765,7 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "この検査計画が関連付けられているエンジニアリング図面。このパーツに対して記録された検査はこの図面を参照します。"
 
 msgid "The escalation applies on each anniversary of the commencement date."
-msgstr ""
+msgstr "エスカレーションは開始日の毎年同日に適用されます。"
 
 msgid "The evening hours, {name}."
 msgstr "夜間のようですね、{name}さん。"
@@ -21777,7 +21789,7 @@ msgid "The first day a company keeps its books in Carbon, set once when accounti
 msgstr "会社がCarbonで帳簿の記録を始める最初の日であり、会計設定時に一度だけ設定され、その後は変更されません。この日以降、転記するたびに転記済の仕訳が作成されます。"
 
 msgid "The first day of a lease month (day {commencementDay}), after the last posted lease run"
-msgstr ""
+msgstr "リース月の初日（{commencementDay}日）、最後の転記済みリース実行後"
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "ロットサイズに関係なく、各ロットの前面から検査する固定単位数。"
@@ -21870,7 +21882,7 @@ msgid "The inventory cost recognized when a shipment posts, valued by the item's
 msgstr "出荷が転記されるときに認識されるインベントリコスト。品目の原価計算方法で評価されます。"
 
 msgid "The invoice for this payment is drafted on this date"
-msgstr ""
+msgstr "この支払いの請求書は、この日付で下書きされます。"
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのアセットのIRS回収期間クラス。"
@@ -21903,25 +21915,28 @@ msgid "The label and document printers your company prints to"
 msgstr "あなたの会社が印刷するラベルおよび文書プリンター"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
-msgstr ""
+msgstr "リース月の末日（{commencementDay}日の前日）、最後の転記済みリース実行後"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run and on or before the end date"
-msgstr ""
+msgstr "リース月の末日（{commencementDay}日の前日）、最後の転記済みリース実行後かつ終了日以前"
 
 msgid "The last day to give renewal or termination notice"
-msgstr ""
+msgstr "更新または終了通知を与える最後の日"
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "仕入先のリードタイムを考慮して、この発注書が必要日までに到着するように発注書を出すべき最後の日付。"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
-msgstr ""
+msgstr "リース資産は、行使日から減価償却される固定資産になります。その後の支払いは削除されます。"
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "商品を受け取る得意先と異なる請求先の法人エンティティ。親会社/子会社または第三者請求の場合に使用します。"
 
 msgid "The legal entity to bill, when different from the supplier who delivers the goods — for parent / subsidiary or factoring arrangements."
 msgstr "商品を配送する仕入先と異なる場合の支払先法人エンティティ。親会社/子会社またはファクタリング取引の場合を想定しています。"
+
+msgid "The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run."
+msgstr ""
 
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "売却型リースのリース会社資産：リース支払いおよび保証されていない残価の現在価値。毎月のリース利息により増加し、各賃料および購入オプション請求書により減少します。"
@@ -21997,6 +22012,9 @@ msgstr "財務年度が開始される月。期間はこの月から番号が付
 
 msgid "The month your tax year begins; may differ from the fiscal year in some jurisdictions."
 msgstr "税務年度が開始される月。一部の管轄区域では会計年度と異なる場合があります。"
+
+msgid "The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals."
+msgstr ""
 
 msgid "The monthly periods you post into and close"
 msgstr "転記およびクローズする月次期間"
@@ -22176,7 +22194,7 @@ msgid "The Ramp connection expired"
 msgstr "Ramp 接続が期限切れになりました"
 
 msgid "The rate at the effective date"
-msgstr ""
+msgstr "有効日時点でのレート"
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "購入して消費する原材料とマテリアルマスター"
@@ -22210,7 +22228,7 @@ msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP
 msgstr "残り {0} {1} は予想されなくなります。発注済の供給と MRP はそれをカウントしなくなります。発注数量と価格設定は変更されません。"
 
 msgid "The remaining payments are cut again from these terms and discounted at the revised rate. The right-of-use asset moves by the same amount as the liability."
-msgstr ""
+msgstr "残りの支払いはこれらの条件から再度削減され、改定レートで割り引かれます。使用権資産は負債と同額移動します。"
 
 msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr "ワークフロー変数が置き換えられた後、JSON コンテンツ タイプで逐語的に送信されるリクエスト本文。これを含むメソッドで送信されます。"
@@ -22237,7 +22255,7 @@ msgid "The revision number of the part"
 msgstr "部品のリビジョン番号"
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
-msgstr ""
+msgstr "使用権資産とリース負債は貸借対照表に計上され、1つの定額リースコストが毎月計上されます。"
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
@@ -22252,7 +22270,7 @@ msgid "The schedule could not be updated after the release"
 msgstr "リリース後、スケジュールを更新できませんでした。"
 
 msgid "The schedule is written when the lease is activated."
-msgstr ""
+msgstr "スケジュールはリースが有効になるときに作成されます。"
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "この資産の原価を耐用年数にわたって配分するために使用されるスケジュール（定額法、定率法、生産単位法）。"
@@ -22525,7 +22543,7 @@ msgid "There's nothing outstanding to apply these credits to."
 msgstr "これらのクレジットを適用する未処理項目がありません。"
 
 msgid "Thereafter"
-msgstr ""
+msgstr "その後"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "これらのカスタムフィールドは、同じタグを持つエンティティでのみ利用可能です"
@@ -22703,7 +22721,7 @@ msgstr "この材料に対するこのジョブ自体の必要数量。"
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): the right-of-use asset, its amortization and the lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
-msgstr ""
+msgstr "このリースは会計が設定される前に開始されました。これを有効にすると、{0}（またはその後の最初のオープン期間の開始）に開始残高を転記します：その日時点での使用権資産、その償却、およびリース負債、ならびに利益剰余金への差額。前の月は転記済みとしてマークされます。"
 
 msgid "This line has no routing to schedule."
 msgstr "この明細にはスケジュール対象の工順がありません。"
@@ -22754,7 +22772,7 @@ msgid "This path only decides what runs next"
 msgstr "このパスは次に何が実行されるかだけを決定します"
 
 msgid "this payment"
-msgstr ""
+msgstr "この支払い"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "この期間には転記された仕訳がなく、永久に削除できます。この処理は取り消せません。"
@@ -22875,11 +22893,11 @@ msgstr "これにより、{0}で終了する期間の下書き減価償却処理
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
-msgstr ""
+msgstr "これは次の期間の下書きリース実行を作成し、{0}に終了します。その日以前に期限が到来するすべてのリースおよびレンタルスケジュール行が含まれます。"
 
 #. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
-msgstr ""
+msgstr "これは{0}に終了する期間の下書きリース実行を作成します。その日以前に期限が到来するすべてのリースおよびレンタルスケジュール行が含まれます。"
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
@@ -22908,7 +22926,7 @@ msgstr "これは既存の見積方法を上書きします"
 #. placeholder {0}: run.runId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr ""
+msgstr "これは{0}をその現在のスケジュールから再構築します：{1}以前に期限が到来し、他の実行が保有していないすべてのスケジュール行。"
 
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
@@ -23222,7 +23240,7 @@ msgid "Total Indirect Cost"
 msgstr "間接原価合計"
 
 msgid "Total lease cost"
-msgstr ""
+msgstr "総リースコスト"
 
 msgid "Total Material Cost"
 msgstr "材料原価合計"
@@ -23261,7 +23279,7 @@ msgid "Total tax"
 msgstr "合計税金"
 
 msgid "Total undiscounted payments"
-msgstr ""
+msgstr "割引前の総支払額"
 
 msgid "Total Value"
 msgstr "合計価値"
@@ -23423,7 +23441,7 @@ msgid "Trash"
 msgstr "ゴミ箱"
 
 msgid "Treatment"
-msgstr ""
+msgstr "会計処理"
 
 msgid "Tree View"
 msgstr "ツリービュー"
@@ -23453,7 +23471,7 @@ msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
 
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
-msgstr ""
+msgstr "12か月以下。貸借対照表に何も計上されません。各請求書は費用化されます。"
 
 msgid "Two-Factor"
 msgstr "2要素認証"
@@ -23571,7 +23589,7 @@ msgid "Under Maximum Quantity policy, planning orders up to this on-hand level w
 msgstr "最大数量ポリシーの場合、再発注点がトリガされたときに手元在庫レベルまで計画注文が行われます。"
 
 msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
-msgstr ""
+msgstr "今後の割引前支払額（会計年度ごと）から、残りの月が請求する利息を差し引いたもの。"
 
 msgid "Undo"
 msgstr "元に戻す"
@@ -24123,10 +24141,10 @@ msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "このランの値が要約されました。詳細は7日間保持されます。"
 
 msgid "Variable lease cost"
-msgstr ""
+msgstr "変動リースコスト"
 
 msgid "Variable Lease Expense"
-msgstr ""
+msgstr "変動リース費用"
 
 msgid "Variables"
 msgstr "変数"
@@ -24617,10 +24635,10 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "過去1年間の加重平均原価は請求書が転記されるときに計算されます"
 
 msgid "Weighted-average discount rate"
-msgstr ""
+msgstr "加重平均割引率"
 
 msgid "Weighted-average remaining term (years)"
-msgstr ""
+msgstr "加重平均残存期間（年）"
 
 msgid "Welcome back, {name}."
 msgstr "お帰りなさい、{name}。"
@@ -24674,7 +24692,7 @@ msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"
 
 msgid "What is leased and where it is used."
-msgstr ""
+msgstr "リースされるもの、およびそれがどこで使用されるか。"
 
 msgid "What it is"
 msgstr "それが何であるか"
@@ -24702,6 +24720,9 @@ msgstr "得意先が前払いするもの、レンタル料に対する税、そ
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "期日カウントダウンが開始される内容(請求書日付、月末など)。"
+
+msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
+msgstr ""
 
 msgid "What these rows mean"
 msgstr "これらの行が何を意味するか"
@@ -25025,7 +25046,7 @@ msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "販売者、対象、クローズ日。"
 
 msgid "Who the company leases from, and who owns it here."
-msgstr ""
+msgstr "会社がリースする対象者、およびそれをここで誰が所有しているか。"
 
 msgid "Who the contract is with and what it is called."
 msgstr "契約の相手先と名称"
@@ -25251,7 +25272,7 @@ msgid "You drive it; we make sure it's done right. Expert eyes on your setup, da
 msgstr "あなたが主導し、私たちはそれが正しく完了することを確認します。あなたの環境設定、データ、およびゴーライブに関する専門家の目。"
 
 msgid "You effectively buy the asset. Interest and amortization of the right-of-use asset are booked separately each month."
-msgstr ""
+msgstr "実質的に資産を購入します。使用権資産の利息と償却は毎月別々に計上されます。"
 
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."

@@ -58,7 +58,7 @@ msgid "(not an Equity posting account)"
 msgstr "(не счет проведения собственного капитала)"
 
 msgid "(reasonably certain)"
-msgstr ""
+msgstr "(с достаточной вероятностью)"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
@@ -177,7 +177,7 @@ msgstr "{0} черновых операций"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to post · {amount}"
-msgstr ""
+msgstr "{0} записей к проведению · {amount}"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
@@ -686,7 +686,7 @@ msgid "1 draft journal entry"
 msgstr "1 черновая проводка"
 
 msgid "1 entry to post · {amount}"
-msgstr ""
+msgstr "1 запись к проведению · {amount}"
 
 msgid "1 entry to recognize · {amount}"
 msgstr "1 запись к признанию · {amount}"
@@ -701,7 +701,7 @@ msgid "1 line"
 msgstr "1 строка"
 
 msgid "1 month"
-msgstr ""
+msgstr "1 месяц"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 деталь пропущена — у неё уже есть открытое задание"
@@ -921,7 +921,7 @@ msgid "A file named {0} already exists — delete or rename it first"
 msgstr "Файл с именем {0} уже существует — удалите или переименуйте его сначала"
 
 msgid "A finance lease when any of these is true, and an operating lease when none is."
-msgstr ""
+msgstr "Финансовая аренда, если любое из условий выше верно, и операционная аренда, если ни одно не верно."
 
 msgid "A firm customer commitment to deliver; fulfillment status splits across ship and invoice before reaching Completed."
 msgstr "Твердое обязательство покупателя осуществить поставку; статус выполнения разделяется на отгрузку и счет-фактуру до достижения статуса Завершено."
@@ -990,13 +990,13 @@ msgid "A job's status changes"
 msgstr "Статус работы изменяется"
 
 msgid "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
-msgstr ""
+msgstr "Аренда классифицируется как аренда типа продажи (для арендодателя) или финансовая аренда (для арендатора), если выполнен какой-либо критерий ASC 842. Эти пороги задают критерии (c) и (d). Ставка дисконта арендодателя используется по умолчанию для новых договоров аренды; дополнительная ставка заимствования используется по умолчанию для новых лизингов."
 
 msgid "A lease must be in the company's base currency to be activated."
-msgstr ""
+msgstr "Аренда должна быть в базовой валюте организации для активации."
 
 msgid "A lease of 12 months or less with no purchase option reasonably certain is short-term. Otherwise it is a finance lease when any of these is true, and an operating lease when none is."
-msgstr ""
+msgstr "Аренда на 12 месяцев или менее без опции покупки с достаточной вероятностью является краткосрочной. В противном случае это финансовая аренда, если выполнено любое из условий выше, и операционная аренда, если ни одно не выполнено."
 
 msgid "A line settles more than its invoice's open balance"
 msgstr "Строка превышает открытый остаток счета-фактуры при погашении"
@@ -1100,7 +1100,7 @@ msgid "A purchase invoice is a document that specifies the products or services 
 msgstr "Счет-фактура полученная — это документ, который определяет товары или услуги, приобретенные покупателем, и соответствующую себестоимость."
 
 msgid "A purchase invoice is drafted for each payment on its due date."
-msgstr ""
+msgstr "Черновик счета-фактуры полученного создается для каждого платежа в его срок выполнения."
 
 msgid "A purchase invoice is posted"
 msgstr "Счет-фактура полученная проведена"
@@ -1349,13 +1349,13 @@ msgid "A shipment's tracking number changes"
 msgstr "Номер отслеживания отгрузки изменился"
 
 msgid "A short-term lease has no schedule: only its payment rows change, and no journal is posted."
-msgstr ""
+msgstr "Краткосрочная аренда не имеет графика: изменяются только строки платежей, и никакая операция не проводится."
 
 msgid "A short-term lease has no schedule. Each invoice is expensed."
-msgstr ""
+msgstr "Краткосрочная аренда не имеет графика. Каждый счет-фактура учитывается как расход."
 
 msgid "A short-term lease posts no journal at activation. Each invoice is expensed when it posts."
-msgstr ""
+msgstr "При активации краткосрочная аренда не проводит никакую операцию. Каждый счет-фактура учитывается как расход при его проведении."
 
 msgid "A step needs a name."
 msgstr "Шаг должен иметь имя."
@@ -1611,7 +1611,7 @@ msgid "Accum. Tax Depr."
 msgstr "Накопл. налог. амортизация"
 
 msgid "Accumulated Amortization – Right-of-Use Assets"
-msgstr ""
+msgstr "Накопленная амортизация – активы права пользования"
 
 msgid "Accumulated Depreciation"
 msgstr "Накопленная амортизация"
@@ -1636,7 +1636,7 @@ msgid "Accumulated Depreciation on Disposal (default)"
 msgstr "Накопленная амортизация при выбытии (по умолчанию)"
 
 msgid "Accumulated ROU Amortization"
-msgstr ""
+msgstr "Накопленная амортизация ППА"
 
 msgid "Accumulation Period (Weeks)"
 msgstr "Период накопления (недели)"
@@ -1699,7 +1699,7 @@ msgid "Activating checks every unit is available, classifies each unit's account
 msgstr "Активация проверяет, доступна ли каждая единица, классифицирует бухгалтерский учет каждой единицы и устанавливает первые периоды выставления счетов по тарифу каждой единицы. Условия и строки фиксируются после этого."
 
 msgid "Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards."
-msgstr ""
+msgstr "Активация классифицирует аренду, отражает актив права пользования и обязательство по аренде, и записывает ежемесячный график. Условия и строки платежей фиксируются после этого."
 
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Активация фиксирует условия и единицы, классифицирует каждую единицу и создает первые периоды выставления счетов. После этого счета-фактуры создаются автоматически по наступлении периодов."
@@ -1828,7 +1828,7 @@ msgid "Add Asset Class"
 msgstr "Добавить класс основных средств"
 
 msgid "Add at least one payment row before activating."
-msgstr ""
+msgstr "Добавьте по крайней мере одну строку платежа перед активацией."
 
 msgid "Add at least one service."
 msgstr "Добавьте хотя бы одну услугу."
@@ -1973,7 +1973,7 @@ msgid "Add path"
 msgstr "Добавить путь"
 
 msgid "Add Payment"
-msgstr ""
+msgstr "Добавить платеж"
 
 msgid "Add Permissions"
 msgstr "Добавить права доступа"
@@ -2152,7 +2152,7 @@ msgid "Advance"
 msgstr "Аванс"
 
 msgid "Advance (start of each period)"
-msgstr ""
+msgstr "Авансовый платеж (в начале каждого периода)"
 
 msgid "Advance to {nextStatus}"
 msgstr "Перейти к {nextStatus}"
@@ -2341,10 +2341,10 @@ msgid "Amendments"
 msgstr "Изменения"
 
 msgid "Amortization"
-msgstr ""
+msgstr "Амортизация"
 
 msgid "Amortization – Right-of-Use Assets"
-msgstr ""
+msgstr "Амортизация – активы права пользования"
 
 msgid "Amount"
 msgstr "Сумма"
@@ -2385,6 +2385,9 @@ msgstr "Оповещение о том, что что-то требует вни
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "Требование утверждения на несоответствии, которое должны утвердить рецензенты (предзагруженные Инженерия и Качество) перед закрытием проблемы."
+
+msgid "An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization."
+msgstr ""
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Стоимость приобретения основного средства за вычетом накопленной амортизации — его остаточная стоимость в учете и сумма, по которой оно выбывает."
@@ -2548,19 +2551,19 @@ msgid "Annotation updated"
 msgstr "Аннотация обновлена"
 
 msgid "Annual"
-msgstr ""
+msgstr "Ежегодно"
 
 msgid "Annual Escalation"
-msgstr ""
+msgstr "Ежегодное увеличение"
 
 msgid "Annual Escalation (%)"
-msgstr ""
+msgstr "Ежегодное увеличение (%)"
 
 msgid "Annual rate the rent is discounted at"
 msgstr "Годовая ставка, по которой аренда дисконтируется"
 
 msgid "Annual. Starts from the company's incremental borrowing rate"
-msgstr ""
+msgstr "Ежегодно. Начинается с дополнительной ставки заимствования организации"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Еще один центр затрат, в который входит этот, позволяя вложить подразделение под его родительский центр затрат для иерархической отчетности по затратам."
@@ -3132,7 +3135,7 @@ msgid "Are you sure you want to delete this passkey? You won't be able to use it
 msgstr "Вы уверены, что хотите удалить этот ключ доступа? Вы больше не сможете использовать его для входа."
 
 msgid "Are you sure you want to delete this payment row?"
-msgstr ""
+msgstr "Вы уверены, что хотите удалить эту строку платежа?"
 
 msgid "Are you sure you want to delete this quality document?"
 msgstr "Вы уверены, что хотите удалить этот документ качества?"
@@ -3272,7 +3275,7 @@ msgid "Arrears"
 msgstr "Задолженность"
 
 msgid "Arrears (end of each period)"
-msgstr ""
+msgstr "Задолженность (в конце каждого периода)"
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "Как будто прыгнула в начало цеховой очереди"
@@ -3288,7 +3291,7 @@ msgid "As of {0}"
 msgstr "По состоянию на {0}"
 
 msgid "As of <0/>, the last month a lease run posted."
-msgstr ""
+msgstr "На <0/>, последний месяц, когда операция аренды была проведена."
 
 msgid "As of:"
 msgstr "По состоянию на:"
@@ -3311,7 +3314,7 @@ msgid "Asks revenue recognition what a new run for this period would recognize n
 msgstr "Запрашивает признание выручки, что новый расчет для этого периода должен признать сейчас — отложенная выручка счета-фактуры, арендная плата к начислению и выручка по контракту — и проверяет наличие черновых расчетов с выручкой, подлежащей получению к концу периода. Создайте расчет и проведите его, чтобы выручка попала в главную книгу. Пропустите с причиной, если ничего не должно быть признано."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
-msgstr ""
+msgstr "Проверяет, что новая операция аренды для этого периода проводила бы сейчас — процент по аренде и амортизацию актива права пользования, плату по аренде для отсрочки или начисления, и процент по аренде типа продажи — и проверяет черновики операций аренды с записями, которые должны быть обработаны к концу периода. Создайте операцию и проведите ее, чтобы записи попали в главную книгу. Пропустите с указанием причины, если ничего не нужно проводить."
 
 msgid "Assemblies"
 msgstr "Сборки"
@@ -3380,10 +3383,10 @@ msgid "Asset ID"
 msgstr "ID активов"
 
 msgid "Asset Name"
-msgstr ""
+msgstr "Наименование актива"
 
 msgid "Asset recognized at lease commencement for the right to use a leased asset"
-msgstr ""
+msgstr "Актив, признанный при начале аренды за право пользования арендованным активом"
 
 msgid "Asset scrap disposals"
 msgstr "Выбытие брака основных средств"
@@ -3449,7 +3452,7 @@ msgid "At Commencement"
 msgstr "При начислении"
 
 msgid "At commencement. No lease run has posted yet."
-msgstr ""
+msgstr "При начале. Ни одна операция аренды еще не была проведена."
 
 msgid "At each gate"
 msgstr "На каждом этапе"
@@ -4232,7 +4235,7 @@ msgid "Cancel job {target}"
 msgstr "Отменить производственный заказ {target}"
 
 msgid "Cancel Lease"
-msgstr ""
+msgstr "Отмена аренды"
 
 msgid "Cancel Order"
 msgstr "Отменить заказ"
@@ -4280,7 +4283,7 @@ msgid "Cancelling voids the agreement and releases its units. An agreement with 
 msgstr "Отмена аннулирует договор и освобождает его единицы. Договор с единицей на аренде или по которому выставлены счета не может быть отменен."
 
 msgid "Cancelling voids the commencement journal and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate it instead."
-msgstr ""
+msgstr "Отмена аннулирует начальную операцию и удаляет график. Аренда с выставленным счетом платежа или проведенной операцией аренды не может быть отменена; вместо этого прекратите ее."
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Невозможно добавить параметры к несохраненной операции"
@@ -4449,10 +4452,10 @@ msgid "Cash & Banking"
 msgstr "Денежные средства и Банк"
 
 msgid "Cash paid: finance leases"
-msgstr ""
+msgstr "Денежные потоки: финансовые лизинги"
 
 msgid "Cash paid: operating leases"
-msgstr ""
+msgstr "Денежные потоки: операционные лизинги"
 
 msgid "Categories that classify how stock is stored"
 msgstr "Категории, которые классифицируют способ хранения запасов"
@@ -4515,7 +4518,7 @@ msgid "Change Inspection Plan"
 msgstr "Изменить план контроля"
 
 msgid "Change Lease"
-msgstr ""
+msgstr "Изменить аренду"
 
 msgid "Change lines with Amend."
 msgstr "Измените строки с помощью поправки."
@@ -4575,7 +4578,7 @@ msgid "Changes"
 msgstr "Изменения"
 
 msgid "Changing a payment term or a date cuts the payment rows again. Edited rows are replaced."
-msgstr ""
+msgstr "Изменение условий оплаты или даты повторно создает строки платежей. Отредактированные строки заменяются."
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "Изменение компонентов переопределяет группу. Повторно запустите Motion Planning, чтобы применить изменение к шагам."
@@ -4726,7 +4729,7 @@ msgid "Classification"
 msgstr "Классификация"
 
 msgid "Classification:"
-msgstr ""
+msgstr "Классификация:"
 
 msgid "Classifies a routing operation: Process, Assembly, and Inspection operations run on your own shop floor in the MES — Assembly gets the guided assembly view and Inspection a quality check — while an Outside Processing operation is subcontracted to a supplier and creates a purchase order; the process carries the same type and defaults it on new operations."
 msgstr "Классификация типа операции маршрута: операции типов Процесс, Сборка и Контроль выполняются на вашем цехе в MES — тип Сборка предоставляет направляемое представление, тип Контроль — проверку качества, — в то время как операции типа Кооперация передаются на субподряд поставщику и создают Заказ поставщику; тип операции сохраняется и применяется по умолчанию для новых операций."
@@ -4846,7 +4849,7 @@ msgid "Closing finishes the agreement. Every unit must be returned or sold and e
 msgstr "Закрытие завершает договор. Каждая единица должна быть возвращена или продана и по каждому периоду выставлен счет."
 
 msgid "Closing Liability"
-msgstr ""
+msgstr "Конечное обязательство"
 
 msgid "Closure blocked"
 msgstr "Закрытие заблокировано"
@@ -4927,10 +4930,10 @@ msgid "comma-separated values"
 msgstr "значения, разделённые запятыми"
 
 msgid "Commencement"
-msgstr ""
+msgstr "Начало"
 
 msgid "Commencement Date"
-msgstr ""
+msgstr "Дата начала"
 
 msgid "Comment"
 msgstr "Комментарий"
@@ -5361,7 +5364,7 @@ msgid "Continue Setup"
 msgstr "Продолжить настройку"
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
-msgstr ""
+msgstr "Контрсчет для амортизации активов права использования"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Контрактивный счет учета на общую амортизацию основных средств"
@@ -5568,7 +5571,7 @@ msgid "Copy job unique identifier"
 msgstr "Скопировать уникальный идентификатор производственного заказа"
 
 msgid "Copy lease number"
-msgstr ""
+msgstr "Скопировать номер аренды"
 
 msgid "Copy link"
 msgstr "Копировать ссылку"
@@ -5598,7 +5601,7 @@ msgid "Copy link to Job"
 msgstr "Скопировать ссылку на задание"
 
 msgid "Copy link to lease"
-msgstr ""
+msgstr "Скопировать ссылку на аренду"
 
 msgid "Copy link to material"
 msgstr "Скопировать ссылку на материал"
@@ -6329,7 +6332,7 @@ msgid "Current Password"
 msgstr "Текущий пароль"
 
 msgid "Current portion"
-msgstr ""
+msgstr "Текущая часть"
 
 msgid "Current projection"
 msgstr "Текущий прогноз"
@@ -6530,7 +6533,7 @@ msgid "Customize the layout of your PDF documents — reorder sections, hide wha
 msgstr "Настройте макет ваших PDF-документов — переупорядочивайте разделы, скрывайте ненужное и добавляйте собственные блоки."
 
 msgid "Cut from the payment terms. Change a row, add one or delete one before activating."
-msgstr ""
+msgstr "Вырезано из условий оплаты. Измените строку, добавьте одну или удалите одну перед активацией."
 
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "Перейти на Carbon и заморозить старую систему"
@@ -6657,7 +6660,7 @@ msgid "Days"
 msgstr "Дни"
 
 msgid "Days before a lease's notice or end date that its owner is reminded."
-msgstr ""
+msgstr "Количество дней до даты уведомления или окончания аренды, за которые ответственный получит напоминание."
 
 msgid "Days Discount"
 msgstr "Дни скидки"
@@ -6750,7 +6753,7 @@ msgid "Decide when material picked to a work center but not consumed flows back 
 msgstr "Решение о том, когда материал, отобранный в рабочий центр, но не использованный, поступает обратно на склад."
 
 msgid "Decided when the lease is activated, from the payment rows and the classification inputs."
-msgstr ""
+msgstr "Определяется при активации аренды на основе строк платежей и входных данных классификации."
 
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
@@ -6789,7 +6792,7 @@ msgid "Default accounts for customer transactions and receivables"
 msgstr "Счета по умолчанию для операций покупателей и дебиторской задолженности"
 
 msgid "Default accounts for leases the company pays, under ASC 842"
-msgstr ""
+msgstr "Счета по умолчанию для арендованного имущества, которое платит организация, в соответствии с ASC 842"
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "Счета по умолчанию для долгосрочных активов и амортизации"
@@ -7092,7 +7095,7 @@ msgid "Delete Journal Entry"
 msgstr "Удалить проводку"
 
 msgid "Delete Lease"
-msgstr ""
+msgstr "Удалить аренду"
 
 msgid "Delete line"
 msgstr "Удалить строку"
@@ -7592,7 +7595,7 @@ msgid "Discount Percentage"
 msgstr "Процент скидки"
 
 msgid "Discount Rate"
-msgstr ""
+msgstr "Ставка дисконта"
 
 msgid "Discount Rate (%)"
 msgstr "Процент скидки (%)"
@@ -7789,7 +7792,7 @@ msgid "Draft only"
 msgstr "Только черновик"
 
 msgid "Draft purchase invoices are created every day for the payments that are due. Use this to draft the due payments right away."
-msgstr ""
+msgstr "Ежедневно создаются черновики счетов-фактур полученных для причитающихся платежей. Используйте эту функцию для создания черновиков причитающихся платежей немедленно."
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Создает черновик кредит-ноты за время, уже выставленное счетом после даты окончания."
@@ -8028,7 +8031,7 @@ msgid "Each line shows its item ID and revision."
 msgstr "Каждая строка показывает код номенклатуры и ревизию."
 
 msgid "Each month the lease run posts the interest and the right-of-use amortization."
-msgstr ""
+msgstr "Каждый месяц запуск аренды проводит проценты и амортизацию активов права использования."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Неиспользованный материал каждой операции возвращается, как только операция завершена."
@@ -8443,10 +8446,10 @@ msgid "edited <0/>"
 msgstr "отредактировано <0/>"
 
 msgid "Effective"
-msgstr ""
+msgstr "Действующий"
 
 msgid "Effective Date"
-msgstr ""
+msgstr "Дата вступления в силу"
 
 msgid "Eliminated"
 msgstr "Исключено"
@@ -8786,7 +8789,7 @@ msgid "EORI"
 msgstr "EORI"
 
 msgid "Equipment, vehicles or buildings the company rents from a supplier. Payment rows are cut from the payment terms and can be edited until the lease is activated."
-msgstr ""
+msgstr "Оборудование, автомобили или здания, которые организация арендует у поставщика. Строки платежей вырезаны из условий оплаты и могут быть отредактированы до активации аренды."
 
 msgid "Equity"
 msgstr "Собственный Капитал"
@@ -8928,7 +8931,7 @@ msgid "Every account default is set"
 msgstr "Установлены все значения по умолчанию счета"
 
 msgid "Every change to an active lease, with the amounts before and after."
-msgstr ""
+msgstr "Все изменения активной аренды с суммами до и после."
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Каждая проверка должна пройти перед включением бухгалтерии."
@@ -8955,7 +8958,7 @@ msgid "Every match"
 msgstr "Каждое совпадение"
 
 msgid "Every payment row is cut again from the payment terms. Rows you edited, added or deleted are replaced."
-msgstr ""
+msgstr "Каждая строка платежей вырезается снова из условий оплаты. Строки, которые вы редактировали, добавили или удалили, заменяются."
 
 msgid "Every required action has already been added."
 msgstr "Все требуемые действия уже добавлены."
@@ -9024,10 +9027,10 @@ msgid "Exemption Reason"
 msgstr "Причина освобождения"
 
 msgid "Exercise Date"
-msgstr ""
+msgstr "Дата осуществления опциона"
 
 msgid "Exercise Purchase Option"
-msgstr ""
+msgstr "Осуществить опцион покупки"
 
 msgid "Existing"
 msgstr "Существующий"
@@ -9770,13 +9773,13 @@ msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycl
 msgstr "Завершение финансового месяца через цикл Открыто → Заблокировано → Закрыто; закрытый период заморожен, его остатки сохранены снимками и обратимы только явным открытием заново."
 
 msgid "Finance"
-msgstr ""
+msgstr "Финансирование"
 
 msgid "Finance lease: amortization of ROU assets"
-msgstr ""
+msgstr "Финансовая аренда: амортизация активов права использования"
 
 msgid "Finance lease: interest on lease liabilities"
-msgstr ""
+msgstr "Финансовая аренда: проценты по обязательствам по аренде"
 
 msgid "Financial Statements"
 msgstr "Финансовые отчеты"
@@ -9950,7 +9953,7 @@ msgid "for anything. They'll pull in the right person."
 msgstr "для чего угодно. Они привлекут нужного человека."
 
 msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr ""
+msgstr "Например \"Вилочный погрузчик FL-12\" или \"Здание завода 2\""
 
 msgid "Forecast"
 msgstr "Прогноз"
@@ -10067,7 +10070,7 @@ msgid "FY {year}"
 msgstr "Финансовый год {year}"
 
 msgid "Gain (Loss)"
-msgstr ""
+msgstr "Прибыль (Убыток)"
 
 msgid "Gain on Disposal"
 msgstr "Прибыль от выбытия"
@@ -10079,10 +10082,10 @@ msgid "Gain on Disposal Account"
 msgstr "Счёт прибыли от выбытия"
 
 msgid "Gain on Lease Modification"
-msgstr ""
+msgstr "Прибыль от изменения условий аренды"
 
 msgid "Gain on Lease Termination"
-msgstr ""
+msgstr "Прибыль от прекращения аренды"
 
 msgid "Gain/Loss"
 msgstr "Прибыль/Убыток"
@@ -10335,7 +10338,7 @@ msgid "Go to implementation hub"
 msgstr "Перейти в центр внедрения"
 
 msgid "Go to lease runs"
-msgstr ""
+msgstr "Перейти к запускам аренды"
 
 msgid "Go to module"
 msgstr "Перейти в модуль"
@@ -10879,13 +10882,13 @@ msgid "in {0}"
 msgstr "через {0}"
 
 msgid "in advance"
-msgstr ""
+msgstr "авансом"
 
 msgid "In an open menu"
 msgstr "В открытом меню"
 
 msgid "in arrears"
-msgstr ""
+msgstr "в конце периода"
 
 msgid "In Maintenance"
 msgstr "На техническом обслуживании"
@@ -11029,7 +11032,7 @@ msgid "Increase purchase order {target} to {amount}"
 msgstr "Увеличить заказ поставщику {target} до {amount}"
 
 msgid "Incremental Borrowing Rate (%)"
-msgstr ""
+msgstr "Дополнительная ставка заимствования (%)"
 
 msgid "Indirect"
 msgstr "Косвенный"
@@ -11074,7 +11077,7 @@ msgid "inherits {inheritedName}"
 msgstr "от {inheritedName}"
 
 msgid "Initial Liability:"
-msgstr ""
+msgstr "Первоначальное обязательство:"
 
 msgid "Input"
 msgstr "Ввод"
@@ -11198,7 +11201,7 @@ msgid "Interest (default)"
 msgstr "Проценты (по умолчанию)"
 
 msgid "Interest Expense – Leases"
-msgstr ""
+msgstr "Процентные расходы – Аренда"
 
 msgid "Interest Income – Leases"
 msgstr "Процентный доход – Лизинг"
@@ -11210,7 +11213,7 @@ msgid "Interest income or expense from banking activities"
 msgstr "Процентный доход или расход от банковской деятельности"
 
 msgid "Interest on finance lease liabilities"
-msgstr ""
+msgstr "Проценты по обязательствам по финансовой аренде"
 
 msgid "Internal"
 msgstr "Внутренние"
@@ -11357,7 +11360,7 @@ msgid "Invoice Date"
 msgstr "Дата счета-фактуры"
 
 msgid "Invoice From"
-msgstr ""
+msgstr "Счет-фактура от"
 
 msgid "Invoice ID"
 msgstr "Счет-фактура ID"
@@ -11366,7 +11369,7 @@ msgid "Invoice Location"
 msgstr "Площадка счета-фактуры"
 
 msgid "Invoice Now"
-msgstr ""
+msgstr "Выставить счет"
 
 msgid "Invoice Number"
 msgstr "Номер счета-фактуры"
@@ -11742,7 +11745,7 @@ msgid "Journal Preview"
 msgstr "Предпросмотр операции"
 
 msgid "Journals"
-msgstr ""
+msgstr "Операции"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Операции, датированные в эту дату или ранее, считаются заблокированными. Объединены с датой блокировки, указанной поставщиком, если обе существуют."
@@ -11978,31 +11981,34 @@ msgid "Learn more"
 msgstr "Узнать больше"
 
 msgid "Lease"
+msgstr "Аренда"
+
+msgid "Lease (lessee)"
 msgstr ""
 
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
-msgstr ""
+msgstr "Платежи по аренде, которые не входят в фиксированные платежи, например за использование или техническое обслуживание"
 
 msgid "Lease Classification"
 msgstr "Классификация аренды"
 
 msgid "Lease Cost"
-msgstr ""
+msgstr "Стоимость аренды"
 
 msgid "Lease Liabilities"
-msgstr ""
+msgstr "Обязательства по аренде"
 
 msgid "Lease liability"
-msgstr ""
+msgstr "Обязательство по аренде"
 
 msgid "Lease Liability"
-msgstr ""
+msgstr "Обязательство по аренде"
 
 msgid "Lease Liability:"
-msgstr ""
+msgstr "Обязательство по аренде:"
 
 msgid "Lease Reminder Days"
-msgstr ""
+msgstr "Дни напоминания об аренде"
 
 msgid "Lease Revenue"
 msgstr "Выручка от лизинга"
@@ -12010,26 +12016,29 @@ msgstr "Выручка от лизинга"
 msgid "Lease Revenue (default)"
 msgstr "Выручка от лизинга (по умолчанию)"
 
-msgid "Lease Run"
+msgid "Lease run"
 msgstr ""
+
+msgid "Lease Run"
+msgstr "Прогон расчета аренды"
 
 msgid "Lease run entries and posted lease invoice lines in the period."
-msgstr ""
+msgstr "Записи прогона расчета аренды и проведенные строки счета по аренде в периоде."
 
 msgid "Lease Runs"
-msgstr ""
+msgstr "Прогоны расчета аренды"
 
 msgid "Leased Asset"
-msgstr ""
+msgstr "Арендованный актив"
 
 msgid "Leases"
-msgstr ""
+msgstr "Аренды"
 
 msgid "Leases (Lessee)"
-msgstr ""
+msgstr "Аренды (Арендатор)"
 
 msgid "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
-msgstr ""
+msgstr "Аренды сроком на 12 месяцев или менее без обоснованной уверенности в опции покупки учитываются как расходы по мере оплаты."
 
 msgid "Leave any related receipts untouched"
 msgstr "Оставить все связанные квитанции без изменений"
@@ -12065,7 +12074,7 @@ msgid "Leftover staged material returns when the whole job completes."
 msgstr "Оставшийся подготовленный материал возвращается по завершении всей работы."
 
 msgid "Less imputed interest"
-msgstr ""
+msgstr "Минус подразумеваемые проценты"
 
 msgid "Less manual work"
 msgstr "Меньше ручной работы"
@@ -12077,13 +12086,13 @@ msgid "Less overtime"
 msgstr "Меньше переработки"
 
 msgid "Lessee lease balances, maturity analysis and lease cost"
-msgstr ""
+msgstr "Остатки аренды арендатора, анализ сроков и стоимость аренды"
 
 msgid "Lessor"
-msgstr ""
+msgstr "Арендодатель"
 
 msgid "Lessor Discount Rate (%)"
-msgstr ""
+msgstr "Ставка дисконтирования арендодателя (%)"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "Позвольте членам входить через вашего поставщика удостоверений с помощью SAML."
@@ -12107,7 +12116,7 @@ msgid "Letter"
 msgstr "Буква"
 
 msgid "Liability"
-msgstr ""
+msgstr "Обязательство"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Счет обязательств для сумм, причитающихся сотрудникам за возмещение расходов. Использует кредиторскую задолженность, если не установлено"
@@ -12413,7 +12422,7 @@ msgid "Loss on Disposal Account"
 msgstr "Счёт убытков от выбытия"
 
 msgid "Loss on Lease Termination"
-msgstr ""
+msgstr "Убыток при расторжении аренды"
 
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Убытки, признаваемые при выбытии основных средств"
@@ -12886,7 +12895,7 @@ msgid "Matrix"
 msgstr "Матрица"
 
 msgid "Maturity Analysis"
-msgstr ""
+msgstr "Анализ сроков"
 
 msgid "Max Qty"
 msgstr "Макс. кол-во"
@@ -13114,20 +13123,20 @@ msgid "Model upload"
 msgstr "Загрузка модели"
 
 msgid "Modification"
-msgstr ""
+msgstr "Изменение"
 
 msgid "Modified"
 msgstr "Изменено"
 
 msgid "Modify"
-msgstr ""
+msgstr "Изменить"
 
 #. placeholder {0}: lease.leaseId
 msgid "Modify {0}"
-msgstr ""
+msgstr "Изменить {0}"
 
 msgid "Modify Lease"
-msgstr ""
+msgstr "Изменить аренду"
 
 msgid "Module"
 msgstr "Модуль"
@@ -13157,7 +13166,7 @@ msgid "Month"
 msgstr "Месяц"
 
 msgid "Month Ending"
-msgstr ""
+msgstr "Конец месяца"
 
 msgid "Month Rate"
 msgstr "Месячный тариф"
@@ -13175,7 +13184,7 @@ msgid "Monthly Rent:"
 msgstr "Ежемесячная аренда:"
 
 msgid "Months Left"
-msgstr ""
+msgstr "Осталось месяцев"
 
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Месяцы, в течение которых это имущество амортизируется в налоговых целях (при отсутствии MACRS)."
@@ -13400,13 +13409,13 @@ msgid "Net Investment in Leases (default)"
 msgstr "Чистые инвестиции в лизинг (по умолчанию)"
 
 msgid "Net right-of-use asset"
-msgstr ""
+msgstr "Чистый актив права использования"
 
 msgid "Net Right-of-Use Asset:"
-msgstr ""
+msgstr "Чистый актив права использования:"
 
 msgid "Net ROU Asset"
-msgstr ""
+msgstr "Чистый актив ПИ"
 
 msgid "Net Unit Price"
 msgstr "Чистая цена за единицу"
@@ -13553,7 +13562,7 @@ msgid "New Kanban"
 msgstr "Новый канбан"
 
 msgid "New Lease"
-msgstr ""
+msgstr "Новая аренда"
 
 msgid "New line"
 msgstr "Новая строка"
@@ -13817,7 +13826,7 @@ msgid "Next page"
 msgstr "Следующая страница"
 
 msgid "Next Payment:"
-msgstr ""
+msgstr "Следующий платеж:"
 
 msgid "Next Sequence"
 msgstr "Следующая Нумерация"
@@ -13950,7 +13959,7 @@ msgid "No changes yet."
 msgstr "Пока нет изменений."
 
 msgid "No changes yet. Modify, Terminate and Purchase are in the header once the lease is active."
-msgstr ""
+msgstr "Изменений еще нет. Изменить, Расторгнуть и Приобрести находятся в заголовке после активации аренды."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
@@ -14052,7 +14061,7 @@ msgid "No due date"
 msgstr "Нет срока выполнения"
 
 msgid "No economic life entered, counts as not met"
-msgstr ""
+msgstr "Не введен экономический срок жизни, считается невыполненным"
 
 msgid "No editable properties for this item."
 msgstr "Нет редактируемых свойств для этого элемента."
@@ -14097,7 +14106,7 @@ msgid "No failure path — the run stops here and is marked failed"
 msgstr "Нет пути отказа — выполнение останавливается здесь и отмечается как неудачное"
 
 msgid "No fair value entered, counts as not met"
-msgstr ""
+msgstr "Не введена справедливая стоимость, считается невыполненным"
 
 msgid "No fields found."
 msgstr "Поля не найдены."
@@ -14314,7 +14323,7 @@ msgid "No payables"
 msgstr "Нет кредиторской задолженности"
 
 msgid "No payment rows. Regenerate them from the terms or add one."
-msgstr ""
+msgstr "Нет строк платежа. Переформируйте их из условий или добавьте один."
 
 msgid "No payments yet."
 msgstr "Платежей пока нет."
@@ -14425,7 +14434,7 @@ msgid "No rules assigned"
 msgstr "Нет назначенных правил"
 
 msgid "No schedule lines."
-msgstr ""
+msgstr "Нет строк графика."
 
 msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
@@ -14581,10 +14590,10 @@ msgid "Non-conformances"
 msgstr "Несоответствия"
 
 msgid "Non-Current"
-msgstr ""
+msgstr "Долгосрочный"
 
 msgid "Non-current portion"
-msgstr ""
+msgstr "Долгосрочная часть"
 
 msgid "Non-Inventory"
 msgstr "Нескладской"
@@ -14605,7 +14614,7 @@ msgid "None"
 msgstr "Нет"
 
 msgid "None yet"
-msgstr ""
+msgstr "Еще ничего нет"
 
 msgid "Normal"
 msgstr "Обычный"
@@ -14723,7 +14732,7 @@ msgid "Nothing selected yet"
 msgstr "Ничего не выбрано"
 
 msgid "Nothing to post for this period."
-msgstr ""
+msgstr "Нечего проводить за этот период."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Нечего признавать. Выручка следует за тем, что выставляют счетом счета."
@@ -14732,7 +14741,7 @@ msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
 
 msgid "Notice Date"
-msgstr ""
+msgstr "Дата уведомления"
 
 msgid "Notification"
 msgstr "Уведомление"
@@ -15167,13 +15176,13 @@ msgid "Opening balances as of"
 msgstr "Открывающие остатки на"
 
 msgid "Opening Liability"
-msgstr ""
+msgstr "Открывающееся обязательство"
 
 msgid "Opening Value"
 msgstr "Открывающая стоимость"
 
 msgid "Operating"
-msgstr ""
+msgstr "Операционный"
 
 msgid "Operating Expenses"
 msgstr "Операционные расходы"
@@ -15188,10 +15197,10 @@ msgid "Operating lease"
 msgstr "Операционный лизинг"
 
 msgid "Operating lease cost"
-msgstr ""
+msgstr "Себестоимость операционного лизинга"
 
 msgid "Operating Lease Expense"
-msgstr ""
+msgstr "Расход на операционный лизинг"
 
 msgid "operation"
 msgstr "операция"
@@ -15509,7 +15518,7 @@ msgstr "Переопределить цену для всех покупател
 
 #. placeholder {0}: lease.classificationOverrideReason
 msgid "Override reason: {0}"
-msgstr ""
+msgstr "Причина переопределения: {0}"
 
 msgid "Override reason: {overrideReason}"
 msgstr "Причина переопределения: {overrideReason}"
@@ -15548,13 +15557,13 @@ msgid "Ownership transfers"
 msgstr "Передача собственности"
 
 msgid "Ownership transfers at the end of the term"
-msgstr ""
+msgstr "Право собственности переходит в конце периода"
 
 msgid "Ownership transfers to the customer"
 msgstr "Право собственности переходит к Покупателю"
 
 msgid "Ownership transfers to you by the end of the term"
-msgstr ""
+msgstr "Право собственности переходит к вам к концу периода"
 
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
@@ -15579,7 +15588,7 @@ msgid "Paid Date"
 msgstr "Дата оплаты"
 
 msgid "Paid outside Carbon"
-msgstr ""
+msgstr "Оплачено вне Carbon"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Оплачено авансом; запишите это как платеж после получения"
@@ -15744,10 +15753,10 @@ msgid "Payment"
 msgstr "Платеж"
 
 msgid "Payment actions"
-msgstr ""
+msgstr "Действия платежа"
 
 msgid "Payment Amount"
-msgstr ""
+msgstr "Сумма платежа"
 
 msgid "Payment Applications"
 msgstr "Применение платежей"
@@ -15756,7 +15765,7 @@ msgid "Payment Date"
 msgstr "Дата платежа"
 
 msgid "Payment Frequency"
-msgstr ""
+msgstr "Частота платежей"
 
 msgid "Payment from Customer"
 msgstr "Платеж от Покупателя"
@@ -15786,7 +15795,7 @@ msgid "Payment terms like Net 30 or due on receipt"
 msgstr "Условия оплаты, такие как Net 30 или оплата при получении"
 
 msgid "Payment Timing"
-msgstr ""
+msgstr "График платежей"
 
 msgid "Payment to Supplier"
 msgstr "Платеж Поставщику"
@@ -15798,10 +15807,10 @@ msgid "Payments and credits applied to this invoice. Applied amounts and FX are 
 msgstr "Платежи и авансы, применённые к этому счету. Применённые суммы и обменные курсы указаны в базовой валюте организации. Нажмите строку, чтобы открыть документ-основание."
 
 msgid "Payments due after the termination date are removed. Invoiced payments stay."
-msgstr ""
+msgstr "Платежи, подлежащие оплате после даты прекращения, удаляются. Выставленные платежи остаются."
 
 msgid "Payments due before this date are marked paid outside Carbon"
-msgstr ""
+msgstr "Платежи, подлежащие оплате до этой даты, отмечены как оплаченные вне Carbon"
 
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Возвращает авансовый платеж, удерживаемый по этому документу, из предоплат покупателя."
@@ -15888,7 +15897,7 @@ msgid "Period lock policy"
 msgstr "Политика блокировки периода"
 
 msgid "Period Start"
-msgstr ""
+msgstr "Начало периода"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Периодический расход амортизации основных средств"
@@ -16325,10 +16334,10 @@ msgid "Present value of payments is at least {threshold} of fair value ({actual}
 msgstr "Текущая стоимость платежей составляет не менее {threshold} справедливой стоимости ({actual})"
 
 msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
-msgstr ""
+msgstr "Приведенная стоимость платежей по аренде, которые еще не были оплачены, уменьшенная на каждый счет-фактуру по аренде"
 
 msgid "Present value of the payments is at least {threshold} of the fair value"
-msgstr ""
+msgstr "Приведенная стоимость платежей составляет не менее {threshold} справедливой стоимости"
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "Приведенная стоимость аренды составляет по меньшей мере {threshold} справедливой стоимости единицы"
@@ -16449,7 +16458,7 @@ msgid "Primary cash account for bank transactions"
 msgstr "Основной счет денежных средств для банковских операций"
 
 msgid "Principal"
-msgstr ""
+msgstr "Основная сумма"
 
 msgid "Principal Collected"
 msgstr "Собрана основная сумма"
@@ -16763,7 +16772,7 @@ msgid "Purchase & manufacture from MRP"
 msgstr "Закупка и производство из MRP"
 
 msgid "Purchase Asset"
-msgstr ""
+msgstr "Приобретаемый актив"
 
 msgid "Purchase History"
 msgstr "История покупок"
@@ -16787,10 +16796,10 @@ msgid "Purchase Invoices"
 msgstr "Счета-фактуры полученные"
 
 msgid "Purchase invoices are drafted automatically for each payment once the lease is active."
-msgstr ""
+msgstr "Счета-фактуры полученные автоматически выставляются для каждого платежа после активации аренды."
 
 msgid "Purchase journal (the asset account comes from the asset class):"
-msgstr ""
+msgstr "Операция покупки (счет активов получается из класса основных средств):"
 
 msgid "Purchase option"
 msgstr "Опция покупки"
@@ -16850,7 +16859,7 @@ msgid "Purchase planning"
 msgstr "Планирование закупок"
 
 msgid "Purchase Price"
-msgstr ""
+msgstr "Цена покупки"
 
 msgid "Purchase price variance"
 msgstr "Отклонение цены покупки"
@@ -17430,7 +17439,7 @@ msgid "Received quantity not yet credited. The credit memo is created as a draft
 msgstr "Полученное количество еще не зачислено. Кредит-нота создана как черновик."
 
 msgid "Receives the invoice digest and the reminders"
-msgstr ""
+msgstr "Получает дайджест счетов-фактур и напоминания"
 
 msgid "Receives the invoice email"
 msgstr "Получает письмо со счетом-фактурой"
@@ -17590,10 +17599,10 @@ msgid "Regenerate"
 msgstr "Пересчитать"
 
 msgid "Regenerate from Terms"
-msgstr ""
+msgstr "Пересчитать из условий"
 
 msgid "Regenerate payments from the terms?"
-msgstr ""
+msgstr "Пересчитать платежи из условий?"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "Пересчитать график для этой площадки сейчас. Пересчет также выполняется автоматически примерно через 30 секунд после последнего изменения в планировании (изменения группируются, поэтому несколько быстрых изменений запускают один пересчет)."
@@ -17728,7 +17737,7 @@ msgid "Remaining after split stays on the original row."
 msgstr "Остаток после разделения остается в исходной строке."
 
 msgid "Remeasurement journal (the effective date and the classification are checked when you confirm):"
-msgstr ""
+msgstr "Операция переоценки (дата вступления в силу и классификация проверяются при подтверждении):"
 
 msgid "Remove"
 msgstr "Убрать"
@@ -18560,11 +18569,14 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Правый элемент"
 
-msgid "Right-of-Use Asset"
+msgid "Right-of-use asset"
 msgstr ""
 
+msgid "Right-of-Use Asset"
+msgstr "Актив прав пользования"
+
 msgid "Right-of-Use Assets"
-msgstr ""
+msgstr "Активы прав пользования"
 
 msgid "Risk"
 msgstr "Риск"
@@ -18615,7 +18627,7 @@ msgid "Room to grow without bolting on more tools"
 msgstr "Место для роста без добавления новых инструментов"
 
 msgid "ROU Amortization"
-msgstr ""
+msgstr "Амортизация активов прав пользования"
 
 msgid "Rounding Account"
 msgstr "Счет округления"
@@ -19693,7 +19705,7 @@ msgid "Set a target"
 msgstr "Установить цель"
 
 msgid "Set at activation"
-msgstr ""
+msgstr "Установлено при активации"
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Настройте Carbon в соответствии с тем, как работает ваша организация: участки, детали, BOM, Перечень операций и используемые вами процессы."
@@ -19726,7 +19738,7 @@ msgid "Set the base currency."
 msgstr "Установить базовую валюту."
 
 msgid "Set the commencement date, the end date and the payment terms to see the accounting treatment."
-msgstr ""
+msgstr "Установите дату начала, дату окончания и условия оплаты, чтобы увидеть бухгалтерскую обработку."
 
 msgid "Set the fiscal year settings."
 msgstr "Установить параметры финансового года."
@@ -20026,13 +20038,13 @@ msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
 msgid "Short-Term"
-msgstr ""
+msgstr "Краткосрочный"
 
 msgid "Short-term lease cost"
-msgstr ""
+msgstr "Себестоимость краткосрочного лизинга"
 
 msgid "Short-Term Lease Expedient"
-msgstr ""
+msgstr "Льгота по краткосрочному лизингу"
 
 msgid "Shortcuts"
 msgstr "Сочетания клавиш"
@@ -20708,10 +20720,10 @@ msgid "Straight line"
 msgstr "Линейный метод"
 
 msgid "Straight-line amortization of finance lease right-of-use assets"
-msgstr ""
+msgstr "Линейная амортизация активов прав пользования финансового лизинга"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
-msgstr ""
+msgstr "Линейная себестоимость операционного лизинга и платежи краткосрочного лизинга"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -21378,35 +21390,35 @@ msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "Срок должен быть не менее {threshold} экономического срока единицы"
 
 msgid "Term is at least {threshold} of the economic life"
-msgstr ""
+msgstr "Период аренды составляет по крайней мере {threshold} экономического срока службы"
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Срок аренды составляет как минимум {threshold} от экономического срока полезного использования ({actual})"
 
 msgid "Terminate"
-msgstr ""
+msgstr "Прекратить"
 
 #. placeholder {0}: lease.leaseId
 msgid "Terminate {0}"
-msgstr ""
+msgstr "Прекратить {0}"
 
 msgid "Terminate Lease"
-msgstr ""
+msgstr "Прекратить аренду"
 
 msgid "Terminated"
-msgstr ""
+msgstr "Расторгнуто"
 
 msgid "Termination"
-msgstr ""
+msgstr "Расторжение"
 
 msgid "Termination Date"
-msgstr ""
+msgstr "Дата расторжения"
 
 msgid "Termination journal:"
-msgstr ""
+msgstr "Операция расторжения:"
 
 msgid "Termination Penalty"
-msgstr ""
+msgstr "Штраф за расторжение"
 
 msgid "Terms"
 msgstr "Условия"
@@ -21482,7 +21494,7 @@ msgid "The asset moves into its in-service class and starts depreciating from th
 msgstr "Актив переходит в свой класс в эксплуатации и начинает амортизироваться с даты ввода в эксплуатацию."
 
 msgid "The asset would have a negative cost. Check the purchase price."
-msgstr ""
+msgstr "Основное средство имело бы отрицательную себестоимость. Проверьте цену покупки."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Авторизация была отклонена в Onshape. Сохраните настройки интеграции и попробуйте еще раз."
@@ -21726,7 +21738,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
 
 msgid "The discount rate values the payments. The inputs below decide whether this is an operating or a finance lease."
-msgstr ""
+msgstr "Коэффициент дисконтирования определяет стоимость платежей. Приведенные ниже входные данные определяют, является ли это операционным или финансовым лизингом."
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
@@ -21741,7 +21753,7 @@ msgid "The enable resets each item's stock to its on-hand quantity at the cutove
 msgstr "Включение переносит запас каждой номенклатуры в её количество в наличии на дату перехода по себестоимости ниже. Просмотрите себестоимость каждой номенклатуры со средней стоимостью."
 
 msgid "The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr ""
+msgstr "Дата окончания — последний день периода, включая продления, которые обоснованно ожидаются."
 
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "Полный коммерческий цикл от предложения покупателю до получения платежа: запрос цен, коммерческое предложение, заказ покупателя, затем отгрузка, счет-фактура и полученный платеж."
@@ -21753,7 +21765,7 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "Техническая схема, к которой привязан данный план контроля; проверки, записанные для этой детали, ссылаются на эту схему."
 
 msgid "The escalation applies on each anniversary of the commencement date."
-msgstr ""
+msgstr "Эскалация применяется в каждую годовщину даты начала."
 
 msgid "The evening hours, {name}."
 msgstr "Вечерние часы, {name}."
@@ -21777,7 +21789,7 @@ msgid "The first day a company keeps its books in Carbon, set once when accounti
 msgstr "Первый день, когда организация начинает вести учёт в Carbon, устанавливается один раз при настройке бухгалтерии и никогда не меняется; с этого момента каждое проведение создаёт проведённую операцию."
 
 msgid "The first day of a lease month (day {commencementDay}), after the last posted lease run"
-msgstr ""
+msgstr "Первый день месяца лизинга (день {commencementDay}), после последней проведенной операции лизинга"
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Фиксированное количество единиц для проверки с передней части каждой партии, независимо от размера партии."
@@ -21870,7 +21882,7 @@ msgid "The inventory cost recognized when a shipment posts, valued by the item's
 msgstr "Себестоимость Запасов, признаваемая при проведении Отгрузки, оцениваемая по методу Калькуляции Номенклатуры."
 
 msgid "The invoice for this payment is drafted on this date"
-msgstr ""
+msgstr "Счет-фактура для этого платежа создается в эту дату"
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Класс периода восстановления IRS для этого основного средства в соответствии с MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 лет)."
@@ -21903,25 +21915,28 @@ msgid "The label and document printers your company prints to"
 msgstr "Принтеры этикеток и документов, на которые печатает ваша организация"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
-msgstr ""
+msgstr "Последний день месяца лизинга (день перед днем {commencementDay}), после последней проведенной операции лизинга"
 
 msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run and on or before the end date"
-msgstr ""
+msgstr "Последний день месяца лизинга (день перед днем {commencementDay}), после последней проведенной операции лизинга и не позже даты окончания"
 
 msgid "The last day to give renewal or termination notice"
-msgstr ""
+msgstr "Последний день для подачи уведомления о продлении или расторжении"
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Самая поздняя дата размещения этого заказа поставщику, чтобы он прибыл к нужной дате, с учетом срока поставки поставщика."
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
-msgstr ""
+msgstr "Арендуемое основное средство начинает амортизироваться с даты реализации. Платежи, причитающиеся после него, удаляются."
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "Организация для выставления счета, если отличается от покупателя, получающего товары — для взаимоотношений между головной компанией/дочерней компанией или третьей стороной."
 
 msgid "The legal entity to bill, when different from the supplier who delivers the goods — for parent / subsidiary or factoring arrangements."
 msgstr "Юридическое лицо для выставления счета, если оно отличается от поставщика, поставляющего товары - для соглашений о материнской компании/дочерней компании или факторинге."
+
+msgid "The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run."
+msgstr ""
 
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Актив лизингодателя при финансовой аренде: текущая стоимость арендных платежей и не гарантированного остатка, увеличиваемая каждый месяц на сумму процентов по лизингу и уменьшаемая каждый платеж аренды и счет-фактуру по опциону покупки."
@@ -21997,6 +22012,9 @@ msgstr "Месяц начала финансового года; периоды 
 
 msgid "The month your tax year begins; may differ from the fiscal year in some jurisdictions."
 msgstr "Месяц начала налогового года; в некоторых юрисдикциях может отличаться от финансового года."
+
+msgid "The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals."
+msgstr ""
 
 msgid "The monthly periods you post into and close"
 msgstr "Ежемесячные периоды, в которые вы размещаете проводки и которые закрываете"
@@ -22176,7 +22194,7 @@ msgid "The Ramp connection expired"
 msgstr "Срок действия подключения Ramp истек"
 
 msgid "The rate at the effective date"
-msgstr ""
+msgstr "Ставка на дату вступления в силу"
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Сырьё и материалы, которые вы покупаете и используете"
@@ -22210,7 +22228,7 @@ msgid "The remaining {0} {1} will no longer be expected. On-order supply and MRP
 msgstr "Оставшиеся {0} {1} больше не будут ожидаться. Заказанное обеспечение и MRP перестанут их считать. Заказанное количество и ценообразование остаются без изменений."
 
 msgid "The remaining payments are cut again from these terms and discounted at the revised rate. The right-of-use asset moves by the same amount as the liability."
-msgstr ""
+msgstr "Оставшиеся платежи пересчитываются по этим условиям и дисконтируются по пересмотренной ставке. Активы право пользования изменяются на ту же сумму, что и обязательство."
 
 msgid "The request body sent verbatim with a JSON content type after workflow variables inside it are substituted, on the methods that carry one."
 msgstr "Тело запроса, отправляемое дословно с типом содержимого JSON после замены переменных рабочего процесса внутри него, в методах, которые его несут."
@@ -22237,7 +22255,7 @@ msgid "The revision number of the part"
 msgstr "Номер ревизии детали."
 
 msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
-msgstr ""
+msgstr "Активы право пользования и обязательство лизинга отражаются в бухгалтерском балансе, и прямолинейная стоимость лизинга учитывается каждый месяц."
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Строка заказа покупателя, для которой был создан этот Производственный заказ с целью Обеспечения, связывающая Производственный заказ с Потребностью Покупателя."
@@ -22252,7 +22270,7 @@ msgid "The schedule could not be updated after the release"
 msgstr "График не удалось обновить после запуска в работу"
 
 msgid "The schedule is written when the lease is activated."
-msgstr ""
+msgstr "График составляется при активации лизинга."
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "График, используемый для распределения Себестоимости этого актива в течение его Срока полезного использования (линейный, Уменьшаемый остаток, единицы производства)."
@@ -22525,7 +22543,7 @@ msgid "There's nothing outstanding to apply these credits to."
 msgstr "Нечего применять эти кредиты."
 
 msgid "Thereafter"
-msgstr ""
+msgstr "После этого"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Эти пользовательские поля будут доступны только для объектов с одинаковыми тегами"
@@ -22703,7 +22721,7 @@ msgstr "Собственное требуемое количество мате�
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): the right-of-use asset, its amortization and the lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
-msgstr ""
+msgstr "Этот лизинг начался до создания бухгалтерии. Его активация проводит открывающий остаток на {0} (или начало первого открытого периода после него): активы право пользования, его амортизация и обязательство лизинга по состоянию на эту дату, с разницей в нераспределенную прибыль. Месяцы раньше отмечены как проведенные."
 
 msgid "This line has no routing to schedule."
 msgstr "На этой строке нет маршрута для планирования."
@@ -22754,7 +22772,7 @@ msgid "This path only decides what runs next"
 msgstr "Этот путь решает только, что будет запущено дальше"
 
 msgid "this payment"
-msgstr ""
+msgstr "этот платеж"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Этот период не имеет проведенных операций и может быть безвозвратно удален. Это невозможно отменить."
@@ -22875,11 +22893,11 @@ msgstr "Это создаст черновик расчета амортизац
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
-msgstr ""
+msgstr "Это создаст черновик операции лизинга на следующий период, заканчивающийся {0}. Каждая строка графика лизинга и аренды, причитающаяся на дату {0} или раньше, будет включена."
 
 #. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
-msgstr ""
+msgstr "Это создаст черновик операции лизинга на период, заканчивающийся {0}. Каждая строка графика лизинга и аренды, причитающаяся на дату {0} или раньше, будет включена."
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
@@ -22908,7 +22926,7 @@ msgstr "Это перезапишет существующий метод пре
 #. placeholder {0}: run.runId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr ""
+msgstr "Это пересчитает {0} в соответствии с его текущим графиком: каждую строку графика, причитающуюся на дату {1} или раньше, которую не удерживает другой запуск."
 
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
@@ -23222,7 +23240,7 @@ msgid "Total Indirect Cost"
 msgstr "Общие косвенные затраты"
 
 msgid "Total lease cost"
-msgstr ""
+msgstr "Итого себестоимость лизинга"
 
 msgid "Total Material Cost"
 msgstr "Итоговая себестоимость материалов"
@@ -23261,7 +23279,7 @@ msgid "Total tax"
 msgstr "Общий налог"
 
 msgid "Total undiscounted payments"
-msgstr ""
+msgstr "Итого недисконтированные платежи"
 
 msgid "Total Value"
 msgstr "Общая стоимость"
@@ -23423,7 +23441,7 @@ msgid "Trash"
 msgstr "Корзина"
 
 msgid "Treatment"
-msgstr ""
+msgstr "Учет"
 
 msgid "Tree View"
 msgstr "Древовидный вид"
@@ -23453,7 +23471,7 @@ msgid "Turn on the built-in pieces"
 msgstr "Включите встроенные компоненты"
 
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
-msgstr ""
+msgstr "Двенадцать месяцев или менее. Ничего не отражается в бухгалтерском балансе; каждая счет-фактура списывается как расход."
 
 msgid "Two-Factor"
 msgstr "Двухфакторная аутентификация"
@@ -23571,7 +23589,7 @@ msgid "Under Maximum Quantity policy, planning orders up to this on-hand level w
 msgstr "При политике максимального количества планирование заказывает до этого уровня остатка на складе, когда срабатывает точка заказа"
 
 msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
-msgstr ""
+msgstr "Недисконтированные платежи, которые еще поступят, по финансовым годам, минус проценты, которые будут начислены в оставшихся месяцах."
 
 msgid "Undo"
 msgstr "Отменить"
@@ -24123,10 +24141,10 @@ msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Значения в этом запуске были сведены. Полные детали хранятся 7 дней."
 
 msgid "Variable lease cost"
-msgstr ""
+msgstr "Переменная стоимость лизинга"
 
 msgid "Variable Lease Expense"
-msgstr ""
+msgstr "Переменный расход лизинга"
 
 msgid "Variables"
 msgstr "Переменные"
@@ -24617,10 +24635,10 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "Средневзвешенная себестоимость за последний год, рассчитанная при проведении счета-фактуры"
 
 msgid "Weighted-average discount rate"
-msgstr ""
+msgstr "Средневзвешенная ставка дисконтирования"
 
 msgid "Weighted-average remaining term (years)"
-msgstr ""
+msgstr "Средневзвешенный оставшийся срок (годы)"
 
 msgid "Welcome back, {name}."
 msgstr "Добро пожаловать назад, {name}."
@@ -24674,7 +24692,7 @@ msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"
 
 msgid "What is leased and where it is used."
-msgstr ""
+msgstr "Что сдается в лизинг и где оно используется."
 
 msgid "What it is"
 msgstr "Что это такое"
@@ -24702,6 +24720,9 @@ msgstr "Что покупатель платит авансом, налог на
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "На что начинается обратный отсчет срока (дата счета-фактуры, конец месяца и т. д.)."
+
+msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
+msgstr ""
 
 msgid "What these rows mean"
 msgstr "Что означают эти строки"
@@ -25025,7 +25046,7 @@ msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Кто это продал, кому принадлежит и когда закрыто."
 
 msgid "Who the company leases from, and who owns it here."
-msgstr ""
+msgstr "От кого организация берет в лизинг и кто им владеет здесь."
 
 msgid "Who the contract is with and what it is called."
 msgstr "С кем договор и как он называется."
@@ -25251,7 +25272,7 @@ msgid "You drive it; we make sure it's done right. Expert eyes on your setup, da
 msgstr "Вы его ведете; мы следим за тем, чтобы это было сделано правильно. Опытный взгляд на вашу наладку, данные и запуск в производство."
 
 msgid "You effectively buy the asset. Interest and amortization of the right-of-use asset are booked separately each month."
-msgstr ""
+msgstr "Вы фактически покупаете основное средство. Проценты и амортизация активов право пользования учитываются отдельно каждый месяц."
 
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
