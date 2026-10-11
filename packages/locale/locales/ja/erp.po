@@ -4832,6 +4832,9 @@ msgstr "近日公開予定"
 msgid "comma-separated values"
 msgstr "カンマ区切りの値"
 
+msgid "Commencement"
+msgstr ""
+
 msgid "Comment"
 msgstr "コメント"
 
@@ -11787,6 +11790,9 @@ msgstr "学ぶ"
 msgid "Learn more"
 msgstr "詳細情報"
 
+msgid "Lease"
+msgstr ""
+
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr ""
 
@@ -11876,6 +11882,9 @@ msgstr "アカウントをセットアップしましょう"
 
 msgid "Letter"
 msgstr "文字"
+
+msgid "Liability"
+msgstr ""
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "従業員への費用払戻に対する負債勘定です。未設定の場合は買掛金にフォールバックします。"
@@ -15259,6 +15268,9 @@ msgstr "支払済み金額:"
 
 msgid "Paid Date"
 msgstr "支払日"
+
+msgid "Paid outside Carbon"
+msgstr ""
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "前払いされ、受け取ったら支払として記録してください。"
@@ -20986,6 +20998,9 @@ msgstr "契約期間は単位の経済的寿命の少なくとも{threshold}で�
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "期間は経済的耐用年数の少なくとも{threshold}です({actual})"
+
+msgid "Terminated"
+msgstr ""
 
 msgid "Terms"
 msgstr "条件"

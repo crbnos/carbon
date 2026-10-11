@@ -4832,6 +4832,9 @@ msgstr "即将推出"
 msgid "comma-separated values"
 msgstr "逗号分隔的值"
 
+msgid "Commencement"
+msgstr ""
+
 msgid "Comment"
 msgstr "评论"
 
@@ -11787,6 +11790,9 @@ msgstr "学习"
 msgid "Learn more"
 msgstr "了解更多"
 
+msgid "Lease"
+msgstr ""
+
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr ""
 
@@ -11876,6 +11882,9 @@ msgstr "让我们设置您的账户"
 
 msgid "Letter"
 msgstr "字母"
+
+msgid "Liability"
+msgstr ""
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "员工费用报销应付账户。如未设置，则回退到应付款项"
@@ -15259,6 +15268,9 @@ msgstr "已支付金额："
 
 msgid "Paid Date"
 msgstr "支付日期"
+
+msgid "Paid outside Carbon"
+msgstr ""
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "预付款；收到后将其记录为付款"
@@ -20986,6 +20998,9 @@ msgstr "期限至少为该单位经济寿命的 {threshold}"
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "租赁期至少为经济寿命的{threshold}({actual})"
+
+msgid "Terminated"
+msgstr ""
 
 msgid "Terms"
 msgstr "条款"

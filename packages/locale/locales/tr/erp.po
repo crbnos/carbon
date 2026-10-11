@@ -4832,6 +4832,9 @@ msgstr "Yakında"
 msgid "comma-separated values"
 msgstr "virgülle ayrılmış değerler"
 
+msgid "Commencement"
+msgstr ""
+
 msgid "Comment"
 msgstr "Açıklama"
 
@@ -11787,6 +11790,9 @@ msgstr "Öğren"
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
 
+msgid "Lease"
+msgstr ""
+
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr ""
 
@@ -11876,6 +11882,9 @@ msgstr "Hesabınızı kuralım"
 
 msgid "Letter"
 msgstr "Harf"
+
+msgid "Liability"
+msgstr ""
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Çalışanlara ödenen gider geri ödemelerine ait borç tutarları için muhasebe hesabı. Ayarlanmadığında Borçlar hesabına geri düşer"
@@ -15259,6 +15268,9 @@ msgstr "Ödenen Tutar:"
 
 msgid "Paid Date"
 msgstr "Ödeme Tarihi"
+
+msgid "Paid outside Carbon"
+msgstr ""
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Peşin ödenen; alındığında bir ödeme olarak kaydedin"
@@ -20986,6 +20998,9 @@ msgstr "Dönem, bir birim'in ekonomik ömrünün en az {threshold}'i"
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Vade ekonomik ömrün en az {threshold}'sidir ({actual})"
+
+msgid "Terminated"
+msgstr ""
 
 msgid "Terms"
 msgstr "Koşullar"

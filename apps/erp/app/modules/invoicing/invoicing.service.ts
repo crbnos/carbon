@@ -420,8 +420,9 @@ export async function getPurchaseInvoiceLine(
   client: SupabaseClient<Database>,
   purchaseInvoiceLineId: string
 ) {
+  // The view: the line plus its asset's and lease's readable ids.
   return client
-    .from("purchaseInvoiceLine")
+    .from("purchaseInvoiceLines")
     .select("*")
     .eq("id", purchaseInvoiceLineId)
     .single();

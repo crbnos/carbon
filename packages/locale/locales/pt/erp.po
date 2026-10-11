@@ -4832,6 +4832,9 @@ msgstr "Em breve"
 msgid "comma-separated values"
 msgstr "valores separados por vírgula"
 
+msgid "Commencement"
+msgstr ""
+
 msgid "Comment"
 msgstr "Comentário"
 
@@ -11787,6 +11790,9 @@ msgstr "Aprender"
 msgid "Learn more"
 msgstr "Saiba mais"
 
+msgid "Lease"
+msgstr ""
+
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr ""
 
@@ -11876,6 +11882,9 @@ msgstr "Vamos configurar sua conta"
 
 msgid "Letter"
 msgstr "Letra"
+
+msgid "Liability"
+msgstr ""
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Conta de passivo para valores devidos a funcionários por reembolso de despesas. Retorna para Contas a Pagar quando não definido"
@@ -15259,6 +15268,9 @@ msgstr "Valor Pago:"
 
 msgid "Paid Date"
 msgstr "Data de Pagamento"
+
+msgid "Paid outside Carbon"
+msgstr ""
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Pagamento antecipado; registre-o como um pagamento quando recebido"
@@ -20986,6 +20998,9 @@ msgstr "O termo é pelo menos {threshold} da vida econômica de uma unidade"
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "O prazo é de pelo menos {threshold} da vida econômica ({actual})"
+
+msgid "Terminated"
+msgstr ""
 
 msgid "Terms"
 msgstr "Termos"

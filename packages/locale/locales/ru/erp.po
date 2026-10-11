@@ -4832,6 +4832,9 @@ msgstr "Скоро"
 msgid "comma-separated values"
 msgstr "значения, разделённые запятыми"
 
+msgid "Commencement"
+msgstr ""
+
 msgid "Comment"
 msgstr "Комментарий"
 
@@ -11787,6 +11790,9 @@ msgstr "Узнать"
 msgid "Learn more"
 msgstr "Узнать больше"
 
+msgid "Lease"
+msgstr ""
+
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr ""
 
@@ -11876,6 +11882,9 @@ msgstr "Давайте настроим вашу учетную запись"
 
 msgid "Letter"
 msgstr "Буква"
+
+msgid "Liability"
+msgstr ""
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Счет обязательств для сумм, причитающихся сотрудникам за возмещение расходов. Использует кредиторскую задолженность, если не установлено"
@@ -15259,6 +15268,9 @@ msgstr "Оплаченная сумма:"
 
 msgid "Paid Date"
 msgstr "Дата оплаты"
+
+msgid "Paid outside Carbon"
+msgstr ""
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Оплачено авансом; запишите это как платеж после получения"
@@ -20986,6 +20998,9 @@ msgstr "Срок должен быть не менее {threshold} эконом�
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Срок аренды составляет как минимум {threshold} от экономического срока полезного использования ({actual})"
+
+msgid "Terminated"
+msgstr ""
 
 msgid "Terms"
 msgstr "Условия"

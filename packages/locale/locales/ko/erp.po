@@ -4832,6 +4832,9 @@ msgstr "출시 예정"
 msgid "comma-separated values"
 msgstr "쉼표로 구분된 값"
 
+msgid "Commencement"
+msgstr ""
+
 msgid "Comment"
 msgstr "댓글"
 
@@ -11787,6 +11790,9 @@ msgstr "학습"
 msgid "Learn more"
 msgstr "자세히 알아보기"
 
+msgid "Lease"
+msgstr ""
+
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr ""
 
@@ -11876,6 +11882,9 @@ msgstr "계정을 설정해봅시다"
 
 msgid "Letter"
 msgstr "레터"
+
+msgid "Liability"
+msgstr ""
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "직원 비용 환급에 대해 직원에게 빚진 금액의 부채 계정입니다. 설정하지 않으면 매입채무로 대체됩니다"
@@ -15259,6 +15268,9 @@ msgstr "지급액:"
 
 msgid "Paid Date"
 msgstr "지급일"
+
+msgid "Paid outside Carbon"
+msgstr ""
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "선금으로 지불되며, 받으면 지불로 기록하세요."
@@ -20986,6 +20998,9 @@ msgstr "약관은 자산의 경제적 수명의 최소 {threshold} 이상이어�
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "기한이 경제수명의 최소 {threshold}% 이상입니다({actual})"
+
+msgid "Terminated"
+msgstr ""
 
 msgid "Terms"
 msgstr "약관"

@@ -4832,6 +4832,9 @@ msgstr "Wkrótce"
 msgid "comma-separated values"
 msgstr "wartości oddzielone przecinkami"
 
+msgid "Commencement"
+msgstr ""
+
 msgid "Comment"
 msgstr "Komentarz"
 
@@ -11787,6 +11790,9 @@ msgstr "Dowiedz się"
 msgid "Learn more"
 msgstr "Dowiedz się więcej"
 
+msgid "Lease"
+msgstr ""
+
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr ""
 
@@ -11876,6 +11882,9 @@ msgstr "Skonfigurujmy Twoje konto"
 
 msgid "Letter"
 msgstr "Litera"
+
+msgid "Liability"
+msgstr ""
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Konto zobowiązań dla kwot należnych pracownikom za zwrot wydatków. Jeśli nie zostanie ustawione, używane jest konto Zobowiązań"
@@ -15259,6 +15268,9 @@ msgstr "Kwota zapłacona:"
 
 msgid "Paid Date"
 msgstr "Data zapłaty"
+
+msgid "Paid outside Carbon"
+msgstr ""
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Zapłacone z góry; zarejestruj to jako płatność po otrzymaniu"
@@ -20986,6 +20998,9 @@ msgstr "Okres wynosi co najmniej {threshold} ekonomicznego życia jednostki"
 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Okres trwania wynosi co najmniej {threshold} ekonomicznego okresu życia ({actual})"
+
+msgid "Terminated"
+msgstr ""
 
 msgid "Terms"
 msgstr "Warunki"
