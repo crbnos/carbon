@@ -5,6 +5,7 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { validationError, validator } from "@carbon/form";
 import {
   Alert,
@@ -60,15 +61,16 @@ import type {
   PeriodCloseTaskView
 } from "~/modules/accounting";
 import {
-  closePeriodWithChecklist,
+  closeAccountingPeriod,
   closeTaskCompleteValidator,
   closeTaskSkipValidator,
   completeCloseTask,
   createDepreciationRun,
   getAccountingPeriods,
-  getPeriodCloseChecklist,
   LOCK_PERIOD_TASK_NAME,
+  loadPeriodCloseChecklist,
   lockAccountingPeriod,
+  runPreviewer,
   skipCloseTask,
   unlockAccountingPeriod
 } from "~/modules/accounting";
@@ -94,12 +96,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!periodId) throw notFound("periodId not found");
 
   const [checklist, periods] = await Promise.all([
-    getPeriodCloseChecklist(client, getDatabaseClient(), {
+    // `getPeriodCloseChecklist` with the project revenue synthesizers, which
+    // the browser-bundled service cannot import.
+    loadPeriodCloseChecklist(
+      client,
       companyId,
-      companyGroupId,
-      userId,
-      periodId
-    }),
+      periodId,
+      runPreviewer(client, getDatabaseClient(), {
+        companyId,
+        companyGroupId,
+        userId,
+        revenueRunSynthesizers: projectRevenueSynthesizers
+      })
+    ),
     getAccountingPeriods(client, companyId)
   ]);
 
@@ -253,7 +262,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       try {
         // The proposal creates nothing when nothing is due.
         proposal = await serverFns
-          .system({ db: getDatabaseClient(), companyId, userId })
+          .system({
+            db: getDatabaseClient(),
+            companyId,
+            userId,
+            revenueRunSynthesizers: projectRevenueSynthesizers
+          })
           .invokeOrThrow("propose-revenue-recognition-run", { periodEnd });
       } catch (e) {
         return data(
@@ -320,12 +334,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (intent === "close") {
-    const result = await closePeriodWithChecklist(client, getDatabaseClient(), {
-      companyId,
-      companyGroupId,
-      periodId,
-      userId
-    });
+    // `closePeriodWithChecklist` with a previewer that holds the project
+    // revenue synthesizers, which the browser-bundled service cannot import.
+    const db = getDatabaseClient();
+    const args = { companyId, companyGroupId, periodId, userId };
+    const result = await closeAccountingPeriod(
+      client,
+      db,
+      args,
+      runPreviewer(client, db, {
+        ...args,
+        revenueRunSynthesizers: projectRevenueSynthesizers
+      })
+    );
     if (result.error) {
       return data(
         {},

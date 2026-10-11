@@ -12,6 +12,11 @@ import { priorMonthEnd } from "./revenue-recognition-proposal";
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
 }));
+// The commercial project revenue synthesizer reaches the docs glossary's
+// Lingui macros through the plan gates; the proposal is not run here.
+vi.mock("@carbon/ee/project-revenue.server", () => ({
+  projectRevenueSynthesizers: []
+}));
 
 describe("priorMonthEnd", () => {
   it("returns the last day of the previous month on the 1st", () => {

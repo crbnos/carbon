@@ -11,6 +11,7 @@ import {
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
+import type { RunRowSynthesizer } from "@carbon/server-functions/propose-revenue-recognition-run";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
   addDays,
@@ -2714,7 +2715,12 @@ export async function closeAccountingPeriod(
     companyGroupId: string;
     userId: string;
   },
-  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args)
+  // No commercial synthesizers by default: the route passes its own previewer
+  // (`runPreviewer` with `projectRevenueSynthesizers`).
+  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, {
+    ...args,
+    revenueRunSynthesizers: []
+  })
 ) {
   const period = await getAccountingPeriodById(
     client,
@@ -3217,6 +3223,11 @@ function previewError(error: unknown, fallback: string): string {
  * Depreciation: `buildDepreciationRunLines`, empty when a later period is
  * already posted (per-month posting put those months in their periods).
  * Never throws: a failure is returned as the preview's `error`.
+ *
+ * `revenueRunSynthesizers` are the commercial run synthesizers
+ * (`projectRevenueSynthesizers` from `@carbon/ee/project-revenue.server`). This
+ * file is bundled for the browser and cannot import a `.server` module, so a
+ * route passes them in.
  */
 export async function getPeriodRunPreview(
   client: SupabaseClient<Database>,
@@ -3226,12 +3237,18 @@ export async function getPeriodRunPreview(
     companyGroupId: string;
     userId: string;
     periodEnd: string;
+    revenueRunSynthesizers: RunRowSynthesizer[];
   }
 ): Promise<PeriodRunPreview> {
   const { companyId, companyGroupId, userId, periodEnd } = args;
   const [revenue, depreciation] = await Promise.all([
     serverFns
-      .system({ db, companyId, userId })
+      .system({
+        db,
+        companyId,
+        userId,
+        revenueRunSynthesizers: args.revenueRunSynthesizers
+      })
       .invoke("preview-revenue-recognition-run", { periodEnd })
       .then(
         (result): RunPreview =>
@@ -3286,11 +3303,17 @@ export async function getPeriodRunPreview(
   return { revenue, depreciation };
 }
 
-/** The previewer the close checklist uses outside tests. */
-function runPreviewer(
+/** The previewer the close checklist uses outside tests. The close route
+ *  passes `projectRevenueSynthesizers`; the MCP tools pass none. */
+export function runPreviewer(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; companyGroupId: string; userId: string }
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    revenueRunSynthesizers: RunRowSynthesizer[];
+  }
 ): PeriodRunPreviewer {
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
 }
@@ -3656,9 +3679,12 @@ export async function getPeriodCloseReadiness(
     companyId,
     period.data.startDate,
     period.data.endDate,
+    // MCP and the API cannot reach commercial code: no project revenue
+    // synthesizers here.
     await getPeriodRunPreview(client, db, {
       ...args,
-      periodEnd: period.data.endDate
+      periodEnd: period.data.endDate,
+      revenueRunSynthesizers: []
     })
   );
   return { data: { checks, blockers, warnings }, error: null };
@@ -3829,11 +3855,13 @@ export async function getPeriodCloseChecklist(
     periodId: string;
   }
 ) {
+  // MCP and the API cannot reach commercial code: the close route calls
+  // `loadPeriodCloseChecklist` with the project revenue synthesizers instead.
   return loadPeriodCloseChecklist(
     client,
     args.companyId,
     args.periodId,
-    runPreviewer(client, db, args)
+    runPreviewer(client, db, { ...args, revenueRunSynthesizers: [] })
   );
 }
 
