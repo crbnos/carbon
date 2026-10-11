@@ -13,10 +13,23 @@
 // Plan: .ai/plans/2026-10-09-government-contracting-phase-5b.md (Task 7, B2, B12)
 
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { requireEntitlement } from "../entitlements.server";
+import {
+  computePoolRates,
+  type PoolMapping,
+  type PoolRateResult,
+  periodRateFrom
+} from "./compute";
+import {
+  loadAbsorbedOverhead,
+  loadGlCells,
+  loadProjectCells,
+  loadRatePeriod
+} from "./loaders.server";
 import type {
   burdenSettingsValidator,
   contractRateCeilingValidator,
@@ -314,6 +327,215 @@ export async function updateBurdenSettings(
     .eq("id", input.companyId)
     .select("id")
     .single();
+}
+
+// -----------------------------------------------------------------------------
+// The rate run (Task 8)
+// -----------------------------------------------------------------------------
+
+/**
+ * Computes the YTD Actual rate of every active pool for one accounting
+ * period, and writes the Actual rates, the Statement of Indirect Expenses and
+ * the period run in one transaction. Rates write no journal, so any period
+ * state is accepted.
+ */
+export async function computeIndirectRates(
+  db: Kysely<KyselyDatabase>,
+  client: Client,
+  {
+    companyId,
+    userId,
+    accountingPeriodId
+  }: { companyId: string; userId: string; accountingPeriodId: string }
+): Promise<{ data: PoolRateResult[]; error: null }> {
+  await requireEntitlement(client, companyId, FEATURE);
+
+  const ratePeriod = await loadRatePeriod(db, {
+    companyId,
+    accountingPeriodId
+  });
+  const { fiscalYear, periodNumber, fyStart, periodEnd } = ratePeriod;
+
+  const pools = await db
+    .selectFrom("indirectPool")
+    .select([
+      "id",
+      "name",
+      "poolType",
+      "sequence",
+      "baseType",
+      "appliesToProjects",
+      "offsetAbsorbedOverhead"
+    ])
+    .where("companyId", "=", companyId)
+    .where("active", "=", true)
+    .execute();
+  const poolIds = pools.map((p) => p.id);
+
+  const mappings: PoolMapping[] =
+    poolIds.length === 0
+      ? []
+      : await db
+          .selectFrom("indirectPoolAccount")
+          .select([
+            "id",
+            "indirectPoolId",
+            "accountId",
+            "dimensionId",
+            "dimensionValueId",
+            "role"
+          ])
+          .where("companyId", "=", companyId)
+          .where("indirectPoolId", "in", poolIds)
+          .execute();
+
+  const range = { companyId, from: fyStart, to: periodEnd };
+  const [glCells, projectCells, absorbed, previousRows] = await Promise.all([
+    loadGlCells(db, { ...range, mappings }),
+    loadProjectCells(db, range),
+    loadAbsorbedOverhead(db, range),
+    periodNumber > 1 && poolIds.length > 0
+      ? db
+          .selectFrom("indirectRate")
+          .select(["indirectPoolId", "poolCost", "baseAmount"])
+          .where("companyId", "=", companyId)
+          .where("fiscalYear", "=", fiscalYear)
+          .where("periodNumber", "=", periodNumber - 1)
+          .where("rateType", "=", "Actual")
+          .where("indirectPoolId", "in", poolIds)
+          .execute()
+      : Promise.resolve([])
+  ]);
+
+  const results = computePoolRates({
+    pools,
+    mappings,
+    glCells,
+    projectCells,
+    absorbedOverhead: absorbed.amount,
+    absorbedOverheadAccountId: absorbed.accountId
+  });
+
+  const previousByPool = new Map(
+    previousRows.map((row) => [
+      row.indirectPoolId,
+      {
+        poolCost: Number(row.poolCost ?? 0),
+        baseAmount: Number(row.baseAmount ?? 0)
+      }
+    ])
+  );
+  // Period 1 has no earlier period, so its period rate is its YTD rate. A
+  // later period with no Actual row for the period before has no period rate.
+  const periodRateOf = (result: PoolRateResult) => {
+    if (periodNumber === 1) return periodRateFrom(result, null);
+    const previous = previousByPool.get(result.indirectPoolId);
+    return previous ? periodRateFrom(result, previous) : null;
+  };
+
+  const timestamp = datetime.timestamp();
+  await db.transaction().execute(async (trx) => {
+    if (results.length > 0) {
+      await trx
+        .insertInto("indirectRate")
+        .values(
+          results.map((result) => ({
+            companyId,
+            indirectPoolId: result.indirectPoolId,
+            fiscalYear,
+            periodNumber,
+            rateType: "Actual" as const,
+            periodRate: periodRateOf(result),
+            ytdRate: result.ytdRate,
+            poolCost: result.poolCost,
+            unallowableCost: result.unallowableCost,
+            baseAmount: result.baseAmount,
+            createdBy: userId
+          }))
+        )
+        .onConflict((oc) =>
+          oc
+            .columns([
+              "indirectPoolId",
+              "fiscalYear",
+              "periodNumber",
+              "rateType",
+              "companyId"
+            ])
+            .doUpdateSet((eb) => ({
+              periodRate: eb.ref("excluded.periodRate"),
+              ytdRate: eb.ref("excluded.ytdRate"),
+              poolCost: eb.ref("excluded.poolCost"),
+              unallowableCost: eb.ref("excluded.unallowableCost"),
+              baseAmount: eb.ref("excluded.baseAmount"),
+              updatedBy: userId,
+              updatedAt: timestamp
+            }))
+        )
+        .execute();
+
+      await trx
+        .deleteFrom("indirectExpenseStatement")
+        .where("companyId", "=", companyId)
+        .where("fiscalYear", "=", fiscalYear)
+        .where("periodNumber", "=", periodNumber)
+        .where("indirectPoolId", "in", poolIds)
+        .execute();
+
+      const lines = results.flatMap((result) =>
+        result.lines
+          // A line other than Carried Burden needs an account (a CHECK).
+          .filter(
+            (line) =>
+              line.lineType === "Carried Burden" || line.accountId !== null
+          )
+          .map((line) => ({
+            companyId,
+            indirectPoolId: result.indirectPoolId,
+            fiscalYear,
+            periodNumber,
+            lineType: line.lineType,
+            accountId: line.accountId,
+            dimensionValueId: line.dimensionValueId,
+            sourcePoolId: line.sourcePoolId,
+            amount: line.amount,
+            unallowableAmount: line.unallowableAmount,
+            createdBy: userId
+          }))
+      );
+      if (lines.length > 0) {
+        await trx
+          .insertInto("indirectExpenseStatement")
+          .values(lines)
+          .execute();
+      }
+    }
+
+    await trx
+      .insertInto("indirectRateRun")
+      .values({
+        companyId,
+        accountingPeriodId,
+        fiscalYear,
+        periodNumber,
+        ratesComputedAt: timestamp,
+        error: null,
+        createdBy: userId
+      })
+      .onConflict((oc) =>
+        oc.columns(["accountingPeriodId", "companyId"]).doUpdateSet({
+          fiscalYear,
+          periodNumber,
+          ratesComputedAt: timestamp,
+          error: null,
+          updatedBy: userId,
+          updatedAt: timestamp
+        })
+      )
+      .execute();
+  });
+
+  return { data: results, error: null };
 }
 
 // -----------------------------------------------------------------------------

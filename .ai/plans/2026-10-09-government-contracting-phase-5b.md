@@ -92,7 +92,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 5: Add the pure rate engine
 - [x] Task 6: Add the pure burden and billing engine
 - [x] Task 7: Add the authoring functions
-- [ ] Task 8: Add `computeIndirectRates`
+- [x] Task 8: Add `computeIndirectRates`
 - [ ] Task 9: Add the `post-project-burden` server function
 - [ ] Task 10: Add `computeProjectBurden`, `computeBurdenBilling` and the period run
 - [ ] Task 11: Teach the Phase 4 billing readers about burden
@@ -1340,3 +1340,10 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   3. `companySettings` has no `updatedBy` or `updatedAt` column, so `updateBurdenSettings` writes only the 2 settings.
   4. `getIndirectPool` and `getIndirectExpenseStatement` read with 2 queries each, not one embed. The statement has 2 foreign keys to `indirectPool`, so an embed of the pool name is ambiguous. The local PostgREST resolves every embed the readers use.
   5. The test mocks `../plan.server` (`companyHasFeature`) and records the rows at the `upsert` boundary. The assertions check the written rows, not call counts.
+- Task 8:
+  1. The GL readers count journals with status Posted or Reversed, not only Posted. Main's always-post model makes every pre-cutover journal Provisional, which counts nowhere, and its GL readers use `IN ('Posted', 'Reversed')` (`20261009005144_journal-gl-status-readers.sql`). A Reversed journal and its Posted reversal net to zero only when both count.
+  2. `loadAbsorbedOverhead` returns `{ accountId, amount }`. The account id fills the `Absorbed Overhead` statement line (Task 5 note 4). With no absorption account, the amount is 0 and the run writes no such line.
+  3. `computeIndirectRates` reads only active pools, and only the mappings of active pools. A more specific mapping on an inactive pool would otherwise take the cell out of every pool.
+  4. Period 1 takes `periodRateFrom(result, null)`, so its period rate is its YTD rate. A later period whose previous period has no Actual row gets `periodRate` null: the run cannot know that period's own change.
+  5. `toProjectCells` (the bucket mapping) is exported from `loaders.server.ts` and is pure.
+  6. A database test (`compute-indirect-rates.test.ts`, `databaseTest`) seeds 3 pools, 5 mappings, a Posted, a Provisional and a prior-year journal, and a Direct project with 80,000.00 of labor on a period with no fiscal numbers (B14). It runs the rate run twice. It checks Fringe 0.3, Overhead 0.325 with 6,000.00 of carried fringe, G&A 0.38462 with 5,000.00 unallowable, 5 statement lines and one period run. Only `companyHasFeature` is stubbed. The `@carbon/ee` suite passes (2,015).
