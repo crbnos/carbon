@@ -59,7 +59,7 @@ These correct or add to the spec. Task 13 records them there.
 - [x] Task 2: Apply the migration, regenerate types, ship RLS and the seed account
 - [x] Task 3: Let callers pass revenue run synthesizers
 - [x] Task 4: Add the shared project revenue writers and the Right to Invoice synthesizer
-- [ ] Task 5: Add the Percent Complete and loss provision math
+- [x] Task 5: Add the Percent Complete and loss provision math
 - [ ] Task 6: Add the commercial Percent Complete synthesizer
 - [ ] Task 7: Pass the project revenue synthesizers at every run call site
 - [ ] Task 8: Post Cost Relief and Loss Provision rows
@@ -592,3 +592,4 @@ ls .ai/playbooks/project-billing-phase-4b.md
 - Task 4: `clearProgressMonth` deletes the line's Planned schedule rows of the month of the 4 types (`Deferral`, `Accrual`, `Cost Relief`, `Loss Provision`) before the month row. The schedule FK to `customerContractRevenue` is `ON DELETE SET NULL`, not a cascade, so the schedule rows must go first. Their contract ledger entries and `projectCostRelief` rows cascade from the schedule rows.
 - Task 4: `writeCostRelief` pairs each new Cost Relief row with its ledger rows by (line, account) from `RETURNING`, never by position (lesson "Never correlate bulk-insert results by RETURNING position"). A group that nets to 0 writes no row; its ledger rows stay unrelieved and still net to 0. The COGS check runs only when there is cost to relieve.
 - Task 4: the test uses September and October, not October and November: the proposal refuses a month that has not started (today is 2026-10-11). It extends `project-billing-test-fixture.ts` with `addAccounting`, `addJournalLines` (Draft journals on Project WIP), a `journalLineId` on `post`, and the `revenueRecognitionRun` sequence. The invoice is a contract ledger `Invoice` entry of 6,000.00 Deferred Revenue and a Billed item, not a full invoice posting. Two extra ledger rows pin R4: an expensed row and a row with no journal line are never relieved. The whole server-functions suite passed (82 files, 534 tests).
+- Task 5: `percentCompleteRevenue` computes earned to date from the exact ratio (`price × actual ÷ EAC`) and rounds only the returned `progress`. With progress rounded first, the spec's second month gives 129,600.00 × 0.33333 = 43,199.57, not 43,200.00 (the three-boundary rule: round at persist, display and compare). `lossProvisionBalance` takes the rounded progress; at 5 decimals its error is under 0.00001 of the forecast loss.
