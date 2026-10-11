@@ -857,6 +857,9 @@ msgstr "3 años"
 msgid "30D"
 msgstr "30 días"
 
+msgid "31.205-14 Entertainment"
+msgstr ""
+
 msgid "3D Model"
 msgstr "Modelo 3D"
 
@@ -2480,6 +2483,12 @@ msgid "Allocated"
 msgstr "Asignado"
 
 msgid "Allocation"
+msgstr ""
+
+msgid "Allowability"
+msgstr ""
+
+msgid "Allowable"
 msgstr ""
 
 msgid "Allows acknowledge & continue"
@@ -8161,6 +8170,9 @@ msgstr "Dirección"
 msgid "Directions"
 msgstr "Direcciones"
 
+msgid "Directly Associated Unallowable"
+msgstr ""
+
 msgid "Disable"
 msgstr "Desactivar"
 
@@ -9128,6 +9140,9 @@ msgstr ""
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+msgid "Element of cost"
+msgstr ""
+
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr ""
@@ -9915,6 +9930,9 @@ msgid "Export Lines to CSV"
 msgstr "Exportar Líneas a CSV"
 
 msgid "Export PDF"
+msgstr ""
+
+msgid "Expressly Unallowable"
 msgstr ""
 
 msgid "Extended Price"
@@ -14295,6 +14313,9 @@ msgstr "Múltiples Órdenes de trabajo pueden ejecutarse en este Proceso simult�
 
 msgid "Must be in the same location"
 msgstr "Debe estar en la misma ubicación"
+
+msgid "Mutually Agreed Unallowable"
+msgstr ""
 
 msgid "My Documents"
 msgstr "Mis Documentos"
@@ -22413,6 +22434,9 @@ msgstr "Sub-Departamentos"
 msgid "Subassembly"
 msgstr "Subensamble"
 
+msgid "Subcontract"
+msgstr ""
+
 msgid "Subcontracting Variance"
 msgstr "Desviación de Subcontratación"
 
@@ -25201,6 +25225,9 @@ msgstr "Tránsito e institución"
 msgid "Trash"
 msgstr "Papelera"
 
+msgid "Travel"
+msgstr ""
+
 msgid "Travel started <0/>"
 msgstr ""
 
@@ -25309,6 +25336,9 @@ msgstr "Atestación de Persona Estadounidense"
 
 msgid "Unable to unlock"
 msgstr "No se puede desbloquear"
+
+msgid "Unallowable reason"
+msgstr ""
 
 msgid "Unapplied"
 msgstr "No aplicado"

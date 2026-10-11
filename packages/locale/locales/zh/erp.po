@@ -857,6 +857,9 @@ msgstr "3 年"
 msgid "30D"
 msgstr "30天"
 
+msgid "31.205-14 Entertainment"
+msgstr ""
+
 msgid "3D Model"
 msgstr "3D 模型"
 
@@ -2480,6 +2483,12 @@ msgid "Allocated"
 msgstr "已分配"
 
 msgid "Allocation"
+msgstr ""
+
+msgid "Allowability"
+msgstr ""
+
+msgid "Allowable"
 msgstr ""
 
 msgid "Allows acknowledge & continue"
@@ -8161,6 +8170,9 @@ msgstr "方向"
 msgid "Directions"
 msgstr "方向"
 
+msgid "Directly Associated Unallowable"
+msgstr ""
+
 msgid "Disable"
 msgstr "禁用"
 
@@ -9128,6 +9140,9 @@ msgstr ""
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+msgid "Element of cost"
+msgstr ""
+
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr ""
@@ -9915,6 +9930,9 @@ msgid "Export Lines to CSV"
 msgstr "导出行到 CSV"
 
 msgid "Export PDF"
+msgstr ""
+
+msgid "Expressly Unallowable"
 msgstr ""
 
 msgid "Extended Price"
@@ -14295,6 +14313,9 @@ msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机�
 
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
+
+msgid "Mutually Agreed Unallowable"
+msgstr ""
 
 msgid "My Documents"
 msgstr "我的文档"
@@ -22413,6 +22434,9 @@ msgstr "子部门"
 msgid "Subassembly"
 msgstr "子装配件"
 
+msgid "Subcontract"
+msgstr ""
+
 msgid "Subcontracting Variance"
 msgstr "外包差异"
 
@@ -25201,6 +25225,9 @@ msgstr "中转与机构"
 msgid "Trash"
 msgstr "垃圾桶"
 
+msgid "Travel"
+msgstr ""
+
 msgid "Travel started <0/>"
 msgstr ""
 
@@ -25309,6 +25336,9 @@ msgstr "美国人身份证明"
 
 msgid "Unable to unlock"
 msgstr "无法解锁"
+
+msgid "Unallowable reason"
+msgstr ""
 
 msgid "Unapplied"
 msgstr "未应用"

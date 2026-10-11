@@ -857,6 +857,9 @@ msgstr "3 yıl"
 msgid "30D"
 msgstr "30G"
 
+msgid "31.205-14 Entertainment"
+msgstr ""
+
 msgid "3D Model"
 msgstr "3B Model"
 
@@ -2480,6 +2483,12 @@ msgid "Allocated"
 msgstr "Tahsis edildi"
 
 msgid "Allocation"
+msgstr ""
+
+msgid "Allowability"
+msgstr ""
+
+msgid "Allowable"
 msgstr ""
 
 msgid "Allows acknowledge & continue"
@@ -8161,6 +8170,9 @@ msgstr "Yön"
 msgid "Directions"
 msgstr "Yönler"
 
+msgid "Directly Associated Unallowable"
+msgstr ""
+
 msgid "Disable"
 msgstr "Devre Dışı Bırak"
 
@@ -9128,6 +9140,9 @@ msgstr ""
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+msgid "Element of cost"
+msgstr ""
+
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr ""
@@ -9915,6 +9930,9 @@ msgid "Export Lines to CSV"
 msgstr "Satırları CSV'ye Dışa Aktar"
 
 msgid "Export PDF"
+msgstr ""
+
+msgid "Expressly Unallowable"
 msgstr ""
 
 msgid "Extended Price"
@@ -14295,6 +14313,9 @@ msgstr "Bu Proses üzerinde aynı anda birden fazla İş emri çalışabilir —
 
 msgid "Must be in the same location"
 msgstr "Aynı konumda olmalıdır"
+
+msgid "Mutually Agreed Unallowable"
+msgstr ""
 
 msgid "My Documents"
 msgstr "Belgelerim"
@@ -22413,6 +22434,9 @@ msgstr "Alt Departmanlar"
 msgid "Subassembly"
 msgstr "Alt Montaj"
 
+msgid "Subcontract"
+msgstr ""
+
 msgid "Subcontracting Variance"
 msgstr "Taşeronluk Sapması"
 
@@ -25201,6 +25225,9 @@ msgstr "Geçiş ve Kurum"
 msgid "Trash"
 msgstr "Çöp Kutusu"
 
+msgid "Travel"
+msgstr ""
+
 msgid "Travel started <0/>"
 msgstr ""
 
@@ -25309,6 +25336,9 @@ msgstr "ABD Vatandaşı Tasdiki"
 
 msgid "Unable to unlock"
 msgstr "Kilit Açılamadı"
+
+msgid "Unallowable reason"
+msgstr ""
 
 msgid "Unapplied"
 msgstr "Uygulanmamış"

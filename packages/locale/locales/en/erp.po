@@ -857,6 +857,9 @@ msgstr "3 years"
 msgid "30D"
 msgstr "30D"
 
+msgid "31.205-14 Entertainment"
+msgstr "31.205-14 Entertainment"
+
 msgid "3D Model"
 msgstr "3D Model"
 
@@ -2481,6 +2484,12 @@ msgstr "Allocated"
 
 msgid "Allocation"
 msgstr "Allocation"
+
+msgid "Allowability"
+msgstr "Allowability"
+
+msgid "Allowable"
+msgstr "Allowable"
 
 msgid "Allows acknowledge & continue"
 msgstr "Allows acknowledge & continue"
@@ -8161,6 +8170,9 @@ msgstr "Direction"
 msgid "Directions"
 msgstr "Directions"
 
+msgid "Directly Associated Unallowable"
+msgstr "Directly Associated Unallowable"
+
 msgid "Disable"
 msgstr "Disable"
 
@@ -9128,6 +9140,9 @@ msgstr "Element"
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr "Element ids start with the identifier, so it cannot change"
 
+msgid "Element of cost"
+msgstr "Element of cost"
+
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr "Element type: {0}"
@@ -9916,6 +9931,9 @@ msgstr "Export Lines to CSV"
 
 msgid "Export PDF"
 msgstr "Export PDF"
+
+msgid "Expressly Unallowable"
+msgstr "Expressly Unallowable"
 
 msgid "Extended Price"
 msgstr "Extended Price"
@@ -14295,6 +14313,9 @@ msgstr "Multiple jobs can run on this process at the same time — e.g. a laser 
 
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
+
+msgid "Mutually Agreed Unallowable"
+msgstr "Mutually Agreed Unallowable"
 
 msgid "My Documents"
 msgstr "My Documents"
@@ -22413,6 +22434,9 @@ msgstr "Sub-Departments"
 msgid "Subassembly"
 msgstr "Subassembly"
 
+msgid "Subcontract"
+msgstr "Subcontract"
+
 msgid "Subcontracting Variance"
 msgstr "Subcontracting Variance"
 
@@ -25201,6 +25225,9 @@ msgstr "Transit & Institution"
 msgid "Trash"
 msgstr "Trash"
 
+msgid "Travel"
+msgstr "Travel"
+
 msgid "Travel started <0/>"
 msgstr "Travel started <0/>"
 
@@ -25309,6 +25336,9 @@ msgstr "U.S. Person Attestation"
 
 msgid "Unable to unlock"
 msgstr "Unable to unlock"
+
+msgid "Unallowable reason"
+msgstr "Unallowable reason"
 
 msgid "Unapplied"
 msgstr "Unapplied"

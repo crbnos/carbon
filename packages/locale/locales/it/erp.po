@@ -857,6 +857,9 @@ msgstr "3 anni"
 msgid "30D"
 msgstr "30 giorni"
 
+msgid "31.205-14 Entertainment"
+msgstr ""
+
 msgid "3D Model"
 msgstr "Modello 3D"
 
@@ -2480,6 +2483,12 @@ msgid "Allocated"
 msgstr "Allocato"
 
 msgid "Allocation"
+msgstr ""
+
+msgid "Allowability"
+msgstr ""
+
+msgid "Allowable"
 msgstr ""
 
 msgid "Allows acknowledge & continue"
@@ -8161,6 +8170,9 @@ msgstr "Direzione"
 msgid "Directions"
 msgstr "Direzioni"
 
+msgid "Directly Associated Unallowable"
+msgstr ""
+
 msgid "Disable"
 msgstr "Disattiva"
 
@@ -9128,6 +9140,9 @@ msgstr ""
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+msgid "Element of cost"
+msgstr ""
+
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr ""
@@ -9915,6 +9930,9 @@ msgid "Export Lines to CSV"
 msgstr "Esporta Righe in CSV"
 
 msgid "Export PDF"
+msgstr ""
+
+msgid "Expressly Unallowable"
 msgstr ""
 
 msgid "Extended Price"
@@ -14295,6 +14313,9 @@ msgstr "Più ordini di produzione possono essere eseguiti su questo processo con
 
 msgid "Must be in the same location"
 msgstr "Deve essere nella stessa posizione"
+
+msgid "Mutually Agreed Unallowable"
+msgstr ""
 
 msgid "My Documents"
 msgstr "I miei documenti"
@@ -22413,6 +22434,9 @@ msgstr "Sotto-Dipartimenti"
 msgid "Subassembly"
 msgstr "Sottoassembly"
 
+msgid "Subcontract"
+msgstr ""
+
 msgid "Subcontracting Variance"
 msgstr "Scostamento di subfornitura"
 
@@ -25201,6 +25225,9 @@ msgstr "Transito e Istituzione"
 msgid "Trash"
 msgstr "Cestino"
 
+msgid "Travel"
+msgstr ""
+
 msgid "Travel started <0/>"
 msgstr ""
 
@@ -25309,6 +25336,9 @@ msgstr "Attestazione di Persona Statunitense"
 
 msgid "Unable to unlock"
 msgstr "Impossibile sbloccare"
+
+msgid "Unallowable reason"
+msgstr ""
 
 msgid "Unapplied"
 msgstr "Non applicato"

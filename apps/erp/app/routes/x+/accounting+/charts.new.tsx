@@ -97,7 +97,8 @@ export default function NewAccountRoute() {
     accountType: undefined,
     class: "Asset" as AccountClass,
     incomeBalance: "Balance Sheet" as AccountIncomeBalance,
-    consolidatedRate: "Average" as const
+    consolidatedRate: "Average" as const,
+    allowability: "Allowable" as const
   };
 
   return (

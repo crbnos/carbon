@@ -77,7 +77,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 15: Add the service functions
 - [x] Task 16: Route every timesheet write through the server functions
 - [x] Task 17: Add Settings → Timekeeping
-- [ ] Task 18: Add allowability to the account drawer
+- [x] Task 18: Add allowability to the account drawer
 - [ ] Task 19: Add the cost objective, restrict charging and members to the project
 - [ ] Task 20: Add the element flags
 - [ ] Task 21: Add the FLSA status to the employee job
@@ -1567,3 +1567,8 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   3. The check runs only when the mode turns on (the saved mode is not DCAA). An edit of the texts in DCAA mode does not count again.
   4. The Controls helper text explains DCAA mode in one line. The entry window, timecard check and weekly hours fields each say that they apply in DCAA mode.
   5. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 18:
+  1. `ChartOfAccountForm` has no hidden inputs at `:122-125` for these fields. The 3 fields go after the inherited account facts. A group account opens `GroupAccountForm`, so the `isGroup` guard in `ChartOfAccountForm` is a safety check only.
+  2. While the allowability is Allowable, the form sends an empty `unallowableReason`. The update then clears a reason that an earlier unallowable setting left.
+  3. Both actions spread the validated data into `upsertAccount`, so they needed no change. The edit route's initial values now carry the 3 stored values, and the new route defaults to Allowable.
+  4. Browser verification deferred.

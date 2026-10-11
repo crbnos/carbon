@@ -857,6 +857,9 @@ msgstr "3년"
 msgid "30D"
 msgstr "30일"
 
+msgid "31.205-14 Entertainment"
+msgstr ""
+
 msgid "3D Model"
 msgstr "3D 모델"
 
@@ -2480,6 +2483,12 @@ msgid "Allocated"
 msgstr "할당됨"
 
 msgid "Allocation"
+msgstr ""
+
+msgid "Allowability"
+msgstr ""
+
+msgid "Allowable"
 msgstr ""
 
 msgid "Allows acknowledge & continue"
@@ -8161,6 +8170,9 @@ msgstr "방향"
 msgid "Directions"
 msgstr "방향"
 
+msgid "Directly Associated Unallowable"
+msgstr ""
+
 msgid "Disable"
 msgstr "비활성화"
 
@@ -9128,6 +9140,9 @@ msgstr ""
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+msgid "Element of cost"
+msgstr ""
+
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr ""
@@ -9915,6 +9930,9 @@ msgid "Export Lines to CSV"
 msgstr "라인을 CSV로 내보내기"
 
 msgid "Export PDF"
+msgstr ""
+
+msgid "Expressly Unallowable"
 msgstr ""
 
 msgid "Extended Price"
@@ -14295,6 +14313,9 @@ msgstr "여러 작업 지시가 이 공법에서 동시에 실행될 수 있습�
 
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
+
+msgid "Mutually Agreed Unallowable"
+msgstr ""
 
 msgid "My Documents"
 msgstr "내 문서"
@@ -22413,6 +22434,9 @@ msgstr "하위 부서"
 msgid "Subassembly"
 msgstr "서브어셈블리"
 
+msgid "Subcontract"
+msgstr ""
+
 msgid "Subcontracting Variance"
 msgstr "외주 차이"
 
@@ -25201,6 +25225,9 @@ msgstr "운송 및 기관"
 msgid "Trash"
 msgstr "휴지통"
 
+msgid "Travel"
+msgstr ""
+
 msgid "Travel started <0/>"
 msgstr ""
 
@@ -25309,6 +25336,9 @@ msgstr "미국인 증명"
 
 msgid "Unable to unlock"
 msgstr "잠금 해제할 수 없습니다"
+
+msgid "Unallowable reason"
+msgstr ""
 
 msgid "Unapplied"
 msgstr "미적용"

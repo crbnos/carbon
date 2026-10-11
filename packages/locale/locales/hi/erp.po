@@ -857,6 +857,9 @@ msgstr "3 वर्ष"
 msgid "30D"
 msgstr "30 दिन"
 
+msgid "31.205-14 Entertainment"
+msgstr ""
+
 msgid "3D Model"
 msgstr "3D मॉडल"
 
@@ -2480,6 +2483,12 @@ msgid "Allocated"
 msgstr "आवंटित"
 
 msgid "Allocation"
+msgstr ""
+
+msgid "Allowability"
+msgstr ""
+
+msgid "Allowable"
 msgstr ""
 
 msgid "Allows acknowledge & continue"
@@ -8161,6 +8170,9 @@ msgstr "दिशा"
 msgid "Directions"
 msgstr "दिशाएं"
 
+msgid "Directly Associated Unallowable"
+msgstr ""
+
 msgid "Disable"
 msgstr "अक्षम करें"
 
@@ -9128,6 +9140,9 @@ msgstr ""
 msgid "Element ids start with the identifier, so it cannot change"
 msgstr ""
 
+msgid "Element of cost"
+msgstr ""
+
 #. placeholder {0}: typeLabels[type]
 msgid "Element type: {0}"
 msgstr ""
@@ -9915,6 +9930,9 @@ msgid "Export Lines to CSV"
 msgstr "CSV में लाइनें निर्यात करें"
 
 msgid "Export PDF"
+msgstr ""
+
+msgid "Expressly Unallowable"
 msgstr ""
 
 msgid "Extended Price"
@@ -14295,6 +14313,9 @@ msgstr "एक ही समय में इस प्रक्रिया प
 
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
+
+msgid "Mutually Agreed Unallowable"
+msgstr ""
 
 msgid "My Documents"
 msgstr "मेरे दस्तावेज़"
@@ -22413,6 +22434,9 @@ msgstr "उप-विभाग"
 msgid "Subassembly"
 msgstr "सब-असेंबली"
 
+msgid "Subcontract"
+msgstr ""
+
 msgid "Subcontracting Variance"
 msgstr "उप-अनुबंध विचलन"
 
@@ -25201,6 +25225,9 @@ msgstr "ट्रांजिट और संस्था"
 msgid "Trash"
 msgstr "ट्रैश"
 
+msgid "Travel"
+msgstr ""
+
 msgid "Travel started <0/>"
 msgstr ""
 
@@ -25309,6 +25336,9 @@ msgstr "U.S. व्यक्ति साक्ष्य"
 
 msgid "Unable to unlock"
 msgstr "अनलॉक करने में असमर्थ"
+
+msgid "Unallowable reason"
+msgstr ""
 
 msgid "Unapplied"
 msgstr "अप्रयुक्त"
