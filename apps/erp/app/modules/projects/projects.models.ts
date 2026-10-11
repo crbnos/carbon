@@ -255,6 +255,19 @@ export function canChangeProjectStatus(
   return projectStatusTransitions[from].includes(to);
 }
 
+/**
+ * The refusal for a status change of a project with a stop-work order, else
+ * null (C16). The order keeps the project On Hold until Resume, which also
+ * clears it; the CHECK `project_stopWork_check` refuses any other status.
+ */
+export function stopWorkStatusRefusal(
+  stopWorkDate: string | null,
+  to: ProjectStatus
+): string | null {
+  if (!stopWorkDate || to === "On Hold") return null;
+  return "This project has a stop-work order. Use Resume.";
+}
+
 export const projectStatusValidator = z.object({
   status: z.enum(projectStatuses, { error: "Status is required" })
 });

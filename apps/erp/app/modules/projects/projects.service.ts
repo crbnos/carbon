@@ -53,6 +53,7 @@ import {
   requirementCategories,
   requirementTargetOperators,
   requirementVerificationMethods,
+  stopWorkStatusRefusal,
   suspectLinkFields,
   testCaseVerdicts,
   typeSpecificElementFields,
@@ -254,8 +255,9 @@ export async function updateProjectTemplate(
 }
 
 /**
- * Changes the status of a project. Closing refuses while the project has an
- * open purchase order line or an open job.
+ * Changes the status of a project. Refuses any status but On Hold while the
+ * project has a stop-work order (use Resume). Closing refuses while the
+ * project has an open purchase order line or an open job.
  * @mcp action
  */
 export async function updateProjectStatus(
@@ -267,6 +269,21 @@ export async function updateProjectStatus(
     updatedBy: string;
   }
 ) {
+  if (args.status !== "On Hold") {
+    const project = await client
+      .from("project")
+      .select("stopWorkDate")
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .single();
+    if (project.error) return { data: null, error: project.error };
+    const stopped = stopWorkStatusRefusal(
+      project.data.stopWorkDate,
+      args.status
+    );
+    if (stopped) return refusal(stopped);
+  }
+
   if (args.status === "Closed") {
     const [openLines, openJobs] = await Promise.all([
       client
