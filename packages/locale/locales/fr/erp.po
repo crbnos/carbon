@@ -2519,6 +2519,9 @@ msgstr ""
 msgid "Allowable"
 msgstr ""
 
+msgid "Allowable and unallowable cost of each contract line item, with its funding and billing"
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Permet d'accuser réception et de continuer"
 
@@ -3714,6 +3717,9 @@ msgstr "Attributs"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "Les attributs sont hérités de la procédure."
+
+msgid "Audit and contracts"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "Journal d'audit"
@@ -5060,6 +5066,9 @@ msgstr ""
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choisissez une pièce que {itemReadableId} remplace. La règle est enregistrée sur cette pièce avec {itemReadableId} comme successeur."
 
+msgid "Choose a period"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Choisissez une ligne à gauche pour voir d'où son stock peut provenir."
 
@@ -6295,6 +6304,9 @@ msgid "Cost"
 msgstr "Coût"
 
 msgid "Cost Account"
+msgstr ""
+
+msgid "Cost by CLIN"
 msgstr ""
 
 msgid "cost center"
@@ -9709,6 +9721,9 @@ msgstr "Tous les enregistrements de l'entreprise. Les identifiants, jetons d'int
 msgid "Every condition must match"
 msgstr "Chaque condition doit correspondre"
 
+msgid "Every entry dated in the range and every change made to it"
+msgstr ""
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Tous les tests dans le périmètre réussissent dans votre système configuré, avec vos données."
 
@@ -11509,6 +11524,9 @@ msgstr "Heures"
 msgid "Hours Actual"
 msgstr ""
 
+msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "Heures supposées selon les équipes du site"
 
@@ -12911,6 +12929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "Coûts de Main-d'œuvre"
 
+msgid "Labor distribution"
+msgstr ""
+
 msgid "Labor ended"
 msgstr ""
 
@@ -12934,6 +12955,9 @@ msgstr "Temps de main-d'œuvre"
 
 msgid "Labor Time"
 msgstr "Temps de main-d'œuvre"
+
+msgid "Labor transfers"
+msgstr ""
 
 msgid "Labor unit"
 msgstr "Unité de main-d'œuvre"
@@ -13028,6 +13052,9 @@ msgstr "Date de la dernière formation"
 
 msgid "Last used"
 msgstr "Dernière utilisation"
+
+msgid "Late entries"
+msgstr ""
 
 msgid "Late Entry"
 msgstr ""
@@ -14202,6 +14229,9 @@ msgstr "Frais de port manquants"
 msgid "Missing Suppliers"
 msgstr "Fournisseurs manquants"
 
+msgid "Missing time"
+msgstr ""
+
 msgid "Missing:"
 msgstr "Manquants :"
 
@@ -15041,6 +15071,9 @@ msgstr "Aucune compétence ajoutée"
 
 msgid "No Access"
 msgstr "Aucun accès"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No accounts match your search"
 msgstr "Aucun compte ne correspond à votre recherche"
@@ -20766,6 +20799,9 @@ msgstr "Maintenance Planifiée"
 msgid "Scheduled Maintenances"
 msgstr "Maintenances Planifiées"
 
+msgid "Scheduled work days with no time entered, with each employee's manager"
+msgstr ""
+
 msgid "Schedules"
 msgstr "Calendriers"
 
@@ -24967,6 +25003,12 @@ msgstr ""
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Utilisation en temps et en dollars de la flotte de location par actif et classe"
 
+msgid "Time entered after the entry window, with the reason the employee gave"
+msgstr ""
+
+msgid "Time moved between charge numbers, with the reason, the requester and the approver"
+msgstr ""
+
 msgid "Time not posted yet"
 msgstr ""
 
@@ -25010,6 +25052,9 @@ msgid "Timesheet"
 msgstr ""
 
 msgid "Timesheet Approval"
+msgstr ""
+
+msgid "Timesheet export for auditors"
 msgstr ""
 
 msgid "Timezone"

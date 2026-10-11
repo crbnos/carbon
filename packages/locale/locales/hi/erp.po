@@ -2519,6 +2519,9 @@ msgstr ""
 msgid "Allowable"
 msgstr ""
 
+msgid "Allowable and unallowable cost of each contract line item, with its funding and billing"
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "स्वीकार करने और जारी रखने की अनुमति देता है"
 
@@ -3714,6 +3717,9 @@ msgstr "विशेषताएं"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "विशेषताएँ कार्यविधि से विरासत में मिली हैं।"
+
+msgid "Audit and contracts"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "ऑडिट लॉग"
@@ -5060,6 +5066,9 @@ msgstr ""
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
 
+msgid "Choose a period"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "यह देखने के लिए बाईं ओर की पंक्ति को चुनें कि इसका स्टॉक कहां से आ सकता है।"
 
@@ -6295,6 +6304,9 @@ msgid "Cost"
 msgstr "लागत"
 
 msgid "Cost Account"
+msgstr ""
+
+msgid "Cost by CLIN"
 msgstr ""
 
 msgid "cost center"
@@ -9709,6 +9721,9 @@ msgstr "हर कंपनी-स्कोप्ड रिकॉर्ड। �
 msgid "Every condition must match"
 msgstr "हर शर्त मेल खानी चाहिए"
 
+msgid "Every entry dated in the range and every change made to it"
+msgstr ""
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
 
@@ -11509,6 +11524,9 @@ msgstr "घंटे"
 msgid "Hours Actual"
 msgstr ""
 
+msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "स्थान शिफ्ट से मानी गई घंटें"
 
@@ -12911,6 +12929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "श्रम लागत"
 
+msgid "Labor distribution"
+msgstr ""
+
 msgid "Labor ended"
 msgstr ""
 
@@ -12934,6 +12955,9 @@ msgstr "श्रम समय"
 
 msgid "Labor Time"
 msgstr "श्रम समय"
+
+msgid "Labor transfers"
+msgstr ""
 
 msgid "Labor unit"
 msgstr "श्रम इकाई"
@@ -13028,6 +13052,9 @@ msgstr "अंतिम प्रशिक्षण की तारीख"
 
 msgid "Last used"
 msgstr "अंतिम उपयोग"
+
+msgid "Late entries"
+msgstr ""
 
 msgid "Late Entry"
 msgstr ""
@@ -14202,6 +14229,9 @@ msgstr "शिपिंग लागत अनुपलब्ध"
 msgid "Missing Suppliers"
 msgstr "आपूर्तिकर्ता गायब हैं"
 
+msgid "Missing time"
+msgstr ""
+
 msgid "Missing:"
 msgstr "लापता:"
 
@@ -15041,6 +15071,9 @@ msgstr "कोई कौशल जोड़ा नहीं गया"
 
 msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No accounts match your search"
 msgstr "कोई खाता आपकी खोज से मेल नहीं खाता"
@@ -20766,6 +20799,9 @@ msgstr "अनुसूचित रखरखाव"
 msgid "Scheduled Maintenances"
 msgstr "अनुसूचित रखरखाव"
 
+msgid "Scheduled work days with no time entered, with each employee's manager"
+msgstr ""
+
 msgid "Schedules"
 msgstr "शेड्यूल"
 
@@ -24967,6 +25003,12 @@ msgstr ""
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "संपत्ति और वर्ग द्वारा किराया बेड़े का समय और डॉलर उपयोग"
 
+msgid "Time entered after the entry window, with the reason the employee gave"
+msgstr ""
+
+msgid "Time moved between charge numbers, with the reason, the requester and the approver"
+msgstr ""
+
 msgid "Time not posted yet"
 msgstr ""
 
@@ -25010,6 +25052,9 @@ msgid "Timesheet"
 msgstr ""
 
 msgid "Timesheet Approval"
+msgstr ""
+
+msgid "Timesheet export for auditors"
 msgstr ""
 
 msgid "Timezone"

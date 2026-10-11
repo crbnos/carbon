@@ -2519,6 +2519,9 @@ msgstr "Allowability"
 msgid "Allowable"
 msgstr "Allowable"
 
+msgid "Allowable and unallowable cost of each contract line item, with its funding and billing"
+msgstr "Allowable and unallowable cost of each contract line item, with its funding and billing"
+
 msgid "Allows acknowledge & continue"
 msgstr "Allows acknowledge & continue"
 
@@ -3714,6 +3717,9 @@ msgstr "Attributes"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "Attributes are inherited from the procedure."
+
+msgid "Audit and contracts"
+msgstr "Audit and contracts"
 
 msgid "Audit Log"
 msgstr "Audit Log"
@@ -5060,6 +5066,9 @@ msgstr "Choose a node to log time, issue a part or add an expense."
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 
+msgid "Choose a period"
+msgstr "Choose a period"
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Choose a row on the left to see where its stock can come from."
 
@@ -6296,6 +6305,9 @@ msgstr "Cost"
 
 msgid "Cost Account"
 msgstr "Cost Account"
+
+msgid "Cost by CLIN"
+msgstr "Cost by CLIN"
 
 msgid "cost center"
 msgstr "cost center"
@@ -9709,6 +9721,9 @@ msgstr "Every company-scoped record. Credentials, integration tokens and webhook
 msgid "Every condition must match"
 msgstr "Every condition must match"
 
+msgid "Every entry dated in the range and every change made to it"
+msgstr "Every entry dated in the range and every change made to it"
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
 
@@ -11509,6 +11524,9 @@ msgstr "Hours"
 msgid "Hours Actual"
 msgstr "Hours Actual"
 
+msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
+msgstr "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
+
 msgid "Hours assumed from location shifts"
 msgstr "Hours assumed from location shifts"
 
@@ -12911,6 +12929,9 @@ msgstr "Labor Category or Employee"
 msgid "Labor Costs"
 msgstr "Labor Costs"
 
+msgid "Labor distribution"
+msgstr "Labor distribution"
+
 msgid "Labor ended"
 msgstr "Labor ended"
 
@@ -12934,6 +12955,9 @@ msgstr "Labor time"
 
 msgid "Labor Time"
 msgstr "Labor Time"
+
+msgid "Labor transfers"
+msgstr "Labor transfers"
 
 msgid "Labor unit"
 msgstr "Labor unit"
@@ -13028,6 +13052,9 @@ msgstr "Last Training Date"
 
 msgid "Last used"
 msgstr "Last used"
+
+msgid "Late entries"
+msgstr "Late entries"
 
 msgid "Late Entry"
 msgstr "Late Entry"
@@ -14202,6 +14229,9 @@ msgstr "Missing Shipping Costs"
 msgid "Missing Suppliers"
 msgstr "Missing Suppliers"
 
+msgid "Missing time"
+msgstr "Missing time"
+
 msgid "Missing:"
 msgstr "Missing:"
 
@@ -15041,6 +15071,9 @@ msgstr "No abilities added"
 
 msgid "No Access"
 msgstr "No Access"
+
+msgid "No accounting periods yet"
+msgstr "No accounting periods yet"
 
 msgid "No accounts match your search"
 msgstr "No accounts match your search"
@@ -20766,6 +20799,9 @@ msgstr "Scheduled Maintenance"
 msgid "Scheduled Maintenances"
 msgstr "Scheduled Maintenances"
 
+msgid "Scheduled work days with no time entered, with each employee's manager"
+msgstr "Scheduled work days with no time entered, with each employee's manager"
+
 msgid "Schedules"
 msgstr "Schedules"
 
@@ -24967,6 +25003,12 @@ msgstr "Time & Materials"
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Time and dollar utilization of the rental fleet by asset and class"
 
+msgid "Time entered after the entry window, with the reason the employee gave"
+msgstr "Time entered after the entry window, with the reason the employee gave"
+
+msgid "Time moved between charge numbers, with the reason, the requester and the approver"
+msgstr "Time moved between charge numbers, with the reason, the requester and the approver"
+
 msgid "Time not posted yet"
 msgstr "Time not posted yet"
 
@@ -25011,6 +25053,9 @@ msgstr "Timesheet"
 
 msgid "Timesheet Approval"
 msgstr "Timesheet Approval"
+
+msgid "Timesheet export for auditors"
+msgstr "Timesheet export for auditors"
 
 msgid "Timezone"
 msgstr "Timezone"

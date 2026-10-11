@@ -2519,6 +2519,9 @@ msgstr ""
 msgid "Allowable"
 msgstr ""
 
+msgid "Allowable and unallowable cost of each contract line item, with its funding and billing"
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
 
@@ -3714,6 +3717,9 @@ msgstr "Öznitelikler"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "Öznitelikler prosedürden devralınır."
+
+msgid "Audit and contracts"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "Denetim günlüğü"
@@ -5060,6 +5066,9 @@ msgstr ""
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
+msgid "Choose a period"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı seçin."
 
@@ -6295,6 +6304,9 @@ msgid "Cost"
 msgstr "Maliyet"
 
 msgid "Cost Account"
+msgstr ""
+
+msgid "Cost by CLIN"
 msgstr ""
 
 msgid "cost center"
@@ -9709,6 +9721,9 @@ msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon beli
 msgid "Every condition must match"
 msgstr "Her koşul eşleşmelidir"
 
+msgid "Every entry dated in the range and every change made to it"
+msgstr ""
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle geçer."
 
@@ -11509,6 +11524,9 @@ msgstr "Saatler"
 msgid "Hours Actual"
 msgstr ""
 
+msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "Konum vardiyalarından varsayılan saatler"
 
@@ -12911,6 +12929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "İşçilik Maliyetleri"
 
+msgid "Labor distribution"
+msgstr ""
+
 msgid "Labor ended"
 msgstr ""
 
@@ -12934,6 +12955,9 @@ msgstr "İşçilik süresi"
 
 msgid "Labor Time"
 msgstr "İşçilik Süresi"
+
+msgid "Labor transfers"
+msgstr ""
 
 msgid "Labor unit"
 msgstr "İşçilik birimi"
@@ -13028,6 +13052,9 @@ msgstr "Son Eğitim Tarihi"
 
 msgid "Last used"
 msgstr "Son Kullanılan"
+
+msgid "Late entries"
+msgstr ""
 
 msgid "Late Entry"
 msgstr ""
@@ -14202,6 +14229,9 @@ msgstr "Eksik nakliye bedelleri"
 msgid "Missing Suppliers"
 msgstr "Tedarikçi Eksikleri"
 
+msgid "Missing time"
+msgstr ""
+
 msgid "Missing:"
 msgstr "Eksik:"
 
@@ -15041,6 +15071,9 @@ msgstr "Hiçbir yetkinlik eklenmedi"
 
 msgid "No Access"
 msgstr "Erişim Yok"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No accounts match your search"
 msgstr "Aramanızla eşleşen hesap yok"
@@ -20766,6 +20799,9 @@ msgstr "Planlanmış Bakım"
 msgid "Scheduled Maintenances"
 msgstr "Planlanmış Bakımlar"
 
+msgid "Scheduled work days with no time entered, with each employee's manager"
+msgstr ""
+
 msgid "Schedules"
 msgstr "Programlar"
 
@@ -24967,6 +25003,12 @@ msgstr ""
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Kiralama filosunun varlık ve sınıf bazında zaman ve dolar kullanım oranı"
 
+msgid "Time entered after the entry window, with the reason the employee gave"
+msgstr ""
+
+msgid "Time moved between charge numbers, with the reason, the requester and the approver"
+msgstr ""
+
 msgid "Time not posted yet"
 msgstr ""
 
@@ -25010,6 +25052,9 @@ msgid "Timesheet"
 msgstr ""
 
 msgid "Timesheet Approval"
+msgstr ""
+
+msgid "Timesheet export for auditors"
 msgstr ""
 
 msgid "Timezone"

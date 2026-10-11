@@ -2519,6 +2519,9 @@ msgstr ""
 msgid "Allowable"
 msgstr ""
 
+msgid "Allowable and unallowable cost of each contract line item, with its funding and billing"
+msgstr ""
+
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
 
@@ -3714,6 +3717,9 @@ msgstr "Атрибуты"
 
 msgid "Attributes are inherited from the procedure."
 msgstr "Атрибуты наследуются из процедуры."
+
+msgid "Audit and contracts"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "Журнал аудита"
@@ -5060,6 +5066,9 @@ msgstr ""
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
 
+msgid "Choose a period"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Выберите строку слева, чтобы увидеть, откуда может поступить её запас."
 
@@ -6295,6 +6304,9 @@ msgid "Cost"
 msgstr "Себестоимость"
 
 msgid "Cost Account"
+msgstr ""
+
+msgid "Cost by CLIN"
 msgstr ""
 
 msgid "cost center"
@@ -9709,6 +9721,9 @@ msgstr "Все записи компании. Учётные данные, то�
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
+msgid "Every entry dated in the range and every change made to it"
+msgstr ""
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
 
@@ -11509,6 +11524,9 @@ msgstr "Часы"
 msgid "Hours Actual"
 msgstr ""
 
+msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
+msgstr ""
+
 msgid "Hours assumed from location shifts"
 msgstr "Часы предполагаются на основе смен в месте"
 
@@ -12911,6 +12929,9 @@ msgstr ""
 msgid "Labor Costs"
 msgstr "Стоимость труда"
 
+msgid "Labor distribution"
+msgstr ""
+
 msgid "Labor ended"
 msgstr ""
 
@@ -12934,6 +12955,9 @@ msgstr "Трудозатраты"
 
 msgid "Labor Time"
 msgstr "Трудозатраты"
+
+msgid "Labor transfers"
+msgstr ""
 
 msgid "Labor unit"
 msgstr "Единица труда"
@@ -13028,6 +13052,9 @@ msgstr "Дата последнего обучения"
 
 msgid "Last used"
 msgstr "Последний раз использован"
+
+msgid "Late entries"
+msgstr ""
 
 msgid "Late Entry"
 msgstr ""
@@ -14202,6 +14229,9 @@ msgstr "Отсутствующие стоимости доставки"
 msgid "Missing Suppliers"
 msgstr "Отсутствуют поставщики"
 
+msgid "Missing time"
+msgstr ""
+
 msgid "Missing:"
 msgstr "Отсутствует:"
 
@@ -15041,6 +15071,9 @@ msgstr "Нет добавленных навыков"
 
 msgid "No Access"
 msgstr "Нет доступа"
+
+msgid "No accounting periods yet"
+msgstr ""
 
 msgid "No accounts match your search"
 msgstr "Ни один счет не соответствует вашему поиску"
@@ -20766,6 +20799,9 @@ msgstr "Запланированное техобслуживание"
 msgid "Scheduled Maintenances"
 msgstr "Запланированные техобслуживания"
 
+msgid "Scheduled work days with no time entered, with each employee's manager"
+msgstr ""
+
 msgid "Schedules"
 msgstr "Расписания"
 
@@ -24967,6 +25003,12 @@ msgstr ""
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Использование арендного парка по времени и стоимости по активам и классам"
 
+msgid "Time entered after the entry window, with the reason the employee gave"
+msgstr ""
+
+msgid "Time moved between charge numbers, with the reason, the requester and the approver"
+msgstr ""
+
 msgid "Time not posted yet"
 msgstr ""
 
@@ -25010,6 +25052,9 @@ msgid "Timesheet"
 msgstr ""
 
 msgid "Timesheet Approval"
+msgstr ""
+
+msgid "Timesheet export for auditors"
 msgstr ""
 
 msgid "Timezone"

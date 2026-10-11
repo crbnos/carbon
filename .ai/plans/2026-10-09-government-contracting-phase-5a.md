@@ -1682,4 +1682,5 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   7. `getLaborTransfers` filters on the transfer date (the replacement's `createdAt` on the company's calendar). "Days After Entry" is that date less the entry date.
   8. The route reads each report in one query and streams the encoded CSV in pages of 1,000 rows. The precedent pages its reads with a cursor; these reads are bounded by a date range or a period. A bad range (not `YYYY-MM-DD`, or start after end) returns 400; an unknown key returns 404 before the permission check.
   9. Verify: `projects-labor-distribution` 4 passed, `erp` typecheck green, `erp` tests 2,211 passed. Each report query ran against the local database with `ON_ERROR_STOP` and raised no error.
+- Fix after Task 31 (a conformance finding of Task 23): `getTimesheetWeekView` logged `Failed to load ${what}`, which the `no-interpolated-error-log` check refuses, so the `@carbon/checks` conformance gate failed. The message is now constant, and `what` is a field of the log context.
 

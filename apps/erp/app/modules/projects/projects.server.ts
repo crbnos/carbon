@@ -4489,8 +4489,9 @@ export async function getTimesheetWeekView(
     ["company settings", settings]
   ] as const) {
     if (result.error) {
-      logger.error(`Failed to load ${what}`, {
+      logger.error("Failed to load the timesheet week", {
         companyId,
+        what,
         error: result.error
       });
     }
