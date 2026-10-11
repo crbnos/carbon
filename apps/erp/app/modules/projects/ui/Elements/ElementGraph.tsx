@@ -60,10 +60,12 @@ import { ElementCardNode } from "./graph/ElementCardNode";
 import type { LinkEdgeData } from "./graph/LinkEdge";
 import { LinkEdge, linkDash } from "./graph/LinkEdge";
 import { getProjectGraphStore } from "./graph/store";
+import { TreeBreadcrumb } from "./graph/TreeBreadcrumb";
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
   countTraceLinks,
+  elementTreePath,
   highlightTraceLinks,
   layoutElementTree,
   type TraceHighlight,
@@ -419,74 +421,82 @@ function ElementGraphCanvas({
       : [];
 
   return (
-    <div className="h-full w-full">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        proOptions={proOptions}
-        nodesDraggable={false}
-        nodesConnectable={canUpdate}
-        isValidConnection={isValidConnection}
-        onConnect={(connection) => setPending(connection)}
-        onNodeClick={onNodeClick}
-        onPaneClick={() => setHighlight(null)}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") setHighlight(null);
-        }}
-        minZoom={0.2}
-        maxZoom={1.5}
-        fitView
-      >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <Panel position="top-left" className="flex gap-1">
-          <IconButton
-            aria-label={t`Fit view`}
-            icon={<LuMaximize />}
-            variant="secondary"
-            onClick={() => fitView({ padding: 0.15, duration: 200 })}
-          />
-          <IconButton
-            aria-label={t`Search`}
-            icon={<LuSearch />}
-            variant="secondary"
-            onClick={() => setSearching(true)}
-          />
-          <LinkLegend labels={labels} />
-        </Panel>
-        {pending && (
-          <Panel position="top-center">
-            <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 text-sm shadow-md">
-              <span className="text-xs text-muted-foreground">
-                <Trans>
-                  Link {pendingFrom} to {pendingTo}
-                </Trans>
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {pendingTypes.map((type) => (
-                  <Button
-                    key={type}
-                    variant="secondary"
-                    size="sm"
-                    isDisabled={fetcher.state !== "idle"}
-                    onClick={() => addLink(type)}
-                  >
-                    {labels[type].forward}
-                  </Button>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPending(null)}
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-              </div>
-            </div>
+    <div className="flex h-full w-full flex-col">
+      <div className="flex h-9 shrink-0 items-center border-b border-border px-2">
+        <TreeBreadcrumb
+          projectName={projectName}
+          path={elementTreePath(elements, layout.rootId)}
+        />
+      </div>
+      <div className="min-h-0 flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          proOptions={proOptions}
+          nodesDraggable={false}
+          nodesConnectable={canUpdate}
+          isValidConnection={isValidConnection}
+          onConnect={(connection) => setPending(connection)}
+          onNodeClick={onNodeClick}
+          onPaneClick={() => setHighlight(null)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setHighlight(null);
+          }}
+          minZoom={0.2}
+          maxZoom={1.5}
+          fitView
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+          <Panel position="top-left" className="flex gap-1">
+            <IconButton
+              aria-label={t`Fit view`}
+              icon={<LuMaximize />}
+              variant="secondary"
+              onClick={() => fitView({ padding: 0.15, duration: 200 })}
+            />
+            <IconButton
+              aria-label={t`Search`}
+              icon={<LuSearch />}
+              variant="secondary"
+              onClick={() => setSearching(true)}
+            />
+            <LinkLegend labels={labels} />
           </Panel>
-        )}
-      </ReactFlow>
+          {pending && (
+            <Panel position="top-center">
+              <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 text-sm shadow-md">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>
+                    Link {pendingFrom} to {pendingTo}
+                  </Trans>
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {pendingTypes.map((type) => (
+                    <Button
+                      key={type}
+                      variant="secondary"
+                      size="sm"
+                      isDisabled={fetcher.state !== "idle"}
+                      onClick={() => addLink(type)}
+                    >
+                      {labels[type].forward}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPending(null)}
+                  >
+                    <Trans>Cancel</Trans>
+                  </Button>
+                </div>
+              </div>
+            </Panel>
+          )}
+        </ReactFlow>
+      </div>
       <CommandDialog
         open={searching}
         onOpenChange={setSearching}

@@ -103,6 +103,9 @@ const defaultState = parseProjectDisplayState({});
 
 /** Keeping the preference changes nothing this page shows: skip the reload. */
 export const shouldRevalidate: ShouldRevalidateFunction = ({
+  currentUrl,
+  nextUrl,
+  formMethod,
   formAction,
   formData,
   defaultShouldRevalidate
@@ -112,6 +115,21 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     formData?.get("intent") === "savePreference"
   ) {
     return false;
+  }
+  // `root` changes only what the Tree layout draws: skip the reload.
+  if (!formMethod && currentUrl.pathname === nextUrl.pathname) {
+    const withoutRoot = (url: URL) => {
+      const params = new URLSearchParams(url.search);
+      params.delete("root");
+      params.sort();
+      return params.toString();
+    };
+    if (
+      currentUrl.search !== nextUrl.search &&
+      withoutRoot(currentUrl) === withoutRoot(nextUrl)
+    ) {
+      return false;
+    }
   }
   return defaultShouldRevalidate;
 };

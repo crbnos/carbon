@@ -63,7 +63,7 @@ Make the Tree layout of the project Elements page look and work like Flow's tree
 - [x] Task 3: Load the full list, the comment counts and the open change requests
 - [x] Task 4: Add the card node and the box node
 - [x] Task 5: Draw the Tree layout as boxes
-- [ ] Task 6: Add the breadcrumb root
+- [x] Task 6: Add the breadcrumb root
 - [ ] Task 7: Add the change request picker
 - [ ] Task 8: Update the rules, AGENTS.md and the docs page
 - [ ] Task 9: Verify in the browser
@@ -788,3 +788,4 @@ ls .ai/playbooks/ | grep -i tree
 - Task 4 (deviation): an `aria-label` takes a string, and `<Plural>` renders an element. So the comment count's accessible name is a `sr-only` span with the `<Plural>` ("# comment" / "# comments"), and the visible icon and number are `aria-hidden`.
 - Task 5: the top box's empty text is computed inside the node `useMemo` from `layout.rootId` (so an unknown `?root=` reads "No elements yet"), with `t` in the deps. `toggleHighlight` uses a functional `setHighlight`, so it depends on `byId` only and does not rebuild every node on each highlight. A card whose type has no trace count (Folder, Test Case, Parameter, Task) clears the highlight instead of setting one.
 - Task 5 (edges over the box tint): not checked in a browser. `getElevatedEdgeZIndex` in `@xyflow/system` 0.0.76 adds the child node's `internals.z` to an edge whose end has a `parentId`, so the card-to-box edges draw above the boxes; the box-to-box (`out`) edges have `zIndex: 1` over boxes at 0. Brad to confirm in the browser.
+- Task 6 (risk, not a deviation): the new `shouldRevalidate` skips only the Elements route's own loader on a `root` change. The parent layouts (`x+/project+/$projectId.tsx` and above) export no skip, so React Router still runs their loaders. Task 9 point 5 ("no loader request") can see those requests. `BreadcrumbLink` uses `PrefetchLink`, so a crumb prefetches on pointer down.
