@@ -171,9 +171,14 @@ export function relieveLayers(
   return { totalCost, layersConsumed, remaining };
 }
 
-/** One step of a replay: a layer that opens, or a quantity that leaves. */
+/**
+ * One step of a replay: a layer that opens, or a quantity that leaves. A
+ * layer with `costOf` takes its cost from the relief with that key, in
+ * proportion to its quantity: stock moved at cost from one pool to another
+ * (a project stock transfer between stripes).
+ */
 export type ReliefEvent =
-  | { kind: "layer"; itemId: string; layer: ReliefLayer }
+  | { kind: "layer"; itemId: string; layer: ReliefLayer; costOf?: string }
   | {
       kind: "relief";
       key: string;
@@ -186,8 +191,9 @@ export type ReliefEvent =
  * Runs `events` in order, as successive `calculateCOGS` calls would: a layer
  * event opens a layer at its own remaining quantity (newest of its item), a
  * relief event relieves its item's open layers with `relieveLayers`. Returns
- * each relief's cost (rounded) by key, and the remaining quantity (rounded)
- * of every layer and child the events opened.
+ * each relief's cost (rounded) by key, the remaining quantity (rounded)
+ * of every layer and child the events opened, and the cost of every layer
+ * that took it from a relief (`costOf`).
  */
 export function replayReliefs({
   events,
@@ -197,16 +203,33 @@ export function replayReliefs({
   events: readonly ReliefEvent[];
   methodByItem: ReadonlyMap<string, CostingMethod>;
   fallbackUnitCostByItem: ReadonlyMap<string, number>;
-}): { costByKey: Map<string, number>; remainingById: Map<string, number> } {
+}): {
+  costByKey: Map<string, number>;
+  remainingById: Map<string, number>;
+  layerCostById: Map<string, number>;
+} {
   const open = new Map<string, ReliefLayer[]>();
   const costByKey = new Map<string, number>();
+  const quantityByKey = new Map<string, number>();
   const remainingById = new Map<string, number>();
+  const layerCostById = new Map<string, number>();
   for (const event of events) {
     if (event.kind === "layer") {
       const layer = {
         ...event.layer,
         children: event.layer.children.map((child) => ({ ...child }))
       };
+      if (event.costOf !== undefined) {
+        const reliefCost = costByKey.get(event.costOf);
+        const reliefQuantity = quantityByKey.get(event.costOf);
+        if (reliefCost === undefined || !reliefQuantity) {
+          throw new Error(
+            `Layer ${layer.id} takes its cost from relief ${event.costOf}, which has not run`
+          );
+        }
+        layer.cost = round((reliefCost * layer.quantity) / reliefQuantity);
+        layerCostById.set(layer.id, layer.cost);
+      }
       const layers = open.get(event.itemId);
       if (layers) layers.push(layer);
       else open.set(event.itemId, [layer]);
@@ -231,6 +254,7 @@ export function replayReliefs({
       fallbackUnitCost
     );
     costByKey.set(event.key, round(result.totalCost));
+    quantityByKey.set(event.key, event.quantity);
     for (const layer of layers) {
       const layerRemaining = result.remaining.get(layer.id);
       if (layerRemaining !== undefined)
@@ -249,5 +273,5 @@ export function replayReliefs({
   for (const [id, quantity] of remainingById) {
     remainingById.set(id, round(quantity));
   }
-  return { costByKey, remainingById };
+  return { costByKey, remainingById, layerCostById };
 }

@@ -139,3 +139,63 @@ failed the typecheck. It now uses `CREATE_SHORTCUTS.serviceOrder = "v"`.
 4. Make the cutover re-cost aware of project charges and stock stripes.
 5. Run the full test suites.
 6. Run `pnpm db:check:datasets` and `pnpm db:check:backups`.
+
+## Phase 2b: the cutover and this branch's data
+
+Projects and Field Service have not shipped. So no production company holds
+a project document posted before always-post, and every project document
+gets its journal when it posts. The legacy backfill (`activate-accounting/legacy/*`)
+needs no project family.
+
+| Area | Decision | Change |
+|---|---|---|
+| Project Expense and Project WIP accounts | Both are non-control accounts when Project WIP differs from the WIP account. The trial balance opens them. | None |
+| Project stock stripes: the inventory reset | The reset opened one common layer per item. A project stripe then had no layer, and `calculateCOGS` relieves a stripe from its own layers only. The reset now opens one layer per stripe, at the item's one unit cost (`splitOpeningLayersByStripe`). Common stock takes the rest of the quantity and the cost, so the opening journal does not change. | `accounting-cutover.ts`, `recost.ts` |
+| Project stock stripes: the re-cost | Each stripe is its own pool, as `calculateCOGS` relieves it. | `recost.ts` |
+| Project stock Transfer and Borrow after the cutover | The layer that the transfer opens takes the re-costed cost of the stock it drew (`costOf` on the replay layer). Both legs use one inventory account, so the re-cost writes no journal for it. | `cost-relief.ts`, `accounting-cutover.ts`, `recost.ts` |
+| Project stock Payback after the cutover | If the re-cost changes its cost, the enable refuses (409). See open question 4. | `recost.ts` |
+| Timesheets | An empty labor absorption default writes a stand-in line before the cutover. The enable re-points it. | None |
+| Revenue rows (Cost Relief, Loss Provision) | Step 5 sets each Planned row dated before the cutover to Posted with no journal. The trial balance holds the prior system's relief. The opening deferred revenue reads only `Deferral` rows. | None |
+| Service order completion | `complete-service-order` reads the WIP from `projectLedger`, not from journals. See open question 1. | None |
+
+Tests: `activate-accounting/project-stripes.test.ts` (the reset per stripe,
+and a Transfer re-costed at cost) and the `splitOpeningLayersByStripe` and
+`costOf` cases in `packages/database/src/accounting-cutover.test.ts`.
+
+### Open questions for Brad
+
+1. **Project and service WIP on the WIP control account.** The WIP account
+   is a control account. Its opening reads only per-job lines
+   (`getWorkInProgressItems`). Two kinds of project cost also post to it:
+   - A Refurbishment charge with Capitalized coverage always posts to
+     `workInProgressAccount`.
+   - The backfill (`20261009055122`) set `projectWorkInProgressAccount` to
+     `workInProgressAccount` for each existing company. So Contract
+     project costs post there too.
+
+   Such costs before the cutover are missing from the opening WIP. Migration
+   Clearing then shows the difference, and the enable refuses. If the user
+   forces Migration Clearing to zero, a completion after the cutover credits
+   WIP below zero. Recommendation: add one opening item for these lines. Its
+   amount is the sum of the WIP-account lines dated before the cutover whose
+   document is not a job, minus the Cost Relief rows dated before the
+   cutover that credit the WIP account (step 5 posts them with no journal).
+2. **Fixed asset cost at the cutover.** `getCutoverFixedAssets` reads
+   today's `acquisitionCost` and today's class. A CIP cost dated on or after
+   the cutover raises `acquisitionCost`, and its promoted journal posts it
+   again. A capitalization after the cutover moves the asset to its
+   in-service class, and its promoted journal moves the cost again. Every
+   cost charged to a Capitalize project after the cutover shows this. Main's
+   job CIP shows it too. Recommendation: subtract the `fixedAssetCipCost`
+   rows dated on or after the cutover, and use the class at the cutover.
+3. **Re-cost of a project issue.** The re-cost adjusts the issue's journal
+   (the project account against inventory). It changes no `projectLedger`
+   row, billable item or `fixedAssetCipCost` row. So Cost Plus billing, the
+   project cost summary and CIP capitalization keep the old cost. Should the
+   re-cost also write a `projectLedger` adjustment row (quantity 0) and a CIP
+   row?
+4. **Re-cost of a project stock Payback.** A Payback returns the lender's
+   cost at `borrowedUnitCost` and books the difference as Payback Variance.
+   A re-cost would have to move the lender layers, the variance journal and
+   the Payback Variance ledger row. The enable now refuses instead. Is a
+   refusal right, or should the re-cost rebuild the payback?
