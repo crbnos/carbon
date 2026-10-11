@@ -1273,6 +1273,18 @@ export const accounts = [
     createdBy: "system"
   },
   {
+    key: "2165",
+    number: "2165",
+    name: "Contract Loss Provision",
+    isGroup: false,
+    parentKey: "current-liabilities",
+    accountType: "Other Current Liability",
+    incomeBalance: "Balance Sheet",
+    class: "Liability",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
     key: "2170",
     number: "2170",
     name: "Short-Term Loans",
@@ -2216,7 +2228,8 @@ export const accountDefaults = {
   rentalIncomeAccount: "4060",
   leaseRevenueAccount: "4070",
   leaseInterestIncomeAccount: "4150",
-  netInvestmentInLeasesAccount: "1160"
+  netInvestmentInLeasesAccount: "1160",
+  contractLossProvisionAccount: "2165"
 } as const;
 
 export const fixedAssetClasses = [

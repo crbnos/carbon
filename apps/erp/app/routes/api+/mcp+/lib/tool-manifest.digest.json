@@ -61,7 +61,7 @@
     {"name":"accounting_getCurrency","classification":"READ","paramCount":1,"schema":"0e98c276626d","response":"6d5bae3dafd5","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getCurrencyByCode","classification":"READ","paramCount":1,"schema":"cc2bce783cc5","response":"300e136d14d0","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getCurrentAccountingPeriod","classification":"READ","paramCount":1,"schema":"2f19cae7bae1","response":"923d00cf55d7","injectAuth":"companyId","permission":"accounting:view","paginates":false},
-    {"name":"accounting_getDefaultAccounts","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"ca7b0102048b","injectAuth":"companyId","permission":"accounting:view","paginates":false},
+    {"name":"accounting_getDefaultAccounts","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"75bef27a738e","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getDeferredRevenueWaterfall","classification":"READ","paramCount":1,"schema":"c860433efc00","response":"5f6b5d60e104","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getDepreciationRun","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"22ccbb1556ab","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getDepreciationRunLines","classification":"READ","paramCount":1,"schema":"e83946bf5ea7","response":"9c31ce726755","injectAuth":"companyId","permission":"accounting:view","paginates":false},

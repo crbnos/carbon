@@ -9,6 +9,7 @@
     "./errors": "./src/errors.ts",
     "./lib/service-orders": "./src/lib/service-orders.ts",
     "./lib/stock-stripes": "./src/lib/stock-stripes.ts",
+    "./test-fixture": "./src/local-database-test-fixture.ts",
     "./*": "./src/*/index.ts"
   },
   "scripts": {

@@ -1140,6 +1140,13 @@ export const manifest = {
     update: false,
     delete: false
   }),
+  // The revenue recognition run writes reliefs with Kysely; nothing writes
+  // them through the API.
+  projectCostRelief: company("accounting", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   projectElement: projectTable(),
   projectElementComment: company("projects", {
     read: projectModule("projectElementId", "view", {

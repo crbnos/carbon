@@ -358,6 +358,7 @@ export type Database = {
           bankLocalCurrencyAccount: string
           companyId: string
           contractAssetAccount: string | null
+          contractLossProvisionAccount: string | null
           costOfGoodsSoldAccount: string
           currencyTranslationAccount: string
           customerPaymentDiscountAccount: string
@@ -425,6 +426,7 @@ export type Database = {
           bankLocalCurrencyAccount: string
           companyId: string
           contractAssetAccount?: string | null
+          contractLossProvisionAccount?: string | null
           costOfGoodsSoldAccount: string
           currencyTranslationAccount: string
           customerPaymentDiscountAccount: string
@@ -492,6 +494,7 @@ export type Database = {
           bankLocalCurrencyAccount?: string
           companyId?: string
           contractAssetAccount?: string | null
+          contractLossProvisionAccount?: string | null
           costOfGoodsSoldAccount?: string
           currencyTranslationAccount?: string
           customerPaymentDiscountAccount?: string
@@ -697,6 +700,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_contractAssetAccount_fkey"
             columns: ["contractAssetAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_contractLossProvisionAccount_fkey"
+            columns: ["contractLossProvisionAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_contractLossProvisionAccount_fkey"
+            columns: ["contractLossProvisionAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -12825,10 +12842,14 @@ export type Database = {
           createdBy: string
           customerContractId: string
           customerContractLineId: string
+          earnedToDate: number | null
+          estimateAtCompletion: number | null
           id: string
           periodEnd: string
           periodStart: string
+          progress: number | null
           status: Database["public"]["Enums"]["contractRevenueStatus"]
+          transactionPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -12839,10 +12860,14 @@ export type Database = {
           createdBy: string
           customerContractId: string
           customerContractLineId: string
+          earnedToDate?: number | null
+          estimateAtCompletion?: number | null
           id?: string
           periodEnd: string
           periodStart: string
+          progress?: number | null
           status?: Database["public"]["Enums"]["contractRevenueStatus"]
+          transactionPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12853,10 +12878,14 @@ export type Database = {
           createdBy?: string
           customerContractId?: string
           customerContractLineId?: string
+          earnedToDate?: number | null
+          estimateAtCompletion?: number | null
           id?: string
           periodEnd?: string
           periodStart?: string
+          progress?: number | null
           status?: Database["public"]["Enums"]["contractRevenueStatus"]
+          transactionPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -47892,6 +47921,76 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          }
+        ]
+      }
+      projectCostRelief: {
+        Row: {
+          amount: number
+          companyId: string
+          createdAt: string
+          id: string
+          projectLedgerId: string
+          revenueRecognitionScheduleId: string
+        }
+        Insert: {
+          amount: number
+          companyId: string
+          createdAt?: string
+          id?: string
+          projectLedgerId: string
+          revenueRecognitionScheduleId: string
+        }
+        Update: {
+          amount?: number
+          companyId?: string
+          createdAt?: string
+          id?: string
+          projectLedgerId?: string
+          revenueRecognitionScheduleId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projectCostRelief_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectCostRelief_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectCostRelief_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectCostRelief_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectCostRelief_ledger_fkey"
+            columns: ["projectLedgerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "projectLedger"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectCostRelief_schedule_fkey"
+            columns: ["revenueRecognitionScheduleId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "revenueRecognitionSchedule"
+            referencedColumns: ["id", "companyId"]
           }
         ]
       }

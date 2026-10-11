@@ -38253,6 +38253,150 @@ export default {
         tags: ["services"]
       }
     },
+    "/projectCostRelief": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.projectLedgerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.revenueRecognitionScheduleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/projectCostRelief"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["projectCostRelief"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.projectCostRelief"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["projectCostRelief"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.projectLedgerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.revenueRecognitionScheduleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectCostRelief"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.projectLedgerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.revenueRecognitionScheduleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.projectCostRelief"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["projectCostRelief"]
+      }
+    },
     "/unitOfMeasure": {
       get: {
         parameters: [
@@ -46897,6 +47041,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.warrantyExpenseAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.contractLossProvisionAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -47151,6 +47298,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.warrantyExpenseAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.contractLossProvisionAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -47357,6 +47507,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.warrantyExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.contractLossProvisionAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -66763,6 +66916,18 @@ export default {
             $ref: "#/parameters/rowFilter.customerContractRevenue.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.earnedToDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.estimateAtCompletion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.transactionPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.progress"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -66858,6 +67023,18 @@ export default {
             $ref: "#/parameters/rowFilter.customerContractRevenue.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.earnedToDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.estimateAtCompletion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.transactionPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.progress"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -66905,6 +67082,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerContractRevenue.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.earnedToDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.estimateAtCompletion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.transactionPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRevenue.progress"
           },
           {
             $ref: "#/parameters/body.customerContractRevenue"
@@ -141887,6 +142076,48 @@ export default {
       },
       type: "object"
     },
+    projectCostRelief: {
+      required: [
+        "id",
+        "companyId",
+        "projectLedgerId",
+        "revenueRecognitionScheduleId",
+        "amount",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pcr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        projectLedgerId: {
+          format: "text",
+          type: "string"
+        },
+        revenueRecognitionScheduleId: {
+          format: "text",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     unitOfMeasure: {
       required: [
         "id",
@@ -146275,6 +146506,12 @@ export default {
           type: "string"
         },
         warrantyExpenseAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        contractLossProvisionAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
@@ -155064,6 +155301,22 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        earnedToDate: {
+          format: "numeric",
+          type: "number"
+        },
+        estimateAtCompletion: {
+          format: "numeric",
+          type: "number"
+        },
+        transactionPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        progress: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -196326,6 +196579,51 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.projectCostRelief": {
+      name: "projectCostRelief",
+      description: "projectCostRelief",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/projectCostRelief"
+      }
+    },
+    "rowFilter.projectCostRelief.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectCostRelief.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectCostRelief.projectLedgerId": {
+      name: "projectLedgerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectCostRelief.revenueRecognitionScheduleId": {
+      name: "revenueRecognitionScheduleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectCostRelief.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectCostRelief.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.unitOfMeasure": {
       name: "unitOfMeasure",
       description: "unitOfMeasure",
@@ -201058,6 +201356,12 @@ export default {
     },
     "rowFilter.accountDefault.warrantyExpenseAccount": {
       name: "warrantyExpenseAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.contractLossProvisionAccount": {
+      name: "contractLossProvisionAccount",
       required: false,
       in: "query",
       type: "string"
@@ -210830,6 +211134,30 @@ export default {
     },
     "rowFilter.customerContractRevenue.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRevenue.earnedToDate": {
+      name: "earnedToDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRevenue.estimateAtCompletion": {
+      name: "estimateAtCompletion",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRevenue.transactionPrice": {
+      name: "transactionPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRevenue.progress": {
+      name: "progress",
       required: false,
       in: "query",
       type: "string"

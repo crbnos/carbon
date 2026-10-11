@@ -56,7 +56,7 @@ These correct or add to the spec. Task 13 records them there.
 ## Progress
 
 - [x] Task 1: Create the project revenue migration
-- [ ] Task 2: Apply the migration, regenerate types, ship RLS and the seed account
+- [x] Task 2: Apply the migration, regenerate types, ship RLS and the seed account
 - [ ] Task 3: Let callers pass revenue run synthesizers
 - [ ] Task 4: Add the shared project revenue writers and the Right to Invoice synthesizer
 - [ ] Task 5: Add the Percent Complete and loss provision math
@@ -585,3 +585,4 @@ ls .ai/playbooks/project-billing-phase-4b.md
 ## Execution notes
 
 - Task 1: the `progress` CHECK is a named constraint (`customerContractRevenue_progress_check`) added in a guarded `DO` block, so the migration stays re-runnable. The unique key on (`projectLedgerId`, `companyId`) indexes the ledger FK, so only `companyId` and the schedule FK get their own indexes; `contractLossProvisionAccount` gets an index too. RLS is turned on by the generated authz migration (Task 2), as for `customerContractLaborRate`. `crbn migrate` applied the migration and then stopped at `authz sync` (no rule for `projectCostRelief` yet); Task 2 adds the rule. The commit used `CARBON_SKIP_MANIFEST_CHECK=1`, as 4a Task 2 did: the regenerated types sit in the working tree until Task 2 commits them.
+- Task 2: `id-refs.ts` needs no entry: both id columns of `projectCostRelief` have FKs, and the file lists only id columns with no FK. The generated RLS migration is `20261011141454_project-revenue-rls.sql`. The MCP digest changed by one line (the regenerated types); `check:manifest` passes.
