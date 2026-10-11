@@ -126,6 +126,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "finalize-supplier-quote": {
     "create": "purchasing",
   },
+  "generate-contract-billable-items": {
+    "update": "sales",
+  },
   "get-method": {
     "update": "production",
   },

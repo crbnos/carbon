@@ -26,6 +26,8 @@ const registry = {
   create: () => import("./create"),
   "finalize-purchasing-rfq": () => import("./finalize-purchasing-rfq"),
   "finalize-supplier-quote": () => import("./finalize-supplier-quote"),
+  "generate-contract-billable-items": () =>
+    import("./generate-contract-billable-items"),
   "get-method": () => import("./get-method"),
   "import-csv": () => import("./import-csv"),
   issue: () => import("./issue"),

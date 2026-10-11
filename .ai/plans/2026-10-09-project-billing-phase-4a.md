@@ -68,7 +68,7 @@ These correct or add to the spec. Task 20 records them there.
 - [x] Task 6: Keep billing lines out of the contract schedule
 - [x] Task 7: Validate billing lines at confirm and amend
 - [x] Task 8: Write T&M billable items at posting
-- [ ] Task 9: Add `generate-contract-billable-items`
+- [x] Task 9: Add `generate-contract-billable-items`
 - [ ] Task 10: Add `create-project-billing-invoices`
 - [ ] Task 11: Release billable items on Draft delete and on VOID
 - [ ] Task 12: Add the `ContractFundingThreshold` notification
@@ -1090,3 +1090,4 @@ ls .ai/playbooks/project-billing-phase-4a.md
 - Task 8: an item's description is `<cost type> — <document type>`, as the Cost Plus generator writes. `buildContractBillableItem` takes `createdBy` and returns null for every line that is not Time & Materials.
 - Task 8: the database tests call `insertProjectLedgerRows` directly through a shared fixture, `lib/project-billing-test-fixture.ts`, which Tasks 7, 9 and 10 reuse. The verify grep still lists 4 test files that seed ledger rows directly. They are fixtures, not posting paths.
 - Task 7 (finished after Task 8): confirm runs the T&M backfill for each T&M line as its last step, after the status becomes Active, with `through` = the payload's `asOf`. Amend reads the added lines back with `RETURNING ("id", "billingMethod")` and runs the backfill for each added T&M line. A line that starts after `asOf` is not live yet, so the backfill writes nothing; posting and the invoice source bill its rows later. Test case 3 posts a 200.00 Material row while the contract is a Draft (no item), confirms, and expects one 220.00 Unbilled item.
+- Task 9: the server function also refuses a Fixed line ("Only a Time & Materials line has billable items") and returns `NotFoundError` for an unknown line. It returns `{ generated }`. A second test pins the Cost Plus refusal.
