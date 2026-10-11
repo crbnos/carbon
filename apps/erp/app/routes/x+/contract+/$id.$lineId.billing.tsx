@@ -5,6 +5,10 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  getContractRateCeilings,
+  getIndirectPools
+} from "@carbon/ee/indirect-rates.server";
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -55,23 +59,40 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const asOf = datetime
     .today(await getCompanyTimeZone(client, companyId))
     .toString();
-  const [funding, laborRates, items, fundingActions, settings] =
-    await Promise.all([
-      getContractLineFunding(client, { companyId, lineIds: [lineId], asOf }),
-      getContractLaborRates(client, lineId, companyId),
-      getContractBillableItems(client, {
-        companyId,
-        customerContractLineId: lineId
-      }),
-      getContractFundingActions(client, [lineId], companyId),
-      getCompanySettings(client, companyId)
-    ]);
+  const isCostPlus = line.data.billingMethod === "Cost Plus";
+  const [
+    funding,
+    laborRates,
+    items,
+    fundingActions,
+    settings,
+    rateCeilings,
+    pools
+  ] = await Promise.all([
+    getContractLineFunding(client, { companyId, lineIds: [lineId], asOf }),
+    getContractLaborRates(client, lineId, companyId),
+    getContractBillableItems(client, {
+      companyId,
+      customerContractLineId: lineId
+    }),
+    getContractFundingActions(client, [lineId], companyId),
+    getCompanySettings(client, companyId),
+    isCostPlus
+      ? getContractRateCeilings(client, {
+          companyId,
+          customerContractLineId: lineId
+        })
+      : null,
+    isCostPlus ? getIndirectPools(client, companyId) : null
+  ]);
   if (
     funding.error ||
     laborRates.error ||
     items.error ||
     fundingActions.error ||
-    settings.error
+    settings.error ||
+    rateCeilings?.error ||
+    pools?.error
   ) {
     logger.error("Failed to load a contract line's billing", {
       companyId,
@@ -81,7 +102,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         laborRates.error ??
         items.error ??
         fundingActions.error ??
-        settings.error
+        settings.error ??
+        rateCeilings?.error ??
+        pools?.error
     });
   }
 
@@ -96,13 +119,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     laborRates: laborRates.data ?? [],
     items: items.data ?? [],
     fundingActions: fundingActions.data ?? [],
-    fundedByActions: settings.data?.timekeepingControls === "DCAA"
+    fundedByActions: settings.data?.timekeepingControls === "DCAA",
+    rateCeilings: rateCeilings?.data ?? [],
+    ceilingPools: (pools?.data ?? [])
+      .filter((pool) => pool.active && pool.appliesToProjects)
+      .map((pool) => ({
+        id: pool.id,
+        name: pool.name,
+        baseType: pool.baseType
+      }))
   };
 }
 
 export default function ContractLineBillingRoute() {
-  const { line, funding, laborRates, items, fundingActions, fundedByActions } =
-    useLoaderData<typeof loader>();
+  const {
+    line,
+    funding,
+    laborRates,
+    items,
+    fundingActions,
+    fundedByActions,
+    rateCeilings,
+    ceilingPools
+  } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const routeData = useRouteData<ContractRouteData>(
     path.to.contract(line.customerContractId)
@@ -121,6 +160,8 @@ export default function ContractLineBillingRoute() {
       items={items}
       fundingActions={fundingActions}
       fundedByActions={fundedByActions}
+      rateCeilings={rateCeilings}
+      ceilingPools={ceilingPools}
       canUpdate={
         permissions.can("update", "sales") &&
         (contract.status === "Draft" || contract.status === "Active")

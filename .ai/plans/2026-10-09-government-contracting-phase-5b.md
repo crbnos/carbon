@@ -101,7 +101,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 14: Add the ICE schedules and the CSV route
 - [x] Task 15: Build the Indirect Pools pages
 - [x] Task 16: Build the Indirect Rates, Statement and ICE pages
-- [ ] Task 17: Add rate ceilings to the contract line
+- [x] Task 17: Add rate ceilings to the contract line
 - [ ] Task 18: Add burden by pool to the project Costs tab
 - [ ] Task 19: Extend the demo datasets
 - [ ] Task 20: Run the scoped gates
@@ -1403,3 +1403,8 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   3. The runs card lists the runs of the selected fiscal year. **Run Period** and **Run True-Up** pick from every Locked period (newest first) and are disabled, with a tooltip, while no period is Locked. **Run True-Up** shows when every active pool that applies to projects has a Final rate for period 12, the period the true-up reads.
   4. The statement opens on the last period of the year with Actual rates, else period 12. Its pool cost, base and rate come from that period's Actual rate row. The Absorbed Overhead line shows as a credit and claims nothing (B7).
   5. Run and true-up errors flash the message the run wrote to `indirectRateRun.error`.
+- Task 17:
+  1. The page is the contract line's **Billing** tab (`x+/contract+/$id.$lineId.billing.tsx`, `ContractLineBilling`). It shows **Labor Rates** on a Time & Materials line only, so **Rate Ceilings** takes the same place on a Cost Plus line. The labor rates action (`$id.$lineId.labor-rates.tsx`) takes the 2 new intents.
+  2. The Add modal offers the active pools that apply to projects and have no ceiling on the line yet (`customerContractRateCeiling_key` is unique per line and pool), so the plan's edit is a delete and an add. A unique-key refusal still answers "This line already has a ceiling for the pool".
+  3. A Direct Labor Hours pool's ceiling is an amount per hour in the company currency, like its rate. Every other ceiling is a percent.
+  4. A gated company sees the section with no rows behind `UpgradeOverlaySection`. The intents call `requireFeature` and answer an `EntitlementError` with "Upgrade to use rate ceilings".

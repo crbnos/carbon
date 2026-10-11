@@ -434,6 +434,7 @@ msgstr "{0}-Year"
 msgid "{0}/{1} viewed"
 msgstr "{0}/{1} viewed"
 
+#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
@@ -1996,6 +1997,9 @@ msgstr "Add Authenticator App"
 msgid "Add Calibration Record"
 msgstr "Add Calibration Record"
 
+msgid "Add Ceiling"
+msgstr "Add Ceiling"
+
 msgid "Add Characteristic"
 msgstr "Add Characteristic"
 
@@ -3396,6 +3400,9 @@ msgstr "Are you sure you want to delete this passkey? You won't be able to use i
 msgid "Are you sure you want to delete this quality document?"
 msgstr "Are you sure you want to delete this quality document?"
 
+msgid "Are you sure you want to delete this rate ceiling?"
+msgstr "Are you sure you want to delete this rate ceiling?"
+
 msgid "Are you sure you want to delete this record?"
 msgstr "Are you sure you want to delete this record?"
 
@@ -4424,6 +4431,9 @@ msgstr "Bulk Jobs"
 msgid "Burden"
 msgstr "Burden"
 
+msgid "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
+msgstr "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
+
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 
@@ -4706,6 +4716,9 @@ msgstr "Cannot upload — supplier interaction not yet created"
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Cannot upload to parts bucket without item ID"
 
+msgid "Cap the indirect rates a Cost Plus line bills, and bill burden at provisional rates."
+msgstr "Cap the indirect rates a Cost Plus line bills, and bill burden at provisional rates."
+
 msgid "Capacity"
 msgstr "Capacity"
 
@@ -4847,6 +4860,9 @@ msgstr "CC"
 
 msgid "Ceiling"
 msgstr "Ceiling"
+
+msgid "Ceiling per Hour"
+msgstr "Ceiling per Hour"
 
 msgid "Centralized Billing Address"
 msgstr "Centralized Billing Address"
@@ -7739,6 +7755,9 @@ msgstr "Delete Attribute"
 msgid "Delete Category"
 msgstr "Delete Category"
 
+msgid "Delete ceiling"
+msgstr "Delete ceiling"
+
 msgid "Delete Change Notice"
 msgstr "Delete Change Notice"
 
@@ -10492,6 +10511,9 @@ msgstr "Failed to save result"
 
 msgid "Failed to save slides"
 msgstr "Failed to save slides"
+
+msgid "Failed to save the ceiling"
+msgstr "Failed to save the ceiling"
 
 msgid "Failed to save the change"
 msgstr "Failed to save the change"
@@ -15311,6 +15333,9 @@ msgstr "No capacity reservations to visualize. Schedule a job to see work-center
 msgid "No category"
 msgstr "No category"
 
+msgid "No ceilings. Burden bills at the billing rates."
+msgstr "No ceilings. Burden bills at the billing rates."
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
 msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
 
@@ -19039,6 +19064,9 @@ msgstr "rate {was} → {now}"
 
 msgid "Rate actions"
 msgstr "Rate actions"
+
+msgid "Rate Ceilings"
+msgstr "Rate Ceilings"
 
 msgid "Rate frequency"
 msgstr "Rate frequency"
@@ -23982,6 +24010,9 @@ msgstr "The grades that classify your materials"
 
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "The group account this account rolls up to; determines its type, class, and statement placement."
+
+msgid "The highest rate this line bills for the pool."
+msgstr "The highest rate this line bills for the pool."
 
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."

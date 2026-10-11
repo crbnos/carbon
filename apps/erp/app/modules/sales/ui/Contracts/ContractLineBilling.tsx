@@ -52,6 +52,10 @@ import {
   useBillingMethodLabels
 } from "./ContractLineBillingFields";
 import ContractMoney from "./ContractMoney";
+import ContractRateCeilings, {
+  type CeilingPool,
+  type ContractRateCeiling
+} from "./ContractRateCeilings.ee";
 import FundingBar, { type ContractLineFundingPosition } from "./FundingBar";
 import type { ContractLine } from "./types";
 
@@ -81,6 +85,8 @@ export default function ContractLineBilling({
   items,
   fundingActions,
   fundedByActions,
+  rateCeilings,
+  ceilingPools,
   canUpdate
 }: {
   contractId: string;
@@ -93,6 +99,10 @@ export default function ContractLineBilling({
   fundingActions: ContractFundingAction[];
   /** DCAA mode: the funding actions own the funded cost and amount. */
   fundedByActions: boolean;
+  /** Cost Plus: the indirect rate ceilings of the line (Phase 5b). */
+  rateCeilings: ContractRateCeiling[];
+  /** Cost Plus: the active pools that apply to projects. */
+  ceilingPools: CeilingPool[];
   canUpdate: boolean;
 }) {
   const { t } = useLingui();
@@ -174,6 +184,16 @@ export default function ContractLineBilling({
           lineId={line.id}
           rates={laborRates}
           currencyCode={currencyCode}
+          action={path.to.contractLineLaborRates(contractId, line.id)}
+          isDisabled={!canUpdate}
+        />
+      )}
+
+      {line.billingMethod === "Cost Plus" && (
+        <ContractRateCeilings
+          lineId={line.id}
+          ceilings={rateCeilings}
+          pools={ceilingPools}
           action={path.to.contractLineLaborRates(contractId, line.id)}
           isDisabled={!canUpdate}
         />

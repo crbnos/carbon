@@ -434,6 +434,7 @@ msgstr "{0}-Année"
 msgid "{0}/{1} viewed"
 msgstr ""
 
+#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
@@ -1996,6 +1997,9 @@ msgstr "Ajouter une application d'authentification"
 msgid "Add Calibration Record"
 msgstr "Ajouter un enregistrement d'étalonnage"
 
+msgid "Add Ceiling"
+msgstr ""
+
 msgid "Add Characteristic"
 msgstr "Ajouter une caractéristique"
 
@@ -3396,6 +3400,9 @@ msgstr "Êtes-vous sûr de vouloir supprimer cette clé d'accès ? Vous ne pourr
 msgid "Are you sure you want to delete this quality document?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce document de qualité ?"
 
+msgid "Are you sure you want to delete this rate ceiling?"
+msgstr ""
+
 msgid "Are you sure you want to delete this record?"
 msgstr "Êtes-vous sûr de vouloir supprimer cet enregistrement ?"
 
@@ -4424,6 +4431,9 @@ msgstr "Ordres de fabrication en masse"
 msgid "Burden"
 msgstr ""
 
+msgid "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
+msgstr ""
+
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr ""
 
@@ -4706,6 +4716,9 @@ msgstr "Impossible de téléverser — interaction fournisseur non créée"
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "Impossible de téléverser vers le seau des pièces sans ID d'article"
 
+msgid "Cap the indirect rates a Cost Plus line bills, and bill burden at provisional rates."
+msgstr ""
+
 msgid "Capacity"
 msgstr "Capacité"
 
@@ -4846,6 +4859,9 @@ msgid "CC"
 msgstr "CC"
 
 msgid "Ceiling"
+msgstr ""
+
+msgid "Ceiling per Hour"
 msgstr ""
 
 msgid "Centralized Billing Address"
@@ -7739,6 +7755,9 @@ msgstr "Supprimer l'attribut"
 msgid "Delete Category"
 msgstr "Supprimer la catégorie"
 
+msgid "Delete ceiling"
+msgstr ""
+
 msgid "Delete Change Notice"
 msgstr "Supprimer l'avis de modification"
 
@@ -10492,6 +10511,9 @@ msgstr "Impossible d'enregistrer le résultat"
 
 msgid "Failed to save slides"
 msgstr "Échec de l'enregistrement des diapositives"
+
+msgid "Failed to save the ceiling"
+msgstr ""
 
 msgid "Failed to save the change"
 msgstr "Impossible d'enregistrer la modification"
@@ -15311,6 +15333,9 @@ msgstr "Aucune réservation de capacité à visualiser. Planifiez une tâche pou
 msgid "No category"
 msgstr ""
 
+msgid "No ceilings. Burden bills at the billing rates."
+msgstr ""
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
 msgstr ""
 
@@ -19038,6 +19063,9 @@ msgid "rate {was} → {now}"
 msgstr "taux {was} → {now}"
 
 msgid "Rate actions"
+msgstr ""
+
+msgid "Rate Ceilings"
 msgstr ""
 
 msgid "Rate frequency"
@@ -23982,6 +24010,9 @@ msgstr "Les grades qui classent vos matériaux"
 
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "Le compte de groupe auquel ce compte se résume; détermine son type, sa classe et son placement dans les états financiers."
+
+msgid "The highest rate this line bills for the pool."
+msgstr ""
 
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "Le coût horaire de la main-d'œuvre de l'opérateur sur ce poste de travail ; combiné avec les heures de main-d'œuvre enregistrées pour imputer le coût de la main-d'œuvre dans l'en-cours de l'ordre de fabrication."

@@ -434,6 +434,7 @@ msgstr "{0} 年"
 msgid "{0}/{1} viewed"
 msgstr ""
 
+#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
@@ -1996,6 +1997,9 @@ msgstr "認証器アプリを追加"
 msgid "Add Calibration Record"
 msgstr "校正記録を追加"
 
+msgid "Add Ceiling"
+msgstr ""
+
 msgid "Add Characteristic"
 msgstr "特性を追加"
 
@@ -3396,6 +3400,9 @@ msgstr "このパスキーを削除してもよろしいですか？サインイ
 msgid "Are you sure you want to delete this quality document?"
 msgstr "この品質文書を削除してもよろしいですか?"
 
+msgid "Are you sure you want to delete this rate ceiling?"
+msgstr ""
+
 msgid "Are you sure you want to delete this record?"
 msgstr "このレコードを削除してもよろしいですか？"
 
@@ -4424,6 +4431,9 @@ msgstr "一括製造指図"
 msgid "Burden"
 msgstr ""
 
+msgid "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
+msgstr ""
+
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr ""
 
@@ -4706,6 +4716,9 @@ msgstr "アップロードできません — 仕入先インタラクション�
 msgid "Cannot upload to parts bucket without item ID"
 msgstr "品目IDなしで部品バケットにアップロードすることはできません"
 
+msgid "Cap the indirect rates a Cost Plus line bills, and bill burden at provisional rates."
+msgstr ""
+
 msgid "Capacity"
 msgstr "容量"
 
@@ -4846,6 +4859,9 @@ msgid "CC"
 msgstr "CC"
 
 msgid "Ceiling"
+msgstr ""
+
+msgid "Ceiling per Hour"
 msgstr ""
 
 msgid "Centralized Billing Address"
@@ -7739,6 +7755,9 @@ msgstr "属性を削除"
 msgid "Delete Category"
 msgstr "カテゴリを削除"
 
+msgid "Delete ceiling"
+msgstr ""
+
 msgid "Delete Change Notice"
 msgstr "変更通知を削除"
 
@@ -10492,6 +10511,9 @@ msgstr "結果の保存に失敗しました"
 
 msgid "Failed to save slides"
 msgstr "スライドの保存に失敗しました"
+
+msgid "Failed to save the ceiling"
+msgstr ""
 
 msgid "Failed to save the change"
 msgstr "変更の保存に失敗しました。"
@@ -15311,6 +15333,9 @@ msgstr "表示する容量予約はありません。ジョブをスケジュー
 msgid "No category"
 msgstr ""
 
+msgid "No ceilings. Burden bills at the billing rates."
+msgstr ""
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
 msgstr ""
 
@@ -19038,6 +19063,9 @@ msgid "rate {was} → {now}"
 msgstr "料金 {was} → {now}"
 
 msgid "Rate actions"
+msgstr ""
+
+msgid "Rate Ceilings"
 msgstr ""
 
 msgid "Rate frequency"
@@ -23982,6 +24010,9 @@ msgstr "あなたの材料を分類するグレード"
 
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "このアカウントがロールアップされるグループアカウント。種類、クラス、および明細書の配置を決定します。"
+
+msgid "The highest rate this line bills for the pool."
+msgstr ""
 
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "この作業区の作業者労務の時間原価。ログ記録された労務時間と組み合わせて、製造指図の仕掛品に労務原価を転記します。"

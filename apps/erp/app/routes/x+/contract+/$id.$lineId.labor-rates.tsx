@@ -5,6 +5,13 @@
 import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { contractRateCeilingValidator } from "@carbon/ee/indirect-rates";
+import {
+  deleteContractRateCeiling,
+  upsertContractRateCeiling
+} from "@carbon/ee/indirect-rates.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -14,6 +21,7 @@ import {
   deleteContractLaborRate,
   upsertContractLaborRate
 } from "~/modules/sales";
+import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-line-labor-rates");
 
@@ -21,8 +29,10 @@ function failure(message: string) {
   return data({ success: false, error: { message } }, { status: 400 });
 }
 
-/** Adds, changes or deletes one bill rate of a Time & Materials line. Rates
- *  change at any time, also on an Active contract. */
+/** Adds, changes or deletes one bill rate of a Time & Materials line, or one
+ *  indirect rate ceiling of a Cost Plus line (intents `ceiling-upsert` and
+ *  `ceiling-delete`, GOVERNMENT_CONTRACTING). Both change at any time, also on
+ *  an Active contract. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -33,8 +43,80 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   const formData = await request.formData();
+  const intent = formData.get("intent");
 
-  if (formData.get("intent") === "delete") {
+  if (intent === "ceiling-upsert" || intent === "ceiling-delete") {
+    const { id: contractId } = params;
+    await requireFeature({
+      request,
+      client,
+      companyId,
+      feature: "GOVERNMENT_CONTRACTING",
+      redirectTo: contractId
+        ? path.to.contractLineBilling(contractId, lineId)
+        : path.to.contracts
+    });
+    try {
+      if (intent === "ceiling-delete") {
+        const id = formData.get("id");
+        if (typeof id !== "string" || !id) {
+          return failure("No ceiling was given");
+        }
+        const deleted = await deleteContractRateCeiling(client, {
+          id,
+          companyId
+        });
+        if (deleted.error) {
+          logger.error("Failed to delete a contract rate ceiling", {
+            companyId,
+            lineId,
+            error: deleted.error
+          });
+          return failure("Failed to delete the ceiling");
+        }
+        return data(
+          { success: true, error: null },
+          await flash(request, success("Ceiling deleted"))
+        );
+      }
+
+      const validation = await validator(contractRateCeilingValidator).validate(
+        formData
+      );
+      if (validation.error) return validationError(validation.error);
+      // The line is the URL's, never the form's copy.
+      const saved = await upsertContractRateCeiling(client, {
+        ...validation.data,
+        customerContractLineId: lineId,
+        companyId,
+        userId
+      });
+      if (saved.error) {
+        logger.error("Failed to save a contract rate ceiling", {
+          companyId,
+          lineId,
+          error: saved.error
+        });
+        return failure(
+          saved.error.code === "23505"
+            ? "This line already has a ceiling for the pool"
+            : "Failed to save the ceiling"
+        );
+      }
+      return data(
+        { success: true, error: null },
+        await flash(request, success("Ceiling saved"))
+      );
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      logger.error("Indirect rates are not in the company's plan", {
+        companyId
+      });
+      return failure("Upgrade to use rate ceilings");
+    }
+  }
+
+  if (intent === "delete") {
     const id = formData.get("id");
     if (typeof id !== "string" || !id) return failure("No rate was given");
     const deleted = await deleteContractLaborRate(client, id, companyId);
