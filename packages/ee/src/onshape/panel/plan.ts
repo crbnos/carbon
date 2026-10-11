@@ -43,7 +43,8 @@ import {
   externalIdForAssembly,
   externalIdForBomLine,
   externalIdForPart,
-  normalizeConfiguration
+  normalizeConfiguration,
+  type ReleasedRevision
 } from "./status";
 
 /**
@@ -168,10 +169,10 @@ export function bomLineItemType(
 
 /**
  * The latest revision among rows sharing a part number — the row a BOM line
- * points at when the plan reuses an item, and the base a release revision is
- * copied from. Active rows win over inactive ones (a revision a change notice
- * has not released yet is not the one in use). Order-independent, so plan and
- * apply agree whatever the query returned.
+ * points at when the plan reuses an item. Active rows win over inactive ones
+ * (a revision a change notice has not released yet is not the one in use).
+ * Order-independent, so plan and apply agree whatever the query returned.
+ * A release uses `pickRevisionBase` and `pickBomChildRow` instead.
  */
 export function pickLatestRow<
   T extends { revision: string | null; active?: boolean | null }
@@ -184,6 +185,54 @@ export function pickLatestRow<
     }
   }
   return latest;
+}
+
+/**
+ * The row a new release revision is copied from: the newest revision below
+ * the released one, whether or not its change notice is released. Onshape
+ * releases revisions in order, so Rev B builds on Rev A even while A waits in
+ * its notice; the newest active row would skip A and copy an older revision.
+ * With no row below the released revision, the latest row.
+ */
+export function pickRevisionBase<
+  T extends { revision: string | null; active?: boolean | null }
+>(rows: T[], revision: string): T | undefined {
+  let base: T | undefined;
+  for (const row of rows) {
+    if (compareRevisions(row.revision, revision) >= 0) continue;
+    if (!base || compareRevisions(row.revision, base.revision) > 0) {
+      base = row;
+    }
+  }
+  return base ?? pickLatestRow(rows);
+}
+
+/**
+ * The row a released BOM line points at for a child that is not in the
+ * release: the revision Onshape's released BOM names, when Carbon has it,
+ * released or still waiting in its change notice. Otherwise, or when the BOM
+ * row names no revision, the latest row; `missingRevision` is then the named
+ * revision Carbon does not have, so the review can say which one the line uses.
+ */
+export function pickBomChildRow<
+  T extends {
+    revision: string | null;
+    active?: boolean | null;
+    type?: string | null;
+  }
+>(
+  rows: T[],
+  revision: string | null | undefined
+): { row: T | undefined; missingRevision: string | null } {
+  const named = revision?.trim() || null;
+  if (named) {
+    const match = pickReuseRow(
+      rows.filter((row) => compareRevisions(row.revision, named) === 0)
+    );
+    if (match) return { row: match, missingRevision: null };
+  }
+  const row = pickLatestRow(rows);
+  return { row, missingRevision: named && row ? named : null };
 }
 
 /**
@@ -1110,7 +1159,12 @@ export type PartPlanAction =
   | "adopt"
   | "update"
   | "unchanged"
-  | "skip-no-part-number";
+  | "skip-no-part-number"
+  /**
+   * A release push made a revision of this part number: the push changes
+   * nothing, because the part's changes now come through a release.
+   */
+  | "released";
 
 export type PartPlanRow = MappedRowPlan & {
   partId: string;
@@ -1166,7 +1220,8 @@ export function buildPartPlan({
   items,
   options,
   mapping,
-  propertiesByPartId
+  propertiesByPartId,
+  released = new Map()
 }: {
   documentId: string;
   elementId: string;
@@ -1176,6 +1231,8 @@ export function buildPartPlan({
   mappings: PlanMappingRow[];
   items: PlanItemRow[];
   options: PlanOptions;
+  /** `releasedRevisionsByPartNumber` over `items`. */
+  released?: ReadonlyMap<string, ReleasedRevision>;
   /** The company's property map; absent, only descriptions are planned. */
   mapping?: PlanMappingContext;
   /** Each part's Onshape properties, read when the map is not empty. */
@@ -1236,6 +1293,26 @@ export function buildPartPlan({
       proposed: null as ProposedItem | null,
       changes: [] as PartPlanRow["changes"]
     };
+
+    const releasedRevision = part.partNumber
+      ? released.get(part.partNumber)
+      : undefined;
+    const releasedItem = releasedRevision
+      ? itemById.get(releasedRevision.itemId)
+      : undefined;
+    if (releasedItem) {
+      rows.push({
+        ...base,
+        action: "released",
+        itemId: releasedItem.id,
+        item: {
+          readableId: releasedItem.readableId,
+          revision: releasedItem.revision,
+          name: releasedItem.name
+        }
+      });
+      continue;
+    }
 
     const mapped = mappingByExternalId.get(
       externalIdForPart(documentId, elementId, partId, configuration)
@@ -1375,6 +1452,12 @@ export type AssemblyPlanItem = MappedRowPlan & {
    * part: the descriptions in "everyPush" mode the push overwrites.
    */
   changes?: OwnedFieldChange[];
+  /**
+   * Reuse only: a release push made a revision of this part number, so a
+   * workspace push writes no fields, link or model for it. Changes to its BOM
+   * still go into a Draft.
+   */
+  released?: { revision: string };
   /** Has children in the BOM: gets a make method and lines of its own. */
   isAssembly: boolean;
   /**
@@ -1420,6 +1503,13 @@ export type AssemblyPlanMethod = {
   takesOver: Array<PlanLine & { onshapeQuantity: number }>;
   /** Lines added by hand for parts Onshape doesn't list: left untouched. */
   keeps: PlanLine[];
+  /**
+   * `active` with no reusable Draft only: Onshape's lines already equal the
+   * method's Onshape lines (part number and quantity, in order) and nothing is
+   * taken over, so the push makes no Draft. The apply checks again, with the
+   * child-method pointers.
+   */
+  unchanged?: true;
 };
 
 export type AssemblyPlanRoot = MappedRowPlan & {
@@ -1436,6 +1526,12 @@ export type AssemblyPlanRoot = MappedRowPlan & {
   current?: ItemFieldSnapshot | null;
   /** Reuse only: the descriptions in "everyPush" mode the push overwrites. */
   changes?: OwnedFieldChange[];
+  /**
+   * Reuse only: a release push made a revision of this part number, so a
+   * workspace push writes no fields, link or model for it. Changes to its BOM
+   * still go into a Draft.
+   */
+  released?: { revision: string };
 };
 
 /**
@@ -1508,7 +1604,8 @@ export function buildAssemblyPlan({
   configuration = null,
   reusableDraftByItemId = new Map(),
   mapping,
-  rootProperties = null
+  rootProperties = null,
+  released = new Map()
 }: {
   documentId: string;
   wv: "w" | "v";
@@ -1554,6 +1651,8 @@ export function buildAssemblyPlan({
   mapping?: PlanMappingContext;
   /** The assembly's own properties (element metadata). BOM rows carry theirs. */
   rootProperties?: OnshapePropertyValue[] | null;
+  /** `releasedRevisionsByPartNumber` over `items`. */
+  released?: ReadonlyMap<string, ReleasedRevision>;
 }): AssemblyPlan {
   // One row per part number: the latest revision, whatever order the rows
   // arrived in, so the plan pins the same item the apply would pick.
@@ -1655,18 +1754,28 @@ export function buildAssemblyPlan({
     description: root.description,
     revision: root.revision
   };
-  // The pushed assembly is always linked, so it takes "everyPush" values.
+  // The pushed assembly is always linked, so it takes "everyPush" values,
+  // unless a release push made a revision of it: then only its BOM is written.
+  const rootReleased = released.get(root.partNumber);
   const planRoot: AssemblyPlanRoot = rootItem
-    ? {
-        ...rootIdentity,
-        ...existingPlan(rootItem, root, rootResolved),
-        ...nonEmpty("unmappedProperties", rootResolved?.unmapped ?? []),
-        action: "reuse",
-        itemId: rootItem.id,
-        ...(rootConflict ? { conflict: true } : {}),
-        current: currentItemFields(rootItem),
-        proposed: null
-      }
+    ? rootReleased
+      ? {
+          ...rootIdentity,
+          action: "reuse",
+          itemId: rootItem.id,
+          released: { revision: rootReleased.revision },
+          proposed: null
+        }
+      : {
+          ...rootIdentity,
+          ...existingPlan(rootItem, root, rootResolved),
+          ...nonEmpty("unmappedProperties", rootResolved?.unmapped ?? []),
+          action: "reuse",
+          itemId: rootItem.id,
+          ...(rootConflict ? { conflict: true } : {}),
+          current: currentItemFields(rootItem),
+          proposed: null
+        }
     : {
         ...rootIdentity,
         ...planCreatedItem(rootIdentity, rootResolved, options),
@@ -1728,6 +1837,17 @@ export function buildAssemblyPlan({
       isAssembly: node.children.length > 0,
       ...(node.shownAsUnit ? { shownAsUnit: true as const } : {})
     };
+    const childReleased = existing ? released.get(node.partNumber) : undefined;
+    if (existing && childReleased) {
+      planItems.push({
+        ...identity,
+        action: "reuse",
+        itemId: existing.id,
+        released: { revision: childReleased.revision },
+        proposed: null
+      });
+      continue;
+    }
     if (existing) {
       planItems.push({
         ...identity,
@@ -1815,6 +1935,17 @@ export function buildAssemblyPlan({
       replaces,
       manual
     );
+    // A released method whose lines already match gets no Draft.
+    const unchanged =
+      status === "active" &&
+      !reusedDraft &&
+      takesOver.length === 0 &&
+      writes.length === replaces.length &&
+      writes.every(
+        (write, index) =>
+          replaces[index]?.readableId === write.partNumber &&
+          replaces[index]?.quantity === write.quantity
+      );
     methods.push({
       parentPartNumber,
       parentItemId,
@@ -1823,7 +1954,8 @@ export function buildAssemblyPlan({
       writes,
       replaces,
       takesOver,
-      keeps
+      keeps,
+      ...(unchanged ? { unchanged: true as const } : {})
     });
     for (const child of children) {
       if (child.partNumber && child.children.length > 0) {
@@ -1938,6 +2070,17 @@ export type ReleasePlanItem = MappedRowPlan & {
    * method. A reused item with a released (Active) method is refused.
    */
   methodStatus: "draft" | "active" | "new" | "missing" | null;
+  /**
+   * Drawings only: the model the drawing attaches to — the model item with
+   * the drawing's part number in this release, else the model the release
+   * package lists under the drawing. `itemId` is set when that model is not
+   * in this release and Carbon already has it at the package's revision.
+   */
+  drawingOf?: {
+    partNumber: string;
+    revision: string | null;
+    itemId?: string | null;
+  } | null;
 };
 
 /** A BOM child of a released assembly that is not itself in the release. */
@@ -1947,6 +2090,13 @@ export type ReleasePlanChild = MappedRowPlan & {
   revision: string | null;
   action: "create" | "reuse";
   itemId: string | null;
+  /** Reuse only: the Carbon revision the line points at. */
+  itemRevision?: string | null;
+  /**
+   * Reuse only: the revision Onshape's BOM names when Carbon does not have
+   * it; the line then points at `itemRevision` instead.
+   */
+  missingRevision?: string;
   proposed: ProposedItem | null;
   /** Reuse only: the existing item's current manufacturing fields. */
   current?: ItemFieldSnapshot | null;
@@ -1962,6 +2112,11 @@ export type ReleasePlan = {
   children: ReleasePlanChild[];
   /** Null when nothing new is created (re-push): no change notice then. */
   changeNotice: { name: string; description: string | null } | null;
+  /**
+   * The open change notice an earlier push of this release made (from another
+   * document): the push adds to it instead of making a new one.
+   */
+  existingChangeNotice?: string | null;
   makeDefault: boolean;
   alreadyPushed: boolean;
   options: PlanOptions;
@@ -1975,7 +2130,8 @@ export function buildReleasePlan({
   methodByItemId,
   options,
   mapping,
-  propertiesByPartNumber
+  propertiesByPartNumber,
+  drawingModelByElementId = new Map()
 }: {
   documentId: string;
   release: PanelRelease;
@@ -1995,6 +2151,11 @@ export function buildReleasePlan({
    * number. BOM children carry theirs on the BOM row.
    */
   propertiesByPartNumber?: ReadonlyMap<string, OnshapePropertyValue[]>;
+  /** `drawingModels` over the release package, per drawing element. */
+  drawingModelByElementId?: ReadonlyMap<
+    string,
+    { partNumber: string; revision: string | null }
+  >;
 }): ReleasePlan {
   const descriptionModes =
     mapping?.descriptionModes ?? DEFAULT_DESCRIPTION_MODES;
@@ -2060,16 +2221,30 @@ export function buildReleasePlan({
   const planItems: ReleasePlanItem[] = [];
   for (const item of release.items) {
     if (!isModelReleaseItem(item)) {
+      // A drawing attaches to the model with its part number in this release,
+      // else to the model the package lists under it: in this release, or
+      // already in Carbon at that revision.
+      const model = modelPartNumbers.has(item.partNumber)
+        ? { partNumber: item.partNumber, revision: item.revision }
+        : (drawingModelByElementId.get(item.elementId) ?? null);
+      const inRelease = !!model && modelPartNumbers.has(model.partNumber);
+      const carbonRow =
+        model && !inRelease && model.revision
+          ? letterRowFor(model.partNumber, model.revision)
+          : undefined;
+      const attaches = inRelease || !!carbonRow;
       planItems.push({
         ...releaseIdentity(item),
-        action: modelPartNumbers.has(item.partNumber)
-          ? "drawing"
-          : "drawing-unmatched",
+        action: attaches ? "drawing" : "drawing-unmatched",
         baseItemId: null,
         baseRevision: null,
         existingItemId: null,
         proposed: null,
-        methodStatus: null
+        methodStatus: null,
+        drawingOf:
+          attaches && model
+            ? { ...model, ...(carbonRow ? { itemId: carbonRow.id } : {}) }
+            : null
       });
       continue;
     }
@@ -2105,10 +2280,11 @@ export function buildReleasePlan({
       continue;
     }
 
-    const bases = byReadable.get(item.partNumber) ?? [];
-    const latestBase = pickLatestRow(bases);
-    if (latestBase) {
-      const base = latestBase;
+    const base = pickRevisionBase(
+      byReadable.get(item.partNumber) ?? [],
+      item.revision
+    );
+    if (base) {
       planItems.push({
         ...releaseIdentity(item),
         ...existingPlan(base, onshapeText, item.partNumber),
@@ -2148,7 +2324,8 @@ export function buildReleasePlan({
 
   // Level-1 BOM children that are not release items: reused when Carbon has
   // any revision of them (bought hardware), created otherwise. A reused child
-  // is not linked by the release, so it takes no mapped value.
+  // is the revision the BOM names when Carbon has it. It is not linked by the
+  // release, so it takes no mapped value.
   const children: ReleasePlanChild[] = [];
   const childSeen = new Set<string>();
   for (const lines of Object.values(bomLinesByElementId)) {
@@ -2156,7 +2333,10 @@ export function buildReleasePlan({
       if (!node.partNumber || modelPartNumbers.has(node.partNumber)) continue;
       if (childSeen.has(node.partNumber)) continue;
       childSeen.add(node.partNumber);
-      const existing = pickLatestRow(byReadable.get(node.partNumber) ?? []);
+      const { row: existing, missingRevision } = pickBomChildRow(
+        byReadable.get(node.partNumber) ?? [],
+        node.revision
+      );
       const identity = {
         partNumber: node.partNumber,
         name: node.name,
@@ -2167,6 +2347,8 @@ export function buildReleasePlan({
           ...identity,
           action: "reuse",
           itemId: existing.id,
+          itemRevision: existing.revision,
+          ...(missingRevision ? { missingRevision } : {}),
           current: currentItemFields(existing),
           proposed: null
         });

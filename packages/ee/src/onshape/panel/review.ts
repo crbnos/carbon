@@ -413,12 +413,15 @@ export function applyCount(review: ReviewState): number {
         ).length
       );
     case "release":
+      // An attached drawing is uploaded to its model, so a release of
+      // drawings alone still has something to push.
       return (
         review.plan.items.filter(
           (item) =>
             item.action === "reuse" ||
             item.action === "revision" ||
-            item.action === "create"
+            item.action === "create" ||
+            item.action === "drawing"
         ).length + review.plan.children.length
       );
   }
@@ -514,6 +517,18 @@ export function describeMethod(
     `${added} added, ${method.replaces.length} replaced, ` +
     (takenOver > 0 ? `${takenOver} manual taken over, ` : "") +
     `${method.keeps.length + method.takesOver.length - takenOver} manual kept`;
+  // A released method whose lines already match gets no Draft, unless the
+  // reviewer excluded one of its parts (that line would then go).
+  if (
+    method.status === "active" &&
+    method.unchanged &&
+    !method.writes.some((line) => excluded.has(line.partNumber))
+  ) {
+    return {
+      text: `${parent} · released in Carbon — no change`,
+      tone: "muted"
+    };
+  }
   // A released method is not skipped: the push writes a Draft version of it
   // (see `ensureDraftMakeMethod`) — the one an earlier push made, or a new one.
   if (method.status === "active") {
@@ -528,6 +543,64 @@ export function describeMethod(
   }
   const label = method.status === "new" ? "new method" : "Draft";
   return { text: `${parent} · ${label}: ${counts}`, tone: "normal" };
+}
+
+/** The counts of a release push the result line is built from. */
+export type ReleaseResultCounts = {
+  revisionsCreated: number;
+  itemsCreated: number;
+  childrenCreated?: number;
+  linesWritten: number;
+  methodsTouched: number;
+  changeNotice: string | null;
+  /** Drawings whose upload to their model item was queued. */
+  drawingsQueued?: number;
+  /** The release held drawings only, so there is no model to report on. */
+  drawingsOnly?: boolean;
+};
+
+const countOf = (count: number, noun: string) =>
+  `${count} ${noun}${count === 1 ? "" : "s"}`;
+
+/**
+ * The one-line result of a release push. What the change notice holds comes
+ * first, then BOM parts the push created (they are not on the notice), then
+ * the BOM lines. Zero counts are left out, and BOMs are mentioned only when
+ * the release wrote one.
+ */
+export function releaseResultText(s: ReleaseResultCounts): string {
+  const staged = [
+    s.revisionsCreated > 0 ? countOf(s.revisionsCreated, "new revision") : null,
+    s.itemsCreated > 0 ? countOf(s.itemsCreated, "new item") : null
+  ]
+    .filter(Boolean)
+    .join(" and ");
+  const parts: string[] = [];
+  if (staged) {
+    parts.push(
+      s.changeNotice
+        ? `${staged} on change notice ${s.changeNotice}, inactive until it is released in Carbon`
+        : staged
+    );
+  } else if (!s.drawingsOnly) {
+    parts.push("Already in Carbon");
+  }
+  const children = s.childrenCreated ?? 0;
+  if (children > 0) {
+    parts.push(`${countOf(children, "BOM part")} added to Carbon`);
+  }
+  if (s.methodsTouched > 0) {
+    parts.push(
+      s.linesWritten > 0
+        ? `${countOf(s.linesWritten, "BOM line")} written`
+        : "BOM unchanged"
+    );
+  }
+  const drawings = s.drawingsQueued ?? 0;
+  if (drawings > 0) {
+    parts.push(`${countOf(drawings, "drawing")} sent to Carbon`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : "Nothing to push";
 }
 
 export type PartApplyResult = {

@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { OnshapeElementPart } from "../lib/client";
+import { compareRevisions } from "./revision";
 
 /**
  * What the panel shows per part of the current element: whether Carbon already
@@ -13,6 +14,8 @@ import type { OnshapeElementPart } from "../lib/client";
  * - `matched`: no mapping, but an item's readableId equals the Onshape part
  *   number. The candidate join; a push adopts it and writes the mapping.
  * - `missing`: Carbon has nothing for it.
+ * - `released`: a release push made a revision of this part number. A
+ *   workspace push leaves it alone; `item` is the newest released revision.
  */
 export type PanelPartStatus = {
   partId: string;
@@ -20,7 +23,7 @@ export type PanelPartStatus = {
   partNumber: string | null;
   revision: string | null;
   microversionId: string | null;
-  state: "linked" | "matched" | "missing";
+  state: "linked" | "matched" | "missing" | "released";
   item: {
     id: string;
     readableId: string;
@@ -100,13 +103,40 @@ export type PanelItemRow = {
   name: string;
 };
 
+/** The newest revision a release push made, per part number. */
+export type ReleasedRevision = { itemId: string; revision: string };
+
+/**
+ * Per part number, the newest revision among the items a release push made
+ * (`releasedItemIds`: items carrying a `release:` link). Revisions compare the
+ * way Carbon counts them, so "10" is newer than "9".
+ */
+export function releasedRevisionsByPartNumber(
+  items: Array<{ id: string; readableId: string; revision: string | null }>,
+  releasedItemIds: ReadonlySet<string>
+): Map<string, ReleasedRevision> {
+  const byPartNumber = new Map<string, ReleasedRevision>();
+  for (const item of items) {
+    if (!releasedItemIds.has(item.id)) continue;
+    const current = byPartNumber.get(item.readableId);
+    if (!current || compareRevisions(item.revision, current.revision) > 0) {
+      byPartNumber.set(item.readableId, {
+        itemId: item.id,
+        revision: item.revision ?? "0"
+      });
+    }
+  }
+  return byPartNumber;
+}
+
 export function buildPartStatuses({
   documentId,
   elementId,
   configuration = null,
   parts,
   mappings,
-  items
+  items,
+  released = new Map()
 }: {
   documentId: string;
   elementId: string;
@@ -115,6 +145,8 @@ export function buildPartStatuses({
   parts: OnshapeElementPart[];
   mappings: PanelMappingRow[];
   items: PanelItemRow[];
+  /** `releasedRevisionsByPartNumber` over the parts' items. */
+  released?: ReadonlyMap<string, ReleasedRevision>;
 }): PanelPartStatus[] {
   const mappingByExternalId = new Map(
     mappings.filter((m) => m.externalId).map((m) => [m.externalId as string, m])
@@ -125,6 +157,24 @@ export function buildPartStatuses({
   return parts
     .filter((part) => !part.isHidden)
     .map((part) => {
+      const releasedRevision = part.partNumber
+        ? released.get(part.partNumber)
+        : undefined;
+      const releasedItem = releasedRevision
+        ? itemById.get(releasedRevision.itemId)
+        : undefined;
+      if (releasedItem) {
+        return {
+          partId: part.partId,
+          name: part.name,
+          partNumber: part.partNumber ?? null,
+          revision: part.revision ?? null,
+          microversionId: part.microversionId ?? null,
+          state: "released" as const,
+          item: releasedItem,
+          lastSyncedAt: null
+        };
+      }
       const mapping = mappingByExternalId.get(
         externalIdForPart(documentId, elementId, part.partId, configuration)
       );
@@ -174,8 +224,10 @@ export type PanelAssemblyLineStatus = {
   partNumber: string | null;
   name: string | null;
   quantity: number;
-  state: "linked" | "matched" | "missing";
+  state: "linked" | "matched" | "missing" | "released";
   itemId: string | null;
+  /** `released` only: the newest released revision. */
+  releasedRevision?: string;
   lastSyncedAt: string | null;
 };
 
@@ -222,11 +274,14 @@ export function externalIdForBomLine(
 export function buildAssemblyLineStatuses({
   lines,
   mappings,
-  items
+  items,
+  released = new Map()
 }: {
   lines: PanelAssemblyLineInput[];
   mappings: PanelMappingRow[];
   items: PanelItemRow[];
+  /** `releasedRevisionsByPartNumber` over the lines' items. */
+  released?: ReadonlyMap<string, ReleasedRevision>;
 }): PanelAssemblyLineStatus[] {
   const mappingByExternalId = new Map(
     mappings.filter((m) => m.externalId).map((m) => [m.externalId as string, m])
@@ -235,6 +290,18 @@ export function buildAssemblyLineStatuses({
   const itemByReadableId = new Map(items.map((i) => [i.readableId, i]));
 
   return lines.map(({ itemSource, ...line }) => {
+    const releasedRevision = line.partNumber
+      ? released.get(line.partNumber)
+      : undefined;
+    if (releasedRevision && itemById.has(releasedRevision.itemId)) {
+      return {
+        ...line,
+        state: "released" as const,
+        itemId: releasedRevision.itemId,
+        releasedRevision: releasedRevision.revision,
+        lastSyncedAt: null
+      };
+    }
     const externalId = externalIdForBomLine(itemSource);
     const mapping = externalId
       ? mappingByExternalId.get(externalId)

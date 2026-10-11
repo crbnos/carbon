@@ -357,10 +357,16 @@ onshapeName, valueType, target, mode, translations? }`, where `target` is
   `releaseManagementAvailable: false` and the panel says releases need a
   company account rather than "No releases yet".
 - Per released model item: ensure an item AT the released letter —
-  `createRevision` from the base or a fresh item. BOM children that are not
-  release items are resolved with one bulk lookup (bought hardware is
-  reused). Release lines are inserted in one batch per method. A new revision
-  copies its base, then takes the "everyPush" values.
+  `createRevision` from the base or a fresh item. The base is the newest
+  revision below the released one, whether or not its change notice is
+  released (`pickRevisionBase`): Rev B builds on a Rev A still waiting in its
+  notice. `pickLatestRow` (active rows win) is for workspace pushes only.
+  BOM children that are not release items are resolved with one bulk lookup
+  (bought hardware is reused) and point at the revision the released BOM
+  names when Carbon has it, else the latest row (`pickBomChildRow`); the
+  review says when the named revision is missing. Release lines are inserted
+  in one batch per method. A new revision copies its base, then takes the
+  "everyPush" values, and its Sourcing reaches the lines written after it.
 - What the push creates is staged under one **Draft** change notice, inserted
   before the first item write (if that fails, nothing is written).
   `stageChangeNoticeItem` (`onshape-push.server.ts`) does what

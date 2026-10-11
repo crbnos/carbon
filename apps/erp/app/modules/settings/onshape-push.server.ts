@@ -16,6 +16,7 @@ import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  canEditChangeNoticeEngineering,
   cascadeItemTrackingType,
   updateItemMethodAndSourcing
 } from "~/modules/items";
@@ -246,6 +247,89 @@ export async function claimManualMethodLine(
  * Draft, reveals the item and, for a Revision, writes the old-to-new
  * supersession. The stamps and the row land together or not at all.
  */
+/**
+ * The change notice an earlier push of the same Onshape release made, while it
+ * can still take items. One release can span two documents, and each document
+ * is pushed on its own: the second push adds to the first push's notice instead
+ * of making a second notice with the same name. Null when there is none, or
+ * when it is past Engineering Complete.
+ */
+export async function findOpenReleaseNotice(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  releaseId: string
+): Promise<{
+  id: string;
+  changeNoticeId: string;
+  affectedCount: number;
+} | null> {
+  const links = await client
+    .from("externalIntegrationMapping")
+    .select("entityId")
+    .eq("companyId", companyId)
+    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("entityType", "item")
+    .like("externalId", `release:${releaseId}:%`);
+  if (links.error) {
+    logger.warn("Could not read a release's earlier links", {
+      companyId,
+      releaseId,
+      error: links.error
+    });
+    return null;
+  }
+  if (!links.data?.length) return null;
+  const items = await client
+    .from("item")
+    .select("changeOrderId")
+    .eq("companyId", companyId)
+    .in(
+      "id",
+      links.data.map((link) => link.entityId)
+    )
+    .not("changeOrderId", "is", null);
+  const noticeIds = [
+    ...new Set(
+      (items.data ?? [])
+        .map((item) => item.changeOrderId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  if (items.error) {
+    logger.warn("Could not read a release's earlier items", {
+      companyId,
+      releaseId,
+      error: items.error
+    });
+    return null;
+  }
+  if (noticeIds.length === 0) return null;
+  const notices = await client
+    .from("changeOrder")
+    .select("id, changeOrderId, status, changeOrderAffectedItem(id)")
+    .eq("companyId", companyId)
+    .in("id", noticeIds)
+    .order("createdAt", { ascending: true });
+  if (notices.error) {
+    logger.warn("Could not read a release's earlier change notices", {
+      companyId,
+      releaseId,
+      error: notices.error
+    });
+    return null;
+  }
+  const open = (notices.data ?? []).find((notice) =>
+    canEditChangeNoticeEngineering(notice.status)
+  );
+  return open
+    ? {
+        id: open.id,
+        changeNoticeId: open.changeOrderId,
+        affectedCount: open.changeOrderAffectedItem?.length ?? 0
+      }
+    : null;
+}
+
 export async function stageChangeNoticeItem(
   db: Kysely<KyselyDatabase>,
   args: {

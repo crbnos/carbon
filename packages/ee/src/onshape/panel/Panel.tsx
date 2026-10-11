@@ -112,6 +112,7 @@ import {
   mappedValueText,
   normalizeWarnings,
   patchPartStatuses,
+  releaseResultText,
   replenishmentMismatches
 } from "./review";
 import {
@@ -144,8 +145,10 @@ export type PanelAssemblyLine = {
   partNumber: string | null;
   name: string | null;
   quantity: number;
-  state: "linked" | "matched" | "missing";
+  state: "linked" | "matched" | "missing" | "released";
   itemId: string | null;
+  /** `released` only: the newest revision a release push made. */
+  releasedRevision?: string;
   lastSyncedAt: string | null;
 };
 
@@ -159,8 +162,9 @@ export type PanelAssemblyStatus = {
      * response still type-checks.
      */
     identityUnavailable?: boolean;
-    state: "linked" | "matched" | "missing";
+    state: "linked" | "matched" | "missing" | "released";
     itemId: string | null;
+    releasedRevision?: string;
     lastSyncedAt: string | null;
   };
   lines: PanelAssemblyLine[];
@@ -410,6 +414,9 @@ type ReleasePushSummary = {
   releaseName: string | null;
   revisionsCreated: number;
   itemsCreated: number;
+  childrenCreated?: number;
+  drawingsQueued?: number;
+  drawingsOnly?: boolean;
   reused: number;
   linesWritten: number;
   methodsTouched: number;
@@ -535,14 +542,7 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
 function releaseOutcomeText(s: ReleasePushSummary): PushOutcome {
   // Skipped items are not appended to this line: it becomes the title of a
   // success alert. They render as their own warning.
-  const text = s.alreadyPushed
-    ? "Revisions already in Carbon — BOMs refreshed"
-    : `${s.revisionsCreated} revisions + ${s.itemsCreated} new items, ` +
-      `${s.linesWritten} BOM lines` +
-      (s.changeNotice
-        ? ` · change notice ${s.changeNotice} (release it in Carbon to activate them)`
-        : "");
-  return { text, skipped: s.skipped, errors: s.errors };
+  return { text: releaseResultText(s), skipped: s.skipped, errors: s.errors };
 }
 
 function failedOutcome(message: string): PushOutcome {
@@ -2014,7 +2014,11 @@ export function OnshapePanel({
                 pushingReleaseId={pushingReleaseId}
                 outcome={releaseOutcome}
                 onPush={(releaseId) => planRelease(session.token, releaseId)}
-                onRefresh={() => loadReleases(session.token)}
+                onRefresh={() => {
+                  // A refresh shows the releases as they are now.
+                  setReleaseOutcome({});
+                  void loadReleases(session.token);
+                }}
               />
             )
           ) : null}
@@ -2083,7 +2087,8 @@ function AssemblySection({
               isDisabled={busy || locked || refreshing}
               isLoading={busy}
             >
-              {assembly.root.state === "linked"
+              {assembly.root.state === "linked" ||
+              assembly.root.state === "released"
                 ? "Re-push assembly"
                 : "Push assembly"}
             </Button>
@@ -2285,6 +2290,9 @@ function BomLineText({
       <p className="text-xs text-muted-foreground truncate">
         {line.partNumber ?? "No part number"}
         {line.state === "matched" ? " · number already used in Carbon" : ""}
+        {line.state === "released" && line.releasedRevision
+          ? ` · released as Rev ${line.releasedRevision}`
+          : ""}
         {note ? ` · ${note}` : ""}
       </p>
     </div>
@@ -2405,6 +2413,9 @@ function PartsSection({
                   {part.state === "matched" && part.item
                     ? " · number already used in Carbon"
                     : ""}
+                  {part.state === "released" && part.item
+                    ? ` · released in Carbon as Rev ${part.item.revision}`
+                    : ""}
                 </p>
               </div>
               <HStack spacing={2} className="shrink-0">
@@ -2432,13 +2443,16 @@ function PartsSection({
                       !!pushing ||
                       locked ||
                       !part.partNumber ||
+                      part.state === "released" ||
                       (parts.status === "ready" && !!parts.refreshing)
                     }
                     isLoading={!!pushing && pushing.has(part.partId)}
                     title={
-                      part.partNumber
-                        ? undefined
-                        : "Set a part number in Onshape first"
+                      !part.partNumber
+                        ? "Set a part number in Onshape first"
+                        : part.state === "released"
+                          ? "Released in Carbon: changes come through a release"
+                          : undefined
                     }
                   >
                     {part.state === "linked" ? "Re-push" : "Push"}
@@ -4272,6 +4286,12 @@ function CarbonOnlyNote() {
 
 function PartPlanBadge({ row }: { row: PartPlanRow }) {
   switch (row.action) {
+    case "released":
+      return (
+        <Status color="purple" disableTooltip>
+          Released
+        </Status>
+      );
     case "create":
       return (
         <Status color="blue" disableTooltip>
@@ -4338,6 +4358,7 @@ function PartReviewSection({
               [count("adopt"), "linked"],
               [count("update"), "updated"],
               [count("unchanged"), "up to date"],
+              [count("released"), "released"],
               [count("skip-no-part-number"), "skipped"]
             ]}
           />
@@ -4408,6 +4429,9 @@ function PartReviewSection({
                   <p className="mt-1 text-xs text-muted-foreground">
                     Only the model is exported again.
                   </p>
+                ) : null}
+                {row.action === "released" ? (
+                  <ReleasedNote revision={row.item?.revision} />
                 ) : null}
                 {row.action !== "skip-no-part-number" ? (
                   <RowMappedFields
@@ -4664,8 +4688,15 @@ function AssemblyReviewSection({
               <div className="shrink-0">
                 <ItemActionBadge action="reuse" conflict />
               </div>
+            ) : plan.root.released ? (
+              <div className="shrink-0">
+                <PartStateBadge state="released" />
+              </div>
             ) : null}
           </div>
+          {plan.root.released ? (
+            <ReleasedNote revision={plan.root.released.revision} />
+          ) : null}
           {(() => {
             const baseline = fieldBaseline(plan.root);
             return baseline ? (
@@ -4705,8 +4736,15 @@ function AssemblyReviewSection({
                 <div className="shrink-0">
                   <ItemActionBadge action="reuse" conflict />
                 </div>
+              ) : item.released ? (
+                <div className="shrink-0">
+                  <PartStateBadge state="released" />
+                </div>
               ) : null}
             </div>
+            {item.released ? (
+              <ReleasedNote revision={item.released.revision} />
+            ) : null}
             <TextChanges changes={item.changes} />
             {(() => {
               const baseline = fieldBaseline(item);
@@ -4744,7 +4782,9 @@ function releaseItemLabel(item: ReleasePlanItem): string {
     case "reuse":
       return `already Rev ${item.revision}`;
     case "drawing":
-      return `drawing → ${item.partNumber}`;
+      return `drawing → ${item.drawingOf?.partNumber ?? item.partNumber}${
+        item.drawingOf?.revision ? ` Rev ${item.drawingOf.revision}` : ""
+      }`;
     case "drawing-unmatched":
       return "drawing has no model item";
   }
@@ -4805,7 +4845,9 @@ function ReleaseReviewSection({
    */
   const outcomes = [
     review.changeNotice
-      ? `Records change notice "${review.changeNotice.name}"`
+      ? review.plan.existingChangeNotice
+        ? `Adds to change notice ${review.plan.existingChangeNotice}, which an earlier push of this release made`
+        : `Records change notice "${review.changeNotice.name}"`
       : null,
     review.changeNotice
       ? "New revisions stay inactive until it is released in Carbon"
@@ -4833,7 +4875,8 @@ function ReleaseReviewSection({
             count("revision") === 1 ? "new revision" : "new revisions"
           ],
           [count("create") + childrenCreated, "created"],
-          [count("reuse"), "already in Carbon"]
+          [count("reuse"), "already in Carbon"],
+          [count("drawing"), count("drawing") === 1 ? "drawing" : "drawings"]
         ]}
       />
       {outcomes.length > 0 ? (
@@ -4924,6 +4967,13 @@ function ReleaseReviewSection({
             item.action === "revision" ? (
               <RowMappedFields isCreate={item.action === "create"} row={item} />
             ) : null}
+            {item.action === "revision" &&
+            (item.customFields?.length ?? 0) > 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Custom fields belong to the part, not to one revision, so this
+                change shows on every revision now.
+              </p>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -4953,6 +5003,13 @@ function ReleaseReviewSection({
                     action={child.action === "create" ? "create" : "reuse"}
                   />
                 </div>
+                {child.missingRevision ? (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                    Rev {child.missingRevision} isn't in Carbon, so the line
+                    uses Rev {child.itemRevision ?? "0"}. Push the release that
+                    has Rev {child.missingRevision} first.
+                  </p>
+                ) : null}
                 {(() => {
                   const baseline = fieldBaseline(child);
                   return baseline ? (
@@ -5019,7 +5076,26 @@ function ReleaseStateBadge({ state }: { state: PanelRelease["state"] }) {
  * of the same part, and a push would write into that item. Unlinked: Carbon
  * has nothing for it, and a push creates it.
  */
+/** A row a workspace push leaves alone because a release push made a revision of it. */
+function ReleasedNote({ revision }: { revision: string | null | undefined }) {
+  return (
+    <p className="mt-1 text-xs text-muted-foreground">
+      Released in Carbon as Rev {revision ?? "?"}. Its fields change only
+      through a release.
+    </p>
+  );
+}
+
 function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
+  if (state === "released")
+    return (
+      <Status
+        color="purple"
+        tooltip="Released in Carbon. A workspace push leaves it as it is; its changes come through a release."
+      >
+        Released
+      </Status>
+    );
   if (state === "linked")
     return (
       <Status color="green" disableTooltip>

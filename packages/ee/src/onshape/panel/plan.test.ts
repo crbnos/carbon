@@ -19,8 +19,10 @@ import {
   mergeItemEdits,
   pairManualLines,
   pickAdoptTarget,
+  pickBomChildRow,
   pickLatestRow,
   pickReuseRow,
+  pickRevisionBase,
   planCreatedItem,
   planExistingItem,
   proposeItem,
@@ -1007,6 +1009,70 @@ describe("buildReleasePlan", () => {
     expect(plan.alreadyPushed).toBe(false);
   });
 
+  it("ties a drawing numbered apart from its model through the release package", () => {
+    const drawingOnly: PanelRelease = {
+      ...release,
+      items: [
+        {
+          ...release.items[4]!,
+          partNumber: "WB-100-DWG",
+          revision: "C",
+          elementId: "e-drw"
+        },
+        {
+          ...release.items[4]!,
+          partNumber: "PAD-005-DWG",
+          revision: "C",
+          elementId: "e-drw3"
+        }
+      ]
+    };
+    const plan = buildReleasePlan({
+      documentId: "d",
+      release: drawingOnly,
+      items: [
+        { id: "wb-b", readableId: "WB-100", revision: "B", name: "Workbench" },
+        { id: "wb-c", readableId: "WB-100", revision: "C", name: "Workbench" }
+      ],
+      bomLinesByElementId: {},
+      methodByItemId: new Map(),
+      options,
+      drawingModelByElementId: new Map([
+        ["e-drw", { partNumber: "WB-100", revision: "C" }],
+        // Carbon has no PAD-005 Rev C: nothing to attach to.
+        ["e-drw3", { partNumber: "PAD-005", revision: "C" }]
+      ])
+    });
+    expect(
+      plan.items.map((i) => [i.partNumber, i.action, i.drawingOf])
+    ).toEqual([
+      [
+        "WB-100-DWG",
+        "drawing",
+        { partNumber: "WB-100", revision: "C", itemId: "wb-c" }
+      ],
+      ["PAD-005-DWG", "drawing-unmatched", null]
+    ]);
+    expect(plan.changeNotice).toBeNull();
+  });
+
+  it("prefers the model with the drawing's own number in the release", () => {
+    const plan = buildReleasePlan({
+      documentId: "d",
+      release,
+      items: [],
+      bomLinesByElementId: {},
+      methodByItemId: new Map(),
+      options,
+      drawingModelByElementId: new Map([
+        ["e-drw", { partNumber: "OTHER-1", revision: "A" }]
+      ])
+    });
+    const drawing = plan.items.find((i) => i.elementId === "e-drw");
+    expect(drawing?.action).toBe("drawing");
+    expect(drawing?.drawingOf).toEqual({ partNumber: "WB-100", revision: "A" });
+  });
+
   it("proposes no change notice when everything is already at its letter", () => {
     const plan = buildReleasePlan({
       documentId: "d",
@@ -1049,6 +1115,95 @@ describe("buildReleasePlan", () => {
     expect(plan.alreadyPushed).toBe(false);
     // The apply records only created release items on the notice.
     expect(plan.changeNotice).toBeNull();
+  });
+
+  it("copies a new revision from the newest one, even while it waits in its notice", () => {
+    const plan = buildReleasePlan({
+      documentId: "d",
+      release: {
+        ...release,
+        items: [{ ...release.items[1]!, revision: "B" }]
+      },
+      items: [
+        {
+          id: "pad-0",
+          readableId: "PAD-005",
+          revision: "0",
+          active: true,
+          name: "Foot pad"
+        },
+        {
+          id: "pad-a",
+          readableId: "PAD-005",
+          revision: "A",
+          active: false,
+          name: "Foot pad"
+        }
+      ],
+      bomLinesByElementId: {},
+      methodByItemId: new Map(),
+      options
+    });
+    expect(plan.items[0]).toMatchObject({
+      action: "revision",
+      baseItemId: "pad-a",
+      baseRevision: "A"
+    });
+  });
+
+  it("points a BOM child at the revision the BOM names, and says when Carbon lacks it", () => {
+    const plan = buildReleasePlan({
+      documentId: "d",
+      release: { ...release, items: release.items.slice(0, 1) },
+      items: [
+        { id: "wb-0", readableId: "WB-100", revision: "0", name: "Workbench" },
+        {
+          id: "leg-0",
+          readableId: "ASM-008",
+          revision: "0",
+          active: true,
+          name: "Leg assembly"
+        },
+        {
+          id: "leg-a",
+          readableId: "ASM-008",
+          revision: "A",
+          active: false,
+          name: "Leg assembly"
+        },
+        {
+          id: "top-0",
+          readableId: "ASM-007",
+          revision: "0",
+          active: true,
+          name: "Top assembly"
+        }
+      ],
+      bomLinesByElementId: {
+        "e-wb": [
+          node({ partNumber: "ASM-008", name: "Leg assembly", revision: "A" }),
+          node({
+            index: "2",
+            partNumber: "ASM-007",
+            name: "Top assembly",
+            revision: "B"
+          })
+        ]
+      },
+      methodByItemId: new Map(),
+      options
+    });
+    expect(
+      plan.children.map((child) => [
+        child.partNumber,
+        child.itemId,
+        child.itemRevision,
+        child.missingRevision
+      ])
+    ).toEqual([
+      ["ASM-008", "leg-a", "A", undefined],
+      ["ASM-007", "top-0", "0", "B"]
+    ]);
   });
 
   it("carries each released part's partId and configuration to the export", () => {
@@ -1110,6 +1265,161 @@ describe("assemblyTextChanges", () => {
         { name: "Pad", description: "Rubber pad" }
       )
     ).toEqual([{ field: "description", from: null, to: "Rubber pad" }]);
+  });
+});
+
+describe("released parts in workspace pushes", () => {
+  const released = new Map([["TOP-001", { itemId: "top-c", revision: "C" }]]);
+
+  it("leaves a released part alone in a part push, even when it is linked", () => {
+    const rows = buildPartPlan({
+      documentId: "d",
+      elementId: "e",
+      parts: [
+        { partId: "p1", name: "Top", partNumber: "TOP-001", revision: "C" }
+      ],
+      requestedPartIds: ["p1"],
+      mappings: [
+        {
+          entityId: "top-0",
+          externalId: "d:e:p1",
+          lastSyncedAt: null,
+          metadata: { microversionId: "m1" }
+        }
+      ],
+      items: [
+        { id: "top-0", readableId: "TOP-001", revision: "0", name: "Top" },
+        { id: "top-c", readableId: "TOP-001", revision: "C", name: "Top" }
+      ],
+      options,
+      released
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      action: "released",
+      itemId: "top-c",
+      item: { revision: "C" }
+    });
+    expect(rows[0]?.current).toBeUndefined();
+  });
+
+  it("writes no fields to a released root or child in an assembly push", () => {
+    const plan = buildAssemblyPlan({
+      documentId: "d",
+      wv: "w",
+      wvId: "w1",
+      elementId: "e",
+      root: {
+        partNumber: "WB-100",
+        name: "Workbench",
+        description: "New text",
+        revision: "B"
+      },
+      nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
+      items: [
+        { id: "wb-b", readableId: "WB-100", revision: "B", name: "Old text" },
+        { id: "top-c", readableId: "TOP-001", revision: "C", name: "Old" }
+      ],
+      methodByItemId: new Map(),
+      mappedLinesByMethodId: new Map(),
+      manualLinesByMethodId: new Map(),
+      options,
+      mapping: {
+        map: [],
+        definitions: [],
+        descriptionModes: { name: "everyPush", description: "everyPush" },
+        heldCustomFields: new Map()
+      },
+      released: new Map([
+        ["WB-100", { itemId: "wb-b", revision: "B" }],
+        ["TOP-001", { itemId: "top-c", revision: "C" }]
+      ])
+    });
+    expect(plan.root).toMatchObject({
+      action: "reuse",
+      itemId: "wb-b",
+      released: { revision: "B" }
+    });
+    expect(plan.root.changes).toBeUndefined();
+    expect(plan.root.current).toBeUndefined();
+    expect(plan.items[0]).toMatchObject({
+      action: "reuse",
+      itemId: "top-c",
+      released: { revision: "C" }
+    });
+    expect(plan.items[0]?.conflict).toBeUndefined();
+    expect(plan.items[0]?.current).toBeUndefined();
+  });
+});
+
+describe("buildAssemblyPlan unchanged released methods", () => {
+  const build = (
+    lines: Array<{ readableId: string; quantity: number }>,
+    reusableDraftByItemId = new Map<
+      string,
+      { id: string; version: number | null }
+    >()
+  ) =>
+    buildAssemblyPlan({
+      documentId: "d",
+      wv: "w",
+      wvId: "w1",
+      elementId: "e",
+      root: {
+        partNumber: "WB-100",
+        name: "Workbench",
+        description: null,
+        revision: null
+      },
+      nodes: [
+        node({ index: "1", partNumber: "TOP-001", name: "Top", quantity: 1 }),
+        node({ index: "2", partNumber: "LEG-003", name: "Leg", quantity: 4 })
+      ],
+      items: [{ id: "root", readableId: "WB-100", revision: "0", name: "W" }],
+      methodByItemId: new Map([["root", { id: "active", status: "Active" }]]),
+      mappedLinesByMethodId: new Map([["active", lines]]),
+      manualLinesByMethodId: new Map(),
+      options,
+      reusableDraftByItemId
+    }).methods[0];
+
+  it("needs no Draft when the released method already has Onshape's lines", () => {
+    expect(
+      build([
+        { readableId: "TOP-001", quantity: 1 },
+        { readableId: "LEG-003", quantity: 4 }
+      ])?.unchanged
+    ).toBe(true);
+  });
+
+  it("needs a Draft when a quantity, a line or the order differs", () => {
+    expect(
+      build([
+        { readableId: "TOP-001", quantity: 1 },
+        { readableId: "LEG-003", quantity: 2 }
+      ])?.unchanged
+    ).toBeUndefined();
+    expect(
+      build([{ readableId: "TOP-001", quantity: 1 }])?.unchanged
+    ).toBeUndefined();
+    expect(
+      build([
+        { readableId: "LEG-003", quantity: 4 },
+        { readableId: "TOP-001", quantity: 1 }
+      ])?.unchanged
+    ).toBeUndefined();
+  });
+
+  it("writes into a reused Draft as before", () => {
+    expect(
+      build(
+        [
+          { readableId: "TOP-001", quantity: 1 },
+          { readableId: "LEG-003", quantity: 4 }
+        ],
+        new Map([["root", { id: "draft", version: 2 }]])
+      )?.unchanged
+    ).toBeUndefined();
   });
 });
 
@@ -1333,6 +1643,77 @@ describe("pickLatestRow", () => {
     expect(pickLatestRow([{ revision: "C", active: false }])?.revision).toBe(
       "C"
     );
+  });
+});
+
+describe("pickRevisionBase", () => {
+  it("copies from the newest revision below the released one, released or not", () => {
+    const rows = [
+      { id: "0", revision: "0", active: true },
+      { id: "A", revision: "A", active: false },
+      { id: "C", revision: "C", active: false }
+    ];
+    expect(pickRevisionBase(rows, "B")?.id).toBe("A");
+    expect(pickRevisionBase(rows, "A")?.id).toBe("0");
+    expect(pickRevisionBase(rows, "D")?.id).toBe("C");
+  });
+
+  it("falls back to the latest row when none is below the released revision", () => {
+    expect(
+      pickRevisionBase(
+        [
+          { id: "C", revision: "C", active: true },
+          { id: "D", revision: "D", active: false }
+        ],
+        "B"
+      )?.id
+    ).toBe("C");
+    expect(pickRevisionBase([], "A")).toBeUndefined();
+  });
+});
+
+describe("pickBomChildRow", () => {
+  const rows = [
+    { id: "0", revision: "0", active: true, type: "Part" },
+    { id: "A", revision: "A", active: false, type: "Part" }
+  ];
+
+  it("takes the revision the BOM names, even one still waiting in its notice", () => {
+    expect(pickBomChildRow(rows, "A")).toEqual({
+      row: rows[1],
+      missingRevision: null
+    });
+    expect(pickBomChildRow(rows, " a ").row?.id).toBe("A");
+  });
+
+  it("falls back to the latest row and names the revision Carbon lacks", () => {
+    expect(pickBomChildRow(rows, "B")).toEqual({
+      row: rows[0],
+      missingRevision: "B"
+    });
+  });
+
+  it("takes the latest row when the BOM names no revision", () => {
+    expect(pickBomChildRow(rows, null)).toEqual({
+      row: rows[0],
+      missingRevision: null
+    });
+    expect(pickBomChildRow([], "B")).toEqual({
+      row: undefined,
+      missingRevision: null
+    });
+  });
+
+  it("prefers the Part when another item type shares the number and revision", () => {
+    expect(
+      pickBomChildRow(
+        [
+          { id: "tool", revision: "A", type: "Tool" },
+          { id: "part", revision: "A", type: "Part" }
+        ],
+        "A"
+      ).row?.id
+    ).toBe("part");
   });
 });
 

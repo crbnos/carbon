@@ -10,6 +10,7 @@ import type {
 } from "@carbon/ee";
 import {
   buildReleasePlan,
+  drawingModels,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
   missingBomColumnsMessage,
@@ -34,6 +35,7 @@ import { readPartProperties } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import { findOpenReleaseNotice } from "~/modules/settings/onshape-push.server";
 
 export const config = {
   runtime: "nodejs"
@@ -98,19 +100,46 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const modelItems = release.items.filter(isModelReleaseItem);
-  if (modelItems.length === 0) {
+  const drawingItems = release.items.filter(
+    (item) => !isModelReleaseItem(item)
+  );
+  if (modelItems.length === 0 && drawingItems.length === 0) {
     return data(
-      { error: "The release contains no parts or assemblies" },
+      { error: "The release contains no parts, assemblies or drawings" },
       { status: 422 }
     );
   }
-
-  // Read before any BOM: an assembly whose Carbon method is already released
-  // refuses its BOM at apply, so reading that BOM wastes quota.
   const releasePartNumbers = [
     ...new Set(modelItems.map((item) => item.partNumber))
   ];
-  const releaseRows = await selectInBatches(releasePartNumbers, (batch) =>
+
+  // A drawing numbered apart from its model is tied to it by the release
+  // package, which lists the model under the drawing. Read only when needed.
+  const warnings: string[] = [];
+  let drawingModelByElementId: ReturnType<typeof drawingModels> = new Map();
+  if (
+    drawingItems.some((item) => !releasePartNumbers.includes(item.partNumber))
+  ) {
+    try {
+      drawingModelByElementId = drawingModels(
+        await onshape.client.getReleasePackageItems(releaseId)
+      );
+    } catch (error) {
+      warnings.push(
+        `The release package couldn't be read, so a drawing numbered apart from its model is not attached (${onshapeFailure(error).body.error})`
+      );
+    }
+  }
+  const drawingModelPartNumbers = [...drawingModelByElementId.values()]
+    .map((model) => model.partNumber)
+    .filter((partNumber) => !releasePartNumbers.includes(partNumber));
+
+  // Read before any BOM: an assembly whose Carbon method is already released
+  // refuses its BOM at apply, so reading that BOM wastes quota.
+  const lookupPartNumbers = [
+    ...new Set([...releasePartNumbers, ...drawingModelPartNumbers])
+  ];
+  const releaseRows = await selectInBatches(lookupPartNumbers, (batch) =>
     client
       .from("item")
       .select(
@@ -179,7 +208,6 @@ export async function action({ request }: ActionFunctionArgs) {
   // failed read stores null lines, which apply treats as "leave the method
   // alone"; an empty array is a genuinely empty BOM.
   const bomLinesByElementId: Record<string, OnshapeBomNode[] | null> = {};
-  const warnings: string[] = [];
   for (const item of modelItems) {
     if (item.elementType !== 1) continue;
     if (refusedElementIds.has(item.elementId)) {
@@ -223,7 +251,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .flatMap((lines) => (lines ?? []).map((line) => line.partNumber))
         .filter(
           (partNumber): partNumber is string =>
-            !!partNumber && !releasePartNumbers.includes(partNumber)
+            !!partNumber && !lookupPartNumbers.includes(partNumber)
         )
     )
   ];
@@ -323,7 +351,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const plan = buildReleasePlan({
+  const built = buildReleasePlan({
     documentId,
     release,
     items,
@@ -331,8 +359,16 @@ export async function action({ request }: ActionFunctionArgs) {
     methodByItemId,
     options,
     mapping,
-    propertiesByPartNumber
+    propertiesByPartNumber,
+    drawingModelByElementId
   });
+  // A release pushed from a second document adds to the first push's notice.
+  const openNotice = built.changeNotice
+    ? await findOpenReleaseNotice(client, companyId, built.releaseId)
+    : null;
+  const plan = openNotice
+    ? { ...built, existingChangeNotice: openNotice.changeNoticeId }
+    : built;
 
   // Only the stored copy carries the BOM lines the apply walks, without
   // their cells.

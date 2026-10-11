@@ -225,3 +225,44 @@ export function releaseExportSelection(item: {
   }
   return { ok: true, partId, ...(configuration ? { configuration } : {}) };
 }
+
+/** A package item as `drawingModels` reads it. */
+export type ReleasePackageItemLike = {
+  id: string;
+  parentId: string | null;
+  elementType: number;
+  elementId: string | null;
+  partNumber: string | null;
+  revision: string | null;
+};
+
+/**
+ * Per drawing element in a release package, the model it depicts: the first
+ * part or assembly the package lists under the drawing. A company can require
+ * a drawing's part number to differ from its model's, so the part number alone
+ * cannot tie a drawing to its model.
+ */
+export function drawingModels(
+  items: ReleasePackageItemLike[]
+): Map<string, { partNumber: string; revision: string | null }> {
+  const out = new Map<
+    string,
+    { partNumber: string; revision: string | null }
+  >();
+  for (const drawing of items) {
+    if (drawing.elementType !== 2 || !drawing.elementId) continue;
+    const model = items.find(
+      (item) =>
+        item.parentId === drawing.id &&
+        isModelReleaseItem(item) &&
+        !!item.partNumber
+    );
+    if (model?.partNumber && !out.has(drawing.elementId)) {
+      out.set(drawing.elementId, {
+        partNumber: model.partNumber,
+        revision: model.revision
+      });
+    }
+  }
+  return out;
+}

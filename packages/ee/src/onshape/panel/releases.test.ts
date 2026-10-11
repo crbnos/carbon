@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { ReleaseRevisionLike } from "./releases";
 import {
+  drawingModels,
   groupRevisionsIntoReleases,
   releaseExportSelection,
   resolveReleaseStates
@@ -145,5 +146,43 @@ describe("releaseExportSelection", () => {
     expect(
       releaseExportSelection({ elementType: 1, configuration: "default" })
     ).toEqual({ ok: true });
+  });
+});
+
+describe("drawingModels", () => {
+  const pkgItem = (
+    id: string,
+    parentId: string | null,
+    elementType: number,
+    partNumber: string | null,
+    revision: string | null = "C"
+  ) => ({
+    id,
+    parentId,
+    elementType,
+    elementId: `e-${id}`,
+    partNumber,
+    revision
+  });
+
+  it("maps each drawing to the first model listed under it", () => {
+    expect(
+      drawingModels([
+        pkgItem("drw", null, 2, "WB-100-DWG"),
+        pkgItem("asm", "drw", 1, "WB-100"),
+        pkgItem("prt", "asm", 0, "PAD-005"),
+        pkgItem("lone", null, 2, "LONE-DWG")
+      ])
+    ).toEqual(new Map([["e-drw", { partNumber: "WB-100", revision: "C" }]]));
+  });
+
+  it("skips a model under the drawing that has no part number", () => {
+    expect(
+      drawingModels([
+        pkgItem("drw", null, 2, "WB-100-DWG"),
+        pkgItem("asm", "drw", 1, null),
+        pkgItem("prt", "drw", 0, "PAD-005", null)
+      ])
+    ).toEqual(new Map([["e-drw", { partNumber: "PAD-005", revision: null }]]));
   });
 });

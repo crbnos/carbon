@@ -166,6 +166,19 @@ export interface OnshapeRevision {
 }
 
 /**
+ * One item of an Onshape release package, as the panel needs it. `parentId`
+ * is the item it sits under: a drawing's children are the models it depicts.
+ */
+export interface OnshapeReleasePackageItem {
+  id: string;
+  parentId: string | null;
+  elementType: number;
+  elementId: string | null;
+  partNumber: string | null;
+  revision: string | null;
+}
+
+/**
  * `&configuration=…` for a non-default configuration, nothing for the default:
  * an unconfigured read keeps the URL (and so the dev cache key) it always had.
  */
@@ -516,6 +529,52 @@ export class OnshapeClient {
       items.push(...(page.items ?? []));
     }
     return { items, next: page.next ?? null };
+  }
+
+  /**
+   * A release package's items, flattened, each with the item it sits under.
+   * Onshape nests a package's items while it is being set up and lists them
+   * flat with `parentId` once released; both shapes are read.
+   */
+  async getReleasePackageItems(
+    releaseId: string
+  ): Promise<OnshapeReleasePackageItem[]> {
+    type RawItem = {
+      id?: string;
+      parentId?: string | null;
+      elementType?: number;
+      elementId?: string | null;
+      properties?: Array<{ name?: string; value?: unknown }>;
+      children?: RawItem[];
+    };
+    const pkg = await this.request<{ items?: RawItem[] }>(
+      "GET",
+      `/api/v10/releasepackages/${releaseId}?detailed=true`
+    );
+    const text = (item: RawItem, name: string) => {
+      const value = item.properties?.find((p) => p.name === name)?.value;
+      return typeof value === "string" && value.trim() !== ""
+        ? value.trim()
+        : null;
+    };
+    const out: OnshapeReleasePackageItem[] = [];
+    const walk = (items: RawItem[], parentId: string | null) => {
+      for (const item of items) {
+        if (!item.id) continue;
+        out.push({
+          id: item.id,
+          parentId: item.parentId ?? parentId,
+          elementType:
+            typeof item.elementType === "number" ? item.elementType : -1,
+          elementId: item.elementId ?? null,
+          partNumber: text(item, "Part number"),
+          revision: text(item, "Revision")
+        });
+        walk(item.children ?? [], item.id);
+      }
+    };
+    walk(pkg.items ?? [], null);
+    return out;
   }
 
   // --- Release-asset export ---------------------------------------------------

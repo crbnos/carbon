@@ -16,6 +16,7 @@ import {
   getOnshapeClient,
   loadPlanMapping,
   loadPlanOptions,
+  loadReleasedRevisions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
@@ -163,6 +164,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const mappedItems = mappedResult.data as PlanItemRow[];
 
   const candidates = [...matchedItems, ...mappedItems];
+  // A part a release push made a revision of is left to its releases.
+  let released: Awaited<ReturnType<typeof loadReleasedRevisions>>;
+  try {
+    released = await loadReleasedRevisions(client, companyId, matchedItems);
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to read Carbon items"
+      },
+      { status: 500 }
+    );
+  }
 
   // Planning without the map would silently skip "everyPush" values.
   let mapping: PlanMappingContext;
@@ -212,7 +226,8 @@ export async function action({ request }: ActionFunctionArgs) {
     items: candidates,
     options,
     mapping,
-    propertiesByPartId
+    propertiesByPartId,
+    released
   });
   if (rows.length === 0) {
     return data(

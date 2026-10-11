@@ -24,6 +24,7 @@ import {
   loadMethodLineOwnership,
   loadPlanMapping,
   loadPlanOptions,
+  loadReleasedRevisions,
   loadReusableDrafts,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
@@ -328,6 +329,20 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(failure.body, { status: failure.status });
   }
 
+  // Parts a release push made a revision of are left to their releases.
+  let released: Awaited<ReturnType<typeof loadReleasedRevisions>>;
+  try {
+    released = await loadReleasedRevisions(client, companyId, items);
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to read Carbon items"
+      },
+      { status: 500 }
+    );
+  }
+
   const plan = buildAssemblyPlan({
     documentId,
     wv,
@@ -352,7 +367,8 @@ export async function action({ request }: ActionFunctionArgs) {
     reusableDraftByItemId,
     mapping,
     rootProperties:
-      elementMetadata !== null ? parseProperties(elementMetadata) : null
+      elementMetadata !== null ? parseProperties(elementMetadata) : null,
+    released
   });
 
   // The parsed BOM is stored for the apply; the panel never needs it.

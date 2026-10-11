@@ -557,14 +557,87 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 500 }
     );
   }
+  // A released method whose Onshape lines already match what this push would
+  // write gets no Draft: nothing in it changes. The check pairs lines the way
+  // the write loop below does, against the Active method's own lines.
+  let activeOwnership: Awaited<ReturnType<typeof loadMethodLineOwnership>>;
+  try {
+    activeOwnership = await loadMethodLineOwnership(
+      client,
+      serviceRole,
+      companyId,
+      [...activeMethodIdByItemId.entries()]
+        .filter(([itemId]) => !reusableDraftByItemId.has(itemId))
+        .map(([, methodId]) => methodId)
+    );
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the existing BOM lines"
+      },
+      { status: 500 }
+    );
+  }
+  const linesWouldChange = (
+    planned: (typeof plan.methods)[number],
+    methodId: string
+  ) => {
+    const reusable = new Map<string, MappedLineRow[]>();
+    for (const row of activeOwnership.mappedRows.get(methodId) ?? []) {
+      const queue = reusable.get(row.itemId) ?? [];
+      queue.push(row);
+      reusable.set(row.itemId, queue);
+    }
+    let order = 0;
+    for (const write of planned.writes) {
+      if (excluded.has(write.partNumber)) continue;
+      const childItem = itemByReadableId.get(write.partNumber);
+      if (!childItem || !bomLineItemType(childItem)) continue;
+      const childMethod = childMethodFor(
+        childItem,
+        isAssemblyByPartNumber.get(write.partNumber) === true
+      );
+      const reuse = reusable.get(childItem.id)?.shift();
+      // No Onshape line to reuse: a hand-added line is taken over, or a new
+      // line is written.
+      if (!reuse) return true;
+      if (
+        reuse.quantity !== write.quantity ||
+        reuse.order !== order ||
+        reuse.materialMakeMethodId !== (childMethod?.id ?? null)
+      ) {
+        return true;
+      }
+      order += 1;
+    }
+    // A line Onshape no longer lists would be removed.
+    return [...reusable.values()].some((queue) => queue.length > 0);
+  };
+  const unchangedItemIds = new Set<string>();
+
   for (const planned of plan.methods) {
     const parentItem = itemByReadableId.get(planned.parentPartNumber);
     if (!parentItem) continue;
-    if (targetMethodByItemId.has(parentItem.id)) continue;
+    if (
+      targetMethodByItemId.has(parentItem.id) ||
+      unchangedItemIds.has(parentItem.id)
+    ) {
+      continue;
+    }
     const method = methodByItemId.get(parentItem.id);
     if (!method) continue; // reported in the write loop
     if (method.status !== "Active") {
       targetMethodByItemId.set(parentItem.id, method.id);
+      continue;
+    }
+    if (
+      !reusableDraftByItemId.has(parentItem.id) &&
+      !linesWouldChange(planned, method.id)
+    ) {
+      unchangedItemIds.add(parentItem.id);
       continue;
     }
     const draft = await ensureDraftMakeMethod(client, {
@@ -617,6 +690,12 @@ export async function action({ request }: ActionFunctionArgs) {
     const method = methodByItemId.get(parentItem.id);
     if (!method) {
       summary.errors.push(`${parentLabel}: no make method found`);
+      continue;
+    }
+    if (unchangedItemIds.has(parentItem.id)) {
+      summary.linesUnchanged += planned.writes.filter(
+        (write) => !excluded.has(write.partNumber)
+      ).length;
       continue;
     }
     const methodId = targetMethodByItemId.get(parentItem.id);
@@ -863,6 +942,21 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // ---- Assembly item mapping + child part links ----
+  // A released assembly keeps the links and model its releases gave it: this
+  // push only wrote its BOM, into a Draft.
+  if (root.released) {
+    summary.skipped.push(
+      `${root.partNumber}: released in Carbon as Rev ${root.released.revision}; its fields, link and model stay as its release left them`
+    );
+    const childLinkProblems = await linkChildParts(client, serviceRole, {
+      companyId,
+      userId,
+      nodes: allNodes,
+      itemByReadableId
+    });
+    summary.errors.push(...childLinkProblems);
+    return data({ summary }, { headers: { "Cache-Control": "no-store" } });
+  }
   const pushedAt = datetime.timestamp();
   const assemblyExternalId = externalIdForAssembly(
     documentId,

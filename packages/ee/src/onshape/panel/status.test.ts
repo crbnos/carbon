@@ -9,7 +9,8 @@ import {
   externalIdForAssembly,
   externalIdForBomLine,
   externalIdForPart,
-  normalizeConfiguration
+  normalizeConfiguration,
+  releasedRevisionsByPartNumber
 } from "./status";
 
 const item = (id: string, readableId: string) => ({
@@ -338,5 +339,72 @@ describe("configurations in identity", () => {
     });
     expect(part?.state).toBe("linked");
     expect(part?.item?.id).toBe("large");
+  });
+});
+
+describe("released parts", () => {
+  const rows = [
+    { id: "top-0", readableId: "TOP-001", revision: "0", name: "Top" },
+    { id: "top-a", readableId: "TOP-001", revision: "A", name: "Top" },
+    { id: "top-c", readableId: "TOP-001", revision: "C", name: "Top" },
+    { id: "leg-0", readableId: "LEG-003", revision: "0", name: "Leg" }
+  ];
+  const released = releasedRevisionsByPartNumber(
+    rows,
+    new Set(["top-a", "top-c"])
+  );
+
+  it("names the newest revision a release push made, per part number", () => {
+    expect(released.get("TOP-001")).toEqual({
+      itemId: "top-c",
+      revision: "C"
+    });
+    expect(released.has("LEG-003")).toBe(false);
+  });
+
+  it("shows a released part as released, even when the workspace is linked", () => {
+    const [top, leg] = buildPartStatuses({
+      documentId: "d",
+      elementId: "e",
+      parts: [
+        { partId: "p1", name: "Top", partNumber: "TOP-001", revision: "C" },
+        { partId: "p2", name: "Leg", partNumber: "LEG-003", revision: null }
+      ],
+      mappings: [
+        {
+          entityId: "top-0",
+          externalId: externalIdForPart("d", "e", "p1"),
+          lastSyncedAt: null
+        }
+      ],
+      items: rows,
+      released
+    });
+    expect(top?.state).toBe("released");
+    expect(top?.item?.id).toBe("top-c");
+    expect(leg?.state).toBe("matched");
+  });
+
+  it("shows a released BOM line with its released revision", () => {
+    const [line] = buildAssemblyLineStatuses({
+      lines: [
+        {
+          index: "1",
+          level: 1,
+          partNumber: "TOP-001",
+          name: "Top",
+          quantity: 1,
+          itemSource: null
+        }
+      ],
+      mappings: [],
+      items: rows,
+      released
+    });
+    expect(line).toMatchObject({
+      state: "released",
+      itemId: "top-c",
+      releasedRevision: "C"
+    });
   });
 });

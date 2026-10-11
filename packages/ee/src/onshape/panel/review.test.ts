@@ -30,6 +30,7 @@ import {
   mappedValueText,
   normalizeWarnings,
   patchPartStatuses,
+  releaseResultText,
   replenishmentMismatches
 } from "./review";
 import type { PanelPartStatus } from "./status";
@@ -500,8 +501,18 @@ describe("applyCount", () => {
     expect(applyCount({ ...review, excluded: new Set(["PAD-005"]) })).toBe(2);
   });
 
-  it("counts release model items and children, not drawings", () => {
-    expect(applyCount(releaseReview())).toBe(4);
+  it("counts release model items, children and attached drawings", () => {
+    expect(applyCount(releaseReview())).toBe(5);
+  });
+
+  it("leaves out a drawing with no model to attach to", () => {
+    const plan = releasePlan();
+    const items = plan.items.map((item) =>
+      item.action === "drawing"
+        ? { ...item, action: "drawing-unmatched" as const }
+        : item
+    );
+    expect(applyCount(releaseReview({ ...plan, items }))).toBe(4);
   });
 });
 
@@ -579,6 +590,16 @@ describe("describeMethod", () => {
       tone: "notice"
     });
     expect(described.text).not.toMatch(/will not be applied/);
+  });
+
+  it("says a released method with no change needs no Draft", () => {
+    const unchanged = method({ status: "active", unchanged: true });
+    expect(describeMethod(unchanged, new Set())).toEqual({
+      text: "ASM-001 · released in Carbon — no change",
+      tone: "muted"
+    });
+    // Excluding one of its parts would remove that line: then it changes.
+    expect(describeMethod(unchanged, new Set(["PAD-005"])).tone).toBe("notice");
   });
 
   it("warns that a method missing in Carbon won't be written", () => {
@@ -887,6 +908,64 @@ describe("mapped value review text", () => {
     );
     expect(customFieldChangeText(vendor(null, "Acme Co"))).toBe(
       "Vendor: Clears Acme Co (updated on every push)."
+    );
+  });
+});
+
+describe("releaseResultText", () => {
+  const base = {
+    revisionsCreated: 0,
+    itemsCreated: 0,
+    childrenCreated: 0,
+    linesWritten: 0,
+    methodsTouched: 0,
+    changeNotice: null
+  };
+
+  it("counts in the singular and leaves out zero counts", () => {
+    expect(
+      releaseResultText({
+        ...base,
+        revisionsCreated: 1,
+        changeNotice: "CN-000008"
+      })
+    ).toBe(
+      "1 new revision on change notice CN-000008, inactive until it is released in Carbon"
+    );
+  });
+
+  it("names what the notice holds, then BOM parts outside it, then the lines", () => {
+    expect(
+      releaseResultText({
+        ...base,
+        revisionsCreated: 3,
+        itemsCreated: 2,
+        childrenCreated: 1,
+        linesWritten: 4,
+        methodsTouched: 1,
+        changeNotice: "CN-000014"
+      })
+    ).toBe(
+      "3 new revisions and 2 new items on change notice CN-000014, inactive until it is released in Carbon · 1 BOM part added to Carbon · 4 BOM lines written"
+    );
+  });
+
+  it("mentions BOMs only when the release has one", () => {
+    expect(releaseResultText(base)).toBe("Already in Carbon");
+    expect(releaseResultText({ ...base, methodsTouched: 1 })).toBe(
+      "Already in Carbon · BOM unchanged"
+    );
+  });
+
+  it("reports drawings, and only drawings for a drawing-only release", () => {
+    expect(releaseResultText({ ...base, drawingsQueued: 1 })).toBe(
+      "Already in Carbon · 1 drawing sent to Carbon"
+    );
+    expect(
+      releaseResultText({ ...base, drawingsQueued: 2, drawingsOnly: true })
+    ).toBe("2 drawings sent to Carbon");
+    expect(releaseResultText({ ...base, drawingsOnly: true })).toBe(
+      "Nothing to push"
     );
   });
 });

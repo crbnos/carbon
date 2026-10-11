@@ -16,6 +16,7 @@ import {
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   getOnshapeClient,
+  loadReleasedRevisions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
@@ -239,6 +240,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     const mappedItems = mappedResult.data as PanelItemRow[];
     const allItems = [...assemblyItems, ...mappedItems];
+    let released: Awaited<ReturnType<typeof loadReleasedRevisions>>;
+    try {
+      released = await loadReleasedRevisions(client, companyId, assemblyItems);
+    } catch {
+      return data(
+        {
+          error: "Carbon couldn't read its items for this assembly. Try again."
+        },
+        { status: 500 }
+      );
+    }
 
     const itemByReadableId = new Map(
       assemblyItems.map((i) => [i.readableId, i])
@@ -249,6 +261,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const rootLinkedItem = rootMapping.data
       ? allItems.find((i) => i.id === rootMapping.data?.entityId)
       : undefined;
+    const rootReleased = rootPartNumber
+      ? released.get(rootPartNumber)
+      : undefined;
 
     return data(
       {
@@ -258,20 +273,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
             partNumber: rootPartNumber,
             name: rootName,
             identityUnavailable: rootIdentityUnavailable,
-            state: rootLinkedItem
-              ? ("linked" as const)
-              : rootItem
-                ? ("matched" as const)
-                : ("missing" as const),
-            itemId: rootLinkedItem?.id ?? rootItem?.id ?? null,
-            lastSyncedAt: rootLinkedItem
-              ? (rootMapping.data?.lastSyncedAt ?? null)
-              : null
+            state: rootReleased
+              ? ("released" as const)
+              : rootLinkedItem
+                ? ("linked" as const)
+                : rootItem
+                  ? ("matched" as const)
+                  : ("missing" as const),
+            itemId:
+              rootReleased?.itemId ??
+              rootLinkedItem?.id ??
+              rootItem?.id ??
+              null,
+            ...(rootReleased
+              ? { releasedRevision: rootReleased.revision }
+              : {}),
+            lastSyncedAt:
+              rootLinkedItem && !rootReleased
+                ? (rootMapping.data?.lastSyncedAt ?? null)
+                : null
           },
           lines: buildAssemblyLineStatuses({
             lines: flat,
             mappings: lineMappings.data ?? [],
-            items: allItems
+            items: allItems,
+            released
           })
         }
       },
@@ -341,6 +367,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
   const mappedItems = mappedResult.data as PanelItemRow[];
+  let released: Awaited<ReturnType<typeof loadReleasedRevisions>>;
+  try {
+    released = await loadReleasedRevisions(
+      client,
+      companyId,
+      (matches.data ?? []) as PanelItemRow[]
+    );
+  } catch {
+    return data(
+      {
+        error: "Carbon couldn't read its items for these parts. Try again."
+      },
+      { status: 500 }
+    );
+  }
 
   const statuses = buildPartStatuses({
     documentId,
@@ -348,7 +389,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     configuration,
     parts,
     mappings: mappings.data ?? [],
-    items: [...((matches.data ?? []) as PanelItemRow[]), ...mappedItems]
+    items: [...((matches.data ?? []) as PanelItemRow[]), ...mappedItems],
+    released
   });
 
   return data(

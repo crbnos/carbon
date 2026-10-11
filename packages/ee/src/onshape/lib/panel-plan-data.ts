@@ -17,6 +17,10 @@ import type {
 } from "../panel/plan";
 import { parsePushDefaults } from "../panel/preferences";
 import { parseDescriptionModes, parsePropertyMap } from "../panel/properties";
+import {
+  type ReleasedRevision,
+  releasedRevisionsByPartNumber
+} from "../panel/status";
 import { selectInBatches } from "./batched-filter";
 import { ONSHAPE_V2_INTEGRATION_ID } from "./integration-id";
 
@@ -94,6 +98,38 @@ export async function loadActiveMakeMethods(
     }
   }
   return byItemId;
+}
+
+/**
+ * Per part number, the newest revision a release push made: an item with a
+ * `release:` link. A workspace push leaves such a part alone, because its
+ * changes now come through a release. Throws on a failed read: an empty map
+ * would let a workspace push write into a released part.
+ */
+export async function loadReleasedRevisions(
+  client: Client,
+  companyId: string,
+  items: Array<{ id: string; readableId: string; revision: string | null }>
+): Promise<Map<string, ReleasedRevision>> {
+  const ids = [...new Set(items.map((item) => item.id))];
+  if (ids.length === 0) return new Map();
+  const rows = await selectInBatches(ids, (batch) =>
+    client
+      .from("externalIntegrationMapping")
+      .select("entityId")
+      .eq("companyId", companyId)
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+      .eq("entityType", "item")
+      .like("externalId", "release:%")
+      .in("entityId", batch)
+  );
+  if (rows.error) {
+    throw new Error(`Failed to read the release links: ${rows.error.message}`);
+  }
+  return releasedRevisionsByPartNumber(
+    items,
+    new Set((rows.data ?? []).map((row) => row.entityId))
+  );
 }
 
 /**

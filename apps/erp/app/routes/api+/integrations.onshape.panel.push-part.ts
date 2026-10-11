@@ -249,6 +249,15 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
+    if (row.action === "released") {
+      results.push({
+        partId,
+        action: "skipped",
+        message: `Released in Carbon as Rev ${row.item?.revision ?? "?"}: changes come through a release`
+      });
+      continue;
+    }
+
     if (row.action === "unchanged") {
       // The CAD and every mapped value are unchanged, but a reviewer edit to
       // a manufacturing field is still a real update. No mapping re-stamp and

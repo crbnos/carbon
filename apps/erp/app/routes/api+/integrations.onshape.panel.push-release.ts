@@ -23,7 +23,8 @@ import {
   mergeChangeNoticeEdit,
   mergeCustomFieldValues,
   mergeEditsForCreates,
-  pickLatestRow,
+  pickBomChildRow,
+  pickRevisionBase,
   proposeItem
 } from "@carbon/ee";
 import type {
@@ -56,6 +57,7 @@ import {
 import {
   applyExistingItemFields,
   applyItemFieldWrites,
+  findOpenReleaseNotice,
   insertOwnedMethodLines,
   type OwnedMethodLine,
   stageChangeNoticeItem,
@@ -96,6 +98,10 @@ type PushSummary = {
   releaseName: string | null;
   revisionsCreated: number;
   itemsCreated: number;
+  /** BOM children the push created; not on the change notice. */
+  childrenCreated: number;
+  drawingsQueued: number;
+  drawingsOnly: boolean;
   reused: number;
   linesWritten: number;
   methodsTouched: number;
@@ -243,6 +249,9 @@ export async function action({ request }: ActionFunctionArgs) {
     releaseName: plan.releaseName,
     revisionsCreated: 0,
     itemsCreated: 0,
+    childrenCreated: 0,
+    drawingsQueued: 0,
+    drawingsOnly: modelItems.length === 0,
     reused: 0,
     linesWritten: 0,
     methodsTouched: 0,
@@ -279,8 +288,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const fieldEditsApplied = new Set<string>();
   /**
    * The descriptions, mapped values and reviewer edits for an item the push
-   * does not create. The row's method and unit are updated in place, because
-   * a BOM line written later copies them.
+   * does not create. The row's method, Sourcing and unit are updated in place,
+   * because a BOM line written later copies them.
    */
   const applyItemFieldEdit = async (partNumber: string, row: ItemRow) => {
     if (fieldEditsApplied.has(partNumber)) return;
@@ -302,6 +311,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     if (applied.values) {
       row.defaultMethodType = applied.values.defaultMethodType;
+      row.sourcingType = applied.values.sourcingType ?? row.sourcingType;
       row.unitOfMeasureCode =
         applied.values.unitOfMeasureCode ?? row.unitOfMeasureCode;
     }
@@ -406,7 +416,8 @@ export async function action({ request }: ActionFunctionArgs) {
     if (existingLetter) return { item, kind: "reuse", row: existingLetter };
     const bases = byReadable.get(item.partNumber) ?? [];
     const base =
-      bases.find((row) => row.id === item.baseItemId) ?? pickLatestRow(bases);
+      bases.find((row) => row.id === item.baseItemId) ??
+      pickRevisionBase(bases, item.revision);
     if (base) return { item, kind: "revision", base };
     return {
       item,
@@ -553,12 +564,27 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // A notice stages what this push creates: each new revision or item is
   // inactive and owned by the notice until it is released in Carbon. Created
-  // first, so every item is tied to it as it is written.
+  // first, so every item is tied to it as it is written. A release pushed
+  // from a second document adds to the notice its first push made, while
+  // that notice still takes items.
   let changeNotice: { id: string; changeNoticeId: string } | null = null;
-  if (
+  let noticeReused = false;
+  let noticeSortOrder = 0;
+  const needsNotice =
     (createChangeNoticeChoice ?? true) &&
-    decisions.some((decision) => decision.kind !== "reuse")
-  ) {
+    decisions.some((decision) => decision.kind !== "reuse");
+  const openNotice = needsNotice
+    ? await findOpenReleaseNotice(client, companyId, plan.releaseId)
+    : null;
+  if (openNotice) {
+    changeNotice = {
+      id: openNotice.id,
+      changeNoticeId: openNotice.changeNoticeId
+    };
+    noticeReused = true;
+    noticeSortOrder = openNotice.affectedCount;
+    summary.changeNotice = openNotice.changeNoticeId;
+  } else if (needsNotice) {
     const description = changeNoticeDescriptionJson(
       changeNoticeValues.description
     );
@@ -585,7 +611,6 @@ export async function action({ request }: ActionFunctionArgs) {
     changeNotice = inserted.data;
     summary.changeNotice = inserted.data.changeNoticeId;
   }
-  let noticeSortOrder = 0;
   const stageInNotice = async (
     label: string,
     itemId: string,
@@ -711,7 +736,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   summary.alreadyPushed = created.length === 0;
-  if (changeNotice && created.length === 0) {
+  if (changeNotice && !noticeReused && created.length === 0) {
     // Every create failed, so the notice holds nothing.
     const dropped = await deleteChangeNotice(
       client,
@@ -807,7 +832,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  // 2b: line items: this release's letter item, else the latest existing revision, else a create.
+  // 2b: line items: this release's letter item, else the revision the BOM names (else the latest), else a create.
   const childItemByPartNumber = new Map<string, ItemRow>();
   const childFailed = new Set<string>();
   for (const target of bomTargets) {
@@ -821,7 +846,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const existingChild =
         revisionItemByPartNumber.get(child.partNumber) ??
-        pickLatestRow(byReadable.get(child.partNumber) ?? []);
+        pickBomChildRow(byReadable.get(child.partNumber) ?? [], child.revision)
+          .row;
       if (existingChild) {
         childItemByPartNumber.set(child.partNumber, existingChild);
         await applyItemFieldEdit(child.partNumber, existingChild);
@@ -871,7 +897,7 @@ export async function action({ request }: ActionFunctionArgs) {
       await writeCreatedExtras(child.partNumber, childRow.id, proposed);
       childItemByPartNumber.set(child.partNumber, childRow);
       rememberRow(childRow);
-      summary.itemsCreated += 1;
+      summary.childrenCreated += 1;
     }
   }
 
@@ -1196,15 +1222,21 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
   for (const drawing of drawingItems) {
-    // A drawing matches the model item with its part number in this release.
-    const target = revisionItemByPartNumber.get(drawing.partNumber);
-    if (!target) {
+    // The model the plan tied the drawing to: in this release, or already in
+    // Carbon at the revision the release package names.
+    const model = drawing.drawingOf;
+    const targetId = model
+      ? (revisionItemByPartNumber.get(model.partNumber)?.id ??
+        model.itemId ??
+        null)
+      : null;
+    if (!targetId) {
       summary.skipped.push(
         `${drawing.partNumber}: drawing has no matching model item in this release`
       );
       continue;
     }
-    assetTargets.push({ item: drawing, itemId: target.id, kind: "drawing" });
+    assetTargets.push({ item: drawing, itemId: targetId, kind: "drawing" });
   }
   for (const target of assetTargets) {
     const selection: ReleaseExportSelection =
@@ -1239,6 +1271,7 @@ export async function action({ request }: ActionFunctionArgs) {
         },
         { id: `${planId}:${target.itemId}:${target.item.elementId}` }
       );
+      if (target.kind === "drawing") summary.drawingsQueued += 1;
     } catch {
       summary.errors.push(
         `${target.item.partNumber} Rev ${target.item.revision}: pushed, but the ${

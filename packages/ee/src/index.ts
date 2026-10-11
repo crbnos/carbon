@@ -173,8 +173,10 @@ export {
   mergeItemEdits,
   methodForReplenishment,
   pickAdoptTarget,
+  pickBomChildRow,
   pickLatestRow,
   pickReuseRow,
+  pickRevisionBase,
   planCreatedItem,
   planExistingItem,
   proposeItem,
@@ -224,9 +226,11 @@ export type {
   PanelRelease,
   PanelReleaseItem,
   ReleaseCarbonItemRow,
+  ReleasePackageItemLike,
   ReleaseRevisionLike
 } from "./onshape/panel/releases";
 export {
+  drawingModels,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
   releaseKeyFor,
@@ -258,7 +262,8 @@ export type {
   PanelAssemblyLineStatus,
   PanelItemRow,
   PanelMappingRow,
-  PanelPartStatus
+  PanelPartStatus,
+  ReleasedRevision
 } from "./onshape/panel/status";
 export {
   buildAssemblyLineStatuses,
@@ -266,7 +271,8 @@ export {
   externalIdForAssembly,
   externalIdForBomLine,
   externalIdForPart,
-  normalizeConfiguration
+  normalizeConfiguration,
+  releasedRevisionsByPartNumber
 } from "./onshape/panel/status";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
