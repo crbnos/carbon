@@ -77,6 +77,7 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 10-11 | Projects 3 | Tasks 1–17 + return fix; 18 deferred | done (`03b7c24044`…`16e1cb00da`) — Phase 3 implemented; Task 16's dataset check ran without its database layer |
 | 10-11 | Tree canvas (Flow-style) | Tasks 1–8; 9 deferred | done (`dbdaed7797`…`628fae0cbb`) |
 | 10-11 | Project billing 4a | Tasks 14–20; 21 deferred | done (`81265037b3`…`4a48f33082`, then the docs commit) — Phase 4a implemented |
+| 10-11 | Project billing 4a, 4b | 4a Tasks 1–20, 21 deferred; 4b Tasks 1–13, 14 deferred | done (4a from `3d42be0094`; 4b `129e0b9dc7`…`1223834483`, then the docs commit) — Phase 4 implemented, spec moved to `implemented/` |
 
 ## Follow-ups found during execution
 
@@ -108,3 +109,6 @@ Open:
 - Project billing 4a: an MCP `sales_upsertContractLine` can create a Cost Plus line without the `PROJECT_REVENUE` check. The ee generator still bills nothing for it (P1). Brad to decide if the service needs the check too.
 - Project billing 4a: the browser check (Task 21) is deferred. Check the points in the plan's Task 21, and the UI points in the 4a hand-off.
 - `projects.mdx` should link to the new `project-billing.mdx` page once the page is cut to its word limit.
+- Project billing 4b: through MCP or the API, the close checklist's revenue run preview leaves out the Percent Complete rows. The 3 MCP tools that reach `getPeriodRunPreview` cannot take functions, so they pass no synthesizers. The ERP close page and every run call site include them.
+- Project billing 4b: the browser check (Task 14) is deferred. Check the points in the plan's Task 14 and the UI points in the 4b hand-off.
+- Project billing 4b: the revenue run page's **Amount** sums every line, so it adds the cost relief and the loss provision to the revenue.

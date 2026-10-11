@@ -197,9 +197,12 @@ Refactor one at a time; each PR should leave the tree green.
   nothing without ee code — that is the lock. `requireProjectRevenueEntitlement` is the
   authoring check for Cost Plus or Percent Complete; the contract line and amend routes
   reach it through `projectRevenueRefusal` (`sales.server.ts`) and flash the upgrade
-  message. The forms keep both choices visible with an upgrade notice. Phase 4b adds
-  the Percent Complete synthesizer and the loss provision behind the same key. See
-  `project-billing.md`.
+  message. The forms keep both choices visible with an upgrade notice. The Percent
+  Complete synthesizer and the loss provision (`synthesizeCommercialProjectRevenue`,
+  same module) degrade through `projectRevenueEnabledForCompany`: without the feature
+  the run writes no Percent Complete month. The community run cannot import it, so
+  every run call site passes `projectRevenueSynthesizers` as `revenueRunSynthesizers`.
+  See `project-billing.md`.
 - Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
   community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision

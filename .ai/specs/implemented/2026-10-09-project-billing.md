@@ -1,6 +1,6 @@
 # Project Billing: time-and-materials and cost-plus contract lines, and revenue by progress
 
-> Status: Phase 4a implemented (2026-10-11, plan `.ai/plans/2026-10-09-project-billing-phase-4a.md`; browser check deferred). Phase 4b planned (`.ai/plans/2026-10-09-project-billing-phase-4b.md`).
+> Status: Implemented (2026-10-11). Phase 4a: plan `.ai/plans/2026-10-09-project-billing-phase-4a.md`. Phase 4b: plan `.ai/plans/2026-10-09-project-billing-phase-4b.md`. The browser checks of both phases are deferred.
 > Author: Brad (with Claude)
 > Date: 2026-10-09
 > Research: `.ai/research/projects-wbs-pmmo.md` (patterns 9 and 10, Answer 6, Recommendation 7)
@@ -121,12 +121,12 @@ Wiring, as the contracts research lists it:
 
 ### Revenue and WIP relief
 
-The monthly recognition run gets a third synthesizer, `synthesizeProjectRevenue`, beside `synthesizeRentalAccruals` and `synthesizeContractRevenue` (`RUN_ROW_SYNTHESIZERS`, `propose-revenue-recognition-run/index.ts:496-499`). For each Active contract line with revenue method Right to Invoice or Percent Complete, it computes the month's revenue and writes a `customerContractRevenue` row. Then it moves the contract position with `applyContractMovement`, exactly as for planned rows. Invoices already credit Contract Assets first, then Deferred Revenue (`planContractInvoiceLine`), so unbilled revenue sits in Contract Assets and billing in advance sits in Deferred Revenue.
+The monthly recognition run gets 2 project synthesizers (R1). `runRowSynthesizers(extra)` (`propose-revenue-recognition-run/index.ts`) runs `synthesizeRentalAccruals`, the caller's `revenueRunSynthesizers`, the community `synthesizeProjectRevenue` (Right to Invoice), then `synthesizeContractRevenue`. The commercial Percent Complete synthesizer reaches the run as `revenueRunSynthesizers`, because `@carbon/server-functions` cannot import `@carbon/ee`. Every run call site passes it. A synthesizer reads each line with revenue method Right to Invoice or Percent Complete on a contract that is not Draft. It computes the month's revenue and writes a `customerContractRevenue` row with the figures behind it (R7). Then `synthesizeContractRevenue` moves the contract position with `applyContractMovement`, exactly as for planned rows. Invoices already credit Contract Assets first, then Deferred Revenue (`planContractInvoiceLine`), so unbilled revenue sits in Contract Assets and billing in advance sits in Deferred Revenue.
 
 **Right to Invoice:**
 - Earned to date = Σ the amount of the line's billable items with posting date ≤ the period end and status other than Written Off.
 - This month = earned to date − recognized to date. A write-off gives a negative month.
-- Cost relief = the cost of those items not yet relieved.
+- Cost relief = every subtree ledger row posted on or before the period end that is not yet relieved (R3). Overhead rows that a T&M line does not bill, and the cost of written-off items, are relieved too. Only a row whose journal debit line is on an Asset account is relieved (R4).
 
 **Percent Complete:**
 - Price:
@@ -135,10 +135,10 @@ The monthly recognition run gets a third synthesizer, `synthesizeProjectRevenue`
 - Estimate at completion (EAC): the billing element subtree's estimate at completion from the Costs tab (actual + committed + remaining plan, or the manual override).
 - Progress = cumulative actual cost of the subtree up to the period end ÷ EAC, capped at 1.
 - Earned to date = price × progress. This month = earned to date − recognized to date.
-- Cost relief = every subtree cost not yet relieved (cost-to-cost expenses cost as incurred).
+- Cost relief = every subtree cost not yet relieved (cost-to-cost expenses cost as incurred), with the same Asset account test (R4).
 - **Loss provision.** If EAC > price, the provision balance must be (EAC − price) × (1 − progress). The run posts the change: Dr cost of goods sold / Cr `contractLossProvisionAccount`, or the reverse. With the cost-to-cost margin, the full loss shows at once (ASC 606 and ASC 605-35).
 
-**Cost relief rows.** The run writes schedule rows of two new types, `Cost Relief` (Dr cost of goods sold / Cr Project WIP) and `Loss Provision`. `postRevenueRecognitionRun` posts them with the Project and Project Element dimensions. `projectCostRelief` records which ledger rows each relief covered, so no cost is relieved twice.
+**Cost relief rows.** The run writes schedule rows of two new types, `Cost Relief` (Dr cost of goods sold / Cr the account the ledger row debited, Project WIP) and `Loss Provision`. They carry `customerContractLineId` and no `customerContractRevenueId` (R6). `postRevenueRecognitionRun` posts them in the run's `Revenue Recognition` journal with the Project and Project Element dimensions. `projectCostRelief` records each ledger row a Cost Relief row covered, keyed on that schedule row, so no cost is relieved twice (R2).
 
 ### Design Decisions
 
@@ -147,7 +147,7 @@ The monthly recognition run gets a third synthesizer, `synthesizeProjectRevenue`
 | 1 | Where the method lives | `customerContractLine.billingMethod` (Fixed, Time & Materials, Cost Plus). `revenueType` stays for Fixed lines. | The projects spec said `kind`; main has `revenueType` (One-time, Recurring), which answers a different question. Naming rule: name what the choice decides. |
 | 2 | Revenue method names | Add `'Right to Invoice'` and `'Percent Complete'` to `contractRevenueMethod`. Not `'As Invoiced'`. | Under ASC 606-10-55-18, T&M revenue follows the right to invoice, which arises when work is performed, not when an invoice is drafted. "As Invoiced" would mislead. The contracts migration only reserved the names in a comment. |
 | 3 | One revenue path | Both methods go through the monthly run and the contract position (`applyContractMovement`). Invoices post as for every contract line. | Reuses the deferral and contract asset machinery. No second revenue engine. |
-| 4 | WIP relief timing | In the same run as revenue: Right to Invoice relieves the cost of the items it recognizes; Percent Complete relieves all cost incurred. | Revenue and its cost land in the same month. Cost-to-cost expenses contract cost as incurred. |
+| 4 | WIP relief timing | In the same run as revenue. Both methods relieve all cost incurred to the period end (R3). | Revenue and its cost land in the same month. Cost-to-cost expenses contract cost as incurred. All performed work is recognized under Right to Invoice, so its cost belongs to the same month. |
 | 5 | Loss | Full provision at once, adjusted monthly to (EAC − price) × (1 − progress). | ASC 605-35-25-46 (kept by ASC 606 for contracts with a forecast loss). |
 | 6 | Billable items | Created at posting, in the posting transaction, by the field service `buildBillableItem` hook. A backfill action covers older rows. | One billing table for service and contracts. SAP DP91 and Costpoint review states. |
 | 7 | Rate lookup | Line × employee, then line × labor category, then the category's default bill rate. No rate puts the item On Hold. | Costpoint's most-specific-wins sequence. An item never bills at 0 by accident. |
@@ -209,32 +209,38 @@ CREATE TABLE "customerContractLaborRate" (
 -- No holdReason column (P3): the reasons ('No bill rate', 'No hours', 'Funding limit', a user's note)
 -- live in the existing projectBillableItem.statusReason. projectBillableItem gains voidedSalesInvoiceId (P4).
 
-CREATE TABLE "projectCostRelief" (                   -- append-only
+CREATE TABLE "projectCostRelief" (                   -- append-only (R2)
   "id" TEXT NOT NULL DEFAULT id('pcr'),
   "companyId" TEXT NOT NULL,
   "projectLedgerId" TEXT NOT NULL,
-  "revenueRecognitionRunLineId" TEXT NOT NULL,
+  "revenueRecognitionScheduleId" TEXT NOT NULL,      -- FK, ON DELETE CASCADE
   "amount" NUMERIC NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  -- PK ("id","companyId"); UNIQUE ("projectLedgerId", "revenueRecognitionRunLineId", "companyId")
+  -- PK ("id","companyId"); UNIQUE ("projectLedgerId", "companyId")
 );
 
+ALTER TABLE "customerContractRevenue"               -- the figures behind a progress month (R7)
+  ADD COLUMN "earnedToDate" NUMERIC,
+  ADD COLUMN "estimateAtCompletion" NUMERIC,
+  ADD COLUMN "transactionPrice" NUMERIC,
+  ADD COLUMN "progress" NUMERIC;                     -- 0–1
+
 ALTER TABLE "accountDefault" ADD COLUMN "contractLossProvisionAccount" TEXT;
--- seeded account: 'Contract Loss Provision' (Liability, Balance Sheet), number chosen in the plan
--- after checking the chart for a free number next to 2160 Deferred Revenue; backfill as
--- 20261006220201_revenue-recognition-core.sql does
+-- seeded account: 2165 'Contract Loss Provision' (Liability, Balance Sheet), next to
+-- 2160 Deferred Revenue (R9); backfilled as 20261006220201_revenue-recognition-core.sql does
 ```
 
 `projectWorkInProgressAccount` comes from projects Phase 1a. `projectBillableItem` comes from field service Phase A.
 
 ## API / Service Changes
 
-- **Pure helpers** (`@carbon/utils`, unit-tested): `resolveBillRate`, `priceContractBillableItem(method, costType, ledgerRow, rates, line)`, `percentCompleteRevenue({ price, eac, actualToDate, recognizedToDate })`, `lossProvisionBalance({ price, eac, progress })`, `fundingPosition(items, line)`, `fundingNotice({ incurred, averageDailyCost, remainingPlan, line })`.
+- **Pure helpers** (`@carbon/utils`, unit-tested): `resolveBillRate`, `priceContractBillableItem(method, costType, ledgerRow, rates, line)`, `fundingPosition(items, line)`, `fundingNotice({ incurred, averageDailyCost, remainingPlan, line })`. The Percent Complete math is commercial (`packages/ee/src/project-revenue/progress.ts`): `percentCompletePrice`, `percentCompleteRevenue({ price, estimateAtCompletion, actualToDate, recognizedToDate })`, `lossProvisionBalance({ price, estimateAtCompletion, progress })`.
 - **Posting:** `buildBillableItem` gains the contract branch; every posting function that writes `projectLedger` already calls it.
 - **Server functions:**
   - `create-project-billing-invoices` (`{ asOf, customerContractId? }`, permissions `{ update: "sales", create: "invoicing" }`);
   - `generate-contract-billable-items` (`{ customerContractLineId }`, the backfill action);
-  - `propose-revenue-recognition-run`: the `synthesizeProjectRevenue` synthesizer.
+  - `propose-revenue-recognition-run`, `recalculate-revenue-recognition-run` and `preview-revenue-recognition-run`: the `synthesizeProjectRevenue` synthesizer, and `revenueRunSynthesizers` from the caller (R1). The shared writers are `@carbon/server-functions/lib/project-revenue`.
+- **Commercial** (`@carbon/ee/project-revenue.server`): `synthesizeCommercialProjectRevenue` (Percent Complete and the loss provision), exported as `projectRevenueSynthesizers`.
 - **Contract services** (`sales.service.ts`): `getContractLaborRates`, `upsertContractLaborRate`, `deleteContractLaborRate`, `getContractLineFunding`.
 - **Project services** (`projects.service.ts`): `getContractBillableItems(client, { companyId, customerContractLineId, status })`, `updateProjectBillableItems` (bulk hold, release, write-off, price).
 - **Jobs:** `recurring-billing` gains the Cost Plus and project billing steps (before the contract step) and a daily funding check that sends `ContractFundingThreshold` once per threshold per funded cost (P12, P13).
@@ -293,7 +299,9 @@ Phase 4b: revenue
 ## Delivery phases
 
 1. **Phase 4a: billing.** ✅ Implemented 2026-10-11. Billing method, billing element, bill rates, billable items for contracts, review, funding and notices, the invoicing source.
-2. **Phase 4b: revenue.** Right to Invoice, Percent Complete, cost relief, loss provision, the Billing tab's progress figures.
+2. **Phase 4b: revenue.** ✅ Implemented 2026-10-11. Right to Invoice, Percent Complete, cost relief, loss provision, the Billing tab's progress figures.
+
+Phase 4 is done: both phases are implemented.
 
 ## Plan decisions (Phase 4a)
 
@@ -318,6 +326,30 @@ The plan corrected or added to this spec. Each is in the code; the plan's *Execu
 | P15 | Confirm and an amend `add` of a T&M line run the T&M backfill in their transaction. |
 | — | Rows that `complete_job_to_inventory` and `backflush_job_materials` insert into `projectLedger` get their T&M item from the backfill, which `create-project-billing-invoices` runs before it reads items. They reach the review list on the next invoice run, not at posting. |
 | — | Item review reaches the audit log: `projectBillableItem` is in `auditConfig` and has `events: true` in `event-system/attachments.ts`. |
+
+## Plan decisions (Phase 4b)
+
+The Phase 4b plan corrected or added to this spec. Each is in the code; the plan's *Execution notes* record how.
+
+| # | Decision |
+|---|---|
+| R1 | The run functions take extra synthesizers from the caller (`revenueRunSynthesizers`). The ERP routes and the job pass `projectRevenueSynthesizers` from `@carbon/ee/project-revenue.server`. The order is rental accruals, the passed synthesizers, Right to Invoice, then contract revenue. |
+| R2 | `projectCostRelief` keys on `revenueRecognitionScheduleId` (`ON DELETE CASCADE`), not on a run line, with `UNIQUE ("projectLedgerId", "companyId")`. The synthesizers run before the run lines exist, and a rebuilt month frees its ledger rows. |
+| R3 | Right to Invoice relieves every unrelieved subtree ledger row posted on or before the period end, not only the cost of billed items. |
+| R4 | Relief covers only rows whose journal debit line is on an Asset account; the Cost Relief row credits that account. |
+| R5 | A synthesizer rebuilds the run's month of each progress line: it deletes the line's Planned schedule rows and Planned month row of that month, then writes new ones. A Recognized month is never touched. |
+| R6 | `Cost Relief` and `Loss Provision` rows carry `customerContractLineId` and no `customerContractRevenueId`. The orphan cleanup of `synthesizeContractRevenue` reads only `Deferral` and `Accrual` rows. |
+| R7 | `customerContractRevenue` gains `earnedToDate`, `estimateAtCompletion`, `transactionPrice` and `progress`, so the run review can show them. |
+| R8 | Progress = `min(actual ÷ EAC, 1)` when EAC > 0, else 0. EAC = the billing element's override, else the subtree roll-up of the Costs tab. |
+| R9 | Cost Relief and Loss Provision debit `costOfGoodsSoldAccount`. The provision credits the new `contractLossProvisionAccount`, seeded as `2165 Contract Loss Provision`. |
+| R10 | The commercial synthesizer first runs `generateCostPlusItems` through the period end, in the run's transaction. |
+| R11 | The Percent Complete database tests live in `packages/ee` and use the server function test fixtures through package exports. |
+
+## Known gaps
+
+- Through MCP or the API, the close checklist's revenue run preview leaves out the Percent Complete rows. The 3 MCP tools that reach `getPeriodRunPreview` (`closeAccountingPeriod`, `getPeriodCloseChecklist`, `getPeriodCloseReadiness`) cannot take functions, so they pass no synthesizers. The ERP close page and every run call site include them.
+- The project **Billing** tab and the contract's **Project Billing** card list billing lines only. A Fixed Percent Complete line shows its figures in the run review only.
+- The browser checks of Phase 4a and Phase 4b are deferred.
 
 ## Out of scope
 
@@ -349,3 +381,4 @@ Resolved autonomously (2026-10-09), open to veto:
 - 2026-10-09: Created autonomously from `.ai/research/projects-wbs-pmmo.md`, the projects spec's Phase 4 outline, and a map of the contracts, recurring invoicing and revenue recognition code on main. Corrects the projects spec: the line's type is `revenueType`, not `kind`; `customerContractLine.projectId` already exists. Q1 (commercial gating) is open.
 - 2026-10-09: Q1 resolved (Brad): T&M and Right to Invoice community; Cost Plus, Percent Complete and the loss provision commercial behind `PROJECT_REVENUE`.
 - 2026-10-11: Phase 4a implemented. Recorded plan decisions P1–P15 and the SQL backfill decision; corrected the billable item, data model and jobs sections (P1, P3, P12).
+- 2026-10-11: Phase 4b implemented, so Phase 4 is done. Recorded plan decisions R1–R11 and the known gaps; corrected `projectCostRelief` (R2), the Right to Invoice cost relief (R3), the run order (R1) and the location of the Percent Complete math. Moved to `.ai/specs/implemented/`.

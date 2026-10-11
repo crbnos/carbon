@@ -1,6 +1,6 @@
 # Project Billing Phase 4b — revenue — implementation plan
 
-**Spec:** .ai/specs/2026-10-09-project-billing.md (Phase 4b, *Revenue and WIP relief*, decisions 2–5, 12, 17–18, Open Questions Q1)
+**Spec:** .ai/specs/implemented/2026-10-09-project-billing.md (Phase 4b, *Revenue and WIP relief*, decisions 2–5, 12, 17–18, Open Questions Q1)
 **Research:** .ai/research/projects-wbs-pmmo.md (patterns 9 and 10, Answer 6, Recommendation 7)
 **Branch:** projects-wbs-research-spec
 **Prerequisite:** every task of these plans is done and committed:
@@ -67,7 +67,7 @@ These correct or add to the spec. Task 13 records them there.
 - [x] Task 10: Show progress in the run review
 - [x] Task 11: Show progress on the Billing tab and the contract
 - [x] Task 12: Add the Contract Loss Provision account default
-- [ ] Task 13: Update the rules, AGENTS.md, docs, spec and changelog
+- [x] Task 13: Update the rules, AGENTS.md, docs, spec and changelog
 - [ ] Task 14: Verify in the browser
 
 ## Dependencies
@@ -530,7 +530,7 @@ pnpm exec turbo run typecheck --filter=erp
 - Modify: `apps/erp/app/modules/accounting/AGENTS.md` (Revenue recognition: the synthesizer order, the call-site rule)
 - Modify: `packages/server-functions/AGENTS.md` (`revenueRunSynthesizers`, `@carbon/server-functions/project-revenue`)
 - Modify: `docs/content/docs/reference/project-billing.mdx`
-- Modify: `.ai/specs/2026-10-09-project-billing.md`
+- Modify: `.ai/specs/implemented/2026-10-09-project-billing.md`
 - Create: `docs/content/changelog/<YYYY-MM-DD>-project-billing.mdx` (use the `changelog-entry` skill)
 
 **Steps:**
@@ -614,3 +614,8 @@ ls .ai/playbooks/project-billing-phase-4b.md
 - Task 10: the run lines select (`getRevenueRecognitionRunLines`) embeds the month row (`revenue`) and the contract line (`contractLine`, with its contract and billing element) through the schedule's composite FKs. A contract row's **Source** cell now links to its contract. `ProjectRevenueProgress.ee.tsx` builds one row per contract line with a progress month (`earnedToDate` set), a Cost Relief row or a Loss Provision row (`projectRevenueRows`). **This Month** counts each month row once, because its Deferral and Accrual rows both point at it. `check:manifest` passes unchanged. The UI is not checked in a browser (Task 14).
 - Task 11: `getProjectContractRevenue` returns `{ data, error }` with `data` keyed by line id (`ProjectContractRevenue`). **Revenue Recognized** sums the months that are not Planned, so a month `Recognized Externally` counts too. The 2 surfaces list only billing lines (Time & Materials and Cost Plus), as before; a Fixed Percent Complete line shows its figures in the run review only. `ProjectBillingLines` shows **Percent Complete** for a Percent Complete line and "—" for the rest. The UI is not checked in a browser (Task 14).
 - Task 12: **Contract Loss Provision** sits under Accounts Receivable, after **Deferred Revenue**, with `badgeType: "Liability"`. The form offers that badge's accounts from the accounting layout's balance sheet list, as for Deferred Revenue. It has no glossary `termId`, as **Project WIP** has none. `updateDefaultAccounts` writes the validated object as it is, so the new optional field saves with no service change.
+- Task 13: the spec moved to `.ai/specs/implemented/` (`git mv`) in this task, although the task lists the move as out of scope. Phases 4a and 4b are both implemented, and the run's brief asked for the move. The references in the plans, the specs, the rules and 3 code comments point to the new path. The migration comments keep the old path, as the field service move did (`52fda3a53a`).
+- Task 13: the changelog entry is `docs/content/changelog/2026-10-11-project-billing.mdx`, one entry for 4a and 4b, with a generated `ledger` thumbnail. `docs` typecheck passed and `links.test.ts` passed (5 tests). The RSS check did not run: no docs server listens on port 3002.
+- Task 13: the spec and the rule record a known gap. Through MCP or the API, the close checklist's revenue run preview leaves out the Percent Complete rows (Task 7). The run log lists it under the follow-ups.
+- Task 14: Browser verification deferred. localhost:3000 is a different product, so the overnight run skipped it. The box stays unticked.
+- Phase 4b is implemented: the spec's status line and *Delivery phases* say so, and Phase 4 is done.

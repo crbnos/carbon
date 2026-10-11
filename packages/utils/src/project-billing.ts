@@ -5,7 +5,7 @@
 // Project billing on a customer contract line: bill rates, Time & Materials
 // prices, funding, notices and invoice grouping. Pure, so posting, the
 // invoicing source, the funding check and their tests agree.
-// Spec: `.ai/specs/2026-10-09-project-billing.md` (Phase 4a)
+// Spec: `.ai/specs/implemented/2026-10-09-project-billing.md` (Phase 4a)
 
 import type { Database } from "@carbon/database";
 import { equals, RoundingMode, round } from "@carbon/database/precision";

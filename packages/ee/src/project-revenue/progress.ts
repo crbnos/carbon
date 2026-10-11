@@ -4,7 +4,7 @@
 
 // Percent Complete revenue and the contract loss provision (`PROJECT_REVENUE`).
 // Pure and client-safe, so the synthesizer and its tests agree. Spec:
-// `.ai/specs/2026-10-09-project-billing.md` (*Revenue and WIP relief*), plan
+// `.ai/specs/implemented/2026-10-09-project-billing.md` (*Revenue and WIP relief*), plan
 // `.ai/plans/2026-10-09-project-billing-phase-4b.md` (decision R8).
 
 import type { Database } from "@carbon/database";

@@ -1,6 +1,6 @@
 # Project Billing Phase 4a — billing — implementation plan
 
-**Spec:** .ai/specs/2026-10-09-project-billing.md (Phase 4a, decisions 1–18, Open Questions Q1)
+**Spec:** .ai/specs/implemented/2026-10-09-project-billing.md (Phase 4a, decisions 1–18, Open Questions Q1)
 **Research:** .ai/research/projects-wbs-pmmo.md (patterns 9 and 10, Answer 6, Recommendation 7)
 **Branch:** projects-wbs-research-spec
 **Prerequisite:** every task of these plans is done and committed:
@@ -1017,7 +1017,7 @@ pnpm exec turbo run typecheck --filter=erp
 - Modify: `apps/erp/app/modules/sales/AGENTS.md` (Contracts: billing lines), `packages/server-functions/AGENTS.md`
 - Modify: `AGENTS.md` (Task Router: a Project billing row)
 - Create: `docs/content/docs/reference/project-billing.mdx`
-- Modify: `.ai/specs/2026-10-09-project-billing.md`
+- Modify: `.ai/specs/implemented/2026-10-09-project-billing.md`
 
 **Steps:**
 1. Document only committed code. Ground every claim in a file.

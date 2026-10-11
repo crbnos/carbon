@@ -3,20 +3,23 @@ paths:
   - "packages/server-functions/src/create-project-billing-invoices/**"
   - "packages/server-functions/src/generate-contract-billable-items/**"
   - "packages/ee/src/project-revenue/**"
+  - "packages/server-functions/src/lib/project-revenue.ts"
+  - "apps/erp/app/modules/accounting/ui/RevenueRecognition/ProjectRevenueProgress.ee.tsx"
   - "packages/utils/src/project-billing.ts"
   - "packages/jobs/src/invoicing/contract-funding.ts"
   - "apps/erp/app/modules/sales/ui/Contracts/ContractLineBilling*.tsx"
   - "apps/erp/app/modules/projects/ui/Billing/**"
 ---
 
-# Project billing (Phase 4a)
+# Project billing (Phases 4a and 4b)
 
-A customer contract line bills project work. Spec
-`.ai/specs/2026-10-09-project-billing.md`; plan
-`.ai/plans/2026-10-09-project-billing-phase-4a.md` (decisions P1–P15 and the
-*Execution notes*). Phase 4b (revenue: Right to Invoice, Percent Complete, cost
-relief, loss provision) has its own plan and ships in the same release: 4a alone
-posts T&M invoices to Deferred Revenue, and nothing recognizes them.
+A customer contract line bills project work, and the monthly revenue recognition
+run recognizes its revenue and relieves its Project WIP. Spec
+`.ai/specs/implemented/2026-10-09-project-billing.md`; plans
+`.ai/plans/2026-10-09-project-billing-phase-4a.md` (decisions P1–P15) and
+`.ai/plans/2026-10-09-project-billing-phase-4b.md` (decisions R1–R11), each with its
+*Execution notes*. The 2 phases ship in the same release: 4a alone posts T&M
+invoices to Deferred Revenue, and nothing recognizes them.
 
 ## The line
 
@@ -146,10 +149,97 @@ daily cost × `noticeWindowDays`, capped by the remaining plan only when the sub
 has a plan, P14) against `noticePercent × fundedCost`; a second notice when the funds
 run out within the window. A changed `fundedCost` makes both due again (P13).
 
+## Revenue and WIP relief (Phase 4b)
+
+The revenue recognition run recognizes a line with revenue method Right to Invoice or
+Percent Complete. Each month of such a line is a `customerContractRevenue` row with
+`earnedToDate` (and, for Percent Complete, `estimateAtCompletion`,
+`transactionPrice` and `progress`). `synthesizeContractRevenue` then moves the month
+through the contract position like a planned month: a Deferral row for what Deferred
+Revenue covers, an Accrual row into Contract Assets for the rest.
+
+**Run order (R1).** `runRowSynthesizers(extra)`
+(`propose-revenue-recognition-run/index.ts`) returns `synthesizeRentalAccruals`, the
+caller's `extra`, `synthesizeProjectRevenue`, then `synthesizeContractRevenue`. The
+caller passes `extra` as `revenueRunSynthesizers` on the server function fields
+(`ServerFnContext`, `serverFns.system`). `@carbon/server-functions` cannot import
+`@carbon/ee`, so the commercial synthesizer reaches the run only this way.
+
+**Every run call site passes `projectRevenueSynthesizers`** (`@carbon/ee/project-revenue.server`):
+the routes `revenue-recognition-runs.new`, `$runId.repeat`, `$runId.recalculate` and
+`periods.$periodId.close` (propose and the close checklist preview), and the job
+`revenue-recognition-proposal`. A call site that leaves it out writes no Percent
+Complete month, and the next call site that passes it rebuilds the month (R5).
+`getPeriodRunPreview` (`accounting.service.ts`, browser-bundled) takes the
+synthesizers as an argument. The 3 MCP tools that reach it (`closeAccountingPeriod`,
+`getPeriodCloseChecklist`, `getPeriodCloseReadiness`) pass `[]`.
+
+The shared writers live in `@carbon/server-functions/lib/project-revenue`
+(`src/lib/project-revenue.ts`). A synthesizer:
+
+1. takes `lockProjectRevenue` (the contract position lock);
+2. reads its lines with `loadProgressLines` (contract not Draft, line started by the
+   period end);
+3. rebuilds the run's month with `clearProgressMonth` (R5): it deletes the line's
+   Planned schedule rows of the month (`Deferral`, `Accrual`, `Cost Relief`,
+   `Loss Provision`, through `syncDraftRecognitionRuns`), then the Planned month row.
+   A Recognized month is never touched;
+4. writes the month with `writeProgressMonths` (`recognizedBefore` gives what earlier
+   months recognized, any status);
+5. relieves cost with `selectUnrelievedCost` and `writeCostRelief`.
+
+**Right to Invoice** (`synthesizeProjectRevenue`, community). Earned to date = Σ the
+line's billable items whose ledger row posted on or before the period end, other than
+Written Off. The month = earned to date − recognized before; a write-off gives a
+negative month.
+
+**Percent Complete** (`synthesizeCommercialProjectRevenue`, ee). It returns at once
+without `PROJECT_REVENUE` (`projectRevenueEnabledForCompany`). It first runs
+`generateCostPlusItems` through the period end (R10). Per line:
+
+| Figure | Rule |
+|---|---|
+| EAC | the billing element's `estimateAtCompletion` override, else `estimateAtCompletion(sumSubtree(…))` over `get_project_cost_summary` |
+| Price | Fixed: Σ the line's `customerContractInvoiceLine.amount`. Cost Plus: EAC × (1 + fee), capped at `ceilingAmount` (`percentCompletePrice`) |
+| Progress | `min(actual ÷ EAC, 1)`, 0 when EAC is 0; actual = the subtree's ledger rows to the period end (R8) |
+| Earned to date | price × actual ÷ EAC, rounded once (`percentCompleteRevenue`) |
+| Loss provision | target `(EAC − price) × (1 − progress)` when EAC > price, else 0 (`lossProvisionBalance`); the run writes the change from the earlier `Loss Provision` rows |
+
+The math is pure in `packages/ee/src/project-revenue/progress.ts`.
+
+**Cost relief (R2–R4).** Both methods relieve every subtree ledger row posted on or
+before the period end that has no `projectCostRelief` row and whose journal debit line
+is on an Asset account. A row posted with accounting off, or an expensed row, is never
+relieved. One `Cost Relief` schedule row per line and account: Dr
+`costOfGoodsSoldAccount` / Cr that account. `projectCostRelief` records each ledger row
+with its schedule row (`UNIQUE (projectLedgerId, companyId)`, FK to the schedule row
+`ON DELETE CASCADE`), so a rebuilt month frees its rows and none is relieved twice.
+
+**Loss provision.** A `Loss Provision` schedule row: Dr `costOfGoodsSoldAccount` / Cr
+`contractLossProvisionAccount` (seeded `2165 Contract Loss Provision`, set under
+**Accounting → Default Accounts**). A negative row releases provision; posting swaps
+its sides.
+
+**Posting.** `Cost Relief` and `Loss Provision` rows carry `customerContractLineId` and
+no `customerContractRevenueId` (R6), and post in the run's `Revenue Recognition`
+journal (off external ledgers by default, `POSTING_POLICY`). `postRevenueRecognitionRun`
+adds the Project and Project Element dimensions to contract rows; the descriptions come
+from `revenueRowDescriptions` (`accounting.utils.ts`). The orphan cleanup of
+`synthesizeContractRevenue` reads only `Deferral` and `Accrual` rows, or it would
+delete the relief rows.
+
+**Review.** The run page shows a **Project Revenue** card above its sections
+(`ProjectRevenueProgress.ee.tsx`): per line the EAC, price, progress, earned to date,
+this month, cost relieved and loss provision change. A Right to Invoice line has no
+EAC, price or progress. The project **Billing** tab shows **Percent Complete** and
+**Revenue Recognized** per billing line, and the contract's **Project Billing** card
+shows **Revenue Recognized** (`getProjectContractRevenue`, `projects.service.ts`).
+
 ## Commercial gating
 
 `PROJECT_REVENUE` (Business, Partner). T&M and Right to Invoice are community. The
-lock is P1 (Cost Plus items only from ee code). The routes call
+lock is P1 (Cost Plus items only from ee code), and the Percent Complete synthesizer
+and the loss provision run only in ee code (R1). The routes call
 `requireProjectRevenueEntitlement` for Cost Plus or Percent Complete through
 `projectRevenueRefusal` (`sales.server.ts`; `lines.new`, `$lineId.details`, `amend`)
 and flash `defaultUpgradeMessage`. The forms keep both choices visible with an
@@ -170,4 +260,11 @@ upgrade notice (`ProjectRevenueUpgrade`) and Save disabled. An MCP
 
 - Billing lines need the contract currency to equal the base currency (P5);
   multi-currency bill rates are out of scope.
-- Browser verification of Phase 4a is deferred (plan Task 21).
+- Through MCP or the API, the close checklist's revenue run preview leaves out the
+  Percent Complete rows: the 3 MCP tools pass no synthesizers (above). The ERP close
+  page and every run call site include them.
+- The project **Billing** tab and the contract's **Project Billing** card list billing
+  lines only, so a Fixed Percent Complete line shows its figures in the run review only.
+- The run page's **Amount** sums every line, cost relief and loss provision included.
+- Browser verification of Phase 4a (plan Task 21) and Phase 4b (plan Task 14) is
+  deferred.

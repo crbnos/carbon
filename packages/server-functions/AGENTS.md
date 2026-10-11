@@ -141,6 +141,22 @@ package cannot import) and `generateTimeAndMaterialsItems`, the T&M backfill tha
 `create-project-billing-invoices` call. The last drafts project billing invoices through
 `create-contract-invoices/insert-invoice.ts` (`insertDraftContractInvoice`).
 
+Project revenue (Phase 4b): the 3 revenue recognition run functions
+(`propose-`, `recalculate-` and `preview-revenue-recognition-run`) run
+`runRowSynthesizers(ctx.revenueRunSynthesizers)`: rental accruals, the caller's
+synthesizers, `synthesizeProjectRevenue`, then `synthesizeContractRevenue`.
+`revenueRunSynthesizers` is a field of `ServerFnContext` and of the `serverFns`
+fields (default `[]`). It is how the commercial Percent Complete synthesizer
+(`@carbon/ee/project-revenue.server`, `projectRevenueSynthesizers`) runs inside the
+run's transaction, since this package cannot import `@carbon/ee`; every caller passes
+it. The writers both synthesizers share are exported as
+`@carbon/server-functions/lib/project-revenue` (`lockProjectRevenue`,
+`loadProgressLines`, `clearProgressMonth`, `recognizedBefore`, `writeProgressMonths`,
+`selectUnrelievedCost`, `writeCostRelief`, `monthStartOf`). The project billing test
+fixture is exported as `@carbon/server-functions/lib/project-billing-test-fixture`, and
+the database test gate as `@carbon/server-functions/test-fixture`, for the ee database
+tests.
+
 Two more internal helpers sit at the `src/` root (not exported): `shelf-life.ts`
 (the company's expired-entity policy and expiry checks, used by `issue` and
 `post-stock-transfer`) and `tracked-entity-attributes.ts` (`attributesContain`, the

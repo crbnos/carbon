@@ -15,14 +15,15 @@ paths:
 # Projects
 
 Phases 1a, 1b, 1c, 2a, 2b and 3 of `.ai/specs/2026-10-03-projects.md`, and
-Phase 4a of `.ai/specs/2026-10-09-project-billing.md`; plans
+Phases 4a and 4b of `.ai/specs/implemented/2026-10-09-project-billing.md`; plans
 `.ai/plans/2026-10-07-projects-phase-1a.md`,
 `.ai/plans/2026-10-08-projects-phase-1b.md`,
 `.ai/plans/2026-10-08-projects-phase-1c.md`,
 `.ai/plans/2026-10-08-projects-phase-2a.md`,
 `.ai/plans/2026-10-08-projects-phase-2b.md`,
-`.ai/plans/2026-10-08-projects-phase-3.md` and
-`.ai/plans/2026-10-09-project-billing-phase-4a.md` (their *Execution notes* record every
+`.ai/plans/2026-10-08-projects-phase-3.md`,
+`.ai/plans/2026-10-09-project-billing-phase-4a.md` and
+`.ai/plans/2026-10-09-project-billing-phase-4b.md` (their *Execution notes* record every
 deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
@@ -170,7 +171,7 @@ and `parentProjectId` names a coverage contract's project. Field service owns th
   list, the charge number pickers, the dimension picker and the Ramp sync filter
   `projectType = 'Standard'`. Never list a Service project in Projects.
 
-## Contract billing (Phase 4a)
+## Contract billing and revenue (Phases 4a and 4b)
 
 A customer contract line with billing method Time & Materials or Cost Plus bills a
 Contract project's billing element and its subtree. The whole subsystem is in
@@ -190,6 +191,10 @@ Contract project's billing element and its subtree. The whole subsystem is in
   only), `update: projects`. Each change reaches the audit log ("Billable Item").
 - `laborCategoryRate.billRate` is a category's default price of an hour, beside its
   cost rate.
+- **Revenue (Phase 4b).** The monthly revenue recognition run recognizes Right to
+  Invoice and Percent Complete lines and relieves Project WIP to cost of goods sold:
+  every subtree ledger row whose journal debit line is on an Asset account, once
+  (`projectCostRelief`). Details, the run order and the call-site rule: `project-billing.md`.
 
 ## Project stock (Phase 2a)
 

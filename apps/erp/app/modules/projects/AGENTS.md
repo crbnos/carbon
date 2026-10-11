@@ -187,6 +187,10 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   contract billing review (Phase 4a): Projects → **Billing** (`projects+/billing.tsx`,
   `billing.update.tsx`) and the project **Billing** tab (`$projectId.billing.tsx`,
   Contract projects only), UI in `ui/Billing/`.
+- `getProjectContractRevenue` (`ProjectContractRevenue`) — per contract line, the revenue
+  recognized to date and the latest month's progress, EAC and price (Phase 4b). The Billing
+  tab passes it to `ProjectBillingLines` (**Percent Complete**, **Revenue Recognized**), and
+  the contract page (`contract+/$id.details.tsx`) to `ContractProjectBilling`.
 - `getPlanningSegmentOwners`, `moveActionPegsToSupply` (`.server`) — the planning routes'
   Apply in a group segment: the owner of each segment, and one transaction that moves an
   action's pegs onto the PO line or job it created.

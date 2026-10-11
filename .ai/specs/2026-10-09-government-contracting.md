@@ -6,7 +6,7 @@
 > Research: `.ai/research/government-contracting-layer.md` and `.ai/research/projects-wbs-pmmo.md` (patterns 8 and 10, Answer 7). The first covers indirect rates, unallowable costs, DCAA timekeeping, CLIN/ACRN funding, budget control, earned value, R&D tax and the SF 1408 ranking.
 > Builds on:
 > - `.ai/specs/2026-10-03-projects.md` (the project ledger, timesheets, treatments; Phase 5 outline)
-> - `.ai/specs/2026-10-09-project-billing.md` (Cost Plus billing, funding, revenue by progress)
+> - `.ai/specs/implemented/2026-10-09-project-billing.md` (Cost Plus billing, funding, revenue by progress)
 
 ## TLDR
 

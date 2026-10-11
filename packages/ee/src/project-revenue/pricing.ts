@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 // Cost Plus pricing (`PROJECT_REVENUE`). Pure and client-safe, so the
-// generator and its tests agree. Spec: `.ai/specs/2026-10-09-project-billing.md`
+// generator and its tests agree. Spec: `.ai/specs/implemented/2026-10-09-project-billing.md`
 // (*Billable items*), plan decision P10.
 
 import type { Database } from "@carbon/database";

@@ -1,6 +1,6 @@
 ---
 title: Project billing
-description: "Bill a customer for project work from a contract line: time and materials at bill rates, or cost plus a fee, within funding."
+description: "Bill a customer for project work from a contract line, time and materials or cost plus a fee, and recognize its revenue by progress."
 ---
 
 A contract line can bill the work charged to a project instead of a fixed schedule. Its **Billing Method** decides how:
@@ -63,3 +63,22 @@ The daily billing job drafts one invoice per contract for its billing lines, for
 ## Funding notices
 
 Once a day Carbon adds the cost incurred under each billing element to the cost it expects over the notice window (the average daily cost of the last 90 days, capped by the plan's remaining cost when the element has a plan). When that reaches **Notice At** of the funded cost, the contract's sales person and the project's manager get a notice in the app and by email. A second notice goes out when the funds will run out within the window. A change to the funded cost starts a new cycle. This follows the notice clauses FAR 52.232-20 and 52.232-22.
+
+## Revenue
+
+The monthly [revenue recognition](/docs/reference/contracts#revenue) run (**Accounting → Revenue Recognition**) recognizes a billing line by its **Revenue Method**, whether or not the work is invoiced yet:
+
+| Revenue method | Revenue to date |
+|---|---|
+| **Right to Invoice** | The billable items of the work posted by the month end, less written-off items |
+| **Percent Complete** | Price × (cost to date ÷ estimate at completion) |
+
+Each month recognizes revenue to date less what earlier months recognized, so a write-off or a new estimate shows as a catch-up, negative when it has to be. Revenue billed in advance comes out of Deferred Revenue; revenue not billed yet goes into Contract Assets.
+
+For Percent Complete, the estimate at completion is the billing element's **Estimate** on the project's **Costs** tab. The price of a Fixed line is its scheduled invoices; the price of a Cost Plus line is the estimate × (1 + fee %), capped at the **Ceiling**.
+
+- **Cost.** The same run moves the line's cost from Project WIP to cost of goods sold, so revenue and its cost land in the same month. It moves each cost once. A cost posted to an expense account, or with accounting off, stays where it is.
+- **Loss.** When the estimate is above the price, the run provides the whole forecast loss at once and adjusts it each month as the work progresses. It posts to the **Contract Loss Provision** account under **Accounting → Default Accounts**.
+- **Review.** A run's page lists each project line with its estimate, price, progress, earned to date, this month, cost relieved and loss provision change before you post. The project's **Billing** tab shows each line's percent complete and revenue recognized, and the contract's **Project Billing** card shows revenue recognized.
+
+Percent Complete and the loss provision need the Business plan.
