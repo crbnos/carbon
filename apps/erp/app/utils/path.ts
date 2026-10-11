@@ -153,6 +153,11 @@ export const path = {
       gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>
         generatePath(`${api}/ai/csv/${table}/columns`),
+      indirectRatesIceCsv: (fiscalYear: number, schedule: string) =>
+        `${api}/indirect-rates/ice.csv?${new URLSearchParams({
+          fiscalYear: String(fiscalYear),
+          schedule
+        })}`,
       inspectionDocumentBalloonAnalyze: (inspectionDocumentId: string) =>
         generatePath(
           `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`

@@ -98,7 +98,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 11: Teach the Phase 4 billing readers about burden
 - [x] Task 12: Add the monthly job and the lock trigger
 - [x] Task 13: Add the close checklist task
-- [ ] Task 14: Add the ICE schedules and the CSV route
+- [x] Task 14: Add the ICE schedules and the CSV route
 - [ ] Task 15: Build the Indirect Pools pages
 - [ ] Task 16: Build the Indirect Rates, Statement and ICE pages
 - [ ] Task 17: Add rate ceilings to the contract line
@@ -1381,3 +1381,13 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   3. The check reads with the privileged Kysely client, after the Timesheets complete check, as 5a Task 30 (`9efe6a2846`) does. It reads the pool count and the run in 2 queries, and only when the company has the feature. The run read matches the period by `startDate` and `endDate` through a subquery. A failed read counts as one, as the timesheet check does.
   4. The plan names 3 test cases. The test has 4 for `burdenComputedCheck` (with the not-applicable case) and 2 for `computePeriodReadiness`: a company without the feature that still has a pool passes (also with no entitlements passed), and an entitled company with a pool and no run fails.
   5. The **Compute Burden** button shows only while the period is Locked: `computeProjectBurden` refuses any other period. The task's tooltip explains the check. The intent logs and flashes an error that is not an `EntitlementError`.
+- Task 14:
+  1. A, B, C and E read the last period of the year with Actual rates. With none, A, B and C are empty, and E reads the whole year. E sums the base from the fiscal year start to that period's end.
+  2. The claimed rate of a pool and year is the Final rate of period 12, else the Actual rate of the last computed period, for H and I alike. A year with no claimed rate claims its direct cost only.
+  3. H and I read the allowable non-Burden ledger cost of Direct projects on each current contract line's billing element subtree (`get_contract_line_subtree`, the lines no amendment replaces), as Cost by CLIN does. A row at project level, with no element, is on no line. The Overhead rows feed `absorbedOverhead` for a pool with `offsetAbsorbedOverhead` (B7).
+  4. G counts the ledger rows of Direct projects. It sums each journal line behind them once, debit-positive by account class, whatever the journal status.
+  5. B and C show a Carried Burden line with an empty account number. An Absorbed Overhead line reads "Absorbed overhead (<account name>)" and claims 0 (B7: shown, never claimed).
+  6. K counts Billed items only, as its "Billed amount" column says. The contract line reads its `lineItemNumber`, else its description.
+  7. L joins payroll and labor per employee with a full outer join, so an employee with labor and no payroll still shows. The difference is payroll gross wages less labor distribution dollars.
+  8. `index.ts` also exports `./ice` (pure, client-safe) for the Task 16 page. The route parses the query with zod and answers 400 on a bad year or schedule.
+  9. A database test (`ice.server.test.ts`) runs all 9 schedules against a seeded company. It reads the seeded values back from A, C, E, G, H and I; K and L run their SQL with no rows.
