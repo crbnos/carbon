@@ -92,7 +92,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 30: Add the Timesheets complete close task
 - [x] Task 31: Add the report queries and the CSV route
 - [x] Task 32: Add the Reports page
-- [ ] Task 33: Keep the demo datasets green
+- [x] Task 33: Keep the demo datasets green
 - [ ] Task 34: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 35: Verify in the browser
 
@@ -1691,4 +1691,5 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   5. **Reports** is the last entry of the Manage group, and `/x/projects/reports` joins the routes that the Projects entry does not claim.
   6. The new strings reached the `.po` files in the commit before this task (`f02dedc5ec`, the log fix): the pre-commit hook extracts from the working tree, where this task's files already were. Their `msgstr` is empty in the other locales; the branch-wide `/translate` run fills them.
   7. Browser verification deferred.
+- Task 33: `pnpm db:check:datasets` passes for all four datasets (satellite, robotics, precision, motor) with no change. No `COVERAGE` set in `validate.ts` is built from `timesheetEntryStatus`, so `Pending Employee Review` needs no `except` entry (step 2 does not apply). `pnpm db:check:backups` reports `packages/jobs/manifests/schema.json: restorable`. The task changes no code; this commit holds only the plan.
 
