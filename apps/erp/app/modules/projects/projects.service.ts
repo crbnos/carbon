@@ -43,6 +43,7 @@ import type {
   projectValidator
 } from "./projects.models";
 import {
+  apportionedBaseRefusal,
   canLink,
   governmentFurnishedRefusal,
   PARAMETER_ITEM_UNIT_COST,
@@ -1698,7 +1699,8 @@ export async function updateProjectElementOrder(
 /**
  * Deletes an element and its descendants. Refuses when the element or a
  * descendant has a project ledger row, a timesheet entry, a job or a
- * purchase order line.
+ * purchase order line, or is the base of an Apportioned element outside the
+ * subtree.
  * @mcp delete destructive
  */
 export async function deleteProjectElement(
@@ -1714,10 +1716,19 @@ export async function deleteProjectElement(
     .single();
   if (element.error) return { data: null, error: element.error };
 
-  const all = await fetchAll<{ id: string; parentId: string | null }>(() =>
+  const all = await fetchAll<{
+    id: string;
+    parentId: string | null;
+    readableId: string;
+    name: string;
+    earnedValueTechnique: string | null;
+    apportionedToElementId: string | null;
+  }>(() =>
     client
       .from("projectElement")
-      .select("id, parentId")
+      .select(
+        "id, parentId, readableId, name, earnedValueTechnique, apportionedToElementId"
+      )
       .eq("projectId", element.data.projectId)
       .eq("companyId", companyId)
       .order("id", { ascending: true })
@@ -1743,6 +1754,9 @@ export async function deleteProjectElement(
     subtree.push(next);
     stack.push(...(childrenOf.get(next) ?? []));
   }
+
+  const apportioned = apportionedBaseRefusal(subtree, all.data ?? []);
+  if (apportioned) return refusal(apportioned);
 
   const [ledger, timesheets, jobs, purchaseLines] = await Promise.all([
     client

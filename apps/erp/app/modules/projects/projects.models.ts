@@ -1390,6 +1390,37 @@ export function elementSubtreeIds(
   return ids;
 }
 
+/**
+ * The refusal for a delete that removes the base element of an Apportioned
+ * element outside the deleted subtree, else null. The base FK sets
+ * `apportionedToElementId` to null, which the Apportioned CHECK refuses, so
+ * the delete must stop before it reaches the database. An Apportioned element
+ * inside the subtree goes with it, so it does not block the delete.
+ */
+export function apportionedBaseRefusal(
+  deletedIds: Iterable<string>,
+  elements: {
+    id: string;
+    readableId: string;
+    name: string;
+    earnedValueTechnique: string | null;
+    apportionedToElementId: string | null;
+  }[]
+): string | null {
+  const deleted = new Set(deletedIds);
+  const byId = new Map(elements.map((element) => [element.id, element]));
+  for (const element of elements) {
+    if (element.earnedValueTechnique !== "Apportioned") continue;
+    if (!element.apportionedToElementId) continue;
+    if (deleted.has(element.id)) continue;
+    if (!deleted.has(element.apportionedToElementId)) continue;
+    const base = byId.get(element.apportionedToElementId);
+    const baseLabel = base ? `${base.readableId} ${base.name}` : "This element";
+    return `${baseLabel} is the base of apportioned element ${element.readableId} ${element.name}. Change that element first.`;
+  }
+  return null;
+}
+
 export type ProjectCostFigures = {
   plan: number;
   /** The budgets set in the subtree, or null when none is set. */

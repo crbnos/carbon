@@ -51,12 +51,14 @@ import type {
 } from "./projects.models";
 import {
   applyChangeRequestItems,
+  apportionedBaseRefusal,
   BUILD_FROM_PART_MAX_NODES,
   canLink,
   chargeableByDefault,
   computeVerification,
   defaultProjectStates,
   diffPlanSnapshots,
+  elementSubtreeIds,
   findConflicts,
   groupTimesheetRows,
   isProjectPlanLocked,
@@ -1714,6 +1716,27 @@ export async function applyChangeRequest(
       (item) => item.targetId
     );
     if (deleted.length > 0) {
+      // Refuse a delete that removes the base of an Apportioned element
+      // outside the deleted subtrees (its CHECK refuses the FK's SET NULL).
+      const projectElements = await trx
+        .selectFrom("projectElement")
+        .select([
+          "id",
+          "parentId",
+          "readableId",
+          "name",
+          "earnedValueTechnique",
+          "apportionedToElementId"
+        ])
+        .where("projectId", "=", projectId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      const apportioned = apportionedBaseRefusal(
+        deleted.flatMap((id) => elementSubtreeIds(projectElements, id)),
+        projectElements
+      );
+      if (apportioned) throw new ProjectChangeRequestError(apportioned);
+
       const charged = await sql<{ readableId: string; source: string }>`
         WITH RECURSIVE subtree AS (
           SELECT "id", "readableId" FROM "projectElement"

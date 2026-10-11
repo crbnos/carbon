@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  apportionedBaseRefusal,
   buildElementTree,
   buildReaderOutline
 } from "~/modules/projects/projects.models";
@@ -64,5 +65,47 @@ describe("buildReaderOutline", () => {
       ["d", "1.2.1"],
       ["e", "2"]
     ]);
+  });
+});
+
+describe("apportionedBaseRefusal", () => {
+  const node = (
+    id: string,
+    technique: string | null = null,
+    base: string | null = null
+  ) => ({
+    id,
+    readableId: id.toUpperCase(),
+    name: `Element ${id}`,
+    earnedValueTechnique: technique,
+    apportionedToElementId: base
+  });
+
+  it("refuses to delete the base of an Apportioned element outside the subtree", () => {
+    const refusal = apportionedBaseRefusal(
+      ["b", "b1"],
+      [node("a", "Apportioned", "b1"), node("b"), node("b1")]
+    );
+    expect(refusal).toBe(
+      "B1 Element b1 is the base of apportioned element A Element a. Change that element first."
+    );
+  });
+
+  it("allows the delete when the Apportioned element is in the subtree too", () => {
+    expect(
+      apportionedBaseRefusal(
+        ["b", "b1"],
+        [node("b"), node("b1", "Apportioned", "b")]
+      )
+    ).toBeNull();
+  });
+
+  it("allows the delete when no Apportioned element points into the subtree", () => {
+    expect(
+      apportionedBaseRefusal(
+        ["b"],
+        [node("a", "Apportioned", "c"), node("b"), node("c")]
+      )
+    ).toBeNull();
   });
 });

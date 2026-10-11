@@ -33,9 +33,10 @@ const OK: BudgetCheckResult = { status: "ok", overruns: [] };
 
 /**
  * Checks each charge against the budget of its nearest budgeted element
- * (C2–C4). The element's committed cost (open PO lines) and actual cost
- * (ledger rows without Burden) cover its whole subtree. The reads are 4
- * queries over all the charged projects. The `db` client bypasses RLS, so
+ * (C2–C4). The element's committed cost (open PO lines and the open
+ * planning group supply pegged to the project) and actual cost (ledger rows
+ * without Burden) cover its whole subtree. The reads are 5 queries over all
+ * the charged projects. The `db` client bypasses RLS, so
  * every read is scoped by `companyId`.
  *
  * Status: `block` when an overrun is on a Block project and the source is not
@@ -85,7 +86,7 @@ export async function checkBudgetAvailability(
     ...new Set(charges.flatMap((c) => c.excludePurchaseOrderLineIds ?? []))
   ];
 
-  const [elements, commitments, actuals] = await Promise.all([
+  const [elements, commitments, pegCommitments, actuals] = await Promise.all([
     db
       .selectFrom("projectElement")
       .select(["id", "projectId", "parentId", "budget", "readableId", "name"])
@@ -114,6 +115,41 @@ export async function checkBudgetAvailability(
       )
       .groupBy("pol.projectElementId")
       .execute(),
+    // The project's share of open grouped supply, as `get_project_cost_summary`
+    // counts it (peg_commitments, 20261010161720): each current Soft or Manual
+    // peg on a planning group PO line commits the pegged quantity (inventory
+    // units) at the line's unit price (per purchase unit). A grouped line has
+    // no `projectId`, so the query above cannot see it.
+    db
+      .selectFrom("projectPeg as pp")
+      .innerJoin("purchaseOrderLine as pol", (join) =>
+        join
+          .onRef("pol.id", "=", "pp.supplyId")
+          .onRef("pol.companyId", "=", "pp.companyId")
+      )
+      .innerJoin("purchaseOrder as po", (join) =>
+        join
+          .onRef("po.id", "=", "pol.purchaseOrderId")
+          .onRef("po.companyId", "=", "pol.companyId")
+      )
+      .select([
+        "pp.projectElementId",
+        sql<number>`SUM(pp."quantity" / COALESCE(NULLIF(pol."conversionFactor", 0), 1) * COALESCE(pol."unitPrice", 0))`.as(
+          "amount"
+        )
+      ])
+      .where("pp.companyId", "=", companyId)
+      .where("pp.projectId", "in", controlledIds)
+      .where("pp.projectElementId", "is not", null)
+      .where("pp.supplyType", "=", "Purchase Order Line")
+      .where("pp.state", "in", ["Soft", "Manual"])
+      .where("pp.supersededAt", "is", null)
+      .where("po.status", "in", [...BUDGET_COMMITMENT_STATUSES])
+      .$if(excludeIds.length > 0, (qb) =>
+        qb.where("pol.id", "not in", excludeIds)
+      )
+      .groupBy("pp.projectElementId")
+      .execute(),
     db
       .selectFrom("projectLedger")
       .select(["projectElementId", sql<number>`SUM("amount")`.as("amount")])
@@ -136,9 +172,13 @@ export async function checkBudgetAvailability(
     });
     elementsByProject.set(element.projectId, list);
   }
-  const committedById = new Map(
-    commitments.map((row) => [row.projectElementId, Number(row.amount)])
-  );
+  const committedById = new Map<string | null, number>();
+  for (const row of [...commitments, ...pegCommitments]) {
+    committedById.set(
+      row.projectElementId,
+      (committedById.get(row.projectElementId) ?? 0) + Number(row.amount)
+    );
+  }
   const actualById = new Map(
     actuals.map((row) => [row.projectElementId, Number(row.amount)])
   );

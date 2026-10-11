@@ -146,4 +146,38 @@ describe("checkBudgetAvailability", () => {
     expect(result.status).toBe("warn");
     expect(result.overruns).toHaveLength(1);
   });
+
+  it("counts open planning group supply pegged to the project as committed", async () => {
+    companyHasFeature.mockResolvedValue(true);
+    // 4,000 on the project's own PO lines plus 2,000 of grouped supply
+    // pegged to the element is 6,000 committed, as the Costs tab shows it.
+    const { db, reads } = fakeDb({
+      project: [
+        {
+          id: "p1",
+          name: "Star Tracker",
+          budgetControl: "Block",
+          budgetTolerancePercent: null,
+          ownerId: "manager-1"
+        }
+      ],
+      projectElement: elements,
+      purchaseOrderLine: [{ projectElementId: "wbs-1.1", amount: 4000 }],
+      projectPeg: [{ projectElementId: "wbs-1.1.1", amount: 2000 }],
+      projectLedger: [{ projectElementId: "wbs-1", amount: 3000 }]
+    });
+
+    const result = await checkBudgetAvailability(db, {} as never, {
+      companyId: "c1",
+      source: "purchase",
+      charges: [charge]
+    });
+
+    expect(reads).toContain("projectPeg");
+    expect(result.status).toBe("block");
+    expect(result.overruns[0]).toMatchObject({
+      projected: 10500,
+      overBy: 500
+    });
+  });
 });
