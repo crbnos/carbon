@@ -53,6 +53,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // C16: a stop-work order keeps the project On Hold until Resume, which also
+  // clears the order. The status menu must not bypass it.
+  if (project.data.stopWorkDate && status !== "On Hold") {
+    throw redirect(
+      back,
+      await flash(
+        request,
+        error(null, "This project has a stop-work order. Use Resume.")
+      )
+    );
+  }
+
   if (!canChangeProjectStatus(project.data.status, status)) {
     throw redirect(
       back,

@@ -11,6 +11,8 @@ import {
   nearestBudgetedAncestor,
   performanceIndexes,
   plannedValue,
+  stopWorkDaysLeft,
+  stopWorkEnd,
   subtreeIds
 } from "./compute";
 
@@ -188,5 +190,16 @@ describe("earned value", () => {
     );
 
     expect(recognized.get("wp-1")).toBe(400);
+  });
+});
+
+describe("stop-work orders", () => {
+  it("ends 90 days after the order date", () => {
+    expect(stopWorkEnd("2026-10-01")).toBe("2026-12-30");
+  });
+
+  it("counts the days left, never below 0", () => {
+    expect(stopWorkDaysLeft("2026-10-11", "2026-10-01")).toBe(80);
+    expect(stopWorkDaysLeft("2027-01-15", "2026-10-01")).toBe(0);
   });
 });

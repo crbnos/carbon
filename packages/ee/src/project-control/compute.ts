@@ -6,7 +6,11 @@ import type { Database } from "@carbon/database";
 import { equals, round } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { IndirectPoolType } from "../indirect-rates/models";
-import type { AcwpElement, EarnedValueTechnique } from "./models";
+import {
+  type AcwpElement,
+  type EarnedValueTechnique,
+  STOP_WORK_DAYS
+} from "./models";
 
 // The pure project control engine (Phase 5c): budget availability now, earned
 // value in the functions below it. No database access, so the client-safe
@@ -360,4 +364,17 @@ export function holdUntilIssued(
   }
   for (const [key, amount] of recognized) recognized.set(key, round(amount));
   return recognized;
+}
+
+/** The end of a stop-work order: the order date + 90 days (FAR 52.242-15). */
+export function stopWorkEnd(orderDate: string): string {
+  return parseDate(orderDate).add({ days: STOP_WORK_DAYS }).toString();
+}
+
+/** The days left on a stop-work order on `today`; 0 once it has ended. */
+export function stopWorkDaysLeft(today: string, orderDate: string): number {
+  return Math.max(
+    0,
+    parseDate(stopWorkEnd(orderDate)).compare(parseDate(today))
+  );
 }

@@ -100,7 +100,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 13: Add `getEarnedValue` and `closeEarnedValuePeriod`
 - [x] Task 14: Add the close checklist task
 - [x] Task 15: Add the ACWP export
-- [ ] Task 16: Add stop-work orders
+- [x] Task 16: Add stop-work orders
 - [ ] Task 17: Add the control fields to project settings and the element page
 - [ ] Task 18: Add earned value to the Costs tab
 - [ ] Task 19: Add Stop work and Resume to the project header
@@ -1195,3 +1195,8 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   2. "Control Account" is the element's own `readableId` when it is a control account, else its nearest control account's; a project-level row has none. A project-level row uses the project identifier as the charge number and the project name as the element.
   3. `path.to.api.earnedValueAcwpCsv` builds `/api/earned-value/acwp.csv?periodId=…&projectId=…`. The route logs each refusal before it answers 400 or 402.
   4. Test: `buildAcwpExport` refuses an Open period before it reads any cost. The fake `db` gained `executeTakeFirst` for `loadRatePeriod`. 21 project-control tests pass.
+- Task 16:
+  1. `stopWork` and `resumeWork` write through the user's Supabase client (the route requires `update: projects`) and return `{ data, error }`. `stopWork` refuses a project that is not Released with "Only a Released project can stop work."; `resumeWork` refuses a project with no order ("This project has no stop-work order.").
+  2. The stop-work route sets `projectId` from the URL before it validates the form with `stopWorkValidator`, and redirects back to the referrer with a flash in every case.
+  3. The status route guard (C16) refuses any status but On Hold while `stopWorkDate` is set. Other writers of `project.status` (the `updateProjectStatus` MCP tool) meet the CHECK `project_stopWork_check` instead, which raises a database error.
+  4. Tests: an order on 2026-10-01 ends on 2026-12-30; on 2026-10-11 it has 80 days left; after its end it has 0. 23 project-control tests pass.

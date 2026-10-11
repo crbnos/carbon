@@ -1075,3 +1075,85 @@ export async function buildAcwpExport(
   }
   return { data: result, error: null };
 }
+
+// ── Stop-work orders (Task 16, C16) ────────────────────────────────────────
+
+/**
+ * Issues a stop-work order (FAR 52.242-15) on a Released Direct project: it
+ * goes On Hold with `stopWorkDate`, in one update. `assertChargeable` already
+ * refuses new charges on an On Hold project; commitments still post.
+ */
+export async function stopWork(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    orderDate: string;
+  }
+) {
+  const { companyId, userId, projectId, orderDate } = args;
+  await requireEntitlement(client, companyId, FEATURE);
+
+  const project = await client
+    .from("project")
+    .select("id, status, costObjective")
+    .eq("id", projectId)
+    .eq("companyId", companyId)
+    .single();
+  if (project.error) return { data: null, error: project.error };
+  if (project.data.costObjective !== "Direct") {
+    return refuse("Stop-work orders apply to Direct projects.");
+  }
+  if (project.data.status !== "Released") {
+    return refuse("Only a Released project can stop work.");
+  }
+
+  return client
+    .from("project")
+    .update({
+      status: "On Hold",
+      stopWorkDate: orderDate,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", projectId)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Lifts a stop-work order: the project returns to Released. Deliberately NOT
+ * entitled: a company that loses GOVERNMENT_CONTRACTING must still be able to
+ * release a stopped project, or a downgrade would strand it On Hold.
+ */
+export async function resumeWork(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string; projectId: string }
+) {
+  const { companyId, userId, projectId } = args;
+  const project = await client
+    .from("project")
+    .select("id, stopWorkDate")
+    .eq("id", projectId)
+    .eq("companyId", companyId)
+    .single();
+  if (project.error) return { data: null, error: project.error };
+  if (!project.data.stopWorkDate) {
+    return refuse("This project has no stop-work order.");
+  }
+
+  return client
+    .from("project")
+    .update({
+      status: "Released",
+      stopWorkDate: null,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", projectId)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
