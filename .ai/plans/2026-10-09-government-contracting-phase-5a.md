@@ -62,7 +62,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 
 - [x] Task 1: Check the prerequisites
 - [x] Task 2: Create the enum migration
-- [ ] Task 3: Create the columns migration
+- [x] Task 3: Create the columns migration
 - [ ] Task 4: Create the timekeeping and funding tables migration
 - [ ] Task 5: Create the SQL functions migration
 - [ ] Task 6: Apply migrations, regenerate types, ship RLS
@@ -1466,3 +1466,4 @@ ls .ai/playbooks/government-contracting-phase-5a.md
 ## Execution notes
 
 - Task 1: every prerequisite exists. The live schema also has `projectLedger.unallowable`, `customerContractLine.fundedCost`, `fundedAmount`, `projectElementId`, `billingMethod` and `amendsLineId`, the `projectBillableItem` table, and `insertProjectLedgerRows` in `project-posting.ts`. `project.costTreatment` is the real column name. `employeeJob.id` is the employee's user id, and `employeeJob.managerId` exists. Task 1 changes no code, so it has no commit.
+- Task 3: the columns migration also indexes the two new self FKs, `timesheetEntry ("correctionOfId", "companyId")` and `customerContractLine ("parentLineId", "companyId")` (step 3). Tasks 2 and 3 ran together in a `BEGIN … ROLLBACK` dry run against the local database before the commit.
