@@ -89,7 +89,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 2: Create the indirect rates tables migration
 - [x] Task 3: Apply migrations, regenerate types, ship RLS
 - [x] Task 4: Add the feature key and the ee package skeleton
-- [ ] Task 5: Add the pure rate engine
+- [x] Task 5: Add the pure rate engine
 - [ ] Task 6: Add the pure burden and billing engine
 - [ ] Task 7: Add the authoring functions
 - [ ] Task 8: Add `computeIndirectRates`
@@ -1321,3 +1321,11 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   2. `models.ts` also exports the enum value lists (`indirectPoolTypes`, `indirectBaseTypes`, `indirectRateTypes`, `indirectPoolAccountRoles` from `Constants`), `enteredIndirectRateTypes` (Provisional, Target, Final) and `burdenRateTypes` (Provisional, Actual). The validators and the Task 15–16 forms use them.
   3. `indirectPoolAccountValidator` and `contractRateCeilingValidator` have an optional `id`, because their service functions are upserts.
   4. The license fixer scans files that git knows. New files need `git add -N` before `pnpm --filter @carbon/checks license-headers` writes their header.
+- Task 5:
+  1. `matchMapping` takes every pool's Cost mappings for the Cost role, so the most specific mapping wins across pools (B4). For the Base role, the engine matches within one pool's mappings, because one cell may be Base of several pools.
+  2. Step 4.3.2 splits the earlier burden on IR&D and B&P cost: the rate × the allowable amount goes into G&A cost, and the rate × the unallowable amount goes into `unallowableCost`, as step 4.3.1 does for a GL cell. The plan says "their amount", which would put the burden on unallowable cost into the G&A numerator.
+  3. Step 4.3.3 carries an earlier pool's burden into a TCI or Value Added base only when that pool applies to projects. `projectBurdenTargets` (Task 6) counts only such pools, so the rate's base and the base the burden applies to stay the same.
+  4. The `Absorbed Overhead` line needs an account: `indirectExpenseStatement_account_check` requires one on every line that is not Carried Burden. `computePoolRates` takes an optional `absorbedOverheadAccountId` for it. Task 8 passes `accountDefault.overheadAbsorptionAccount`.
+  5. Account lines merge by account and matched dimension value, so 2 cells that match the same account-only mapping make one statement line.
+  6. `carriesBurdenIntoBase` and `sortPools` are exported, so Task 6 uses the same cascade rule. `periodRateFrom` treats a null previous period as zero, so period 1's rate is its YTD rate.
+  7. `pnpm --filter @carbon/ee test -- indirect-rates/compute` runs the whole `@carbon/ee` suite (vitest ignores a filter after `--`). `pnpm exec vitest run src/indirect-rates` in `packages/ee` runs the 9 tests; the full suite passes too (2,004).
