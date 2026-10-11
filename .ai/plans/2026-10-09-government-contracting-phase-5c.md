@@ -88,7 +88,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 1: Create the Phase 5c enum migration
 - [x] Task 2: Create the project control migration
 - [x] Task 3: Apply migrations, regenerate types, ship RLS
-- [ ] Task 4: Add the schedule to the baseline snapshot
+- [x] Task 4: Add the schedule to the baseline snapshot
 - [ ] Task 5: Add the ee package skeleton
 - [ ] Task 6: Add the pure budget engine
 - [ ] Task 7: Add the pure earned value engine
@@ -1113,3 +1113,9 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   2. The freeze proof ran in a rolled-back transaction on an Open period of a test company: set it Locked, insert a row, update it (allowed), set the period Closed, update again. The last update failed with "Earned value of a closed period cannot change".
   3. The regenerated types change the MCP digest (`tool-manifest.digest.json`); the commit carries it. `check:workflow-catalog` passes with no catalog change.
   4. `pnpm --filter @carbon/database test -- migration` runs the whole suite: 518 pass.
+- Task 4:
+  1. `PROJECT_BASELINE_FORMAT_VERSION` is now 2, and `insertProjectBaseline` writes it. No other code reads the constant.
+  2. `ProjectPlanSnapshotKey` excludes `schedule`, so the code that loops over the 5 plan tables stays as it is. The schedule row type is `PlanScheduleRow`.
+  3. `loadPlanSnapshot` also selects `startDate` and `targetDate` for `projectElement`. `toPlanSnapshot` builds `schedule` from the element rows. The element rows of the snapshot still hold only the plan-layer columns.
+  4. `parsePlanSnapshot` also returns a stored `schedule`, so Task 13 can read it from a baseline. A version 1 baseline has none.
+  5. A restore into another company does not rewrite the ids in `schedule`, the same open gap as the rest of the snapshot (run log follow-up, Phase 1c).

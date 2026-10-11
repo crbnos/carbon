@@ -334,7 +334,8 @@ export async function copyProject(
 
 /**
  * Loads the plan layer of a project as a snapshot: 5 queries, one per plan
- * table, each reading only its `PLAN_LAYER_FIELDS`.
+ * table, each reading only its `PLAN_LAYER_FIELDS`. The element query also
+ * reads `startDate` and `targetDate` for the snapshot's `schedule`.
  */
 export async function loadPlanSnapshot(
   db: Kysely<KyselyDatabase> | KyselyTx,
@@ -343,7 +344,11 @@ export async function loadPlanSnapshot(
   const ofProject = (table: ProjectPlanTable) =>
     db
       .selectFrom(table as "projectElement")
-      .select(PLAN_LAYER_FIELDS[table] as never)
+      .select(
+        (table === "projectElement"
+          ? [...PLAN_LAYER_FIELDS[table], "startDate", "targetDate"]
+          : PLAN_LAYER_FIELDS[table]) as never
+      )
       .where("projectId", "=", args.projectId)
       .where("companyId", "=", args.companyId)
       .execute() as Promise<Record<string, unknown>[]>;

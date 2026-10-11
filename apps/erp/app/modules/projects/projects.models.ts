@@ -3310,11 +3310,21 @@ export const PLAN_LAYER_FIELDS: Record<ProjectPlanTable, readonly string[]> = {
   ]
 };
 
-/** The version of the `projectBaseline.snapshot` shape this code writes. */
-export const PROJECT_BASELINE_FORMAT_VERSION = 1;
+/**
+ * The version of the `projectBaseline.snapshot` shape this code writes.
+ * Version 2 adds `schedule`, the element dates that earned value reads.
+ */
+export const PROJECT_BASELINE_FORMAT_VERSION = 2;
 
 /** One row of a plan snapshot: only the table's `PLAN_LAYER_FIELDS`. */
 export type PlanRow = Record<string, unknown> & { id: string };
+
+/** One element's dates in a baseline (format version 2). */
+export type PlanScheduleRow = {
+  id: string;
+  startDate: string | null;
+  targetDate: string | null;
+};
 
 export type ProjectPlanSnapshot = {
   elements: PlanRow[];
@@ -3322,9 +3332,19 @@ export type ProjectPlanSnapshot = {
   materials: PlanRow[];
   labor: PlanRow[];
   costs: PlanRow[];
+  /**
+   * Each element's `startDate` and `targetDate`, sorted by `id` (format
+   * version 2). Dates stay progress fields: the diff, change requests and the
+   * plan lock ignore `schedule`. Earned value spreads BCWS over these dates.
+   */
+  schedule?: PlanScheduleRow[];
 };
 
-export type ProjectPlanSnapshotKey = keyof ProjectPlanSnapshot;
+/** The snapshot keys that hold the rows of a plan table. */
+export type ProjectPlanSnapshotKey = Exclude<
+  keyof ProjectPlanSnapshot,
+  "schedule"
+>;
 
 /** The snapshot key that holds the rows of each plan table. */
 export const planSnapshotKeys: Record<
@@ -3366,7 +3386,8 @@ function byId(a: PlanRow, b: PlanRow) {
 /**
  * Builds a plan snapshot from the rows of the 5 plan tables. It keeps the
  * plan-layer columns only and sorts each array by `id`, so two snapshots of
- * the same plan are equal.
+ * the same plan are equal. `schedule` takes each element row's `startDate`
+ * and `targetDate`; a missing date reads as null.
  */
 export function toPlanSnapshot(
   rows: Record<ProjectPlanSnapshotKey, Record<string, unknown>[]>
@@ -3375,12 +3396,20 @@ export function toPlanSnapshot(
     rows[key]
       .map((row) => pickPlanLayerFields(planTableBySnapshotKey[key], row))
       .sort(byId);
+  const schedule = rows.elements
+    .map((row) => ({
+      id: String(row.id),
+      startDate: (row.startDate as string | null | undefined) ?? null,
+      targetDate: (row.targetDate as string | null | undefined) ?? null
+    }))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   return {
     elements: pick("elements"),
     links: pick("links"),
     materials: pick("materials"),
     labor: pick("labor"),
-    costs: pick("costs")
+    costs: pick("costs"),
+    schedule
   };
 }
 
@@ -3391,12 +3420,16 @@ export function parsePlanSnapshot(value: unknown): ProjectPlanSnapshot {
   >;
   const rowsOf = (key: ProjectPlanSnapshotKey) =>
     Array.isArray(source[key]) ? (source[key] as PlanRow[]) : [];
+  const schedule = (source as { schedule?: unknown }).schedule;
   return {
     elements: rowsOf("elements"),
     links: rowsOf("links"),
     materials: rowsOf("materials"),
     labor: rowsOf("labor"),
-    costs: rowsOf("costs")
+    costs: rowsOf("costs"),
+    ...(Array.isArray(schedule)
+      ? { schedule: schedule as PlanScheduleRow[] }
+      : {})
   };
 }
 

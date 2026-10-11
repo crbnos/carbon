@@ -66,6 +66,22 @@ describe("toPlanSnapshot", () => {
     expect(snapshot.elements[0]).not.toHaveProperty("companyId");
     expect(snapshot.elements[0]?.budget).toBe(1000);
   });
+
+  it("returns each element's start and target date in schedule", () => {
+    const snapshot = toPlanSnapshot({
+      ...empty,
+      elements: [
+        element("2", { startDate: "2026-06-01", targetDate: "2026-06-30" }),
+        element("1")
+      ]
+    });
+
+    expect(snapshot.schedule).toEqual([
+      { id: "1", startDate: null, targetDate: null },
+      { id: "2", startDate: "2026-06-01", targetDate: "2026-06-30" }
+    ]);
+    expect(snapshot.elements[1]).not.toHaveProperty("targetDate");
+  });
 });
 
 describe("diffPlanSnapshots", () => {
@@ -107,6 +123,21 @@ describe("diffPlanSnapshots", () => {
     const target = toPlanSnapshot({
       ...empty,
       elements: [element("1", { stateId: "done", ownerId: "u2" })]
+    });
+
+    const diff = diffPlanSnapshots(base, target);
+
+    expect(diff.elements.map((e) => e.status)).toEqual(["unchanged"]);
+  });
+
+  it("gives no diff for a changed target date alone", () => {
+    const base = toPlanSnapshot({
+      ...empty,
+      elements: [element("1", { targetDate: "2026-06-30" })]
+    });
+    const target = toPlanSnapshot({
+      ...empty,
+      elements: [element("1", { targetDate: "2026-07-31" })]
     });
 
     const diff = diffPlanSnapshots(base, target);
