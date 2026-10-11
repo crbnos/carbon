@@ -85,7 +85,7 @@ These correct or add to the spec. Task 22 records them there.
 
 ## Progress
 
-- [ ] Task 1: Create the Phase 5c enum migration
+- [x] Task 1: Create the Phase 5c enum migration
 - [ ] Task 2: Create the project control migration
 - [ ] Task 3: Apply migrations, regenerate types, ship RLS
 - [ ] Task 4: Add the schedule to the baseline snapshot
@@ -1095,3 +1095,8 @@ ls .ai/playbooks/government-contracting-phase-5c.md
 ```
 
 **Out of scope:** Phase 5d.
+
+## Execution notes
+
+- Prerequisites: every check prints a line. Neither enum type exists in the database before Task 1, and `project` has no `budgetControl`, `budgetTolerancePercent` or `stopWorkDate` column.
+- Task 1: the migration is `20261011224853_government-contracting-5c-enums.sql`. It is applied in Task 3.
