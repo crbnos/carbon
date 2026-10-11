@@ -1391,6 +1391,37 @@ export function elementSubtreeIds(
 }
 
 /**
+ * The refusal for a delete of an element subtree, from the rows that name an
+ * element of it, else null. An earned value snapshot names its work package
+ * and its control account; both FKs have no ON DELETE action, so the delete
+ * must stop before it reaches the database.
+ */
+export function elementDeleteRefusal(counts: {
+  ledger: number;
+  timesheets: number;
+  jobs: number;
+  purchaseLines: number;
+  earnedValue: number;
+}): string | null {
+  if (counts.ledger > 0) {
+    return "Costs are posted to this element or an element below it. It cannot be deleted.";
+  }
+  if (counts.timesheets > 0) {
+    return "Time is logged on this element or an element below it. It cannot be deleted.";
+  }
+  if (counts.jobs > 0) {
+    return "A job charges this element or an element below it. It cannot be deleted.";
+  }
+  if (counts.purchaseLines > 0) {
+    return "A purchase order line charges this element or an element below it. It cannot be deleted.";
+  }
+  if (counts.earnedValue > 0) {
+    return "Earned value is recorded for this element or an element below it. It cannot be deleted.";
+  }
+  return null;
+}
+
+/**
  * The refusal for a delete that removes the base element of an Apportioned
  * element outside the deleted subtree, else null. The base FK sets
  * `apportionedToElementId` to null, which the Apportioned CHECK refuses, so

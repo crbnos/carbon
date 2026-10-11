@@ -45,6 +45,7 @@ import type {
 import {
   apportionedBaseRefusal,
   canLink,
+  elementDeleteRefusal,
   governmentFurnishedRefusal,
   PARAMETER_ITEM_UNIT_COST,
   parameterSources,
@@ -1698,9 +1699,9 @@ export async function updateProjectElementOrder(
 
 /**
  * Deletes an element and its descendants. Refuses when the element or a
- * descendant has a project ledger row, a timesheet entry, a job or a
- * purchase order line, or is the base of an Apportioned element outside the
- * subtree.
+ * descendant has a project ledger row, a timesheet entry, a job, a
+ * purchase order line or an earned value snapshot, or is the base of an
+ * Apportioned element outside the subtree.
  * @mcp delete destructive
  */
 export async function deleteProjectElement(
@@ -1758,7 +1759,14 @@ export async function deleteProjectElement(
   const apportioned = apportionedBaseRefusal(subtree, all.data ?? []);
   if (apportioned) return refusal(apportioned);
 
-  const [ledger, timesheets, jobs, purchaseLines] = await Promise.all([
+  const [
+    ledger,
+    timesheets,
+    jobs,
+    purchaseLines,
+    earnedValueRows,
+    earnedValueAccounts
+  ] = await Promise.all([
     client
       .from("projectLedger")
       .select("id", { count: "exact", head: true })
@@ -1778,31 +1786,38 @@ export async function deleteProjectElement(
       .from("purchaseOrderLine")
       .select("id", { count: "exact", head: true })
       .in("projectElementId", subtree)
+      .eq("companyId", companyId),
+    // An earned value snapshot names its work package and its control
+    // account. Both FKs have no ON DELETE action.
+    client
+      .from("earnedValuePeriod")
+      .select("id", { count: "exact", head: true })
+      .in("projectElementId", subtree)
+      .eq("companyId", companyId),
+    client
+      .from("earnedValuePeriod")
+      .select("id", { count: "exact", head: true })
+      .in("controlAccountId", subtree)
       .eq("companyId", companyId)
   ]);
-  for (const result of [ledger, timesheets, jobs, purchaseLines]) {
+  for (const result of [
+    ledger,
+    timesheets,
+    jobs,
+    purchaseLines,
+    earnedValueRows,
+    earnedValueAccounts
+  ]) {
     if (result.error) return { data: null, error: result.error };
   }
-  if ((ledger.count ?? 0) > 0) {
-    return refusal(
-      "Costs are posted to this element or an element below it. It cannot be deleted."
-    );
-  }
-  if ((timesheets.count ?? 0) > 0) {
-    return refusal(
-      "Time is logged on this element or an element below it. It cannot be deleted."
-    );
-  }
-  if ((jobs.count ?? 0) > 0) {
-    return refusal(
-      "A job charges this element or an element below it. It cannot be deleted."
-    );
-  }
-  if ((purchaseLines.count ?? 0) > 0) {
-    return refusal(
-      "A purchase order line charges this element or an element below it. It cannot be deleted."
-    );
-  }
+  const charged = elementDeleteRefusal({
+    ledger: ledger.count ?? 0,
+    timesheets: timesheets.count ?? 0,
+    jobs: jobs.count ?? 0,
+    purchaseLines: purchaseLines.count ?? 0,
+    earnedValue: (earnedValueRows.count ?? 0) + (earnedValueAccounts.count ?? 0)
+  });
+  if (charged) return refusal(charged);
 
   // The parent FK cascades, so the descendants go with the element.
   return client

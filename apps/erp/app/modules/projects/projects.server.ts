@@ -1775,12 +1775,19 @@ export async function applyChangeRequest(
         SELECT s."readableId", 'a purchase order line' FROM subtree s
           WHERE EXISTS (SELECT 1 FROM "purchaseOrderLine" p
             WHERE p."projectElementId" = s."id" AND p."companyId" = ${args.companyId})
+        UNION ALL
+        SELECT s."readableId", 'earned value' FROM subtree s
+          WHERE EXISTS (SELECT 1 FROM "earnedValuePeriod" v
+            WHERE (v."projectElementId" = s."id" OR v."controlAccountId" = s."id")
+              AND v."companyId" = ${args.companyId})
         LIMIT 1
       `.execute(trx);
       const first = charged.rows[0];
       if (first) {
         throw new ProjectChangeRequestError(
-          `${first.readableId} has ${first.source} charged to it. The change request cannot delete it.`
+          first.source === "earned value"
+            ? `${first.readableId} has earned value recorded. The change request cannot delete it.`
+            : `${first.readableId} has ${first.source} charged to it. The change request cannot delete it.`
         );
       }
       await trx

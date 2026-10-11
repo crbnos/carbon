@@ -6,7 +6,8 @@ import { describe, expect, it } from "vitest";
 import {
   apportionedBaseRefusal,
   buildElementTree,
-  buildReaderOutline
+  buildReaderOutline,
+  elementDeleteRefusal
 } from "~/modules/projects/projects.models";
 
 const element = (id: string, parentId: string | null, sortOrder: number) => ({
@@ -107,5 +108,31 @@ describe("apportionedBaseRefusal", () => {
         [node("a", "Apportioned", "c"), node("b"), node("c")]
       )
     ).toBeNull();
+  });
+});
+
+describe("elementDeleteRefusal", () => {
+  const none = {
+    ledger: 0,
+    timesheets: 0,
+    jobs: 0,
+    purchaseLines: 0,
+    earnedValue: 0
+  };
+
+  it("refuses an element with an earned value snapshot", () => {
+    expect(elementDeleteRefusal({ ...none, earnedValue: 1 })).toBe(
+      "Earned value is recorded for this element or an element below it. It cannot be deleted."
+    );
+  });
+
+  it("names posted cost first when the element has cost and earned value", () => {
+    expect(elementDeleteRefusal({ ...none, ledger: 2, earnedValue: 1 })).toBe(
+      "Costs are posted to this element or an element below it. It cannot be deleted."
+    );
+  });
+
+  it("allows an element with no charges and no snapshot", () => {
+    expect(elementDeleteRefusal(none)).toBeNull();
   });
 });
