@@ -183,3 +183,129 @@ export async function regenerateLeasePayments(
     return { count: rows.length };
   });
 }
+
+/** Returns the lease payment rows billed by these purchase invoice lines to
+ *  Pending, so the next invoice run bills them again.
+ *  `leasePayment.purchaseInvoiceLineId` has no foreign key, so a plain
+ *  delete would leave them Invoiced against a line that no longer exists. */
+async function releaseLeasePayments(
+  trx: Kysely<KyselyDatabase>,
+  args: { companyId: string; purchaseInvoiceLineIds: string[]; userId: string }
+): Promise<void> {
+  const { companyId, purchaseInvoiceLineIds, userId } = args;
+  if (purchaseInvoiceLineIds.length === 0) return;
+  await trx
+    .updateTable("leasePayment")
+    .set({
+      status: "Pending",
+      purchaseInvoiceLineId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("purchaseInvoiceLineId", "in", purchaseInvoiceLineIds)
+    .execute();
+}
+
+/**
+ * Deletes a Draft purchase invoice and, in the same transaction, returns the
+ * lease payment rows it billed to Pending (see `releaseLeasePayments`).
+ * Throws on a missing or non-Draft invoice.
+ */
+export async function deletePurchaseInvoiceReleasingLeases(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; invoiceId: string; userId: string }
+): Promise<void> {
+  const { companyId, invoiceId, userId } = args;
+  await db.transaction().execute(async (trx) => {
+    const invoice = await trx
+      .selectFrom("purchaseInvoice")
+      .select(["id", "status"])
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!invoice) throw new Error("Purchase invoice not found");
+    if (invoice.status !== "Draft") {
+      throw new Error(
+        `Cannot delete purchase invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
+      );
+    }
+
+    const lines = await trx
+      .selectFrom("purchaseInvoiceLine")
+      .select("id")
+      .where("invoiceId", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .where("leasePaymentId", "is not", null)
+      .execute();
+    await releaseLeasePayments(trx, {
+      companyId,
+      purchaseInvoiceLineIds: lines.map((line) => line.id),
+      userId
+    });
+
+    await trx
+      .deleteFrom("purchaseInvoice")
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/** One line of a Draft purchase invoice, returning the lease payment row it
+ *  billed to Pending (see `deletePurchaseInvoiceReleasingLeases`). The line
+ *  must belong to `invoiceId` and that invoice must be Draft — checked here,
+ *  under a row lock, because releasing a POSTED line's payment would bill it
+ *  again. Throws otherwise. */
+export async function deletePurchaseInvoiceLineReleasingLeases(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    purchaseInvoiceLineId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const { companyId, invoiceId, purchaseInvoiceLineId, userId } = args;
+  await db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("purchaseInvoiceLine")
+      .innerJoin("purchaseInvoice", (join) =>
+        join
+          .onRef("purchaseInvoice.id", "=", "purchaseInvoiceLine.invoiceId")
+          .onRef(
+            "purchaseInvoice.companyId",
+            "=",
+            "purchaseInvoiceLine.companyId"
+          )
+      )
+      .select([
+        "purchaseInvoiceLine.invoiceId as invoiceId",
+        "purchaseInvoice.status as status"
+      ])
+      .where("purchaseInvoiceLine.id", "=", purchaseInvoiceLineId)
+      .where("purchaseInvoiceLine.companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!line || line.invoiceId !== invoiceId) {
+      throw new Error("Purchase invoice line not found on this invoice");
+    }
+    if (line.status !== "Draft") {
+      throw new Error(
+        `Cannot delete a line of a purchase invoice with status "${line.status}". Only Draft invoices can be edited.`
+      );
+    }
+
+    await releaseLeasePayments(trx, {
+      companyId,
+      purchaseInvoiceLineIds: [purchaseInvoiceLineId],
+      userId
+    });
+    await trx
+      .deleteFrom("purchaseInvoiceLine")
+      .where("id", "=", purchaseInvoiceLineId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}

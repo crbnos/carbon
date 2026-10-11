@@ -1,5 +1,5 @@
 {
-  "totalTools": 1553,
+  "totalTools": 1551,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -306,8 +306,6 @@
     {"name":"invoicing_createSalesInvoiceFromShipment","classification":"WRITE","paramCount":1,"schema":"2e39a760a5ca","response":"ec9aaaf82857","injectAuth":"companyId+createdBy+updatedBy","permission":"invoicing:create","paginates":false},
     {"name":"invoicing_deleteMemo","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
     {"name":"invoicing_deletePayment","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
-    {"name":"invoicing_deletePurchaseInvoice","classification":"DESTRUCTIVE","paramCount":1,"schema":"9fcbb4e4e012","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
-    {"name":"invoicing_deletePurchaseInvoiceLine","classification":"DESTRUCTIVE","paramCount":1,"schema":"af656ed8709f","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
     {"name":"invoicing_getApAging","classification":"READ","paramCount":2,"schema":"9db366ef805c","response":"eca97da3238d","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getApOpenBySupplier","classification":"READ","paramCount":1,"schema":"00e9099a963a","response":"cfaa2af435c0","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getApTieOut","classification":"READ","paramCount":1,"schema":"00e9099a963a","response":"194f80599d96","injectAuth":"companyId","permission":"invoicing:view","paginates":false},

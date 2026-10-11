@@ -57,6 +57,9 @@ msgstr "(निष्क्रिय)"
 msgid "(not an Equity posting account)"
 msgstr "(इक्विटी पोस्टिंग खाता नहीं है)"
 
+msgid "(reasonably certain)"
+msgstr ""
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# अवरोधक रिकॉर्ड} other {# अवरोधक रिकॉर्डें}}"
@@ -1093,6 +1096,9 @@ msgstr "एक अनंतिम जर्नल जो संक्रमण �
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "एक क्रय चालान एक दस्तावेज है जो किसी ग्राहक द्वारा खरीदे गए उत्पादों या सेवाओं और संबंधित लागत को निर्दिष्ट करता है।"
 
+msgid "A purchase invoice is drafted for each payment on its due date."
+msgstr ""
+
 msgid "A purchase invoice is posted"
 msgstr "एक क्रय चालान पोस्ट किया गया है"
 
@@ -1343,6 +1349,9 @@ msgid "A shipment's tracking number changes"
 msgstr "एक शिपमेंट का ट्रैकिंग नंबर बदल जाता है"
 
 msgid "A short-term lease has no schedule: only its payment rows change, and no journal is posted."
+msgstr ""
+
+msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr ""
 
 msgid "A short-term lease posts no journal at activation. Each invoice is expensed when it posts."
@@ -1625,6 +1634,9 @@ msgstr "संचित मूल्यह्रास निपटान पर
 
 msgid "Accumulated Depreciation on Disposal (default)"
 msgstr "संचित मूल्यह्रास निपटान पर (डिफ़ॉल्ट)"
+
+msgid "Accumulated ROU Amortization"
+msgstr ""
 
 msgid "Accumulation Period (Weeks)"
 msgstr "संचय अवधि (सप्ताह)"
@@ -1959,6 +1971,9 @@ msgstr "पासकी जोड़ें"
 
 msgid "Add path"
 msgstr "पथ जोड़ें"
+
+msgid "Add Payment"
+msgstr ""
 
 msgid "Add Permissions"
 msgstr "अनुमतियां जोड़ें"
@@ -2533,6 +2548,9 @@ msgid "Annotation updated"
 msgstr "एनोटेशन अपडेट किया गया"
 
 msgid "Annual"
+msgstr ""
+
+msgid "Annual Escalation"
 msgstr ""
 
 msgid "Annual Escalation (%)"
@@ -3113,6 +3131,9 @@ msgstr "क्या आप इस रखरखाव कार्य को ह
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "क्या आप इस पासकी को हटाना चाहते हैं? आप इसे साइन इन करने के लिए अब उपयोग नहीं कर पाएँगे।"
 
+msgid "Are you sure you want to delete this payment row?"
+msgstr ""
+
 msgid "Are you sure you want to delete this quality document?"
 msgstr "क्या आप इस गुणवत्ता दस्तावेज़ को हटाना चाहते हैं?"
 
@@ -3266,6 +3287,9 @@ msgstr "के अनुसार"
 msgid "As of {0}"
 msgstr "{0} के अनुसार"
 
+msgid "As of <0/>, the last month a lease run posted."
+msgstr ""
+
 msgid "As of:"
 msgstr "इसके अनुसार:"
 
@@ -3355,6 +3379,9 @@ msgstr "विक्रय प्रकार के पट्टे के श�
 msgid "Asset ID"
 msgstr "परिसंपत्ति ID"
 
+msgid "Asset Name"
+msgstr ""
+
 msgid "Asset recognized at lease commencement for the right to use a leased asset"
 msgstr ""
 
@@ -3420,6 +3447,9 @@ msgstr "{locationName} पर"
 
 msgid "At Commencement"
 msgstr "आरंभ पर"
+
+msgid "At commencement. No lease run has posted yet."
+msgstr ""
 
 msgid "At each gate"
 msgstr "हर गेट पर"
@@ -4538,6 +4568,9 @@ msgstr "परिवर्तन न्यूजलेटर"
 msgid "Changes"
 msgstr "परिवर्तन"
 
+msgid "Changing a payment term or a date cuts the payment rows again. Edited rows are replaced."
+msgstr ""
+
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "घटकों को बदलने से समूह को पुनः परिभाषित किया जाता है। परिवर्तन को चरणों पर लागू करने के लिए मोशन योजना को पुनः चलाएं।"
 
@@ -4805,6 +4838,9 @@ msgstr "समापन"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "बंद करना समझौते को समाप्त करता है। हर इकाई को वापस किया या बेचा जाना चाहिए और हर बिलिंग अवधि को चालान किया गया होना चाहिए।"
+
+msgid "Closing Liability"
+msgstr ""
 
 msgid "Closure blocked"
 msgstr "बंद करना अवरुद्ध"
@@ -5525,6 +5561,9 @@ msgstr "जॉब नंबर कॉपी करें"
 msgid "Copy job unique identifier"
 msgstr "जॉब की विशिष्ट पहचान नकल करें"
 
+msgid "Copy lease number"
+msgstr ""
+
 msgid "Copy link"
 msgstr "लिंक कॉपी करें"
 
@@ -5551,6 +5590,9 @@ msgstr "समस्या के लिए लिंक कॉपी करे�
 
 msgid "Copy link to Job"
 msgstr "जॉब के लिए लिंक कॉपी करें"
+
+msgid "Copy link to lease"
+msgstr ""
 
 msgid "Copy link to material"
 msgstr "सामग्री के लिए लिंक कॉपी करें"
@@ -6478,6 +6520,9 @@ msgstr "अनुकूलित करें"
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "अपने PDF दस्तावेज़ों के लेआउट को कस्टमाइज़ करें — अनुभागों को पुनः व्यवस्थित करें, जो आपको आवश्यकता नहीं है उसे छिपाएं, और अपने स्वयं के ब्लॉक जोड़ें।"
 
+msgid "Cut from the payment terms. Change a row, add one or delete one before activating."
+msgstr ""
+
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "कार्बन में स्विच करें और पुरानी प्रणाली को फ्रीज करें"
 
@@ -6691,6 +6736,9 @@ msgstr "तय करें कि जब ऑपरेटर शॉप फ्ल
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "तय करें कि वर्क सेंटर में चुनी गई अप्रयुक्त सामग्री कब गोदाम में वापस जाए।"
+
+msgid "Decided when the lease is activated, from the payment rows and the classification inputs."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
@@ -7970,6 +8018,9 @@ msgstr "प्रत्येक पंक्ति इस कंपनी क�
 msgid "Each line shows its item ID and revision."
 msgstr "प्रत्येक पंक्ति अपना आइटम ID और रिवीजन दिखाती है।"
 
+msgid "Each month the lease run posts the interest and the right-of-use amortization."
+msgstr ""
+
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "प्रत्येक ऑपरेशन की अप्रयुक्त सामग्री जैसे ही ऑपरेशन हो जाता है तुरंत वापस आती है।"
 
@@ -8381,6 +8432,9 @@ msgstr "संपादित"
 
 msgid "edited <0/>"
 msgstr "संपादित <0/>"
+
+msgid "Effective"
+msgstr ""
 
 msgid "Effective Date"
 msgstr ""
@@ -8864,6 +8918,9 @@ msgstr "हर 3 घंटे में"
 msgid "Every account default is set"
 msgstr "हर खाता डिफ़ॉल्ट सेट है"
 
+msgid "Every change to an active lease, with the amounts before and after."
+msgstr ""
+
 msgid "Every check must pass before accounting can be enabled."
 msgstr "लेखांकन सक्षम होने से पहले हर जांच पास होनी चाहिए।"
 
@@ -8887,6 +8944,9 @@ msgstr "प्रत्येक पंक्ति जो बिल करत�
 
 msgid "Every match"
 msgstr "हर मेल"
+
+msgid "Every payment row is cut again from the payment terms. Rows you edited, added or deleted are replaced."
+msgstr ""
 
 msgid "Every required action has already been added."
 msgstr "हर आवश्यक कार्रवाई पहले से जोड़ी जा चुकी है।"
@@ -8953,6 +9013,9 @@ msgstr "छूट प्रमाणपत्र"
 
 msgid "Exemption Reason"
 msgstr "छूट कारण"
+
+msgid "Exercise Date"
+msgstr ""
 
 msgid "Exercise Purchase Option"
 msgstr ""
@@ -9988,6 +10051,9 @@ msgstr "विदेशी मुद्रा लाभ/हानि"
 msgid "FY {year}"
 msgstr "वित्तीय वर्ष {year}"
 
+msgid "Gain (Loss)"
+msgstr ""
+
 msgid "Gain on Disposal"
 msgstr "निपटान पर लाभ"
 
@@ -9998,6 +10064,9 @@ msgid "Gain on Disposal Account"
 msgstr "निपटान पर लाभ खाता"
 
 msgid "Gain on Lease Modification"
+msgstr ""
+
+msgid "Gain on Lease Termination"
 msgstr ""
 
 msgid "Gain/Loss"
@@ -10794,8 +10863,14 @@ msgstr "अपना BOM आयात करें"
 msgid "in {0}"
 msgstr "{0} में"
 
+msgid "in advance"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "एक खुले मेनू में"
+
+msgid "in arrears"
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "रखरखाव में"
@@ -10979,6 +11054,9 @@ msgstr "मूल समूह से विरासत में मिला�
 
 msgid "inherits {inheritedName}"
 msgstr "{inheritedName} से विरासत"
+
+msgid "Initial Liability:"
+msgstr ""
 
 msgid "Input"
 msgstr "इनपुट"
@@ -11645,6 +11723,9 @@ msgstr "जर्नल पंक्तियाँ"
 msgid "Journal Preview"
 msgstr "जर्नल पूर्वावलोकन"
 
+msgid "Journals"
+msgstr ""
+
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "इस तारीख को या इससे पहले दिनांकित जर्नल को लॉक माना जाता है। दोनों मौजूद होने पर प्रदाता द्वारा रिपोर्ट की गई लॉक तारीख के साथ मर्ज किया जाता है।"
 
@@ -11887,10 +11968,16 @@ msgstr ""
 msgid "Lease Classification"
 msgstr "लीज वर्गीकरण"
 
+msgid "Lease Cost"
+msgstr ""
+
 msgid "Lease Liabilities"
 msgstr ""
 
 msgid "Lease Liability"
+msgstr ""
+
+msgid "Lease Liability:"
 msgstr ""
 
 msgid "Lease Revenue"
@@ -12285,6 +12372,9 @@ msgstr "निपटान पर हानि (डिफ़ॉल्ट)"
 
 msgid "Loss on Disposal Account"
 msgstr "निपटान पर हानि खाता"
+
+msgid "Loss on Lease Termination"
+msgstr ""
 
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "अचल संपत्ति के निपटान पर मान्यता प्राप्त हानियाँ"
@@ -12981,6 +13071,9 @@ msgstr "मॉडल लाइन से हटाया गया"
 msgid "Model upload"
 msgstr "मॉडल अपलोड"
 
+msgid "Modification"
+msgstr ""
+
 msgid "Modified"
 msgstr "संशोधित"
 
@@ -13020,6 +13113,9 @@ msgstr "आप जो पैसे देते हैं"
 
 msgid "Month"
 msgstr "महीना"
+
+msgid "Month Ending"
+msgstr ""
 
 msgid "Month Rate"
 msgstr "माह दर"
@@ -13257,6 +13353,12 @@ msgstr "पट्टों में शुद्ध निवेश"
 
 msgid "Net Investment in Leases (default)"
 msgstr "पट्टों में शुद्ध निवेश (डिफ़ॉल्ट)"
+
+msgid "Net Right-of-Use Asset:"
+msgstr ""
+
+msgid "Net ROU Asset"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "शुद्ध इकाई मूल्य"
@@ -13666,6 +13768,9 @@ msgstr "अगला चालान {date} स्वचालित रूप �
 msgid "Next page"
 msgstr "अगला पृष्ठ"
 
+msgid "Next Payment:"
+msgstr ""
+
 msgid "Next Sequence"
 msgstr "अगला अनुक्रम"
 
@@ -13795,6 +13900,9 @@ msgstr "कोई परिवर्तन दर्ज नहीं किय�
 
 msgid "No changes yet."
 msgstr "अभी तक कोई परिवर्तन नहीं।"
+
+msgid "No changes yet. Modify, Terminate and Purchase are in the header once the lease is active."
+msgstr ""
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "कोई शुल्क नहीं। माइलेज, क्षति, डिलीवरी या सफाई शुल्क अगले चालान में शामिल होंगे।"
@@ -14157,6 +14265,9 @@ msgstr "अभी तक कोई पासकी पंजीकृत नह�
 msgid "No payables"
 msgstr "कोई देय राशि नहीं"
 
+msgid "No payment rows. Regenerate them from the terms or add one."
+msgstr ""
+
 msgid "No payments yet."
 msgstr "अभी तक कोई भुगतान नहीं।"
 
@@ -14264,6 +14375,9 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
+
+msgid "No schedule lines."
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
@@ -14435,6 +14549,9 @@ msgstr "गैर-कार्य दिन जिन्हें शेड्�
 
 msgid "None"
 msgstr "कोई नहीं"
+
+msgid "None yet"
+msgstr ""
 
 msgid "Normal"
 msgstr "सामान्य"
@@ -14994,6 +15111,9 @@ msgstr "इस संपत्ति को Carbon में जोड़े ज
 
 msgid "Opening balances as of"
 msgstr "के अनुसार प्रारंभिक शेष राशि"
+
+msgid "Opening Liability"
+msgstr ""
 
 msgid "Opening Value"
 msgstr "प्रारंभिक मूल्य"
@@ -15566,6 +15686,9 @@ msgstr "देय राशि की आयु"
 msgid "Payment"
 msgstr "भुगतान"
 
+msgid "Payment actions"
+msgstr ""
+
 msgid "Payment Amount"
 msgstr ""
 
@@ -15616,6 +15739,9 @@ msgstr "भुगतान"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "इस चालान के लिए आवंटित भुगतान और क्रेडिट। आवंटित राशियाँ और विनिमय अंतर की राशियाँ कंपनी की आधार मुद्रा में हैं। स्रोत दस्तावेज़ खोलने के लिए किसी पंक्ति पर क्लिक करें।"
+
+msgid "Payments due after the termination date are removed. Invoiced payments stay."
+msgstr ""
 
 msgid "Payments due before this date are marked paid outside Carbon"
 msgstr ""
@@ -15703,6 +15829,9 @@ msgstr "अवधि का अंत"
 
 msgid "Period lock policy"
 msgstr "अवधि लॉक नीति"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "अचल संपत्ति के लिए आवधिक मूल्यह्रास व्यय"
@@ -16262,6 +16391,9 @@ msgstr "मूल्य निर्धारण ट्रेस"
 msgid "Primary cash account for bank transactions"
 msgstr "बैंक लेनदेन के लिए प्राथमिक नकद खाता"
 
+msgid "Principal"
+msgstr ""
+
 msgid "Principal Collected"
 msgstr "एकत्रित मूलधन"
 
@@ -16573,6 +16705,9 @@ msgstr "क्रय"
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP से खरीद और निर्माण करें"
 
+msgid "Purchase Asset"
+msgstr ""
+
 msgid "Purchase History"
 msgstr "खरीद इतिहास"
 
@@ -16593,6 +16728,12 @@ msgstr "क्रय चालान"
 
 msgid "Purchase Invoices"
 msgstr "क्रय चालान"
+
+msgid "Purchase invoices are drafted automatically for each payment once the lease is active."
+msgstr ""
+
+msgid "Purchase journal (the asset account comes from the asset class):"
+msgstr ""
 
 msgid "Purchase option"
 msgstr "क्रय विकल्प"
@@ -16650,6 +16791,9 @@ msgstr "क्रय आदेश आवश्यक हैं"
 
 msgid "Purchase planning"
 msgstr "खरीद योजना"
+
+msgid "Purchase Price"
+msgstr ""
 
 msgid "Purchase price variance"
 msgstr "क्रय मूल्य विचलन"
@@ -17387,6 +17531,12 @@ msgstr "ग्राहक को धनवापसी"
 
 msgid "Regenerate"
 msgstr "पुनर्जीवित करें"
+
+msgid "Regenerate from Terms"
+msgstr ""
+
+msgid "Regenerate payments from the terms?"
+msgstr ""
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "इस स्थान के लिए अभी शेड्यूल फिर से जेनरेट करें। यह अंतिम शेड्यूलिंग परिवर्तन के लगभग 30 सेकंड बाद स्वचालित रूप से भी चलता है (संपादन बैच किए जाते हैं, इसलिए कई त्वरित परिवर्तन एकल पुनर्जनन को ट्रिगर करते हैं)।"
@@ -18406,6 +18556,9 @@ msgstr "नई कर्मचारियों के लिए डिफ़�
 
 msgid "Room to grow without bolting on more tools"
 msgstr "बिना अतिरिक्त उपकरण जोड़े बढ़ने की गुंजाइश"
+
+msgid "ROU Amortization"
+msgstr ""
 
 msgid "Rounding Account"
 msgstr "राउंडिंग खाता"
@@ -19481,6 +19634,9 @@ msgstr "प्राप्ति से जोड़ने के लिए इ�
 
 msgid "Set a target"
 msgstr "लक्ष्य निर्धारित करें"
+
+msgid "Set at activation"
+msgstr ""
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "Carbon को अपनी कंपनी के संचालन के अनुसार सेट अप करें: साइटें, पार्ट्स, BOM, प्रक्रिया सूची, और जिन प्रवाहों का आप उपयोग करते हैं।"
@@ -21167,7 +21323,26 @@ msgstr "अवधि आर्थिक जीवन के कम से कम
 msgid "Terminate"
 msgstr ""
 
+#. placeholder {0}: lease.leaseId
+msgid "Terminate {0}"
+msgstr ""
+
+msgid "Terminate Lease"
+msgstr ""
+
 msgid "Terminated"
+msgstr ""
+
+msgid "Termination"
+msgstr ""
+
+msgid "Termination Date"
+msgstr ""
+
+msgid "Termination journal:"
+msgstr ""
+
+msgid "Termination Penalty"
 msgstr ""
 
 msgid "Terms"
@@ -21242,6 +21417,9 @@ msgstr "प्रत्येक स्टॉक आंदोलन का क�
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "संपत्ति अपनी सेवा-में कक्षा में चली जाती है और सेवा-में तारीख से मूल्यह्रास शुरू करती है।"
+
+msgid "The asset would have a negative cost. Check the purchase price."
+msgstr ""
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshape में प्राधिकरण को अस्वीकार कर दिया गया था। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"
@@ -21628,6 +21806,9 @@ msgstr "इनकोटर्म नियम (FOB, DAP, EXW, CIF, …) जो �
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "शिपमेंट पोस्ट होने पर मान्यता दी गई इन्वेंटरी लागत, जिसका मूल्यांकन आइटम की लागत निर्धारण विधि के द्वारा किया गया है।"
 
+msgid "The invoice for this payment is drafted on this date"
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS के तहत इस संपत्ति के लिए IRS पुनर्प्राप्ति-अवधि वर्ग (3, 5, 7, 10, 15, 20, 27.5, 39-वर्ष)।"
 
@@ -21658,11 +21839,20 @@ msgstr "इस विशेषता द्वारा स्वीकृत �
 msgid "The label and document printers your company prints to"
 msgstr "लेबल और दस्तावेज़ प्रिंटर जो आपकी कंपनी में प्रिंट करते हैं"
 
+msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
+msgstr ""
+
+msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run and on or before the end date"
+msgstr ""
+
 msgid "The last day to give renewal or termination notice"
 msgstr ""
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "इस PO को रखने की सबसे हाल की तिथि ताकि यह प्राप्ति की आवश्यकता तिथि तक पहुँचे, आपूर्तिकर्ता की लीड टाइम दी गई।"
+
+msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
+msgstr ""
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "कानूनी इकाई जिसे चालान भेजा जाता है, जब यह उस ग्राहक से अलग होता है जो माल प्राप्त करता है - माता-पिता / सहायक या तीसरे पक्ष के बिलिंग व्यवस्था के लिए।"
@@ -21997,6 +22187,9 @@ msgstr "आपके आइडेंटिटी प्रदाता द्व
 
 msgid "The schedule could not be updated after the release"
 msgstr "जारी करने के बाद शेड्यूल को अपडेट नहीं किया जा सका"
+
+msgid "The schedule is written when the lease is activated."
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "यह शेड्यूल जिसका उपयोग इस संपत्ति की लागत को इसके उपयोगी जीवन (सीधी लाइन मूल्यह्रास, ह्रासमान शेष, उत्पादन की इकाई) पर फैलाने के लिए किया जाता है।"
@@ -22489,6 +22682,9 @@ msgstr "यह पार्ट अप्रचलित है और Stock Only
 
 msgid "This path only decides what runs next"
 msgstr "यह path केवल यह तय करता है कि आगे क्या चलेगा"
+
+msgid "this payment"
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "इस अवधि में कोई जर्नल प्रविष्टि पोस्ट नहीं की गई है और इसे स्थायी रूप से हटाया जा सकता है। इसे पूर्ववत नहीं किया जा सकता।"
@@ -23149,6 +23345,9 @@ msgstr "ट्रांजिट और संस्था"
 
 msgid "Trash"
 msgstr "ट्रैश"
+
+msgid "Treatment"
+msgstr ""
 
 msgid "Tree View"
 msgstr "ट्री दृश्य"

@@ -57,6 +57,12 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   // would orphan them, and the periods would never be re-billed.
   "invoicing_deleteSalesInvoice",
   "invoicing_deleteSalesInvoiceLine",
+  // Likewise a purchase invoice (or line) that billed a lease payment row:
+  // the routes return the row to Pending
+  // (`deletePurchaseInvoiceReleasingLeases`); a plain delete leaves it
+  // Invoiced and it is never billed again.
+  "invoicing_deletePurchaseInvoice",
+  "invoicing_deletePurchaseInvoiceLine",
   // Variadic (`...items`): the dispatcher fills one positional argument per
   // parameter from a JSON object and has no slot for a rest tail.
   "production_getPartDocuments"

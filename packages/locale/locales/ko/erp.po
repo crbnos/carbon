@@ -57,6 +57,9 @@ msgstr "(비활성)"
 msgid "(not an Equity posting account)"
 msgstr "(자본 전기 계정이 아님)"
 
+msgid "(reasonably certain)"
+msgstr ""
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# 차단 레코드} other {# 차단 레코드}}"
@@ -1093,6 +1096,9 @@ msgstr "회계 전환 날짜 이전에 작성된 임시 전표입니다. 회계�
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "매입 송장은 고객이 구매한 제품 또는 서비스와 해당 원가를 명시한 문서입니다."
 
+msgid "A purchase invoice is drafted for each payment on its due date."
+msgstr ""
+
 msgid "A purchase invoice is posted"
 msgstr "매입 송장이 전기됩니다."
 
@@ -1343,6 +1349,9 @@ msgid "A shipment's tracking number changes"
 msgstr "출하의 추적 번호가 변경됨"
 
 msgid "A short-term lease has no schedule: only its payment rows change, and no journal is posted."
+msgstr ""
+
+msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr ""
 
 msgid "A short-term lease posts no journal at activation. Each invoice is expensed when it posts."
@@ -1625,6 +1634,9 @@ msgstr "처분 시 감가상각누계액"
 
 msgid "Accumulated Depreciation on Disposal (default)"
 msgstr "처분 시 감가상각누계액(기본값)"
+
+msgid "Accumulated ROU Amortization"
+msgstr ""
 
 msgid "Accumulation Period (Weeks)"
 msgstr "누적 기간(주)"
@@ -1959,6 +1971,9 @@ msgstr "패스키 추가"
 
 msgid "Add path"
 msgstr "경로 추가"
+
+msgid "Add Payment"
+msgstr ""
 
 msgid "Add Permissions"
 msgstr "권한 추가"
@@ -2533,6 +2548,9 @@ msgid "Annotation updated"
 msgstr "주석이 업데이트됨"
 
 msgid "Annual"
+msgstr ""
+
+msgid "Annual Escalation"
 msgstr ""
 
 msgid "Annual Escalation (%)"
@@ -3113,6 +3131,9 @@ msgstr "이 유지보수 지시를 삭제하시겠습니까? 이 작업은 취�
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "이 패스키를 삭제하시겠습니까? 더 이상 로그인할 수 없습니다."
 
+msgid "Are you sure you want to delete this payment row?"
+msgstr ""
+
 msgid "Are you sure you want to delete this quality document?"
 msgstr "이 품질 문서를 삭제하시겠습니까?"
 
@@ -3266,6 +3287,9 @@ msgstr "기준"
 msgid "As of {0}"
 msgstr "{0} 기준"
 
+msgid "As of <0/>, the last month a lease run posted."
+msgstr ""
+
 msgid "As of:"
 msgstr "기준:"
 
@@ -3355,6 +3379,9 @@ msgstr "판매형 리스 개시 시 인식되는 자산 계정과목으로, 지�
 msgid "Asset ID"
 msgstr "자산 ID"
 
+msgid "Asset Name"
+msgstr ""
+
 msgid "Asset recognized at lease commencement for the right to use a leased asset"
 msgstr ""
 
@@ -3420,6 +3447,9 @@ msgstr "{locationName}에서"
 
 msgid "At Commencement"
 msgstr "개시 시점에"
+
+msgid "At commencement. No lease run has posted yet."
+msgstr ""
 
 msgid "At each gate"
 msgstr "각 게이트마다"
@@ -4538,6 +4568,9 @@ msgstr "변경 로그 뉴스레터"
 msgid "Changes"
 msgstr "변경 사항"
 
+msgid "Changing a payment term or a date cuts the payment rows again. Edited rows are replaced."
+msgstr ""
+
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "구성 요소를 변경하면 그룹이 다시 정의됩니다. 모션 계획을 다시 실행하여 단계의 변경 사항을 적용하세요."
 
@@ -4805,6 +4838,9 @@ msgstr "마감"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "마감하면 계약이 종료됩니다. 모든 개를 반납하거나 판매해야 하고 모든 청구 기간을 송장 발행해야 합니다."
+
+msgid "Closing Liability"
+msgstr ""
 
 msgid "Closure blocked"
 msgstr "마감 차단됨"
@@ -5525,6 +5561,9 @@ msgstr "작업 번호 복사"
 msgid "Copy job unique identifier"
 msgstr "작업 지시 고유 식별자 복사"
 
+msgid "Copy lease number"
+msgstr ""
+
 msgid "Copy link"
 msgstr "링크 복사"
 
@@ -5551,6 +5590,9 @@ msgstr "이슈 링크 복사"
 
 msgid "Copy link to Job"
 msgstr "작업 링크 복사"
+
+msgid "Copy link to lease"
+msgstr ""
 
 msgid "Copy link to material"
 msgstr "자재 링크 복사"
@@ -6478,6 +6520,9 @@ msgstr "사용자 지정"
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "PDF 문서의 레이아웃을 사용자 지정하세요 — 섹션 순서를 변경하고, 필요 없는 항목을 숨기고, 원하는 블록을 추가할 수 있습니다."
 
+msgid "Cut from the payment terms. Change a row, add one or delete one before activating."
+msgstr ""
+
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "Carbon으로 전환하고 기존 시스템을 동결하세요"
 
@@ -6691,6 +6736,9 @@ msgstr "작업자가 아직 선택되지 않은 재료가 있는 상태에서 �
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "작업장으로 이송했으나 소비하지 않은 재료가 창고로 반환되는 시기를 결정합니다."
+
+msgid "Decided when the lease is activated, from the payment rows and the classification inputs."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "소수 자릿수"
@@ -7970,6 +8018,9 @@ msgstr "각 라인은 이 회사 데이터에서 소유하지 않은 행으로�
 msgid "Each line shows its item ID and revision."
 msgstr "각 라인에 품목 ID 및 리비전이 표시됩니다."
 
+msgid "Each month the lease run posts the interest and the right-of-use amortization."
+msgstr ""
+
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "각 작업의 미사용 재료는 해당 작업이 완료되는 즉시 반환됩니다."
 
@@ -8381,6 +8432,9 @@ msgstr "수정됨"
 
 msgid "edited <0/>"
 msgstr "편집됨 <0/>"
+
+msgid "Effective"
+msgstr ""
 
 msgid "Effective Date"
 msgstr ""
@@ -8864,6 +8918,9 @@ msgstr "3시간마다"
 msgid "Every account default is set"
 msgstr "모든 계정 기본값이 설정되었습니다"
 
+msgid "Every change to an active lease, with the amounts before and after."
+msgstr ""
+
 msgid "Every check must pass before accounting can be enabled."
 msgstr "회계를 활성화하기 전에 모든 확인이 통과해야 합니다."
 
@@ -8887,6 +8944,9 @@ msgstr "모든 라인이 청구한 것을 인식합니다."
 
 msgid "Every match"
 msgstr "모든 일치"
+
+msgid "Every payment row is cut again from the payment terms. Rows you edited, added or deleted are replaced."
+msgstr ""
 
 msgid "Every required action has already been added."
 msgstr "필요한 모든 작업이 이미 추가되었습니다."
@@ -8953,6 +9013,9 @@ msgstr "면세 증명서"
 
 msgid "Exemption Reason"
 msgstr "면세 사유"
+
+msgid "Exercise Date"
+msgstr ""
 
 msgid "Exercise Purchase Option"
 msgstr ""
@@ -9988,6 +10051,9 @@ msgstr "환율 손익"
 msgid "FY {year}"
 msgstr "FY {year}"
 
+msgid "Gain (Loss)"
+msgstr ""
+
 msgid "Gain on Disposal"
 msgstr "처분 이익"
 
@@ -9998,6 +10064,9 @@ msgid "Gain on Disposal Account"
 msgstr "처분 이익 계정"
 
 msgid "Gain on Lease Modification"
+msgstr ""
+
+msgid "Gain on Lease Termination"
 msgstr ""
 
 msgid "Gain/Loss"
@@ -10794,8 +10863,14 @@ msgstr "BOM 가져오기"
 msgid "in {0}"
 msgstr "{0} 안에"
 
+msgid "in advance"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "열린 메뉴에서"
+
+msgid "in arrears"
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "유지보수 중"
@@ -10979,6 +11054,9 @@ msgstr "상위 그룹에서 상속됨."
 
 msgid "inherits {inheritedName}"
 msgstr "상속: {inheritedName}"
+
+msgid "Initial Liability:"
+msgstr ""
 
 msgid "Input"
 msgstr "입력"
@@ -11645,6 +11723,9 @@ msgstr "전표 라인"
 msgid "Journal Preview"
 msgstr "전표 미리 보기"
 
+msgid "Journals"
+msgstr ""
+
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "이 날짜 또는 이전 날짜의 전표는 잠김으로 처리됩니다. 둘 다 존재할 때 공급자 보고 잠금 날짜와 병합됩니다."
 
@@ -11887,10 +11968,16 @@ msgstr ""
 msgid "Lease Classification"
 msgstr "리스 분류"
 
+msgid "Lease Cost"
+msgstr ""
+
 msgid "Lease Liabilities"
 msgstr ""
 
 msgid "Lease Liability"
+msgstr ""
+
+msgid "Lease Liability:"
 msgstr ""
 
 msgid "Lease Revenue"
@@ -12285,6 +12372,9 @@ msgstr "처분 손실 (기본값)"
 
 msgid "Loss on Disposal Account"
 msgstr "처분 손실 계정"
+
+msgid "Loss on Lease Termination"
+msgstr ""
 
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 손실"
@@ -12981,6 +13071,9 @@ msgstr "라인에서 모델이 제거됨"
 msgid "Model upload"
 msgstr "모델 업로드"
 
+msgid "Modification"
+msgstr ""
+
 msgid "Modified"
 msgstr "수정됨"
 
@@ -13020,6 +13113,9 @@ msgstr "귀사가 지급해야 할 금액"
 
 msgid "Month"
 msgstr "월"
+
+msgid "Month Ending"
+msgstr ""
 
 msgid "Month Rate"
 msgstr "월간 요금"
@@ -13257,6 +13353,12 @@ msgstr "리스 순투자"
 
 msgid "Net Investment in Leases (default)"
 msgstr "리스 순투자(기본값)"
+
+msgid "Net Right-of-Use Asset:"
+msgstr ""
+
+msgid "Net ROU Asset"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "순 단가"
@@ -13666,6 +13768,9 @@ msgstr "다음 송장 {date}는 자동으로 생성된 후 전기됩니다."
 msgid "Next page"
 msgstr "다음 페이지"
 
+msgid "Next Payment:"
+msgstr ""
+
 msgid "Next Sequence"
 msgstr "다음 채번 규칙"
 
@@ -13795,6 +13900,9 @@ msgstr "기록된 변경 사항이 없습니다"
 
 msgid "No changes yet."
 msgstr "아직 변경사항이 없습니다."
+
+msgid "No changes yet. Modify, Terminate and Purchase are in the header once the lease is active."
+msgstr ""
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "요금이 없습니다. 주행 거리, 손상, 배송 또는 청소 요금은 다음 송장에 포함됩니다."
@@ -14157,6 +14265,9 @@ msgstr "등록된 패스키가 없습니다."
 msgid "No payables"
 msgstr "매입채무가 없습니다"
 
+msgid "No payment rows. Regenerate them from the terms or add one."
+msgstr ""
+
 msgid "No payments yet."
 msgstr "아직 지불이 없습니다."
 
@@ -14264,6 +14375,9 @@ msgstr "행이 없습니다."
 
 msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
+
+msgid "No schedule lines."
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "이 시간대에 스케줄된 작업이 없습니다"
@@ -14435,6 +14549,9 @@ msgstr "일정 및 용량 계산에 반영되는 비근무일"
 
 msgid "None"
 msgstr "없음"
+
+msgid "None yet"
+msgstr ""
 
 msgid "Normal"
 msgstr "일반"
@@ -14994,6 +15111,9 @@ msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상�
 
 msgid "Opening balances as of"
 msgstr "다음 기준 개시 잔액:"
+
+msgid "Opening Liability"
+msgstr ""
 
 msgid "Opening Value"
 msgstr "개시 가액"
@@ -15566,6 +15686,9 @@ msgstr "매입채무 연령분석"
 msgid "Payment"
 msgstr "지불"
 
+msgid "Payment actions"
+msgstr ""
+
 msgid "Payment Amount"
 msgstr ""
 
@@ -15616,6 +15739,9 @@ msgstr "지불"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "이 송장에 적용된 지불 및 크레딧입니다. 적용된 금액과 외환 손익 금액은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
+
+msgid "Payments due after the termination date are removed. Invoiced payments stay."
+msgstr ""
 
 msgid "Payments due before this date are marked paid outside Carbon"
 msgstr ""
@@ -15703,6 +15829,9 @@ msgstr "기간 종료"
 
 msgid "Period lock policy"
 msgstr "기간 잠금 정책"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "고정자산에 대한 정기적인 감가상각 비용"
@@ -16262,6 +16391,9 @@ msgstr "가격 책정 추적"
 msgid "Primary cash account for bank transactions"
 msgstr "은행 거래를 위한 기본 현금 계정"
 
+msgid "Principal"
+msgstr ""
+
 msgid "Principal Collected"
 msgstr "수집된 원금"
 
@@ -16573,6 +16705,9 @@ msgstr "구매"
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP 기반 구매 및 제조"
 
+msgid "Purchase Asset"
+msgstr ""
+
 msgid "Purchase History"
 msgstr "구매 이력"
 
@@ -16593,6 +16728,12 @@ msgstr "매입 송장"
 
 msgid "Purchase Invoices"
 msgstr "매입 송장"
+
+msgid "Purchase invoices are drafted automatically for each payment once the lease is active."
+msgstr ""
+
+msgid "Purchase journal (the asset account comes from the asset class):"
+msgstr ""
 
 msgid "Purchase option"
 msgstr "구매 선택권"
@@ -16650,6 +16791,9 @@ msgstr "발주서가 필요합니다"
 
 msgid "Purchase planning"
 msgstr "구매 계획"
+
+msgid "Purchase Price"
+msgstr ""
 
 msgid "Purchase price variance"
 msgstr "구매가격차이"
@@ -17387,6 +17531,12 @@ msgstr "고객 환불"
 
 msgid "Regenerate"
 msgstr "재생성"
+
+msgid "Regenerate from Terms"
+msgstr ""
+
+msgid "Regenerate payments from the terms?"
+msgstr ""
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "이 사업장의 일정을 지금 다시 생성하세요. 마지막 일정 변경 후 약 30초에 자동으로 실행됩니다(편집이 일괄 처리되므로 여러 빠른 변경으로 인해 단일 재생성이 트리거됩니다)."
@@ -18406,6 +18556,9 @@ msgstr "신규 직원의 기본 권한을 설정하는 역할"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "추가 도구 없이도 성장할 수 있는 여유"
+
+msgid "ROU Amortization"
+msgstr ""
 
 msgid "Rounding Account"
 msgstr "반올림 계정"
@@ -19481,6 +19634,9 @@ msgstr "이 반품에 공급업체를 지정하여 입고에서 추가하세요.
 
 msgid "Set a target"
 msgstr "목표 설정"
+
+msgid "Set at activation"
+msgstr ""
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "회사의 운영 방식에 맞게 Carbon을 설정하세요: 사업장, 부품, BOM, 공정 목록 및 사용 워크플로우"
@@ -21167,7 +21323,26 @@ msgstr "기한이 경제수명의 최소 {threshold}% 이상입니다({actual})"
 msgid "Terminate"
 msgstr ""
 
+#. placeholder {0}: lease.leaseId
+msgid "Terminate {0}"
+msgstr ""
+
+msgid "Terminate Lease"
+msgstr ""
+
 msgid "Terminated"
+msgstr ""
+
+msgid "Termination"
+msgstr ""
+
+msgid "Termination Date"
+msgstr ""
+
+msgid "Termination journal:"
+msgstr ""
+
+msgid "Termination Penalty"
 msgstr ""
 
 msgid "Terms"
@@ -21242,6 +21417,9 @@ msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보�
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "자산이 사용 중인 분류로 이동하고 사용 개시 일자부터 감가상각을 시작합니다."
+
+msgid "The asset would have a negative cost. Check the purchase price."
+msgstr ""
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "Onshape에서 인증이 거부되었습니다. 연동 설정을 저장하여 다시 시도하세요."
@@ -21628,6 +21806,9 @@ msgstr "이 고객으로의 출하에서 운송비 지불자, 리스크 부담�
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "출하가 전기될 때 인식되는 재고 원가로, 품목의 원가 계산 방법에 따라 평가됩니다."
 
+msgid "The invoice for this payment is drafted on this date"
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 등급(3, 5, 7, 10, 15, 20, 27.5, 39년)입니다."
 
@@ -21658,11 +21839,20 @@ msgstr "이 속성이 수락하는 값의 종류(텍스트, 숫자, 날짜, 부�
 msgid "The label and document printers your company prints to"
 msgstr "회사가 인쇄하는 라벨 및 문서 프린터"
 
+msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
+msgstr ""
+
+msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run and on or before the end date"
+msgstr ""
+
 msgid "The last day to give renewal or termination notice"
 msgstr ""
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "공급업체의 리드타임을 고려할 때, 필요일까지 도착하도록 이 PO를 발주해야 하는 최종 일자입니다."
+
+msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
+msgstr ""
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "재화를 수령하는 고객과 청구 대상이 다를 경우의 청구 법인입니다 — 모/자회사 또는 제3자 청구 방식에 사용됩니다."
@@ -21997,6 +22187,9 @@ msgstr "신원 공급자가 게시한 SAML 메타데이터 URL"
 
 msgid "The schedule could not be updated after the release"
 msgstr "릴리스 후 일정을 업데이트할 수 없었습니다."
+
+msgid "The schedule is written when the lease is activated."
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "이 자산의 원가를 내용연수에 걸쳐 배분하는 데 사용되는 상각 스케줄입니다(정액법, 정률법, 생산량비례법)."
@@ -22489,6 +22682,9 @@ msgstr "이 부품은 대체되었으며 재고만으로 설정됩니다 — 소
 
 msgid "This path only decides what runs next"
 msgstr "이 경로는 다음에 실행할 작업만 결정합니다."
+
+msgid "this payment"
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "이 기간은 전기된 전표 항목이 없으며 영구적으로 삭제할 수 있습니다. 이를 취소할 수 없습니다."
@@ -23149,6 +23345,9 @@ msgstr "운송 및 기관"
 
 msgid "Trash"
 msgstr "휴지통"
+
+msgid "Treatment"
+msgstr ""
 
 msgid "Tree View"
 msgstr "트리 뷰"

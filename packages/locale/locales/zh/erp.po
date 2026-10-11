@@ -57,6 +57,9 @@ msgstr "(已停用)"
 msgid "(not an Equity posting account)"
 msgstr "（非所有者权益过账账户）"
 
+msgid "(reasonably certain)"
+msgstr ""
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# 条阻止记录} other {# 条阻止记录}}"
@@ -1093,6 +1096,9 @@ msgstr "一份日期在截断日期前的临时凭证；设置会计时，它将
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "采购发票是一份文件，用于说明客户购买的产品或服务以及相应的成本。"
 
+msgid "A purchase invoice is drafted for each payment on its due date."
+msgstr ""
+
 msgid "A purchase invoice is posted"
 msgstr "采购发票已过账"
 
@@ -1343,6 +1349,9 @@ msgid "A shipment's tracking number changes"
 msgstr "发货的跟踪号变更"
 
 msgid "A short-term lease has no schedule: only its payment rows change, and no journal is posted."
+msgstr ""
+
+msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr ""
 
 msgid "A short-term lease posts no journal at activation. Each invoice is expensed when it posts."
@@ -1625,6 +1634,9 @@ msgstr "处置时累计折旧"
 
 msgid "Accumulated Depreciation on Disposal (default)"
 msgstr "处置时累计折旧（默认）"
+
+msgid "Accumulated ROU Amortization"
+msgstr ""
 
 msgid "Accumulation Period (Weeks)"
 msgstr "累积期（周）"
@@ -1959,6 +1971,9 @@ msgstr "添加通行密钥"
 
 msgid "Add path"
 msgstr "添加路径"
+
+msgid "Add Payment"
+msgstr ""
 
 msgid "Add Permissions"
 msgstr "添加权限"
@@ -2533,6 +2548,9 @@ msgid "Annotation updated"
 msgstr "注释已更新"
 
 msgid "Annual"
+msgstr ""
+
+msgid "Annual Escalation"
 msgstr ""
 
 msgid "Annual Escalation (%)"
@@ -3113,6 +3131,9 @@ msgstr "确定要删除此维护工单吗？此操作无法撤消。"
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "确定要删除此通行密钥吗？您将无法再使用它登录。"
 
+msgid "Are you sure you want to delete this payment row?"
+msgstr ""
+
 msgid "Are you sure you want to delete this quality document?"
 msgstr "你确定要删除此质量文件吗？"
 
@@ -3266,6 +3287,9 @@ msgstr "截至"
 msgid "As of {0}"
 msgstr "截至 {0}"
 
+msgid "As of <0/>, the last month a lease run posted."
+msgstr ""
+
 msgid "As of:"
 msgstr "截至："
 
@@ -3355,6 +3379,9 @@ msgstr "销售型租赁开始时确认的资产总账科目，记录付款和残
 msgid "Asset ID"
 msgstr "资产ID"
 
+msgid "Asset Name"
+msgstr ""
+
 msgid "Asset recognized at lease commencement for the right to use a leased asset"
 msgstr ""
 
@@ -3420,6 +3447,9 @@ msgstr "在 {locationName}"
 
 msgid "At Commencement"
 msgstr "在开始时"
+
+msgid "At commencement. No lease run has posted yet."
+msgstr ""
 
 msgid "At each gate"
 msgstr "在每个关卡"
@@ -4538,6 +4568,9 @@ msgstr "更新日志通讯"
 msgid "Changes"
 msgstr "更改"
 
+msgid "Changing a payment term or a date cuts the payment rows again. Edited rows are replaced."
+msgstr ""
+
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "更改组件重新定义了组。重新运行运动规划以将更改应用到步骤。"
 
@@ -4805,6 +4838,9 @@ msgstr "结余"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "关闭将完成协议。每个件都必须已返回或已售出，每个计费期间都必须已开票。"
+
+msgid "Closing Liability"
+msgstr ""
 
 msgid "Closure blocked"
 msgstr "关闭被阻止"
@@ -5525,6 +5561,9 @@ msgstr "复制工作单号"
 msgid "Copy job unique identifier"
 msgstr "复制工单唯一标识符"
 
+msgid "Copy lease number"
+msgstr ""
+
 msgid "Copy link"
 msgstr "复制链接"
 
@@ -5551,6 +5590,9 @@ msgstr "复制问题链接"
 
 msgid "Copy link to Job"
 msgstr "复制工作链接"
+
+msgid "Copy link to lease"
+msgstr ""
 
 msgid "Copy link to material"
 msgstr "复制原材料链接"
@@ -6478,6 +6520,9 @@ msgstr "自定义"
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "自定义您的 PDF 文档布局 — 重新排列部分、隐藏不需要的内容，并添加您自己的块。"
 
+msgid "Cut from the payment terms. Change a row, add one or delete one before activating."
+msgstr ""
+
 msgid "Cut over to Carbon and freeze the old system"
 msgstr "切换到 Carbon 并冻结旧系统"
 
@@ -6691,6 +6736,9 @@ msgstr "决定当操作员在车间按下完成时且原材料仍未拣货时发
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "决定何时将拣货到工作中心但未消耗的原材料流回仓库。"
+
+msgid "Decided when the lease is activated, from the payment rows and the classification inputs."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -7970,6 +8018,9 @@ msgstr "每一行都是从该公司的数据链接到它不拥有的一行。删
 msgid "Each line shows its item ID and revision."
 msgstr "每行显示其物料 ID 和修订版。"
 
+msgid "Each month the lease run posts the interest and the right-of-use amortization."
+msgstr ""
+
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "每个工序的未使用原材料在工序完成后立即退回。"
 
@@ -8381,6 +8432,9 @@ msgstr "已编辑"
 
 msgid "edited <0/>"
 msgstr "编辑于<0/>"
+
+msgid "Effective"
+msgstr ""
 
 msgid "Effective Date"
 msgstr ""
@@ -8864,6 +8918,9 @@ msgstr "每3小时"
 msgid "Every account default is set"
 msgstr "已设置每个账户默认值"
 
+msgid "Every change to an active lease, with the amounts before and after."
+msgstr ""
+
 msgid "Every check must pass before accounting can be enabled."
 msgstr "启用会计之前，每个检查都必须通过。"
 
@@ -8887,6 +8944,9 @@ msgstr "每行都确认其计费内容"
 
 msgid "Every match"
 msgstr "每次匹配"
+
+msgid "Every payment row is cut again from the payment terms. Rows you edited, added or deleted are replaced."
+msgstr ""
 
 msgid "Every required action has already been added."
 msgstr "每个必需的操作已添加。"
@@ -8953,6 +9013,9 @@ msgstr "豁免证书"
 
 msgid "Exemption Reason"
 msgstr "豁免原因"
+
+msgid "Exercise Date"
+msgstr ""
 
 msgid "Exercise Purchase Option"
 msgstr ""
@@ -9988,6 +10051,9 @@ msgstr "汇兑收益/损失"
 msgid "FY {year}"
 msgstr "会计年度 {year}"
 
+msgid "Gain (Loss)"
+msgstr ""
+
 msgid "Gain on Disposal"
 msgstr "处置获利"
 
@@ -9998,6 +10064,9 @@ msgid "Gain on Disposal Account"
 msgstr "处置获利账户"
 
 msgid "Gain on Lease Modification"
+msgstr ""
+
+msgid "Gain on Lease Termination"
 msgstr ""
 
 msgid "Gain/Loss"
@@ -10794,8 +10863,14 @@ msgstr "导入您的BOM"
 msgid "in {0}"
 msgstr "{0} 后"
 
+msgid "in advance"
+msgstr ""
+
 msgid "In an open menu"
 msgstr "在打开的菜单中"
+
+msgid "in arrears"
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "维护中"
@@ -10979,6 +11054,9 @@ msgstr "从父组继承。"
 
 msgid "inherits {inheritedName}"
 msgstr "继承自 {inheritedName}"
+
+msgid "Initial Liability:"
+msgstr ""
 
 msgid "Input"
 msgstr "输入"
@@ -11645,6 +11723,9 @@ msgstr "日记账行"
 msgid "Journal Preview"
 msgstr "凭证预览"
 
+msgid "Journals"
+msgstr ""
+
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
 
@@ -11887,10 +11968,16 @@ msgstr ""
 msgid "Lease Classification"
 msgstr "租赁分类"
 
+msgid "Lease Cost"
+msgstr ""
+
 msgid "Lease Liabilities"
 msgstr ""
 
 msgid "Lease Liability"
+msgstr ""
+
+msgid "Lease Liability:"
 msgstr ""
 
 msgid "Lease Revenue"
@@ -12285,6 +12372,9 @@ msgstr "处置亏损（默认）"
 
 msgid "Loss on Disposal Account"
 msgstr "处置亏损账户"
+
+msgid "Loss on Lease Termination"
+msgstr ""
 
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的亏损"
@@ -12981,6 +13071,9 @@ msgstr "模型已从行中移除"
 msgid "Model upload"
 msgstr "模型上传"
 
+msgid "Modification"
+msgstr ""
+
 msgid "Modified"
 msgstr "已修改"
 
@@ -13020,6 +13113,9 @@ msgstr "你欠的钱"
 
 msgid "Month"
 msgstr "月"
+
+msgid "Month Ending"
+msgstr ""
 
 msgid "Month Rate"
 msgstr "月费率"
@@ -13257,6 +13353,12 @@ msgstr "租赁净投资"
 
 msgid "Net Investment in Leases (default)"
 msgstr "租赁净投资（默认）"
+
+msgid "Net Right-of-Use Asset:"
+msgstr ""
+
+msgid "Net ROU Asset"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "净单价"
@@ -13666,6 +13768,9 @@ msgstr "下一份发票 {date} 将自动创建，然后过账。"
 msgid "Next page"
 msgstr "下一页"
 
+msgid "Next Payment:"
+msgstr ""
+
 msgid "Next Sequence"
 msgstr "下一个编号规则"
 
@@ -13795,6 +13900,9 @@ msgstr "未记录任何更改"
 
 msgid "No changes yet."
 msgstr "还没有变更。"
+
+msgid "No changes yet. Modify, Terminate and Purchase are in the header once the lease is active."
+msgstr ""
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "无费用。里程、损毁、交付或清洁费用计入下一张发票。"
@@ -14157,6 +14265,9 @@ msgstr "还没有已登记的通行密钥。"
 msgid "No payables"
 msgstr "没有应付款项"
 
+msgid "No payment rows. Regenerate them from the terms or add one."
+msgstr ""
+
 msgid "No payments yet."
 msgstr "还没有付款。"
 
@@ -14264,6 +14375,9 @@ msgstr "这里没有行。"
 
 msgid "No rules assigned"
 msgstr "没有已分配的规则"
+
+msgid "No schedule lines."
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
@@ -14435,6 +14549,9 @@ msgstr "不工作日，排班和产能规划会考虑这些日期"
 
 msgid "None"
 msgstr "无"
+
+msgid "None yet"
+msgstr ""
 
 msgid "Normal"
 msgstr "正常"
@@ -14994,6 +15111,9 @@ msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（
 
 msgid "Opening balances as of"
 msgstr "期初余额截至"
+
+msgid "Opening Liability"
+msgstr ""
 
 msgid "Opening Value"
 msgstr "期初价值"
@@ -15566,6 +15686,9 @@ msgstr "应付款项账龄"
 msgid "Payment"
 msgstr "付款"
 
+msgid "Payment actions"
+msgstr ""
+
 msgid "Payment Amount"
 msgstr ""
 
@@ -15616,6 +15739,9 @@ msgstr "付款"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
+
+msgid "Payments due after the termination date are removed. Invoiced payments stay."
+msgstr ""
 
 msgid "Payments due before this date are marked paid outside Carbon"
 msgstr ""
@@ -15703,6 +15829,9 @@ msgstr "期末"
 
 msgid "Period lock policy"
 msgstr "期间锁定政策"
+
+msgid "Period Start"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "固定资产的定期折旧费用"
@@ -16262,6 +16391,9 @@ msgstr "定价追踪"
 msgid "Primary cash account for bank transactions"
 msgstr "银行交易的主要现金账户"
 
+msgid "Principal"
+msgstr ""
+
 msgid "Principal Collected"
 msgstr "已收本金"
 
@@ -16573,6 +16705,9 @@ msgstr "采购"
 msgid "Purchase & manufacture from MRP"
 msgstr "从 MRP 采购和制造"
 
+msgid "Purchase Asset"
+msgstr ""
+
 msgid "Purchase History"
 msgstr "采购历史记录"
 
@@ -16593,6 +16728,12 @@ msgstr "采购发票"
 
 msgid "Purchase Invoices"
 msgstr "采购发票"
+
+msgid "Purchase invoices are drafted automatically for each payment once the lease is active."
+msgstr ""
+
+msgid "Purchase journal (the asset account comes from the asset class):"
+msgstr ""
 
 msgid "Purchase option"
 msgstr "购置选择权"
@@ -16650,6 +16791,9 @@ msgstr "采购订单必需"
 
 msgid "Purchase planning"
 msgstr "采购计划"
+
+msgid "Purchase Price"
+msgstr ""
 
 msgid "Purchase price variance"
 msgstr "采购价格差异"
@@ -17387,6 +17531,12 @@ msgstr "向客户退款"
 
 msgid "Regenerate"
 msgstr "重新生成"
+
+msgid "Regenerate from Terms"
+msgstr ""
+
+msgid "Regenerate payments from the terms?"
+msgstr ""
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "立即为该地点重新生成排程。它也会在最后一次排程变化后约30秒自动运行（编辑是批处理的，因此几次快速变化会触发单次重新生成）。"
@@ -18406,6 +18556,9 @@ msgstr "为新员工设置默认权限的角色"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "无需添加更多工具即可扩展"
+
+msgid "ROU Amortization"
+msgstr ""
 
 msgid "Rounding Account"
 msgstr "舍入账户"
@@ -19481,6 +19634,9 @@ msgstr "为此退货指定供应商以从其收货中添加"
 
 msgid "Set a target"
 msgstr "设置目标"
+
+msgid "Set at activation"
+msgstr ""
 
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "根据公司运营方式设置 Carbon：地点、零件、BOM、工序清单和您使用的流程。"
@@ -21167,7 +21323,26 @@ msgstr "租赁期至少为经济寿命的{threshold}({actual})"
 msgid "Terminate"
 msgstr ""
 
+#. placeholder {0}: lease.leaseId
+msgid "Terminate {0}"
+msgstr ""
+
+msgid "Terminate Lease"
+msgstr ""
+
 msgid "Terminated"
+msgstr ""
+
+msgid "Termination"
+msgstr ""
+
+msgid "Termination Date"
+msgstr ""
+
+msgid "Termination journal:"
+msgstr ""
+
+msgid "Termination Penalty"
 msgstr ""
 
 msgid "Terms"
@@ -21242,6 +21417,9 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "资产进入其在用资产类别，并从在用日期开始折旧。"
+
+msgid "The asset would have a negative cost. Check the purchase price."
+msgstr ""
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "授权在 Onshape 中被拒绝。保存集成设置以重试。"
@@ -21628,6 +21806,9 @@ msgstr "贸易术语规则（FOB、DAP、EXW、CIF 等），规定在发往此�
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "发货过账时确认的库存管理成本，按物料的成本核算方法计值。"
 
+msgid "The invoice for this payment is drafted on this date"
+msgstr ""
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
 
@@ -21658,11 +21839,20 @@ msgstr "此属性接受的值类型（文本、数字、日期、布尔值、列
 msgid "The label and document printers your company prints to"
 msgstr "您公司打印至的标签和文件打印机"
 
+msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
+msgstr ""
+
+msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run and on or before the end date"
+msgstr ""
+
 msgid "The last day to give renewal or termination notice"
 msgstr ""
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "放置此采购订单的最迟日期，以便在给定供应商提前期的情况下按需要日期到达。"
+
+msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
+msgstr ""
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "要开票的法律实体，当不同于接收商品的客户时 — 用于母公司/子公司或第三方开票安排。"
@@ -21997,6 +22187,9 @@ msgstr "您的身份提供商发布的 SAML 元数据 URL"
 
 msgid "The schedule could not be updated after the release"
 msgstr "下达后无法更新排程。"
+
+msgid "The schedule is written when the lease is activated."
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "用于在其使用年限内分摊此资产成本的排程（直线法、余额递减法、生产单位法）。"
@@ -22489,6 +22682,9 @@ msgstr "此零件已被替代并设置为仅库存 — 它补充到其备件储�
 
 msgid "This path only decides what runs next"
 msgstr "此路径仅决定接下来运行什么"
+
+msgid "this payment"
+msgstr ""
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "此期间没有已过账的凭证，可以永久删除。此操作无法撤销。"
@@ -23149,6 +23345,9 @@ msgstr "中转与机构"
 
 msgid "Trash"
 msgstr "垃圾桶"
+
+msgid "Treatment"
+msgstr ""
 
 msgid "Tree View"
 msgstr "树形视图"
