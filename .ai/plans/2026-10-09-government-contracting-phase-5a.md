@@ -81,7 +81,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 19: Add the cost objective, restrict charging and members to the project
 - [x] Task 20: Add the element flags
 - [x] Task 21: Add the FLSA status to the employee job
-- [ ] Task 22: Build the DCAA controls on My Timesheet
+- [x] Task 22: Build the DCAA controls on My Timesheet
 - [ ] Task 23: Add the employee timesheet page for managers
 - [ ] Task 24: Add labor transfers to the correction modal and approvals
 - [ ] Task 25: Add allowable, unallowable and preproduction cost to the Costs tab
@@ -1595,3 +1595,13 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   1. `employeeJobValidator` and `updateEmployeeJob` already carried `flsaStatus` (Tasks 14 and 15), so the route action needed no change. The route's initial values now pass the stored status.
   2. The select is clearable: the column is nullable, and an empty status means "not set". Its helper text says what the status does in DCAA mode.
   3. Browser verification deferred.
+- Task 22:
+  1. The loader reads the settings with `getCompanySettings`, the FLSA status from `employeeJob`, and the week's revised entry ids with one inline query. No new service function, so no new MCP tool. The grid takes all of it as one `controls` prop, which is null in Standard mode.
+  2. `TIMESHEET_ENTRY_COLUMNS` (the element embed) and `ChargeNumber` gain `isLeave`, so a row added in the grid knows its leave element too. `pnpm run generate:mcp` changes the response digest of 5 tools.
+  3. In DCAA mode, a Pending Employee Review cell stays editable with its status icon (orange, the color of the status). The owner's change returns it to Draft, as `nextEntryStatus` says. Submitted and Approved cells stay locked, as in Phase 1a, although the server would accept the owner's change.
+  4. The change modal asks for both reasons when a saved entry on a late date changes, because the server requires both. A refused save toasts and keeps the modal open. Cancel reverts the cell.
+  5. With no certification text for the employee's FLSA status, the certification modal shows a warning and cannot submit. The server refuses that submit anyway.
+  6. The review banner accepts every listed entry at once (**Accept changes**). To disagree, the employee changes the cell with a reason.
+  7. The history icon shows on each cell with revisions, locked cells included. On a posted cell it sits in front of the correction menu button, not inside it.
+  8. The Log time modal shows an optional **Reason for late entry** in DCAA mode. The server decides when it is needed. The service order charge route passes it to `saveTimesheetEntry` too.
+  9. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.

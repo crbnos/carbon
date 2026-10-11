@@ -2649,6 +2649,9 @@ export const path = {
     timekeepingSettings: `${x}/settings/timekeeping`,
     timesheet: `${x}/timesheet`,
     timesheetCorrect: `${x}/timesheet/correct`,
+    timesheetReview: `${x}/timesheet/review`,
+    timesheetRevisions: (entryId: string) =>
+      generatePath(`${x}/timesheet/revisions/${entryId}`),
     timesheetSubmit: `${x}/timesheet/submit`,
     timesheetUpdate: `${x}/timesheet/update`,
     tool: (id: string) => generatePath(`${x}/tool/${id}`),

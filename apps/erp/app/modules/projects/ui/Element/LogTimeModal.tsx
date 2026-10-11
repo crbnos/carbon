@@ -30,6 +30,7 @@ import {
   TextArea
 } from "~/components/Form";
 import { useCompanyToday } from "~/hooks";
+import { useSettings } from "~/hooks/useSettings";
 import { path } from "~/utils/path";
 import { logTimeValidator } from "../../projects.models";
 
@@ -65,6 +66,8 @@ export function LogTimeModal({
 }) {
   const { t } = useLingui();
   const today = useCompanyToday();
+  // DCAA mode (5a): a date before the entry window needs a late reason.
+  const isDcaa = useSettings().timekeepingControls === "DCAA";
   const fetcher = useAction<{
     success?: boolean;
     error?: { message: string } | null;
@@ -96,7 +99,8 @@ export function LogTimeModal({
                 ? defaultLaborCategoryId
                 : (laborCategories[0]?.id ?? ""),
             hours: defaultHours,
-            note: ""
+            note: "",
+            lateReason: ""
           }}
         >
           <ModalHeader>
@@ -139,6 +143,13 @@ export function LogTimeModal({
                 }))}
               />
               <TextArea name="note" label={t`Note`} />
+              {isDcaa && (
+                <TextArea
+                  name="lateReason"
+                  label={t`Reason for late entry`}
+                  placeholder={t`Needed when the date is before the entry window`}
+                />
+              )}
             </VStack>
           </ModalBody>
           <ModalFooter>

@@ -65,6 +65,10 @@ msgstr ""
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# ブロック中のレコード} other {# ブロック中のレコード}}"
 
+#. placeholder {0}: entries.length
+msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
+msgstr ""
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr ""
@@ -1573,6 +1577,9 @@ msgstr "吸収"
 
 msgid "Academy"
 msgstr "アカデミー"
+
+msgid "Accept changes"
+msgstr ""
 
 msgid "Accept Lot"
 msgstr "ロット承諾"
@@ -4374,6 +4381,10 @@ msgstr "購買担当者"
 msgid "Buyer, Planner"
 msgstr "購買担当者、プランナー"
 
+#. placeholder {0}: entry.revision.reviser.fullName
+msgid "by {0}"
+msgstr ""
+
 msgid "by {byUser}"
 msgstr "{byUser}による"
 
@@ -4781,6 +4792,12 @@ msgstr ""
 msgid "Certified"
 msgstr "認定済み"
 
+msgid "Certify and submit"
+msgstr ""
+
+msgid "Certify and Submit"
+msgstr ""
+
 msgid "Chain"
 msgstr "チェーン"
 
@@ -4869,6 +4886,9 @@ msgid "Change the priority (the open or selected element)"
 msgstr ""
 
 msgid "Change the state (the open or selected element)"
+msgstr ""
+
+msgid "Change Time"
 msgstr ""
 
 msgid "Change type"
@@ -11648,6 +11668,9 @@ msgstr "ハイパーケア：最初の数週間の集中的なサポート"
 msgid "I (reduced)"
 msgstr "I(ゆるい検査)"
 
+msgid "I certify this statement"
+msgstr ""
+
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "この個人は22 CFR 120.62で定義されている米国人である合理的な根拠があります"
 
@@ -12942,6 +12965,9 @@ msgstr "最終教育訓練日"
 
 msgid "Last used"
 msgstr "最後に使用"
+
+msgid "Late Entry"
+msgstr ""
 
 msgid "Late in the evening, {name}."
 msgstr "夜遅く、{name}さん。"
@@ -14398,6 +14424,9 @@ msgstr "所要日目標"
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "必要人数は、その日の予定作業時間を{personDayHours}hで除した値を四捨五入したものです。フィルタリングしているシフト、またはこの場所で最も一般的なシフト長です。"
 
+msgid "Needed when the date is before the entry window"
+msgstr ""
+
 msgid "Needs a Business or Partner plan."
 msgstr "ビジネスプランまたはパートナープランが必要です。"
 
@@ -15032,10 +15061,16 @@ msgstr "表示する容量予約はありません。ジョブをスケジュー
 msgid "No category"
 msgstr ""
 
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
+msgstr ""
+
 msgid "No change request"
 msgstr ""
 
 msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
+msgid "No changes"
 msgstr ""
 
 msgid "No changes recorded"
@@ -18800,11 +18835,17 @@ msgstr "理由"
 msgid "Reason Account"
 msgstr "理由アカウント"
 
+msgid "Reason for change"
+msgstr ""
+
 msgid "Reason for Change"
 msgstr "変更の理由"
 
 msgid "Reason for declining (Optional)"
 msgstr "辞退する理由（オプション）"
+
+msgid "Reason for late entry"
+msgstr ""
 
 msgid "Reason for skipping (required)"
 msgstr "スキップの理由（必須）"
@@ -21734,6 +21775,9 @@ msgstr "仕入先IDを表示"
 msgid "Show sync options"
 msgstr "同期オプションを表示"
 
+msgid "Show the changes to this entry"
+msgstr ""
+
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
 
@@ -23314,6 +23358,9 @@ msgstr "この得意先が属するカテゴリ（OEM、ディストリビュー
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "この仕入先が属するカテゴリ（原材料、サービス、請負製造業者）。デフォルトの勘定科目とレポートのグループ化を決定します。"
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr ""
+
 msgid "The charge moves to the new coverage, and its cost to that coverage's account."
 msgstr ""
 
@@ -23425,6 +23472,9 @@ msgstr "製造指図の数量が必要な日付です — これは遅刻が測�
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "このアセットの減価償却が開始される日付。通常は償却開始日です。"
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr ""
 
 msgid "The date past which this quote's pricing is no longer honored; converting to an order after this date may require re-quoting."
 msgstr "この見積の価格が有効でなくなった日付。この日付後に注文に変換する場合は、見積をやり直す必要がある場合があります。"

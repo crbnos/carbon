@@ -132,7 +132,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         laborCategoryId: validation.data.laborCategoryId,
         entryDate: validation.data.entryDate,
         hours: validation.data.hours,
-        note: validation.data.note
+        note: validation.data.note,
+        lateReason: validation.data.lateReason
       });
       if (saved.error !== null || !saved.data.entryId) {
         return refuse(saved.error ?? "Failed to log the time");

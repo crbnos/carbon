@@ -340,6 +340,8 @@ export type ChargeNumber = {
   targetFixedAssetId: string | null;
   /** `FA000012 — name` of the target asset, for display. */
   targetFixedAssetLabel: string | null;
+  /** A leave element (5a): DCAA mode takes time for a future date on it. */
+  isLeave: boolean;
 };
 
 /**
@@ -396,6 +398,7 @@ export async function getChargeNumbers(client: Client, companyId: string) {
       projectId: string;
       readableId: string;
       name: string;
+      isLeave: boolean;
       project: {
         name: string;
         costTreatment: ProjectCostTreatment;
@@ -405,7 +408,7 @@ export async function getChargeNumbers(client: Client, companyId: string) {
       client
         .from("projectElement")
         .select(
-          "id, projectId, readableId, name, project:project!projectElement_project_fkey!inner(name, costTreatment, projectStock), state:projectState!projectElement_state_fkey!inner(group)"
+          "id, projectId, readableId, name, isLeave, project:project!projectElement_project_fkey!inner(name, costTreatment, projectStock), state:projectState!projectElement_state_fkey!inner(group)"
         )
         .eq("companyId", companyId)
         .eq("isChargeable", true)
@@ -481,7 +484,8 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         costTreatment: project.costTreatment,
         projectStock: project.projectStock,
         targetFixedAssetId: targetFixedAssetId(project.id, null),
-        targetFixedAssetLabel: null
+        targetFixedAssetLabel: null,
+        isLeave: false
       }));
 
   const elementRows: ChargeNumber[] = (elements.data ?? []).map((element) => ({
@@ -494,7 +498,8 @@ export async function getChargeNumbers(client: Client, companyId: string) {
     costTreatment: element.project?.costTreatment ?? "Statistical",
     projectStock: element.project?.projectStock ?? false,
     targetFixedAssetId: targetFixedAssetId(element.projectId, element.id),
-    targetFixedAssetLabel: null
+    targetFixedAssetLabel: null,
+    isLeave: element.isLeave
   }));
 
   const rows = [...projectRows, ...elementRows];
@@ -3168,7 +3173,7 @@ export async function deletePlanningGroup(
 // --- Timesheets --------------------------------------------------------------
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 /**
  * Gets an employee's timesheet entries between two dates (inclusive), with
@@ -3669,7 +3674,7 @@ export async function getTimesheetApprovals(
 }
 
 const TIMESHEET_APPROVAL_COLUMNS =
-  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, reversalOfId, correctionReason, employee:user!timesheetEntry_employeeId_fkey(id, fullName, avatarUrl), project:project!timesheetEntry_project_fkey!inner(id, identifier, name, ownerId), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, reversalOfId, correctionReason, employee:user!timesheetEntry_employeeId_fkey(id, fullName, avatarUrl), project:project!timesheetEntry_project_fkey!inner(id, identifier, name, ownerId), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 function timesheetApprovalsQuery(client: Client) {
   return client.from("timesheetEntry").select(TIMESHEET_APPROVAL_COLUMNS);

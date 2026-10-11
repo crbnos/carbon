@@ -65,6 +65,10 @@ msgstr ""
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# 차단 레코드} other {# 차단 레코드}}"
 
+#. placeholder {0}: entries.length
+msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
+msgstr ""
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr ""
@@ -1573,6 +1577,9 @@ msgstr "흡수"
 
 msgid "Academy"
 msgstr "아카데미"
+
+msgid "Accept changes"
+msgstr ""
 
 msgid "Accept Lot"
 msgstr "로트 수락"
@@ -4374,6 +4381,10 @@ msgstr "구매 담당자"
 msgid "Buyer, Planner"
 msgstr "구매 담당자, 계획 담당자"
 
+#. placeholder {0}: entry.revision.reviser.fullName
+msgid "by {0}"
+msgstr ""
+
 msgid "by {byUser}"
 msgstr "{byUser}"
 
@@ -4781,6 +4792,12 @@ msgstr ""
 msgid "Certified"
 msgstr "인증됨"
 
+msgid "Certify and submit"
+msgstr ""
+
+msgid "Certify and Submit"
+msgstr ""
+
 msgid "Chain"
 msgstr "체인"
 
@@ -4869,6 +4886,9 @@ msgid "Change the priority (the open or selected element)"
 msgstr ""
 
 msgid "Change the state (the open or selected element)"
+msgstr ""
+
+msgid "Change Time"
 msgstr ""
 
 msgid "Change type"
@@ -11648,6 +11668,9 @@ msgstr "하이퍼케어: 초기 몇 주간의 집중 지원"
 msgid "I (reduced)"
 msgstr "I (수월한 검사)"
 
+msgid "I certify this statement"
+msgstr ""
+
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "나는 이 개인이 22 CFR 120.62에서 정의한 미국인이라고 합리적으로 믿을 이유가 있습니다"
 
@@ -12942,6 +12965,9 @@ msgstr "마지막 교육 날짜"
 
 msgid "Last used"
 msgstr "마지막 사용"
+
+msgid "Late Entry"
+msgstr ""
 
 msgid "Late in the evening, {name}."
 msgstr "{name}님, 저녁이 늦어가는군요."
@@ -14398,6 +14424,9 @@ msgstr "소요 일자"
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "필요한 것은 그 날의 작업 지시 시간을 {personDayHours}h로 나눈 값(올림)입니다 — 필터링하는 교대조 또는 이 사업장의 가장 일반적인 교대조 길이입니다."
 
+msgid "Needed when the date is before the entry window"
+msgstr ""
+
 msgid "Needs a Business or Partner plan."
 msgstr "Business 또는 Partner 요금제가 필요합니다."
 
@@ -15032,10 +15061,16 @@ msgstr "시각화할 용량 예약이 없습니다. 작업을 예약하여 작�
 msgid "No category"
 msgstr ""
 
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
+msgstr ""
+
 msgid "No change request"
 msgstr ""
 
 msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
+msgid "No changes"
 msgstr ""
 
 msgid "No changes recorded"
@@ -18800,11 +18835,17 @@ msgstr "사유"
 msgid "Reason Account"
 msgstr "사유 계정"
 
+msgid "Reason for change"
+msgstr ""
+
 msgid "Reason for Change"
 msgstr "변경 이유"
 
 msgid "Reason for declining (Optional)"
 msgstr "거절 사유(선택 사항)"
+
+msgid "Reason for late entry"
+msgstr ""
 
 msgid "Reason for skipping (required)"
 msgstr "건너뛰기 사유 (필수)"
@@ -21734,6 +21775,9 @@ msgstr "공급업체 ID 표시"
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
 
+msgid "Show the changes to this entry"
+msgstr ""
+
 msgid "Show Trailing Zeros"
 msgstr "후행 0 표시"
 
@@ -23314,6 +23358,9 @@ msgstr "이 고객이 속하는 카테고리(OEM, 유통업체, 최종 사용자
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "이 공급업체가 속하는 카테고리(원자재, 서비스, 위탁제조업체)로, 기본 총계정원장 계정과 보고 그룹을 결정합니다."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr ""
+
 msgid "The charge moves to the new coverage, and its cost to that coverage's account."
 msgstr ""
 
@@ -23425,6 +23472,9 @@ msgstr "작업 지시의 수량이 필요한 날짜 — 지연이 측정되는 �
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "이 자산의 감가상각이 시작되는 날짜로, 일반적으로 사용 개시일입니다."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr ""
 
 msgid "The date past which this quote's pricing is no longer honored; converting to an order after this date may require re-quoting."
 msgstr "이 견적서의 가격이 더 이상 유효하지 않은 날짜로, 이 날짜 이후에 주문으로 변환할 때는 재견적이 필요할 수 있습니다."

@@ -35,9 +35,9 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, isEntryDateAllowed } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
@@ -71,6 +71,16 @@ import {
   timesheetRowValidator
 } from "../../projects.models";
 import { TimesheetEntryStatus } from "../Element/TimesheetEntryStatus";
+import { CertificationModal } from "./CertificationModal";
+import {
+  TimesheetChangeModal,
+  type TimesheetChangeReasons
+} from "./TimesheetChangeModal";
+import {
+  type PendingReviewEntry,
+  TimesheetReviewBanner
+} from "./TimesheetReviewBanner";
+import { TimesheetRevisionsPopover } from "./TimesheetRevisionsPopover";
 
 type GridRow = {
   key: string;
@@ -87,6 +97,8 @@ type GridRow = {
   to: string | null;
   /** A service order's time: read-only here, its visit page posts it. */
   isService: boolean;
+  /** A leave element (5a): DCAA mode takes time for a future date on it. */
+  isLeave: boolean;
   laborCategory: string;
   cells: Record<string, TimesheetCell>;
   total: number;
@@ -111,22 +123,59 @@ type TimesheetGridProps = {
         projectType: "Standard" | "Service";
         serviceOrder: { id: string; serviceOrderId: string }[];
       } | null;
-      element: { readableId: string; name: string } | null;
+      element: { readableId: string; name: string; isLeave?: boolean } | null;
       laborCategory: { name: string } | null;
     };
   }[];
   timecardHours: Record<string, number>;
   laborCategories: { id: string; name: string }[];
+  /** DCAA mode's controls (5a); null in Standard mode. */
+  controls: TimesheetControls | null;
+};
+
+/** What DCAA mode adds to the grid (5a). */
+export type TimesheetControls = {
+  /** Today on the company calendar. */
+  today: string;
+  windowDays: number;
+  /** The entries that have a correction trail. */
+  revisedEntryIds: string[];
+  /** The certification text for the employee's FLSA status. */
+  certificationText: string | null;
+  /** The entries another user changed, waiting for the employee. */
+  pendingReview: PendingReviewEntry[];
+};
+
+/** A cell value that waits for its reasons before it saves (DCAA mode). */
+type PendingChange = {
+  label: string;
+  fields: Record<string, string>;
+  hours: number;
+  previousHours: number | null;
+  requiresReason: boolean;
+  requiresLateReason: boolean;
+  revert: () => void;
 };
 
 /** Hours in a Draft or Rejected cell can change; the others are locked. */
 const EDITABLE_STATUSES: TimesheetEntryStatusType[] = ["Draft", "Rejected"];
+/** DCAA mode: the employee can also change an entry another user changed. */
+const DCAA_EDITABLE_STATUSES: TimesheetEntryStatusType[] = [
+  ...EDITABLE_STATUSES,
+  "Pending Employee Review"
+];
 
 /**
  * The signed-in user's week: one row per charge number and labor category,
  * one cell per day. A cell saves on blur. Submit week submits the Draft
  * cells; a posted cell changes only through a correction. A service order's
  * row is read-only: its visit page posts the time.
+ *
+ * DCAA mode (`controls`): a day after today is read-only except on a leave
+ * element; a change to a saved entry, and a new value on a late date, ask
+ * for their reasons first (`TimesheetChangeModal`); Submit week certifies
+ * the week (`CertificationModal`); the changes another user made wait in
+ * `TimesheetReviewBanner`; a cell with a correction trail shows its history.
  */
 export default function TimesheetGrid({
   weekOffset,
@@ -135,7 +184,8 @@ export default function TimesheetGrid({
   days,
   rows,
   timecardHours,
-  laborCategories
+  laborCategories,
+  controls
 }: TimesheetGridProps) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -157,6 +207,18 @@ export default function TimesheetGrid({
     hours: number;
     label: string;
   } | null>(null);
+  const [pendingChange, setPendingChange] = useState<PendingChange | null>(
+    null
+  );
+  const [certifying, setCertifying] = useState(false);
+  const save = useCellSave();
+  const editableStatuses = controls
+    ? DCAA_EDITABLE_STATUSES
+    : EDITABLE_STATUSES;
+  const revisedEntryIds = useMemo(
+    () => new Set(controls?.revisedEntryIds ?? []),
+    [controls?.revisedEntryIds]
+  );
 
   const gridRows = useMemo<GridRow[]>(() => {
     const serverRows: GridRow[] = rows.map((row) => {
@@ -183,6 +245,7 @@ export default function TimesheetGrid({
             ? path.to.projectElement(row.projectId, row.projectElementId)
             : path.to.project(row.projectId),
         isService,
+        isLeave: row.entry.element?.isLeave ?? false,
         laborCategory: row.entry.laborCategory?.name ?? "",
         cells: row.cells,
         total: row.total
@@ -206,6 +269,7 @@ export default function TimesheetGrid({
             ? path.to.projectElement(row.projectId, row.projectElementId)
             : path.to.project(row.projectId),
           isService: false,
+          isLeave: chargeNumber?.isLeave ?? false,
           laborCategory:
             laborCategories.find((c) => c.id === row.laborCategoryId)?.name ??
             "",
@@ -277,25 +341,39 @@ export default function TimesheetGrid({
           >
             <Trans>Add row</Trans>
           </Button>
-          <submitFetcher.Form method="post" action={path.to.timesheetSubmit}>
-            <input type="hidden" name="from" value={weekStart} />
-            <input type="hidden" name="to" value={weekEnd} />
-            <input type="hidden" name="week" value={weekOffset} />
+          {controls ? (
             <Button
-              type="submit"
               leftIcon={<LuSend />}
-              isDisabled={!hasDraft || isSubmitting}
-              isLoading={isSubmitting}
+              isDisabled={!hasDraft}
+              onClick={() => setCertifying(true)}
             >
-              {settings.timesheetApprovalRequired ? (
-                <Trans>Submit week</Trans>
-              ) : (
-                <Trans>Submit and post week</Trans>
-              )}
+              <Trans>Submit week</Trans>
             </Button>
-          </submitFetcher.Form>
+          ) : (
+            <submitFetcher.Form method="post" action={path.to.timesheetSubmit}>
+              <input type="hidden" name="from" value={weekStart} />
+              <input type="hidden" name="to" value={weekEnd} />
+              <input type="hidden" name="week" value={weekOffset} />
+              <Button
+                type="submit"
+                leftIcon={<LuSend />}
+                isDisabled={!hasDraft || isSubmitting}
+                isLoading={isSubmitting}
+              >
+                {settings.timesheetApprovalRequired ? (
+                  <Trans>Submit week</Trans>
+                ) : (
+                  <Trans>Submit and post week</Trans>
+                )}
+              </Button>
+            </submitFetcher.Form>
+          )}
         </HStack>
       </div>
+
+      {controls && controls.pendingReview.length > 0 && (
+        <TimesheetReviewBanner entries={controls.pendingReview} />
+      )}
 
       {gridRows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
@@ -356,6 +434,11 @@ export default function TimesheetGrid({
                   </Td>
                   {days.map((day) => {
                     const cell = row.cells[day];
+                    const cellLabel = `${row.readableId} · ${formatDate(day)}`;
+                    const history =
+                      cell && revisedEntryIds.has(cell.entryId) ? (
+                        <TimesheetRevisionsPopover entryId={cell.entryId} />
+                      ) : null;
                     if (row.isService) {
                       return (
                         <Td key={day} className="p-0">
@@ -363,30 +446,76 @@ export default function TimesheetGrid({
                         </Td>
                       );
                     }
-                    if (cell && !EDITABLE_STATUSES.includes(cell.status)) {
+                    if (cell && !editableStatuses.includes(cell.status)) {
                       return (
                         <Td key={day} className="p-0">
-                          <LockedCell
-                            cell={cell}
-                            onCorrect={() =>
-                              setCorrecting({
-                                entryId: cell.entryId,
-                                hours: cell.hours,
-                                label: `${row.readableId} · ${formatDate(day)}`
-                              })
-                            }
-                          />
+                          <CellWithHistory history={history}>
+                            <LockedCell
+                              cell={cell}
+                              onCorrect={() =>
+                                setCorrecting({
+                                  entryId: cell.entryId,
+                                  hours: cell.hours,
+                                  label: cellLabel
+                                })
+                              }
+                            />
+                          </CellWithHistory>
+                        </Td>
+                      );
+                    }
+                    // DCAA mode: no time for a future date, except leave.
+                    if (controls && day > controls.today && !row.isLeave) {
+                      return (
+                        <Td key={day} className="p-0">
+                          {cell ? (
+                            <CellWithHistory history={history}>
+                              <ReadOnlyCell cell={cell} />
+                            </CellWithHistory>
+                          ) : (
+                            <span className="block h-9" />
+                          )}
                         </Td>
                       );
                     }
                     return (
                       <Td key={day} className="p-0">
-                        <HoursCell
-                          row={row}
-                          day={day}
-                          cell={cell}
-                          label={t`Hours on ${formatDate(day)} for ${row.readableId}`}
-                        />
+                        <CellWithHistory history={history}>
+                          <HoursCell
+                            row={row}
+                            day={day}
+                            cell={cell}
+                            label={t`Hours on ${formatDate(day)} for ${row.readableId}`}
+                            onRequestReasons={
+                              controls
+                                ? (change) => {
+                                    const entryWindow = isEntryDateAllowed({
+                                      entryDate: day,
+                                      today: controls.today,
+                                      windowDays: controls.windowDays,
+                                      isLeave: row.isLeave
+                                    });
+                                    const requiresLateReason =
+                                      entryWindow.allowed && entryWindow.late;
+                                    const requiresReason = Boolean(cell);
+                                    if (
+                                      !requiresReason &&
+                                      !requiresLateReason
+                                    ) {
+                                      return false;
+                                    }
+                                    setPendingChange({
+                                      ...change,
+                                      label: cellLabel,
+                                      requiresReason,
+                                      requiresLateReason
+                                    });
+                                    return true;
+                                  }
+                                : undefined
+                            }
+                          />
+                        </CellWithHistory>
                       </Td>
                     );
                   })}
@@ -462,21 +591,83 @@ export default function TimesheetGrid({
           onClose={() => setCorrecting(null)}
         />
       )}
+
+      {pendingChange && (
+        <TimesheetChangeModal
+          label={pendingChange.label}
+          previousHours={pendingChange.previousHours}
+          hours={pendingChange.hours}
+          requiresReason={pendingChange.requiresReason}
+          requiresLateReason={pendingChange.requiresLateReason}
+          onConfirm={async (reasons: TimesheetChangeReasons) => {
+            const result = await save(path.to.timesheetUpdate, {
+              ...pendingChange.fields,
+              ...(reasons.reason ? { reason: reasons.reason } : {}),
+              ...(reasons.lateReason ? { lateReason: reasons.lateReason } : {})
+            });
+            // A refusal toasts and keeps the modal open.
+            if (result.error) return false;
+            setPendingChange(null);
+            return true;
+          }}
+          onCancel={() => {
+            pendingChange.revert();
+            setPendingChange(null);
+          }}
+        />
+      )}
+
+      {certifying && controls && (
+        <CertificationModal
+          certificationText={controls.certificationText}
+          weekStart={weekStart}
+          weekEnd={weekEnd}
+          weekOffset={weekOffset}
+          weekLabel={`${formatDate(weekStart)} – ${formatDate(weekEnd)}`}
+          onClose={() => setCertifying(false)}
+        />
+      )}
     </div>
   );
 }
 
-/** A day cell that saves its hours on blur. */
+/** A cell's content with its history button in front, when it has one. */
+function CellWithHistory({
+  history,
+  children
+}: {
+  history: ReactNode;
+  children: ReactNode;
+}) {
+  if (!history) return <>{children}</>;
+  return (
+    <div className="flex items-center">
+      {history}
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * A day cell that saves its hours on blur. In DCAA mode
+ * `onRequestReasons` decides first: when the value needs a reason it opens
+ * the change modal, which saves the value or reverts the cell.
+ */
 function HoursCell({
   row,
   day,
   cell,
-  label
+  label,
+  onRequestReasons
 }: {
   row: GridRow;
   day: string;
   cell?: TimesheetCell;
   label: string;
+  /** Returns true when it took the value to ask for its reasons. */
+  onRequestReasons?: (
+    change: Pick<PendingChange, "fields" | "hours" | "previousHours" | "revert">
+  ) => boolean;
 }) {
   const save = useCellSave();
   const serverHours = cell?.hours;
@@ -484,27 +675,41 @@ function HoursCell({
   // A refused save remounts the input with the stored hours.
   const [resets, setResets] = useState(0);
 
+  const revert = () => {
+    latest.current = serverHours;
+    setResets((count) => count + 1);
+  };
+
   const commit = async () => {
     const next = latest.current;
     const hours = next === undefined || !Number.isFinite(next) ? 0 : next;
     if (hours === (serverHours ?? 0)) return;
-    const result = await save(path.to.timesheetUpdate, {
+    const fields = {
       entryDate: day,
       projectId: row.projectId,
       projectElementId: row.projectElementId ?? "",
       laborCategoryId: row.laborCategoryId,
       hours: String(hours)
-    });
-    if (result.error) {
-      latest.current = serverHours;
-      setResets((count) => count + 1);
+    };
+    if (
+      onRequestReasons?.({
+        fields,
+        hours,
+        previousHours: serverHours ?? null,
+        revert
+      })
+    ) {
+      return;
     }
+    const result = await save(path.to.timesheetUpdate, fields);
+    if (result.error) revert();
   };
 
   return (
     <div className="flex items-center justify-end gap-1 pr-1">
-      {cell?.status === "Rejected" && (
-        <TimesheetEntryStatus status="Rejected" iconOnly />
+      {(cell?.status === "Rejected" ||
+        cell?.status === "Pending Employee Review") && (
+        <TimesheetEntryStatus status={cell.status} iconOnly />
       )}
       <NumberField
         key={`${serverHours ?? ""}:${resets}`}

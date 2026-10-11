@@ -733,8 +733,39 @@ export const logTimeValidator = z.object({
       .number()
       .gt(0, { message: "Hours must be greater than 0" })
       .max(24, { message: "A day has 24 hours" })
-  )
+  ),
+  // DCAA mode: the reason for a date before the entry window.
+  lateReason: zfd.text(z.string().trim().optional())
 });
+
+/**
+ * The reasons DCAA mode asks for before a timesheet cell saves: one for a
+ * change to a saved entry, one for a date before the entry window. The form
+ * says which it needs.
+ */
+export const timesheetChangeValidator = z
+  .object({
+    requiresReason: zfd.checkbox(),
+    requiresLateReason: zfd.checkbox(),
+    reason: zfd.text(z.string().trim().optional()),
+    lateReason: zfd.text(z.string().trim().optional())
+  })
+  .superRefine((value, ctx) => {
+    if (value.requiresReason && !value.reason) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["reason"],
+        message: "Give a reason for the change"
+      });
+    }
+    if (value.requiresLateReason && !value.lateReason) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["lateReason"],
+        message: "Give a reason for the late entry"
+      });
+    }
+  });
 
 /** A new row of the timesheet grid: a charge number and a labor category. */
 export const timesheetRowValidator = z.object({

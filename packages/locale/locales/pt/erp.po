@@ -65,6 +65,10 @@ msgstr ""
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# registro bloqueador} other {# registros bloqueadores}}"
 
+#. placeholder {0}: entries.length
+msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
+msgstr ""
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr ""
@@ -1573,6 +1577,9 @@ msgstr "Absorção"
 
 msgid "Academy"
 msgstr "Academia"
+
+msgid "Accept changes"
+msgstr ""
 
 msgid "Accept Lot"
 msgstr "Aceitar Lote"
@@ -4374,6 +4381,10 @@ msgstr "Comprador"
 msgid "Buyer, Planner"
 msgstr "Comprador, Planejador"
 
+#. placeholder {0}: entry.revision.reviser.fullName
+msgid "by {0}"
+msgstr ""
+
 msgid "by {byUser}"
 msgstr "por {byUser}"
 
@@ -4781,6 +4792,12 @@ msgstr ""
 msgid "Certified"
 msgstr "Certificado"
 
+msgid "Certify and submit"
+msgstr ""
+
+msgid "Certify and Submit"
+msgstr ""
+
 msgid "Chain"
 msgstr "Cadeia"
 
@@ -4869,6 +4886,9 @@ msgid "Change the priority (the open or selected element)"
 msgstr ""
 
 msgid "Change the state (the open or selected element)"
+msgstr ""
+
+msgid "Change Time"
 msgstr ""
 
 msgid "Change type"
@@ -11648,6 +11668,9 @@ msgstr "Hypercare: suporte intenso nas primeiras semanas"
 msgid "I (reduced)"
 msgstr "I (Atenuada)"
 
+msgid "I certify this statement"
+msgstr ""
+
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "Tenho uma base razoável para acreditar que este indivíduo é uma pessoa dos EUA conforme definido em 22 CFR 120.62"
 
@@ -12942,6 +12965,9 @@ msgstr "Data do Último Treinamento"
 
 msgid "Last used"
 msgstr "Última utilização"
+
+msgid "Late Entry"
+msgstr ""
 
 msgid "Late in the evening, {name}."
 msgstr "Tarde da noite, {name}."
@@ -14398,6 +14424,9 @@ msgstr "Alvo de necessidade"
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Necessário é as horas de trabalho devidas naquele dia divididas por {personDayHours}h, arredondadas para cima — o turno que você está filtrando ou o comprimento de turno mais comum neste local."
 
+msgid "Needed when the date is before the entry window"
+msgstr ""
+
 msgid "Needs a Business or Partner plan."
 msgstr "Requer um plano Business ou Partner."
 
@@ -15032,10 +15061,16 @@ msgstr "Nenhuma reserva de capacidade para visualizar. Agende um trabalho para v
 msgid "No category"
 msgstr ""
 
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
+msgstr ""
+
 msgid "No change request"
 msgstr ""
 
 msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
+msgid "No changes"
 msgstr ""
 
 msgid "No changes recorded"
@@ -18800,11 +18835,17 @@ msgstr "Motivo"
 msgid "Reason Account"
 msgstr "Conta de Motivo"
 
+msgid "Reason for change"
+msgstr ""
+
 msgid "Reason for Change"
 msgstr "Motivo da Mudança"
 
 msgid "Reason for declining (Optional)"
 msgstr "Motivo da recusa (Opcional)"
+
+msgid "Reason for late entry"
+msgstr ""
 
 msgid "Reason for skipping (required)"
 msgstr "Motivo para saltar (obrigatório)"
@@ -21734,6 +21775,9 @@ msgstr "Mostrar IDs de Fornecedor"
 msgid "Show sync options"
 msgstr "Mostrar opções de sincronização"
 
+msgid "Show the changes to this entry"
+msgstr ""
+
 msgid "Show Trailing Zeros"
 msgstr "Mostrar Zeros Decimais"
 
@@ -23314,6 +23358,9 @@ msgstr "A categoria à qual este cliente pertence (OEM, distribuidor, usuário f
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "A categoria a que este fornecedor pertence (matéria-prima, serviços, fabricante por contrato); determina as contas GL padrão e os agrupamentos de relatórios."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr ""
+
 msgid "The charge moves to the new coverage, and its cost to that coverage's account."
 msgstr ""
 
@@ -23425,6 +23472,9 @@ msgstr "A data em que a quantidade de uma ordem de produção é necessária —
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "A data em que a depreciação de um ativo começa; normalmente a data de entrada em serviço."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr ""
 
 msgid "The date past which this quote's pricing is no longer honored; converting to an order after this date may require re-quoting."
 msgstr "A data após a qual o preço deste orçamento não é mais honrado; converter para um pedido após esta data pode exigir novo orçamento."
