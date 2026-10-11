@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { EPSILON, equals, formatPercent, formatQuantity } from "@carbon/utils";
+import {
+  EPSILON,
+  equals,
+  estimateAtCompletion,
+  formatPercent,
+  formatQuantity
+} from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -1217,25 +1223,9 @@ export type ProjectCostFigures = {
   estimateAtCompletion: number;
 };
 
-/**
- * The estimate at completion: the override when one is set, else actual +
- * committed + whatever of the plan is not spent or committed yet.
- */
-export function estimateAtCompletion(args: {
-  plan: number;
-  committed: number;
-  actual: number;
-  override?: number | null;
-}): number {
-  if (args.override !== null && args.override !== undefined) {
-    return Number(args.override);
-  }
-  return (
-    args.actual +
-    args.committed +
-    Math.max(args.plan - args.actual - args.committed, 0)
-  );
-}
+// The estimate at completion lives in `@carbon/utils` so the Costs tab and
+// the contract funding notice compute it the same way.
+export { estimateAtCompletion } from "@carbon/utils";
 
 /**
  * The Costs tab figures for each element (its subtree) and for the project.
