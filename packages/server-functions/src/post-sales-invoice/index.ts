@@ -2719,6 +2719,25 @@ const postSalesInvoice = defineServerFn({
               .where("salesInvoiceId", "=", invoiceId)
               .execute();
 
+            // A project billing or service order invoice: its billable items
+            // are billable again, remembering the voided invoice so a re-bill
+            // is held for review (project billing P4).
+            if (invoiceLineIds.length > 0) {
+              await trx
+                .updateTable("projectBillableItem")
+                .set({
+                  status: "Unbilled",
+                  salesInvoiceLineId: null,
+                  voidedSalesInvoiceId: invoiceId,
+                  updatedBy: userId,
+                  updatedAt: datetime.timestamp()
+                })
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", invoiceLineIds)
+                .where("status", "=", "Billed")
+                .execute();
+            }
+
             // Update sales order lines to reverse invoiced quantities
             for await (const [salesOrderLineId, update] of Object.entries(
               salesOrderLineUpdates

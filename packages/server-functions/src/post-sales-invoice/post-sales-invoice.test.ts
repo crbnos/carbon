@@ -164,6 +164,27 @@ databaseTest(
         .filter((line) => line.accountId === f.account("sales"))
         .reduce((sum, line) => sum + Number(line.amount), 0);
       expect(sales).toEqual(240);
+
+      // A VOID returns the stamped item to Unbilled and remembers the
+      // voided invoice, so a re-bill is held for review.
+      const voided = await postSalesInvoice(f.ctx, {
+        type: "void",
+        invoiceId
+      });
+      expect(voided.error).toBeNull();
+      const items = await f.db
+        .selectFrom("projectBillableItem")
+        .select(["status", "salesInvoiceLineId", "voidedSalesInvoiceId"])
+        .where("projectId", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(items).toEqual([
+        {
+          status: "Unbilled",
+          salesInvoiceLineId: null,
+          voidedSalesInvoiceId: invoiceId
+        }
+      ]);
     } finally {
       await f.cleanup();
     }

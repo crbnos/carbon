@@ -70,7 +70,7 @@ These correct or add to the spec. Task 20 records them there.
 - [x] Task 8: Write T&M billable items at posting
 - [x] Task 9: Add `generate-contract-billable-items`
 - [x] Task 10: Add `create-project-billing-invoices`
-- [ ] Task 11: Release billable items on Draft delete and on VOID
+- [x] Task 11: Release billable items on Draft delete and on VOID
 - [ ] Task 12: Add the `ContractFundingThreshold` notification
 - [ ] Task 13: Wire project billing into the recurring billing job
 - [ ] Task 14: Add the contract and project services
@@ -1096,3 +1096,4 @@ ls .ai/playbooks/project-billing-phase-4a.md
 - Task 10: before the item read, the source runs the T&M backfill for each T&M line through the period end, or through the line's end date when it is earlier (see the Task 8 note on the SQL inserts). A third test pins it: a ledger row inserted directly, as `backflush_job_materials` writes it, is billed.
 - Task 10: the item read locks the item rows only (`FOR UPDATE OF b`), because the labor category is a left join. The stamp is one `UPDATE … FROM (VALUES …)`, as `create-service-order-invoice` does it. It also clears `statusReason`.
 - Task 10: test case 1 also checks that a March item stays Unbilled on 2026-03-05 (the period end is 2026-02-28).
+- Task 11: step 1 needed no change. `releaseRecurringInvoiceStamps` calls `releaseServiceOrderStamps`, which returns every stamped item to Unbilled, and `deleteSalesInvoiceReleasingRentals` selects the lines that a billable item stamps. Test case 1 (Draft delete) is not written: the delete lives in the ERP (`sales.server.ts`), which has no database test harness. Test case 2 extends the existing service order test in `post-sales-invoice.test.ts`: after the post, a VOID leaves the item Unbilled with `voidedSalesInvoiceId` set.
