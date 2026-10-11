@@ -82,6 +82,7 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 10-11 | Fixes + Government contracting 5a | Project Issue relief fix, `no-unguarded-submit` fix; 5a Tasks 13–15, Task 16 partial | done (`3e64d06a7b`, `69a4e31a9f`, `6701ae72aa`, `14f7d679e4`, `6745de7a4b`, `30900e12ac`) — Task 16 step 3 (Log time, service time) stopped: it needs a design decision, see the 5a plan's execution notes |
 | 10-11 | Government contracting 5a | Task 16 step 3 (add mode), the note fix, the void reversal line fix; Tasks 17–20 | done (`0f4efe50e1`, `44cac82fc0`, `1bc9994652`, `8d4d9fd68c`, `4b80e31c38`, `03b721ce45`, `266b5b5e4c`) — server-functions 773, erp 2,204, ee project-revenue 15 pass; browser checks deferred |
 | 10-11 | Cutover fixes + Government contracting 5a | Brad's 4 cutover decisions (opening project WIP, fixed assets at the cutover, project issue re-cost, payback refusal message); Log time Draft in DCAA mode; 5a Tasks 21–24 | done (`b5cf4c65a8`, `81392d3d0c`, `c008470da5`, `014cf941cd`, `c6affee4d3`, `87ad9a777e`, `518b2bb84b`, `e2d19401d6`, `9641b0017e`, `90add5b7ad`) — server-functions 778, erp 2,204, ee project-revenue 16 pass; browser checks deferred |
+| 10-11 | Government contracting 5a | Tasks 25–30 | done (`f4610cf5a4`, `f0f2f483b0`, `0e6acb255e`, `43291cb094`, `21eeb14335`, `3ff3865649`) — server-functions 782+, erp 2,207, jobs 951 pass; browser checks deferred |
 
 ## Follow-ups found during execution
 
