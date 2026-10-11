@@ -1120,6 +1120,7 @@ export function legacyRecognitionSchedule(
         "schedule.id as scheduleId",
         "run.id as runId",
         "run.runId as runReadableId",
+        "run.type as runType",
         sql<string>`"run"."periodEnd"::text`.as("runPeriodEnd"),
         sql<string>`"schedule"."scheduledDate"::text`.as("scheduledDate"),
         "schedule.type",
@@ -1129,7 +1130,9 @@ export function legacyRecognitionSchedule(
         "schedule.salesInvoiceLineId",
         "schedule.rentalAgreementLineId",
         "schedule.rentalLeaseScheduleLineId",
-        "schedule.customerContractLineId"
+        "schedule.customerContractLineId",
+        "schedule.leaseId",
+        "schedule.leaseScheduleLineId"
       ])
       .where("schedule.companyId", "=", companyId)
       .where("schedule.status", "=", "Posted")
