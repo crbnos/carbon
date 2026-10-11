@@ -75,7 +75,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 13: Turn corrections into labor transfers
 - [x] Task 14: Add the validators
 - [x] Task 15: Add the service functions
-- [ ] Task 16: Route every timesheet write through the server functions (partial: steps 1, 2, 4 and 6 done; step 3 stopped, see the execution notes)
+- [x] Task 16: Route every timesheet write through the server functions
 - [ ] Task 17: Add Settings → Timekeeping
 - [ ] Task 18: Add allowability to the account drawer
 - [ ] Task 19: Add the cost objective, restrict charging and members to the project
@@ -1544,3 +1544,14 @@ ls .ai/playbooks/government-contracting-phase-5a.md
      3. The saved entry is Draft. No server function submits one entry, and `submit-timesheet-week` submits the whole week.
      4. The function's input has no `serviceVisitId`, so service time would lose its visit. A second service log on the same node and day finds the posted first entry and is refused.
      The fix needs a decision: an "add an entry" mode in `save-timesheet-entry` (status, `serviceVisitId`, always insert), or Log time stays a direct insert with the DCAA checks added to it. The verify grep still lists `logTimesheetEntry` and `logServiceTime`.
+- Task 16, step 3 (Brad chose the first option, an "add an entry" mode):
+  1. `save-timesheet-entry` takes `mode` (`cell` by default, or `add`), `status` (`Draft` or `Submitted`, `add` only) and `serviceVisitId` (`add` only). `add` mode always inserts a new entry, beside any entry of the same cell. It never replaces the hours of a Draft entry, and a Posted entry in the cell does not refuse it.
+  2. Standard mode keeps Phase 1a: Log time adds a Submitted entry and stamps `submittedAt`. Service time adds a Draft entry with its visit, and the route posts it. Standard mode has no date window and writes no revision. Only the owner adds an entry, as in a cell save.
+  3. DCAA mode applies the cell's controls to an added entry: the entry window, no future date (except on a leave element), the late reason, and charge restrictions. These now live in one helper, `checkDcaaEntry`, which the cell save also calls. Another user adds an entry only on a recorded absence and with a reason. The entry is then Pending Employee Review and writes a revision with `before` null. The owner's own entry is not a change, so it writes no revision.
+  4. `add` mode refuses 0 hours ("Hours must be greater than 0"). The Log time validator already requires more than 0.
+  5. `logTimesheetEntry` (`projects.server.ts`) and `logServiceTime` (`service.server.ts`) are gone. Neither file is a scanned `*.service.ts`, so `pnpm run generate:mcp` changes nothing.
+  6. The MES has no Log time action and no service time intent, so only the ERP routes changed.
+  7. A refusal now reaches the Log time modal and the service charge drawer with its own message. Before, a direct insert failed only on a database error.
+  8. Open point for Brad: in DCAA mode, Log time still submits the entry at once, as the brief asked ("the target status Log time uses today"). So a Log time entry skips the weekly certification of `submit-timesheet-week`, and it posts at once when approvals are off.
+  9. The Log time modal has no late reason field. In DCAA mode a late Log time is refused with "Give a reason for the late entry". Task 22 builds the DCAA fields.
+  10. Database tests: "Standard mode, add: each call adds a new entry with the requested status" and "DCAA, add: the cell's controls apply to a new entry". The verify grep now lists only `save-timesheet-entry` and `createTimesheetCorrection`.

@@ -13,7 +13,8 @@ import { data } from "react-router";
 import { logTimeValidator, projectIssueValidator } from "~/modules/projects";
 import {
   postProjectIssue,
-  postTimesheetEntries
+  postTimesheetEntries,
+  saveTimesheetEntry
 } from "~/modules/projects/projects.server";
 import {
   coverageOverrideValidator,
@@ -22,7 +23,6 @@ import {
 } from "~/modules/service";
 import {
   addServiceExpense,
-  logServiceTime,
   reclassServiceCharge,
   requireOwnServiceVisit,
   requireServiceOrderNode,
@@ -119,19 +119,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (order.projectId !== validation.data.projectId) {
         return refuse("The time is not for this service order");
       }
-      const entryId = await logServiceTime(db, {
+      // Service time posts from Draft: one new entry, posted right after.
+      const saved = await saveTimesheetEntry({
+        mode: "add",
+        status: "Draft",
         companyId,
         userId,
+        employeeId: userId,
         projectId: order.projectId,
         projectElementId: validation.data.projectElementId ?? null,
         serviceVisitId: visitId,
         laborCategoryId: validation.data.laborCategoryId,
         entryDate: validation.data.entryDate,
         hours: validation.data.hours,
-        note: validation.data.note ?? null
+        note: validation.data.note
       });
+      if (saved.error !== null || !saved.data.entryId) {
+        return refuse(saved.error ?? "Failed to log the time");
+      }
       const postingError = await postTimesheetEntries({
-        timesheetEntryIds: [entryId],
+        timesheetEntryIds: [saved.data.entryId],
         companyId,
         userId
       });

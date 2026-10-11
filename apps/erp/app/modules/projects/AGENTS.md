@@ -139,10 +139,11 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 - `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs tab. `getChildServiceProjectCosts` (`get_child_service_project_costs`) adds the service orders of a contract project; their actual goes to the project total through `buildProjectCostFigures`'s third argument.
 - `getProjectElementPage` (`.server`) — everything the element page loads, in parallel.
 - `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `@mcp` tag).
-- `logTimesheetEntry` (`.server`) — Log time: one Submitted row; the route posts it when approval is off.
 - `saveTimesheetEntry`, `submitTimesheetWeek` (`.server`) — the grid saves a cell and
   submits a week through the `save-timesheet-entry` and `submit-timesheet-week` server
-  functions, which hold the DCAA rules for the ERP and the MES.
+  functions, which hold the DCAA rules for the ERP and the MES. Log time and service
+  time call `saveTimesheetEntry` with `mode: "add"`: one new entry each time (Log time
+  Submitted, service time Draft with its visit); the route posts it.
 - `approveTimesheetEntries`, `rejectTimesheetEntries`, `createTimesheetCorrection` — the
   rest of the timesheet flow. A correction on another charge number is a labor transfer
   (`correctionOfId`); `assertCanApprove` refuses its requester as approver in DCAA mode.

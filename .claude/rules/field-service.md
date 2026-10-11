@@ -158,7 +158,7 @@ company's accounting cutover, Posted after it (`journalPostingStatus`). None rea
 
 | Charge | Server function | Notes |
 |---|---|---|
-| Time | `post-timesheet` | `logServiceTime` writes a Draft entry with the visit; a Service project's Draft entry posts at once. Journal line "Service Labor" with the Customer dimension. |
+| Time | `post-timesheet` | `saveTimesheetEntry` (`mode: "add"`, `save-timesheet-entry`) writes a Draft entry with the visit; a Service project's Draft entry posts at once. Journal line "Service Labor" with the Customer dimension. |
 | Part | `post-project-issue` | `post-project-issue/service.ts`: billable item, installed component, replacement of the node's component, and the `Service` genealogy activity. A return reverses one whole open issue (`findServiceIssueToReturn`). |
 | Expense | `post-project-expense` | `addServiceExpense`; Dr the coverage account / Cr GRNI. |
 | Reclass | `reclass-project-coverage` | Refuses Capitalized either way. |

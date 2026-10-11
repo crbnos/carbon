@@ -2,11 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Saves one timesheet cell: the one write path of a timesheet entry for the
-// ERP and the MES, so the DCAA timekeeping controls live in one place.
-// Standard mode keeps the Phase 1a grid behavior exactly. DCAA mode adds the
-// entry window, the late reason, charge restrictions, supervisor entry on a
-// recorded absence, Pending Employee Review and the correction trail.
+// Saves one timesheet cell, or adds one entry (Log time, service time): the
+// one write path of a timesheet entry for the ERP and the MES, so the DCAA
+// timekeeping controls live in one place. Standard mode keeps the Phase 1a
+// behavior exactly. DCAA mode adds the entry window, the late reason, charge
+// restrictions, supervisor entry on a recorded absence, Pending Employee
+// Review and the correction trail.
 // Spec: .ai/specs/2026-10-09-government-contracting.md (Timekeeping).
 
 import { getCompanyTimeZone } from "@carbon/database";
@@ -36,7 +37,16 @@ export const saveTimesheetEntryInput = z.object({
   /** Required when the date is late in DCAA mode. */
   lateReason: z.string().optional(),
   /** Required to change a saved entry in DCAA mode. */
-  reason: z.string().optional()
+  reason: z.string().optional(),
+  /**
+   * `cell` (the grid) edits the one entry of a cell. `add` (Log time,
+   * service time) always inserts a new entry, as Phase 1a did.
+   */
+  mode: z.enum(["cell", "add"]).default("cell"),
+  /** `add` only: the status of the new entry. Log time submits it. */
+  status: z.enum(["Draft", "Submitted"]).optional(),
+  /** `add` only: the service visit the time belongs to. */
+  serviceVisitId: z.string().min(1).nullable().optional()
 });
 
 export type SaveTimesheetEntryResult = {
@@ -51,6 +61,7 @@ export const TIMESHEET_LATE_REASON_REQUIRED =
 export const TIMESHEET_CHANGE_REASON_REQUIRED = "Give a reason for the change";
 export const TIMESHEET_SUPERVISOR_ENTRY_REFUSED =
   "You can enter time for another employee only on a day of recorded absence";
+export const TIMESHEET_HOURS_REQUIRED = "Hours must be greater than 0";
 
 /** A refusal the caller can fix: returned as a 422 with its message. */
 class TimesheetRefusal extends ServerFnError {
@@ -107,8 +118,11 @@ function currentEntry(rows: EntryRow[]): EntryRow | null {
 
 /**
  * Saves one cell of an employee's timesheet (employee, date, charge number,
- * labor category). Saving never posts.
+ * labor category), or adds one entry in `add` mode. Saving never posts.
  *
+ * - **`add` mode** (Log time, service time): always inserts a new entry with
+ *   the requested status and visit, beside any entry of the same cell. DCAA
+ *   mode applies the same controls as a cell save to it.
  * - **Standard mode** (Phase 1a): a new cell inserts a Draft; a Draft or
  *   Rejected entry is updated to Draft, or deleted at 0 hours; a Submitted,
  *   Approved or Posted entry is refused. No revision.
@@ -134,12 +148,21 @@ const saveTimesheetEntry = defineServerFn({
 
 export default saveTimesheetEntry;
 
+type SaveInput = z.output<typeof saveTimesheetEntryInput> & {
+  companyId: string;
+  userId: string;
+};
+
+type Settings =
+  | Pick<
+      Selectable<DB["companySettings"]>,
+      "timekeepingControls" | "timesheetEntryWindowDays"
+    >
+  | undefined;
+
 async function save(
   trx: Transaction<DB>,
-  input: z.output<typeof saveTimesheetEntryInput> & {
-    companyId: string;
-    userId: string;
-  }
+  input: SaveInput
 ): Promise<SaveTimesheetEntryResult> {
   const { companyId, userId, employeeId } = input;
   const actorIsOwner = userId === employeeId;
@@ -150,6 +173,10 @@ async function save(
     .where("id", "=", companyId)
     .executeTakeFirst();
   const mode = settings?.timekeepingControls ?? "Standard";
+
+  if (input.mode === "add") {
+    return addEntry(trx, input, settings, actorIsOwner);
+  }
 
   let existingQuery = trx
     .selectFrom("timesheetEntry")
@@ -187,6 +214,112 @@ async function save(
   // Nothing to save, nothing to change.
   if (!current && input.hours === 0) return { entryId: null, status: null };
 
+  const { late, lateReason } = await checkDcaaEntry(trx, input, settings);
+
+  const reason = input.reason?.trim() || null;
+  const now = datetime.timestamp();
+
+  // 4. A new entry.
+  if (!current) {
+    if (!actorIsOwner) await assertSupervisorEntry(trx, input, reason);
+    const created = await trx
+      .insertInto("timesheetEntry")
+      .values({
+        companyId,
+        employeeId,
+        entryDate: input.entryDate,
+        projectId: input.projectId,
+        projectElementId: input.projectElementId,
+        laborCategoryId: input.laborCategoryId,
+        hours: input.hours,
+        note: input.note ?? null,
+        lateReason: late ? lateReason : null,
+        status: next,
+        createdBy: userId,
+        createdAt: now
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    // 5. The owner's first save is not a change: no revision.
+    if (!actorIsOwner) {
+      await writeRevision(trx, {
+        companyId,
+        employeeId,
+        timesheetEntryId: created.id,
+        revisedBy: userId,
+        reason: reason!,
+        before: null,
+        after: revisionFields(input)
+      });
+    }
+    return { entryId: created.id, status: next };
+  }
+
+  // 5. A change to a saved entry.
+  if (!reason) throw new TimesheetRefusal(TIMESHEET_CHANGE_REASON_REQUIRED);
+  const before = revisionFields(current);
+
+  // 7. Zero hours deletes the entry; the revision is written first.
+  if (input.hours === 0) {
+    await writeRevision(trx, {
+      companyId,
+      employeeId,
+      timesheetEntryId: current.id,
+      revisedBy: userId,
+      reason,
+      before,
+      after: null
+    });
+    await trx
+      .deleteFrom("timesheetEntry")
+      .where("id", "=", current.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { entryId: null, status: null };
+  }
+
+  await trx
+    .updateTable("timesheetEntry")
+    .set({
+      hours: input.hours,
+      note: input.note ?? null,
+      ...(late ? { lateReason } : {}),
+      status: next,
+      // A changed entry needs approval again.
+      submittedAt: null,
+      approvedBy: null,
+      approvedAt: null,
+      rejectionNote: null,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("id", "=", current.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  // 6. The correction trail, in the same transaction.
+  await writeRevision(trx, {
+    companyId,
+    employeeId,
+    timesheetEntryId: current.id,
+    revisedBy: userId,
+    reason,
+    before,
+    after: revisionFields({ ...current, hours: input.hours })
+  });
+  return { entryId: current.id, status: next };
+}
+
+/**
+ * DCAA steps 1–3, the controls a new entry and a change share: the entry
+ * window (no future dates except on a leave element), the late reason, and
+ * charge restrictions. Returns whether the date is late, with the reason.
+ */
+async function checkDcaaEntry(
+  trx: Transaction<DB>,
+  input: SaveInput,
+  settings: Settings
+): Promise<{ late: boolean; lateReason: string | null }> {
+  const { companyId, employeeId } = input;
   const [project, element, timezone] = await inOrder([
     () =>
       trx
@@ -241,118 +374,104 @@ async function save(
     }
   }
 
-  const reason = input.reason?.trim() || null;
-  const now = datetime.timestamp();
+  return { late: entryWindow.late, lateReason };
+}
 
-  // 4. A new entry.
-  if (!current) {
+/**
+ * `add` mode: one new entry each call, as Phase 1a Log time and service time
+ * did. It never replaces the hours of an entry already in the cell.
+ * - Standard mode: the owner adds the entry with the requested status.
+ * - DCAA mode: the cell's controls apply (entry window, late reason, charge
+ *   restrictions). Another user adds an entry only on the employee's recorded
+ *   absence, with a reason; it is Pending Employee Review and writes a
+ *   revision. The owner's entry is not a change, so it writes no revision.
+ */
+async function addEntry(
+  trx: Transaction<DB>,
+  input: SaveInput,
+  settings: Settings,
+  actorIsOwner: boolean
+): Promise<SaveTimesheetEntryResult> {
+  const { companyId, userId, employeeId } = input;
+  const mode = settings?.timekeepingControls ?? "Standard";
+  if (input.hours <= 0) throw new TimesheetRefusal(TIMESHEET_HOURS_REQUIRED);
+
+  let status: TimesheetEntryStatus = input.status ?? "Draft";
+  let late = false;
+  let lateReason: string | null = null;
+  const reason = input.reason?.trim() || null;
+
+  if (mode === "Standard") {
+    // Standard mode has no supervisor entry: the owner logs their own time.
+    if (!actorIsOwner) throw new TimesheetRefusal(TIMESHEET_REFUSAL_NOT_DRAFT);
+  } else {
+    ({ late, lateReason } = await checkDcaaEntry(trx, input, settings));
     if (!actorIsOwner) {
-      const absence = await trx
-        .selectFrom("peopleAbsence")
-        .select("id")
-        .where("companyId", "=", companyId)
-        .where("employeeId", "=", employeeId)
-        .where("date", "=", input.entryDate)
-        .executeTakeFirst();
-      if (!absence) {
-        throw new TimesheetRefusal(TIMESHEET_SUPERVISOR_ENTRY_REFUSED);
-      }
-      if (!reason) throw new TimesheetRefusal(TIMESHEET_CHANGE_REASON_REQUIRED);
+      await assertSupervisorEntry(trx, input, reason);
+      status = "Pending Employee Review";
     }
-    const created = await trx
-      .insertInto("timesheetEntry")
-      .values({
-        companyId,
-        employeeId,
-        entryDate: input.entryDate,
-        projectId: input.projectId,
-        projectElementId: input.projectElementId,
-        laborCategoryId: input.laborCategoryId,
-        hours: input.hours,
-        note: input.note ?? null,
-        lateReason: entryWindow.late ? lateReason : null,
-        status: next,
-        createdBy: userId,
-        createdAt: now
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    // 5. The owner's first save is not a change: no revision.
-    if (!actorIsOwner) {
-      await writeRevision(trx, {
-        companyId,
-        employeeId,
-        timesheetEntryId: created.id,
-        revisedBy: userId,
-        reason: reason!,
-        before: null,
-        after: revisionFields(input)
-      });
-    }
-    return { entryId: created.id, status: next };
   }
 
-  // 5. A change to a saved entry.
-  if (!reason) throw new TimesheetRefusal(TIMESHEET_CHANGE_REASON_REQUIRED);
-  const before = revisionFields(current);
+  const now = datetime.timestamp();
+  const created = await trx
+    .insertInto("timesheetEntry")
+    .values({
+      companyId,
+      employeeId,
+      entryDate: input.entryDate,
+      projectId: input.projectId,
+      projectElementId: input.projectElementId,
+      serviceVisitId: input.serviceVisitId ?? null,
+      laborCategoryId: input.laborCategoryId,
+      hours: input.hours,
+      note: input.note ?? null,
+      lateReason: late ? lateReason : null,
+      status,
+      submittedAt: status === "Submitted" ? now : null,
+      createdBy: userId,
+      createdAt: now
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
 
-  // 7. Zero hours deletes the entry; the revision is written first.
-  if (input.hours === 0) {
+  if (mode === "DCAA" && !actorIsOwner) {
     await writeRevision(trx, {
       companyId,
       employeeId,
-      timesheetEntryId: current.id,
+      timesheetEntryId: created.id,
       revisedBy: userId,
-      reason,
-      before,
-      after: null
+      reason: reason!,
+      before: null,
+      after: revisionFields(input)
     });
-    await trx
-      .deleteFrom("timesheetEntry")
-      .where("id", "=", current.id)
-      .where("companyId", "=", companyId)
-      .execute();
-    return { entryId: null, status: null };
   }
+  return { entryId: created.id, status };
+}
 
-  await trx
-    .updateTable("timesheetEntry")
-    .set({
-      hours: input.hours,
-      note: input.note ?? null,
-      ...(entryWindow.late ? { lateReason } : {}),
-      status: next,
-      // A changed entry needs approval again.
-      submittedAt: null,
-      approvedBy: null,
-      approvedAt: null,
-      rejectionNote: null,
-      updatedBy: userId,
-      updatedAt: now
-    })
-    .where("id", "=", current.id)
-    .where("companyId", "=", companyId)
-    .execute();
-  // 6. The correction trail, in the same transaction.
-  await writeRevision(trx, {
-    companyId,
-    employeeId,
-    timesheetEntryId: current.id,
-    revisedBy: userId,
-    reason,
-    before,
-    after: revisionFields({ ...current, hours: input.hours })
-  });
-  return { entryId: current.id, status: next };
+/**
+ * DCAA supervisor entry: another user creates an entry for the employee only
+ * on a day of recorded absence, and only with a reason.
+ */
+async function assertSupervisorEntry(
+  trx: Transaction<DB>,
+  input: SaveInput,
+  reason: string | null
+): Promise<void> {
+  const absence = await trx
+    .selectFrom("peopleAbsence")
+    .select("id")
+    .where("companyId", "=", input.companyId)
+    .where("employeeId", "=", input.employeeId)
+    .where("date", "=", input.entryDate)
+    .executeTakeFirst();
+  if (!absence) throw new TimesheetRefusal(TIMESHEET_SUPERVISOR_ENTRY_REFUSED);
+  if (!reason) throw new TimesheetRefusal(TIMESHEET_CHANGE_REASON_REQUIRED);
 }
 
 /** Phase 1a `upsertTimesheetCell`, unchanged. */
 async function saveStandard(
   trx: Transaction<DB>,
-  input: z.output<typeof saveTimesheetEntryInput> & {
-    companyId: string;
-    userId: string;
-  },
+  input: SaveInput,
   rows: EntryRow[],
   actorIsOwner: boolean
 ): Promise<SaveTimesheetEntryResult> {

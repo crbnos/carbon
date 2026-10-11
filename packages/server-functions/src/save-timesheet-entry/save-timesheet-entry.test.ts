@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { datetime } from "@carbon/utils";
+import { datetime, TIMESHEET_REFUSAL_NOT_DRAFT } from "@carbon/utils";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import {
@@ -14,6 +14,7 @@ import { ServerFnContext } from "../server-fn-context";
 import saveTimesheetEntry, {
   TIMESHEET_CHANGE_REASON_REQUIRED,
   TIMESHEET_FUTURE_DATE,
+  TIMESHEET_HOURS_REQUIRED,
   TIMESHEET_LATE_REASON_REQUIRED,
   TIMESHEET_SUPERVISOR_ENTRY_REFUSED
 } from "./index";
@@ -276,6 +277,198 @@ databaseTest(
       const revisions = await f.revisions();
       expect(revisions).toHaveLength(1);
       expect(revisions[0]!.before).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "Standard mode, add: each call adds a new entry with the requested status",
+  async () => {
+    const f = await timesheetFixture("Standard");
+    try {
+      const draft = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        entryDate: day(-2),
+        hours: 6
+      });
+      expect(draft.error).toBeNull();
+
+      // Log time beside a Draft entry: a second entry, the Draft keeps 6 h.
+      const logged = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        entryDate: day(-2),
+        hours: 2,
+        note: "Fixture rework",
+        mode: "add",
+        status: "Submitted"
+      });
+      expect(logged.error).toBeNull();
+      expect(logged.data?.status).toEqual("Submitted");
+      expect(logged.data?.entryId).not.toEqual(draft.data?.entryId);
+      const loggedRow = await f.entry(logged.data!.entryId!);
+      expect(loggedRow.status).toEqual("Submitted");
+      expect(loggedRow.submittedAt).not.toBeNull();
+      expect(loggedRow.note).toEqual("Fixture rework");
+      expect(Number((await f.entry(draft.data!.entryId!)).hours)).toEqual(6);
+
+      // A Posted entry in the cell does not stop a second log (service time).
+      await f.db
+        .updateTable("timesheetEntry")
+        .set({ status: "Posted" })
+        .where("id", "=", logged.data!.entryId!)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const again = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        entryDate: day(-2),
+        hours: 1,
+        mode: "add",
+        status: "Draft",
+        serviceVisitId: null
+      });
+      expect(again.error).toBeNull();
+      expect(again.data?.status).toEqual("Draft");
+      expect((await f.entry(again.data!.entryId!)).submittedAt).toBeNull();
+
+      // Standard mode has no date window and no revision trail.
+      const future = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        entryDate: day(3),
+        hours: 1,
+        mode: "add",
+        status: "Submitted"
+      });
+      expect(future.error).toBeNull();
+      expect(await f.revisions()).toHaveLength(0);
+
+      // Zero hours adds nothing.
+      const empty = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        entryDate: day(-2),
+        hours: 0,
+        mode: "add"
+      });
+      expect(empty.error?.message).toEqual(TIMESHEET_HOURS_REQUIRED);
+
+      // Another user cannot log the employee's time in Standard mode.
+      const other = await saveTimesheetEntry(f.manager, {
+        ...f.cell,
+        entryDate: day(-2),
+        hours: 1,
+        mode: "add"
+      });
+      expect(other.error?.message).toEqual(TIMESHEET_REFUSAL_NOT_DRAFT);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "DCAA, add: the cell's controls apply to a new entry",
+  async () => {
+    const f = await timesheetFixture("DCAA");
+    try {
+      const add = {
+        ...f.cell,
+        mode: "add" as const,
+        status: "Submitted" as const
+      };
+
+      const future = await saveTimesheetEntry(f.ctx, {
+        ...add,
+        entryDate: day(1),
+        hours: 2
+      });
+      expect(future.error?.message).toEqual(TIMESHEET_FUTURE_DATE);
+
+      const late = await saveTimesheetEntry(f.ctx, {
+        ...add,
+        entryDate: day(-3),
+        hours: 2
+      });
+      expect(late.error?.message).toEqual(TIMESHEET_LATE_REASON_REQUIRED);
+
+      const first = await saveTimesheetEntry(f.ctx, {
+        ...add,
+        entryDate: day(-3),
+        hours: 2,
+        lateReason: "On site with no network"
+      });
+      expect(first.error).toBeNull();
+      expect(first.data?.status).toEqual("Submitted");
+      expect((await f.entry(first.data!.entryId!)).lateReason).toEqual(
+        "On site with no network"
+      );
+
+      // A second log on the same cell adds another entry.
+      const second = await saveTimesheetEntry(f.ctx, {
+        ...add,
+        entryDate: day(0),
+        hours: 3
+      });
+      const third = await saveTimesheetEntry(f.ctx, {
+        ...add,
+        entryDate: day(0),
+        hours: 1
+      });
+      expect(third.error).toBeNull();
+      expect(third.data?.entryId).not.toEqual(second.data?.entryId);
+      // The owner's own entries are not changes.
+      expect(await f.revisions()).toHaveLength(0);
+
+      // Another user adds time only on a recorded absence, with a reason.
+      const refused = await saveTimesheetEntry(f.manager, {
+        ...add,
+        entryDate: day(0),
+        hours: 8,
+        reason: "Entered for the employee"
+      });
+      expect(refused.error?.message).toEqual(
+        TIMESHEET_SUPERVISOR_ENTRY_REFUSED
+      );
+      await f.db
+        .insertInto("peopleAbsence")
+        .values({
+          companyId: f.companyId,
+          employeeId: PROJECT_TEST_USER,
+          date: day(0),
+          createdBy: f.managerId
+        })
+        .execute();
+      const supervisor = await saveTimesheetEntry(f.manager, {
+        ...add,
+        entryDate: day(0),
+        hours: 8,
+        reason: "Entered for the employee"
+      });
+      expect(supervisor.error).toBeNull();
+      expect(supervisor.data?.status).toEqual("Pending Employee Review");
+      const revisions = await f.revisions();
+      expect(revisions).toHaveLength(1);
+      expect(revisions[0]).toMatchObject({
+        timesheetEntryId: supervisor.data?.entryId,
+        revisedBy: f.managerId,
+        before: null
+      });
+
+      // Charge restrictions: a non-member's time is refused.
+      await f.db
+        .updateTable("project")
+        .set({ restrictCharging: true })
+        .where("id", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const restricted = await saveTimesheetEntry(f.ctx, {
+        ...add,
+        entryDate: day(0),
+        hours: 1
+      });
+      expect(restricted.error?.message).toMatch(
+        /accepts time only from its members$/
+      );
     } finally {
       await f.cleanup();
     }

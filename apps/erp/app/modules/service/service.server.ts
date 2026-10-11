@@ -936,46 +936,6 @@ export async function requireOwnServiceVisit(
 }
 
 /**
- * Logs time on a service order's node as a Draft timesheet entry, with the
- * visit when there is one. Service time posts from Draft: the caller posts it
- * with `postTimesheetEntries` right after. Returns the entry's id.
- */
-export async function logServiceTime(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    projectElementId: string | null;
-    serviceVisitId: string | null;
-    laborCategoryId: string;
-    entryDate: string;
-    hours: number;
-    note: string | null;
-  }
-): Promise<string> {
-  const row = await db
-    .insertInto("timesheetEntry")
-    .values({
-      companyId: args.companyId,
-      employeeId: args.userId,
-      entryDate: args.entryDate,
-      projectId: args.projectId,
-      projectElementId: args.projectElementId,
-      serviceVisitId: args.serviceVisitId,
-      laborCategoryId: args.laborCategoryId,
-      hours: args.hours,
-      note: args.note,
-      status: "Draft",
-      createdBy: args.userId,
-      createdAt: datetime.timestamp()
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  return row.id;
-}
-
-/**
  * Adds an expense to a service order's node and posts it through
  * `post-project-expense`. Returns an error message, or null. The entry stays
  * when the posting fails, so the message says it did not post.

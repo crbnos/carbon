@@ -29,7 +29,6 @@ import type {
   ChangeRequestConflict,
   ChangeRequestItem,
   ElementVerification,
-  logTimeValidator,
   PlannedBuildElement,
   PlanRow,
   ProjectBaselineSource,
@@ -3672,7 +3671,9 @@ export async function postTimesheetEntries(args: {
 /**
  * Saves one timesheet entry through the `save-timesheet-entry` server
  * function, which applies the DCAA rules in one place for the ERP and the
- * MES. Returns the saved entry, or the refusal message.
+ * MES. `mode: "add"` (Log time, service time) always adds a new entry with
+ * `status` and `serviceVisitId`; the default edits the grid cell. Returns
+ * the saved entry, or the refusal message.
  * System: the caller has already authorized the change.
  */
 export async function saveTimesheetEntry(args: {
@@ -3685,6 +3686,9 @@ export async function saveTimesheetEntry(args: {
   note?: string;
   lateReason?: string;
   reason?: string;
+  mode?: "cell" | "add";
+  status?: "Draft" | "Submitted";
+  serviceVisitId?: string | null;
   companyId: string;
   userId: string;
 }): Promise<
@@ -3842,41 +3846,6 @@ export async function postProjectStockTransfer(args: {
     return posting.error.message || "Failed to post the transfer";
   }
   return null;
-}
-
-/**
- * Logs time for one employee as a new timesheet entry: Submitted when it
- * goes straight to posting or waits for approval. A Kysely write, because
- * the employee's own RLS branch accepts only Draft rows.
- */
-export async function logTimesheetEntry(
-  db: Kysely<KyselyDatabase>,
-  args: z.infer<typeof logTimeValidator> & {
-    companyId: string;
-    employeeId: string;
-    userId: string;
-  }
-): Promise<string> {
-  const now = datetime.timestamp();
-  const row = await db
-    .insertInto("timesheetEntry")
-    .values({
-      companyId: args.companyId,
-      employeeId: args.employeeId,
-      entryDate: args.entryDate,
-      projectId: args.projectId,
-      projectElementId: args.projectElementId ?? null,
-      laborCategoryId: args.laborCategoryId,
-      hours: args.hours,
-      note: args.note ?? null,
-      status: "Submitted",
-      submittedAt: now,
-      createdBy: args.userId,
-      createdAt: now
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  return row.id;
 }
 
 export type ElementLedgerRow = {
