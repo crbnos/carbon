@@ -28,6 +28,7 @@ import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
+import { checkProjectBudget } from "~/modules/projects/projects.server";
 import {
   finalizePurchaseOrder,
   getDefaultAttachmentsForPO,
@@ -165,6 +166,47 @@ export async function action(args: ActionFunctionArgs) {
         orderAmount
       );
 
+  // Budget control (Government Contracting 5c, C2 and C4): every line charged
+  // to a project is checked as a new commitment, with its saved commitment
+  // left out. Block refuses the finalize; Warn finalizes and adds the overrun
+  // to the success flash.
+  const projectLines = await getDatabaseClient()
+    .selectFrom("purchaseOrderLine")
+    .select([
+      "id",
+      "projectId",
+      "projectElementId",
+      "purchaseQuantity",
+      "quantityReceived",
+      "unitPrice"
+    ])
+    .where("companyId", "=", companyId)
+    .where("purchaseOrderId", "=", orderId)
+    .where("projectId", "is not", null)
+    .execute();
+  const budget = await checkProjectBudget(getDatabaseClient(), client, {
+    companyId,
+    source: "purchase",
+    charges: projectLines.map((line) => ({
+      projectId: line.projectId as string,
+      projectElementId: line.projectElementId,
+      amount:
+        Math.max(
+          0,
+          Number(line.purchaseQuantity ?? 0) -
+            Number(line.quantityReceived ?? 0)
+        ) * Number(line.unitPrice ?? 0),
+      excludePurchaseOrderLineIds: [line.id]
+    }))
+  });
+  if (budget.status === "block") {
+    throw redirect(
+      path.to.purchaseOrder(orderId),
+      await flash(request, error(null, budget.message))
+    );
+  }
+  const budgetNote = budget.status === "warn" ? `. ${budget.message}` : "";
+
   const finalize = await finalizePurchaseOrder(client, orderId, userId);
   if (finalize.error) {
     throw redirect(
@@ -246,7 +288,10 @@ export async function action(args: ActionFunctionArgs) {
 
     throw redirect(
       requestReferrer(request) ?? path.to.purchaseOrder(orderId),
-      await flash(request, success("Purchase order submitted for approval"))
+      await flash(
+        request,
+        success(`Purchase order submitted for approval${budgetNote}`)
+      )
     );
   }
 
@@ -510,6 +555,6 @@ export async function action(args: ActionFunctionArgs) {
 
   throw redirect(
     requestReferrer(request) ?? path.to.purchaseOrder(orderId),
-    await flash(request, success("Purchase order finalized"))
+    await flash(request, success(`Purchase order finalized${budgetNote}`))
   );
 }

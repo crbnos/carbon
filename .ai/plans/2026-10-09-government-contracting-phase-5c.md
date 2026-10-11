@@ -93,7 +93,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 6: Add the pure budget engine
 - [x] Task 7: Add the pure earned value engine
 - [x] Task 8: Add `checkBudgetAvailability` and the budget notice
-- [ ] Task 9: Check the budget at PO line save and PO finalize
+- [x] Task 9: Check the budget at PO line save and PO finalize
 - [ ] Task 10: Check the budget at Issue to Project and job charge
 - [ ] Task 11: Warn on timesheets
 - [ ] Task 12: Add the ACWP loader and the material point of measurement
@@ -1150,3 +1150,8 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   2. **The base of an Apportioned element.** The pure `apportionedBaseRefusal` (`projects.models.ts`) returns "<readableId> <name> is the base of apportioned element <readableId> <name>. Change that element first." `deleteProjectElement` returns it as a refusal, which the delete route flashes. The change request apply refuses with it before the charge check. An Apportioned element inside the deleted subtree goes with the subtree: a rolled-back psql run proved that this delete passes. Tests: 3 cases in `projects-element-tree.test.ts`.
   3. **A project with a Closed-period snapshot.** No app path hard-deletes a project (`deleteProject` sets `active = false`). Migration `20261011231328_earned-value-delete-refusal.sql` changes the freeze trigger only: when the project row is gone in a cascade delete, it raises "This project has earned value in a closed accounting period, so it cannot be deleted. Deactivate it instead." A rolled-back psql run on a copied project proved the message.
   4. Risk, not changed: an element delete with `earnedValuePeriod` rows fails on the snapshot FK (no ON DELETE action). Task 13 writes snapshots only for work packages, so the delete of a work package with a snapshot shows a raw FK error.
+- Task 9:
+  1. `checkProjectBudget(db, client, input)` (`projects.server.ts`) wraps `checkBudgetAvailability` and formats the overruns in the base currency (`formatMoney`, locale `en-US`, as `contract-funding.ts` does). No route formatted money in a flash before, so the 6 routes of Tasks 9–11 share this helper.
+  2. The new amount uses the line's base unit price: `supplierUnitPrice / exchangeRate`, the expression of the generated `unitPrice` column. The form sends no `unitPrice`.
+  3. The details route and the finalize route count the open quantity (`purchaseQuantity − quantityReceived`), the same figure as the commitment they leave out. The new line route counts `purchaseQuantity`, which is the open quantity of a new line.
+  4. The finalize route reads its project lines through the Kysely client (one query) and adds ". <overrun>" to both success flashes: "Purchase order finalized" and "Purchase order submitted for approval". Without an overrun the flash text does not change.

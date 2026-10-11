@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,7 +11,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
-import { chargeNumberError } from "~/modules/projects/projects.server";
+import {
+  chargeNumberError,
+  checkProjectBudget
+} from "~/modules/projects/projects.server";
 import {
   getPurchaseOrder,
   isPurchaseOrderLocked,
@@ -20,6 +23,7 @@ import {
 } from "~/modules/purchasing";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { MethodItemType } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -91,6 +95,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  // Budget control (Government Contracting 5c, C4): Block refuses the line,
+  // Warn saves it and flashes the overrun.
+  const budget = d.projectId
+    ? await checkProjectBudget(getDatabaseClient(), client, {
+        companyId,
+        source: "purchase",
+        charges: [
+          {
+            projectId: d.projectId,
+            projectElementId: d.projectElementId ?? null,
+            amount:
+              (d.purchaseQuantity ?? 0) *
+              ((d.supplierUnitPrice ?? 0) / (d.exchangeRate || 1))
+          }
+        ]
+      })
+    : null;
+  if (budget?.status === "block") {
+    return validationError({
+      fieldErrors: { purchaseQuantity: budget.message }
+    });
+  }
+
   const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
     ...d,
     companyId,
@@ -108,6 +135,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
           "Failed to create purchase order line."
         )
       )
+    );
+  }
+
+  if (budget?.status === "warn") {
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, success(`Line saved. ${budget.message}`))
     );
   }
 

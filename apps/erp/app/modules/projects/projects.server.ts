@@ -8,11 +8,17 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
+import {
+  type BudgetCheckInput,
+  type BudgetCheckResult,
+  budgetOverrunMessage
+} from "@carbon/ee/project-control";
+import { checkBudgetAvailability } from "@carbon/ee/project-control.server";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import type { SaveTimesheetEntryResult } from "@carbon/server-functions/save-timesheet-entry";
 import type { SubmitTimesheetWeekResult } from "@carbon/server-functions/submit-timesheet-week";
-import { datetime } from "@carbon/utils";
+import { datetime, formatMoney } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
@@ -4115,6 +4121,45 @@ export async function chargeNumberError(
     };
   }
   return null;
+}
+
+/** The locale of a budget message: a flash or a notice has no user locale. */
+const BUDGET_MESSAGE_LOCALE = "en-US";
+
+/**
+ * Runs the budget availability check (Government Contracting 5c) and formats
+ * its overruns in the company's base currency. Without `GOVERNMENT_CONTRACTING`
+ * the ee check returns "ok", so the message is empty. Routes decide what a
+ * `warn` or a `block` does (decision C4).
+ */
+export async function checkProjectBudget(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  input: BudgetCheckInput
+): Promise<BudgetCheckResult & { message: string }> {
+  const result = await checkBudgetAvailability(db, client, input);
+  if (result.status === "ok") return { ...result, message: "" };
+
+  const currency = await db
+    .selectFrom("company as c")
+    .innerJoin("currency as cur", (join) =>
+      join
+        .onRef("cur.code", "=", "c.baseCurrencyCode")
+        .onRef("cur.companyGroupId", "=", "c.companyGroupId")
+    )
+    .select(["cur.code", "cur.decimalPlaces"])
+    .where("c.id", "=", input.companyId)
+    .executeTakeFirst();
+  const money = (value: number) =>
+    currency
+      ? formatMoney(
+          value,
+          BUDGET_MESSAGE_LOCALE,
+          currency.code,
+          currency.decimalPlaces
+        )
+      : String(value);
+  return { ...result, message: budgetOverrunMessage(result, money) };
 }
 
 /**
