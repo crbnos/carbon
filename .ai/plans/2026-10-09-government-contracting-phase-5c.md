@@ -96,7 +96,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 9: Check the budget at PO line save and PO finalize
 - [x] Task 10: Check the budget at Issue to Project and job charge
 - [x] Task 11: Warn on timesheets
-- [ ] Task 12: Add the ACWP loader and the material point of measurement
+- [x] Task 12: Add the ACWP loader and the material point of measurement
 - [ ] Task 13: Add `getEarnedValue` and `closeEarnedValuePeriod`
 - [ ] Task 14: Add the close checklist task
 - [ ] Task 15: Add the ACWP export
@@ -1168,3 +1168,9 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   4. "Show it under the entry": the grid cell and the MES cell have no place under a cell, and the Log time modal closes on success. So the warning is a toast. `useCellSave` toasts a `warning` field of a successful save; the MES cell toasts `message` on success; Log time returns `warning` as fetcher data and adds it to the success flash.
   5. Not in the plan's file list, so not changed: the manager edit route `x+/projects+/timesheets.$employeeId.tsx` and the service order charge route also save timesheet entries. They give no budget warning.
   6. Test: `budgetNotices` sends one notice per Block project with an owner (18 project-control tests pass).
+- Task 12:
+  1. `loadAcwp` returns `Map<projectId, Map<elementId | null, AcwpTotals>>`; the project root's key is null. The ledger statement also groups by `documentType = 'Purchase Receipt'`, so the receipt Material rows of an Issue project drop out of the same read.
+  2. The receipt rows of an Issue project are its `projectLedger` rows with `documentType` Purchase Receipt, cost type Material and an item. A voided receipt and its reversal (`reversalOfId`) both drop out, so a voided receipt is never stock to issue.
+  3. The issues are `itemLedger` rows of the project's stripe (`projectId` set) with `documentType` Project Issue or Job Consumption, summed as `−quantity` per item and day. A return to project stock is a positive Project Issue row, so the sum nets it. The plan read only negative rows.
+  4. Risk, not changed: on an Issue project, a Purchase Receipt Material row of an item that never goes through project stock is never recognized.
+  5. No test: the loader is glue over 4 reads; `holdUntilIssued` and `acwpElementFor` carry the rules and have tests (Task 7).
