@@ -21,7 +21,12 @@ type Fixture = Awaited<ReturnType<typeof paymentFixture>>;
 /** Planned deferral rows on the fixture's invoice line, keyed by suffix. */
 async function deferrals<K extends string>(
   f: Fixture,
-  rows: { key: K; scheduledDate: string; amount: number }[]
+  rows: {
+    key: K;
+    scheduledDate: string;
+    amount: number;
+    rentalAgreementLineId?: string;
+  }[]
 ): Promise<Record<K, string>> {
   const line = await f.db
     .selectFrom("salesInvoiceLine")
@@ -36,6 +41,7 @@ async function deferrals<K extends string>(
         type: "Deferral" as const,
         status: "Planned" as const,
         salesInvoiceLineId: line.id,
+        rentalAgreementLineId: row.rentalAgreementLineId ?? null,
         periodStart: `${row.scheduledDate.slice(0, 8)}01`,
         periodEnd: row.scheduledDate,
         scheduledDate: row.scheduledDate,
@@ -387,3 +393,48 @@ test("a proposal's periodEnd must be a real month end", () => {
   expect(accepts("2026-02-30")).toBe(false);
   expect(accepts("2026-13-31")).toBe(false);
 });
+
+databaseTest(
+  "recalculating a lease Draft re-claims rental rows only",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      const rental = `${f.companyId}-rental-line`;
+      const ids = await deferrals(f, [
+        {
+          key: "rentA",
+          scheduledDate: "2026-09-30",
+          amount: 40,
+          rentalAgreementLineId: rental
+        },
+        {
+          key: "rentB",
+          scheduledDate: "2026-09-30",
+          amount: 15,
+          rentalAgreementLineId: rental
+        },
+        { key: "service", scheduledDate: "2026-09-30", amount: 60 }
+      ]);
+      const runId = await holdInDraftRun(
+        f.db,
+        f.companyId,
+        [ids.rentA],
+        "2026-09-30",
+        "Lease"
+      );
+
+      const result = await recalculate(f, runId);
+      expect(result).toMatchObject({
+        lineCount: 2,
+        changed: true,
+        deleted: false
+      });
+      expect((await runLines(f, runId)).map((line) => line.scheduleId)).toEqual(
+        [ids.rentA, ids.rentB].sort()
+      );
+    } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
