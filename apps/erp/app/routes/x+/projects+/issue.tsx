@@ -10,8 +10,12 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useNavigate } from "react-router";
 import { projectIssueValidator } from "~/modules/projects";
-import { postProjectIssue } from "~/modules/projects/projects.server";
+import {
+  checkProjectBudget,
+  postProjectIssue
+} from "~/modules/projects/projects.server";
 import { IssueMaterialModal } from "~/modules/projects/ui/Element/IssueMaterialModal";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -32,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: ["inventory", "projects"]
   });
 
@@ -40,6 +44,35 @@ export async function action({ request }: ActionFunctionArgs) {
     await request.formData()
   );
   if (validation.error) return validationError(validation.error);
+
+  // Budget control (Government Contracting 5c, C4). An Issue charges the
+  // item's unit cost to the element; a Return is never checked. Block keeps
+  // the modal open with the overrun; Warn posts and flashes it.
+  let budgetNote = "";
+  if (validation.data.direction === "Issue") {
+    const db = getDatabaseClient();
+    const cost = await db
+      .selectFrom("itemCost")
+      .select("unitCost")
+      .where("itemId", "=", validation.data.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const budget = await checkProjectBudget(db, client, {
+      companyId,
+      source: "issue",
+      charges: [
+        {
+          projectId: validation.data.projectId,
+          projectElementId: validation.data.projectElementId ?? null,
+          amount: validation.data.quantity * Number(cost?.unitCost ?? 0)
+        }
+      ]
+    });
+    if (budget.status === "block") {
+      return data({ success: false, error: { message: budget.message } });
+    }
+    if (budget.status === "warn") budgetNote = `. ${budget.message}`;
+  }
 
   const postingError = await postProjectIssue({
     ...validation.data,
@@ -56,7 +89,7 @@ export async function action({ request }: ActionFunctionArgs) {
       request,
       success(
         validation.data.direction === "Issue"
-          ? "Material issued"
+          ? `Material issued${budgetNote}`
           : "Material returned"
       )
     )

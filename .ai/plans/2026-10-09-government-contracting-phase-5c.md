@@ -94,7 +94,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 7: Add the pure earned value engine
 - [x] Task 8: Add `checkBudgetAvailability` and the budget notice
 - [x] Task 9: Check the budget at PO line save and PO finalize
-- [ ] Task 10: Check the budget at Issue to Project and job charge
+- [x] Task 10: Check the budget at Issue to Project and job charge
 - [ ] Task 11: Warn on timesheets
 - [ ] Task 12: Add the ACWP loader and the material point of measurement
 - [ ] Task 13: Add `getEarnedValue` and `closeEarnedValuePeriod`
@@ -1155,3 +1155,9 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   2. The new amount uses the line's base unit price: `supplierUnitPrice / exchangeRate`, the expression of the generated `unitPrice` column. The form sends no `unitPrice`.
   3. The details route and the finalize route count the open quantity (`purchaseQuantity − quantityReceived`), the same figure as the commitment they leave out. The new line route counts `purchaseQuantity`, which is the open quantity of a new line.
   4. The finalize route reads its project lines through the Kysely client (one query) and adds ". <overrun>" to both success flashes: "Purchase order finalized" and "Purchase order submitted for approval". Without an overrun the flash text does not change.
+- Task 10:
+  1. The 3 routes read `itemCost.unitCost` through the Kysely client, as `checkProjectBudget` does, so a user without item cost access still gets the check.
+  2. The job details route subtracts the job's `projectLedger` cost without Burden rows (`jobId` = the job). The check counts actual cost without Burden (C3), so the subtraction uses the same figure.
+  3. A Block on a job puts the overrun on the `quantity` field. A Warn adds the overrun to the flash: "Job created. <overrun>" on a new job (which had no flash before) and "Updated job. <overrun>" on the details route.
+  4. Issue to Project needs `client` from `requirePermissions` for the feature check. A Block returns the overrun as the modal's error and posts nothing.
+  5. The service order charge route also calls `postProjectIssue`. It is out of scope: the plan lists only `issue.tsx`.
