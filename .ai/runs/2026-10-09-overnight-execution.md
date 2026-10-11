@@ -83,6 +83,7 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 10-11 | Government contracting 5a | Task 16 step 3 (add mode), the note fix, the void reversal line fix; Tasks 17–20 | done (`0f4efe50e1`, `44cac82fc0`, `1bc9994652`, `8d4d9fd68c`, `4b80e31c38`, `03b721ce45`, `266b5b5e4c`) — server-functions 773, erp 2,204, ee project-revenue 15 pass; browser checks deferred |
 | 10-11 | Cutover fixes + Government contracting 5a | Brad's 4 cutover decisions (opening project WIP, fixed assets at the cutover, project issue re-cost, payback refusal message); Log time Draft in DCAA mode; 5a Tasks 21–24 | done (`b5cf4c65a8`, `81392d3d0c`, `c008470da5`, `014cf941cd`, `c6affee4d3`, `87ad9a777e`, `518b2bb84b`, `e2d19401d6`, `9641b0017e`, `90add5b7ad`) — server-functions 778, erp 2,204, ee project-revenue 16 pass; browser checks deferred |
 | 10-11 | Government contracting 5a | Tasks 25–30 | done (`f4610cf5a4`, `f0f2f483b0`, `0e6acb255e`, `43291cb094`, `21eeb14335`, `3ff3865649`) — server-functions 782+, erp 2,207, jobs 951 pass; browser checks deferred |
+| 10-11 | Government contracting 5a | Tasks 1–34 complete (this session: the close check fix, Tasks 31–34, a conformance log fix); Task 35 deferred | done (`9efe6a2846`, `b8317f52ca`, `f02dedc5ec`, `73367da2b7`, `38e2432b8a`, `8cadcd27de`) — Phase 5a implemented; database 518 (incl. the new live-database close-count test), erp 2,211, checks 300 pass; `db:check:datasets` 4/4, `db:check:backups` restorable; browser verification deferred |
 
 ## Follow-ups found during execution
 
