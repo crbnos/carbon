@@ -207,6 +207,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       "partWithMethod": {
         "update": "parts",
       },
+      "payrollPeriodTotal": {
+        "update": "people",
+      },
       "process": {
         "update": "production",
       },
@@ -348,6 +351,7 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "post-production-event": {
     "update": "production",
   },
+  "post-project-burden": "system",
   "post-project-expense": {
     "update": "projects",
   },

@@ -93,7 +93,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 6: Add the pure burden and billing engine
 - [x] Task 7: Add the authoring functions
 - [x] Task 8: Add `computeIndirectRates`
-- [ ] Task 9: Add the `post-project-burden` server function
+- [x] Task 9: Add the `post-project-burden` server function
 - [ ] Task 10: Add `computeProjectBurden`, `computeBurdenBilling` and the period run
 - [ ] Task 11: Teach the Phase 4 billing readers about burden
 - [ ] Task 12: Add the monthly job and the lock trigger
@@ -1347,3 +1347,10 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   4. Period 1 takes `periodRateFrom(result, null)`, so its period rate is its YTD rate. A later period whose previous period has no Actual row gets `periodRate` null: the run cannot know that period's own change.
   5. `toProjectCells` (the bucket mapping) is exported from `loaders.server.ts` and is pure.
   6. A database test (`compute-indirect-rates.test.ts`, `databaseTest`) seeds 3 pools, 5 mappings, a Posted, a Provisional and a prior-year journal, and a Direct project with 80,000.00 of labor on a period with no fiscal numbers (B14). It runs the rate run twice. It checks Fringe 0.3, Overhead 0.325 with 6,000.00 of carried fringe, G&A 0.38462 with 5,000.00 unallowable, 5 statement lines and one period run. Only `companyHasFeature` is stubbed. The `@carbon/ee` suite passes (2,015).
+- Task 9:
+  1. The applied burden journal follows `journalPostingStatus`, not `companySettings.accountingEnabled` (main's always-post rule). Before the cutover the journal is Provisional with no period. After it, the journal is Posted in the given period. The function writes the journal whenever `postApplied` is true and a row's project is Contract.
+  2. The function signs each line by its account's class (`accountTypeFromClass`), the debit line too. A Contract project with its own cost account can name an Expense account; Asset and Expense take the same sign.
+  3. The function writes the journal inline, not through `postProjectJournal`. That helper resolves the period with `"current"` mode, which refuses a Locked period. Its dimension tags are the same for every line, and burden lines need the Project and ProjectElement of each row.
+  4. The function drops rows whose rounded amount is 0, and checks that the `indirectRateRun` and the pools belong to the company.
+  5. The test has a fifth case: before the cutover the journal is Provisional with no period.
+  6. The permissions snapshot also gains `payrollPeriodTotal` (`update: people`) in the `import-csv` map. Phase 5a added that import key without updating the snapshot.
