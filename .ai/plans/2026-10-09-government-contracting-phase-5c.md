@@ -90,7 +90,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 3: Apply migrations, regenerate types, ship RLS
 - [x] Task 4: Add the schedule to the baseline snapshot
 - [x] Task 5: Add the ee package skeleton
-- [ ] Task 6: Add the pure budget engine
+- [x] Task 6: Add the pure budget engine
 - [ ] Task 7: Add the pure earned value engine
 - [ ] Task 8: Add `checkBudgetAvailability` and the budget notice
 - [ ] Task 9: Check the budget at PO line save and PO finalize
@@ -1125,3 +1125,7 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   3. `budgetTolerancePercent` is optional in `projectControlSettingsValidator`, because null reads as 0.
   4. `server.ts` holds `export {};` until Task 8, so the empty module is valid TypeScript.
   5. A dev server that is already running needs a restart before it resolves the 2 new export paths (lesson "A new package `exports` subpath 500s").
+- Task 6:
+  1. `nearestBudgetedAncestor` reads a budget of 0 as a budget (only null is "no budget"). Both tree walks stop on a parent loop.
+  2. `ElementNode` is exported, so Task 8 and the test name the same type.
+  3. `pnpm --filter @carbon/ee test -- project-control/compute` runs the whole suite (vitest ignores the filter after `--`). `pnpm exec vitest run src/project-control` in `packages/ee` runs the 5 tests.
