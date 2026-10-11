@@ -6,26 +6,19 @@ import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { serverFns } from "@carbon/server-functions";
-import { datetime } from "@carbon/utils";
-import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import type { z } from "zod";
 import type { timesheetCellValidator } from "./models";
 
-// The MES copy of the ERP's timesheet services (`apps/erp/app/modules/
+// The MES copy of the ERP's timesheet reads (`apps/erp/app/modules/
 // projects`). The two apps share no module, so a change to the rules there
-// must be made here too.
+// must be made here too. Saving and submitting go through the shared server
+// functions (`save-timesheet-entry`, `submit-timesheet-week`).
 
 type Client = SupabaseClient<Database>;
 
 type TimesheetEntryStatus = Database["public"]["Enums"]["timesheetEntryStatus"];
-
-function refusal(message: string) {
-  return {
-    data: null,
-    error: { message } as unknown as PostgrestError
-  };
-}
 
 export type ChargeNumber = {
   /** `projectId|` for the project itself, `projectId|elementId` for an element. */
@@ -232,12 +225,13 @@ export function groupTimesheetRows(
 }
 
 /**
- * Saves one cell of the timesheet. A Draft entry is updated, or deleted at
- * 0 hours. A Rejected entry goes back to Draft. Submitted, Approved and
- * Posted entries are refused.
+ * Saves one cell of the user's own timesheet through the
+ * `save-timesheet-entry` server function, the one place the DCAA rules
+ * live. System scope, as `postTimesheetEntries`: the route saves only the
+ * user's own time, and an operator does not hold `projects_update`.
  */
-export async function upsertTimesheetCell(
-  client: Client,
+export async function saveTimesheetEntry(
+  db: Kysely<KyselyDatabase>,
   args: Omit<z.infer<typeof timesheetCellValidator>, "projectElementId"> & {
     projectElementId?: string | null;
     companyId: string;
@@ -245,115 +239,39 @@ export async function upsertTimesheetCell(
     userId: string;
   }
 ) {
-  let existing = client
-    .from("timesheetEntry")
-    .select("id, status")
-    .eq("companyId", args.companyId)
-    .eq("employeeId", args.employeeId)
-    .eq("entryDate", args.entryDate)
-    .eq("projectId", args.projectId)
-    .eq("laborCategoryId", args.laborCategoryId)
-    .is("reversalOfId", null);
-  existing = args.projectElementId
-    ? existing.eq("projectElementId", args.projectElementId)
-    : existing.is("projectElementId", null);
-  const entries = await existing;
-  if (entries.error) return { data: null, error: entries.error };
-
-  const rows = entries.data ?? [];
-  const editable =
-    rows.find((row) => row.status === "Draft") ??
-    rows.find((row) => row.status === "Rejected");
-
-  if (!editable) {
-    if (rows.some((row) => row.status === "Posted")) {
-      return refusal(
-        "This time is posted. A correction in the ERP changes posted hours."
-      );
-    }
-    if (rows.length > 0) {
-      return refusal(
-        "This time is submitted. It can change only after it is rejected."
-      );
-    }
-    if (args.hours === 0) return { data: null, error: null };
-    return client
-      .from("timesheetEntry")
-      .insert([
-        {
-          companyId: args.companyId,
-          employeeId: args.employeeId,
-          entryDate: args.entryDate,
-          projectId: args.projectId,
-          projectElementId: args.projectElementId ?? null,
-          laborCategoryId: args.laborCategoryId,
-          hours: args.hours,
-          status: "Draft",
-          createdBy: args.userId
-        }
-      ])
-      .select("id")
-      .single();
-  }
-
-  if (args.hours === 0) {
-    return client
-      .from("timesheetEntry")
-      .delete()
-      .eq("id", editable.id)
-      .eq("companyId", args.companyId)
-      .in("status", ["Draft", "Rejected"])
-      .select("id")
-      .single();
-  }
-
-  return client
-    .from("timesheetEntry")
-    .update({
-      hours: args.hours,
-      status: "Draft",
-      rejectionNote: null,
-      updatedBy: args.userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", editable.id)
-    .eq("companyId", args.companyId)
-    .in("status", ["Draft", "Rejected"])
-    .select("id")
-    .single();
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .system({ db, companyId, userId })
+    .invoke("save-timesheet-entry", {
+      employeeId: input.employeeId,
+      entryDate: input.entryDate,
+      projectId: input.projectId,
+      projectElementId: input.projectElementId || null,
+      laborCategoryId: input.laborCategoryId,
+      hours: input.hours
+    });
 }
 
 /**
- * Submits an employee's Draft entries between two dates (inclusive).
- * Returns the ids it submitted.
+ * Submits a week of the user's own timesheet through the
+ * `submit-timesheet-week` server function. System scope, as
+ * `saveTimesheetEntry`.
  */
-export async function submitTimesheetEntries(
+export async function submitTimesheetWeek(
   db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
     employeeId: string;
-    from: string;
-    to: string;
+    weekStart: string;
     userId: string;
   }
 ) {
-  const now = datetime.timestamp();
-  const rows = await db
-    .updateTable("timesheetEntry")
-    .set({
-      status: "Submitted",
-      submittedAt: now,
-      updatedBy: args.userId,
-      updatedAt: now
-    })
-    .where("companyId", "=", args.companyId)
-    .where("employeeId", "=", args.employeeId)
-    .where("status", "=", "Draft")
-    .where("entryDate", ">=", args.from)
-    .where("entryDate", "<=", args.to)
-    .returning("id")
-    .execute();
-  return rows.map((row) => row.id);
+  return serverFns
+    .system({ db, companyId: args.companyId, userId: args.userId })
+    .invoke("submit-timesheet-week", {
+      employeeId: args.employeeId,
+      weekStart: args.weekStart
+    });
 }
 
 /**

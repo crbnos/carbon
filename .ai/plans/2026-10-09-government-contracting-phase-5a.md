@@ -75,7 +75,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 13: Turn corrections into labor transfers
 - [x] Task 14: Add the validators
 - [x] Task 15: Add the service functions
-- [ ] Task 16: Route every timesheet write through the server functions
+- [ ] Task 16: Route every timesheet write through the server functions (partial: steps 1, 2, 4 and 6 done; step 3 stopped, see the execution notes)
 - [ ] Task 17: Add Settings → Timekeeping
 - [ ] Task 18: Add allowability to the account drawer
 - [ ] Task 19: Add the cost objective, restrict charging and members to the project
@@ -1533,3 +1533,14 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   7. A `parentLineId` needs the line's own number to be a SubCLIN. The parent must be a CLIN of the same contract with the same first 4 digits.
   8. `saveTimesheetEntry` and `submitTimesheetWeek` return `{ data, error }`, with the refusal message as `error`.
   9. `pnpm run generate:mcp` adds 7 tools: `projects_getProjectMembers`, `projects_addProjectMember`, `projects_removeProjectMember`, `projects_getTimesheetRevisions`, `projects_getPendingReviewEntries`, `sales_getContractFundingActions` and `settings_updateTimekeepingSettings`.
+- Task 16 (partial; the box stays open):
+  1. Done: the ERP grid (`timesheet.update.tsx`) saves through `saveTimesheetEntry`, and `timesheet.submit.tsx` submits through `submitTimesheetWeek`, then posts as before. The week starts on `weekStartOf(from)`. Each warning follows the outcome in the flash. With no warning, the flash text is the Phase 1a text.
+  2. Done: the MES grid saves and submits through the same 2 server functions. The MES copies of `upsertTimesheetCell` and `submitTimesheetEntries` are gone, and so are the ERP ones (with their 2 MCP tools). `pnpm run generate:mcp` removes `projects_upsertTimesheetCell` and `projects_submitTimesheetEntries`.
+  3. The MES calls `serverFns.system`, not `serverFns.as`. Both server functions require `update: projects`, and an operator does not hold it. The MES `postTimesheetEntries` uses `system` for the same reason. With `as`, an operator could no longer save time.
+  4. 3 small Standard-mode differences in the MES come from the shared function. A posted cell gives the ERP refusal text ("Use a correction to change posted hours"). A cell save clears the entry's note, as the ERP grid always did. A submit leaves out Service project entries, as the ERP always did.
+  5. 🛑 Stopped: step 3, the element **Log time** action (`logTimesheetEntry`) and the field service time intent (`logServiceTime`). `save-timesheet-entry` edits the one entry of a cell, and Phase 1a Log time adds a new entry each time. Routed through it, Standard mode changes in 4 ways:
+     1. Log time on a cell with a Draft entry replaces the hours. Phase 1a adds a second entry.
+     2. Log time on a cell with a Submitted, Approved or Posted entry is refused. Phase 1a adds a second entry.
+     3. The saved entry is Draft. No server function submits one entry, and `submit-timesheet-week` submits the whole week.
+     4. The function's input has no `serviceVisitId`, so service time would lose its visit. A second service log on the same node and day finds the posted first entry and is refused.
+     The fix needs a decision: an "add an entry" mode in `save-timesheet-entry` (status, `serviceVisitId`, always insert), or Log time stays a direct insert with the DCAA checks added to it. The verify grep still lists `logTimesheetEntry` and `logServiceTime`.

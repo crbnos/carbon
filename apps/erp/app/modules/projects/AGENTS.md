@@ -140,8 +140,12 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 - `getProjectElementPage` (`.server`) — everything the element page loads, in parallel.
 - `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `@mcp` tag).
 - `logTimesheetEntry` (`.server`) — Log time: one Submitted row; the route posts it when approval is off.
-- `upsertTimesheetCell`, `submitTimesheetEntries`, `approveTimesheetEntries`,
-  `rejectTimesheetEntries`, `createTimesheetCorrection` — the timesheet flow.
+- `saveTimesheetEntry`, `submitTimesheetWeek` (`.server`) — the grid saves a cell and
+  submits a week through the `save-timesheet-entry` and `submit-timesheet-week` server
+  functions, which hold the DCAA rules for the ERP and the MES.
+- `approveTimesheetEntries`, `rejectTimesheetEntries`, `createTimesheetCorrection` — the
+  rest of the timesheet flow. A correction on another charge number is a labor transfer
+  (`correctionOfId`); `assertCanApprove` refuses its requester as approver in DCAA mode.
 - `updateProjectStatus` — refuses Close while a PO or job of the project is open.
 - `getProjectVerification` (`.server`) — links, item values (`getProjectItemValues`) and
   `computeVerification` for a project.

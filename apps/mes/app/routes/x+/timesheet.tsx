@@ -32,7 +32,8 @@ import {
   formatDate,
   INPUT_FORMAT,
   INPUT_STEP,
-  TIMESHEET_ENTRY_STATUS_COLOR_MAP
+  TIMESHEET_ENTRY_STATUS_COLOR_MAP,
+  weekStartOf
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -58,9 +59,9 @@ import {
   getTimesheetWeek,
   groupTimesheetRows,
   postTimesheetEntries,
-  submitTimesheetEntries,
-  timesheetRowKey,
-  upsertTimesheetCell
+  saveTimesheetEntry,
+  submitTimesheetWeek,
+  timesheetRowKey
 } from "~/services/projects.service";
 import { path } from "~/utils/path";
 
@@ -152,7 +153,7 @@ export async function action({ request }: ActionFunctionArgs) {
           "The hours are invalid"
       };
     }
-    const result = await upsertTimesheetCell(client, {
+    const result = await saveTimesheetEntry(getDatabaseClient(), {
       ...validation.data,
       companyId,
       employeeId: userId,
@@ -179,19 +180,28 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const db = getDatabaseClient();
-    let ids: string[];
-    try {
-      ids = await submitTimesheetEntries(db, {
+    const submitted = await submitTimesheetWeek(db, {
+      companyId,
+      employeeId: userId,
+      weekStart: weekStartOf(from),
+      userId
+    });
+    if (submitted.error || !submitted.data) {
+      logger.error("Failed to submit the timesheet", {
         companyId,
-        employeeId: userId,
-        from,
-        to,
-        userId
+        error: submitted.error
       });
-    } catch (err) {
-      logger.error("Failed to submit the timesheet", { companyId, error: err });
-      return { success: false, message: "Failed to submit the week" };
+      return {
+        success: false,
+        message: submitted.error?.message || "Failed to submit the week"
+      };
     }
+    const ids = submitted.data.entryIds;
+    // A warning (the DCAA timecard check) does not stop the week.
+    const withWarnings = (message: string) =>
+      submitted.data.warnings.length > 0
+        ? `${message}. ${submitted.data.warnings.join(". ")}`
+        : message;
     if (ids.length === 0) {
       return {
         success: false,
@@ -208,7 +218,10 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     // With the setting unreadable, nothing posts: the time waits for approval.
     if (settings.data?.timesheetApprovalRequired ?? true) {
-      return { success: true, message: "Week submitted for approval" };
+      return {
+        success: true,
+        message: withWarnings("Week submitted for approval")
+      };
     }
 
     const posting = await postTimesheetEntries(db, {
@@ -228,7 +241,10 @@ export async function action({ request }: ActionFunctionArgs) {
         }`
       };
     }
-    return { success: true, message: "Week submitted and posted" };
+    return {
+      success: true,
+      message: withWarnings("Week submitted and posted")
+    };
   }
 
   return { success: false, message: "Unknown action" };

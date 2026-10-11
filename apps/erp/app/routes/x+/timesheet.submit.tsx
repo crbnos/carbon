@@ -6,12 +6,13 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
+import { redirect, weekStartOf } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { submitTimesheetEntries } from "~/modules/projects";
-import { postTimesheetEntries } from "~/modules/projects/projects.server";
+import {
+  postTimesheetEntries,
+  submitTimesheetWeek
+} from "~/modules/projects/projects.server";
 import { getCompanySettings } from "~/modules/settings";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-timesheet-submit");
@@ -19,8 +20,10 @@ const logger = getLogger("erp", "project-timesheet-submit");
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Submits the signed-in user's Draft entries of one week. With approvals
- * off they post at once; with approvals on they wait in Approvals.
+ * Submits the signed-in user's Draft entries of one week through the
+ * `submit-timesheet-week` server function, which also certifies the week in
+ * DCAA mode. With approvals off they post at once; with approvals on they
+ * wait in Approvals. Each warning (the timecard check) is flashed.
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -32,6 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const from = String(formData.get("from") ?? "");
   const to = String(formData.get("to") ?? "");
   const week = String(formData.get("week") ?? "0");
+  const certificationText = formData.get("certificationText");
   const back = `${path.to.timesheet}?week=${encodeURIComponent(week)}`;
 
   if (!DATE_PATTERN.test(from) || !DATE_PATTERN.test(to)) {
@@ -41,22 +45,28 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  let ids: string[];
-  try {
-    ids = await submitTimesheetEntries(getDatabaseClient(), {
+  // The user submits their own week: the server function runs as the system.
+  const submitted = await submitTimesheetWeek({
+    employeeId: userId,
+    weekStart: weekStartOf(from),
+    certificationText:
+      typeof certificationText === "string" && certificationText
+        ? certificationText
+        : undefined,
+    companyId,
+    userId
+  });
+  if (submitted.error !== null) {
+    logger.error("Failed to submit the timesheet", {
       companyId,
-      employeeId: userId,
-      from,
-      to,
-      userId
+      error: submitted.error
     });
-  } catch (err) {
-    logger.error("Failed to submit the timesheet", { companyId, error: err });
-    throw redirect(
-      back,
-      await flash(request, error(err, "Failed to submit the week"))
-    );
+    throw redirect(back, await flash(request, error(null, submitted.error)));
   }
+  const { entryIds: ids, warnings } = submitted.data;
+  // A warning does not stop the week; the flash names it after the outcome.
+  const withWarnings = (message: string) =>
+    warnings.length > 0 ? `${message}. ${warnings.join(". ")}` : message;
 
   if (ids.length === 0) {
     throw redirect(
@@ -78,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (settings.data?.timesheetApprovalRequired ?? true) {
     throw redirect(
       back,
-      await flash(request, success("Week submitted for approval"))
+      await flash(request, success(withWarnings("Week submitted for approval")))
     );
   }
 
@@ -99,6 +109,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   throw redirect(
     back,
-    await flash(request, success("Week submitted and posted"))
+    await flash(request, success(withWarnings("Week submitted and posted")))
   );
 }

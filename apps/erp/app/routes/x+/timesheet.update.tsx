@@ -8,20 +8,19 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  timesheetCellValidator,
-  upsertTimesheetCell
-} from "~/modules/projects";
+import { timesheetCellValidator } from "~/modules/projects";
+import { saveTimesheetEntry } from "~/modules/projects/projects.server";
 
 const logger = getLogger("erp", "project-timesheet-update");
 
 /**
- * Saves one cell of the signed-in user's timesheet. Answers `{ error }`,
- * which the grid cell reads: a refusal reverts the cell and toasts.
+ * Saves one cell of the signed-in user's timesheet through the
+ * `save-timesheet-entry` server function. Answers `{ error }`, which the
+ * grid cell reads: a refusal reverts the cell and toasts.
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     role: "employee"
   });
 
@@ -34,25 +33,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: { message } }, { status: 400 });
   }
 
-  const result = await upsertTimesheetCell(client, {
+  // The user saves their own time: the server function runs as the system.
+  const result = await saveTimesheetEntry({
     ...validation.data,
     companyId,
     employeeId: userId,
     userId
   });
 
-  if (result.error) {
+  if (result.error !== null) {
     logger.error("Failed to save a timesheet cell", {
       companyId,
       error: result.error
     });
-    return data(
-      {
-        error: { message: result.error.message || "Failed to save the hours" }
-      },
-      { status: 400 }
-    );
+    return data({ error: { message: result.error } }, { status: 400 });
   }
 
-  return data({ error: null });
+  return data({ error: null, data: result.data });
 }

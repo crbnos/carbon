@@ -1,5 +1,5 @@
 {
-  "totalTools": 1634,
+  "totalTools": 1632,
   "modules": 16,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -905,7 +905,6 @@
     {"name":"projects_removeProjectMember","classification":"DESTRUCTIVE","paramCount":1,"schema":"8e1d73142851","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"projects:update","paginates":false},
     {"name":"projects_setProjectElementLabels","classification":"DESTRUCTIVE","paramCount":2,"schema":"7e83ac25f19d","response":"7138f4cbb14a","injectAuth":"companyId","permission":"projects:update","paginates":false},
     {"name":"projects_setProjectStateDefault","classification":"WRITE","paramCount":2,"schema":"d9ad53d8595f","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"projects:update","paginates":false},
-    {"name":"projects_submitTimesheetEntries","classification":"WRITE","paramCount":3,"schema":"bc174c3c6dca","response":"681004346c78","injectAuth":"companyId+userId","permission":"projects:update","paginates":false},
     {"name":"projects_updateProject","classification":"WRITE","paramCount":21,"schema":"b6182e71489d","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"projects:update","paginates":false},
     {"name":"projects_updateProjectBillableItems","classification":"WRITE","paramCount":4,"schema":"e13387f5b203","response":"8394fbabd845","injectAuth":"companyId+updatedBy+userId","permission":"projects:update","paginates":false},
     {"name":"projects_updateProjectElementField","classification":"WRITE","paramCount":3,"schema":"8c43d6664554","response":"8394fbabd845","injectAuth":"companyId+updatedBy","permission":"projects:update","paginates":false},
@@ -924,7 +923,6 @@
     {"name":"projects_upsertProjectState","classification":"WRITE","paramCount":1,"schema":"0e06b0c7a8c0","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"projects:create+update","paginates":false,"upsert":"id"},
     {"name":"projects_upsertProjectStockTransfer","classification":"WRITE","paramCount":1,"schema":"f940ca767556","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"projects:create+update","paginates":false,"upsert":"id"},
     {"name":"projects_upsertProjectStockTransferLine","classification":"WRITE","paramCount":6,"schema":"302de1a50e29","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"projects:create+update","paginates":false},
-    {"name":"projects_upsertTimesheetCell","classification":"DESTRUCTIVE","paramCount":9,"schema":"0ca3b64de196","response":"3797626bd17e","injectAuth":"companyId+userId","permission":"projects:update","paginates":false},
     {"name":"purchasing_cancelPurchaseReturnOrder","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"3797626bd17e","injectAuth":"companyId+userId","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_confirmPurchaseReturnOrder","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"none","injectAuth":"companyId","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_convertSupplierQuoteToOrder","classification":"WRITE","paramCount":2,"schema":"16be78b08a8f","response":"ec9aaaf82857","injectAuth":"companyId+updatedBy+userId","permission":"purchasing:update","paginates":false},
