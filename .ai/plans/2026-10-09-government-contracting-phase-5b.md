@@ -90,7 +90,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 3: Apply migrations, regenerate types, ship RLS
 - [x] Task 4: Add the feature key and the ee package skeleton
 - [x] Task 5: Add the pure rate engine
-- [ ] Task 6: Add the pure burden and billing engine
+- [x] Task 6: Add the pure burden and billing engine
 - [ ] Task 7: Add the authoring functions
 - [ ] Task 8: Add `computeIndirectRates`
 - [ ] Task 9: Add the `post-project-burden` server function
@@ -1329,3 +1329,8 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   5. Account lines merge by account and matched dimension value, so 2 cells that match the same account-only mapping make one statement line.
   6. `carriesBurdenIntoBase` and `sortPools` are exported, so Task 6 uses the same cascade rule. `periodRateFrom` treats a null previous period as zero, so period 1's rate is its YTD rate.
   7. `pnpm --filter @carbon/ee test -- indirect-rates/compute` runs the whole `@carbon/ee` suite (vitest ignores a filter after `--`). `pnpm exec vitest run src/indirect-rates` in `packages/ee` runs the 9 tests; the full suite passes too (2,004).
+- Task 6:
+  1. `burdenBillingAdjustments` returns `{ adjustments, warnings }`. The warnings are deduplicated across lines, one per pool and fiscal year.
+  2. A billing line's years are the years of its base and the years of its existing burden items, so a year whose base is gone still bills back to zero.
+  3. The billing cascade carries the burden at the billing rate, before the fee, into a later TCI or Value Added base. A pool with no rate for the year carries nothing.
+  4. `BillingInput` lines carry no cost objective, so the billing cascade has no IR&D or B&P skip. Cost Plus lines bill Direct projects.

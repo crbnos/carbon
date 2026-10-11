@@ -4,13 +4,19 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  type BillingInput,
+  billingRateFor,
+  burdenBillingAdjustments,
+  burdenCatchUp,
   computePoolRates,
+  type ElementCells,
   fiscalYearRange,
   type GlCell,
   matchMapping,
   type PoolDef,
   type PoolMapping,
-  type ProjectCell
+  type ProjectCell,
+  projectBurdenTargets
 } from "./compute";
 
 function pool(
@@ -295,5 +301,163 @@ describe("fiscalYearRange", () => {
       periodStart: "2025-12-01",
       periodEnd: "2025-12-31"
     });
+  });
+});
+
+function element(
+  buckets: ElementCells["buckets"],
+  overrides: Partial<ElementCells> = {}
+): ElementCells {
+  return {
+    projectId: "p1",
+    projectElementId: "e1",
+    costObjective: "Direct",
+    buckets,
+    absorbedOverhead: 0,
+    ...overrides
+  };
+}
+
+describe("projectBurdenTargets and burdenCatchUp", () => {
+  it("Burden catch-up: a rate raised in month 2 posts months 1 and 2 at the new rate, less the burden posted", () => {
+    // Month 1: 2,000.00 posted at 0.20 on 10,000.00.
+    const posted = [
+      {
+        projectId: "p1",
+        projectElementId: "e1",
+        indirectPoolId: "overhead",
+        unallowable: false,
+        amount: 2_000
+      }
+    ];
+    const month2 = element({ Labor: { amount: 25_000, unallowableAmount: 0 } });
+    const targets = projectBurdenTargets(
+      [OVERHEAD],
+      new Map([["overhead", 0.25]]),
+      month2
+    );
+    expect(burdenCatchUp(targets, posted, month2)).toEqual([
+      {
+        projectId: "p1",
+        projectElementId: "e1",
+        indirectPoolId: "overhead",
+        unallowable: false,
+        amount: 4_250
+      }
+    ]);
+  });
+
+  it("An unchanged rate and base post no row", () => {
+    const cells = element({ Labor: { amount: 10_000, unallowableAmount: 0 } });
+    const targets = projectBurdenTargets(
+      [OVERHEAD],
+      new Map([["overhead", 0.2]]),
+      cells
+    );
+    const posted = [
+      {
+        projectId: "p1",
+        projectElementId: "e1",
+        indirectPoolId: "overhead",
+        unallowable: false,
+        amount: 2_000
+      }
+    ];
+    expect(burdenCatchUp(targets, posted, cells)).toEqual([]);
+  });
+
+  it("offsetAbsorbedOverhead takes the absorbed overhead off the target, never below 0", () => {
+    const offsetPool = { ...OVERHEAD, offsetAbsorbedOverhead: true };
+    const rates = new Map([["overhead", 0.3]]);
+    const labor = { Labor: { amount: 10_000, unallowableAmount: 0 } };
+    expect(
+      projectBurdenTargets(
+        [offsetPool],
+        rates,
+        element(labor, { absorbedOverhead: 1_000 })
+      ).get("overhead")?.allowable
+    ).toEqual(2_000);
+    expect(
+      projectBurdenTargets(
+        [offsetPool],
+        rates,
+        element(labor, { absorbedOverhead: 4_000 })
+      ).get("overhead")?.allowable
+    ).toEqual(0);
+  });
+
+  it("Burden on unallowable labor is a separate unallowable row", () => {
+    const cells = element({
+      Labor: { amount: 11_000, unallowableAmount: 1_000 }
+    });
+    const targets = projectBurdenTargets(
+      [OVERHEAD],
+      new Map([["overhead", 0.2]]),
+      cells
+    );
+    const rows = burdenCatchUp(targets, [], cells);
+    expect(rows).toHaveLength(2);
+    expect(rows.find((r) => !r.unallowable)?.amount).toEqual(2_000);
+    expect(rows.find((r) => r.unallowable)?.amount).toEqual(200);
+  });
+});
+
+function billingLine(
+  overrides: Partial<BillingInput["lines"][number]> = {}
+): BillingInput["lines"][number] {
+  return {
+    customerContractLineId: "line-1",
+    projectId: "p1",
+    projectElementId: "e1",
+    feePercent: 0,
+    baseByYear: new Map([[2026, { Labor: 10_000 }]]),
+    ceilings: new Map(),
+    existing: new Map(),
+    ...overrides
+  };
+}
+
+describe("burden billing", () => {
+  it("Ceiling: a 25 % ceiling bills overhead at 25 % when the Provisional rate is 28 %", () => {
+    expect(
+      billingRateFor({ final: null, provisional: 0.28, ceiling: 0.25 })
+    ).toEqual(0.25);
+    const { adjustments, warnings } = burdenBillingAdjustments({
+      pools: [OVERHEAD],
+      lines: [billingLine({ ceilings: new Map([["overhead", 0.25]]) })],
+      rates: new Map([["overhead|2026", { final: null, provisional: 0.28 }]])
+    });
+    expect(warnings).toEqual([]);
+    expect(adjustments).toEqual([
+      {
+        customerContractLineId: "line-1",
+        projectId: "p1",
+        projectElementId: "e1",
+        indirectPoolId: "overhead",
+        fiscalYear: 2026,
+        burdenRate: 0.25,
+        burdenBase: 10_000,
+        amount: 2_500
+      }
+    ]);
+  });
+
+  it("True-up: a Final rate below Provisional bills the negative difference", () => {
+    const { adjustments } = burdenBillingAdjustments({
+      pools: [OVERHEAD],
+      lines: [billingLine({ existing: new Map([["overhead|2026", 2_800]]) })],
+      rates: new Map([["overhead|2026", { final: 0.22, provisional: 0.28 }]])
+    });
+    expect(adjustments).toHaveLength(1);
+    expect(adjustments[0]).toMatchObject({ burdenRate: 0.22, amount: -600 });
+  });
+
+  it("A fee of 8 % on a burden of 2,500.00 bills 2,700.00", () => {
+    const { adjustments } = burdenBillingAdjustments({
+      pools: [OVERHEAD],
+      lines: [billingLine({ feePercent: 0.08 })],
+      rates: new Map([["overhead|2026", { final: null, provisional: 0.25 }]])
+    });
+    expect(adjustments.map((a) => a.amount)).toEqual([2_700]);
   });
 });

@@ -323,3 +323,242 @@ export function periodRateFrom(
   if (equals(baseChange, 0)) return null;
   return round((current.poolCost - (previous?.poolCost ?? 0)) / baseChange);
 }
+
+// ---------------------------------------------------------------------------
+// Burden and burden billing (B5, B7, B8)
+// ---------------------------------------------------------------------------
+
+// YTD cost of one element (null = project level), by bucket. Hours in the LaborHours bucket.
+export type ElementCells = {
+  projectId: string;
+  projectElementId: string | null;
+  costObjective: BurdenedCostObjective;
+  buckets: Partial<
+    Record<BaseBucket, { amount: number; unallowableAmount: number }>
+  >;
+  absorbedOverhead: number; // YTD Overhead ledger rows of the element (B7)
+};
+
+export type PostedBurden = {
+  projectId: string;
+  projectElementId: string | null;
+  indirectPoolId: string;
+  unallowable: boolean;
+  amount: number; // Σ Burden rows for the fiscal year
+};
+
+export type BurdenRow = {
+  projectId: string;
+  projectElementId: string | null;
+  indirectPoolId: string;
+  unallowable: boolean;
+  amount: number; // the delta to post
+};
+
+export type BurdenTarget = { allowable: number; unallowable: number };
+
+/**
+ * The YTD burden one element should carry per pool, split by the unallowable
+ * flag of its base (B8). Only pools that apply to projects and have a rate count.
+ */
+export function projectBurdenTargets(
+  pools: PoolDef[],
+  rates: Map<string, number>,
+  element: ElementCells
+): Map<string, BurdenTarget> {
+  const targets = new Map<string, BurdenTarget>();
+  const applied: { pool: PoolDef; target: BurdenTarget }[] = [];
+
+  for (const pool of sortPools(pools)) {
+    if (!pool.appliesToProjects) continue;
+    const rate = rates.get(pool.id);
+    if (rate === undefined) continue;
+    // IR&D and B&P cost belongs in the G&A pool, so G&A burdens none of it (B2).
+    if (
+      pool.poolType === "G&A" &&
+      isIndependentResearch(element.costObjective)
+    ) {
+      continue;
+    }
+
+    let allowableBase = 0;
+    let unallowableBase = 0;
+    for (const bucket of BASE_TYPE_BUCKETS[pool.baseType]) {
+      const cell = element.buckets[bucket];
+      if (!cell) continue;
+      allowableBase += cell.amount - cell.unallowableAmount;
+      unallowableBase += cell.unallowableAmount;
+    }
+    for (const earlier of applied) {
+      if (!carriesBurdenIntoBase(pool, earlier.pool)) continue;
+      allowableBase += earlier.target.allowable;
+      unallowableBase += earlier.target.unallowable;
+    }
+
+    let allowable = rate * allowableBase;
+    const unallowable = rate * unallowableBase;
+    if (pool.offsetAbsorbedOverhead) {
+      allowable = Math.max(0, allowable - element.absorbedOverhead);
+    }
+
+    const target = { allowable, unallowable };
+    targets.set(pool.id, target);
+    applied.push({ pool, target });
+  }
+
+  return targets;
+}
+
+/**
+ * The YTD catch-up: each pool × unallowable flag posts its target less what
+ * the fiscal year already posted. A pool with posted burden and no target any
+ * more posts it back to zero.
+ */
+export function burdenCatchUp(
+  targets: Map<string, BurdenTarget>,
+  posted: PostedBurden[],
+  element: Pick<ElementCells, "projectId" | "projectElementId">
+): BurdenRow[] {
+  const postedByKey = new Map<string, number>();
+  for (const row of posted) {
+    if (row.projectId !== element.projectId) continue;
+    if (row.projectElementId !== element.projectElementId) continue;
+    const key = `${row.indirectPoolId}|${row.unallowable}`;
+    postedByKey.set(key, (postedByKey.get(key) ?? 0) + row.amount);
+  }
+
+  const poolIds = new Set<string>(targets.keys());
+  for (const key of postedByKey.keys()) poolIds.add(key.split("|")[0]!);
+
+  const rows: BurdenRow[] = [];
+  for (const indirectPoolId of poolIds) {
+    const target = targets.get(indirectPoolId);
+    for (const unallowable of [false, true]) {
+      const goal = unallowable
+        ? (target?.unallowable ?? 0)
+        : (target?.allowable ?? 0);
+      const already = postedByKey.get(`${indirectPoolId}|${unallowable}`) ?? 0;
+      const delta = round(goal - already);
+      if (equals(delta, 0)) continue;
+      rows.push({
+        projectId: element.projectId,
+        projectElementId: element.projectElementId,
+        indirectPoolId,
+        unallowable,
+        amount: delta
+      });
+    }
+  }
+  return rows;
+}
+
+/** The rate burden bills at: Final when set, else Provisional, capped by the line's ceiling. */
+export function billingRateFor({
+  final,
+  provisional,
+  ceiling
+}: {
+  final: number | null;
+  provisional: number | null;
+  ceiling: number | null;
+}): number | null {
+  const rate = final ?? provisional;
+  if (rate === null || rate === undefined) return null;
+  if (ceiling === null || ceiling === undefined) return rate;
+  return Math.min(rate, ceiling);
+}
+
+export type BillingInput = {
+  pools: PoolDef[];
+  lines: {
+    customerContractLineId: string;
+    projectId: string;
+    projectElementId: string;
+    feePercent: number;
+    // Σ ledger cost of the line's billable items that are not Written Off, by fiscal year and bucket
+    baseByYear: Map<number, Partial<Record<BaseBucket, number>>>;
+    ceilings: Map<string, number>; // poolId → ceiling rate
+    existing: Map<string, number>; // `${poolId}|${fiscalYear}` → Σ amount of the line's burden items
+  }[];
+  rates: Map<string, { final: number | null; provisional: number | null }>; // `${poolId}|${fiscalYear}`
+};
+
+export type BurdenBillingAdjustment = {
+  customerContractLineId: string;
+  projectId: string;
+  projectElementId: string;
+  indirectPoolId: string;
+  fiscalYear: number;
+  burdenRate: number;
+  burdenBase: number;
+  amount: number;
+};
+
+/**
+ * B5: burden billing by difference, per contract line × pool × fiscal year.
+ * Target = billable base × billing rate × (1 + fee %), less every burden item
+ * the line already has. One rule covers first billing, re-burden and the
+ * true-up at Final rates, and never touches a posted invoice.
+ */
+export function burdenBillingAdjustments(input: BillingInput): {
+  adjustments: BurdenBillingAdjustment[];
+  warnings: string[];
+} {
+  const ordered = sortPools(input.pools).filter((p) => p.appliesToProjects);
+  const adjustments: BurdenBillingAdjustment[] = [];
+  const warnings = new Set<string>();
+
+  for (const line of input.lines) {
+    const years = new Set<number>(line.baseByYear.keys());
+    for (const key of line.existing.keys()) {
+      years.add(Number(key.split("|")[1]));
+    }
+
+    for (const fiscalYear of [...years].sort((a, b) => a - b)) {
+      const buckets = line.baseByYear.get(fiscalYear) ?? {};
+      const applied: { pool: PoolDef; burden: number }[] = [];
+
+      for (const pool of ordered) {
+        const rates = input.rates.get(`${pool.id}|${fiscalYear}`);
+        const rate = billingRateFor({
+          final: rates?.final ?? null,
+          provisional: rates?.provisional ?? null,
+          ceiling: line.ceilings.get(pool.id) ?? null
+        });
+        if (rate === null) {
+          warnings.add(
+            `No Provisional rate for ${pool.name} in FY${fiscalYear}`
+          );
+          continue;
+        }
+
+        let base = 0;
+        for (const bucket of BASE_TYPE_BUCKETS[pool.baseType]) {
+          base += buckets[bucket] ?? 0;
+        }
+        for (const earlier of applied) {
+          if (carriesBurdenIntoBase(pool, earlier.pool)) base += earlier.burden;
+        }
+
+        const burden = rate * base;
+        applied.push({ pool, burden });
+
+        const existing = line.existing.get(`${pool.id}|${fiscalYear}`) ?? 0;
+        const amount = round(burden * (1 + line.feePercent) - existing);
+        if (equals(amount, 0)) continue;
+        adjustments.push({
+          customerContractLineId: line.customerContractLineId,
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          indirectPoolId: pool.id,
+          fiscalYear,
+          burdenRate: rate,
+          burdenBase: round(base),
+          amount
+        });
+      }
+    }
+  }
+
+  return { adjustments, warnings: [...warnings] };
+}
