@@ -1,5 +1,5 @@
 {
-  "totalTools": 1551,
+  "totalTools": 1552,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -97,6 +97,7 @@
     {"name":"accounting_getJournalEntry","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"f3fc6aeda32d","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getJournalLineDimensions","classification":"READ","paramCount":1,"schema":"4a6413e2bb5a","response":"b731368c1d3c","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getJournalSyncCompleteness","classification":"READ","paramCount":3,"schema":"6eb0a36bbd4b","response":"58d45b19b00c","injectAuth":"companyId","permission":"accounting:view","paginates":false},
+    {"name":"accounting_getLeaseLiabilities","classification":"READ","paramCount":3,"schema":"a9d65afee96d","response":"none","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getLeaseNetInvestment","classification":"READ","paramCount":1,"schema":"c860433efc00","response":"93c82b571cea","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getOrCreateAccountingPeriod","classification":"WRITE","paramCount":2,"schema":"ced53a5f76ed","response":"00404e686415","injectAuth":"companyId","permission":"accounting:update","paginates":false},
     {"name":"accounting_getPaymentTerm","classification":"READ","paramCount":1,"schema":"5386fbcf056f","response":"f7f39c0d662f","injectAuth":"companyId","permission":"accounting:view","paginates":false},
@@ -1468,7 +1469,7 @@
     {"name":"settings_updateInvoiceNotificationSetting","classification":"WRITE","paramCount":1,"schema":"e1f0172b7519","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateKanbanOutputSetting","classification":"WRITE","paramCount":1,"schema":"ca53dc098fc8","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateLeadTimesOnReceiptSetting","classification":"WRITE","paramCount":1,"schema":"95c137844a39","response":"none","injectAuth":"companyId","permission":"settings:update","paginates":false},
-    {"name":"settings_updateLeasePolicySettings","classification":"WRITE","paramCount":3,"schema":"42f033ec1738","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
+    {"name":"settings_updateLeasePolicySettings","classification":"WRITE","paramCount":6,"schema":"73eeba3e8660","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateLogoDark","classification":"WRITE","paramCount":1,"schema":"f2a952625b72","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateLogoDarkIcon","classification":"WRITE","paramCount":1,"schema":"cc8cf36714fa","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateLogoLight","classification":"WRITE","paramCount":1,"schema":"9baa1881adb6","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},

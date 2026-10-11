@@ -2,8 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
-import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
+import {
+  credit,
+  debit,
+  equals,
+  fiscalYearAndPeriodFor,
+  round,
+  toStoredAmount
+} from "@carbon/utils";
 import {
   type CalendarDate,
   endOfMonth,
@@ -1104,4 +1112,341 @@ function isCalendarDateString(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+// -- Lease Liabilities report (lessee, ASC 842-20-50) --
+
+type LesseeClassification = Database["public"]["Enums"]["lesseeClassification"];
+type CapitalizedClassification = Exclude<LesseeClassification, "Short-Term">;
+
+/** How many fiscal years the maturity analysis lists before "Thereafter". */
+export const LEASE_MATURITY_YEARS = 5;
+
+export type LeaseLiabilityLease = {
+  /** `lease.id`. */
+  id: string;
+  /** The readable lease number. */
+  leaseId: string;
+  name: string;
+  supplierName: string | null;
+  status: Database["public"]["Enums"]["leaseStatus"];
+  classification: LesseeClassification | null;
+  commencementDate: string;
+  /** For a Terminated or Purchased lease, the termination or exercise date. */
+  endDate: string;
+  /** Annual percentage points (6 = 6 %). */
+  discountRate: number;
+  initialLiability: number | null;
+  initialRouAsset: number | null;
+};
+
+export type LeaseLiabilityScheduleLine = {
+  leaseId: string;
+  periodDate: string;
+  principalAmount: number;
+  closingLiability: number;
+  closingRouAsset: number;
+};
+
+export type LeaseLiabilityPayment = {
+  leaseId: string;
+  dueDate: string;
+  amount: number;
+};
+
+export type LeaseLiabilityRow = {
+  id: string;
+  leaseId: string;
+  name: string;
+  supplierName: string | null;
+  classification: CapitalizedClassification;
+  /** Schedule months after `asOf`. */
+  remainingMonths: number;
+  discountRate: number;
+  liability: number;
+  /** Principal the schedule pays down in the 12 months after `asOf`. */
+  currentPortion: number;
+  nonCurrentPortion: number;
+  netRou: number;
+  /** Undiscounted payments still to come, by fiscal year. */
+  maturityByFiscalYear: Record<number, number>;
+  maturityThereafter: number;
+  undiscountedPayments: number;
+};
+
+export type LeaseLiabilityTotals = {
+  classification: CapitalizedClassification;
+  liability: number;
+  currentPortion: number;
+  nonCurrentPortion: number;
+  netRou: number;
+  maturityByFiscalYear: Record<number, number>;
+  maturityThereafter: number;
+  undiscountedPayments: number;
+  /** Undiscounted payments − liability. */
+  imputedInterest: number;
+  /** Years, weighted by liability. Null with no liability. */
+  weightedAverageRemainingTermYears: number | null;
+  /** Percentage points, weighted by the remaining undiscounted payments. */
+  weightedAverageDiscountRate: number | null;
+};
+
+export type LeaseLiabilitySummary = {
+  asOf: string;
+  /** The fiscal years the maturity analysis lists, ascending. */
+  fiscalYears: number[];
+  rows: LeaseLiabilityRow[];
+  totals: LeaseLiabilityTotals[];
+};
+
+const CAPITALIZED: CapitalizedClassification[] = ["Operating", "Finance"];
+
+function groupByLease<T extends { leaseId: string }>(rows: T[]) {
+  const byLease = new Map<string, T[]>();
+  for (const row of rows) {
+    const list = byLease.get(row.leaseId) ?? [];
+    list.push(row);
+    byLease.set(row.leaseId, list);
+  }
+  return byLease;
+}
+
+/**
+ * The lessee's lease balances as of `asOf` (spec §11). One row per
+ * Operating or Finance lease that has commenced by `asOf` and still has
+ * schedule months after it; a Terminated or Purchased lease drops out on its
+ * end date.
+ *
+ * The balance is the schedule's: the liability and the net ROU are the
+ * closing figures of the last month dated on or before `asOf` (before the
+ * first month, the amounts at commencement). The maturity analysis takes the
+ * payment rows that month's closing liability still discounts — those due
+ * after it — so the undiscounted total less the liability is the interest the
+ * remaining months will charge. It reads due dates, not the rows' status,
+ * which is today's and not the status on `asOf`.
+ *
+ * Years in the maturity analysis are fiscal years (`startMonth`, 1–12): the
+ * one the day after `asOf` falls in and the four after it, then
+ * "Thereafter".
+ */
+export function summarizeLeaseLiabilities(
+  leases: LeaseLiabilityLease[],
+  lines: LeaseLiabilityScheduleLine[],
+  payments: LeaseLiabilityPayment[],
+  { asOf, startMonth }: { asOf: string; startMonth: number }
+): LeaseLiabilitySummary {
+  const asOfDate = parseDate(asOf);
+  const dayAfter = asOfDate.add({ days: 1 });
+  const firstYear = fiscalYearAndPeriodFor(
+    dayAfter.year,
+    dayAfter.month,
+    startMonth
+  ).fiscalYear;
+  const fiscalYears = Array.from(
+    { length: LEASE_MATURITY_YEARS },
+    (_, index) => firstYear + index
+  );
+  const lastYear = fiscalYears[fiscalYears.length - 1] ?? firstYear;
+  const twelveMonthsOut = asOfDate.add({ months: 12 }).toString();
+
+  const linesByLease = groupByLease(lines);
+  const paymentsByLease = groupByLease(payments);
+
+  const rows: LeaseLiabilityRow[] = [];
+  for (const lease of leases) {
+    const classification = lease.classification;
+    if (classification !== "Operating" && classification !== "Finance") {
+      continue;
+    }
+    if (lease.initialLiability === null) continue;
+    if (lease.status === "Draft" || lease.status === "Cancelled") continue;
+    if (lease.commencementDate > asOf) continue;
+    const ended = lease.status === "Terminated" || lease.status === "Purchased";
+    if (ended && lease.endDate <= asOf) continue;
+
+    const schedule = [...(linesByLease.get(lease.id) ?? [])].sort((a, b) =>
+      a.periodDate < b.periodDate ? -1 : a.periodDate > b.periodDate ? 1 : 0
+    );
+    const remaining = schedule.filter((line) => line.periodDate > asOf);
+    if (remaining.length === 0) continue;
+    const last = schedule.filter((line) => line.periodDate <= asOf).at(-1);
+
+    const liability = last ? last.closingLiability : lease.initialLiability;
+    const netRou = last
+      ? last.closingRouAsset
+      : (lease.initialRouAsset ?? lease.initialLiability);
+
+    // Accumulate at full precision; round once per figure.
+    const principalNextYear = remaining
+      .filter((line) => line.periodDate <= twelveMonthsOut)
+      .reduce((sum, line) => sum + line.principalAmount, 0);
+    const currentPortion = round(
+      Math.min(Math.max(principalNextYear, 0), liability)
+    );
+
+    const maturity: Record<number, number> = {};
+    let thereafter = 0;
+    let undiscounted = 0;
+    for (const payment of paymentsByLease.get(lease.id) ?? []) {
+      if (last && payment.dueDate <= last.periodDate) continue;
+      const { fiscalYear } = fiscalYearAndPeriodFor(
+        Number(payment.dueDate.slice(0, 4)),
+        Number(payment.dueDate.slice(5, 7)),
+        startMonth
+      );
+      undiscounted += payment.amount;
+      if (fiscalYear > lastYear) {
+        thereafter += payment.amount;
+        continue;
+      }
+      // A payment the closing liability still holds that fell due between
+      // that month end and `asOf` belongs to the first year.
+      const year = Math.max(fiscalYear, firstYear);
+      maturity[year] = (maturity[year] ?? 0) + payment.amount;
+    }
+    for (const year of Object.keys(maturity)) {
+      maturity[Number(year)] = round(maturity[Number(year)] ?? 0);
+    }
+
+    rows.push({
+      id: lease.id,
+      leaseId: lease.leaseId,
+      name: lease.name,
+      supplierName: lease.supplierName,
+      classification,
+      remainingMonths: remaining.length,
+      discountRate: lease.discountRate,
+      liability: round(liability),
+      currentPortion,
+      nonCurrentPortion: round(liability - currentPortion),
+      netRou: round(netRou),
+      maturityByFiscalYear: maturity,
+      maturityThereafter: round(thereafter),
+      undiscountedPayments: round(undiscounted)
+    });
+  }
+
+  rows.sort((a, b) =>
+    a.leaseId < b.leaseId ? -1 : a.leaseId > b.leaseId ? 1 : 0
+  );
+
+  const totals = CAPITALIZED.map((classification): LeaseLiabilityTotals => {
+    const group = rows.filter((row) => row.classification === classification);
+    const sum = (pick: (row: LeaseLiabilityRow) => number) =>
+      group.reduce((total, row) => total + pick(row), 0);
+    const liability = sum((row) => row.liability);
+    const undiscounted = sum((row) => row.undiscountedPayments);
+    const maturity: Record<number, number> = {};
+    for (const year of fiscalYears) {
+      maturity[year] = round(sum((row) => row.maturityByFiscalYear[year] ?? 0));
+    }
+    return {
+      classification,
+      liability: round(liability),
+      currentPortion: round(sum((row) => row.currentPortion)),
+      nonCurrentPortion: round(sum((row) => row.nonCurrentPortion)),
+      netRou: round(sum((row) => row.netRou)),
+      maturityByFiscalYear: maturity,
+      maturityThereafter: round(sum((row) => row.maturityThereafter)),
+      undiscountedPayments: round(undiscounted),
+      imputedInterest: round(undiscounted - liability),
+      weightedAverageRemainingTermYears:
+        liability > 0
+          ? round(
+              sum((row) => row.liability * row.remainingMonths) / liability / 12
+            )
+          : null,
+      weightedAverageDiscountRate:
+        undiscounted > 0
+          ? round(
+              sum((row) => row.discountRate * row.undiscountedPayments) /
+                undiscounted
+            )
+          : null
+    };
+  });
+
+  return { asOf, fiscalYears, rows, totals };
+}
+
+export type LeaseCostScheduleRow = {
+  leaseId: string;
+  type: Database["public"]["Enums"]["revenueScheduleType"];
+  amount: number;
+};
+
+export type LeaseCostInvoiceLine = {
+  leaseId: string;
+  leasePaymentId: string | null;
+  /** The line's amount in base currency, before tax. */
+  amount: number;
+};
+
+export type LeaseCostSummary = {
+  operatingLeaseCost: number;
+  financeAmortization: number;
+  financeInterest: number;
+  shortTermLeaseCost: number;
+  variableLeaseCost: number;
+  /** Fixed payments of Operating leases: amounts in the liability. */
+  cashPaidOperating: number;
+  /** Fixed payments of Finance leases: amounts in the liability. */
+  cashPaidFinance: number;
+};
+
+/**
+ * Lease cost for a period (ASC 842-20-50-4), from the lease rows the lease
+ * run posted (`scheduleRows`) and the posted purchase invoice Lease lines
+ * (`invoiceLines`), both already limited to the period. An Operating lease's
+ * Interest and Amortization rows are one straight-line cost; a Finance
+ * lease's are its interest and its ROU amortization. A Lease line with no
+ * payment row is a variable charge; one with a payment row is the cost of a
+ * Short-Term lease, else cash paid for an amount in the liability.
+ */
+export function summarizeLeaseCosts(
+  classificationByLease: Map<string, LesseeClassification>,
+  scheduleRows: LeaseCostScheduleRow[],
+  invoiceLines: LeaseCostInvoiceLine[]
+): LeaseCostSummary {
+  const totals = {
+    operatingLeaseCost: 0,
+    financeAmortization: 0,
+    financeInterest: 0,
+    shortTermLeaseCost: 0,
+    variableLeaseCost: 0,
+    cashPaidOperating: 0,
+    cashPaidFinance: 0
+  };
+  for (const row of scheduleRows) {
+    const classification = classificationByLease.get(row.leaseId);
+    if (classification === "Operating") {
+      totals.operatingLeaseCost += row.amount;
+    } else if (classification === "Finance") {
+      if (row.type === "Interest") totals.financeInterest += row.amount;
+      if (row.type === "Amortization") totals.financeAmortization += row.amount;
+    }
+  }
+  for (const line of invoiceLines) {
+    if (!line.leasePaymentId) {
+      totals.variableLeaseCost += line.amount;
+      continue;
+    }
+    const classification = classificationByLease.get(line.leaseId);
+    if (classification === "Short-Term") {
+      totals.shortTermLeaseCost += line.amount;
+    } else if (classification === "Operating") {
+      totals.cashPaidOperating += line.amount;
+    } else if (classification === "Finance") {
+      totals.cashPaidFinance += line.amount;
+    }
+  }
+  return {
+    operatingLeaseCost: round(totals.operatingLeaseCost),
+    financeAmortization: round(totals.financeAmortization),
+    financeInterest: round(totals.financeInterest),
+    shortTermLeaseCost: round(totals.shortTermLeaseCost),
+    variableLeaseCost: round(totals.variableLeaseCost),
+    cashPaidOperating: round(totals.cashPaidOperating),
+    cashPaidFinance: round(totals.cashPaidFinance)
+  };
 }

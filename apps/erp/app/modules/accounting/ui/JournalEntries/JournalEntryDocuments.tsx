@@ -77,6 +77,11 @@ const JournalEntryDocuments = () => {
       to: path.to.rentalAgreementDetails,
       icon: "Lease"
     },
+    lease: {
+      label: t`Lease`,
+      to: path.to.leaseDetails,
+      icon: "Lease"
+    },
     job: { label: t`Job`, to: path.to.jobDetails, icon: "Job Receipt" },
     fixedAsset: {
       label: t`Fixed Asset`,

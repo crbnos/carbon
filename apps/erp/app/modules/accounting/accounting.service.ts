@@ -74,7 +74,11 @@ import {
   depreciationFloor,
   diffJournalLines,
   hasAccountingCutover,
+  type LeaseCostSummary,
+  type LeaseLiabilitySummary,
   monthEndOf,
+  summarizeLeaseCosts,
+  summarizeLeaseLiabilities,
   usageKey
 } from "./accounting.utils";
 import type {
@@ -5822,6 +5826,7 @@ export type JournalSourceDocument = {
     | "salesInvoice"
     | "purchaseInvoice"
     | "rentalAgreement"
+    | "lease"
     | "job"
     | "fixedAsset"
     | "inventoryCount"
@@ -5966,6 +5971,20 @@ export async function getJournalEntryRelatedItems(
               kind: "rentalAgreement" as const,
               id: r.id,
               readableId: r.rentalAgreementId
+            }))
+          )
+      : none,
+    idsOf("Lease").length > 0
+      ? client
+          .from("lease")
+          .select("id, leaseId")
+          .in("id", idsOf("Lease"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "lease" as const,
+              id: r.id,
+              readableId: r.leaseId
             }))
           )
       : none,
@@ -8149,6 +8168,179 @@ export async function getLeaseNetInvestment(
     },
     error: null
   };
+}
+
+export type LeaseLiabilities = LeaseLiabilitySummary & {
+  from: string;
+  to: string;
+  costs: LeaseCostSummary;
+};
+
+/**
+ * The lessee's Lease Liabilities report (spec §11, ASC 842-20-50): the
+ * balances, maturity analysis and weighted averages as of `asOf`
+ * (`summarizeLeaseLiabilities`), and the lease cost and cash paid for
+ * `[from, to]` (`summarizeLeaseCosts`). `from` defaults to the first day of
+ * the fiscal year `asOf` falls in, `to` to `asOf`. Cost reads the lease rows
+ * the lease run posted (status Posted, dated in the range) and the Lease
+ * lines of posted purchase invoices (posting date in the range). Reads the
+ * lease tables, whose RLS is `purchasing_view` — an accountant without
+ * purchasing view sees an empty report.
+ * @mcp read
+ */
+export async function getLeaseLiabilities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { asOf: string; from?: string; to?: string }
+): Promise<{
+  data: LeaseLiabilities | null;
+  error: PostgrestError | null;
+}> {
+  const { asOf } = args;
+  const fiscalYear = await client
+    .from("fiscalYearSettings")
+    .select("startMonth")
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (fiscalYear.error) return { data: null, error: fiscalYear.error };
+  const startMonth = fiscalYear.data?.startMonth
+    ? (MONTH_NUMBER[fiscalYear.data.startMonth] ?? 1)
+    : 1;
+
+  // The fiscal year `asOf` falls in starts in `startMonth` of this calendar
+  // year, or of the year before when `asOf` is earlier in the calendar year.
+  const asOfDate = parseDate(asOf);
+  const fiscalYearStart = asOfDate
+    .set({ month: startMonth, day: 1 })
+    .subtract({ years: asOfDate.month >= startMonth ? 0 : 1 })
+    .toString();
+  const from = args.from ?? fiscalYearStart;
+  const to = args.to ?? asOf;
+
+  const [leases, lines, payments, scheduleRows, invoiceLines] =
+    await Promise.all([
+      fetchAllFromTable<{
+        id: string;
+        leaseId: string;
+        name: string;
+        supplierName: string | null;
+        status: Database["public"]["Enums"]["leaseStatus"];
+        lesseeClassification:
+          | Database["public"]["Enums"]["lesseeClassification"]
+          | null;
+        commencementDate: string;
+        endDate: string;
+        discountRate: number;
+        initialLiability: number | null;
+        initialRouAsset: number | null;
+      }>(
+        client,
+        "leases",
+        "id, leaseId, name, supplierName, status, lesseeClassification, commencementDate, endDate, discountRate, initialLiability, initialRouAsset",
+        (query: any) =>
+          query
+            .eq("companyId", companyId)
+            .not("lesseeClassification", "is", null)
+            .order("id", { ascending: true })
+      ),
+      fetchAllFromTable<{
+        leaseId: string;
+        periodDate: string;
+        principalAmount: number;
+        closingLiability: number;
+        closingRouAsset: number;
+      }>(
+        client,
+        "leaseScheduleLine",
+        "leaseId, periodDate, principalAmount, closingLiability, closingRouAsset",
+        (query: any) =>
+          query.eq("companyId", companyId).order("id", { ascending: true })
+      ),
+      fetchAllFromTable<{ leaseId: string; dueDate: string; amount: number }>(
+        client,
+        "leasePayment",
+        "leaseId, dueDate, amount",
+        (query: any) =>
+          query.eq("companyId", companyId).order("id", { ascending: true })
+      ),
+      fetchAllFromTable<{
+        leaseId: string;
+        type: Database["public"]["Enums"]["revenueScheduleType"];
+        amount: number;
+      }>(
+        client,
+        "revenueRecognitionSchedule",
+        "leaseId, type, amount",
+        (query: any) =>
+          query
+            .eq("companyId", companyId)
+            .not("leaseId", "is", null)
+            .eq("status", "Posted")
+            .gte("scheduledDate", from)
+            .lte("scheduledDate", to)
+            .order("id", { ascending: true })
+      ),
+      fetchAllFromTable<{
+        leaseId: string;
+        leasePaymentId: string | null;
+        extendedPrice: number | null;
+      }>(
+        client,
+        "purchaseInvoiceLine",
+        "leaseId, leasePaymentId, extendedPrice, purchaseInvoice!inner(status, postingDate)",
+        (query: any) =>
+          query
+            .eq("companyId", companyId)
+            .eq("invoiceLineType", "Lease")
+            .not("leaseId", "is", null)
+            .not("purchaseInvoice.status", "in", '("Draft","Pending","Voided")')
+            .gte("purchaseInvoice.postingDate", from)
+            .lte("purchaseInvoice.postingDate", to)
+            .order("id", { ascending: true })
+      )
+    ]);
+  for (const result of [leases, lines, payments, scheduleRows, invoiceLines]) {
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  const leaseRows = leases.data ?? [];
+  const summary = summarizeLeaseLiabilities(
+    leaseRows.map((lease) => ({
+      id: lease.id,
+      leaseId: lease.leaseId,
+      name: lease.name,
+      supplierName: lease.supplierName,
+      status: lease.status,
+      classification: lease.lesseeClassification,
+      commencementDate: lease.commencementDate,
+      endDate: lease.endDate,
+      discountRate: lease.discountRate,
+      initialLiability: lease.initialLiability,
+      initialRouAsset: lease.initialRouAsset
+    })),
+    lines.data ?? [],
+    payments.data ?? [],
+    { asOf, startMonth }
+  );
+
+  const classificationByLease = new Map(
+    leaseRows.flatMap((lease) =>
+      lease.lesseeClassification
+        ? [[lease.id, lease.lesseeClassification] as const]
+        : []
+    )
+  );
+  const costs = summarizeLeaseCosts(
+    classificationByLease,
+    scheduleRows.data ?? [],
+    (invoiceLines.data ?? []).map((line) => ({
+      leaseId: line.leaseId,
+      leasePaymentId: line.leasePaymentId,
+      amount: line.extendedPrice ?? 0
+    }))
+  );
+
+  return { data: { ...summary, from, to, costs }, error: null };
 }
 
 // -- Depreciation History for a single asset --
