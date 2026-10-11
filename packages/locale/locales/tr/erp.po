@@ -20768,9 +20768,6 @@ msgstr "Süreleri Göster"
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
 
-msgid "Show left to right"
-msgstr ""
-
 msgid "Show lines"
 msgstr "Satırları Göster"
 
@@ -20797,9 +20794,6 @@ msgstr "Tedarikçi Kimliklerini Göster"
 
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
-
-msgid "Show top to bottom"
-msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "Sondaki Sıfırları Göster"

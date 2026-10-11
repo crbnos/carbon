@@ -35,18 +35,13 @@ import {
   useReactFlow
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  LuArrowDown,
-  LuArrowRight,
-  LuInfo,
-  LuMaximize,
-  LuSearch
-} from "react-icons/lu";
+import { LuInfo, LuMaximize, LuSearch } from "react-icons/lu";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useStore } from "zustand";
 import { path } from "~/utils/path";
 import type {
   ProjectElementLinkType,
+  ProjectElementType,
   RequirementStatus
 } from "../../projects.models";
 import { canLink, projectElementLinkTypes } from "../../projects.models";
@@ -58,29 +53,52 @@ import {
 } from "../ChangeRequests/useActiveChangeRequest";
 import { useLinkTypeLabels } from "../Element/ElementLinks";
 import { ElementTypeIcon } from "./ElementTypeIcon";
-import type { ElementGraphNode } from "./graph/ElementNode";
-import { ElementNode } from "./graph/ElementNode";
+import type { ElementBoxGraphNode } from "./graph/ElementBoxNode";
+import { ElementBoxNode } from "./graph/ElementBoxNode";
+import type { ElementCardGraphNode } from "./graph/ElementCardNode";
+import { ElementCardNode } from "./graph/ElementCardNode";
 import type { LinkEdgeData } from "./graph/LinkEdge";
 import { LinkEdge, linkDash } from "./graph/LinkEdge";
-import { layoutElementGraph } from "./graph/layout";
 import { getProjectGraphStore } from "./graph/store";
+import {
+  CARD_HEIGHT,
+  CARD_WIDTH,
+  countTraceLinks,
+  highlightTraceLinks,
+  layoutElementTree,
+  type TraceHighlight,
+  type TreeBox
+} from "./graph/tree-layout";
 
-const nodeTypes: NodeTypes = { element: ElementNode };
+const nodeTypes: NodeTypes = { box: ElementBoxNode, card: ElementCardNode };
 const edgeTypes: EdgeTypes = { link: LinkEdge };
 const proOptions = { hideAttribution: true };
 
 type ElementGraphProps = {
   projectId: string;
+  projectName: string;
+  /** Every element: on this layout the type filter is a lens. */
   elements: ProjectElementListItem[];
+  type: ProjectElementType | null;
   links: ProjectElementLink[];
   requirementStatus: Record<string, RequirementStatus>;
+  commentCounts: Record<string, number>;
   canUpdate: boolean;
 };
 
+/** The trace link a card's count lights up: tests for a Requirement, requirements for a System or Function. */
+function highlightLinkType(
+  type: ProjectElementType
+): TraceHighlight["linkType"] | null {
+  if (type === "Requirement") return "verifies";
+  if (type === "System" || type === "Function") return "satisfies";
+  return null;
+}
+
 /**
- * The Tree layout: the element tree as a graph, read left to right, with the
- * trace links drawn over it. Drag from a handle to another element to add a
- * link.
+ * The Tree layout: one box per parent holds its children as cards, read left
+ * to right, with the trace links drawn over it. Drag from a card's handle to
+ * another card to add a link.
  */
 export function ElementGraph(props: ElementGraphProps) {
   return (
@@ -102,60 +120,66 @@ export function ElementGraph(props: ElementGraphProps) {
 
 function ElementGraphCanvas({
   projectId,
+  projectName,
   elements,
+  type,
   links,
   requirementStatus,
+  commentCounts,
   canUpdate
 }: ElementGraphProps) {
   const { t } = useLingui();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { elementId: openElementId } = useParams();
-  const { fitView, setCenter, getNode } = useReactFlow();
+  const { fitView, setCenter } = useReactFlow();
   const labels = useLinkTypeLabels();
   const store = getProjectGraphStore(projectId);
   const collapsed = useStore(store, (s) => s.collapsed);
-  const direction = useStore(store, (s) => s.direction);
   const toggleCollapsed = useStore(store, (s) => s.toggleCollapsed);
-  const setDirection = useStore(store, (s) => s.setDirection);
   const [searching, setSearching] = useState(false);
   const [pending, setPending] = useState<Connection | null>(null);
+  const [highlight, setHighlight] = useState<TraceHighlight | null>(null);
   const changeRequestId = useActiveChangeRequestId();
+  const rootId = searchParams.get("root");
 
   const byId = useMemo(
     () => new Map(elements.map((element) => [element.id, element])),
     [elements]
   );
 
-  const { nodes, edges } = useMemo(() => {
-    const children = new Map<string, string[]>();
-    for (const element of elements) {
-      if (!element.parentId || !byId.has(element.parentId)) continue;
-      const list = children.get(element.parentId) ?? [];
-      list.push(element.id);
-      children.set(element.parentId, list);
-    }
-    // Hide every element below a collapsed one.
-    const hidden = new Set<string>();
-    const stack = collapsed.flatMap((id) => children.get(id) ?? []);
-    while (stack.length > 0) {
-      const id = stack.pop()!;
-      if (hidden.has(id)) continue;
-      hidden.add(id);
-      stack.push(...(children.get(id) ?? []));
-    }
-    const visible = elements.filter((element) => !hidden.has(element.id));
-    const parentEdges = visible
-      .filter((element) => element.parentId && byId.has(element.parentId))
-      .map((element) => ({
-        source: element.parentId as string,
-        target: element.id
-      }));
-    const positions = layoutElementGraph(
-      visible.map((element) => element.id),
-      parentEdges,
-      direction
-    );
+  const setRoot = useCallback(
+    (id: string | null) => {
+      const next = new URLSearchParams(searchParams);
+      if (id) next.set("root", id);
+      else next.delete("root");
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams]
+  );
+
+  const toggleHighlight = useCallback(
+    (id: string) => {
+      const element = byId.get(id);
+      const linkType = element ? highlightLinkType(element.type) : null;
+      setHighlight((current) =>
+        current?.elementId === id || !linkType
+          ? null
+          : { elementId: id, linkType }
+      );
+    },
+    [byId]
+  );
+
+  const { layout, boxById, nodes, cardNodes, edges } = useMemo(() => {
+    const layout = layoutElementTree({
+      elements,
+      rootId,
+      collapsed: new Set(collapsed),
+      type
+    });
+    const counts = countTraceLinks(links);
+    const lit = highlight ? highlightTraceLinks(links, highlight) : null;
 
     const suspect = new Set<string>();
     for (const link of links) {
@@ -164,52 +188,116 @@ function ElementGraphCanvas({
       suspect.add(link.toElementId);
     }
 
-    const nodes: ElementGraphNode[] = visible.map((element) => ({
-      id: element.id,
-      type: "element",
-      position: positions.get(element.id) ?? { x: 0, y: 0 },
-      data: {
-        readableId: element.readableId,
-        name: element.name,
-        type: element.type,
-        state: element.state,
-        status:
-          element.type === "Requirement"
-            ? (requirementStatus[element.id] ?? null)
-            : null,
-        isSuspect: suspect.has(element.id),
-        isOpen: element.id === openElementId,
-        childCount: children.get(element.id)?.length ?? 0,
-        isCollapsed: collapsed.includes(element.id),
-        direction,
-        onToggle: toggleCollapsed
-      }
-    }));
+    const boxById = new Map<string, TreeBox>(
+      layout.boxes.map((box) => [box.id, box])
+    );
+    const visibleCards = new Set(layout.cards.map((card) => card.id));
+    const topBoxId = layout.boxes[0]?.id;
+    const emptyText = layout.rootId ? t`No child elements` : t`No elements yet`;
+
+    const boxNodes: ElementBoxGraphNode[] = layout.boxes.map((box) => {
+      const owner = box.ownerId ? byId.get(box.ownerId) : undefined;
+      const isTop = box.id === topBoxId;
+      return {
+        id: box.id,
+        type: "box",
+        position: { x: box.x, y: box.y },
+        width: box.width,
+        height: box.height,
+        selectable: false,
+        draggable: false,
+        connectable: false,
+        data: {
+          ownerId: box.ownerId,
+          label: owner?.name ?? projectName,
+          type: owner?.type ?? null,
+          isTop,
+          cardCount: box.cardIds.length,
+          collapsedCount: box.collapsedCount,
+          hiddenCount: box.hiddenCount,
+          emptyText: isTop ? emptyText : null,
+          onFocus: setRoot,
+          onExpand: toggleCollapsed
+        }
+      };
+    });
+
+    const cardNodes: ElementCardGraphNode[] = layout.cards.flatMap((card) => {
+      const element = byId.get(card.id);
+      if (!element) return [];
+      const count = counts.get(card.id);
+      return [
+        {
+          id: card.id,
+          type: "card",
+          parentId: card.boxId,
+          extent: "parent",
+          position: { x: card.x, y: card.y },
+          draggable: false,
+          data: {
+            readableId: element.readableId,
+            name: element.name,
+            type: element.type,
+            state: element.state,
+            ownerId: element.ownerId,
+            status:
+              element.type === "Requirement"
+                ? (requirementStatus[element.id] ?? null)
+                : null,
+            commentCount: commentCounts[element.id] ?? 0,
+            linkCount:
+              element.type === "Requirement"
+                ? { kind: "tests", count: count?.tests ?? 0 }
+                : element.type === "System" || element.type === "Function"
+                  ? { kind: "reqs", count: count?.reqs ?? 0 }
+                  : null,
+            isSuspect: suspect.has(element.id),
+            isOpen: element.id === openElementId,
+            isDimmed: !!lit && !lit.elementIds.has(element.id),
+            isHighlighted: highlight?.elementId === element.id,
+            hasChildren: card.descendantCount > 0,
+            isCollapsed: card.isCollapsed,
+            onToggle: toggleCollapsed,
+            onHighlight: toggleHighlight
+          }
+        }
+      ];
+    });
 
     const edges: Edge[] = [
-      ...parentEdges.map((edge) => ({
-        id: `parent:${edge.target}`,
-        source: edge.source,
-        target: edge.target,
-        type: "smoothstep",
-        selectable: false,
-        style: { stroke: "hsl(var(--border))", strokeWidth: 1.5 }
-      })),
+      ...layout.edges.map(
+        (edge): Edge => ({
+          id: edge.id,
+          source: edge.source,
+          sourceHandle: edge.sourceHandle,
+          target: edge.target,
+          targetHandle: "in",
+          type: "default",
+          selectable: false,
+          zIndex: 1,
+          style: {
+            stroke: "hsl(var(--border))",
+            strokeWidth: 1.5,
+            opacity: lit ? 0.3 : 1
+          }
+        })
+      ),
       ...links
         .filter(
           (link) =>
-            !hidden.has(link.fromElementId) &&
-            !hidden.has(link.toElementId) &&
-            byId.has(link.fromElementId) &&
-            byId.has(link.toElementId)
+            visibleCards.has(link.fromElementId) &&
+            visibleCards.has(link.toElementId)
         )
         .map(
           (link): Edge<LinkEdgeData> => ({
             id: link.id,
             source: link.fromElementId,
+            sourceHandle: "link-out",
             target: link.toElementId,
+            targetHandle: "link-in",
             type: "link",
             selectable: false,
+            zIndex: 1,
             markerEnd: {
               type: MarkerType.ArrowClosed,
               color: link.suspectSince
@@ -219,26 +307,37 @@ function ElementGraphCanvas({
             data: {
               linkType: link.linkType,
               label: labels[link.linkType].forward,
-              isSuspect: !!link.suspectSince
+              isSuspect: !!link.suspectSince,
+              isDimmed: !!lit && !lit.linkIds.has(link.id)
             }
           })
         )
     ];
-    return { nodes, edges };
+
+    // A parent renders before its children: boxes first, then the cards.
+    const nodes = [...boxNodes, ...cardNodes];
+    return { layout, boxById, nodes, cardNodes, edges };
   }, [
     elements,
-    links,
-    byId,
+    rootId,
     collapsed,
-    direction,
-    requirementStatus,
-    openElementId,
+    type,
+    links,
+    highlight,
+    byId,
+    projectName,
+    t,
+    setRoot,
     toggleCollapsed,
+    toggleHighlight,
+    requirementStatus,
+    commentCounts,
+    openElementId,
     labels
   ]);
 
-  // Fit the view when the direction or the set of nodes changes.
-  const nodeSignature = `${direction}:${nodes.length}`;
+  // Fit the view when the root, the lens or the set of nodes changes.
+  const nodeSignature = `${layout.rootId}:${type}:${nodes.length}`;
   useEffect(() => {
     if (!nodeSignature) return;
     requestAnimationFrame(() => fitView({ padding: 0.15, duration: 200 }));
@@ -255,8 +354,10 @@ function ElementGraphCanvas({
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (event, node) => {
-      // The collapse button toggles; it does not open the element.
-      if ((event.target as HTMLElement).closest("[data-graph-toggle]")) return;
+      // An in-node button (collapse, focus, highlight) acts; it does not open
+      // the element.
+      if ((event.target as HTMLElement).closest("[data-graph-action]")) return;
+      if (node.type !== "card") return;
       openElement(node.id);
     },
     [openElement]
@@ -330,6 +431,10 @@ function ElementGraphCanvas({
         isValidConnection={isValidConnection}
         onConnect={(connection) => setPending(connection)}
         onNodeClick={onNodeClick}
+        onPaneClick={() => setHighlight(null)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setHighlight(null);
+        }}
         minZoom={0.2}
         maxZoom={1.5}
         fitView
@@ -341,14 +446,6 @@ function ElementGraphCanvas({
             icon={<LuMaximize />}
             variant="secondary"
             onClick={() => fitView({ padding: 0.15, duration: 200 })}
-          />
-          <IconButton
-            aria-label={
-              direction === "LR" ? t`Show top to bottom` : t`Show left to right`
-            }
-            icon={direction === "LR" ? <LuArrowDown /> : <LuArrowRight />}
-            variant="secondary"
-            onClick={() => setDirection(direction === "LR" ? "TB" : "LR")}
           />
           <IconButton
             aria-label={t`Search`}
@@ -401,18 +498,21 @@ function ElementGraphCanvas({
             <Trans>No element found</Trans>
           </CommandEmpty>
           <CommandGroup>
-            {nodes.map((node) => (
+            {cardNodes.map((node) => (
               <CommandItem
                 key={node.id}
                 value={`${node.data.readableId} ${node.data.name}`}
                 onSelect={() => {
                   setSearching(false);
-                  const found = getNode(node.id);
-                  if (found) {
-                    setCenter(found.position.x + 120, found.position.y + 38, {
-                      zoom: 1,
-                      duration: 300
-                    });
+                  const box = node.parentId
+                    ? boxById.get(node.parentId)
+                    : undefined;
+                  if (box) {
+                    setCenter(
+                      box.x + node.position.x + CARD_WIDTH / 2,
+                      box.y + node.position.y + CARD_HEIGHT / 2,
+                      { zoom: 1, duration: 300 }
+                    );
                   }
                 }}
               >

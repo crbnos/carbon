@@ -20768,9 +20768,6 @@ msgstr "Показать длительность"
 msgid "Show keyboard shortcuts"
 msgstr "Показать сочетания клавиш"
 
-msgid "Show left to right"
-msgstr ""
-
 msgid "Show lines"
 msgstr "Показать строки"
 
@@ -20797,9 +20794,6 @@ msgstr "Показать ID поставщиков"
 
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
-
-msgid "Show top to bottom"
-msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "Показывать завершающие нули"

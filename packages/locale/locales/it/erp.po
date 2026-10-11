@@ -20768,9 +20768,6 @@ msgstr "Mostra durate"
 msgid "Show keyboard shortcuts"
 msgstr "Mostra i tasti di scelta rapida"
 
-msgid "Show left to right"
-msgstr ""
-
 msgid "Show lines"
 msgstr "Mostra righe"
 
@@ -20797,9 +20794,6 @@ msgstr "Mostra ID Fornitore"
 
 msgid "Show sync options"
 msgstr "Mostra opzioni di sincronizzazione"
-
-msgid "Show top to bottom"
-msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "Mostra Zeri Finali"

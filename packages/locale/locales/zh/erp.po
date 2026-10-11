@@ -20768,9 +20768,6 @@ msgstr "显示时长"
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
 
-msgid "Show left to right"
-msgstr ""
-
 msgid "Show lines"
 msgstr "显示行"
 
@@ -20797,9 +20794,6 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
-
-msgid "Show top to bottom"
-msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"

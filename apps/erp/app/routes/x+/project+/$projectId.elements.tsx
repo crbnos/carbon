@@ -333,6 +333,7 @@ export default function ProjectElementsRoute() {
     requirementStatus,
     verification,
     descriptions,
+    commentCounts,
     layout,
     type,
     views,
@@ -625,13 +626,12 @@ export default function ProjectElementsRoute() {
           ) : layout === "tree" ? (
             <ElementGraph
               projectId={projectId}
-              elements={
-                type
-                  ? elements.filter((element) => element.type === type)
-                  : elements
-              }
+              projectName={routeData?.project?.name ?? ""}
+              elements={elements}
+              type={type}
               links={links}
               requirementStatus={requirementStatus}
+              commentCounts={commentCounts}
               canUpdate={layoutProps.canUpdate}
             />
           ) : layout === "reader" ? (

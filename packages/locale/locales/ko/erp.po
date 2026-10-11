@@ -20768,9 +20768,6 @@ msgstr "소요 시간 표시"
 msgid "Show keyboard shortcuts"
 msgstr "키보드 단축키 표시"
 
-msgid "Show left to right"
-msgstr ""
-
 msgid "Show lines"
 msgstr "라인 표시"
 
@@ -20797,9 +20794,6 @@ msgstr "공급업체 ID 표시"
 
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
-
-msgid "Show top to bottom"
-msgstr ""
 
 msgid "Show Trailing Zeros"
 msgstr "후행 0 표시"
