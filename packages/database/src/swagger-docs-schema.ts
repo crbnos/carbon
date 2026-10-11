@@ -11742,6 +11742,195 @@ export default {
         tags: ["tableView"]
       }
     },
+    "/indirectPoolAccount": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.dimensionValueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/indirectPoolAccount"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["indirectPoolAccount"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.indirectPoolAccount"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["indirectPoolAccount"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.dimensionValueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectPoolAccount"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.dimensionValueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPoolAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.indirectPoolAccount"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectPoolAccount"]
+      }
+    },
     "/documentLabel": {
       get: {
         parameters: [
@@ -25794,6 +25983,177 @@ export default {
         tags: ["salesInvoiceLocations"]
       }
     },
+    "/customerContractRateCeiling": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.ceilingRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/customerContractRateCeiling"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["customerContractRateCeiling"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.customerContractRateCeiling"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["customerContractRateCeiling"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.ceilingRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerContractRateCeiling"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.ceilingRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractRateCeiling.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.customerContractRateCeiling"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerContractRateCeiling"]
+      }
+    },
     "/itemLedger": {
       get: {
         parameters: [
@@ -33363,6 +33723,240 @@ export default {
         tags: ["serviceVisit"]
       }
     },
+    "/indirectRateRun": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.ratesComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.billingComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenRowCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.billableItemCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/indirectRateRun"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["indirectRateRun"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.indirectRateRun"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["indirectRateRun"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.ratesComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.billingComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenRowCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.billableItemCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectRateRun"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.accountingPeriodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.ratesComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.billingComputedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.burdenRowCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.billableItemCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRateRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.indirectRateRun"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectRateRun"]
+      }
+    },
     "/jobOperationTool": {
       get: {
         parameters: [
@@ -37684,6 +38278,15 @@ export default {
             $ref: "#/parameters/rowFilter.projectLedger.coverageReason"
           },
           {
+            $ref: "#/parameters/rowFilter.projectLedger.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.indirectRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.burdenFiscalYear"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -37815,6 +38418,15 @@ export default {
             $ref: "#/parameters/rowFilter.projectLedger.coverageReason"
           },
           {
+            $ref: "#/parameters/rowFilter.projectLedger.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.indirectRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.burdenFiscalYear"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -37898,6 +38510,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectLedger.coverageReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.indirectRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.burdenFiscalYear"
           },
           {
             $ref: "#/parameters/body.projectLedger"
@@ -58011,6 +58632,213 @@ export default {
         tags: ["purchaseInvoiceLine"]
       }
     },
+    "/indirectExpenseStatement": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.lineType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.dimensionValueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.sourcePoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.unallowableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/indirectExpenseStatement"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["indirectExpenseStatement"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.indirectExpenseStatement"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["indirectExpenseStatement"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.lineType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.dimensionValueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.sourcePoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.unallowableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectExpenseStatement"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.lineType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.dimensionValueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.sourcePoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.unallowableAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectExpenseStatement.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.indirectExpenseStatement"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectExpenseStatement"]
+      }
+    },
     "/materialForm": {
       get: {
         parameters: [
@@ -70938,6 +71766,222 @@ export default {
         tags: ["maintenanceDispatchComment"]
       }
     },
+    "/indirectPool": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.poolType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.baseType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.appliedAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.appliesToProjects"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.offsetAbsorbedOverhead"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/indirectPool"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["indirectPool"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.indirectPool"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["indirectPool"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.poolType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.baseType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.appliedAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.appliesToProjects"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.offsetAbsorbedOverhead"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectPool"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.poolType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.baseType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.appliedAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.appliesToProjects"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.offsetAbsorbedOverhead"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectPool.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.indirectPool"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectPool"]
+      }
+    },
     "/salesOrderLines": {
       get: {
         parameters: [
@@ -71890,6 +72934,21 @@ export default {
             $ref: "#/parameters/rowFilter.projectBillableItem.voidedSalesInvoiceId"
           },
           {
+            $ref: "#/parameters/rowFilter.projectBillableItem.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.burdenRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.burdenBase"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.postingDate"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -72012,6 +73071,21 @@ export default {
             $ref: "#/parameters/rowFilter.projectBillableItem.voidedSalesInvoiceId"
           },
           {
+            $ref: "#/parameters/rowFilter.projectBillableItem.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.burdenRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.burdenBase"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.postingDate"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -72086,6 +73160,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectBillableItem.voidedSalesInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.burdenRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.burdenBase"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectBillableItem.postingDate"
           },
           {
             $ref: "#/parameters/body.projectBillableItem"
@@ -97152,6 +98241,231 @@ export default {
         tags: ["note"]
       }
     },
+    "/indirectRate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.rateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.periodRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.ytdRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.poolCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.unallowableCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.baseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/indirectRate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["indirectRate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.indirectRate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["indirectRate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.rateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.periodRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.ytdRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.poolCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.unallowableCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.baseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectRate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.indirectPoolId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.fiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.periodNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.rateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.periodRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.ytdRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.poolCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.unallowableCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.baseAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.indirectRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.indirectRate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["indirectRate"]
+      }
+    },
     "/passkeyCredential": {
       get: {
         parameters: [
@@ -109351,6 +110665,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.burdenRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -109641,6 +110961,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.burdenRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -109883,6 +111209,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.burdenRateType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -114624,6 +115956,74 @@ export default {
           }
         },
         tags: ["(rpc) xid"]
+      }
+    },
+    "/rpc/get_project_burden_summary": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_project_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_project_burden_summary"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_project_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_project_id", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_project_burden_summary"]
       }
     },
     "/rpc/get_method_tree": {
@@ -131005,7 +132405,8 @@ export default {
             "Timesheet",
             "Project Expense",
             "Service Order",
-            "Project Transfer"
+            "Project Transfer",
+            "Burden"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -131147,6 +132548,78 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    indirectPoolAccount: {
+      required: [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "accountId",
+        "role",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ipa'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        indirectPoolId: {
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        dimensionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `dimension.id`.<fk table='dimension' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        dimensionValueId: {
+          format: "text",
+          type: "string"
+        },
+        role: {
+          enum: ["Cost", "Base"],
+          format: 'public."indirectPoolAccountRole"',
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -137966,6 +139439,65 @@ export default {
       },
       type: "object"
     },
+    customerContractRateCeiling: {
+      required: [
+        "id",
+        "companyId",
+        "customerContractLineId",
+        "indirectPoolId",
+        "ceilingRate",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('crc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerContractLineId: {
+          format: "text",
+          type: "string"
+        },
+        indirectPoolId: {
+          format: "text",
+          type: "string"
+        },
+        ceilingRate: {
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     itemLedger: {
       required: [
         "id",
@@ -141544,6 +143076,100 @@ export default {
       },
       type: "object"
     },
+    indirectRateRun: {
+      required: [
+        "id",
+        "companyId",
+        "accountingPeriodId",
+        "fiscalYear",
+        "periodNumber",
+        "burdenRowCount",
+        "billableItemCount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('irr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        accountingPeriodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `accountingPeriod.id`.<fk table='accountingPeriod' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        fiscalYear: {
+          format: "integer",
+          type: "integer"
+        },
+        periodNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        burdenRateType: {
+          enum: ["Provisional", "Target", "Actual", "Final"],
+          format: 'public."indirectRateType"',
+          type: "string"
+        },
+        ratesComputedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        burdenComputedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        billingComputedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        burdenRowCount: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        billableItemCount: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        error: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     jobOperationTool: {
       required: [
         "id",
@@ -143590,6 +145216,19 @@ export default {
         coverageReason: {
           format: "text",
           type: "string"
+        },
+        indirectPoolId: {
+          format: "text",
+          type: "string"
+        },
+        indirectRateType: {
+          enum: ["Provisional", "Target", "Actual", "Final"],
+          format: 'public."indirectRateType"',
+          type: "string"
+        },
+        burdenFiscalYear: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -144870,7 +146509,8 @@ export default {
             "Timesheet",
             "Project Expense",
             "Service Order",
-            "Project Transfer"
+            "Project Transfer",
+            "Burden"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -145753,7 +147393,8 @@ export default {
             "Timesheet",
             "Project Expense",
             "Service Order",
-            "Project Transfer"
+            "Project Transfer",
+            "Burden"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -152912,6 +154553,85 @@ export default {
       },
       type: "object"
     },
+    indirectExpenseStatement: {
+      required: [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "fiscalYear",
+        "periodNumber",
+        "lineType",
+        "amount",
+        "unallowableAmount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ies'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        indirectPoolId: {
+          format: "text",
+          type: "string"
+        },
+        fiscalYear: {
+          format: "integer",
+          type: "integer"
+        },
+        periodNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        lineType: {
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        dimensionValueId: {
+          format: "text",
+          type: "string"
+        },
+        sourcePoolId: {
+          format: "text",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        unallowableAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     materialForm: {
       required: ["id", "name", "createdBy", "createdAt", "code"],
       properties: {
@@ -158605,6 +160325,109 @@ export default {
       },
       type: "object"
     },
+    indirectPool: {
+      required: [
+        "id",
+        "companyId",
+        "name",
+        "poolType",
+        "sequence",
+        "baseType",
+        "appliesToProjects",
+        "offsetAbsorbedOverhead",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ipl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        poolType: {
+          enum: [
+            "Fringe",
+            "Overhead",
+            "Material Handling",
+            "G&A",
+            "Service Center"
+          ],
+          format: 'public."indirectPoolType"',
+          type: "string"
+        },
+        sequence: {
+          format: "integer",
+          type: "integer"
+        },
+        baseType: {
+          enum: [
+            "Total Labor Dollars",
+            "Direct Labor Dollars",
+            "Direct Labor Hours",
+            "Direct Material Dollars",
+            "Total Cost Input",
+            "Value Added"
+          ],
+          format: 'public."indirectBaseType"',
+          type: "string"
+        },
+        appliedAccountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        appliesToProjects: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        offsetAbsorbedOverhead: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     salesOrderLines: {
       properties: {
         id: {
@@ -159110,7 +160933,6 @@ export default {
         "id",
         "companyId",
         "projectId",
-        "projectLedgerId",
         "description",
         "quantity",
         "unitPrice",
@@ -159218,6 +161040,26 @@ export default {
         },
         voidedSalesInvoiceId: {
           format: "text",
+          type: "string"
+        },
+        indirectPoolId: {
+          format: "text",
+          type: "string"
+        },
+        fiscalYear: {
+          format: "integer",
+          type: "integer"
+        },
+        burdenRate: {
+          format: "numeric",
+          type: "number"
+        },
+        burdenBase: {
+          format: "numeric",
+          type: "number"
+        },
+        postingDate: {
+          format: "date",
           type: "string"
         }
       },
@@ -161109,7 +162951,8 @@ export default {
             "Timesheet",
             "Project Expense",
             "Service Order",
-            "Project Transfer"
+            "Project Transfer",
+            "Burden"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -161236,7 +163079,8 @@ export default {
             "Timesheet",
             "Project Expense",
             "Service Order",
-            "Project Transfer"
+            "Project Transfer",
+            "Burden"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -161320,7 +163164,8 @@ export default {
             "Timesheet",
             "Project Expense",
             "Service Order",
-            "Project Transfer"
+            "Project Transfer",
+            "Burden"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -171256,6 +173101,92 @@ export default {
       },
       type: "object"
     },
+    indirectRate: {
+      required: [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "fiscalYear",
+        "periodNumber",
+        "rateType",
+        "ytdRate",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('irt'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        indirectPoolId: {
+          format: "text",
+          type: "string"
+        },
+        fiscalYear: {
+          format: "integer",
+          type: "integer"
+        },
+        periodNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        rateType: {
+          enum: ["Provisional", "Target", "Actual", "Final"],
+          format: 'public."indirectRateType"',
+          type: "string"
+        },
+        periodRate: {
+          format: "numeric",
+          type: "number"
+        },
+        ytdRate: {
+          format: "numeric",
+          type: "number"
+        },
+        poolCost: {
+          format: "numeric",
+          type: "number"
+        },
+        unallowableCost: {
+          format: "numeric",
+          type: "number"
+        },
+        baseAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     passkeyCredential: {
       required: [
         "id",
@@ -177363,7 +179294,9 @@ export default {
         "timekeepingControls",
         "timesheetEntryWindowDays",
         "timesheetTimecardCheck",
-        "standardWeeklyHours"
+        "standardWeeklyHours",
+        "burdenRateType",
+        "postAppliedBurden"
       ],
       properties: {
         id: {
@@ -177781,6 +179714,17 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        burdenRateType: {
+          default: "Provisional",
+          enum: ["Provisional", "Target", "Actual", "Final"],
+          format: 'public."indirectRateType"',
+          type: "string"
+        },
+        postAppliedBurden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -184639,6 +186583,81 @@ export default {
     },
     "rowFilter.tableView.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.indirectPoolAccount": {
+      name: "indirectPoolAccount",
+      description: "indirectPoolAccount",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/indirectPoolAccount"
+      }
+    },
+    "rowFilter.indirectPoolAccount.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.indirectPoolId": {
+      name: "indirectPoolId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.dimensionId": {
+      name: "dimensionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.dimensionValueId": {
+      name: "dimensionValueId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.role": {
+      name: "role",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPoolAccount.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -192373,6 +194392,69 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.customerContractRateCeiling": {
+      name: "customerContractRateCeiling",
+      description: "customerContractRateCeiling",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/customerContractRateCeiling"
+      }
+    },
+    "rowFilter.customerContractRateCeiling.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRateCeiling.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRateCeiling.customerContractLineId": {
+      name: "customerContractLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRateCeiling.indirectPoolId": {
+      name: "indirectPoolId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRateCeiling.ceilingRate": {
+      name: "ceilingRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRateCeiling.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRateCeiling.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRateCeiling.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractRateCeiling.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itemLedger": {
       name: "itemLedger",
       description: "itemLedger",
@@ -196356,6 +198438,111 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.indirectRateRun": {
+      name: "indirectRateRun",
+      description: "indirectRateRun",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/indirectRateRun"
+      }
+    },
+    "rowFilter.indirectRateRun.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.accountingPeriodId": {
+      name: "accountingPeriodId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.fiscalYear": {
+      name: "fiscalYear",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.periodNumber": {
+      name: "periodNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.burdenRateType": {
+      name: "burdenRateType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.ratesComputedAt": {
+      name: "ratesComputedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.burdenComputedAt": {
+      name: "burdenComputedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.billingComputedAt": {
+      name: "billingComputedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.burdenRowCount": {
+      name: "burdenRowCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.billableItemCount": {
+      name: "billableItemCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.error": {
+      name: "error",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRateRun.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.jobOperationTool": {
       name: "jobOperationTool",
       description: "jobOperationTool",
@@ -198652,6 +200839,24 @@ export default {
     },
     "rowFilter.projectLedger.coverageReason": {
       name: "coverageReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.indirectPoolId": {
+      name: "indirectPoolId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.indirectRateType": {
+      name: "indirectRateType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.burdenFiscalYear": {
+      name: "burdenFiscalYear",
       required: false,
       in: "query",
       type: "string"
@@ -208809,6 +211014,93 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.indirectExpenseStatement": {
+      name: "indirectExpenseStatement",
+      description: "indirectExpenseStatement",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/indirectExpenseStatement"
+      }
+    },
+    "rowFilter.indirectExpenseStatement.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.indirectPoolId": {
+      name: "indirectPoolId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.fiscalYear": {
+      name: "fiscalYear",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.periodNumber": {
+      name: "periodNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.lineType": {
+      name: "lineType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.dimensionValueId": {
+      name: "dimensionValueId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.sourcePoolId": {
+      name: "sourcePoolId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.unallowableAmount": {
+      name: "unallowableAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectExpenseStatement.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.materialForm": {
       name: "materialForm",
       description: "materialForm",
@@ -215198,6 +217490,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.indirectPool": {
+      name: "indirectPool",
+      description: "indirectPool",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/indirectPool"
+      }
+    },
+    "rowFilter.indirectPool.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.poolType": {
+      name: "poolType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.sequence": {
+      name: "sequence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.baseType": {
+      name: "baseType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.appliedAccountId": {
+      name: "appliedAccountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.appliesToProjects": {
+      name: "appliesToProjects",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.offsetAbsorbedOverhead": {
+      name: "offsetAbsorbedOverhead",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectPool.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesOrderLines": {
       name: "salesOrderLines",
       description: "salesOrderLines",
@@ -215944,6 +218329,36 @@ export default {
     },
     "rowFilter.projectBillableItem.voidedSalesInvoiceId": {
       name: "voidedSalesInvoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBillableItem.indirectPoolId": {
+      name: "indirectPoolId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBillableItem.fiscalYear": {
+      name: "fiscalYear",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBillableItem.burdenRate": {
+      name: "burdenRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBillableItem.burdenBase": {
+      name: "burdenBase",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectBillableItem.postingDate": {
+      name: "postingDate",
       required: false,
       in: "query",
       type: "string"
@@ -229361,6 +231776,105 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.indirectRate": {
+      name: "indirectRate",
+      description: "indirectRate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/indirectRate"
+      }
+    },
+    "rowFilter.indirectRate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.indirectPoolId": {
+      name: "indirectPoolId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.fiscalYear": {
+      name: "fiscalYear",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.periodNumber": {
+      name: "periodNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.rateType": {
+      name: "rateType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.periodRate": {
+      name: "periodRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.ytdRate": {
+      name: "ytdRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.poolCost": {
+      name: "poolCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.unallowableCost": {
+      name: "unallowableCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.baseAmount": {
+      name: "baseAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.indirectRate.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.passkeyCredential": {
       name: "passkeyCredential",
       description: "passkeyCredential",
@@ -236553,6 +239067,18 @@ export default {
     },
     "rowFilter.companySettings.accountingActivatedBy": {
       name: "accountingActivatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.burdenRateType": {
+      name: "burdenRateType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.postAppliedBurden": {
+      name: "postAppliedBurden",
       required: false,
       in: "query",
       type: "string"

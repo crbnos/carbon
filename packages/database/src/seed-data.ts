@@ -2388,6 +2388,16 @@ export const periodCloseTaskDefinitions = [
     isSystem: true
   },
   {
+    name: "Compute burden for the period",
+    taskType: "Auto",
+    autoCheckKey: "burden-computed",
+    sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
     name: "Match & eliminate intercompany transactions",
     taskType: "Auto",
     autoCheckKey: "unmatched-ic",

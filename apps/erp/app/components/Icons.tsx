@@ -650,6 +650,8 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuHandCoins className={className} />;
     case "Project Transfer":
       return <LuArrowLeftRight className={className} />;
+    case "Burden":
+      return <LuFolderKanban className={className} />;
     case "Service Order":
       return <LuHardHat className={className} />;
     case "Asset Depreciation":

@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261011195556",
+  "schemaVersion": "20261011204730",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-11T19:59:40.475Z",
+  "exportedAt": "2026-10-11T20:54:25.435Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -938,6 +938,105 @@
         "collection",
         "payload",
         "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "indirectPool",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "poolType",
+        "sequence",
+        "baseType",
+        "appliedAccountId",
+        "appliesToProjects",
+        "offsetAbsorbedOverhead",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "indirectExpenseStatement",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "fiscalYear",
+        "periodNumber",
+        "lineType",
+        "accountId",
+        "dimensionValueId",
+        "sourcePoolId",
+        "amount",
+        "unallowableAmount",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "indirectPoolAccount",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "accountId",
+        "dimensionId",
+        "dimensionValueId",
+        "role",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "indirectRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "fiscalYear",
+        "periodNumber",
+        "rateType",
+        "periodRate",
+        "ytdRate",
+        "poolCost",
+        "unallowableCost",
+        "baseAmount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "indirectRateRun",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "accountingPeriodId",
+        "fiscalYear",
+        "periodNumber",
+        "burdenRateType",
+        "ratesComputedAt",
+        "burdenComputedAt",
+        "billingComputedAt",
+        "burdenRowCount",
+        "billableItemCount",
+        "error",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -2755,7 +2854,9 @@
         "standardWeeklyHours",
         "accountingCutoverDate",
         "accountingActivatedAt",
-        "accountingActivatedBy"
+        "accountingActivatedBy",
+        "burdenRateType",
+        "postAppliedBurden"
       ]
     },
     {
@@ -4740,6 +4841,21 @@
       ]
     },
     {
+      "name": "customerContractRateCeiling",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractLineId",
+        "indirectPoolId",
+        "ceilingRate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "customerContractRevenue",
       "rows": 0,
       "columns": [
@@ -6140,7 +6256,10 @@
         "createdBy",
         "createdAt",
         "coverage",
-        "coverageReason"
+        "coverageReason",
+        "indirectPoolId",
+        "indirectRateType",
+        "burdenFiscalYear"
       ]
     },
     {
@@ -6627,7 +6746,12 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "voidedSalesInvoiceId"
+        "voidedSalesInvoiceId",
+        "indirectPoolId",
+        "fiscalYear",
+        "burdenRate",
+        "burdenBase",
+        "postingDate"
       ]
     },
     {

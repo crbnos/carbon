@@ -8162,6 +8162,7 @@ export type Database = {
           assetTaxRate: number | null
           autoSelectMaterialWithoutPickingList: boolean
           autoStartOperationTimer: boolean
+          burdenRateType: Database["public"]["Enums"]["indirectRateType"]
           certificationTextExempt: string | null
           certificationTextNonExempt: string | null
           consoleEnabled: boolean
@@ -8194,6 +8195,7 @@ export type Database = {
           operationsDispatchNotificationGroup: string[] | null
           otherDispatchNotificationGroup: string[] | null
           plmReleaseControl: string
+          postAppliedBurden: boolean
           printing: Json | null
           productLabelSize: string | null
           purchasePriceUpdateTiming: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
@@ -8241,6 +8243,7 @@ export type Database = {
           assetTaxRate?: number | null
           autoSelectMaterialWithoutPickingList?: boolean
           autoStartOperationTimer?: boolean
+          burdenRateType?: Database["public"]["Enums"]["indirectRateType"]
           certificationTextExempt?: string | null
           certificationTextNonExempt?: string | null
           consoleEnabled?: boolean
@@ -8273,6 +8276,7 @@ export type Database = {
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
+          postAppliedBurden?: boolean
           printing?: Json | null
           productLabelSize?: string | null
           purchasePriceUpdateTiming?: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
@@ -8320,6 +8324,7 @@ export type Database = {
           assetTaxRate?: number | null
           autoSelectMaterialWithoutPickingList?: boolean
           autoStartOperationTimer?: boolean
+          burdenRateType?: Database["public"]["Enums"]["indirectRateType"]
           certificationTextExempt?: string | null
           certificationTextNonExempt?: string | null
           consoleEnabled?: boolean
@@ -8352,6 +8357,7 @@ export type Database = {
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
+          postAppliedBurden?: boolean
           printing?: Json | null
           productLabelSize?: string | null
           purchasePriceUpdateTiming?: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
@@ -13074,6 +13080,155 @@ export type Database = {
           },
           {
             foreignKeyName: "customerContractLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      customerContractRateCeiling: {
+        Row: {
+          ceilingRate: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractLineId: string
+          id: string
+          indirectPoolId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          ceilingRate: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractLineId: string
+          id?: string
+          indirectPoolId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          ceilingRate?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractLineId?: string
+          id?: string
+          indirectPoolId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractRateCeiling_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_line_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_pool_fkey"
+            columns: ["indirectPoolId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "indirectPool"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractRateCeiling_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -22489,6 +22644,813 @@ export type Database = {
           },
           {
             foreignKeyName: "implementationRow_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      indirectExpenseStatement: {
+        Row: {
+          accountId: string | null
+          amount: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          dimensionValueId: string | null
+          fiscalYear: number
+          id: string
+          indirectPoolId: string
+          lineType: string
+          periodNumber: number
+          sourcePoolId: string | null
+          unallowableAmount: number
+        }
+        Insert: {
+          accountId?: string | null
+          amount: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          dimensionValueId?: string | null
+          fiscalYear: number
+          id?: string
+          indirectPoolId: string
+          lineType: string
+          periodNumber: number
+          sourcePoolId?: string | null
+          unallowableAmount?: number
+        }
+        Update: {
+          accountId?: string | null
+          amount?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          dimensionValueId?: string | null
+          fiscalYear?: number
+          id?: string
+          indirectPoolId?: string
+          lineType?: string
+          periodNumber?: number
+          sourcePoolId?: string | null
+          unallowableAmount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indirectExpenseStatement_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_pool_fkey"
+            columns: ["indirectPoolId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "indirectPool"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "indirectExpenseStatement_source_fkey"
+            columns: ["sourcePoolId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "indirectPool"
+            referencedColumns: ["id", "companyId"]
+          }
+        ]
+      }
+      indirectPool: {
+        Row: {
+          active: boolean
+          appliedAccountId: string | null
+          appliesToProjects: boolean
+          baseType: Database["public"]["Enums"]["indirectBaseType"]
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          name: string
+          offsetAbsorbedOverhead: boolean
+          poolType: Database["public"]["Enums"]["indirectPoolType"]
+          sequence: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          appliedAccountId?: string | null
+          appliesToProjects?: boolean
+          baseType: Database["public"]["Enums"]["indirectBaseType"]
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          name: string
+          offsetAbsorbedOverhead?: boolean
+          poolType: Database["public"]["Enums"]["indirectPoolType"]
+          sequence: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          appliedAccountId?: string | null
+          appliesToProjects?: boolean
+          baseType?: Database["public"]["Enums"]["indirectBaseType"]
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          name?: string
+          offsetAbsorbedOverhead?: boolean
+          poolType?: Database["public"]["Enums"]["indirectPoolType"]
+          sequence?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indirectPool_appliedAccountId_fkey"
+            columns: ["appliedAccountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_appliedAccountId_fkey"
+            columns: ["appliedAccountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectPool_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectPool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "indirectPool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPool_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      indirectPoolAccount: {
+        Row: {
+          accountId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          dimensionId: string | null
+          dimensionValueId: string | null
+          id: string
+          indirectPoolId: string
+          role: Database["public"]["Enums"]["indirectPoolAccountRole"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          dimensionId?: string | null
+          dimensionValueId?: string | null
+          id?: string
+          indirectPoolId: string
+          role: Database["public"]["Enums"]["indirectPoolAccountRole"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          dimensionId?: string | null
+          dimensionValueId?: string | null
+          id?: string
+          indirectPoolId?: string
+          role?: Database["public"]["Enums"]["indirectPoolAccountRole"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indirectPoolAccount_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "dimension"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "dimensionValues"
+            referencedColumns: ["dimensionId"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_pool_fkey"
+            columns: ["indirectPoolId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "indirectPool"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectPoolAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      indirectRate: {
+        Row: {
+          baseAmount: number | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          fiscalYear: number
+          id: string
+          indirectPoolId: string
+          periodNumber: number
+          periodRate: number | null
+          poolCost: number | null
+          rateType: Database["public"]["Enums"]["indirectRateType"]
+          unallowableCost: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+          ytdRate: number
+        }
+        Insert: {
+          baseAmount?: number | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          fiscalYear: number
+          id?: string
+          indirectPoolId: string
+          periodNumber: number
+          periodRate?: number | null
+          poolCost?: number | null
+          rateType: Database["public"]["Enums"]["indirectRateType"]
+          unallowableCost?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          ytdRate: number
+        }
+        Update: {
+          baseAmount?: number | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          fiscalYear?: number
+          id?: string
+          indirectPoolId?: string
+          periodNumber?: number
+          periodRate?: number | null
+          poolCost?: number | null
+          rateType?: Database["public"]["Enums"]["indirectRateType"]
+          unallowableCost?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          ytdRate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indirectRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "indirectRate_pool_fkey"
+            columns: ["indirectPoolId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "indirectPool"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "indirectRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      indirectRateRun: {
+        Row: {
+          accountingPeriodId: string
+          billableItemCount: number
+          billingComputedAt: string | null
+          burdenComputedAt: string | null
+          burdenRateType: Database["public"]["Enums"]["indirectRateType"] | null
+          burdenRowCount: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          error: string | null
+          fiscalYear: number
+          id: string
+          periodNumber: number
+          ratesComputedAt: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountingPeriodId: string
+          billableItemCount?: number
+          billingComputedAt?: string | null
+          burdenComputedAt?: string | null
+          burdenRateType?:
+            | Database["public"]["Enums"]["indirectRateType"]
+            | null
+          burdenRowCount?: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          error?: string | null
+          fiscalYear: number
+          id?: string
+          periodNumber: number
+          ratesComputedAt?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountingPeriodId?: string
+          billableItemCount?: number
+          billingComputedAt?: string | null
+          burdenComputedAt?: string | null
+          burdenRateType?:
+            | Database["public"]["Enums"]["indirectRateType"]
+            | null
+          burdenRowCount?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          error?: string | null
+          fiscalYear?: number
+          id?: string
+          periodNumber?: number
+          ratesComputedAt?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indirectRateRun_accountingPeriodId_fkey"
+            columns: ["accountingPeriodId"]
+            isOneToOne: false
+            referencedRelation: "accountingPeriod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indirectRateRun_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -47224,17 +48186,22 @@ export type Database = {
       projectBillableItem: {
         Row: {
           amount: number
+          burdenBase: number | null
+          burdenRate: number | null
           companyId: string
           coverage: Database["public"]["Enums"]["serviceCoverage"] | null
           createdAt: string
           createdBy: string
           customerContractLineId: string | null
           description: string
+          fiscalYear: number | null
           id: string
+          indirectPoolId: string | null
           itemId: string | null
+          postingDate: string | null
           projectElementId: string | null
           projectId: string
-          projectLedgerId: string
+          projectLedgerId: string | null
           quantity: number
           reversalOfId: string | null
           salesInvoiceLineId: string | null
@@ -47247,17 +48214,22 @@ export type Database = {
         }
         Insert: {
           amount: number
+          burdenBase?: number | null
+          burdenRate?: number | null
           companyId: string
           coverage?: Database["public"]["Enums"]["serviceCoverage"] | null
           createdAt?: string
           createdBy: string
           customerContractLineId?: string | null
           description: string
+          fiscalYear?: number | null
           id?: string
+          indirectPoolId?: string | null
           itemId?: string | null
+          postingDate?: string | null
           projectElementId?: string | null
           projectId: string
-          projectLedgerId: string
+          projectLedgerId?: string | null
           quantity: number
           reversalOfId?: string | null
           salesInvoiceLineId?: string | null
@@ -47270,17 +48242,22 @@ export type Database = {
         }
         Update: {
           amount?: number
+          burdenBase?: number | null
+          burdenRate?: number | null
           companyId?: string
           coverage?: Database["public"]["Enums"]["serviceCoverage"] | null
           createdAt?: string
           createdBy?: string
           customerContractLineId?: string | null
           description?: string
+          fiscalYear?: number | null
           id?: string
+          indirectPoolId?: string | null
           itemId?: string | null
+          postingDate?: string | null
           projectElementId?: string | null
           projectId?: string
-          projectLedgerId?: string
+          projectLedgerId?: string | null
           quantity?: number
           reversalOfId?: string | null
           salesInvoiceLineId?: string | null
@@ -47430,6 +48407,13 @@ export type Database = {
             columns: ["projectLedgerId", "companyId"]
             isOneToOne: false
             referencedRelation: "projectLedger"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "projectBillableItem_pool_fkey"
+            columns: ["indirectPoolId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "indirectPool"
             referencedColumns: ["id", "companyId"]
           },
           {
@@ -50312,6 +51296,7 @@ export type Database = {
       projectLedger: {
         Row: {
           amount: number
+          burdenFiscalYear: number | null
           companyId: string
           costType: Database["public"]["Enums"]["projectCostType"]
           coverage: Database["public"]["Enums"]["serviceCoverage"] | null
@@ -50323,6 +51308,10 @@ export type Database = {
           documentType: string
           employeeId: string | null
           id: string
+          indirectPoolId: string | null
+          indirectRateType:
+            | Database["public"]["Enums"]["indirectRateType"]
+            | null
           itemId: string | null
           jobId: string | null
           journalLineId: string | null
@@ -50338,6 +51327,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          burdenFiscalYear?: number | null
           companyId: string
           costType: Database["public"]["Enums"]["projectCostType"]
           coverage?: Database["public"]["Enums"]["serviceCoverage"] | null
@@ -50349,6 +51339,10 @@ export type Database = {
           documentType: string
           employeeId?: string | null
           id?: string
+          indirectPoolId?: string | null
+          indirectRateType?:
+            | Database["public"]["Enums"]["indirectRateType"]
+            | null
           itemId?: string | null
           jobId?: string | null
           journalLineId?: string | null
@@ -50364,6 +51358,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          burdenFiscalYear?: number | null
           companyId?: string
           costType?: Database["public"]["Enums"]["projectCostType"]
           coverage?: Database["public"]["Enums"]["serviceCoverage"] | null
@@ -50375,6 +51370,10 @@ export type Database = {
           documentType?: string
           employeeId?: string | null
           id?: string
+          indirectPoolId?: string | null
+          indirectRateType?:
+            | Database["public"]["Enums"]["indirectRateType"]
+            | null
           itemId?: string | null
           jobId?: string | null
           journalLineId?: string | null
@@ -50458,6 +51457,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projectElement"
             referencedColumns: ["id", "projectId", "companyId"]
+          },
+          {
+            foreignKeyName: "projectLedger_pool_fkey"
+            columns: ["indirectPoolId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "indirectPool"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "projectLedger_project_fkey"
@@ -99628,6 +100634,16 @@ export type Database = {
           week9: number
         }[]
       }
+      get_project_burden_summary: {
+        Args: { p_company_id: string; p_project_id: string }
+        Returns: {
+          amount: number
+          indirectPoolId: string
+          poolName: string
+          projectElementId: string
+          unallowableAmount: number
+        }[]
+      }
       get_project_cost_summary: {
         Args: { p_company_id: string; p_project_id: string }
         Returns: {
@@ -101369,6 +102385,21 @@ export type Database = {
         | "DAP"
         | "DPU"
         | "DDP"
+      indirectBaseType:
+        | "Total Labor Dollars"
+        | "Direct Labor Dollars"
+        | "Direct Labor Hours"
+        | "Direct Material Dollars"
+        | "Total Cost Input"
+        | "Value Added"
+      indirectPoolAccountRole: "Cost" | "Base"
+      indirectPoolType:
+        | "Fringe"
+        | "Overhead"
+        | "Material Handling"
+        | "G&A"
+        | "Service Center"
+      indirectRateType: "Provisional" | "Target" | "Actual" | "Final"
       inspectionDocumentUsage: "Receipt"
       inspectionLevel: "I" | "II" | "III" | "S1" | "S2" | "S3" | "S4"
       inspectionSampleStatusType: "Pending" | "Passed" | "Failed"
@@ -101513,6 +102544,7 @@ export type Database = {
         | "Project Expense"
         | "Service Order"
         | "Project Transfer"
+        | "Burden"
       journalEntryStatus:
         | "Draft"
         | "Posted"
@@ -101554,6 +102586,7 @@ export type Database = {
         | "Project Expense"
         | "Service Order"
         | "Project Transfer"
+        | "Burden"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       lessorClassification: "Rental" | "Sale" | "Financing"
@@ -103052,6 +104085,23 @@ export const Constants = {
         "DPU",
         "DDP",
       ],
+      indirectBaseType: [
+        "Total Labor Dollars",
+        "Direct Labor Dollars",
+        "Direct Labor Hours",
+        "Direct Material Dollars",
+        "Total Cost Input",
+        "Value Added",
+      ],
+      indirectPoolAccountRole: ["Cost", "Base"],
+      indirectPoolType: [
+        "Fringe",
+        "Overhead",
+        "Material Handling",
+        "G&A",
+        "Service Center",
+      ],
+      indirectRateType: ["Provisional", "Target", "Actual", "Final"],
       inspectionDocumentUsage: ["Receipt"],
       inspectionLevel: ["I", "II", "III", "S1", "S2", "S3", "S4"],
       inspectionSampleStatusType: ["Pending", "Passed", "Failed"],
@@ -103206,6 +104256,7 @@ export const Constants = {
         "Project Expense",
         "Service Order",
         "Project Transfer",
+        "Burden",
       ],
       journalEntryStatus: [
         "Draft",
@@ -103249,6 +104300,7 @@ export const Constants = {
         "Project Expense",
         "Service Order",
         "Project Transfer",
+        "Burden",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],

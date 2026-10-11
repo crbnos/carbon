@@ -356,6 +356,8 @@ export const manifest = {
   customerContractLaborRate: company("sales", { read: "sales_view" }),
   customerContractLedgerEntry: company("sales", { read: "sales_view" }),
   customerContractLine: company("sales", { read: "sales_view" }),
+  // Government contracting Phase 5b: a rate ceiling reads like its contract line.
+  customerContractRateCeiling: company("sales", { read: "sales_view" }),
   customerContractRevenue: company("sales", { read: "sales_view" }),
   customerItemPriceOverride: company("sales"),
   customerItemPriceOverrideBreak: company("sales"),
@@ -670,6 +672,21 @@ export const manifest = {
   }),
   implementationHub: company("settings", { update: "employee", column: "id" }),
   implementationRow: policies({ all: inCompany("companyId", "employee") }),
+  // Government contracting Phase 5b. The rate run writes the statement, the
+  // runs and the Actual rates with Kysely; nothing writes them through the API.
+  indirectExpenseStatement: company("accounting", {
+    create: false,
+    update: false,
+    delete: false
+  }),
+  indirectPool: company("accounting"),
+  indirectPoolAccount: company("accounting"),
+  indirectRate: company("accounting"),
+  indirectRateRun: company("accounting", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   industry: policies({ select: authenticated }),
   inspection: company("quality", { read: "quality_view" }),
   inspectionDocument: company("quality"),

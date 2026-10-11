@@ -87,7 +87,7 @@ These correct or add to the spec. Task 21 records them there.
 
 - [x] Task 1: Create the Phase 5b enum migration
 - [x] Task 2: Create the indirect rates tables migration
-- [ ] Task 3: Apply migrations, regenerate types, ship RLS
+- [x] Task 3: Apply migrations, regenerate types, ship RLS
 - [ ] Task 4: Add the feature key and the ee package skeleton
 - [ ] Task 5: Add the pure rate engine
 - [ ] Task 6: Add the pure burden and billing engine
@@ -1301,3 +1301,18 @@ ls .ai/playbooks/government-contracting-phase-5b.md
 ```
 
 **Out of scope:** Phase 5c.
+
+## Execution notes
+
+- Prerequisites: every check prints a line except one. `synthesizeProjectRevenue` lives in `packages/server-functions/src/lib/project-revenue.ts`, not in `project-revenue/index.ts`. Tasks 1–8 do not use it.
+- Tasks 1 and 2: the pre-commit backup check skipped both commits, because the migrations were not applied yet ("your database is 1 (2) migration(s) behind"). The Task 3 commit runs it against the applied schema. Tasks 1 and 2 ran together in a `BEGIN … ROLLBACK` dry run before the Task 2 commit.
+- Task 2:
+  1. Each new table also has an index on `createdBy`, as the table template asks. `indirectExpenseStatement.sourcePoolId` and `customerContractRateCeiling.indirectPoolId` get a composite index with `companyId`, the shape of their foreign keys.
+  2. `projectLedger` and `projectBillableItem` get a partial index on `("indirectPoolId", "companyId")`. The new pool foreign keys have no `ON DELETE` action, so a pool delete would otherwise scan the whole ledger.
+  3. 🛑 Until Task 13 ships the `burden-computed` evaluator, the close checklist shows "Compute burden for the period" as an open required task on this branch's database. A user can skip it.
+- Task 3:
+  1. `customerContractRateCeiling` reads with `sales_view`, not with any employee. Every other contract table reads that way (`customerContractLine`, `customerContractFunding`), so a ceiling is not visible to an employee who cannot see its line.
+  2. `ID_REF_COLUMNS` also lists `indirectExpenseStatement.dimensionValueId`. It holds the same polymorphic dimension value id with no FK as `indirectPoolAccount.dimensionValueId`.
+  3. The new journal source type `Burden` joins `POSTING_POLICY` with `defaultEnabled: false` (Brad's rule for journal types added after the returns types), `journalEntrySourceTypes` in `accounting.models.ts` and `JournalEntrySourceTypeIcon` (the project icon). Without them `@carbon/ee` and `erp` fail the typecheck. The posting-policy test comment names `Burden` with the other off-by-default types.
+  4. The generated RLS migration is `20261011204730_indirect-rates-rls.sql`. `pnpm db:migrate` ran a second time to record it. `authz check` reports no drift.
+  5. The regenerated types change the MCP digest (`tool-manifest.digest.json`); the commit carries it.

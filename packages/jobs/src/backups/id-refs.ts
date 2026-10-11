@@ -63,6 +63,8 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   ],
   externalIntegrationMapping: ["entityId"],
   externalLink: ["documentId"],
+  indirectExpenseStatement: ["dimensionValueId"],
+  indirectPoolAccount: ["dimensionValueId"],
   inspection: ["sourceDocumentId", "sourceDocumentLineId"],
   intercompanyEliminationLine: ["accountId", "itemId", "journalLineId"],
   intercompanyTransaction: ["documentId"],

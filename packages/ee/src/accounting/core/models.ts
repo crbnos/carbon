@@ -555,6 +555,14 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // Applied burden (Government Contracting 5b): Dr Project WIP / Cr the
+  // pool's applied account, when the company posts burden to the GL. Off by
+  // default for the same reason as 'Revenue Recognition'.
+  Burden: {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Asset Depreciation": {
     representation: "journal",
     defaultEnabled: true,
