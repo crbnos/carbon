@@ -91,7 +91,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 4: Add the schedule to the baseline snapshot
 - [x] Task 5: Add the ee package skeleton
 - [x] Task 6: Add the pure budget engine
-- [ ] Task 7: Add the pure earned value engine
+- [x] Task 7: Add the pure earned value engine
 - [ ] Task 8: Add `checkBudgetAvailability` and the budget notice
 - [ ] Task 9: Check the budget at PO line save and PO finalize
 - [ ] Task 10: Check the budget at Issue to Project and job charge
@@ -1129,3 +1129,11 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   1. `nearestBudgetedAncestor` reads a budget of 0 as a budget (only null is "no budget"). Both tree walks stop on a parent loop.
   2. `ElementNode` is exported, so Task 8 and the test name the same type.
   3. `pnpm --filter @carbon/ee test -- project-control/compute` runs the whole suite (vitest ignores the filter after `--`). `pnpm exec vitest run src/project-control` in `packages/ee` runs the 5 tests.
+- Task 7:
+  1. `plannedValue` rounds its result with `round()`, as `earnedValue` does. BCWS is money, and Level of Effort copies it into BCWP.
+  2. "With no start or end, return 0" applies to every case except a Milestone work package with budgeted milestones. Its BCWS comes from the milestones' target dates, so it does not need its own dates. A Milestone work package with no budgeted milestone uses the 0/100 rule and needs the dates.
+  3. A linear work package whose end is before its start uses the 0/100 rule, so a bad date pair does not divide by 0 or a negative number.
+  4. `performanceIndexes` rounds CPI and SPI at the internal scale and the money values with `round()`. EAC divides by the exact CPI. A CPI of 0 (BCWP 0 with ACWP) also gives EAC = BAC, so EAC never divides by 0.
+  5. `holdUntilIssued` also leaves out the receipts after `periodEnd`. It returns a `Map` keyed by element id; a receipt with no element has the key null. Each element's amount is rounded once, after the sum.
+  6. `acwpElementFor` takes the `projectCostType` enum. `rollUpControlAccounts` returns the control accounts in the order of their first work package.
+  7. The compute test covers both engines: 13 tests pass (`pnpm exec vitest run src/project-control`).
