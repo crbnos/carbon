@@ -342,6 +342,10 @@ msgstr "{0} ऑपरेशन · {1} टुकड़े"
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
 
+#. placeholder {0}: formatQuantity(Number(burdenRate))
+msgid "{0} per hour"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} समस्याएं — प्रकाशित नहीं"
@@ -3969,6 +3973,9 @@ msgstr "बैंक का नाम"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "बार प्रत्येक सप्ताह के प्रवाह को दिखाते हैं: &lt;0&gt;आपूर्ति&lt;/0&gt; इन्वेंटरी को ऊपर धकेलती है, &lt;1&gt;मांग&lt;/1&gt; इसे नीचे खींचती है। &lt;2&gt;लाइन&lt;/2&gt; आपकी अनुमानित उपलब्ध इन्वेंटरी है — जब यह &lt;3&gt;सुरक्षा स्टॉक&lt;/3&gt; के नीचे गिरती है तो आप जोखिम में हैं, और शून्य से नीचे एक &lt;4&gt;स्टॉकआउट&lt;/4&gt; है।"
+
+msgid "Base"
+msgstr ""
 
 msgid "Base currency"
 msgstr "आधार मुद्रा"
@@ -17777,6 +17784,9 @@ msgstr "नीति"
 
 msgid "Policy & Procedure"
 msgstr "नीति और कार्यविधि"
+
+msgid "Pool"
+msgstr ""
 
 msgid "Portal Link"
 msgstr "पोर्टल लिंक"

@@ -96,7 +96,7 @@ const createServiceOrderInvoice = defineServerFn({
           () =>
             trx
               .selectFrom("projectBillableItem")
-              .innerJoin("projectLedger", (join) =>
+              .leftJoin("projectLedger", (join) =>
                 join
                   .onRef(
                     "projectLedger.id",
@@ -124,7 +124,8 @@ const createServiceOrderInvoice = defineServerFn({
               .where("projectBillableItem.status", "=", "Unbilled")
               .orderBy("projectBillableItem.createdAt")
               .orderBy("projectBillableItem.id")
-              .forUpdate()
+              // OF the item: the ledger is the nullable side of the join.
+              .forUpdate("projectBillableItem")
               .execute(),
           () =>
             trx

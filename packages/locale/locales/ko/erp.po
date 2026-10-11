@@ -342,6 +342,10 @@ msgstr "{0} 작업 · {1} 개"
 msgid "{0} orders"
 msgstr "주문 {0}건"
 
+#. placeholder {0}: formatQuantity(Number(burdenRate))
+msgid "{0} per hour"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0}개 문제 — 게시됨 아님"
@@ -3969,6 +3973,9 @@ msgstr "은행명"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "막대는 각 주의 흐름을 보여줍니다: <0>공급</0>은 재고를 증가시키고, <1>소요량</1>은 감소시킵니다. <2>라인</2>은 예상 현재고입니다 — <3>안전 재고</3> 아래로 내려가면 위험하고, 0 아래는 <4>재고 부족</4>입니다."
+
+msgid "Base"
+msgstr ""
 
 msgid "Base currency"
 msgstr "기준 통화"
@@ -17777,6 +17784,9 @@ msgstr "정책"
 
 msgid "Policy & Procedure"
 msgstr "정책 & 절차서"
+
+msgid "Pool"
+msgstr ""
 
 msgid "Portal Link"
 msgstr "포털 링크"

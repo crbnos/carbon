@@ -14,7 +14,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { EmployeeAvatar, Table } from "~/components";
 import { useLaborCategories } from "~/components/Form";
-import { useDateFormatter, useQuantityFormatter, useRouteData } from "~/hooks";
+import {
+  useDateFormatter,
+  usePercentFormatter,
+  useQuantityFormatter,
+  useRouteData
+} from "~/hooks";
 import type { ProjectCostType } from "~/modules/projects";
 import { getProjectBillingBackup } from "~/modules/sales";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
@@ -25,7 +30,8 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "contract-billing-backup");
 
 /** The backup of one project billing invoice: every billable item it
- *  billed, traced to its ledger row. */
+ *  billed, traced to its ledger row, or to its pool, fiscal year, rate and
+ *  base for a burden item. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "sales"
@@ -69,6 +75,7 @@ export default function ContractBillingBackupRoute() {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
   const formatQuantity = useQuantityFormatter();
+  const percentFormatter = usePercentFormatter();
   const categories = useLaborCategories();
   const [people] = usePeople();
   const routeData = useRouteData<ContractRouteData>(
@@ -99,11 +106,15 @@ export default function ContractBillingBackupRoute() {
       {
         id: "postingDate",
         header: t`Posted`,
-        cell: ({ row }) =>
-          row.original.ledger
-            ? formatDate(row.original.ledger.postingDate)
-            : "—",
-        meta: { exportValue: (row) => row.ledger?.postingDate ?? null }
+        cell: ({ row }) => {
+          const postingDate =
+            row.original.ledger?.postingDate ?? row.original.postingDate;
+          return postingDate ? formatDate(postingDate) : "—";
+        },
+        meta: {
+          exportValue: (row) =>
+            row.ledger?.postingDate ?? row.postingDate ?? null
+        }
       },
       {
         id: "element",
@@ -130,11 +141,58 @@ export default function ContractBillingBackupRoute() {
         cell: ({ row }) =>
           row.original.ledger
             ? costTypeLabels[row.original.ledger.costType]
+            : row.original.pool
+              ? costTypeLabels.Burden
+              : "—",
+        meta: {
+          exportValue: (row) =>
+            row.ledger
+              ? costTypeLabels[row.ledger.costType]
+              : row.pool
+                ? costTypeLabels.Burden
+                : null
+        }
+      },
+      {
+        id: "pool",
+        header: t`Pool`,
+        cell: ({ row }) =>
+          row.original.pool
+            ? `${row.original.pool.name} · FY${row.original.fiscalYear}`
             : "—",
         meta: {
           exportValue: (row) =>
-            row.ledger ? costTypeLabels[row.ledger.costType] : null
+            row.pool ? `${row.pool.name} FY${row.fiscalYear}` : null
         }
+      },
+      {
+        id: "burdenRate",
+        header: t`Rate`,
+        cell: ({ row }) => {
+          const { pool, burdenRate } = row.original;
+          if (!pool || burdenRate === null) return "—";
+          return pool.baseType === "Direct Labor Hours"
+            ? t`${formatQuantity(Number(burdenRate))} per hour`
+            : percentFormatter.format(Number(burdenRate));
+        },
+        meta: { exportValue: (row) => row.burdenRate ?? null }
+      },
+      {
+        id: "burdenBase",
+        header: t`Base`,
+        cell: ({ row }) => {
+          const { pool, burdenBase } = row.original;
+          if (!pool || burdenBase === null) return "—";
+          return pool.baseType === "Direct Labor Hours" ? (
+            formatQuantity(Number(burdenBase))
+          ) : (
+            <ContractMoney
+              value={Number(burdenBase)}
+              currencyCode={currencyCode}
+            />
+          );
+        },
+        meta: { exportValue: (row) => row.burdenBase ?? null }
       },
       {
         id: "employee",
@@ -229,7 +287,15 @@ export default function ContractBillingBackupRoute() {
         }
       }
     ];
-  }, [t, categories, people, currencyCode, formatDate, formatQuantity]);
+  }, [
+    t,
+    categories,
+    people,
+    currencyCode,
+    formatDate,
+    percentFormatter,
+    formatQuantity
+  ]);
 
   return (
     <Table<BackupRow>

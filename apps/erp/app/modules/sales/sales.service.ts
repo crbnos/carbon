@@ -10814,8 +10814,9 @@ export async function getContractProjectBillingInvoices(
 /**
  * The backup of one project billing invoice: every billable item it billed,
  * with the ledger row's posting date, cost type, employee, labor category,
- * hours and document, and the billing element. Reconciles the invoice to the
- * books (DFARS 252.242-7006).
+ * hours and document, and the billing element. A burden item has no ledger
+ * row: it carries its pool, fiscal year, rate and base. Reconciles the
+ * invoice to the books (DFARS 252.242-7006).
  * @mcp read
  */
 export async function getProjectBillingBackup(
@@ -10825,7 +10826,7 @@ export async function getProjectBillingBackup(
   return client
     .from("projectBillableItem")
     .select(
-      "id, description, quantity, unitPrice, amount, customerContractLineId, ledger:projectLedger!projectBillableItem_ledger_fkey(postingDate, costType, documentType, documentId, employeeId, laborCategoryId, quantity), element:projectElement!projectBillableItem_element_fkey(readableId, name), invoiceLine:salesInvoiceLine!projectBillableItem_invoiceLine_fkey!inner(invoiceId)"
+      "id, description, quantity, unitPrice, amount, customerContractLineId, postingDate, fiscalYear, burdenRate, burdenBase, ledger:projectLedger!projectBillableItem_ledger_fkey(postingDate, costType, documentType, documentId, employeeId, laborCategoryId, quantity), pool:indirectPool!projectBillableItem_pool_fkey(name, baseType), element:projectElement!projectBillableItem_element_fkey(readableId, name), invoiceLine:salesInvoiceLine!projectBillableItem_invoiceLine_fkey!inner(invoiceId)"
     )
     .eq("companyId", args.companyId)
     .eq("invoiceLine.invoiceId", args.salesInvoiceId)

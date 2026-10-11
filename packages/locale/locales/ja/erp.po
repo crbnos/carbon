@@ -342,6 +342,10 @@ msgstr "{0} 作業 · {1} 個"
 msgid "{0} orders"
 msgstr "{0}件の注文"
 
+#. placeholder {0}: formatQuantity(Number(burdenRate))
+msgid "{0} per hour"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0}個の問題 — 公開済ではありません"
@@ -3969,6 +3973,9 @@ msgstr "銀行名"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "棒グラフは毎週の流れを表示します：<0>供給</0>は在庫を増加させ、<1>所要量</1>は減少させます。<2>線</2>は予測在庫です。<3>安全在庫</3>を下回る場合はリスク状態であり、ゼロを下回る場合は<4>欠品</4>です。"
+
+msgid "Base"
+msgstr ""
 
 msgid "Base currency"
 msgstr "基本通貨"
@@ -17777,6 +17784,9 @@ msgstr "ポリシー"
 
 msgid "Policy & Procedure"
 msgstr "ポリシーと手順書"
+
+msgid "Pool"
+msgstr ""
 
 msgid "Portal Link"
 msgstr "ポータルリンク"

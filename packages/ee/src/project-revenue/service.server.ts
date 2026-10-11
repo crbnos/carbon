@@ -143,6 +143,8 @@ export async function generateCostPlusItems(
       JOIN "project" p ON p."id" = pl."projectId" AND p."companyId" = pl."companyId"
       WHERE pl."postingDate" <= ${through}::date
         AND pl."unallowable" = false
+        -- Burden bills through computeBurdenBilling (5b decision B5).
+        AND pl."costType" <> 'Burden'
         AND p."costTreatment" = 'Contract'
       ORDER BY pl."postingDate", pl."id"
     `.execute(trx);

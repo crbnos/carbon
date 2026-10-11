@@ -399,3 +399,120 @@ databaseTest(
     }
   }
 );
+
+/**
+ * Burden (Government Contracting 5b) on the September work: a memo Burden
+ * row of 500.00 with no journal line, a burden item of 700.00 dated
+ * 2026-09-30 and one of 300.00 dated 2026-10-31. Burden items have no ledger
+ * row.
+ */
+async function septemberBurden(f: Fixture) {
+  const work = await septemberWork(f);
+  const pool = await f.db
+    .insertInto("indirectPool")
+    .values({
+      name: "Overhead",
+      poolType: "Overhead",
+      sequence: 1,
+      baseType: "Direct Labor Dollars",
+      companyId: f.companyId,
+      createdBy: f.userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  const burdenRow = await f.db
+    .insertInto("projectLedger")
+    .values({
+      companyId: f.companyId,
+      projectId: work.project.projectId,
+      projectElementId: work.project.rootId,
+      postingDate: "2026-09-30",
+      costType: "Burden",
+      documentType: "Indirect Burden",
+      documentId: "burden-run",
+      amount: 500,
+      unallowable: false,
+      indirectPoolId: pool.id,
+      indirectRateType: "Provisional",
+      burdenFiscalYear: 2026,
+      createdBy: f.userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  await f.db
+    .insertInto("projectBillableItem")
+    .values(
+      (
+        [
+          [700, "2026-09-30"],
+          [300, "2026-10-31"]
+        ] as const
+      ).map(([amount, postingDate]) => ({
+        companyId: f.companyId,
+        projectId: work.project.projectId,
+        projectElementId: work.project.rootId,
+        projectLedgerId: null,
+        customerContractLineId: work.lineId,
+        indirectPoolId: pool.id,
+        fiscalYear: 2026,
+        burdenRate: 0.25,
+        burdenBase: amount * 4,
+        postingDate,
+        description: "Overhead FY2026 at 25%",
+        quantity: 1,
+        unitPrice: amount,
+        amount,
+        status: "Unbilled" as const,
+        createdBy: f.userId
+      }))
+    )
+    .execute();
+  return { ...work, burdenRowId: burdenRow.id };
+}
+
+databaseTest(
+  "Right to Invoice counts a burden item by its own posting date",
+  async () => {
+    const f = await projectBillingTestFixture();
+    try {
+      await septemberBurden(f);
+      await propose(f, "2026-09-30");
+
+      // 9,000.00 of items plus the 700.00 burden item of September; the
+      // October burden item waits for October.
+      const month = await f.db
+        .selectFrom("customerContractRevenue")
+        .select(["amount", "earnedToDate"])
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(month.amount)).toBe(9700);
+      expect(Number(month.earnedToDate)).toBe(9700);
+    } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a memo Burden row with no journal line gets no cost relief (5b decision B13)",
+  async () => {
+    const f = await projectBillingTestFixture();
+    try {
+      const { rows, burdenRowId } = await septemberBurden(f);
+      await propose(f, "2026-09-30");
+
+      const relieved = (await reliefs(f)).map((r) => r.projectLedgerId);
+      expect(relieved).not.toContain(burdenRowId);
+      expect(relieved).toEqual(
+        rows
+          .slice(0, 3)
+          .map((row) => row.id)
+          .sort()
+      );
+    } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);

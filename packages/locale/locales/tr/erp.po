@@ -342,6 +342,10 @@ msgstr "{0} işlem · {1} adet"
 msgid "{0} orders"
 msgstr "{0} sipariş"
 
+#. placeholder {0}: formatQuantity(Number(burdenRate))
+msgid "{0} per hour"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} sorun — yayınlanmadı"
@@ -3969,6 +3973,9 @@ msgstr "Banka Adı"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Çubuklar her haftanın akışını gösterir: <0>arz</0> envanteri yukarı iter, <1>talep</1> onu aşağı çeker. <2>Satır</2> tahmini eldeki envanterdir — <3>emniyet stoku</3> altına düştüğünde risk altındasın ve sıfırın altı bir <4>stoksuzluk</4>."
+
+msgid "Base"
+msgstr ""
 
 msgid "Base currency"
 msgstr "Ana para birimi"
@@ -17777,6 +17784,9 @@ msgstr "Politika"
 
 msgid "Policy & Procedure"
 msgstr "Politika ve Prosedür"
+
+msgid "Pool"
+msgstr ""
 
 msgid "Portal Link"
 msgstr "Portal Bağlantısı"

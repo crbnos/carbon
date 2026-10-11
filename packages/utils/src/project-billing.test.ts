@@ -252,6 +252,44 @@ describe("planProjectInvoiceLines", () => {
       { description: "Material", quantity: 1, unitPrice: 220, itemIds: ["m"] }
     ]);
   });
+
+  it("groups 2 burden items of one pool into one line after the cost lines", () => {
+    const burden = (id: string, amount: number) => ({
+      id,
+      costType: "Burden" as const,
+      laborCategoryId: null,
+      laborCategoryName: null,
+      quantity: 1,
+      unitPrice: amount,
+      amount,
+      billingMethod: "Cost Plus" as const,
+      indirectPoolId: "pool-overhead",
+      poolName: "Overhead"
+    });
+    const lines = planProjectInvoiceLines([
+      burden("b1", 2500),
+      {
+        id: "m",
+        costType: "Material",
+        laborCategoryId: null,
+        laborCategoryName: null,
+        quantity: 1,
+        unitPrice: 220,
+        amount: 220,
+        billingMethod: "Cost Plus"
+      },
+      burden("b2", -300)
+    ]);
+    expect(lines).toEqual([
+      { description: "Material", quantity: 1, unitPrice: 220, itemIds: ["m"] },
+      {
+        description: "Indirect costs: Overhead",
+        quantity: 1,
+        unitPrice: 2200,
+        itemIds: ["b1", "b2"]
+      }
+    ]);
+  });
 });
 
 describe("projectInvoiceHold", () => {

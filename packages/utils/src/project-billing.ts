@@ -332,6 +332,9 @@ export type ProjectInvoicePlanItem = {
   unitPrice: number;
   amount: number;
   billingMethod: ContractBillingMethod;
+  /** A burden item (Government Contracting): its pool. Null otherwise. */
+  indirectPoolId?: string | null;
+  poolName?: string | null;
 };
 
 export type ProjectInvoicePlanLine = {
@@ -344,15 +347,16 @@ export type ProjectInvoicePlanLine = {
 /**
  * Groups billable items into invoice lines. Time & Materials labor groups by
  * labor category and unit price (quantity = hours); Cost Plus labor by labor
- * category (quantity 1); every other cost by cost type (quantity 1). One line
- * per rate keeps the invoice total equal to the items' total. A group that
- * nets to 0 hours is quantity 1 at its amount.
+ * category (quantity 1); every other cost by cost type (quantity 1). Burden
+ * items group by pool ("Indirect costs: <pool>", quantity 1), after every
+ * other line. One line per rate keeps the invoice total equal to the items'
+ * total. A group that nets to 0 hours is quantity 1 at its amount.
  */
 export function planProjectInvoiceLines(
   items: ProjectInvoicePlanItem[]
 ): ProjectInvoicePlanLine[] {
   type Group = {
-    kind: "labor" | "other";
+    kind: "labor" | "other" | "burden";
     sortName: string;
     sortPrice: number;
     costOrder: number;
@@ -368,7 +372,25 @@ export function planProjectInvoiceLines(
   for (const item of items) {
     const amount = Number(item.amount);
     const quantity = Number(item.quantity);
-    if (item.costType === "Labor") {
+    if (item.indirectPoolId) {
+      const key = `burden:${item.indirectPoolId}`;
+      const poolName = item.poolName ?? item.indirectPoolId;
+      const group = groups.get(key) ?? {
+        kind: "burden",
+        sortName: poolName,
+        sortPrice: 0,
+        costOrder: 0,
+        hourly: false,
+        description: () => `Indirect costs: ${poolName}`,
+        hours: 0,
+        amount: 0,
+        unitPrice: 0,
+        itemIds: []
+      };
+      group.amount += amount;
+      group.itemIds.push(item.id);
+      groups.set(key, group);
+    } else if (item.costType === "Labor") {
       const name = item.laborCategoryName ?? "Labor";
       const category = item.laborCategoryId ?? "";
       const hourly = item.billingMethod === "Time & Materials";
@@ -413,8 +435,10 @@ export function planProjectInvoiceLines(
     }
   }
 
+  const kindOrder = { labor: 0, other: 1, burden: 2 } as const;
   const ordered = [...groups.values()].sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === "labor" ? -1 : 1;
+    if (a.kind !== b.kind) return kindOrder[a.kind] - kindOrder[b.kind];
+    if (a.kind === "burden") return a.sortName.localeCompare(b.sortName);
     if (a.kind === "labor") {
       const byName = a.sortName.localeCompare(b.sortName);
       return byName !== 0 ? byName : a.sortPrice - b.sortPrice;

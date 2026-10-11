@@ -95,7 +95,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 8: Add `computeIndirectRates`
 - [x] Task 9: Add the `post-project-burden` server function
 - [x] Task 10: Add `computeProjectBurden`, `computeBurdenBilling` and the period run
-- [ ] Task 11: Teach the Phase 4 billing readers about burden
+- [x] Task 11: Teach the Phase 4 billing readers about burden
 - [ ] Task 12: Add the monthly job and the lock trigger
 - [ ] Task 13: Add the close checklist task
 - [ ] Task 14: Add the ICE schedules and the CSV route
@@ -1363,3 +1363,11 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   6. The rate in a burden item description uses `formatPercent`. A Direct Labor Hours pool shows the rate per hour with `formatQuantity` ("<pool> FY<year> at 12.5 per hour").
   7. `runIndirectRatePeriod` and `runFinalTrueUp` catch a thrown error and write it to `indirectRateRun.error`, as a returned error. An `EntitlementError` propagates, so the caller can answer with the upgrade message.
   8. A database test (`compute-project-burden.test.ts`) covers the catch-up (5,000.00 once, then nothing), burden billing (5,400.00 with an 8% fee) and a Final rate (−540.00), plus the 2 refusals (period not Locked, no rate). The `@carbon/ee` suite passes (2,018).
+- Task 11:
+  1. `synthesizeProjectRevenue` lives in `packages/server-functions/src/lib/project-revenue.ts` (see the prerequisites note). Its earned-to-date read now left-joins the ledger and filters on `COALESCE(pl."postingDate", b."postingDate")`. The 2 new tests are in `lib/right-to-invoice.test.ts`, not in `project-revenue/right-to-invoice.test.ts`.
+  2. 3 readers inner-joined `projectLedger`: `create-project-billing-invoices`, `synthesizeProjectRevenue` and `create-service-order-invoice`. All 3 now left-join it. The service order read locks `FOR UPDATE OF "projectBillableItem"`, because Postgres refuses `FOR UPDATE` on the nullable side of an outer join. The ERP readers use PostgREST embeds without `!inner`, which are already left joins.
+  3. The Unbilled item read in `create-project-billing-invoices` also left-joins `indirectPool` for the pool name. A burden item takes the cost type Burden in the plan item.
+  4. `ProjectInvoicePlanItem.indirectPoolId` and `poolName` are optional, so the Time & Materials callers need no change. Burden lines sort by pool name, after every other line.
+  5. The billing backup reader (`getProjectBillingBackup`) also selects the item's `postingDate`, `fiscalYear`, `burdenRate`, `burdenBase` and the pool (`name`, `baseType`). The route shows Pool (with the fiscal year), Rate and Base columns. A Direct Labor Hours pool shows the rate per hour and the base in hours.
+  6. The new UI strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+  7. One full `@carbon/server-functions` run had 1 failed test. The next 2 full runs passed (795), and the failure did not repeat.

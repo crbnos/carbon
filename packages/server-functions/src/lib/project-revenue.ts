@@ -402,9 +402,10 @@ export async function synthesizeProjectRevenue(
   if (openIds.length === 0) return;
   const open = lines.filter((line) => openIds.includes(line.id));
 
+  // A burden item has no ledger row: it counts by its own posting date.
   const earnedRows = await trx
     .selectFrom("projectBillableItem as b")
-    .innerJoin("projectLedger as pl", (join) =>
+    .leftJoin("projectLedger as pl", (join) =>
       join
         .onRef("pl.id", "=", "b.projectLedgerId")
         .onRef("pl.companyId", "=", "b.companyId")
@@ -416,7 +417,11 @@ export async function synthesizeProjectRevenue(
     .where("b.companyId", "=", companyId)
     .where("b.customerContractLineId", "in", openIds)
     .where("b.status", "<>", "Written Off")
-    .where("pl.postingDate", "<=", periodEnd)
+    .where(
+      sql<string>`COALESCE(pl."postingDate", b."postingDate")`,
+      "<=",
+      periodEnd
+    )
     .groupBy("b.customerContractLineId")
     .execute();
   const earned = new Map(

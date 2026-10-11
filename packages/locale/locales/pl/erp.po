@@ -342,6 +342,10 @@ msgstr "{0} operacji · {1} szt."
 msgid "{0} orders"
 msgstr "{0} zamówień"
 
+#. placeholder {0}: formatQuantity(Number(burdenRate))
+msgid "{0} per hour"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} problemów — nie opublikowano"
@@ -3969,6 +3973,9 @@ msgstr "Nazwa banku"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Słupki pokazują przepływ każdego tygodnia: <0>Pokrycie</0> podnosi zapasy, <1>Zapotrzebowanie</1> je obniża. <2>Linia</2> to Twoje prognozowane dostępne zapasy — gdy spadną poniżej <3>Zapasu bezpieczeństwa</3>, jesteś zagrożony, a poniżej zera to <4>Brak zapasu</4>."
+
+msgid "Base"
+msgstr ""
 
 msgid "Base currency"
 msgstr "Waluta bazowa"
@@ -17777,6 +17784,9 @@ msgstr "Polityka"
 
 msgid "Policy & Procedure"
 msgstr "Polityka i procedura"
+
+msgid "Pool"
+msgstr ""
 
 msgid "Portal Link"
 msgstr "Link do portalu"

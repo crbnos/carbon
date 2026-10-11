@@ -342,6 +342,10 @@ msgstr "{0} 道工序 · {1} 件"
 msgid "{0} orders"
 msgstr "{0} 个订单"
 
+#. placeholder {0}: formatQuantity(Number(burdenRate))
+msgid "{0} per hour"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0}个问题——未发布"
@@ -3969,6 +3973,9 @@ msgstr "银行名称"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "柱状图显示每周的流向：<0>供应</0>推高库存，<1>需求</1>拉低库存。<2>线</2>表示您的预计现有库存 — 当它跌破<3>安全库存</3>时，您面临风险；跌破零则是<4>缺货</4>。"
+
+msgid "Base"
+msgstr ""
 
 msgid "Base currency"
 msgstr "基础货币"
@@ -17777,6 +17784,9 @@ msgstr "政策"
 
 msgid "Policy & Procedure"
 msgstr "政策与程序文件"
+
+msgid "Pool"
+msgstr ""
 
 msgid "Portal Link"
 msgstr "门户链接"

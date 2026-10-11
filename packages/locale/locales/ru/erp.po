@@ -342,6 +342,10 @@ msgstr "{0} опер. · {1} шт"
 msgid "{0} orders"
 msgstr "{0} заказов"
 
+#. placeholder {0}: formatQuantity(Number(burdenRate))
+msgid "{0} per hour"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} проблем — не опубликовано"
@@ -3969,6 +3973,9 @@ msgstr "Название банка"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Столбцы показывают поток каждой недели: <0>обеспечение</0> увеличивает запасы, <1>потребность</1> снижает их. <2>Строка</2> — это ваши прогнозируемые запасы на складе — когда она падает ниже <3>страхового запаса</3>, вы в зоне риска, а ниже нуля — <4>дефицит</4>."
+
+msgid "Base"
+msgstr ""
 
 msgid "Base currency"
 msgstr "Базовая валюта"
@@ -17777,6 +17784,9 @@ msgstr "Политика"
 
 msgid "Policy & Procedure"
 msgstr "Политика и процедура"
+
+msgid "Pool"
+msgstr ""
 
 msgid "Portal Link"
 msgstr "Ссылка портала"

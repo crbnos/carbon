@@ -1331,7 +1331,7 @@
     {"name":"sales_getOpportunityLineDocuments","classification":"READ","paramCount":2,"schema":"067400ea63f8","response":"95c1c04c0566","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getPricingRule","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"ad07d2ee862b","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getPricingRules","classification":"READ","paramCount":3,"schema":"b00172859bab","response":"ef4af464ac84","injectAuth":"companyId","permission":"sales:view","paginates":true,"defaults":"always"},
-    {"name":"sales_getProjectBillingBackup","classification":"READ","paramCount":1,"schema":"9e382a0affeb","response":"2711d1ce22c8","injectAuth":"companyId","permission":"sales:view","paginates":false},
+    {"name":"sales_getProjectBillingBackup","classification":"READ","paramCount":1,"schema":"9e382a0affeb","response":"7a3c3fd98f0f","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getQuote","classification":"READ","paramCount":1,"schema":"c726ae407913","response":"65bcf04ce549","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getQuoteAssemblies","classification":"READ","paramCount":1,"schema":"c726ae407913","response":"9807da529af1","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getQuoteAssembliesByLine","classification":"READ","paramCount":1,"schema":"e0050938a2c8","response":"9807da529af1","injectAuth":"companyId","permission":"sales:view","paginates":false},

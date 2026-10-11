@@ -177,10 +177,12 @@ async function processContract(
     .where("statusReason", "=", BILLABLE_REASON_FUNDING_LIMIT)
     .execute();
 
-  // 5. The Unbilled items of the period, oldest first, locked.
+  // 5. The Unbilled items of the period, oldest first, locked. A burden item
+  // has no ledger row: it carries its own posting date and its pool.
+  const postingDate = sql<string>`COALESCE(pl."postingDate", b."postingDate")`;
   const rows = await trx
     .selectFrom("projectBillableItem as b")
-    .innerJoin("projectLedger as pl", (join) =>
+    .leftJoin("projectLedger as pl", (join) =>
       join
         .onRef("pl.id", "=", "b.projectLedgerId")
         .onRef("pl.companyId", "=", "b.companyId")
@@ -190,6 +192,11 @@ async function processContract(
         .onRef("lc.id", "=", "pl.laborCategoryId")
         .onRef("lc.companyId", "=", "pl.companyId")
     )
+    .leftJoin("indirectPool as ip", (join) =>
+      join
+        .onRef("ip.id", "=", "b.indirectPoolId")
+        .onRef("ip.companyId", "=", "b.companyId")
+    )
     .select([
       "b.id",
       "b.customerContractLineId",
@@ -197,16 +204,18 @@ async function processContract(
       "b.unitPrice",
       "b.amount",
       "b.voidedSalesInvoiceId",
-      "pl.postingDate",
+      "b.indirectPoolId",
+      postingDate.as("postingDate"),
       "pl.costType",
       "pl.laborCategoryId",
-      "lc.name as laborCategoryName"
+      "lc.name as laborCategoryName",
+      "ip.name as poolName"
     ])
     .where("b.companyId", "=", companyId)
     .where("b.customerContractLineId", "in", lineIds)
     .where("b.status", "=", "Unbilled")
-    .where("pl.postingDate", "<=", periodEnd)
-    .orderBy("pl.postingDate")
+    .where(postingDate, "<=", periodEnd)
+    .orderBy(postingDate)
     .orderBy("b.id")
     .forUpdate("b")
     .execute();
@@ -219,9 +228,11 @@ async function processContract(
     id: row.id,
     customerContractLineId: row.customerContractLineId as string,
     postingDate: row.postingDate,
-    costType: row.costType,
+    costType: row.costType ?? "Burden",
     laborCategoryId: row.laborCategoryId,
     laborCategoryName: row.laborCategoryName,
+    indirectPoolId: row.indirectPoolId,
+    poolName: row.poolName,
     quantity: Number(row.quantity),
     unitPrice: Number(row.unitPrice),
     amount: Number(row.amount),
