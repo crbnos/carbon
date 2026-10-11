@@ -34,3 +34,6 @@
 - 32 sweep: typecheck 8/8 packages; tests utils 676, database 493, jobs 955, notifications 16, server-functions 613, ERP modules 810 — all pass. Biome: 0 errors. db:check:datasets 4/4, db:check:backups restorable, clobbers none.
 - Known, unrelated: invariant `tracked-entity-readable-id` fails on local seed data.
 - Follow-ups noted by the docs agent: `RECOGNIZED_REVENUE_VOID_ERROR` (post-sales-invoice) still says "revenue recognition run" for rental invoices; `period-close.mdx` seeded-checks table is stale; no `status-colors` map for leases.
+
+## 2026-10-11 — Task 34 (browser)
+All six flows PASS on the dev company (LSE000001, AP000008–12): create, activate (PV 65,742.03, journal on May 1), Invoice Now (5 drafts), post (Dr Lease Liabilities / Cr AP), void (row back to Pending), Lease Runs / Lease Liabilities / Settings pages. Playbook: .ai/playbooks/lessee-lease-lifecycle.md

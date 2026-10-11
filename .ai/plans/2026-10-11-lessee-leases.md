@@ -53,7 +53,7 @@
 - [x] Task 31: Update AGENTS.md, rules and docs
 - [x] Task 32: Run the full verification sweep
 - [x] Task 33: Extract and translate the new strings
-- [ ] Task 34: Verify in the browser
+- [x] Task 34: Verify in the browser
 
 ## Dependencies
 
