@@ -1,6 +1,6 @@
 # Government Contracting: an adequate accounting system, indirect rates, control and R&D tax
 
-> Status: Phase 5a implemented (2026-10-11); Phases 5b, 5c and 5d are planned. Every open question is resolved (Q1–Q3 answered 2026-10-09).
+> Status: Phases 5a and 5b implemented (2026-10-11); Phases 5c and 5d are planned. Every open question is resolved (Q1–Q3 answered 2026-10-09).
 > Author: Brad (with Claude)
 > Date: 2026-10-09
 > Research: `.ai/research/government-contracting-layer.md` and `.ai/research/projects-wbs-pmmo.md` (patterns 8 and 10, Answer 7). The first covers indirect rates, unallowable costs, DCAA timekeeping, CLIN/ACRN funding, budget control, earned value, R&D tax and the SF 1408 ranking.
@@ -227,6 +227,21 @@ A **Stop work** action on a Direct project records the order date and the 90-day
 | P8 | Payroll import path (5a plan) | The existing CSV import wizard, with a table `payrollPeriodTotal`, in place of an `import-payroll-totals` server function. | The wizard already does upload, column mapping and employee mapping. |
 | P9 | Shared timesheet writes (5a plan) | Two server functions, `save-timesheet-entry` and `submit-timesheet-week`. The ERP and the MES call them. | The DCAA rules live in one place. |
 | P10 | Lines with funding actions (5a plan) | Billing lines only (Time & Materials and Cost Plus). | A billing line keeps its id for its whole life (project billing P9), so a funding row never moves to another line. |
+| B1 | Where the 5b engine lives (5b plan) | `packages/ee/src/indirect-rates/`, not `@carbon/utils`. The runs are ee functions: `computeIndirectRates`, `computeProjectBurden`, `computeBurdenBilling`. One community server function, `post-project-burden`, writes the Burden rows and the optional journal. | Q1 makes 5b commercial. `@carbon/ee` depends on `@carbon/server-functions`, so a server function cannot import the engine. |
+| B2 | Pool base sources (5b plan) | GL accounts mapped as Base, plus project ledger cost of Direct, Commercial, IR&D and B&P projects. A G&A pool leaves IR&D and B&P out of its base. A project account cannot be a Base account. | Carbon posts all project labor and material to one WIP or expense account. |
+| B3 | The cascade (5b plan) | Burden on a cell that is Q's Base and P's Cost goes into P's cost; Q's burden on IR&D and B&P cost goes into the next G&A pool's cost; a TCI base takes every earlier pool's burden, a Value Added base all but Material Handling. | The spec's cascade, written as rules a test pins. |
+| B4 | Mapping match (5b plan) | The most specific mapping wins (account + dimension value, else the account). One cell is Cost of at most one pool. | A cell in two pools counts its cost twice. |
+| B5 | Burden billing (5b plan) | Burden rows create no billable item. `computeBurdenBilling` bills by difference per contract line × pool × fiscal year at the Final rate, else the Provisional rate, capped by the ceiling. It replaces `compute-retroactive-billing`. | Billing Burden rows and retroactive items both would bill a rate change twice. One rule covers first billing, re-burden and true-up. |
+| B6 | Burden items (5b plan) | `projectBillableItem.projectLedgerId` is nullable. A burden item carries `indirectPoolId`, `fiscalYear`, `burdenRate`, `burdenBase` and `postingDate`. | A burden item belongs to no single ledger row. |
+| B7 | Absorbed overhead (5b plan) | The rate uses the gross pool cost. A project's target burden = max(0, rate × base − its YTD Overhead rows). The statement shows the absorbed overhead as a credit line. | Subtracting it from the numerator and the burden would remove it twice. |
+| B8 | Burden key (5b plan) | Burden per element; the catch-up key is project × element × pool × unallowable flag; rows carry `burdenFiscalYear`. Burden on an unallowable base is unallowable. | Earned value needs ACWP per work package; a Final true-up may post after the year ends; CAS 405-40(e). |
+| B9 | Burden settings (5b plan) | `companySettings.burdenRateType` (Provisional or Actual) and `postAppliedBurden`. | The spec names both; the data model omitted them. |
+| B10 | Burden period (5b plan) | The burden run needs a Locked period. Applied burden posts as an accounting adjustment: Locked accepts it, Closed refuses it. | The risk mitigation runs burden only on a locked period. |
+| B11 | Period runs (5b plan) | A table `indirectRateRun` records each period run. The close task "Compute burden for the period" passes when the period has a run with `burdenComputedAt`, or no active pool applies to projects. | The UI lists runs; the close checklist needs a marker. |
+| B12 | Entered rates (5b plan) | A rate "from period N" writes periods N to 12 with period rate = YTD rate. Only the run writes Actual rates. | Contracting officers set provisional rates per year. |
+| B13 | Cost relief (5b plan) | Memo Burden rows stay out of cost relief with no code change; applied burden is relieved with the rest. | Relieving a memo row would credit WIP that was never debited. |
+| B14 | Fiscal numbers (5b plan) | A period with no fiscal year or number gets them from `fiscalYearAndPeriodFor`. | Job-costing SQL creates periods without fiscal numbers. |
+| B15 | ICE schedules (5b plan) | Computed at export time from the run's readers. Schedule G reconciles the project ledger to its journal lines. | No stored copy; contract cost sits in Project WIP, so a GL expense total cannot reconcile direct cost. |
 
 ## Data Model Changes
 
@@ -294,8 +309,21 @@ CREATE TABLE "indirectExpenseStatement" ( -- id('ies'): indirectPoolId, fiscalYe
 );
 CREATE TABLE "customerContractRateCeiling" ( -- id('crc'): customerContractLineId, indirectPoolId, ceilingRate
 );
+CREATE TABLE "indirectRateRun" (         -- id('irr'): accountingPeriodId, fiscalYear, periodNumber, burdenRateType,
+                                         -- ratesComputedAt, burdenComputedAt, billingComputedAt, burdenRowCount,
+                                         -- billableItemCount, error; UNIQUE (accountingPeriodId, companyId) (B11)
+);
 ALTER TABLE "projectLedger" ADD COLUMN "indirectPoolId" TEXT,       -- Burden rows
-                            ADD COLUMN "indirectRateType" "indirectRateType";
+                            ADD COLUMN "indirectRateType" "indirectRateType",
+                            ADD COLUMN "burdenFiscalYear" INTEGER;  -- B8
+ALTER TABLE "projectBillableItem" ALTER COLUMN "projectLedgerId" DROP NOT NULL,  -- B6: burden items
+                                  ADD COLUMN "indirectPoolId" TEXT,
+                                  ADD COLUMN "fiscalYear" INTEGER,
+                                  ADD COLUMN "burdenRate" NUMERIC,
+                                  ADD COLUMN "burdenBase" NUMERIC,
+                                  ADD COLUMN "postingDate" DATE;
+ALTER TABLE "companySettings" ADD COLUMN "burdenRateType" "indirectRateType" NOT NULL DEFAULT 'Provisional', -- B9
+                              ADD COLUMN "postAppliedBurden" BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- 5c
 ALTER TABLE "projectElement" ADD COLUMN "isControlAccount" BOOLEAN NOT NULL DEFAULT FALSE,
@@ -322,9 +350,10 @@ ALTER TABLE "customerContract" ADD COLUMN "researchFunded" BOOLEAN,
 
 ## API / Service Changes
 
-- **Pure helpers** (`@carbon/utils`, unit-tested): `isEntryDateAllowed`, `dilutionFactor`, `computePoolRates(pools, costs, bases)`, `burdenCatchUp(ytdBase, ytdRate, postedYtd)`, `retroactiveBillingAdjustment`, `budgetAvailability`, `earnedValue(technique, budget, status, schedule)`, `section6765Rows(components, qres)`.
+- **Pure helpers** (`@carbon/utils`, unit-tested): `isEntryDateAllowed`, `dilutionFactor`, `budgetAvailability`, `earnedValue(technique, budget, status, schedule)`, `section6765Rows(components, qres)`.
+- **5b pure helpers** live in `packages/ee/src/indirect-rates/compute.ts` (`@carbon/ee/indirect-rates`, B1): `computePoolRates`, `projectBurdenTargets`, `burdenCatchUp`, `billingRateFor`, `burdenBillingAdjustments`; the ICE builders in `ice.ts`.
 - **Posting:** `project-posting.ts` sets `unallowable`; `post-timesheet` applies dilution and the DCAA rules; `assertChargeable` checks `restrictCharging`.
-- **Server functions:** `compute-indirect-rates`, `compute-project-burden`, `compute-retroactive-billing`, `close-earned-value-period`, `import-payroll-totals`.
+- **Server functions:** `post-project-burden` (5b: writes the Burden rows and the applied burden journal), `close-earned-value-period`. The 5b runs are ee functions, not server functions (B1): `computeIndirectRates`, `computeProjectBurden` and `computeBurdenBilling`, which replaces `compute-retroactive-billing` (B5), run in that order by `runIndirectRatePeriod`; `runFinalTrueUp` runs the year-end true-up. The payroll import is the CSV import wizard (P8), not `import-payroll-totals`.
 - **Jobs:**
   - the daily missing-time check;
   - the monthly rate and burden run after period lock;
@@ -403,7 +432,7 @@ Phase 5d
 ## Delivery phases
 
 1. **Phase 5a: adequate system.** Cost objectives, unallowable, DCAA timekeeping, dilution, labor distribution with payroll import, CLIN/ACRN funding, preproduction. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34; the browser verification (Task 35) is deferred.
-2. **Phase 5b: indirect rates.** Pools, rates, computation, burden, provisional billing and ceilings, re-burden, retroactive billing, the ICE export.
+2. **Phase 5b: indirect rates.** Pools, rates, computation, burden, provisional billing and ceilings, re-burden, retroactive billing, the ICE export. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5b.md`, Tasks 1–21; the browser verification (Task 22) is deferred. Rule: `.claude/rules/indirect-rates.md`.
 3. **Phase 5c: control and reporting.** Budget availability control, earned value (native and the export), stop-work.
 4. **Phase 5d: R&D tax.** Tags and the two reports.
 
@@ -457,4 +486,4 @@ Resolved autonomously (2026-10-09), open to veto:
   Also from a map of Carbon's accounts, dimensions, periods, employees, timecards, audit log and reports. Q1 (gating) and Q2 (payroll source) are open.
 - 2026-10-09: Q1–Q3 resolved (Brad), each with the recommendation. Status: ready for /plan.
 - 2026-10-11: Phase 5a implemented (`.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34). Decisions P1–P10 of the plan are recorded in *Design Decisions*. Rule: `.claude/rules/government-contracting.md`. The browser verification (Task 35) is deferred.
-
+- 2026-10-11: Phase 5b implemented (`.ai/plans/2026-10-09-government-contracting-phase-5b.md`, Tasks 1–21). Decisions B1–B15 of the plan are recorded in *Design Decisions*; *Data Model Changes* and *API / Service Changes* now name `indirectRateRun`, the burden columns, `post-project-burden` and the ee runs. Rule: `.claude/rules/indirect-rates.md`. The browser verification (Task 22) is deferred.

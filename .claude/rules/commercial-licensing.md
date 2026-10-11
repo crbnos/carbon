@@ -203,6 +203,17 @@ Refactor one at a time; each PR should leave the tree green.
   the run writes no Percent Complete month. The community run cannot import it, so
   every run call site passes `projectRevenueSynthesizers` as `revenueRunSynthesizers`.
   See `project-billing.md`.
+- ✅ **Government contracting (5b)** — indirect pools, rates, burden and burden billing in
+  `packages/ee/src/indirect-rates/` (`@carbon/ee/indirect-rates` client-safe,
+  `@carbon/ee/indirect-rates.server` server), feature `GOVERNMENT_CONTRACTING`.
+  `requireEntitlement` is embedded in every authoring function and every run
+  (`upsertIndirectPool`, `setIndirectRate`, `upsertContractRateCeiling`,
+  `updateBurdenSettings`, `runIndirectRatePeriod`, `runFinalTrueUp`, `buildIceSchedule`, …);
+  the `indirect-rates` job degrades with `companyHasFeature`. The Burden rows and the
+  applied burden journal are written by the community `post-project-burden` server
+  function, which the ee run calls through `serverFns`. Accounting → Indirect Pools and
+  Indirect Rates show `IndirectRatesUpgradeOverlay` when gated; the contract line's rate
+  ceilings use `UpgradeOverlaySection`. See `indirect-rates.md`.
 - Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
   community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision

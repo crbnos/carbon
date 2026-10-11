@@ -232,6 +232,36 @@ Contract project's billing element and its subtree. The whole subsystem is in
   every subtree ledger row whose journal debit line is on an Asset account, once
   (`projectCostRelief`). Details, the run order and the call-site rule: `project-billing.md`.
 
+## Burden (Government Contracting Phase 5b)
+
+The commercial indirect rates run (`indirect-rates.md`) burdens project cost.
+What it changes here:
+
+- **Burden rows.** `projectLedger` rows with `costType = 'Burden'`,
+  `indirectPoolId`, `indirectRateType` and `burdenFiscalYear` (a CHECK requires
+  all three on a Burden row, and refuses all three on any other row). One row per project ×
+  element × pool × unallowable flag per run: the YTD catch-up, never an edit of
+  an earlier row. Only `post-project-burden` writes them. They are memo rows (no
+  journal) unless `companySettings.postAppliedBurden` posts Contract projects'
+  burden as applied burden: Dr the project account / Cr the pool's applied
+  account.
+- **Burden feeds no base.** `PROJECT_BASE_BUCKETS.Burden` is empty, so burden is
+  never burdened again through the project ledger.
+- **Burden billable items.** A Burden row creates no billable item
+  (`generateCostPlusItems` skips it; the T&M pricer returns null).
+  `computeBurdenBilling` creates the burden items of a Cost Plus line by
+  difference, one per line × pool × fiscal year: `projectLedgerId` null, with
+  `indirectPoolId`, `fiscalYear`, `burdenRate`, `burdenBase` and `postingDate`.
+  The billing readers (`create-project-billing-invoices`,
+  `synthesizeProjectRevenue`, `create-service-order-invoice`) left-join
+  `projectLedger`; the invoice groups burden lines by pool, after every other
+  line, and the billing backup shows the pool, rate and base.
+- **Cost relief.** Memo rows are never relieved (no journal debit on an Asset
+  account); applied burden is relieved with the rest of the cost.
+- **Costs tab.** `get_project_burden_summary` (`getProjectBurdenSummary`) gives
+  burden per element and pool. The tab lists it per pool under the tree, and an
+  element's Allowable cell says "of which burden".
+
 ## Project stock (Phase 2a)
 
 `project.projectStock` (set while Draft only; `$projectId.details.tsx` keeps the stored value

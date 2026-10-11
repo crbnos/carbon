@@ -287,6 +287,49 @@ Click an element to see its ledger rows. The **Time & materials** tab lists unpo
 Time, issues, receipts, charges and reimbursements write ledger rows in every company. Job material, job time and purchase invoices write ledger rows only when accounting is on.
 </Callout>
 
+## Indirect rates
+
+<PlanBadge plan="Business" />
+
+**Indirect rates** spread fringe, overhead and G&A cost over the projects that cause it, as a government contractor does. Carbon computes each pool's rate every month, puts **burden** on your projects, and bills it on Cost Plus contract lines.
+
+### Pools
+
+Open **Accounting → Indirect Pools** and click **New**:
+
+<FieldTable>
+  <Field name="Name" type="text" required>Unique in the company.</Field>
+  <Field name="Pool Type" type="enum" required>`Fringe`, `Overhead`, `Material Handling`, `G&A` or `Service Center`.</Field>
+  <Field name="Sequence" type="number" required>The order in which pools compute. A later pool takes the burden of an earlier one, so fringe on indirect labor goes into overhead.</Field>
+  <Field name="Base" type="enum" required>What the rate applies to: `Total Labor Dollars`, `Direct Labor Dollars`, `Direct Labor Hours`, `Direct Material Dollars`, `Total Cost Input` or `Value Added`.</Field>
+  <Field name="Applied Account" type="reference">The account that applied burden credits.</Field>
+  <Field name="Applies to Projects" type="boolean">The burden run burdens project cost with this pool. Not for a Service Center pool.</Field>
+  <Field name="Offset Absorbed Overhead" type="boolean">Overhead pools only. Subtracts the overhead your work centers already applied from each project's burden.</Field>
+  <Field name="Active" type="boolean">An inactive pool computes no rate and burdens nothing.</Field>
+</FieldTable>
+
+Open a pool and click **Add** under **Accounts** to map a GL account to it. **Cost** is pool cost, the top of the rate. **Base** is part of what the rate applies to. A mapping can narrow the account to one dimension value, such as a department. One account is the cost of at most one pool. Project labor and material come into the base from the project ledger, by the project's cost objective, so a project account cannot be a Base account.
+
+### Rates and the period run
+
+Open **Accounting → Indirect Rates** and pick a fiscal year. The grid shows each pool's year-to-date rate by period, for the rate types `Provisional`, `Target`, `Actual` and `Final`.
+
+- **Set Rate** enters a Provisional, Target or Final rate from a period to the end of the year.
+- Locking an accounting period starts the **period run**. **Run Period** starts it by hand. The run computes the Actual rates, posts the burden catch-up to your projects, and bills burden on Cost Plus lines.
+- **Run True-Up** appears when every pool that applies to projects has a Final rate for period 12. It burdens the year again at the Final rates and bills the difference.
+
+Burden posts only into a Locked period. Each run posts the year-to-date burden less the burden already posted, so a rate change during the year is caught up on the next run. Unallowable cost stays out of a pool's rate and stays in its base.
+
+**Burden Settings** picks the rate the run applies, `Provisional` or `Actual`. Burden rows are memo rows in the project ledger. **Post applied burden for Contract projects** also posts them to the general ledger: debit Project WIP, credit the pool's applied account.
+
+**Statement** opens the Statement of Indirect Expenses for a period: each pool's accounts, the burden it carries from earlier pools, and its cost, base and rate. **ICE Export** downloads the incurred cost schedules A, B, C, E, G, H, I, K and L of the year, one CSV each.
+
+### Burden on projects and contracts
+
+The **Costs** tab of a burdened project lists **Burden by pool**, allowable and unallowable, under the element tree. Hover over an element's **Allowable** amount to see how much of it is burden.
+
+A Cost Plus contract line bills burden at the Final rate when one exists, else at the Provisional rate, plus the line's fee. On the line's **Billing** tab, **Rate Ceilings** caps a pool's rate for that line. Burden bills by difference, so a rate change or the true-up adds a positive or negative item, and a posted invoice never changes.
+
 ## Keyboard shortcuts
 
 **⌘⇧E**, **⌘⇧M**, **⌘⇧B**, **⌘⇧R**, **⌘⇧C**, **⌘⇧H**, **⌘⇧K** (Stock, with project stock), **⌘⇧S** and **⌘⇧D** open the project tabs in order (Ctrl instead of ⌘ on Windows). On the Elements tab and the element page, **C** adds an element, and **S**, **A**, **P** and **L** change the state, owner, priority and labels. On the element page, **T** logs time and **I** issues material. Press **?** for the [full list](/docs/reference/keyboard-shortcuts).

@@ -105,7 +105,7 @@ These correct or add to the spec. Task 21 records them there.
 - [x] Task 18: Add burden by pool to the project Costs tab
 - [x] Task 19: Extend the demo datasets
 - [x] Task 20: Run the scoped gates
-- [ ] Task 21: Update the rules, docs and spec
+- [x] Task 21: Update the rules, docs and spec
 - [ ] Task 22: Verify in the browser
 
 ## Dependencies
@@ -1427,3 +1427,9 @@ ls .ai/playbooks/government-contracting-phase-5b.md
   4. `pnpm --filter @carbon/checks test` (not in the task list) found one new violation in Task 16's route: `no-interpolated-error-log` at `indirect-rates.tsx` (a template string in `logger.error`). The fix commit moves the read's name into the log context. The suite then passes (300 tests).
   5. 🛑 `pnpm --filter erp build` fails with "Server-only module referenced by client", and the cause is outside Phase 5b: `packages/planning/src/mrp/mrp.ts` imports `@carbon/ee/plan.server` and `planning-actions.ts` imports `@carbon/ee/pegging.server` (dynamic imports, Projects Phase 3, `1b80ed58f5`). The ERP's client graph reaches `@carbon/planning` through `purchasing.service.ts` and `production.service.ts`. No 5b commit touches `packages/planning`. With those 2 imports bypassed in the working tree only (then restored), the build passes, so 5b adds no server-only import to the client graph. The fix belongs to Phase 3 and is left for Brad.
   6. `pnpm db:check:backups`: `schema.json` restorable. `pnpm db:check:datasets`: all four pass.
+- Task 21:
+  1. `.claude/rules/indirect-rates.md` also tracks the `indirect-rates` job, the Indirect Rates UI folder and the `indirect-*` routes in its `paths:`, so the rule loads where the pages are edited.
+  2. `government-contracting.md` said Phases 5b–5d were not built. It now points to `indirect-rates.md` for 5b.
+  3. The spec's *Data Model Changes* also gains `projectLedger.burdenFiscalYear` (B8), which the 5b migration adds. Phase 5b is marked done in the status line, *Delivery phases* and the changelog; the acceptance criteria stay unticked until the browser check.
+  4. `cd docs && pnpm typecheck` passes.
+- Task 22: Browser verification deferred (overnight run rule). The box stays unticked.
