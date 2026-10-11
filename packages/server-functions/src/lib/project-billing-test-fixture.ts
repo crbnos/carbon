@@ -7,11 +7,15 @@
 // (bill rate 150.00), and helpers for a Time & Materials contract and for
 // ledger rows written through `insertProjectLedgerRows`. `addAccounting` and
 // `addJournalLines` add the accounts and WIP journal lines the revenue
-// recognition run reads. Deleted afterwards.
+// recognition run reads. Deleted afterwards. The commercial Percent Complete
+// tests (`packages/ee`) import it through
+// `@carbon/server-functions/lib/project-billing-test-fixture` and pass their
+// synthesizers as `revenueRunSynthesizers`.
 
 import type { Database } from "@carbon/database";
 import { sql } from "kysely";
 import { connectLocalTestDatabase } from "../local-database-test-fixture";
+import type { RunRowSynthesizer } from "../propose-revenue-recognition-run";
 import { ServerFnContext } from "../server-fn-context";
 import {
   buildProjectLedgerRow,
@@ -34,7 +38,9 @@ const ACCOUNTS = [
 
 type AccountName = (typeof ACCOUNTS)[number]["name"];
 
-export async function projectBillingTestFixture() {
+export async function projectBillingTestFixture(
+  options: { revenueRunSynthesizers?: RunRowSynthesizer[] } = {}
+) {
   const db = await connectLocalTestDatabase();
   const prefix = `pbtest-${crypto
     .randomUUID()
@@ -142,7 +148,12 @@ export async function projectBillingTestFixture() {
       .execute();
   });
 
-  const ctx = ServerFnContext.system({ db, companyId, userId: USER });
+  const ctx = ServerFnContext.system({
+    db,
+    companyId,
+    userId: USER,
+    revenueRunSynthesizers: options.revenueRunSynthesizers
+  });
 
   const account = (name: AccountName) => `${prefix}-acct-${name}`;
 
@@ -301,15 +312,18 @@ export async function projectBillingTestFixture() {
   };
 
   /** A Monthly / Calendar / Arrears contract with one billing line on the
-   *  element, from 2026-01-01. Active unless `status` says otherwise. */
+   *  element, from 2026-01-01. Active unless `status` says otherwise. The
+   *  revenue method is Right to Invoice unless `revenueMethod` says otherwise. */
   const addContract = async (input: {
     key: string;
     projectId: string;
     projectElementId: string;
     status?: "Draft" | "Active";
-    billingMethod?: "Time & Materials" | "Cost Plus";
+    billingMethod?: "Fixed" | "Time & Materials" | "Cost Plus";
+    revenueMethod?: "Right to Invoice" | "Percent Complete";
     materialHandlingPercent?: number | null;
     fundedAmount?: number | null;
+    ceilingAmount?: number | null;
   }) => {
     const contractId = `${companyId}-${input.key}`;
     const lineId = `${contractId}-line`;
@@ -347,13 +361,14 @@ export async function projectBillingTestFixture() {
           rate: 0,
           startDate: "2026-01-01",
           billingMethod,
-          revenueMethod: "Right to Invoice",
+          revenueMethod: input.revenueMethod ?? "Right to Invoice",
           materialHandlingPercent:
             input.materialHandlingPercent === undefined
               ? 0.1
               : input.materialHandlingPercent,
           feePercent: billingMethod === "Cost Plus" ? 0.08 : null,
           fundedAmount: input.fundedAmount ?? null,
+          ceilingAmount: input.ceilingAmount ?? null,
           projectId: input.projectId,
           projectElementId: input.projectElementId,
           companyId,

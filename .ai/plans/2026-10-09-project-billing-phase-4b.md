@@ -63,7 +63,7 @@ These correct or add to the spec. Task 13 records them there.
 - [x] Task 6: Add the commercial Percent Complete synthesizer
 - [x] Task 7: Pass the project revenue synthesizers at every run call site
 - [x] Task 8: Post Cost Relief and Loss Provision rows
-- [ ] Task 9: Add the Percent Complete database tests
+- [x] Task 9: Add the Percent Complete database tests
 - [ ] Task 10: Show progress in the run review
 - [ ] Task 11: Show progress on the Billing tab and the contract
 - [ ] Task 12: Add the Contract Loss Provision account default
@@ -605,3 +605,8 @@ ls .ai/playbooks/project-billing-phase-4b.md
 - Task 7: 5 code files pass the synthesizers: the 4 routes (`revenue-recognition-runs.new`, `$runId.repeat`, `$runId.recalculate`, `periods.$periodId.close`, which covers the propose call and the checklist preview) and the job. `accounting.service.ts` takes them as an argument and names them only in a comment. `revenue-recognition-proposal.test.ts` mocks `@carbon/ee/project-revenue.server`. Through the plan gates, that module reaches the docs glossary's Lingui macros, which fail outside compilation (lesson "The `@carbon/ee` barrel boots the server env"). The jobs suite passed (70 files) and the ERP accounting tests passed (6 files, 216 tests).
 - Task 8: `revenueRowDescriptions` and `REVENUE_LINE_DESCRIPTIONS` live in `accounting.utils.ts`, not in `accounting.server.ts`. The test then imports a pure module and needs no mocks; `accounting.server.ts` imports the function. The utils file is not in the module barrel.
 - Task 8, the posting policy: the phase adds no journal source type. `Cost Relief` and `Loss Provision` are `revenueScheduleType` values, and their rows post in the run's `Revenue Recognition` journal. `POSTING_POLICY` already has `Revenue Recognition` at `defaultEnabled: false`, so the one rule holds with no change (`posting-policy.test.ts`, 30 passed).
+- Task 9: the test reuses the project billing fixture through a new export, `@carbon/server-functions/lib/project-billing-test-fixture`, not only `./test-fixture` (R11). That fixture has the accounts, the project and the contract helpers; a copy in `packages/ee` would duplicate about 400 lines. Three small changes to the fixture:
+  1. `projectBillingTestFixture({ revenueRunSynthesizers })` passes the synthesizers to its `ServerFnContext.system` call. So the ee test needs no `ServerFnContext` subpath.
+  2. `addContract` takes `revenueMethod`, `ceilingAmount` and a `Fixed` billing method.
+  3. The header names its ee caller.
+- Task 9: the test mocks `../plan.server` (`companyHasFeature`) and `@carbon/auth/client.server` (`getCarbonServiceRole`), the plan read and the service-role client. The EAC is the billing element's `estimateAtCompletion` override. The Fixed line's contract value is one `customerContractInvoiceLine` under a `customerContractInvoice` (`customerContractInvoiceLine_parent_check`). The months are September and October 2026, as in Task 4. 6 passed; the whole ee suite passed (138 files, 1,957 tests).
