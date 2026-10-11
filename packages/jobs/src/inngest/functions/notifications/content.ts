@@ -1406,6 +1406,15 @@ async function buildEventContent(
       };
     }
 
+    // Payload-carried: the recurring-billing job sends the notice as `title`
+    // and the funding figures as `body`; documentId is the contract.
+    case NotificationEvent.ContractFundingThreshold: {
+      return {
+        description: opts?.title ?? "Contract funding notice",
+        details: opts?.body ? [{ label: "Funding", value: opts.body }] : []
+      };
+    }
+
     default:
       return null;
   }

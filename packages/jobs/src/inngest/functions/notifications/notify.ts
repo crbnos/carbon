@@ -194,6 +194,11 @@ const defaultDestinations: Partial<
     NotificationDestination.InApp,
     NotificationDestination.Email
   ],
+  // At most one per threshold per funded amount (the line stores which).
+  [NotificationEvent.ContractFundingThreshold]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
+  ],
   // In-app only: the outbound sweep re-fires while failures persist, and an
   // email per sweep cycle would be noise.
   [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]

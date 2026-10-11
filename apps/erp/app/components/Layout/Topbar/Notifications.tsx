@@ -31,6 +31,7 @@ import {
   LuCirclePlay,
   LuClipboardCheck,
   LuDollarSign,
+  LuGauge,
   LuGitPullRequestArrow,
   LuGraduationCap,
   LuHammer,
@@ -374,6 +375,14 @@ function GenericNotification({
         <Notification
           icon={<LuDollarSign />}
           to={`${path.to.invoicingSales}?filter=needsReview:eq:true`}
+          {...props}
+        />
+      );
+    case NotificationEvent.ContractFundingThreshold:
+      return (
+        <Notification
+          icon={<LuGauge />}
+          to={path.to.contractDetails(id)}
           {...props}
         />
       );

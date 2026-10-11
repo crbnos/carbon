@@ -45,6 +45,9 @@ export enum NotificationEvent {
   // invoice source. Payload-carried like IntegrationSync: the counts arrive as
   // `body` ("2 posted, 1 emailed, 1 need review") and nothing is read.
   RecurringInvoicing = "recurring-invoicing",
+  // Payload-carried like RecurringInvoicing: the figures arrive as `title` and
+  // `body`; `documentId` is the contract.
+  ContractFundingThreshold = "contract-funding-threshold",
   RiskAssignment = "risk-assignment",
   SalesOrderAssignment = "sales-order-assignment",
   SalesRfqAssignment = "sales-rfq-assignment",
@@ -186,6 +189,7 @@ export function getNotificationTopic(
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
     case NotificationEvent.RecurringInvoicing:
+    case NotificationEvent.ContractFundingThreshold:
       return NotificationTopic.Sales;
     case NotificationEvent.MaintenanceDispatchAssignment:
     case NotificationEvent.MaintenanceDispatchCreated:
@@ -304,6 +308,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Accounting sync needs attention";
     case NotificationEvent.RecurringInvoicing:
       return "Recurring invoicing summary";
+    case NotificationEvent.ContractFundingThreshold:
+      return "Contract funding notice";
     default:
       return "You have a new notification";
   }
@@ -344,6 +350,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View sync activity";
     case NotificationEvent.RecurringInvoicing:
       return "Review invoices";
+    case NotificationEvent.ContractFundingThreshold:
+      return "View contract";
     default:
       return "View details";
   }
