@@ -86,7 +86,7 @@ These correct or add to the spec. Task 22 records them there.
 ## Progress
 
 - [x] Task 1: Create the Phase 5c enum migration
-- [ ] Task 2: Create the project control migration
+- [x] Task 2: Create the project control migration
 - [ ] Task 3: Apply migrations, regenerate types, ship RLS
 - [ ] Task 4: Add the schedule to the baseline snapshot
 - [ ] Task 5: Add the ee package skeleton
@@ -1100,3 +1100,11 @@ ls .ai/playbooks/government-contracting-phase-5c.md
 
 - Prerequisites: every check prints a line. Neither enum type exists in the database before Task 1, and `project` has no `budgetControl`, `budgetTolerancePercent` or `stopWorkDate` column.
 - Task 1: the migration is `20261011224853_government-contracting-5c-enums.sql`. It is applied in Task 3.
+- Tasks 1 and 2: the pre-commit backup check skips both commits, because the migrations are not applied yet. Tasks 1 and 2 ran together in a `BEGIN … ROLLBACK` dry run before the Task 2 commit. The dry run inserted the close task for 29 companies.
+- Task 2:
+  1. The migration is `20261011225048_project-control.sql`.
+  2. `earnedValuePeriod` also has `updatedBy` and `updatedAt`. The migration rules require `updatedBy` on every table with `createdBy`.
+  3. Indexes: `companyId`, the control account FK, `accountingPeriodId`, `baselineId` (partial) and `createdBy`. The unique key covers `projectElementId`, and `earnedValuePeriod_project_idx` covers `projectId`. `projectElement` also gets partial indexes on the 2 new FK columns, `controlAccountManagerId` and `apportionedToElementId`.
+  4. Each `ADD CONSTRAINT` sits in one `DO` block per table with the `pg_constraint` guard.
+  5. Risk, not changed: a delete of an Apportioned element's base element fails on `projectElement_apportioned_check`, because the FK sets `apportionedToElementId` to null. A project delete fails while a snapshot of a Closed period exists, because the freeze trigger refuses the cascade delete.
+  6. 🛑 Until Task 14 ships the `earned-value-closed` evaluator, the close checklist shows "Close earned value for the period" as an open required task on this branch's database. A user can skip it.
