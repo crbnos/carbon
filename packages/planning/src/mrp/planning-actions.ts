@@ -48,7 +48,8 @@ import type {
   GroupPegInput,
   MemberMove,
   MemberPosition,
-  PegPriorityRule
+  PegPriorityRule,
+  WriteGroupPegs
 } from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
 import {
@@ -1809,8 +1810,11 @@ export async function generatePlanningActions(
      * Projects Phase 3: the peg writer's inputs, passed only when the company
      * has PLANNING_GROUPS. The pegs are diff-written in this function's
      * transaction, after the actions, so a planned supply has its action id.
+     * `writeGroupPegs` is the commercial writer, injected by the server-side
+     * caller (`MrpDeps`): this package imports no `.server` module.
      */
     pegging?: {
+      writeGroupPegs: WriteGroupPegs;
       runId: string;
       inputs: GroupPegInput[];
       priorityRuleByGroup: Record<string, PegPriorityRule>;
@@ -2384,8 +2388,7 @@ async function writePegs(
   const actionIdByKey = new Map(
     actionRows.map((row) => [naturalKey(row, args.keyPeriod), row.id])
   );
-  const { writeGroupPegs } = await import("@carbon/ee/pegging.server");
-  return writeGroupPegs(trx, {
+  return pegging.writeGroupPegs(trx, {
     companyId,
     userId,
     runId: pegging.runId,

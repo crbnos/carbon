@@ -31,13 +31,15 @@ vi.mock("@carbon/server-functions", () => ({
 vi.mock("../app/modules/production/production.service", () => ({
   getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
-  runMRP: vi.fn(async () => ({ data: null, error: null })),
   updateJobStatus: vi.fn(async () => ({ error: null, updated: true }))
 }));
+vi.mock("../app/modules/production/production.mcp.server", () => ({
+  runMRP: vi.fn(async () => ({ data: null, error: null }))
+}));
 
+import { runMRP } from "../app/modules/production/production.mcp.server";
 import {
   recalculateJobRequirements,
-  runMRP,
   updateJobStatus
 } from "../app/modules/production/production.service";
 import {

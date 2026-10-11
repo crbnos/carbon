@@ -95,7 +95,6 @@ Brad resolved 4 items on 2026-10-10, so they are gone from this list:
 4. A technician without `service_update` charges only their own open visit: it stays as built.
 
 Open:
-- 🛑 `pnpm --filter erp build` fails with "Server-only module referenced by client". `packages/planning/src/mrp/mrp.ts` imports `@carbon/ee/plan.server` and `planning-actions.ts` imports `@carbon/ee/pegging.server` (dynamic imports, Projects Phase 3, `1b80ed58f5`). The ERP's client graph reaches `@carbon/planning` through `purchasing.service.ts` and `production.service.ts`. With the 2 imports bypassed, the build passes.
 - A receipt still makes an inspection lot for a stocked item that the project consumes at receipt (Phase 1a Task 21).
 - Shared-database test races: `post-charge-transaction.test.ts`, `preview-asset-capitalization.test.ts`, `rows.test.ts`, `get-accounting-period.test.ts` and `calculate-cogs.test.ts` fail sometimes in full runs and pass alone.
 - ~~The merge with main left 5 open questions on the accounting cutover.~~ Resolved: question 5 was fixed earlier, and Brad accepted the recommendations for 1 to 4 on 2026-10-11 (`b5cf4c65a8`, `81392d3d0c`, `c008470da5`, `014cf941cd`). `.ai/runs/2026-10-11-merge-origin-main.md` → *Open questions for Brad* records each one.

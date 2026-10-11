@@ -9,7 +9,12 @@
 // *.service.ts, *.server.ts, or @carbon/jobs handlers, never client code.
 
 // Material Requirements Planning.
-export { type MrpPayload, type MrpResult, runMrp } from "./mrp/mrp.ts";
+export {
+  type MrpDeps,
+  type MrpPayload,
+  type MrpResult,
+  runMrp
+} from "./mrp/mrp.ts";
 // Finite scheduling (formerly reached via @carbon/database/scheduling).
 export {
   type CalendarWindow,

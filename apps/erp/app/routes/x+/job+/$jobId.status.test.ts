@@ -71,8 +71,10 @@ vi.mock("~/modules/production", () => ({
   getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(),
-  runMRP: vi.fn(async () => ({ data: null, error: null })),
   updateJobStatus: vi.fn()
+}));
+vi.mock("~/modules/production/production.mcp.server", () => ({
+  runMRP: vi.fn(async () => ({ data: null, error: null }))
 }));
 // The Release dialog goes through the shared releaseJobs path; delegate its
 // status flip to the mocked updateJobStatus so the ordering guard still sees it.

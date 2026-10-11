@@ -25,8 +25,10 @@ vi.mock("./production.service", () => ({
   getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(),
   returnPickedRemaindersForJob: vi.fn(),
-  runMRP: vi.fn(),
   updateJobStatus: vi.fn()
+}));
+vi.mock("./production.mcp.server", () => ({
+  runMRP: vi.fn()
 }));
 
 import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";

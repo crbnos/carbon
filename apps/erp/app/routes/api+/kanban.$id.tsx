@@ -28,10 +28,10 @@ import { getItemReplenishment, getSupplierPartPricing } from "~/modules/items";
 import {
   getActiveJobOperationByJobId,
   insertJob,
-  runMRP,
   updateKanbanJob,
   upsertJobMethod
 } from "~/modules/production";
+import { runMRP } from "~/modules/production/production.mcp.server";
 import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine

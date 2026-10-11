@@ -16,9 +16,9 @@ import {
   jobStatus,
   makeToAssetItemError,
   recalculateJobRequirements,
-  runMRP,
   updateJobStatus
 } from "~/modules/production";
+import { runMRP } from "~/modules/production/production.mcp.server";
 import { cancelJob, releaseJobs } from "~/modules/production/production.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";

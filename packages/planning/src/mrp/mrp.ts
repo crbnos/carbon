@@ -7,6 +7,7 @@ import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import type { MethodType } from "@carbon/database/mrp-engine";
+import type { WriteGroupPegs } from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import {
@@ -79,16 +80,35 @@ export type MrpPayload = z.infer<typeof payloadValidator>;
 export type MrpResult = { success: true };
 
 /**
+ * The commercial functions a run uses for planning groups (PLANNING_GROUPS).
+ * `@carbon/planning` is reachable from the ERP client bundle, so it imports
+ * no `.server` module: a server-side caller injects these
+ * (`planningGroupMrpDeps`, `@carbon/ee/pegging.server`). Without them the
+ * run degrades as it does for a company without PLANNING_GROUPS.
+ */
+export type MrpDeps = {
+  /** Whether the company has PLANNING_GROUPS (`companyHasFeature`). */
+  companyHasPlanningGroups: (
+    client: SupabaseClient<Database>,
+    companyId: string
+  ) => Promise<boolean>;
+  /** The peg writer, run in the planning-action transaction. */
+  writeGroupPegs: WriteGroupPegs;
+};
+
+/**
  * Material Requirements Planning, run in-process in Node. The caller supplies
  * a service-role Supabase client (PostgREST reads) and a Kysely handle (the
  * atomic Phase-7 write), and authenticates before calling — this function does
  * not re-check permissions. Throws on failure so the caller (ERP route /
- * Inngest cron) can report it.
+ * Inngest cron) can report it. `deps` carries the commercial planning group
+ * functions; without it the run plans no group segment and writes no peg.
  */
 export async function runMrp(
   client: SupabaseClient<Database>,
   db: Kysely<DB>,
-  payload: unknown
+  payload: unknown,
+  deps?: MrpDeps
 ): Promise<MrpResult> {
   const parsedPayload = payloadValidator.parse(payload);
   const { type, companyId, userId } = parsedPayload;
@@ -306,7 +326,7 @@ export async function runMrp(
     // segment exists. The plan is read only when the company has a group.
     const planningGroupsEnabled =
       planningGroupRows.length > 0 &&
-      (await companyHasPlanningGroups(client, companyId));
+      (await companyHasPlanningGroups(deps, client, companyId));
     const activeGroupIds = new Set(
       planningGroupRows.filter((group) => group.active).map((group) => group.id)
     );
@@ -629,21 +649,26 @@ export async function runMrp(
         userId,
         commonSurplusDraws,
         planningGroups,
-        pegging: planningGroupsEnabled
-          ? {
-              runId: randomUUID(),
-              inputs: groupPegInputs,
-              priorityRuleByGroup: Object.fromEntries(
-                planningGroupRows.map((group) => [group.id, group.priorityRule])
-              ),
-              priorityByProject: Object.fromEntries(
-                groupMemberRows.map((project) => [
-                  project.id,
-                  project.planningPriority
-                ])
-              )
-            }
-          : undefined
+        pegging:
+          planningGroupsEnabled && deps
+            ? {
+                writeGroupPegs: deps.writeGroupPegs,
+                runId: randomUUID(),
+                inputs: groupPegInputs,
+                priorityRuleByGroup: Object.fromEntries(
+                  planningGroupRows.map((group) => [
+                    group.id,
+                    group.priorityRule
+                  ])
+                ),
+                priorityByProject: Object.fromEntries(
+                  groupMemberRows.map((project) => [
+                    project.id,
+                    project.planningPriority
+                  ])
+                )
+              }
+            : undefined
       });
 
       return { success: true };
@@ -663,19 +688,18 @@ export async function runMrp(
 
 /**
  * Whether the company has the commercial PLANNING_GROUPS feature. The check
- * lives in `@carbon/ee`; it is imported only for a company that has a
- * planning group, so every other run loads no commercial code. A failed
- * check degrades to "no", as `companyHasFeature` callers do.
+ * is the caller's injected `deps` (`MrpDeps`); without it the answer is "no".
+ * It runs only for a company that has a planning group. A failed check
+ * degrades to "no", as `companyHasFeature` callers do.
  */
 async function companyHasPlanningGroups(
+  deps: MrpDeps | undefined,
   client: SupabaseClient<Database>,
   companyId: string
 ): Promise<boolean> {
+  if (!deps) return false;
   try {
-    const { companyHasFeature } = await import("@carbon/ee/plan.server");
-    return await companyHasFeature(client, companyId, {
-      feature: "PLANNING_GROUPS"
-    });
+    return await deps.companyHasPlanningGroups(client, companyId);
   } catch (err) {
     logger.warn("could not read the planning groups feature", {
       companyId,

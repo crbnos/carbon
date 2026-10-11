@@ -336,8 +336,10 @@ A planning group pools projects with project stock. Its members' demand nets
 in one segment, the group id. The feature is commercial (`PLANNING_GROUPS`).
 The pure functions are in `packages/ee/src/pegging/mrp-pegging.ts`
 (`@carbon/ee/pegging`) and the writer in `peg-writer.ts`
-(`@carbon/ee/pegging.server`). `@carbon/planning` imports both lazily; it is
-the one gate in this package (`packages/planning/AGENTS.md`). The posting side
+(`@carbon/ee/pegging.server`). `@carbon/planning` imports the pure functions
+lazily. It never imports a `.server` module: the caller injects the feature
+check and the writer as `runMrp`'s `deps` (`planningGroupMrpDeps`). It is the
+one gate in this package (`packages/planning/AGENTS.md`). The posting side
 (receipt, completion, variance) is in `projects-system.md`.
 
 - **Segment rule.** `project_planning_segment` (`20261010145821`) returns the

@@ -26,12 +26,22 @@ to plan materials.
 
 - Never add an entitlement/plan gate here. This is CE — Material Planning is
   ungated. The one exception is the commercial planning groups degrade
-  (Projects Phase 3): `runMrp` imports `companyHasFeature` from
-  `@carbon/ee/plan.server` lazily, and only for a company that has a planning
-  group. Without `PLANNING_GROUPS`, the members net in their own segments.
-  The pegging code itself is commercial and stays in `@carbon/ee`
-  (`@carbon/ee/pegging`, `@carbon/ee/pegging.server`); this package imports
-  it lazily, only when `runMrp` passes `pegging`. Never copy it here.
+  (Projects Phase 3), and it is INJECTED: `runMrp(client, db, payload, deps?)`
+  takes `MrpDeps` — `companyHasPlanningGroups` (the `companyHasFeature`
+  check) and `writeGroupPegs`. The check runs only for a company that has a
+  planning group. Without `deps`, or without `PLANNING_GROUPS`, the members
+  net in their own segments and no peg is written. The pegging code itself is
+  commercial and stays in `@carbon/ee`. Never copy it here.
+- Never import a `.server` module, not even lazily with `await import()`.
+  The ERP client graph reaches this package (`production.service.ts`
+  imports it), and the React Router build fails with
+  "Server-only module referenced by client". Only the client-safe
+  `@carbon/ee/pegging` (pure functions, `WriteGroupPegs` type) is allowed.
+  Every server-side `runMrp` caller passes `planningGroupMrpDeps`
+  (`@carbon/ee/pegging.server`): the ERP's `runMRP`
+  (`production.mcp.server.ts`), the jobs MRP cron, and `planDemoCompany`
+  (which loads it lazily, because under plain tsx `@carbon/auth` does not
+  load and the run then degrades). Verify with `pnpm --filter erp build`.
 - Never construct a connection/pool inside this package.
 
 ## Validation Commands

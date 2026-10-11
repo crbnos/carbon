@@ -5,6 +5,8 @@
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -32,6 +34,45 @@ import {
 // per-tool permission check, and some of these writes reach privileged paths (a
 // SECURITY DEFINER RPC, an Inngest trigger) that bypass RLS — so the ERP route's
 // permission gate is re-applied inline via `hasPermission` on the caller's claims.
+
+/**
+ * Run MRP for the company, one location, or one job, order or item.
+ * It runs IN-PROCESS (Node): the caller's service-role client does the
+ * PostgREST reads; the atomic Phase-7 write goes through the Node Kysely pool.
+ * Returns `{ data, error }`, the shape the caller (api+/mrp.ts) returns.
+ * It lives here, not in `production.service.ts`, because it injects the
+ * commercial planning group functions (`planningGroupMrpDeps`,
+ * `@carbon/ee/pegging.server`): `@carbon/planning` imports no `.server`
+ * module, so every server-side `runMrp` caller passes them in.
+ * @mcp update
+ */
+export async function runMRP(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  params: {
+    type:
+      | "company"
+      | "location"
+      | "job"
+      | "salesOrder"
+      | "item"
+      | "purchaseOrder";
+    id: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  try {
+    const { runMrp } = await import("@carbon/planning");
+    const data = await runMrp(client, db, params, planningGroupMrpDeps);
+    return { data, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error("Failed to run MRP")
+    };
+  }
+}
 
 /**
  * Issue material to a job operation, enforcing work-center material-issue rules first.

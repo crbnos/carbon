@@ -10,7 +10,7 @@ import { canApproveRequest } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { runMRP } from "~/modules/production";
+import { runMRP } from "~/modules/production/production.mcp.server";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,

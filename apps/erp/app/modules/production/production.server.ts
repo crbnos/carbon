@@ -12,12 +12,12 @@ import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
+import { runMRP } from "./production.mcp.server";
 import { isJobLocked } from "./production.models";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
   returnPickedRemaindersForJob,
-  runMRP,
   updateJobStatus
 } from "./production.service";
 import { jobReleaseProblems } from "./ui/Jobs/job-release-logic";

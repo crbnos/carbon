@@ -347,6 +347,15 @@ Commercial: the feature key is `PLANNING_GROUPS` (Business, Partner). The peggin
 for `upsertPlanningGroup`, `createManualPeg` and `writeGroupPegs`). The MRP side is in
 `mrp-system.md` → *Planning groups and pegging*.
 
+`@carbon/planning` reaches the ERP client graph, so it must not import a `.server` module.
+The MRP run gets the commercial functions by dependency injection: every server-side caller
+passes `planningGroupMrpDeps` (`@carbon/ee/pegging.server`: the `companyHasFeature`
+check and `writeGroupPegs`) as `runMrp`'s fourth argument. The callers are the ERP's
+`runMRP` (`production.mcp.server.ts`, not the service, because it imports a `.server`
+module), the jobs MRP cron, and `planDemoCompany`. Without the deps, a run degrades as it does
+for a company without `PLANNING_GROUPS`. A new caller that forgets them silently plans
+without groups.
+
 - **The group.** `planningGroup` has a location, an excess rule (`Common Stock` or
   `Exception Project` with `exceptionProjectId`), a priority rule (`Earliest Need` or
   `Project Priority`) and `active`. `upsertPlanningGroup` calls `requireEntitlement` first, then

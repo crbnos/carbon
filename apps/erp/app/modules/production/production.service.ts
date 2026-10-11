@@ -2936,38 +2936,6 @@ export async function recalculateJobMakeMethodRequirements(
 }
 
 /** @mcp update */
-export async function runMRP(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  params: {
-    type:
-      | "company"
-      | "location"
-      | "job"
-      | "salesOrder"
-      | "item"
-      | "purchaseOrder";
-    id: string;
-    companyId: string;
-    userId: string;
-  }
-) {
-  // Run MRP IN-PROCESS (Node). The caller's service-role client does
-  // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
-  // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
-  try {
-    const { runMrp } = await import("@carbon/planning");
-    const data = await runMrp(client, db, params);
-    return { data, error: null };
-  } catch (err) {
-    return {
-      data: null,
-      error: err instanceof Error ? err : new Error("Failed to run MRP")
-    };
-  }
-}
-
-/** @mcp update */
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
   companyId: string,
