@@ -79,6 +79,7 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 | 10-11 | Project billing 4a | Tasks 14–20; 21 deferred | done (`81265037b3`…`4a48f33082`, then the docs commit) — Phase 4a implemented |
 | 10-11 | Project billing 4a, 4b | 4a Tasks 1–20, 21 deferred; 4b Tasks 1–13, 14 deferred | done (4a from `3d42be0094`; 4b `129e0b9dc7`…`1223834483`, then the docs commit) — Phase 4 implemented, spec moved to `implemented/` |
 | 10-11 | Merge origin/main (`a4a1e15ba2`) + always-post | Phase 2b of `.ai/runs/2026-10-11-merge-origin-main.md` | done (`344624656d`, `1397e61049`, `b39ead1e74`, `63e77ba0bc`, then the docs commit) — the project and service journals follow main's always-post rule; `db:check:backups` passes with no skip |
+| 10-11 | Fixes + Government contracting 5a | Project Issue relief fix, `no-unguarded-submit` fix; 5a Tasks 13–15, Task 16 partial | done (`3e64d06a7b`, `69a4e31a9f`, `6701ae72aa`, `14f7d679e4`, `6745de7a4b`, `30900e12ac`) — Task 16 step 3 (Log time, service time) stopped: it needs a design decision, see the 5a plan's execution notes |
 
 ## Follow-ups found during execution
 
