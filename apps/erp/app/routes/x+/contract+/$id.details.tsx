@@ -8,6 +8,7 @@ import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { getProjectContractRevenue } from "~/modules/projects";
 import {
   getContractLineFunding,
   getContractProjectBillingInvoices
@@ -43,8 +44,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (setup) throw redirect(setup);
 
   // Project billing (Phase 4a): the billing lines' funding on the company's
-  // today, and the invoices that billed them. Nothing for a contract with
-  // no Time & Materials or Cost Plus line.
+  // today, the invoices that billed them and the revenue recognized for them
+  // (Phase 4b). Nothing for a contract with no Time & Materials or Cost Plus
+  // line.
   const billingLines = await client
     .from("customerContractLine")
     .select("id")
@@ -59,18 +61,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const asOf = datetime
     .today(await getCompanyTimeZone(client, companyId))
     .toString();
-  const [funding, invoices] = await Promise.all([
+  const [funding, invoices, revenue] = await Promise.all([
     getContractLineFunding(client, { companyId, lineIds, asOf }),
     getContractProjectBillingInvoices(client, {
       companyId,
       customerContractId: id
-    })
+    }),
+    getProjectContractRevenue(client, { companyId, lineIds })
   ]);
-  if (billingLines.error || funding.error || invoices.error) {
+  if (billingLines.error || funding.error || invoices.error || revenue.error) {
     logger.error("Failed to load a contract's project billing", {
       companyId,
       customerContractId: id,
-      error: billingLines.error ?? funding.error ?? invoices.error
+      error:
+        billingLines.error ?? funding.error ?? invoices.error ?? revenue.error
     });
   }
 
@@ -86,7 +90,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           }
         ])
       ),
-      invoices: invoices.data ?? []
+      invoices: invoices.data ?? [],
+      revenue: revenue.data ?? {}
     }
   };
 }
@@ -136,6 +141,7 @@ export default function ContractDetailsRoute() {
           lines={lines}
           funding={projectBilling.funding}
           invoices={projectBilling.invoices}
+          revenue={projectBilling.revenue}
           currencyCode={contract.currencyCode}
         />
       )}

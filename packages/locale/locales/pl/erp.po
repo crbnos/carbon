@@ -19292,6 +19292,9 @@ msgstr "Ujęcie Przychodów"
 msgid "Revenue Recognition Run"
 msgstr "Ujęcie przychodów"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Przychody ze sprzedaży ujęte na zawarciu leasingu finansowego"
 

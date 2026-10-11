@@ -19292,6 +19292,9 @@ msgstr "收入确认"
 msgid "Revenue Recognition Run"
 msgstr "收入确认运行"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "在销售型租赁开始时确认的收入"
 

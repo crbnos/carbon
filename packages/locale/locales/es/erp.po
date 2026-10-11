@@ -19292,6 +19292,9 @@ msgstr "Reconocimiento de Ingresos por Ventas"
 msgid "Revenue Recognition Run"
 msgstr "Ejecución de reconocimiento de ingresos"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Ingresos por ventas reconocidos al inicio de un arrendamiento de tipo venta"
 

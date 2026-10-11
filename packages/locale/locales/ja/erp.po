@@ -19292,6 +19292,9 @@ msgstr "売上高認識"
 msgid "Revenue Recognition Run"
 msgstr "売上高認識実行"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "セールスタイプリースの開始時に認識された売上高"
 

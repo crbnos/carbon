@@ -10,7 +10,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getContractBillableItems,
-  getContractBillingLines
+  getContractBillingLines,
+  getProjectContractRevenue
 } from "~/modules/projects";
 import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import ProjectBillingLines from "~/modules/projects/ui/Billing/ProjectBillingLines";
@@ -47,16 +48,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getCompanyTimeZone(client, companyId)
   ]);
   const lineIds = (lines.data ?? []).map((line) => line.id);
-  const funding = await getContractLineFunding(client, {
-    companyId,
-    lineIds,
-    asOf: datetime.today(timeZone).toString()
-  });
-  if (lines.error || items.error || funding.error) {
+  const [funding, revenue] = await Promise.all([
+    getContractLineFunding(client, {
+      companyId,
+      lineIds,
+      asOf: datetime.today(timeZone).toString()
+    }),
+    getProjectContractRevenue(client, { companyId, lineIds })
+  ]);
+  if (lines.error || items.error || funding.error || revenue.error) {
     logger.error("Failed to load a project's billing", {
       companyId,
       projectId,
-      error: lines.error ?? items.error ?? funding.error
+      error: lines.error ?? items.error ?? funding.error ?? revenue.error
     });
   }
 
@@ -64,6 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lines: lines.data ?? [],
     items: items.data ?? [],
     count: items.count ?? 0,
+    revenue: revenue.data ?? {},
     funding: Object.fromEntries(
       (funding.data ?? []).map((row) => [
         row.customerContractLineId,
@@ -79,7 +84,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ProjectBillingRoute() {
   const { t } = useLingui();
-  const { lines, items, count, funding } = useLoaderData<typeof loader>();
+  const { lines, items, count, funding, revenue } =
+    useLoaderData<typeof loader>();
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -87,7 +93,11 @@ export default function ProjectBillingRoute() {
         <h3 className="text-xs font-medium text-muted-foreground">
           <Trans>Contract lines</Trans>
         </h3>
-        <ProjectBillingLines lines={lines} funding={funding} />
+        <ProjectBillingLines
+          lines={lines}
+          funding={funding}
+          revenue={revenue}
+        />
       </section>
       <div className="min-h-0 flex-1">
         <ProjectBillableItemsTable

@@ -6,16 +6,19 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Hyperlink } from "~/components";
 import { useCurrencyFormatter, useUser } from "~/hooks";
+import { usePercentFormatter } from "~/hooks/usePercentFormatter";
 import { FundingBar } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
+import type { ProjectContractRevenue } from "../../projects.service";
 import type { ContractBillingLine } from "../../types";
 
 type Position = { billed: number; unbilled: number; incurred: number };
 
 /**
  * A project's contract billing lines: the contract, the line, its billing
- * element, method and funding. Phase 4b adds the percent complete and the
- * revenue recognized to date through `revenue`.
+ * element, method and funding, and with `revenue` the percent complete and
+ * the revenue recognized to date. A Right to Invoice line has no percent
+ * complete.
  */
 export default function ProjectBillingLines({
   lines,
@@ -24,17 +27,22 @@ export default function ProjectBillingLines({
 }: {
   lines: ContractBillingLine[];
   funding: Record<string, Position>;
-  /** Phase 4b: progress and revenue to date per line. */
-  revenue?: Record<
-    string,
-    { percentComplete: number | null; recognizedToDate: number }
-  >;
+  /** Progress and revenue to date per line (`getProjectContractRevenue`). */
+  revenue?: Record<string, ProjectContractRevenue>;
 }) {
   const { t } = useLingui();
   const { company } = useUser();
   // Billing lines need the contract currency to be the base currency (P5).
   const currencyCode = company.baseCurrencyCode ?? "USD";
   const formatMoney = useCurrencyFormatter({ currency: currencyCode });
+  const formatPercent = usePercentFormatter();
+  // A Right to Invoice line has no progress: it recognizes what it bills.
+  const formatProgress = (line: ContractBillingLine) => {
+    const progress = revenue?.[line.id]?.percentComplete ?? null;
+    return line.revenueMethod === "Percent Complete" && progress !== null
+      ? formatPercent.format(progress)
+      : "—";
+  };
   const methodLabels: Record<ContractBillingLine["billingMethod"], string> = {
     Fixed: t`Fixed`,
     "Time & Materials": t`Time & Materials`,
@@ -74,7 +82,12 @@ export default function ProjectBillingLines({
             </Th>
             {revenue && (
               <Th className="text-right">
-                <Trans>Recognized</Trans>
+                <Trans>Percent Complete</Trans>
+              </Th>
+            )}
+            {revenue && (
+              <Th className="text-right">
+                <Trans>Revenue Recognized</Trans>
               </Th>
             )}
           </Tr>
@@ -128,9 +141,12 @@ export default function ProjectBillingLines({
               </Td>
               {revenue && (
                 <Td className="text-right tabular-nums">
-                  {revenue[line.id]
-                    ? formatMoney.format(revenue[line.id].recognizedToDate)
-                    : "—"}
+                  {formatProgress(line)}
+                </Td>
+              )}
+              {revenue && (
+                <Td className="text-right tabular-nums">
+                  {formatMoney.format(revenue[line.id]?.recognizedToDate ?? 0)}
                 </Td>
               )}
             </Tr>

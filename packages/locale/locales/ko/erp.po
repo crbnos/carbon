@@ -19292,6 +19292,9 @@ msgstr "매출 인식"
 msgid "Revenue Recognition Run"
 msgstr "매출 인식 실행"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "판매형 리스 개시 시 인식된 매출"
 

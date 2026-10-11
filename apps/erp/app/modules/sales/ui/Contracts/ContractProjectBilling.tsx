@@ -20,6 +20,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
 import { Hyperlink } from "~/components";
 import { useDateFormatter } from "~/hooks";
+import type { ProjectContractRevenue } from "~/modules/projects";
 import { path } from "~/utils/path";
 import { isProjectBillingMethod } from "../../sales.models";
 import { useBillingMethodLabels } from "./ContractLineBillingFields";
@@ -36,21 +37,24 @@ export type ContractProjectBillingInvoice = {
 };
 
 /**
- * The contract's Time & Materials and Cost Plus lines with their funding, and
- * the invoices that billed them, each with its backup report. Shown only when
- * the contract has a billing line.
+ * The contract's Time & Materials and Cost Plus lines with their funding and
+ * the revenue recognized for them, and the invoices that billed them, each
+ * with its backup report. Shown only when the contract has a billing line.
  */
 export default function ContractProjectBilling({
   contractId,
   lines,
   funding,
   invoices,
+  revenue,
   currencyCode
 }: {
   contractId: string;
   lines: ContractLine[];
   funding: Record<string, ContractLineFundingPosition>;
   invoices: ContractProjectBillingInvoice[];
+  /** Revenue recognized per line (`getProjectContractRevenue`). */
+  revenue: Record<string, ProjectContractRevenue>;
   currencyCode: string;
 }) {
   const { t } = useLingui();
@@ -93,6 +97,9 @@ export default function ContractProjectBilling({
                 <Th className="text-right">
                   <Trans>Funded</Trans>
                 </Th>
+                <Th className="text-right">
+                  <Trans>Revenue Recognized</Trans>
+                </Th>
                 <Th className="min-w-32">
                   <Trans>Funding</Trans>
                 </Th>
@@ -133,6 +140,12 @@ export default function ContractProjectBilling({
                     <Td className="text-right whitespace-nowrap">
                       <ContractMoney
                         value={line.fundedAmount}
+                        currencyCode={currencyCode}
+                      />
+                    </Td>
+                    <Td className="text-right whitespace-nowrap">
+                      <ContractMoney
+                        value={revenue[line.id]?.recognizedToDate ?? 0}
                         currencyCode={currencyCode}
                       />
                     </Td>

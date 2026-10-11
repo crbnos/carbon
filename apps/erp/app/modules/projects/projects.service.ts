@@ -2651,6 +2651,63 @@ export async function getContractBillingLines(
     .order("startDate", { ascending: true });
 }
 
+export type ProjectContractRevenue = {
+  /** Σ the line's months recognized in Carbon or externally. */
+  recognizedToDate: number;
+  /** The latest month's progress (0–1); null for Right to Invoice. */
+  percentComplete: number | null;
+  estimateAtCompletion: number | null;
+  transactionPrice: number | null;
+};
+
+/**
+ * The revenue of project contract lines, per line: what the revenue
+ * recognition runs recognized to date, and the progress figures of the
+ * latest month (Phase 4b).
+ */
+export async function getProjectContractRevenue(
+  client: Client,
+  args: { companyId: string; lineIds: string[] }
+): Promise<{
+  data: Record<string, ProjectContractRevenue> | null;
+  error: PostgrestError | null;
+}> {
+  if (args.lineIds.length === 0) return { data: {}, error: null };
+  const months = await client
+    .from("customerContractRevenue")
+    .select(
+      "customerContractLineId, periodStart, amount, status, progress, estimateAtCompletion, transactionPrice"
+    )
+    .eq("companyId", args.companyId)
+    .in("customerContractLineId", args.lineIds)
+    .order("periodStart", { ascending: true });
+  if (months.error) return { data: null, error: months.error };
+
+  const byLine: Record<string, ProjectContractRevenue> = {};
+  for (const month of months.data ?? []) {
+    const line = byLine[month.customerContractLineId] ?? {
+      recognizedToDate: 0,
+      percentComplete: null,
+      estimateAtCompletion: null,
+      transactionPrice: null
+    };
+    if (month.status !== "Planned") {
+      line.recognizedToDate += Number(month.amount);
+    }
+    // Ordered by month, so the last month seen is the latest.
+    line.percentComplete =
+      month.progress === null ? null : Number(month.progress);
+    line.estimateAtCompletion =
+      month.estimateAtCompletion === null
+        ? null
+        : Number(month.estimateAtCompletion);
+    line.transactionPrice =
+      month.transactionPrice === null ? null : Number(month.transactionPrice);
+    byLine[month.customerContractLineId] = line;
+  }
+  return { data: byLine, error: null };
+}
+
 /** The statuses each review action applies to. Billed and Written Off
  *  items never change. */
 const BILLABLE_ITEM_ACTION_FROM: Record<

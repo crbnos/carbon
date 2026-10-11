@@ -19292,6 +19292,9 @@ msgstr "Erlöserfassung"
 msgid "Revenue Recognition Run"
 msgstr "Umsatzerlöse-Anerkennungslauf"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Bei Beginn eines Finanzierungsleasingverhältnisses erfasste Umsatzerlöse"
 

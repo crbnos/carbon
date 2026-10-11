@@ -19292,6 +19292,9 @@ msgstr "राजस्व मान्यता"
 msgid "Revenue Recognition Run"
 msgstr "राजस्व मान्यता रन"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "बिक्रय-प्रकार पट्टे की शुरुआत में राजस्व मान्य"
 

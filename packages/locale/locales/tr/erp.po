@@ -19292,6 +19292,9 @@ msgstr "Hasılat Muhasebeleştirmesi"
 msgid "Revenue Recognition Run"
 msgstr "Hasılat Muhasebeleştirme Çalışması"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Satış türü kiralamanın başlangıcında muhasebeleştirilen Hasılat"
 

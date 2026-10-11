@@ -19292,6 +19292,9 @@ msgstr "Признание выручки"
 msgid "Revenue Recognition Run"
 msgstr "Период признания выручки"
 
+msgid "Revenue Recognized"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Выручка, признанная при начале лизинга продажного типа"
 
