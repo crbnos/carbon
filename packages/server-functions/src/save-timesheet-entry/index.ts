@@ -80,6 +80,15 @@ type EntryRow = Pick<
   | "entryDate"
 >;
 
+/**
+ * The note of an updated entry. A save without a note keeps the stored note
+ * (the grid sends hours only, and Log time may have written one), as Phase 1a
+ * did. A note that is sent replaces it.
+ */
+function keptNote(note: string | undefined): { note?: string | null } {
+  return note === undefined ? {} : { note: note || null };
+}
+
 /** The fields a revision records, before and after a change. */
 function revisionFields(entry: {
   hours: number | string;
@@ -282,7 +291,7 @@ async function save(
     .updateTable("timesheetEntry")
     .set({
       hours: input.hours,
-      note: input.note ?? null,
+      ...keptNote(input.note),
       ...(late ? { lateReason } : {}),
       status: next,
       // A changed entry needs approval again.
@@ -528,7 +537,7 @@ async function saveStandard(
     .updateTable("timesheetEntry")
     .set({
       hours: input.hours,
-      note: input.note ?? null,
+      ...keptNote(input.note),
       status: "Draft",
       rejectionNote: null,
       updatedBy: userId,

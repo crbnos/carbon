@@ -474,3 +474,45 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "A cell save without a note keeps the stored note, in both modes",
+  async () => {
+    for (const mode of ["Standard", "DCAA"] as const) {
+      const f = await timesheetFixture(mode);
+      try {
+        const saved = await saveTimesheetEntry(f.ctx, {
+          ...f.cell,
+          entryDate: day(0),
+          hours: 6,
+          note: "Thermal vacuum prep"
+        });
+        expect(saved.error).toBeNull();
+
+        // The grid sends hours only.
+        const changed = await saveTimesheetEntry(f.ctx, {
+          ...f.cell,
+          entryDate: day(0),
+          hours: 4,
+          reason: mode === "DCAA" ? "Left early" : undefined
+        });
+        expect(changed.error).toBeNull();
+        const row = await f.entry(saved.data!.entryId!);
+        expect(Number(row.hours)).toEqual(4);
+        expect(row.note).toEqual("Thermal vacuum prep");
+
+        // A note that is sent replaces the stored one.
+        await saveTimesheetEntry(f.ctx, {
+          ...f.cell,
+          entryDate: day(0),
+          hours: 5,
+          note: "Bake-out",
+          reason: mode === "DCAA" ? "Stayed late" : undefined
+        });
+        expect((await f.entry(saved.data!.entryId!)).note).toEqual("Bake-out");
+      } finally {
+        await f.cleanup();
+      }
+    }
+  }
+);
