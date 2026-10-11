@@ -12,6 +12,7 @@ import {
   contractPositionPreview,
   datetime,
   horizon,
+  isProgressRevenueMethod,
   lineRevenueDates,
   lineTotals,
   planInvoiceSchedule,
@@ -248,6 +249,9 @@ export async function loader({
   let revenueLines: ReturnType<typeof revenuePreview> = [];
   try {
     revenueLines = contractLines.flatMap((line) => {
+      // Right to Invoice and Percent Complete lines have no planned revenue:
+      // the monthly recognition run computes it from progress.
+      if (isProgressRevenueMethod(line.revenueMethod)) return [];
       const dates = lineRevenueDates(line);
       // A Recurring line with no end (open-ended, or running to the contract's
       // end) earns over the periods the schedule bills it for — not all at once,

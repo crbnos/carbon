@@ -318,6 +318,7 @@ export function toLineTerms(
     | "discountPercent"
     | "startDate"
     | "endDate"
+    | "billingMethod"
   >[]
 ): ContractLineTerms[] {
   return lines.map((line) => ({
@@ -328,7 +329,8 @@ export function toLineTerms(
     rateUnit: line.rateUnit,
     discountPercent: Number(line.discountPercent),
     startDate: line.startDate,
-    endDate: line.endDate
+    endDate: line.endDate,
+    billingMethod: line.billingMethod
   }));
 }
 

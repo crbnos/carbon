@@ -51,6 +51,9 @@ export type ContractLineTerms = {
   discountPercent: number;
   startDate: string;
   endDate: string | null;
+  /** Absent means Fixed. A Time & Materials or Cost Plus line has no
+   *  schedule: its billable items are invoiced instead. */
+  billingMethod?: "Fixed" | "Time & Materials" | "Cost Plus";
 };
 
 export type PlannedRow = {
@@ -395,6 +398,7 @@ export function planInvoiceSchedule(
   };
 
   for (const line of lines) {
+    if (line.billingMethod && line.billingMethod !== "Fixed") continue;
     if (line.revenueType === "One-time") {
       const periodEnd = line.endDate ?? line.startDate;
       if (periodEnd < line.startDate) continue;
