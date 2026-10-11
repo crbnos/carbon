@@ -16,8 +16,8 @@ import { lockContractPositions } from "../lib/contract-ledger";
 import {
   claimScheduleRows,
   lockRecognitionProposals,
-  RUN_ROW_SYNTHESIZERS,
   type RunProposalContext,
+  runRowSynthesizers,
   selectDueScheduleRows
 } from "../propose-revenue-recognition-run";
 
@@ -38,7 +38,10 @@ const recalculateRevenueRecognitionRun = defineServerFn({
   name: "recalculate-revenue-recognition-run",
   input: recalculateRevenueRecognitionRunInput,
   permissions: { update: "accounting" },
-  async run({ db, companyId, userId }, { runId }): Promise<RunRecalculation> {
+  async run(
+    { db, companyId, userId, revenueRunSynthesizers },
+    { runId }
+  ): Promise<RunRecalculation> {
     return db.transaction().execute(async (trx) => {
       const run = await trx
         .selectFrom("revenueRecognitionRun")
@@ -96,7 +99,7 @@ const recalculateRevenueRecognitionRun = defineServerFn({
           .execute();
       }
 
-      for (const synthesize of RUN_ROW_SYNTHESIZERS) {
+      for (const synthesize of runRowSynthesizers(revenueRunSynthesizers)) {
         await synthesize(trx, ctx);
       }
 

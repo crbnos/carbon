@@ -10,6 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateInput, CreateResultFor } from "./create";
 import type { ServerFnResult } from "./define-server-fn";
 import type { ServerFnError } from "./errors";
+import type { RunRowSynthesizer } from "./propose-revenue-recognition-run";
 import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
@@ -86,6 +87,10 @@ type Fields = {
   companyId: string;
   /** Recorded on every write (`createdBy`, `updatedBy`). */
   userId: string;
+  /** Extra revenue recognition run synthesizers (`projectRevenueSynthesizers`
+   *  from `@carbon/ee/project-revenue.server`). Every caller of the propose,
+   *  recalculate and preview functions passes them. */
+  revenueRunSynthesizers?: RunRowSynthesizer[];
 };
 
 class Invoker {

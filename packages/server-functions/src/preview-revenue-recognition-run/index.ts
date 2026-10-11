@@ -12,7 +12,7 @@ import { round } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import {
-  RUN_ROW_SYNTHESIZERS,
+  runRowSynthesizers,
   selectDueScheduleRows
 } from "../propose-revenue-recognition-run";
 
@@ -34,11 +34,14 @@ const previewRevenueRecognitionRun = defineServerFn({
   name: "preview-revenue-recognition-run",
   input: previewRevenueRecognitionRunInput,
   permissions: { view: "accounting" },
-  async run({ db, companyId, userId }, { periodEnd }): Promise<RunPreview> {
+  async run(
+    { db, companyId, userId, revenueRunSynthesizers },
+    { periodEnd }
+  ): Promise<RunPreview> {
     try {
       await db.transaction().execute(async (trx) => {
         const ctx = { companyId, periodEnd, userId };
-        for (const synthesize of RUN_ROW_SYNTHESIZERS) {
+        for (const synthesize of runRowSynthesizers(revenueRunSynthesizers)) {
           await synthesize(trx, ctx);
         }
         const due = await selectDueScheduleRows(trx, ctx);

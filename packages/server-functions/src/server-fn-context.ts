@@ -12,6 +12,7 @@ import {
   permissionsFromClaims,
   type RequiredPermissions
 } from "./permissions";
+import type { RunRowSynthesizer } from "./propose-revenue-recognition-run";
 
 let serviceRole: Promise<SupabaseClient<Database>> | undefined;
 
@@ -67,12 +68,17 @@ type ContextFields = {
   companyId: string;
   /** Recorded on every write (`createdBy`, `updatedBy`), system or not. */
   userId: string;
+  /** Extra revenue recognition run synthesizers from the caller: the ERP and
+   *  the jobs pass the commercial project revenue synthesizer, which this
+   *  package cannot import. */
+  revenueRunSynthesizers?: RunRowSynthesizer[];
 };
 
 export class ServerFnContext {
   readonly db: Kysely<KyselyDatabase>;
   readonly companyId: string;
   readonly userId: string;
+  readonly revenueRunSynthesizers: RunRowSynthesizer[];
   readonly actor: Actor;
   readonly apiKey: string | undefined;
 
@@ -80,6 +86,7 @@ export class ServerFnContext {
     this.db = fields.db;
     this.companyId = fields.companyId;
     this.userId = fields.userId;
+    this.revenueRunSynthesizers = fields.revenueRunSynthesizers ?? [];
     this.actor = actor;
     this.apiKey = apiKey;
   }

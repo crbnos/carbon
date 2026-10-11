@@ -493,10 +493,15 @@ export async function synthesizeContractRevenue(
     .execute();
 }
 
-export const RUN_ROW_SYNTHESIZERS: RunRowSynthesizer[] = [
-  synthesizeRentalAccruals,
-  synthesizeContractRevenue
-];
+/** The run's synthesizers in order. `extra` comes from the caller (the
+ *  commercial project revenue synthesizer, decision R1) and runs before the
+ *  contract synthesizer, which moves the month rows it writes through the
+ *  contract position. */
+export function runRowSynthesizers(
+  extra: RunRowSynthesizer[] = []
+): RunRowSynthesizer[] {
+  return [synthesizeRentalAccruals, ...extra, synthesizeContractRevenue];
+}
 
 export type RunProposal = { id: string; runId: string; lineCount: number };
 
@@ -561,12 +566,13 @@ export async function claimScheduleRows(
  */
 async function createRevenueRecognitionRunProposal(
   db: Kysely<KyselyDatabase>,
-  args: RunProposalContext
+  args: RunProposalContext,
+  extraSynthesizers: RunRowSynthesizer[]
 ): Promise<RunProposal | null> {
   const { companyId, periodEnd, userId } = args;
 
   return db.transaction().execute(async (trx) => {
-    for (const synthesize of RUN_ROW_SYNTHESIZERS) {
+    for (const synthesize of runRowSynthesizers(extraSynthesizers)) {
       await synthesize(trx, args);
     }
 
@@ -640,7 +646,7 @@ const proposeRevenueRecognitionRun = defineServerFn({
   name: "propose-revenue-recognition-run",
   input: proposeRevenueRecognitionRunInput,
   permissions: { create: "accounting" },
-  async run({ db, companyId, userId }, { periodEnd }) {
+  async run({ db, companyId, userId, revenueRunSynthesizers }, { periodEnd }) {
     // A run may cover the current month or an earlier one, never a month that
     // has not started (the ERP's isFutureRunPeriod; this package cannot import
     // it). Guards the monthly job as well as the routes.
@@ -650,11 +656,11 @@ const proposeRevenueRecognitionRun = defineServerFn({
         `${formatDate(periodEnd, { month: "long", year: "numeric" })} has not started yet. A run can cover the current month or an earlier one.`
       );
     }
-    return createRevenueRecognitionRunProposal(db, {
-      companyId,
-      periodEnd,
-      userId
-    });
+    return createRevenueRecognitionRunProposal(
+      db,
+      { companyId, periodEnd, userId },
+      revenueRunSynthesizers
+    );
   }
 });
 
