@@ -76,7 +76,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 14: Add the validators
 - [x] Task 15: Add the service functions
 - [x] Task 16: Route every timesheet write through the server functions
-- [ ] Task 17: Add Settings → Timekeeping
+- [x] Task 17: Add Settings → Timekeeping
 - [ ] Task 18: Add allowability to the account drawer
 - [ ] Task 19: Add the cost objective, restrict charging and members to the project
 - [ ] Task 20: Add the element flags
@@ -1561,3 +1561,9 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   2. The purchase invoice void and the purchase receipt void now allocate the reversal line ids with `allocateJournalLineIds` before the insert, as the precedent `3e64d06a7b` and the charge void do.
   3. The Production Event reversal lines net the earlier lines per account, so a reversal row takes the reversal line on its original line's account. Two rows on one account share that line. The relief reads only the line's account, so this is correct.
   4. Tests: `right-to-invoice.test.ts` relieves a cost, voids it, and checks that the next run relieves the reversal for −1,600.00. `project-invoice.test.ts` and `project-event.test.ts` check that the reversal row names the void line on the project account.
+- Task 17:
+  1. The page copies the one-card settings shape of `RescheduleToleranceCard` (a `ValidatedForm` with a fetcher and a toast), not the intent switch of `invoicing.tsx`. The page has one card and one validator, so it needs no intent.
+  2. The DCAA check counts only Standard projects (`projectType = 'Standard'`). A service order creates its own Service project, which has no cost objective field, so counting it would block DCAA in every company with service orders.
+  3. The check runs only when the mode turns on (the saved mode is not DCAA). An edit of the texts in DCAA mode does not count again.
+  4. The Controls helper text explains DCAA mode in one line. The entry window, timecard check and weekly hours fields each say that they apply in DCAA mode.
+  5. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.

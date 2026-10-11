@@ -4162,6 +4162,9 @@ msgstr "ブラインド"
 msgid "Blind Count"
 msgstr "ブラインドカウント"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "エラーでブロック"
 
@@ -4756,6 +4759,12 @@ msgstr "証明書番号"
 
 msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "認定済み"
@@ -5872,6 +5881,9 @@ msgstr "アイテムID（部品、材料、消耗品、工具、およびサー�
 
 msgid "Controller, Accountant"
 msgstr "コントローラー、会計士"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "計画が廃止品目をどのように処理するかを制御します：先に消費は在庫がなくなるまで消費してから後継品目に切り替え、新を優先は新しい所要量を即座に後継品目にリダイレクト、在庫のみは最小サービス在庫のみを保持、在庫なしは品目を計画から完全に除外します。"
@@ -7224,6 +7236,12 @@ msgstr "休日"
 
 msgid "Days Remaining"
 msgstr "残り日数"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "無効化"
@@ -9457,6 +9475,9 @@ msgstr "仕訳"
 msgid "Entry Type"
 msgstr "エントリータイプ"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "各明細が売上高を得る方法：日ごとに分散するか、毎
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "各個のレンタル料がどのように期間に分割され、期間内のいつ請求されるかを説明します。"
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "スケジュール済みの作業が利用可能な時間をどの程度超過しているか（+）、または空いている時間がどの程度あるか。"
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "開いているメニュー内"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "保全中"
@@ -22007,6 +22037,9 @@ msgstr "標準リードタイム"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "開始"
 
@@ -23489,6 +23522,9 @@ msgstr "この作業区の機械実行の時間単価。ログされた機械時
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "この作業区に適用される時間当たりの間接費負担。労務 + 機械と完全な見積レートの差が間接費で吸収されます。"
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "スケジューラーがステーションに配置した時間。"
 
@@ -24737,6 +24773,9 @@ msgstr "時間利用率"
 msgid "Timecard"
 msgstr "タイムカード"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "タイムカード"
 
@@ -24745,6 +24784,12 @@ msgstr "タイムカードは無効です"
 
 msgid "Timecards are enabled"
 msgstr "タイムカードが有効です"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""

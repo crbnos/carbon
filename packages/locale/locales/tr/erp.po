@@ -4162,6 +4162,9 @@ msgstr "Kör"
 msgid "Blind Count"
 msgstr "Kör Sayımı"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Hata ile engelle"
 
@@ -4756,6 +4759,12 @@ msgstr "Sertifika Numarası"
 
 msgid "Certificate uploaded"
 msgstr "Sertifika Yüklendi"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "Sertifikalı"
@@ -5872,6 +5881,9 @@ msgstr "Stok kartı ID'lerinin (parçalar, malzeme, sarf malzemeleri, takımlar 
 
 msgid "Controller, Accountant"
 msgstr "Kontrolör, Muhasebeci"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Planlamanın kullanımdan kaldırılan bir öğeyi nasıl işlediğini kontrol eder: Önce Tüket mevcut stoğu tüketir ve ardından halefi kullanmaya geçer, Yeni Tercih et yeni talebi hemen halefi yönlendirir, Yalnızca Stok minimum bir hizmet rezervi tutar ve Stok Yok öğeyi planlama işleminden tamamen çıkarır.\""
@@ -7224,6 +7236,12 @@ msgstr "İzin Günleri"
 
 msgid "Days Remaining"
 msgstr "Kalan Günler"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "Devre dışı bırak"
@@ -9457,6 +9475,9 @@ msgstr "Giriş"
 msgid "Entry Type"
 msgstr "Giriş Türü"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "Her satırın hasılatını nasıl kazandığı: gün bazında dağıtı
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Her adetin kirası dönemlere nasıl bölündüğü ve bir dönem içinde ne zaman faturalandırıldığı."
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "Planlanan işin mevcut saatleri ne kadar aştığı (+) veya kaç saatin hala boş olması."
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "Açık bir menüde"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "Açık menüde"
@@ -22007,6 +22037,9 @@ msgstr "Normal Tedarik süresi"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "Başlat"
 
@@ -23489,6 +23522,9 @@ msgstr "Bu İş merkezi üzerinde makinenin çalıştırılmasının saatlik Mal
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Bu İş merkezi üzerine uygulanan saatlik dolaylı Maliyet yükü; İşçilik + Makine ile tam tekliflendirme oranı arasındaki fark Genel üretim giderlerinin absorbe ettiği yerdir."
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "zamanlayıcının istasyona yerleştirdiği saatler."
 
@@ -24737,6 +24773,9 @@ msgstr "Zaman Kullanım Oranı"
 msgid "Timecard"
 msgstr "Çalışma Saati Kaydı"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "Puantaj"
 
@@ -24745,6 +24784,12 @@ msgstr "Puantaj devre dışı"
 
 msgid "Timecards are enabled"
 msgstr "Puantaj etkin"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""

@@ -4162,6 +4162,9 @@ msgstr "Blind"
 msgid "Blind Count"
 msgstr "Blind Count"
 
+msgid "Block"
+msgstr "Block"
+
 msgid "Block with an error"
 msgstr "Block with an error"
 
@@ -4756,6 +4759,12 @@ msgstr "Certificate Number"
 
 msgid "Certificate uploaded"
 msgstr "Certificate uploaded"
+
+msgid "Certification text, exempt staff"
+msgstr "Certification text, exempt staff"
+
+msgid "Certification text, non-exempt staff"
+msgstr "Certification text, non-exempt staff"
 
 msgid "Certified"
 msgstr "Certified"
@@ -5872,6 +5881,9 @@ msgstr "Control whether item IDs (parts, materials, consumables, tools, and serv
 
 msgid "Controller, Accountant"
 msgstr "Controller, Accountant"
+
+msgid "Controls"
+msgstr "Controls"
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
@@ -7224,6 +7236,12 @@ msgstr "Days Off"
 
 msgid "Days Remaining"
 msgstr "Days Remaining"
+
+msgid "DCAA"
+msgstr "DCAA"
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 
 msgid "Deactivate"
 msgstr "Deactivate"
@@ -9457,6 +9475,9 @@ msgstr "Entry"
 msgid "Entry Type"
 msgstr "Entry Type"
 
+msgid "Entry window (days)"
+msgstr "Entry window (days)"
+
 msgid "Environmental"
 msgstr "Environmental"
 
@@ -11459,6 +11480,9 @@ msgstr "How each line earns its revenue: spread by the day or evenly per month, 
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "How each unit's rent is cut into periods, and when in a period it is invoiced."
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "how far the scheduled work is over the available hours (+) or how many hours are still free."
 
@@ -11730,6 +11754,12 @@ msgstr "In {0}; the supplier part's conversion factor gives the purchase quantit
 
 msgid "In an open menu"
 msgstr "In an open menu"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr "In DCAA mode, an entry older than this needs a late reason."
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr "In DCAA mode, compares a submitted week with the employee's timecards."
 
 msgid "In Maintenance"
 msgstr "In Maintenance"
@@ -22007,6 +22037,9 @@ msgstr "Standard Lead Time"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr "Standard posts this cost to material variance. The serial stays at its standard cost."
 
+msgid "Standard weekly hours"
+msgstr "Standard weekly hours"
+
 msgid "Start"
 msgstr "Start"
 
@@ -23489,6 +23522,9 @@ msgstr "The hourly cost of running the machinery on this work center; combined w
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr "The hours an exempt employee's week is diluted to in DCAA mode."
+
 msgid "the hours the scheduler placed on the station."
 msgstr "the hours the scheduler placed on the station."
 
@@ -24737,6 +24773,9 @@ msgstr "Time Utilization"
 msgid "Timecard"
 msgstr "Timecard"
 
+msgid "Timecard check"
+msgstr "Timecard check"
+
 msgid "Timecards"
 msgstr "Timecards"
 
@@ -24745,6 +24784,12 @@ msgstr "Timecards are disabled"
 
 msgid "Timecards are enabled"
 msgstr "Timecards are enabled"
+
+msgid "Timekeeping"
+msgstr "Timekeeping"
+
+msgid "Timekeeping Controls"
+msgstr "Timekeeping Controls"
 
 msgid "Timeline"
 msgstr "Timeline"

@@ -4162,6 +4162,9 @@ msgstr "ब्लाइंड"
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "त्रुटि के साथ ब्लॉक करें"
 
@@ -4756,6 +4759,12 @@ msgstr "प्रमाणपत्र संख्या"
 
 msgid "Certificate uploaded"
 msgstr "प्रमाणपत्र अपलोड किया गया"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "प्रमाणित"
@@ -5872,6 +5881,9 @@ msgstr "नियंत्रित करें कि क्या आइट�
 
 msgid "Controller, Accountant"
 msgstr "नियंत्रक, लेखाकार"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "यह नियंत्रित करता है कि योजना एक बंद की गई आइटम को कैसे संभालती है: पहले उपयोग करें ऑन-हैंड स्टॉक को समाप्त करता है फिर उत्तराधिकारी पर स्विच करता है; नई को प्राथमिकता तुरंत नई मांग को उत्तराधिकारी पर पुनर्निर्देशित करती है; केवल स्टॉक न्यूनतम सेवा रिज़र्व रखता है; कोई स्टॉक आइटम को पूरी तरह योजना से हटा देता है।"
@@ -7224,6 +7236,12 @@ msgstr "दिन बंद"
 
 msgid "Days Remaining"
 msgstr "शेष दिन"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "निष्क्रिय करें"
@@ -9457,6 +9475,9 @@ msgstr "प्रविष्टि"
 msgid "Entry Type"
 msgstr "प्रविष्टि प्रकार"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "प्रत्येक पंक्ति अपने राजस्
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "प्रत्येक इकाई का किराया अवधि में कैसे काटा जाता है, और अवधि में इसे कब चालान दिया जाता है।"
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "अनुसूचित कार्य उपलब्ध घंटों से कितना अधिक है (+) या कितने घंटे अभी भी मुक्त हैं।"
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "एक खुले मेनू में"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "रखरखाव में"
@@ -22007,6 +22037,9 @@ msgstr "मानक लीड टाइम"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "शुरू करें"
 
@@ -23489,6 +23522,9 @@ msgstr "इस वर्क सेंटर पर मशीनरी चला�
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "इस वर्क सेंटर पर लागू अप्रत्यक्ष लागत का प्रति घंटा भार; श्रम + मशीन और पूर्ण कोटेशन दर के बीच अंतर वह है जो उपरिव्यय ले लेता है।"
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "स्टेशन पर शेड्यूलर द्वारा रखे गए घंटे।"
 
@@ -24737,6 +24773,9 @@ msgstr "समय उपयोग"
 msgid "Timecard"
 msgstr "टाइमकार्ड"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "टाइमकार्ड"
 
@@ -24745,6 +24784,12 @@ msgstr "टाइमकार्ड अक्षम हैं"
 
 msgid "Timecards are enabled"
 msgstr "टाइमकार्ड सक्षम हैं"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""

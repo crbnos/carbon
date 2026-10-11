@@ -4162,6 +4162,9 @@ msgstr "Blind"
 msgid "Blind Count"
 msgstr "Blinde Inventur"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Mit Fehler blockieren"
 
@@ -4756,6 +4759,12 @@ msgstr "Zertifikatnummer"
 
 msgid "Certificate uploaded"
 msgstr "Zertifikat hochgeladen"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "Zertifiziert"
@@ -5872,6 +5881,9 @@ msgstr "Steuern Sie, ob Artikel-IDs (Teile, Materialien, Verbrauchsmaterialien, 
 
 msgid "Controller, Accountant"
 msgstr "Controller, Buchhalter"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Steuert, wie die Planung mit eingestellten Artikeln umgeht: „Zuerst verbrauchen\" verbraucht den verfügbaren Bestand bevor zum Nachfolger gewechselt wird, „Bevorzuge Neu\" leitet neue Nachfrage sofort zum Nachfolger um, „Nur Bestand\" behält nur eine minimale Servicereserve, und „Kein Bestand\" entfernt den Artikel vollständig aus der Planung."
@@ -7224,6 +7236,12 @@ msgstr "Tage frei"
 
 msgid "Days Remaining"
 msgstr "Verbleibende Tage"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "Deaktivieren"
@@ -9457,6 +9475,9 @@ msgstr "Eintrag"
 msgid "Entry Type"
 msgstr "Eintragstyp"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "Wie jede Position ihre Umsatzerlöse verdient: verteilt nach Tag oder gl
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Wie die Miete jeder Einheit in Perioden aufgeteilt wird und wann in einer Periode sie fakturiert wird."
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "wie weit die geplante Arbeit über die verfügbaren Stunden (+) hinausgeht oder wie viele Stunden noch frei sind."
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "In einem offenen Menü"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "In Wartung"
@@ -22007,6 +22037,9 @@ msgstr "Standard-Beschaffungszeit"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "Starten"
 
@@ -23489,6 +23522,9 @@ msgstr "Die Stundensätze für Maschinenkosten an diesem Arbeitsplatz; kombinier
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Die auf diesem Arbeitsplatz angewendeten Stundensätze für indirekte Kosten; der Unterschied zwischen Personal + Maschine und dem vollständigen Angebotssatz wird durch die Gemeinkosten abgedeckt."
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "die Stunden, die der Planer auf der Station platziert hat."
 
@@ -24737,6 +24773,9 @@ msgstr "Zeitauslastung"
 msgid "Timecard"
 msgstr "Zeitkarte"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "Zeiterfassung"
 
@@ -24745,6 +24784,12 @@ msgstr "Zeiterfassungen sind deaktiviert"
 
 msgid "Timecards are enabled"
 msgstr "Zeiterfassung ist aktiviert"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""

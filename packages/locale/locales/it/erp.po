@@ -4162,6 +4162,9 @@ msgstr "Cieco"
 msgid "Blind Count"
 msgstr "Conteggio Cieco"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Blocca con un errore"
 
@@ -4756,6 +4759,12 @@ msgstr "Numero del Certificato"
 
 msgid "Certificate uploaded"
 msgstr "Certificato caricato"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "Certificato"
@@ -5872,6 +5881,9 @@ msgstr "Controlla se gli ID articolo (componenti, materiali, materiali di consum
 
 msgid "Controller, Accountant"
 msgstr "Controllore, Contabile"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Controlla come la pianificazione gestisce un articolo discontinuato: Consumare prima esaurisce la giacenza prima di passare al successore, Preferisci Nuovo reindirizza immediatamente la nuova domanda al successore, Solo Giacenza mantiene solo una minima riserva di servizio e Nessuna Giacenza esclude completamente l'articolo dalla pianificazione."
@@ -7224,6 +7236,12 @@ msgstr "Giorni liberi"
 
 msgid "Days Remaining"
 msgstr "Giorni rimanenti"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "Disattiva"
@@ -9457,6 +9475,9 @@ msgstr "Registrazione"
 msgid "Entry Type"
 msgstr "Tipo di Voce"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "In che modo ogni riga realizza i suoi ricavi: distribuito per giorno o u
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Come il noleggio di ogni unità è diviso in periodi e quando in un periodo viene fatturato."
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "quanto lavoro programmato supera le ore disponibili (+) o quante ore sono ancora libere."
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "In un menu aperto"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "In manutenzione"
@@ -22007,6 +22037,9 @@ msgstr "Lead time ordinario"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "Avvia"
 
@@ -23489,6 +23522,9 @@ msgstr "Il costo orario di funzionamento dei macchinari in questo centro di lavo
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "L'onere dei costi indiretti orari applicato a questo centro di lavoro; la differenza tra manodopera + macchina e il tasso di quotazione completo è ciò che i costi generali assorbono."
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "le ore che lo scheduler ha inserito nella stazione."
 
@@ -24737,6 +24773,9 @@ msgstr "Utilizzo temporale"
 msgid "Timecard"
 msgstr "Foglio presenze"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "Rilevazione tempi"
 
@@ -24745,6 +24784,12 @@ msgstr "Rilevazione tempi disabilitata"
 
 msgid "Timecards are enabled"
 msgstr "Rilevazione tempi abilitata"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""

@@ -4162,6 +4162,9 @@ msgstr "Слепой"
 msgid "Blind Count"
 msgstr "Слепой подсчет"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Заблокировать с ошибкой"
 
@@ -4756,6 +4759,12 @@ msgstr "Номер сертификата"
 
 msgid "Certificate uploaded"
 msgstr "Сертификат загружен"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "Сертифицировано"
@@ -5872,6 +5881,9 @@ msgstr "Управляйте тем, могут ли коды элементов
 
 msgid "Controller, Accountant"
 msgstr "Контроллер, Бухгалтер"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Управляет тем, как планирование обрабатывает снятую с производства номенклатуру: режим «Сначала израсходовать» исчерпывает имеющийся запас перед переходом на преемника, режим «Предпочесть новое» сразу перенаправляет новую потребность на преемника, режим «Только запас» сохраняет только минимальный резервный запас, а режим «Нет запаса» полностью исключает номенклатуру из планирования."
@@ -7224,6 +7236,12 @@ msgstr "Выходные дни"
 
 msgid "Days Remaining"
 msgstr "Дней осталось"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "Деактивировать"
@@ -9457,6 +9475,9 @@ msgstr "Запись"
 msgid "Entry Type"
 msgstr "Тип записи"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "Как каждая строка признает выручку: рас
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Как аренда каждой единицы делится на периоды и когда в периоде выставляется счет."
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "насколько запланированная работа превышает доступные часы (+) или сколько часов все еще свободно."
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "В открытом меню"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "На техническом обслуживании"
@@ -22007,6 +22037,9 @@ msgstr "Стандартный срок поставки"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "Начать"
 
@@ -23489,6 +23522,9 @@ msgstr "Почасовая Себестоимость работы Станка 
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Почасовая нагрузка косвенных расходов, применяемая к этому Рабочему центру; разница между Трудом + Станком и полной ставкой котировки — это то, что поглощают Накладные расходы."
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "часы, которые планировщик разместил на станции."
 
@@ -24737,6 +24773,9 @@ msgstr "Использование времени"
 msgid "Timecard"
 msgstr "Табель учета рабочего времени"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "Табели учета рабочего времени"
 
@@ -24745,6 +24784,12 @@ msgstr "Табели учета отключены"
 
 msgid "Timecards are enabled"
 msgstr "Табели учета рабочего времени включены"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""

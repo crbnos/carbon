@@ -4162,6 +4162,9 @@ msgstr "맹검"
 msgid "Blind Count"
 msgstr "블라인드 실사"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "오류로 차단"
 
@@ -4756,6 +4759,12 @@ msgstr "인증서 번호"
 
 msgid "Certificate uploaded"
 msgstr "인증서가 업로드됨"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "인증됨"
@@ -5872,6 +5881,9 @@ msgstr "품목 ID(부품, 자재, 소모품, 공구, 서비스)에 소문자 포
 
 msgid "Controller, Accountant"
 msgstr "컨트롤러, 회계 담당자"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "계획이 단종 품목을 처리하는 방식을 제어합니다: 우선 소진은 후속 품목으로 전환하기 전에 현재고를 소진하고, 신규 우선은 새로운 소요량을 즉시 후속 품목으로 리디렉트하며, 재고만은 최소 서비스 예비만 유지하고, 재고 없음은 계획에서 품목을 완전히 제거합니다."
@@ -7224,6 +7236,12 @@ msgstr "휴무일"
 
 msgid "Days Remaining"
 msgstr "남은 일수"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "비활성화"
@@ -9457,6 +9475,9 @@ msgstr "항목"
 msgid "Entry Type"
 msgstr "항목 유형"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "각 라인이 매출을 얻는 방법: 일별 분산 또는 월별 균�
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "각 단위의 렌트가 기간으로 나뉘는 방식과 기간 내 언제 송장이 발행되는지입니다."
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "예약된 작업이 가용 시간을 초과한 정도(+) 또는 남은 여유 시간."
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "열린 메뉴에서"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "유지보수 중"
@@ -22007,6 +22037,9 @@ msgstr "표준 리드타임"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "시작"
 
@@ -23489,6 +23522,9 @@ msgstr "이 작업장에서 기계 운영의 시간당 원가이며, 기록된 �
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "이 작업장에 적용되는 시간당 간접비 부담률입니다. 노무비+기계비와 전체 견적 요율의 차이를 간접비가 흡수합니다."
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "스케줄러가 스테이션에 배치한 시간."
 
@@ -24737,6 +24773,9 @@ msgstr "시간 이용률"
 msgid "Timecard"
 msgstr "근무기록"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "타임카드"
 
@@ -24745,6 +24784,12 @@ msgstr "타임카드가 비활성화됨"
 
 msgid "Timecards are enabled"
 msgstr "타임카드가 활성화됨"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""

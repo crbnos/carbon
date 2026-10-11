@@ -28,6 +28,7 @@ import {
   LuSheet,
   LuShieldCheck,
   LuShoppingCart,
+  LuTimer,
   LuUsers,
   LuWebhook,
   LuWorkflow,
@@ -155,6 +156,12 @@ export default function useSettingsSubmodules() {
             to: path.to.projectsSettings,
             role: "employee",
             icon: <LuFolderKanban />
+          },
+          {
+            name: t`Timekeeping`,
+            to: path.to.timekeepingSettings,
+            role: "employee",
+            icon: <LuTimer />
           },
           {
             name: t`Quality`,

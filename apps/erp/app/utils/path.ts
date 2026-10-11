@@ -2646,6 +2646,7 @@ export const path = {
     theme: `${x}/account/theme`,
     timecard: (id: string) => generatePath(`${x}/people/timecard/${id}`),
     timecards: `${x}/timecards`,
+    timekeepingSettings: `${x}/settings/timekeeping`,
     timesheet: `${x}/timesheet`,
     timesheetCorrect: `${x}/timesheet/correct`,
     timesheetSubmit: `${x}/timesheet/submit`,

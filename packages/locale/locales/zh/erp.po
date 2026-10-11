@@ -4162,6 +4162,9 @@ msgstr "盲法"
 msgid "Blind Count"
 msgstr "盲点库存"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "用错误阻止"
 
@@ -4756,6 +4759,12 @@ msgstr "证书编号"
 
 msgid "Certificate uploaded"
 msgstr "证书已上传"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "已认证"
@@ -5872,6 +5881,9 @@ msgstr "控制物料编号（零件、原料、耗材、工具和服务）是否
 
 msgid "Controller, Accountant"
 msgstr "控制器，会计"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "控制计划如何处理已停用物料：先消耗在切换到后继物料前用尽现有库存，优先使用新品立即将新需求重定向到后继物料，仅库存仅保留最小服务储备，无库存将物料从计划中完全删除。"
@@ -7224,6 +7236,12 @@ msgstr "休息日"
 
 msgid "Days Remaining"
 msgstr "剩余天数"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "停用"
@@ -9457,6 +9475,9 @@ msgstr "条目"
 msgid "Entry Type"
 msgstr "条目类型"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "每行如何确认收入：按天分配或每月均匀分配，从上线
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "如何将每件的租赁分成周期，以及在周期内何时开具发票。"
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "计划工作超过可用小时数的程度 (+)，或还有多少小时空闲。"
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "在打开的菜单中"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "维护中"
@@ -22007,6 +22037,9 @@ msgstr "标准提前期"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "开始"
 
@@ -23489,6 +23522,9 @@ msgstr "此工作中心运行机械的每小时成本；与记录的机器小时
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "应用于此工作中心的每小时间接成本负担；人工 + 机器与完整报价率之间的差异就是制造费用吸收的内容。"
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "计划员在工作站上安排的小时数。"
 
@@ -24737,6 +24773,9 @@ msgstr "时间利用率"
 msgid "Timecard"
 msgstr "时间卡"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "工时记录"
 
@@ -24745,6 +24784,12 @@ msgstr "工时记录已禁用"
 
 msgid "Timecards are enabled"
 msgstr "工时记录已启用"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""

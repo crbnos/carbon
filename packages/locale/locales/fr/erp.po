@@ -4162,6 +4162,9 @@ msgstr "Aveugle"
 msgid "Blind Count"
 msgstr "Comptage à l'aveugle"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Bloquer avec une erreur"
 
@@ -4756,6 +4759,12 @@ msgstr "Numéro de Certificat"
 
 msgid "Certificate uploaded"
 msgstr "Certificat téléchargé"
+
+msgid "Certification text, exempt staff"
+msgstr ""
+
+msgid "Certification text, non-exempt staff"
+msgstr ""
 
 msgid "Certified"
 msgstr "Certifié"
@@ -5872,6 +5881,9 @@ msgstr "Contrôler si les ID d'article (pièces, matériaux, consommables, outil
 
 msgid "Controller, Accountant"
 msgstr "Contrôleur, Comptable"
+
+msgid "Controls"
+msgstr ""
 
 msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
 msgstr "Contrôle comment la Planification gère un Article arrêté : Consommer d'abord épuise les quantités disponibles avant de basculer vers le Successeur, Nouveau en priorité redirige les nouveaux Besoins vers le Successeur immédiatement, Stock seulement maintient uniquement une réserve de service minimale, et Pas de stock supprime l'Article de la Planification entièrement."
@@ -7224,6 +7236,12 @@ msgstr "Jours de congé"
 
 msgid "Days Remaining"
 msgstr "Jours restants"
+
+msgid "DCAA"
+msgstr ""
+
+msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+msgstr ""
 
 msgid "Deactivate"
 msgstr "Désactiver"
@@ -9457,6 +9475,9 @@ msgstr "Écriture"
 msgid "Entry Type"
 msgstr "Type d'entrée"
 
+msgid "Entry window (days)"
+msgstr ""
+
 msgid "Environmental"
 msgstr ""
 
@@ -11459,6 +11480,9 @@ msgstr "Comment chaque ligne gagne ses revenus : répartie par jour ou uniformé
 msgid "How each unit's rent is cut into periods, and when in a period it is invoiced."
 msgstr "Comment le loyer de chaque unité est divisé en périodes, et quand dans une période il est facturé."
 
+msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "la distance entre le travail planifié et les heures disponibles (+) ou le nombre d'heures encore libres."
 
@@ -11730,6 +11754,12 @@ msgstr ""
 
 msgid "In an open menu"
 msgstr "Dans un menu ouvert"
+
+msgid "In DCAA mode, an entry older than this needs a late reason."
+msgstr ""
+
+msgid "In DCAA mode, compares a submitted week with the employee's timecards."
+msgstr ""
 
 msgid "In Maintenance"
 msgstr "En maintenance"
@@ -22007,6 +22037,9 @@ msgstr "Délai d'approvisionnement standard"
 msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
 msgstr ""
 
+msgid "Standard weekly hours"
+msgstr ""
+
 msgid "Start"
 msgstr "Démarrer"
 
@@ -23489,6 +23522,9 @@ msgstr "Le coût horaire d'utilisation de la machine sur ce poste de travail; co
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "La charge de frais indirects horaires appliquée à ce poste de travail; la différence entre la main-d'œuvre + machine et le tarif de devis complet est ce que les frais généraux absorbent."
 
+msgid "The hours an exempt employee's week is diluted to in DCAA mode."
+msgstr ""
+
 msgid "the hours the scheduler placed on the station."
 msgstr "les heures que le planificateur a placées sur la station."
 
@@ -24737,6 +24773,9 @@ msgstr "Utilisation du temps"
 msgid "Timecard"
 msgstr "Feuille de temps"
 
+msgid "Timecard check"
+msgstr ""
+
 msgid "Timecards"
 msgstr "Feuilles de temps"
 
@@ -24745,6 +24784,12 @@ msgstr "Les feuilles de temps sont désactivées"
 
 msgid "Timecards are enabled"
 msgstr "Les feuilles de temps sont activées"
+
+msgid "Timekeeping"
+msgstr ""
+
+msgid "Timekeeping Controls"
+msgstr ""
 
 msgid "Timeline"
 msgstr ""
