@@ -46,6 +46,8 @@ import {
 import { upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
+  leasePaymentValidator,
+  leaseValidator,
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
   purchaseOrderPaymentValidator,
@@ -5239,4 +5241,354 @@ export async function createSupplierInteractionLineDocumentUploadUrl(
     entityId: args.lineId,
     name: args.name
   });
+}
+
+// ----------------------------------------------------------------------
+// Leases (lessee, ASC 842; spec `.ai/specs/2026-10-11-lessee-leases.md`).
+// Lifecycle changes — activate, modify, terminate, purchase, cancel — go
+// through the `post-lease` server function; invoices are drafted by
+// `create-lease-invoices`. These are the plain reads and the Draft writes.
+// ----------------------------------------------------------------------
+
+/** A refusal shaped like a PostgREST error, so every caller's existing
+ *  `result.error` handling (routes, MCP dispatch) reports it unchanged. */
+function leaseRefusal(code: string, message: string) {
+  return {
+    data: null,
+    error: { message, details: "", hint: "", code } as PostgrestError
+  };
+}
+
+/** @mcp read */
+export async function getLeases(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("leases")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `leaseId.ilike.%${args.search}%,name.ilike.%${args.search}%,supplierName.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+/** @mcp read */
+export async function getLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return client
+    .from("leases")
+    .select("*")
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/** The terms a caller may write — never `status`, the classification or
+ *  anything activation owns. These writers are also MCP tools, whose inputs
+ *  reach them unfiltered, so the fields are picked rather than spread. */
+function leaseTerms(
+  terms: Omit<z.infer<typeof leaseValidator>, "id" | "leaseId">
+) {
+  return {
+    name: terms.name,
+    description: terms.description ?? null,
+    supplierId: terms.supplierId,
+    supplierLocationId: terms.supplierLocationId || null,
+    supplierContactId: terms.supplierContactId || null,
+    locationId: terms.locationId || null,
+    assignee: terms.assignee || null,
+    commencementDate: terms.commencementDate,
+    endDate: terms.endDate,
+    // A cleared DatePicker posts "", which a DATE column rejects.
+    noticeDate: terms.noticeDate || null,
+    invoiceFromDate: terms.invoiceFromDate || terms.commencementDate,
+    paymentAmount: terms.paymentAmount,
+    paymentFrequency: terms.paymentFrequency,
+    paymentTiming: terms.paymentTiming,
+    annualEscalationPercent: terms.annualEscalationPercent,
+    discountRate: terms.discountRate,
+    currencyCode: terms.currencyCode,
+    fairValue: terms.fairValue ?? null,
+    economicLifeMonths: terms.economicLifeMonths ?? null,
+    ownershipTransfers: terms.ownershipTransfers,
+    specializedAsset: terms.specializedAsset,
+    purchaseOptionAmount: terms.purchaseOptionAmount ?? null,
+    purchaseOptionReasonablyCertain: terms.purchaseOptionReasonablyCertain
+  };
+}
+
+/** `leaseId` (the readable LSE number) comes from the caller — the route
+ *  draws it from the sequence. Payment rows are cut separately
+ *  (`regenerateLeasePayments`, `purchasing.server.ts`). @mcp create */
+export async function insertLease(
+  client: SupabaseClient<Database>,
+  lease: Omit<z.infer<typeof leaseValidator>, "id"> & {
+    leaseId: string;
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+  }
+) {
+  return client
+    .from("lease")
+    .insert([
+      {
+        ...leaseTerms(lease),
+        leaseId: lease.leaseId,
+        companyId: lease.companyId,
+        createdBy: lease.createdBy,
+        customFields: lease.customFields
+      }
+    ])
+    .select("id, leaseId")
+    .single();
+}
+
+/** Payment rows and the classification are cut from the terms at
+ *  activation, so only a Draft lease's terms can change. @mcp update */
+export async function updateLease(
+  client: SupabaseClient<Database>,
+  lease: Omit<z.infer<typeof leaseValidator>, "id" | "leaseId"> & {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
+) {
+  const updated = await client
+    .from("lease")
+    .update({
+      ...leaseTerms(lease),
+      updatedBy: lease.updatedBy,
+      updatedAt: datetime.timestamp(),
+      ...(lease.customFields !== undefined
+        ? { customFields: lease.customFields }
+        : {})
+    })
+    .eq("id", lease.id)
+    .eq("companyId", lease.companyId)
+    .eq("status", "Draft")
+    .select("id")
+    .maybeSingle();
+  if (updated.error) return updated;
+  if (!updated.data) {
+    return leaseRefusal(
+      "LEASE_NOT_DRAFT",
+      "Only a Draft lease's terms can change; modify an active lease instead"
+    );
+  }
+  return updated;
+}
+
+/** Only a Draft lease can be deleted; cancel an active one. @mcp delete */
+export async function deleteLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return client
+    .from("lease")
+    .delete()
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .eq("status", "Draft");
+}
+
+/** @mcp read */
+export async function getLeasePayments(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return client
+    .from("leasePayment")
+    .select("*")
+    .eq("leaseId", leaseId)
+    .eq("companyId", companyId)
+    .order("dueDate")
+    .order("paymentType");
+}
+
+async function requireDraftLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  const lease = await client
+    .from("lease")
+    .select("status")
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .single();
+  if (lease.error) return lease.error.message;
+  if (lease.data.status !== "Draft") {
+    return "A payment row changes only while the lease is Draft; modify an active lease instead";
+  }
+  return null;
+}
+
+/** Add or change one payment row of a Draft lease (a rent holiday, an
+ *  irregular step). @mcp update */
+export async function upsertLeasePayment(
+  client: SupabaseClient<Database>,
+  payment: z.infer<typeof leasePaymentValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const refusal = await requireDraftLease(
+    client,
+    payment.leaseId,
+    payment.companyId
+  );
+  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+
+  const row = {
+    leaseId: payment.leaseId,
+    paymentType: payment.paymentType,
+    periodStart: payment.periodStart,
+    periodEnd: payment.periodEnd,
+    dueDate: payment.dueDate,
+    amount: payment.amount
+  };
+  if (payment.id) {
+    return client
+      .from("leasePayment")
+      .update({
+        ...row,
+        updatedBy: payment.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", payment.id)
+      .eq("companyId", payment.companyId)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("leasePayment")
+    .insert([
+      { ...row, companyId: payment.companyId, createdBy: payment.userId }
+    ])
+    .select("id")
+    .single();
+}
+
+/** @mcp delete */
+export async function deleteLeasePayment(
+  client: SupabaseClient<Database>,
+  args: { leaseId: string; paymentId: string; companyId: string }
+) {
+  const refusal = await requireDraftLease(client, args.leaseId, args.companyId);
+  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+  return client
+    .from("leasePayment")
+    .delete()
+    .eq("id", args.paymentId)
+    .eq("leaseId", args.leaseId)
+    .eq("companyId", args.companyId);
+}
+
+/** The monthly schedule, each line with whether its lease run rows have
+ *  posted. @mcp read */
+export async function getLeaseSchedule(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return client
+    .from("leaseScheduleLine")
+    .select(
+      "*, rows:revenueRecognitionSchedule!revenueRecognitionSchedule_leaseScheduleLine_fkey(id, type, status, journalId)"
+    )
+    .eq("leaseId", leaseId)
+    .eq("companyId", companyId)
+    .order("periodDate");
+}
+
+/** @mcp read */
+export async function getLeaseEvents(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return client
+    .from("leaseEvent")
+    .select("*")
+    .eq("leaseId", leaseId)
+    .eq("companyId", companyId)
+    .order("effectiveDate", { ascending: false });
+}
+
+/** The purchase invoices that bill the lease, and the journals that name it.
+ *  @mcp read */
+export async function getLeaseRelatedDocuments(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  // Plain id reads, then one read per document table: the embedded selects
+  // trip TS2589 on these busy tables (.ai/lessons.md).
+  const [invoiceLines, journalLines] = await Promise.all([
+    client
+      .from("purchaseInvoiceLine")
+      .select("invoiceId")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId),
+    client
+      .from("journalLine")
+      .select("journalId")
+      .eq("documentType", "Lease")
+      .eq("documentId", leaseId)
+      .eq("companyId", companyId)
+  ]);
+  if (invoiceLines.error) return { data: null, error: invoiceLines.error };
+  if (journalLines.error) return { data: null, error: journalLines.error };
+
+  const invoiceIds = [
+    ...new Set((invoiceLines.data ?? []).map((line) => line.invoiceId))
+  ];
+  const journalIds = [
+    ...new Set((journalLines.data ?? []).map((line) => line.journalId))
+  ];
+  const [invoices, journals] = await Promise.all([
+    invoiceIds.length > 0
+      ? client
+          .from("purchaseInvoice")
+          .select("id, invoiceId, status, dateIssued")
+          .in("id", invoiceIds)
+          .eq("companyId", companyId)
+          .order("dateIssued", { ascending: false })
+      : null,
+    journalIds.length > 0
+      ? client
+          .from("journal")
+          .select("id, journalEntryId, postingDate, status, sourceType")
+          .in("id", journalIds)
+          .eq("companyId", companyId)
+          .order("postingDate", { ascending: false })
+      : null
+  ]);
+  if (invoices?.error) return { data: null, error: invoices.error };
+  if (journals?.error) return { data: null, error: journals.error };
+
+  return {
+    data: {
+      purchaseInvoices: invoices?.data ?? [],
+      journals: journals?.data ?? []
+    },
+    error: null
+  };
 }
