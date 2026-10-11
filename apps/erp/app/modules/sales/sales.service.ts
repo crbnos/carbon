@@ -51,6 +51,8 @@ import {
 } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
+  contractLaborRateValidator,
+  contractLineFundingValidator,
   customerAccountingValidator,
   customerBankAccountValidator,
   customerContactValidator,
@@ -97,6 +99,7 @@ import type {
 import {
   contractEndDate,
   costCategoryKeys,
+  isProjectBillingMethod,
   isQuoteLocked,
   OPEN_SALES_ORDER_STATUSES,
   REPAIR_DISPOSITION_LOCKED_MESSAGE,
@@ -10175,16 +10178,21 @@ export async function upsertContractLine(
     );
   }
 
+  // A billing line has no schedule: quantity 1 at rate 0, One-time
+  // (`customerContractLine_billing_check`). Its price comes from the items.
+  const isBilling = isProjectBillingMethod(line.billingMethod);
+  const revenueType = isBilling ? "One-time" : line.revenueType;
+
   // Picked, not spread: amendment and sales-order provenance and the sort
   // order belong to the server functions.
   const values = {
     customerContractId: line.customerContractId,
-    revenueType: line.revenueType,
+    revenueType,
     itemId: line.itemId,
     description: line.description ?? null,
-    quantity: line.quantity,
-    rate: line.rate,
-    rateUnit: line.revenueType === "Recurring" ? (line.rateUnit ?? null) : null,
+    quantity: isBilling ? 1 : line.quantity,
+    rate: isBilling ? 0 : line.rate,
+    rateUnit: revenueType === "Recurring" ? (line.rateUnit ?? null) : null,
     discountPercent: percentToFraction(line.discountPercent),
     discountEndsOn: line.discountEndsOn || null,
     taxPercent: percentToFraction(line.taxPercent),
@@ -10194,7 +10202,22 @@ export async function upsertContractLine(
     revenueMethod: line.revenueMethod,
     revenueStartDate: line.revenueStartDate || null,
     revenueEndDate: line.revenueEndDate || null,
-    projectId: line.projectId || null
+    projectId: line.projectId || null,
+    billingMethod: line.billingMethod,
+    projectElementId:
+      isBilling || line.revenueMethod === "Percent Complete"
+        ? line.projectElementId || null
+        : null,
+    materialHandlingPercent:
+      line.billingMethod === "Time & Materials" &&
+      line.materialHandlingPercent !== undefined
+        ? percentToFraction(line.materialHandlingPercent)
+        : null,
+    feePercent:
+      line.billingMethod === "Cost Plus" && line.feePercent !== undefined
+        ? percentToFraction(line.feePercent)
+        : null,
+    ...contractLineFundingValues(isBilling ? line : {})
   };
 
   if ("id" in line) {
@@ -10214,6 +10237,200 @@ export async function upsertContractLine(
   return client
     .from("customerContractLine")
     .insert([{ ...values, companyId, createdBy: line.createdBy }])
+    .select("id")
+    .single();
+}
+
+type ContractLineFunding = Omit<
+  z.infer<typeof contractLineFundingValidator>,
+  "id" | "noticePercent" | "noticeWindowDays"
+> &
+  Partial<
+    Pick<
+      z.infer<typeof contractLineFundingValidator>,
+      "noticePercent" | "noticeWindowDays"
+    >
+  >;
+
+/** The funding columns of a line, from percent points. A Fixed line passes
+ *  `{}` and gets no funding, with the notice defaults. */
+function contractLineFundingValues(funding: ContractLineFunding) {
+  return {
+    fundedAmount: funding.fundedAmount ?? null,
+    fundedCost: funding.fundedCost ?? null,
+    ceilingAmount: funding.ceilingAmount ?? null,
+    noticePercent: percentToFraction(funding.noticePercent ?? 75),
+    noticeWindowDays: funding.noticeWindowDays ?? 60
+  };
+}
+
+/**
+ * Lists the bill rates of a contract line: per labor category and per
+ * employee, newest first.
+ * @mcp read
+ */
+export async function getContractLaborRates(
+  client: SupabaseClient<Database>,
+  customerContractLineId: string,
+  companyId: string
+) {
+  return client
+    .from("customerContractLaborRate")
+    .select(
+      "id, customerContractLineId, laborCategoryId, employeeId, billRate, effectiveFrom"
+    )
+    .eq("customerContractLineId", customerContractLineId)
+    .eq("companyId", companyId)
+    .order("effectiveFrom", { ascending: false });
+}
+
+/**
+ * Creates or changes one bill rate of a contract line, for a labor category
+ * or an employee. Rates change at any time, also on an Active contract.
+ * @mcp upsert
+ */
+export async function upsertContractLaborRate(
+  client: SupabaseClient<Database>,
+  rate:
+    | (Omit<z.infer<typeof contractLaborRateValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof contractLaborRateValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  const line = await client
+    .from("customerContractLine")
+    .select("billingMethod")
+    .eq("id", rate.customerContractLineId)
+    .eq("companyId", rate.companyId)
+    .single();
+  if (line.error) return { data: null, error: line.error };
+  if (line.data.billingMethod !== "Time & Materials") {
+    return contractRefusal(
+      "CONTRACT_LINE_NOT_TIME_AND_MATERIALS",
+      "Only a Time & Materials line has bill rates"
+    );
+  }
+
+  const values = {
+    laborCategoryId: rate.laborCategoryId || null,
+    employeeId: rate.laborCategoryId ? null : rate.employeeId || null,
+    billRate: rate.billRate,
+    effectiveFrom: rate.effectiveFrom
+  };
+
+  if ("id" in rate) {
+    return client
+      .from("customerContractLaborRate")
+      .update({
+        ...values,
+        updatedBy: rate.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", rate.id)
+      .eq("customerContractLineId", rate.customerContractLineId)
+      .eq("companyId", rate.companyId)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("customerContractLaborRate")
+    .insert([
+      {
+        ...values,
+        customerContractLineId: rate.customerContractLineId,
+        companyId: rate.companyId,
+        createdBy: rate.createdBy
+      }
+    ])
+    .select("id")
+    .single();
+}
+
+/**
+ * Deletes one bill rate of a contract line.
+ * @mcp delete
+ */
+export async function deleteContractLaborRate(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("customerContractLaborRate")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+/**
+ * Gets the funding position of billing lines on a day: billed, unbilled,
+ * incurred cost and the cost of the last 90 days.
+ * @mcp read
+ */
+export async function getContractLineFunding(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; lineIds: string[]; asOf: string }
+) {
+  if (args.lineIds.length === 0) return { data: [], error: null };
+  return client.rpc("get_contract_line_funding", {
+    p_company_id: args.companyId,
+    p_line_ids: args.lineIds,
+    p_as_of: args.asOf
+  });
+}
+
+/**
+ * Changes the funding of a billing line: funded amount and cost, the ceiling
+ * and the notice terms. Allowed on a Draft or Active contract (a funding
+ * modification is routine on a live contract); nothing else on the line
+ * changes.
+ * @mcp update
+ */
+export async function updateContractLineFunding(
+  client: SupabaseClient<Database>,
+  args: z.infer<typeof contractLineFundingValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const line = await client
+    .from("customerContractLine")
+    .select(
+      "billingMethod, contract:customerContract!customerContractLine_contract_fkey(status)"
+    )
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .single();
+  if (line.error) return { data: null, error: line.error };
+  if (!isProjectBillingMethod(line.data.billingMethod)) {
+    return contractRefusal(
+      "CONTRACT_LINE_NOT_BILLING",
+      "Only a Time & Materials or Cost Plus line has funding"
+    );
+  }
+  const status = line.data.contract?.status;
+  if (status !== "Draft" && status !== "Active") {
+    return contractRefusal(
+      "CONTRACT_NOT_OPEN",
+      "Funding changes only on a Draft or Active contract"
+    );
+  }
+
+  return client
+    .from("customerContractLine")
+    .update({
+      ...contractLineFundingValues(args),
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
     .select("id")
     .single();
 }

@@ -5,7 +5,7 @@
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
-import { datetime } from "@carbon/utils";
+import { BILLABLE_REASON_NO_BILL_RATE, datetime, round } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -13,6 +13,7 @@ import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
+  BillableItemAction,
   ItemValues,
   laborCategoryRateValidator,
   laborCategoryValidator,
@@ -2533,6 +2534,157 @@ export async function upsertLaborCategoryRate(
     .eq("companyId", rate.companyId)
     .select("id")
     .single();
+}
+
+// --- Contract billing (Projects Phase 4a) ---------------------------------------
+
+type ProjectBillableItemStatus =
+  Database["public"]["Enums"]["projectBillableItemStatus"];
+
+const CONTRACT_BILLABLE_ITEM_COLUMNS =
+  "id, projectId, projectElementId, projectLedgerId, customerContractLineId, itemId, description, quantity, unitPrice, amount, status, statusReason, reversalOfId, salesInvoiceLineId, voidedSalesInvoiceId, createdAt, ledger:projectLedger!projectBillableItem_ledger_fkey(postingDate, costType, documentType, documentId, employeeId, laborCategoryId, quantity, amount), element:projectElement!projectBillableItem_element_fkey(id, readableId, name), project:project!projectBillableItem_project_fkey(id, identifier, name), contractLine:customerContractLine!projectBillableItem_contractLine_fkey(id, customerContractId, billingMethod, description), invoiceLine:salesInvoiceLine!projectBillableItem_invoiceLine_fkey(invoiceId)" as const;
+
+/**
+ * Lists the billable items of contract billing lines, with the ledger row's
+ * posting date and cost type, and the invoice that billed each one. Filter
+ * by contract line, project or status.
+ * @mcp read
+ */
+export async function getContractBillableItems(
+  client: Client,
+  args: Partial<GenericQueryFilters> & {
+    companyId: string;
+    customerContractLineId?: string | null;
+    projectId?: string | null;
+    status?: ProjectBillableItemStatus[] | null;
+  }
+) {
+  let query = client
+    .from("projectBillableItem")
+    .select(CONTRACT_BILLABLE_ITEM_COLUMNS, { count: LIST_COUNT })
+    .eq("companyId", args.companyId)
+    .not("customerContractLineId", "is", null);
+
+  if (args.customerContractLineId) {
+    query = query.eq("customerContractLineId", args.customerContractLineId);
+  }
+  if (args.projectId) {
+    query = query.eq("projectId", args.projectId);
+  }
+  if (args.status && args.status.length > 0) {
+    query = query.in("status", args.status);
+  }
+
+  return setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: true }
+  ]);
+}
+
+/** The statuses each review action applies to. Billed and Written Off
+ *  items never change. */
+const BILLABLE_ITEM_ACTION_FROM: Record<
+  BillableItemAction,
+  readonly ProjectBillableItemStatus[]
+> = {
+  hold: ["Unbilled", "On Hold"],
+  release: ["On Hold"],
+  writeOff: ["Unbilled", "On Hold"],
+  price: ["Unbilled", "On Hold"]
+};
+
+/**
+ * Reviews contract billable items before they are billed: hold them with a
+ * reason, release a hold, write them off with a reason, or change one item's
+ * unit price (the amount follows; a "No bill rate" hold is released). Billed
+ * and Written Off items are refused. Each change reaches the audit log
+ * ("Billable Item").
+ * @mcp update
+ */
+export async function updateProjectBillableItems(
+  client: Client,
+  args: {
+    companyId: string;
+    userId: string;
+    ids: string[];
+    action: BillableItemAction;
+    reason?: string;
+    unitPrice?: number;
+  }
+) {
+  const ids = [...new Set(args.ids)];
+  if (ids.length === 0) return refusal("Choose at least one item");
+
+  const current = await client
+    .from("projectBillableItem")
+    .select("id, quantity, status, statusReason, reversalOfId")
+    .eq("companyId", args.companyId)
+    .not("customerContractLineId", "is", null)
+    .in("id", ids);
+  if (current.error) return { data: null, error: current.error };
+  if (current.data.length !== ids.length) {
+    return refusal("Some items were not found");
+  }
+
+  const from = BILLABLE_ITEM_ACTION_FROM[args.action];
+  if (current.data.some((item) => !from.includes(item.status))) {
+    return refusal(
+      args.action === "release"
+        ? "Only an item on hold can be released"
+        : "A billed or written off item cannot change"
+    );
+  }
+
+  const stamp = {
+    updatedBy: args.userId,
+    updatedAt: datetime.timestamp()
+  };
+
+  if (args.action === "price") {
+    if (ids.length !== 1)
+      return refusal("Edit the price of one item at a time");
+    if (args.unitPrice === undefined || args.unitPrice < 0) {
+      return refusal("A unit price is required");
+    }
+    const [item] = current.data;
+    if (item.reversalOfId) return refusal("A reversal cannot change");
+    const releasesHold =
+      item.status === "On Hold" &&
+      item.statusReason === BILLABLE_REASON_NO_BILL_RATE;
+    return client
+      .from("projectBillableItem")
+      .update({
+        unitPrice: args.unitPrice,
+        amount: round(Number(item.quantity) * args.unitPrice),
+        ...(releasesHold
+          ? { status: "Unbilled" as const, statusReason: null }
+          : {}),
+        ...stamp
+      })
+      .eq("id", item.id)
+      .eq("companyId", args.companyId)
+      .in("status", [...from])
+      .select("id");
+  }
+
+  const reason = args.reason?.trim() || null;
+  if ((args.action === "hold" || args.action === "writeOff") && !reason) {
+    return refusal("A reason is required");
+  }
+
+  const values =
+    args.action === "hold"
+      ? { status: "On Hold" as const, statusReason: reason }
+      : args.action === "writeOff"
+        ? { status: "Written Off" as const, statusReason: reason }
+        : { status: "Unbilled" as const, statusReason: null };
+
+  return client
+    .from("projectBillableItem")
+    .update({ ...values, ...stamp })
+    .eq("companyId", args.companyId)
+    .in("id", ids)
+    .in("status", [...from])
+    .select("id");
 }
 
 // --- Planning groups (Projects Phase 3) ---------------------------------------

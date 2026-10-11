@@ -78,7 +78,8 @@ import {
   contractRateUnits,
   contractRevenueTypes,
   customerContractAmendmentValidator,
-  customerContractTypes
+  customerContractTypes,
+  newContractLineBillingValues
 } from "../../sales.models";
 import ContractMoney from "./ContractMoney";
 import type {
@@ -293,7 +294,8 @@ const ContractAmendModal = ({
                 taxPercent: row.taxPercent,
                 // The server starts it on the effective date when that is later.
                 startDate: amendmentDate,
-                revenueMethod: "Daily"
+                revenueMethod: "Daily",
+                ...newContractLineBillingValues
               }
             }
           ];

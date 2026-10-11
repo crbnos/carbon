@@ -11,6 +11,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
+  contractLineBillingFormValues,
   customerContractLineValidator,
   getContract,
   getContractLine,
@@ -133,7 +134,8 @@ export default function ContractLineRoute() {
         revenueMethod: line.revenueMethod,
         revenueStartDate: line.revenueStartDate ?? undefined,
         revenueEndDate: line.revenueEndDate ?? undefined,
-        projectId: line.projectId ?? undefined
+        projectId: line.projectId ?? undefined,
+        ...contractLineBillingFormValues(line)
       }}
       currencyCode={contract.currencyCode}
       isLocked={contract.status !== "Draft"}

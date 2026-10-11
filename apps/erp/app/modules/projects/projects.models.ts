@@ -525,6 +525,43 @@ export const laborCategoryRateValidator = z.object({
   effectiveFrom: z.string().min(1, { message: "Effective date is required" })
 });
 
+/** A review action on contract billable items (Projects → Billing). */
+export const billableItemActions = [
+  "hold",
+  "release",
+  "writeOff",
+  "price"
+] as const;
+
+export type BillableItemAction = (typeof billableItemActions)[number];
+
+export const billableItemActionValidator = z
+  .object({
+    ids: zfd
+      .repeatableOfType(z.string().min(1))
+      .pipe(
+        z.array(z.string()).min(1, { message: "Choose at least one item" })
+      ),
+    action: z.enum(billableItemActions, { error: "Action is required" }),
+    reason: zfd.text(z.string().trim().optional()),
+    unitPrice: zfd.numeric(
+      z.number().min(0, { message: "The price cannot be negative" }).optional()
+    )
+  })
+  .refine(
+    (data) =>
+      (data.action !== "hold" && data.action !== "writeOff") || !!data.reason,
+    { message: "A reason is required", path: ["reason"] }
+  )
+  .refine((data) => data.action !== "price" || data.unitPrice !== undefined, {
+    message: "A unit price is required",
+    path: ["unitPrice"]
+  })
+  .refine((data) => data.action !== "price" || data.ids.length === 1, {
+    message: "Edit the price of one item at a time",
+    path: ["ids"]
+  });
+
 export const planningGroupExcessRules = [
   "Common Stock",
   "Exception Project"

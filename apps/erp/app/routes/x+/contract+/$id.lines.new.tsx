@@ -13,6 +13,7 @@ import { useRouteData } from "~/hooks";
 import {
   customerContractLineValidator,
   getContract,
+  newContractLineBillingValues,
   upsertContractLine
 } from "~/modules/sales";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
@@ -98,7 +99,8 @@ export default function NewContractLineRoute() {
         taxPercent: 0,
         startDate: contract.startDate ?? "",
         revenueMethod: "Daily",
-        projectId: contract.projectId ?? undefined
+        projectId: contract.projectId ?? undefined,
+        ...newContractLineBillingValues
       }}
       currencyCode={contract.currencyCode}
       isLocked={contract.status !== "Draft"}

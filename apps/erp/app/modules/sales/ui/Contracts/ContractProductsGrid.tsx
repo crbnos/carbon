@@ -47,6 +47,7 @@ import {
 import { useServices } from "~/stores";
 import { path } from "~/utils/path";
 import {
+  contractLineBillingFormValues,
   contractRateUnits,
   contractRevenueTypes,
   customerContractLinesAddValidator
@@ -466,7 +467,8 @@ function contractLineFormValues(line: ContractLine) {
     revenueMethod: line.revenueMethod,
     revenueStartDate: line.revenueStartDate ?? undefined,
     revenueEndDate: line.revenueEndDate ?? undefined,
-    projectId: line.projectId ?? undefined
+    projectId: line.projectId ?? undefined,
+    ...contractLineBillingFormValues(line)
   };
 }
 

@@ -11,6 +11,7 @@ import {
   isFieldAvailableOnSalesRuleSurfaces,
   isValidSwiftBic,
   RULE_SEVERITIES,
+  round,
   SALES_RULE_SURFACES
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -1902,6 +1903,72 @@ function percentPoints(label: string) {
   );
 }
 
+/** An optional percent-points field (0–100); empty is absent. */
+function optionalPercentPoints(label: string) {
+  return zfd.numeric(
+    z
+      .number()
+      .min(0, { message: `${label} cannot be negative` })
+      .max(100, { message: `${label} cannot exceed 100%` })
+      .optional()
+  );
+}
+
+function optionalAmount(label: string) {
+  return zfd.numeric(
+    z
+      .number()
+      .min(0, { message: `${label} cannot be negative` })
+      .optional()
+  );
+}
+
+/** The funding of a billing line. `noticePercent` is in percent points
+ *  (75–85), as FAR 52.232-20/-22 allow. */
+const contractLineFundingFields = {
+  fundedAmount: optionalAmount("Funded amount"),
+  fundedCost: optionalAmount("Funded cost"),
+  ceilingAmount: optionalAmount("Ceiling"),
+  noticePercent: zfd.numeric(
+    z
+      .number()
+      .min(75, { message: "The notice percent is 75% to 85%" })
+      .max(85, { message: "The notice percent is 75% to 85%" })
+      .default(75)
+  ),
+  noticeWindowDays: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Enter whole days" })
+      .min(30, { message: "The notice window is 30 to 90 days" })
+      .max(90, { message: "The notice window is 30 to 90 days" })
+      .default(60)
+  )
+};
+
+/** The funding of one billing line, edited on an Active contract (P9). */
+export const contractLineFundingValidator = z.object({
+  id: z.string().min(1, { message: "Line is required" }),
+  ...contractLineFundingFields
+});
+
+/** One bill rate of a contract line: a labor category or an employee. */
+export const contractLaborRateValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    customerContractLineId: z.string().min(1, { message: "Line is required" }),
+    laborCategoryId: zfd.text(z.string().optional()),
+    employeeId: zfd.text(z.string().optional()),
+    billRate: zfd.numeric(
+      z.number().min(0, { message: "The bill rate cannot be negative" })
+    ),
+    effectiveFrom: z.string().min(1, { message: "Effective from is required" })
+  })
+  .refine((rate) => !!rate.laborCategoryId !== !!rate.employeeId, {
+    message: "Choose a labor category or an employee",
+    path: ["laborCategoryId"]
+  });
+
 /** The fields of one contract line, shared by the line form and an
  *  amendment's added line. */
 const contractLineFields = {
@@ -1927,8 +1994,68 @@ const contractLineFields = {
   }),
   revenueStartDate: zfd.text(z.string().optional()),
   revenueEndDate: zfd.text(z.string().optional()),
-  projectId: zfd.text(z.string().optional())
+  projectId: zfd.text(z.string().optional()),
+  // Project billing (Phase 4a). Absent means a Fixed line.
+  billingMethod: zfd.text(z.enum(contractBillingMethods).default("Fixed")),
+  projectElementId: zfd.text(z.string().optional()),
+  materialHandlingPercent: optionalPercentPoints("Handling"),
+  feePercent: optionalPercentPoints("Fee"),
+  ...contractLineFundingFields
 };
+
+/** Revenue methods each billing method allows (plan decision P6). */
+export const contractRevenueMethodsByBillingMethod = {
+  Fixed: ["Daily", "Even Period", "Percent Complete"],
+  "Time & Materials": ["Right to Invoice"],
+  "Cost Plus": ["Percent Complete", "Right to Invoice"]
+} as const satisfies Record<
+  (typeof contractBillingMethods)[number],
+  readonly (typeof contractRevenueMethods)[number][]
+>;
+
+/** The billing fields of a new line: Fixed, with the notice defaults. */
+export const newContractLineBillingValues = {
+  billingMethod: "Fixed",
+  noticePercent: 75,
+  noticeWindowDays: 60
+} as const;
+
+/** A stored line's billing fields as the line form's values: percents in
+ *  percent points. */
+export function contractLineBillingFormValues(line: {
+  billingMethod: (typeof contractBillingMethods)[number];
+  projectElementId: string | null;
+  materialHandlingPercent: number | null;
+  feePercent: number | null;
+  fundedAmount: number | null;
+  fundedCost: number | null;
+  ceilingAmount: number | null;
+  noticePercent: number;
+  noticeWindowDays: number;
+}) {
+  const points = (fraction: number | null) =>
+    fraction === null ? undefined : round(Number(fraction) * 100);
+  const amount = (value: number | null) =>
+    value === null ? undefined : Number(value);
+  return {
+    billingMethod: line.billingMethod,
+    projectElementId: line.projectElementId ?? undefined,
+    materialHandlingPercent: points(line.materialHandlingPercent),
+    feePercent: points(line.feePercent),
+    fundedAmount: amount(line.fundedAmount),
+    fundedCost: amount(line.fundedCost),
+    ceilingAmount: amount(line.ceilingAmount),
+    noticePercent: round(Number(line.noticePercent) * 100),
+    noticeWindowDays: Number(line.noticeWindowDays)
+  };
+}
+
+/** A line billed from project work rather than a schedule. */
+export function isProjectBillingMethod(
+  billingMethod: (typeof contractBillingMethods)[number] | null | undefined
+) {
+  return billingMethod === "Time & Materials" || billingMethod === "Cost Plus";
+}
 
 function checkContractLine(
   line: {
@@ -1937,9 +2064,53 @@ function checkContractLine(
     startDate: string;
     endDate?: string;
     discountEndsOn?: string;
+    revenueMethod: (typeof contractRevenueMethods)[number];
+    projectId?: string;
+    billingMethod: (typeof contractBillingMethods)[number];
+    projectElementId?: string;
+    feePercent?: number;
   },
   ctx: z.RefinementCtx
 ) {
+  const allowed: readonly string[] =
+    contractRevenueMethodsByBillingMethod[line.billingMethod];
+  if (!allowed.includes(line.revenueMethod)) {
+    ctx.addIssue({
+      code: "custom",
+      message: `A ${line.billingMethod} line cannot use ${line.revenueMethod}`,
+      path: ["revenueMethod"]
+    });
+  }
+  if (isProjectBillingMethod(line.billingMethod)) {
+    if (!line.projectId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A billing line needs a project",
+        path: ["projectId"]
+      });
+    }
+    if (!line.projectElementId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A billing line needs a billing element",
+        path: ["projectElementId"]
+      });
+    }
+  }
+  if (line.billingMethod === "Cost Plus" && line.feePercent === undefined) {
+    ctx.addIssue({
+      code: "custom",
+      message: "A Cost Plus line needs a fee",
+      path: ["feePercent"]
+    });
+  }
+  if (line.revenueMethod === "Percent Complete" && !line.projectElementId) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Percent Complete needs a billing element",
+      path: ["projectElementId"]
+    });
+  }
   if (line.revenueType === "Recurring" && !line.rateUnit) {
     ctx.addIssue({
       code: "custom",
