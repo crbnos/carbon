@@ -7,6 +7,9 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
+import { requireProjectRevenueEntitlement } from "@carbon/ee/project-revenue.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -1364,4 +1367,39 @@ export async function draftRentalAgreementSetupPath(
     return null;
   }
   return path.to.rentalAgreementSetup(id, "units");
+}
+
+/**
+ * Cost Plus billing and Percent Complete revenue need `PROJECT_REVENUE`
+ * (plan decision P2). Returns the upgrade message when the company is not
+ * entitled and a line asks for either, else null. The lock lives in
+ * `@carbon/ee` (`requireProjectRevenueEntitlement`); this only turns its
+ * `EntitlementError` into a message a route can flash.
+ */
+export async function projectRevenueRefusal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lines: {
+    billingMethod?: Database["public"]["Enums"]["contractBillingMethod"];
+    revenueMethod?: Database["public"]["Enums"]["contractRevenueMethod"];
+  }[]
+): Promise<string | null> {
+  const needsEntitlement = lines.some(
+    (line) =>
+      line.billingMethod === "Cost Plus" ||
+      line.revenueMethod === "Percent Complete"
+  );
+  if (!needsEntitlement) return null;
+  try {
+    await requireProjectRevenueEntitlement(client, companyId);
+    return null;
+  } catch (err) {
+    if (!(err instanceof EntitlementError)) throw err;
+    logger.error("Project revenue is not in the company's plan", {
+      companyId
+    });
+    return defaultUpgradeMessage(
+      resolveRequirement({ feature: "PROJECT_REVENUE" })
+    );
+  }
 }

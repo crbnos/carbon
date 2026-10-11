@@ -2541,6 +2541,29 @@ export async function upsertLaborCategoryRate(
 type ProjectBillableItemStatus =
   Database["public"]["Enums"]["projectBillableItemStatus"];
 
+/**
+ * Lists the billing elements of one project (`isBilling`), for a contract
+ * line's billing element. Only a Contract-treatment project has them.
+ * @mcp read
+ */
+export async function getProjectBillingElements(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("projectElement")
+    .select(
+      "id, readableId, name, type, project:project!projectElement_project_fkey!inner(costTreatment)"
+    )
+    .eq("projectId", projectId)
+    .eq("companyId", companyId)
+    .eq("isBilling", true)
+    .eq("project.costTreatment", "Contract")
+    .order("sortOrder", { ascending: true })
+    .order("id", { ascending: true });
+}
+
 const CONTRACT_BILLABLE_ITEM_COLUMNS =
   "id, projectId, projectElementId, projectLedgerId, customerContractLineId, itemId, description, quantity, unitPrice, amount, status, statusReason, reversalOfId, salesInvoiceLineId, voidedSalesInvoiceId, createdAt, ledger:projectLedger!projectBillableItem_ledger_fkey(postingDate, costType, documentType, documentId, employeeId, laborCategoryId, quantity, amount), element:projectElement!projectBillableItem_element_fkey(id, readableId, name), project:project!projectBillableItem_project_fkey(id, identifier, name), contractLine:customerContractLine!projectBillableItem_contractLine_fkey(id, customerContractId, billingMethod, description), invoiceLine:salesInvoiceLine!projectBillableItem_invoiceLine_fkey(invoiceId)" as const;
 

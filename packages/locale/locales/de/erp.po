@@ -3936,8 +3936,14 @@ msgstr "Abrechnungszyklus"
 msgid "Billing Cycle"
 msgstr "Abrechnungszyklus"
 
+msgid "Billing Element"
+msgstr ""
+
 msgid "Billing Frequency"
 msgstr "Fakturierungshäufigkeit"
+
+msgid "Billing Method"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "Abrechnungsperioden"
@@ -3947,6 +3953,12 @@ msgstr "Abrechnungsperioden werden ab diesem Datum erstellt"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Abrechnungsperioden werden erstellt, wenn der Vertrag aktiviert wird."
+
+msgid "Billing stops at this amount"
+msgstr ""
+
+msgid "Billing Terms"
+msgstr ""
 
 msgid "Billing timing"
 msgstr "Abrechnungszeit"
@@ -3959,6 +3971,9 @@ msgstr "Fakturiert jede Periode, bis jede Einheit zurückgegeben wird."
 
 msgid "Bills of material"
 msgstr "Stücklisten"
+
+msgid "Bills the work charged to this element and the elements below it"
+msgstr ""
 
 msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
 msgstr ""
@@ -4527,6 +4542,9 @@ msgstr "Verursachender Durchlauf: "
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Ceiling"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "Zentralisierte Rechnungsadresse"
@@ -6013,6 +6031,15 @@ msgid "Cost of Sales"
 msgstr "Umsatzkosten"
 
 msgid "Cost of service work covered by a warranty"
+msgstr ""
+
+msgid "Cost Plus"
+msgstr ""
+
+msgid "Cost Plus and Percent Complete need an upgrade."
+msgstr ""
+
+msgid "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
 msgstr ""
 
 msgid "Cost Rate"
@@ -9393,6 +9420,9 @@ msgstr "Unterstruktur erweitern"
 msgid "Expansion"
 msgstr "Erweiterung"
 
+msgid "Expected cost over the next 30 to 90 days"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Erwarteter zukünftiger Bedarf für ein Eigenfertigungsteil, das Woche für Woche eingegeben wird, bevor ein Kundenauftrag vorhanden ist; die Planung setzt ihn gegen die Deckung ab und explodiert die Methode, um Komponenten im Voraus zu bestellen."
 
@@ -10028,6 +10058,12 @@ msgstr "Faxnummer"
 msgid "Fed by"
 msgstr ""
 
+msgid "Fee (%)"
+msgstr ""
+
+msgid "Fee on allowable cost"
+msgstr ""
+
 msgid "Feeds"
 msgstr ""
 
@@ -10418,6 +10454,15 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded Amount"
+msgstr ""
+
+msgid "Funded Cost"
+msgstr ""
+
+msgid "Funding without the fee; the funding notices compare cost with it"
+msgstr ""
+
 msgid "FX G/L"
 msgstr "FX G/L"
 
@@ -10796,6 +10841,9 @@ msgstr "Wiederkehrende und stornierte Buchungssätze verwalten"
 
 msgid "Handled by {delegatedTo}"
 msgstr "Wird bearbeitet von {delegatedTo}"
+
+msgid "Handling (%)"
+msgstr ""
 
 msgid "Hands-on"
 msgstr "Praktisch"
@@ -13148,6 +13196,9 @@ msgstr "Markiert die Person für jeden Tag im Bereich als frei. Sie werden nicht
 msgid "Markup by Category"
 msgstr "Aufschlag nach Kategorie"
 
+msgid "Markup on material and other direct cost"
+msgstr ""
+
 msgid "Markup Percent"
 msgstr "Aufschlag Prozent"
 
@@ -15282,6 +15333,12 @@ msgstr "Noch nichts zum Erfassen. Die Umsatzerlöse folgen dem, was die Rechnung
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Noch nichts. Ein Schritt bietet Werte erst nach der Konfiguration an."
 
+msgid "Notice At (%)"
+msgstr ""
+
+msgid "Notice Window (Days)"
+msgstr ""
+
 msgid "Notification"
 msgstr "Benachrichtigung"
 
@@ -15333,6 +15390,9 @@ msgstr "von"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "von {0}h"
+
+msgid "Of the funded cost, from 75% to 85%"
+msgstr ""
 
 msgid "Off"
 msgstr "Aus"
@@ -17252,6 +17312,9 @@ msgstr "Gewinnprozent"
 msgid "Progress"
 msgstr "Fortschritt"
 
+msgid "Progress is this element's cost against its estimate at completion"
+msgstr ""
+
 msgid "Project"
 msgstr "Projekt"
 
@@ -17275,6 +17338,9 @@ msgstr "Projektverantwortlicher"
 
 msgid "Project Plan"
 msgstr "Projektplan"
+
+msgid "Project revenue is not in your plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "Projektstart"
@@ -20444,6 +20510,9 @@ msgstr "Preisfindung festlegen"
 
 msgid "Set Quantity"
 msgstr "Menge festlegen"
+
+msgid "Set terms"
+msgstr ""
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Legen Sie das Startdatum der Vereinbarung fest, um die Buchhaltungsbehandlung anzuzeigen."
@@ -23775,6 +23844,9 @@ msgid "Tightened"
 msgstr "Verschärft"
 
 msgid "Time & materials"
+msgstr ""
+
+msgid "Time & Materials"
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

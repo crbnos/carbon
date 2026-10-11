@@ -33,6 +33,7 @@ import Account, { AccountControlled } from "./Account";
 import AddressAutocomplete from "./AddressAutocomplete";
 import AssemblyInstruction from "./AssemblyInstruction";
 import AssetClass, { useAssetClasses } from "./AssetClass";
+import BillingElement from "./BillingElement";
 import ChargeNumber, {
   ChargeNumberControlled,
   useChargeNumbers
@@ -112,6 +113,7 @@ export {
   Array,
   ArrayNumeric,
   AssemblyInstruction,
+  BillingElement,
   Boolean,
   ChargeNumber,
   ChargeNumberControlled,

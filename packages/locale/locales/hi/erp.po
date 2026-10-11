@@ -3936,8 +3936,14 @@ msgstr "बिलिंग चक्र"
 msgid "Billing Cycle"
 msgstr "बिलिंग चक्र"
 
+msgid "Billing Element"
+msgstr ""
+
 msgid "Billing Frequency"
 msgstr "बिलिंग आवृत्ति"
+
+msgid "Billing Method"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "बिलिंग अवधि"
@@ -3947,6 +3953,12 @@ msgstr "बिलिंग अवधि इस तारीख से काट�
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "बिलिंग अवधि तब काटी जाती है जब समझौता सक्रिय हो जाता है।"
+
+msgid "Billing stops at this amount"
+msgstr ""
+
+msgid "Billing Terms"
+msgstr ""
 
 msgid "Billing timing"
 msgstr "बिलिंग समय"
@@ -3959,6 +3971,9 @@ msgstr "प्रत्येक अवधि का बिल तब तक द
 
 msgid "Bills of material"
 msgstr "सामग्री के बिल"
+
+msgid "Bills the work charged to this element and the elements below it"
+msgstr ""
 
 msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
 msgstr ""
@@ -4527,6 +4542,9 @@ msgstr "कारण बनने वाला रन: "
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Ceiling"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "केंद्रीकृत बिलिंग पता"
@@ -6013,6 +6031,15 @@ msgid "Cost of Sales"
 msgstr "बिक्री की लागत"
 
 msgid "Cost of service work covered by a warranty"
+msgstr ""
+
+msgid "Cost Plus"
+msgstr ""
+
+msgid "Cost Plus and Percent Complete need an upgrade."
+msgstr ""
+
+msgid "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
 msgstr ""
 
 msgid "Cost Rate"
@@ -9393,6 +9420,9 @@ msgstr "सबट्री को विस्तृत करें"
 msgid "Expansion"
 msgstr "विस्तार"
 
+msgid "Expected cost over the next 30 to 90 days"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "एक निर्माण पार्ट के लिए अपेक्षित भविष्य मांग को किसी भी विक्रय आदेश के मौजूद होने से पहले सप्ताह दर सप्ताह दर्ज किया जाता है; योजना इसे आपूर्ति के विरुद्ध नेट करती है और घटकों को आगे के लिए आदेश देने के लिए विधि को विस्तृत करती है।"
 
@@ -10028,6 +10058,12 @@ msgstr "फैक्स नंबर"
 msgid "Fed by"
 msgstr ""
 
+msgid "Fee (%)"
+msgstr ""
+
+msgid "Fee on allowable cost"
+msgstr ""
+
 msgid "Feeds"
 msgstr ""
 
@@ -10418,6 +10454,15 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded Amount"
+msgstr ""
+
+msgid "Funded Cost"
+msgstr ""
+
+msgid "Funding without the fee; the funding notices compare cost with it"
+msgstr ""
+
 msgid "FX G/L"
 msgstr "FX G/L"
 
@@ -10796,6 +10841,9 @@ msgstr "आवर्ती और उलट जर्नल प्रविष�
 
 msgid "Handled by {delegatedTo}"
 msgstr "{delegatedTo} द्वारा संभाला गया"
+
+msgid "Handling (%)"
+msgstr ""
 
 msgid "Hands-on"
 msgstr "हैंड्स-ऑन"
@@ -13148,6 +13196,9 @@ msgstr "रेंज में प्रत्येक दिन व्यक�
 msgid "Markup by Category"
 msgstr "श्रेणी के अनुसार मार्कअप"
 
+msgid "Markup on material and other direct cost"
+msgstr ""
+
 msgid "Markup Percent"
 msgstr "मार्कअप प्रतिशत"
 
@@ -15282,6 +15333,12 @@ msgstr "अभी मान्यता देने के लिए कुछ 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक चरण केवल तभी मान प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
 
+msgid "Notice At (%)"
+msgstr ""
+
+msgid "Notice Window (Days)"
+msgstr ""
+
 msgid "Notification"
 msgstr "सूचना"
 
@@ -15333,6 +15390,9 @@ msgstr "का"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "का {0}h"
+
+msgid "Of the funded cost, from 75% to 85%"
+msgstr ""
 
 msgid "Off"
 msgstr "बंद"
@@ -17252,6 +17312,9 @@ msgstr "लाभ प्रतिशत"
 msgid "Progress"
 msgstr "प्रगति"
 
+msgid "Progress is this element's cost against its estimate at completion"
+msgstr ""
+
 msgid "Project"
 msgstr "प्रोजेक्ट"
 
@@ -17275,6 +17338,9 @@ msgstr "परियोजना स्वामी"
 
 msgid "Project Plan"
 msgstr "प्रोजेक्ट प्लान"
+
+msgid "Project revenue is not in your plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
@@ -20444,6 +20510,9 @@ msgstr "मूल्य निर्धारण सेट करें"
 
 msgid "Set Quantity"
 msgstr "मात्रा निर्धारित करें"
+
+msgid "Set terms"
+msgstr ""
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "लेखांकन उपचार देखने के लिए समझौते की प्रारंभ तिथि निर्धारित करें।"
@@ -23775,6 +23844,9 @@ msgid "Tightened"
 msgstr "कठोर"
 
 msgid "Time & materials"
+msgstr ""
+
+msgid "Time & Materials"
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

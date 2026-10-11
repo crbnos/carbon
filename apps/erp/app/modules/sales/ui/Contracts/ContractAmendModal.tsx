@@ -41,6 +41,7 @@ import {
   LuCircleAlert,
   LuCircleStop,
   LuPlus,
+  LuReceipt,
   LuTrash,
   LuTriangleAlert,
   LuUndo2
@@ -55,6 +56,7 @@ import {
   EditableText
 } from "~/components/Editable";
 import {
+  BillingElement,
   DatePicker,
   Hidden,
   Select,
@@ -71,17 +73,30 @@ import {
   usePermissions,
   useQuantityFormatter
 } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { useServices } from "~/stores";
 import {
   type contractAmendmentChangeValidator,
   contractAmendmentEffects,
+  contractBillingMethods,
+  contractLineBillingFormValues,
+  contractLineBillingTermsValidator,
   contractRateUnits,
+  contractRevenueMethods,
+  contractRevenueMethodsByBillingMethod,
   contractRevenueTypes,
   customerContractAmendmentValidator,
   customerContractTypes,
+  isProjectBillingMethod,
   newContractLineBillingValues
 } from "../../sales.models";
+import {
+  ContractLineBillingFields,
+  ProjectRevenueUpgrade,
+  useBillingMethodLabels
+} from "./ContractLineBilling";
 import ContractMoney from "./ContractMoney";
+import ContractProject from "./ContractProject";
 import type {
   Contract,
   ContractLine,
@@ -94,6 +109,7 @@ type Effect = (typeof contractAmendmentEffects)[number];
 type RateUnit = (typeof contractRateUnits)[number];
 type RevenueType = (typeof contractRevenueTypes)[number];
 type AmendmentChange = z.infer<typeof contractAmendmentChangeValidator>;
+type BillingTerms = z.infer<typeof contractLineBillingTermsValidator>;
 
 /** A line as the amendment grid edits it: an open line of the contract, or
  *  one the amendment adds (`isNew`). Percentages in percent points, as the
@@ -112,6 +128,9 @@ type AmendRow = {
   discountPercent: number;
   taxPercent: number;
   end: boolean;
+  /** How the line bills. An existing Time & Materials or Cost Plus line
+   *  cannot change through Amend (plan decision P9), only end. */
+  billing: BillingTerms;
 };
 
 type PreviewResponse = {
@@ -138,8 +157,17 @@ const toRow = (line: ContractLine): AmendRow => ({
   rateUnit: line.rateUnit,
   discountPercent: round(Number(line.discountPercent) * 100),
   taxPercent: round(Number(line.taxPercent) * 100),
-  end: false
+  end: false,
+  billing: {
+    ...contractLineBillingFormValues(line),
+    revenueMethod: line.revenueMethod,
+    projectId: line.projectId ?? undefined
+  }
 });
+
+/** A Time & Materials or Cost Plus row: no quantity, rate or schedule. */
+const isBillingRow = (row: AmendRow) =>
+  isProjectBillingMethod(row.billing.billingMethod);
 
 const isValidNumber = (value: number, min = 0) =>
   Number.isFinite(value) && value >= min;
@@ -265,7 +293,12 @@ const ContractAmendModal = ({
           rateUnit: contract.billingFrequency ?? "Month",
           discountPercent: 0,
           taxPercent: 0,
-          end: false
+          end: false,
+          billing: {
+            ...newContractLineBillingValues,
+            revenueMethod: "Daily" as const,
+            projectId: contract.projectId ?? undefined
+          }
         };
       })
     ]);
@@ -277,25 +310,26 @@ const ContractAmendModal = ({
     () =>
       rows.flatMap((row): AmendmentChange[] => {
         if (row.isNew) {
+          const billing = isBillingRow(row);
           return [
             {
               op: "add",
               line: {
-                revenueType: row.revenueType,
+                ...row.billing,
+                // A billing line is One-time at quantity 1 and rate 0.
+                revenueType: billing ? "One-time" : row.revenueType,
                 itemId: row.itemId,
                 description: row.description || undefined,
-                quantity: row.quantity,
-                rate: row.rate,
+                quantity: billing ? 1 : row.quantity,
+                rate: billing ? 0 : row.rate,
                 rateUnit:
-                  row.revenueType === "Recurring"
+                  !billing && row.revenueType === "Recurring"
                     ? (row.rateUnit ?? undefined)
                     : undefined,
-                discountPercent: row.discountPercent,
+                discountPercent: billing ? 0 : row.discountPercent,
                 taxPercent: row.taxPercent,
                 // The server starts it on the effective date when that is later.
-                startDate: amendmentDate,
-                revenueMethod: "Daily",
-                ...newContractLineBillingValues
+                startDate: amendmentDate
               }
             }
           ];
@@ -345,8 +379,27 @@ const ContractAmendModal = ({
           isValidNumber(row.rate) &&
           isValidNumber(row.discountPercent) &&
           isValidNumber(row.taxPercent) &&
-          (row.revenueType === "One-time" || !!row.rateUnit))
+          (isBillingRow(row) ||
+            row.revenueType === "One-time" ||
+            !!row.rateUnit) &&
+          (!row.isNew ||
+            contractLineBillingTermsValidator.safeParse(row.billing).success))
     );
+  // Cost Plus and Percent Complete are commercial: the route refuses them
+  // without `PROJECT_REVENUE`, so Amend is disabled and the terms say why.
+  const { isGated: projectRevenueGated } = usePlanGate({
+    feature: "PROJECT_REVENUE"
+  });
+  const needsUpgrade =
+    projectRevenueGated &&
+    rows.some(
+      (row) =>
+        row.isNew &&
+        (row.billing.billingMethod === "Cost Plus" ||
+          row.billing.revenueMethod === "Percent Complete")
+    );
+  const [editingTerms, setEditingTerms] = useState<AmendRow | null>(null);
+  const billingLabels = useBillingMethodLabels();
   const hasChanges = changes.length > 0;
   const changesJson = JSON.stringify(changes);
 
@@ -403,6 +456,7 @@ const ContractAmendModal = ({
   // (an ended line, or a type an existing line cannot change).
   const display = useMemo<
     Record<
+      | "billingMethod"
       | "description"
       | "revenueType"
       | "quantity"
@@ -414,21 +468,47 @@ const ContractAmendModal = ({
     >
   >(
     () => ({
+      billingMethod: (row) =>
+        row.isNew &&
+        isBillingRow(row) &&
+        !contractLineBillingTermsValidator.safeParse(row.billing).success ? (
+          <span className="truncate text-amber-600 dark:text-amber-400">
+            {billingLabels[row.billing.billingMethod]} ·{" "}
+            <Trans>Set terms</Trans>
+          </span>
+        ) : (
+          <span className="truncate">
+            {billingLabels[row.billing.billingMethod]}
+          </span>
+        ),
       description: (row) =>
         row.description ? (
           <span className="truncate">{row.description}</span>
         ) : (
           <span className="truncate text-muted-foreground">{row.name}</span>
         ),
-      revenueType: (row) => revenueTypeLabels[row.revenueType],
-      quantity: (row) => (
-        <span className="tabular-nums">{formatQuantity(row.quantity)}</span>
-      ),
-      rate: (row) => (
-        <ContractMoney value={row.rate} currencyCode={currencyCode} rate />
-      ),
+      revenueType: (row) =>
+        isBillingRow(row) ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          revenueTypeLabels[row.revenueType]
+        ),
+      quantity: (row) =>
+        isBillingRow(row) ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <span className="tabular-nums">{formatQuantity(row.quantity)}</span>
+        ),
+      rate: (row) =>
+        isBillingRow(row) ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <ContractMoney value={row.rate} currencyCode={currencyCode} rate />
+        ),
       rateUnit: (row) =>
-        row.revenueType === "Recurring" && row.rateUnit ? (
+        !isBillingRow(row) &&
+        row.revenueType === "Recurring" &&
+        row.rateUnit ? (
           rateUnitLabels[row.rateUnit]
         ) : (
           <span className="text-muted-foreground">—</span>
@@ -450,7 +530,14 @@ const ContractAmendModal = ({
           <span className="text-muted-foreground">—</span>
         )
     }),
-    [currencyCode, formatQuantity, percent, rateUnitLabels, revenueTypeLabels]
+    [
+      currencyCode,
+      formatQuantity,
+      percent,
+      rateUnitLabels,
+      revenueTypeLabels,
+      billingLabels
+    ]
   );
 
   const columns = useMemo<ColumnDef<AmendRow>[]>(() => {
@@ -490,6 +577,11 @@ const ContractAmendModal = ({
         accessorKey: "description",
         header: t`Description`,
         cell: cell("description")
+      },
+      {
+        id: "billingMethod",
+        header: t`Billing`,
+        cell: cell("billingMethod")
       },
       {
         accessorKey: "revenueType",
@@ -546,8 +638,10 @@ const ContractAmendModal = ({
         ) : (
           editor(props)
         );
-    const never = () => false;
-    const existing = (row: AmendRow) => !row.isNew;
+    // An existing billing line only ends (P9); any billing line has no
+    // quantity, rate, rate unit or discount.
+    const never = (row: AmendRow) => !row.isNew && isBillingRow(row);
+    const existing = (row: AmendRow) => !row.isNew || isBillingRow(row);
     const percentField = {
       minValue: 0,
       maxValue: 100,
@@ -573,7 +667,7 @@ const ContractAmendModal = ({
       ),
       quantity: unless(
         "quantity",
-        never,
+        isBillingRow,
         EditableNumber<AmendRow>(onCellEdit, {
           minValue: 0,
           step: INPUT_STEP.quantity,
@@ -582,7 +676,7 @@ const ContractAmendModal = ({
       ),
       rate: unless(
         "rate",
-        never,
+        isBillingRow,
         EditableNumber<AmendRow>(onCellEdit, {
           minValue: 0,
           step: INPUT_STEP.rate,
@@ -591,7 +685,8 @@ const ContractAmendModal = ({
       ),
       rateUnit: unless(
         "rateUnit",
-        (row) => !row.isNew || row.revenueType !== "Recurring",
+        (row) =>
+          !row.isNew || isBillingRow(row) || row.revenueType !== "Recurring",
         EditableList<AmendRow>(
           onCellEdit,
           contractRateUnits.map((value) => ({
@@ -602,7 +697,7 @@ const ContractAmendModal = ({
       ),
       discountPercent: unless(
         "discountPercent",
-        never,
+        isBillingRow,
         EditableNumber<AmendRow>(onCellEdit, percentField)
       ),
       taxPercent: unless(
@@ -623,15 +718,21 @@ const ContractAmendModal = ({
   const renderRowMenu = useCallback(
     (row: AmendRow) =>
       row.isNew ? (
-        <MenuItem
-          destructive
-          onClick={() =>
-            setRows((prev) => prev.filter((other) => other.id !== row.id))
-          }
-        >
-          <MenuIcon icon={<LuTrash />} />
-          <Trans>Remove Line</Trans>
-        </MenuItem>
+        <>
+          <MenuItem onClick={() => setEditingTerms(row)}>
+            <MenuIcon icon={<LuReceipt />} />
+            <Trans>Billing Terms</Trans>
+          </MenuItem>
+          <MenuItem
+            destructive
+            onClick={() =>
+              setRows((prev) => prev.filter((other) => other.id !== row.id))
+            }
+          >
+            <MenuIcon icon={<LuTrash />} />
+            <Trans>Remove Line</Trans>
+          </MenuItem>
+        </>
       ) : row.end ? (
         <MenuItem onClick={() => updateRow(row.id, { end: false })}>
           <MenuIcon icon={<LuUndo2 />} />
@@ -832,11 +933,17 @@ const ContractAmendModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
+            {needsUpgrade && (
+              <div className="mr-auto">
+                <Trans>Cost Plus and Percent Complete need an upgrade.</Trans>
+              </div>
+            )}
             <Submit
               isDisabled={
                 !hasChanges ||
                 !isValid ||
                 isRefused ||
+                needsUpgrade ||
                 !permissions.can("update", "sales")
               }
             >
@@ -848,7 +955,170 @@ const ContractAmendModal = ({
       {addServices.isOpen && (
         <AddServicesModal onAdd={addRows} onClose={addServices.onClose} />
       )}
+      {/* Outside the amendment's form: a form inside another form's React
+          tree would bubble its submit to the outer one. */}
+      {editingTerms && (
+        <BillingTermsModal
+          key={editingTerms.id}
+          name={editingTerms.description || editingTerms.name}
+          terms={editingTerms.billing}
+          currencyCode={currencyCode}
+          isGated={projectRevenueGated}
+          onSave={(billing) => {
+            updateRow(editingTerms.id, { billing });
+            setEditingTerms(null);
+          }}
+          onClose={() => setEditingTerms(null)}
+        />
+      )}
     </Modal>
+  );
+};
+
+/** How an added line bills: Fixed (priced in the grid), or Time & Materials
+ *  or Cost Plus from a project's billing element. Saved into the amendment's
+ *  local state; nothing posts until Amend. */
+const BillingTermsModal = ({
+  name,
+  terms,
+  currencyCode,
+  isGated,
+  onSave,
+  onClose
+}: {
+  name: string;
+  terms: BillingTerms;
+  currencyCode: string;
+  isGated: boolean;
+  onSave: (terms: BillingTerms) => void;
+  onClose: () => void;
+}) => {
+  const { t } = useLingui();
+  const billingLabels = useBillingMethodLabels();
+  const [billingMethod, setBillingMethod] = useState(terms.billingMethod);
+  const [revenueMethod, setRevenueMethod] = useState(terms.revenueMethod);
+  const [projectId, setProjectId] = useState(terms.projectId ?? "");
+  const revenueMethodLabels: Record<
+    (typeof contractRevenueMethods)[number],
+    string
+  > = {
+    Daily: t`Daily`,
+    "Even Period": t`Even Period`,
+    "Right to Invoice": t`Right to Invoice`,
+    "Percent Complete": t`Percent Complete`
+  };
+  const isBilling = isProjectBillingMethod(billingMethod);
+  const showUpgrade =
+    isGated &&
+    (billingMethod === "Cost Plus" || revenueMethod === "Percent Complete");
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent size="large">
+        <ValidatedForm
+          validator={contractLineBillingTermsValidator}
+          defaultValues={terms}
+          onSubmit={(data, event) => {
+            event.preventDefault();
+            onSave(data);
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Billing Terms</Trans>
+            </ModalTitle>
+            <ModalDescription>{name}</ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={4}>
+              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
+                <Select
+                  name="billingMethod"
+                  label={t`Billing Method`}
+                  options={contractBillingMethods.map((value) => ({
+                    value,
+                    label: billingLabels[value]
+                  }))}
+                  onChange={(option) => {
+                    const next = contractBillingMethods.find(
+                      (value) => value === option?.value
+                    );
+                    if (!next) return;
+                    setBillingMethod(next);
+                    const allowed: readonly string[] =
+                      contractRevenueMethodsByBillingMethod[next];
+                    if (!allowed.includes(revenueMethod)) {
+                      setRevenueMethod(
+                        contractRevenueMethodsByBillingMethod[next][0]
+                      );
+                    }
+                  }}
+                />
+                <SelectControlled
+                  name="revenueMethod"
+                  label={t`Revenue Method`}
+                  value={revenueMethod}
+                  options={contractRevenueMethodsByBillingMethod[
+                    billingMethod
+                  ].map((value) => ({
+                    value,
+                    label: revenueMethodLabels[value]
+                  }))}
+                  onChange={(option) => {
+                    const next = contractRevenueMethods.find(
+                      (value) => value === option?.value
+                    );
+                    if (next) setRevenueMethod(next);
+                  }}
+                />
+                <ContractProject
+                  name="projectId"
+                  label={t`Project`}
+                  onChange={(option) => setProjectId(option?.value ?? "")}
+                />
+                {isBilling ? (
+                  <ContractLineBillingFields
+                    billingMethod={billingMethod}
+                    projectId={projectId}
+                    currencyCode={currencyCode}
+                  />
+                ) : (
+                  revenueMethod === "Percent Complete" && (
+                    <BillingElementField projectId={projectId} />
+                  )
+                )}
+              </div>
+              {showUpgrade && <ProjectRevenueUpgrade />}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit isDisabled={showUpgrade}>
+              <Trans>Save</Trans>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
+  );
+};
+
+/** The element whose cost measures a Fixed line's Percent Complete. */
+const BillingElementField = ({ projectId }: { projectId: string }) => {
+  const { t } = useLingui();
+  return (
+    <BillingElement
+      name="projectElementId"
+      projectId={projectId}
+      helperText={t`Progress is this element's cost against its estimate at completion`}
+    />
   );
 };
 

@@ -249,6 +249,8 @@ export const path = {
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>
         generatePath(`${api}/production/kpi/${key}`),
+      projectBillingElements: (projectId: string) =>
+        `${api}/projects/billing-elements?projectId=${encodeURIComponent(projectId)}`,
       projectChargeNumbers: `${api}/projects/charge-numbers`,
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),

@@ -24,24 +24,34 @@ import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
+  BillingElement,
   DatePicker,
   Hidden,
   Input,
   Item,
   Number,
   Select,
+  SelectControlled,
   Submit
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 import {
+  contractBillingMethods,
   contractRateUnits,
-  type contractRevenueMethods,
+  contractRevenueMethods,
+  contractRevenueMethodsByBillingMethod,
   contractRevenueTypes,
-  contractScheduleRevenueMethods,
-  customerContractLineValidator
+  customerContractLineValidator,
+  isProjectBillingMethod
 } from "../../sales.models";
+import {
+  ContractLineBillingFields,
+  ProjectRevenueUpgrade,
+  useBillingMethodLabels
+} from "./ContractLineBilling";
 import ContractProject from "./ContractProject";
 
 type ContractLineFormValues = z.infer<typeof customerContractLineValidator>;
@@ -76,6 +86,16 @@ const ContractLineForm = ({
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   const isEditing = initialValues.id !== undefined;
+  const { isGated: projectRevenueGated } = usePlanGate({
+    feature: "PROJECT_REVENUE"
+  });
+  const [billingMethod, setBillingMethod] = useState(
+    initialValues.billingMethod
+  );
+  const [revenueMethod, setRevenueMethod] = useState(
+    initialValues.revenueMethod
+  );
+  const [projectId, setProjectId] = useState(initialValues.projectId ?? "");
   const [revenueType, setRevenueType] = useState(initialValues.revenueType);
   const [startDate, setStartDate] = useState(initialValues.startDate);
   const [showRevenue, setShowRevenue] = useState(
@@ -116,6 +136,32 @@ const ContractLineForm = ({
     "Even Period": t`Even Period`,
     "Right to Invoice": t`Right to Invoice`,
     "Percent Complete": t`Percent Complete`
+  };
+  const billingMethodLabels = useBillingMethodLabels();
+
+  // A billing line bills project work: no quantity, rate or schedule. The
+  // revenue methods follow the billing method (plan decision P6); Percent
+  // Complete on a Fixed line also needs a billing element.
+  const isBilling = isProjectBillingMethod(billingMethod);
+  const revenueMethods = contractRevenueMethodsByBillingMethod[billingMethod];
+  const needsBillingElement = isBilling || revenueMethod === "Percent Complete";
+  // Cost Plus and Percent Complete are commercial (`PROJECT_REVENUE`): kept
+  // visible, with an upgrade notice and Save disabled. The route action is
+  // the lock.
+  const choosesProjectRevenue =
+    billingMethod === "Cost Plus" || revenueMethod === "Percent Complete";
+  const showUpgrade = projectRevenueGated && choosesProjectRevenue;
+
+  const changeBillingMethod = (
+    next: (typeof contractBillingMethods)[number]
+  ) => {
+    setBillingMethod(next);
+    const allowed: readonly string[] =
+      contractRevenueMethodsByBillingMethod[next];
+    if (!allowed.includes(revenueMethod)) {
+      setRevenueMethod(contractRevenueMethodsByBillingMethod[next][0]);
+    }
+    if (isProjectBillingMethod(next)) setShowRevenue(true);
   };
 
   const isDisabled =
@@ -167,26 +213,52 @@ const ContractLineForm = ({
               <Hidden name="customerContractId" />
               <VStack spacing={4}>
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                  <Select
+                    name="billingMethod"
+                    label={t`Billing Method`}
+                    options={contractBillingMethods.map((value) => ({
+                      value,
+                      label: billingMethodLabels[value]
+                    }))}
+                    onChange={(option) => {
+                      const next = contractBillingMethods.find(
+                        (value) => value === option?.value
+                      );
+                      if (next) changeBillingMethod(next);
+                    }}
+                  />
                   <Item
                     name="itemId"
                     label={t`Service`}
                     type="Service"
                     isReadOnly={isLocked}
                   />
-                  <Select
-                    name="revenueType"
-                    label={t`Revenue Type`}
-                    options={contractRevenueTypes.map((value) => ({
-                      value,
-                      label: revenueTypeLabels[value]
-                    }))}
-                    onChange={(option) => {
-                      const next = contractRevenueTypes.find(
-                        (value) => value === option?.value
-                      );
-                      if (next) setRevenueType(next);
-                    }}
-                  />
+                  {isBilling ? (
+                    // A billing line is One-time at quantity 1 and rate 0
+                    // (`customerContractLine_billing_check`); its price comes
+                    // from the billable items.
+                    <>
+                      <Hidden name="revenueType" value="One-time" />
+                      <Hidden name="quantity" value={1} />
+                      <Hidden name="rate" value={0} />
+                      <Hidden name="discountPercent" value={0} />
+                    </>
+                  ) : (
+                    <Select
+                      name="revenueType"
+                      label={t`Revenue Type`}
+                      options={contractRevenueTypes.map((value) => ({
+                        value,
+                        label: revenueTypeLabels[value]
+                      }))}
+                      onChange={(option) => {
+                        const next = contractRevenueTypes.find(
+                          (value) => value === option?.value
+                        );
+                        if (next) setRevenueType(next);
+                      }}
+                    />
+                  )}
                   <Input
                     name="description"
                     label={t`Description`}
@@ -194,58 +266,80 @@ const ContractLineForm = ({
                   />
                 </div>
 
-                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
-                  <Number
-                    name="quantity"
-                    label={t`Quantity`}
-                    minValue={0}
-                    step={INPUT_STEP.quantity}
-                    formatOptions={INPUT_FORMAT.quantity}
-                  />
-                  <Number
-                    name="rate"
-                    label={t`Rate`}
-                    minValue={0}
-                    step={INPUT_STEP.rate}
-                    formatOptions={INPUT_FORMAT.rate(
-                      currencyCode,
-                      currencyDecimals
-                    )}
-                  />
-                  {/* Unmounted for a one-time line: the validator refuses a
-                      rate unit on one. */}
-                  {revenueType === "Recurring" && (
-                    <Select
-                      name="rateUnit"
-                      label={t`Per`}
-                      options={contractRateUnits.map((value) => ({
-                        value,
-                        label: rateUnitLabels[value]
-                      }))}
+                {showUpgrade && billingMethod === "Cost Plus" && (
+                  <ProjectRevenueUpgrade />
+                )}
+
+                {isBilling ? (
+                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
+                    <ContractLineBillingFields
+                      billingMethod={billingMethod}
+                      projectId={projectId}
+                      currencyCode={currencyCode}
                     />
-                  )}
-                  <Number
-                    name="discountPercent"
-                    label={t`Discount (%)`}
-                    minValue={0}
-                    maxValue={100}
-                    step={INPUT_STEP.percent}
-                    formatOptions={INPUT_FORMAT.percentPoints}
-                  />
-                  <DatePicker
-                    name="discountEndsOn"
-                    label={t`Discount Ends On`}
-                    minValue={minDate}
-                  />
-                  <Number
-                    name="taxPercent"
-                    label={t`Tax (%)`}
-                    minValue={0}
-                    maxValue={100}
-                    step={INPUT_STEP.percent}
-                    formatOptions={INPUT_FORMAT.percentPoints}
-                  />
-                </div>
+                    <Number
+                      name="taxPercent"
+                      label={t`Tax (%)`}
+                      minValue={0}
+                      maxValue={100}
+                      step={INPUT_STEP.percent}
+                      formatOptions={INPUT_FORMAT.percentPoints}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
+                    <Number
+                      name="quantity"
+                      label={t`Quantity`}
+                      minValue={0}
+                      step={INPUT_STEP.quantity}
+                      formatOptions={INPUT_FORMAT.quantity}
+                    />
+                    <Number
+                      name="rate"
+                      label={t`Rate`}
+                      minValue={0}
+                      step={INPUT_STEP.rate}
+                      formatOptions={INPUT_FORMAT.rate(
+                        currencyCode,
+                        currencyDecimals
+                      )}
+                    />
+                    {/* Unmounted for a one-time line: the validator refuses a
+                        rate unit on one. */}
+                    {revenueType === "Recurring" && (
+                      <Select
+                        name="rateUnit"
+                        label={t`Per`}
+                        options={contractRateUnits.map((value) => ({
+                          value,
+                          label: rateUnitLabels[value]
+                        }))}
+                      />
+                    )}
+                    <Number
+                      name="discountPercent"
+                      label={t`Discount (%)`}
+                      minValue={0}
+                      maxValue={100}
+                      step={INPUT_STEP.percent}
+                      formatOptions={INPUT_FORMAT.percentPoints}
+                    />
+                    <DatePicker
+                      name="discountEndsOn"
+                      label={t`Discount Ends On`}
+                      minValue={minDate}
+                    />
+                    <Number
+                      name="taxPercent"
+                      label={t`Tax (%)`}
+                      minValue={0}
+                      maxValue={100}
+                      step={INPUT_STEP.percent}
+                      formatOptions={INPUT_FORMAT.percentPoints}
+                    />
+                  </div>
+                )}
 
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
                   <DatePicker
@@ -267,6 +361,7 @@ const ContractLineForm = ({
                     name="projectId"
                     label={t`Project`}
                     isReadOnly={isLocked}
+                    onChange={(option) => setProjectId(option?.value ?? "")}
                   />
                 </div>
 
@@ -291,14 +386,30 @@ const ContractLineForm = ({
                         : "hidden"
                     }
                   >
-                    <Select
+                    <SelectControlled
                       name="revenueMethod"
                       label={t`Revenue Method`}
-                      options={contractScheduleRevenueMethods.map((value) => ({
+                      value={revenueMethod}
+                      options={revenueMethods.map((value) => ({
                         value,
                         label: revenueMethodLabels[value]
                       }))}
+                      onChange={(option) => {
+                        const next = contractRevenueMethods.find(
+                          (value) => value === option?.value
+                        );
+                        if (next) setRevenueMethod(next);
+                      }}
                     />
+                    {/* A Fixed line recognized by progress needs the element
+                        whose cost measures it. */}
+                    {!isBilling && needsBillingElement && (
+                      <BillingElement
+                        name="projectElementId"
+                        projectId={projectId}
+                        helperText={t`Progress is this element's cost against its estimate at completion`}
+                      />
+                    )}
                     <DatePicker
                       name="revenueStartDate"
                       label={t`Revenue Start`}
@@ -310,6 +421,14 @@ const ContractLineForm = ({
                       helperText={t`Defaults to the end date`}
                     />
                   </div>
+                  {showRevenue &&
+                    showUpgrade &&
+                    revenueMethod === "Percent Complete" &&
+                    billingMethod !== "Cost Plus" && (
+                      <div className="mt-4">
+                        <ProjectRevenueUpgrade />
+                      </div>
+                    )}
                 </div>
               </VStack>
             </ModalCardBody>
@@ -317,7 +436,7 @@ const ContractLineForm = ({
               <ModalCardFooter>
                 <HStack>
                   {!isLocked && (
-                    <Submit isDisabled={isDisabled}>
+                    <Submit isDisabled={isDisabled || showUpgrade}>
                       <Trans>Save</Trans>
                     </Submit>
                   )}

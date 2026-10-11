@@ -3936,8 +3936,14 @@ msgstr "计费周期"
 msgid "Billing Cycle"
 msgstr "计费 周期"
 
+msgid "Billing Element"
+msgstr ""
+
 msgid "Billing Frequency"
 msgstr "计费频率"
+
+msgid "Billing Method"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "计费 期间"
@@ -3947,6 +3953,12 @@ msgstr "从此日期开始计费周期"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "激活协议时，计费期间将被创建。"
+
+msgid "Billing stops at this amount"
+msgstr ""
+
+msgid "Billing Terms"
+msgstr ""
 
 msgid "Billing timing"
 msgstr "计费时机"
@@ -3959,6 +3971,9 @@ msgstr "每个周期计费，直到所有设备都归还。"
 
 msgid "Bills of material"
 msgstr "物料清单"
+
+msgid "Bills the work charged to this element and the elements below it"
+msgstr ""
 
 msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
 msgstr ""
@@ -4527,6 +4542,9 @@ msgstr "导致运行："
 
 msgid "CC"
 msgstr "抄送"
+
+msgid "Ceiling"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "集中式账单地址"
@@ -6013,6 +6031,15 @@ msgid "Cost of Sales"
 msgstr "销售成本"
 
 msgid "Cost of service work covered by a warranty"
+msgstr ""
+
+msgid "Cost Plus"
+msgstr ""
+
+msgid "Cost Plus and Percent Complete need an upgrade."
+msgstr ""
+
+msgid "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
 msgstr ""
 
 msgid "Cost Rate"
@@ -9393,6 +9420,9 @@ msgstr "展开子树"
 msgid "Expansion"
 msgstr "扩展"
 
+msgid "Expected cost over the next 30 to 90 days"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "预期的制造零件未来需求，在任何销售订单存在之前逐周输入；计划根据供应进行净额计算并爆炸方法以提前订购组件。"
 
@@ -10028,6 +10058,12 @@ msgstr "传真号码"
 msgid "Fed by"
 msgstr ""
 
+msgid "Fee (%)"
+msgstr ""
+
+msgid "Fee on allowable cost"
+msgstr ""
+
 msgid "Feeds"
 msgstr ""
 
@@ -10418,6 +10454,15 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded Amount"
+msgstr ""
+
+msgid "Funded Cost"
+msgstr ""
+
+msgid "Funding without the fee; the funding notices compare cost with it"
+msgstr ""
+
 msgid "FX G/L"
 msgstr "外汇损益"
 
@@ -10796,6 +10841,9 @@ msgstr "处理循环和冲销凭证"
 
 msgid "Handled by {delegatedTo}"
 msgstr "由 {delegatedTo} 处理"
+
+msgid "Handling (%)"
+msgstr ""
 
 msgid "Hands-on"
 msgstr "动手实践"
@@ -13148,6 +13196,9 @@ msgstr "在范围内的每一天都标记该人缺席。他们在外出期间不
 msgid "Markup by Category"
 msgstr "按分类加价"
 
+msgid "Markup on material and other direct cost"
+msgstr ""
+
 msgid "Markup Percent"
 msgstr "加价百分比"
 
@@ -15282,6 +15333,12 @@ msgstr "暂无待确认。收入遵循发票开票的内容。"
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
 
+msgid "Notice At (%)"
+msgstr ""
+
+msgid "Notice Window (Days)"
+msgstr ""
+
 msgid "Notification"
 msgstr "通知"
 
@@ -15333,6 +15390,9 @@ msgstr "的"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "共 {0}h"
+
+msgid "Of the funded cost, from 75% to 85%"
+msgstr ""
 
 msgid "Off"
 msgstr "关闭"
@@ -17252,6 +17312,9 @@ msgstr "利润百分比"
 msgid "Progress"
 msgstr "进度"
 
+msgid "Progress is this element's cost against its estimate at completion"
+msgstr ""
+
 msgid "Project"
 msgstr "项目"
 
@@ -17275,6 +17338,9 @@ msgstr "项目负责人"
 
 msgid "Project Plan"
 msgstr "项目计划"
+
+msgid "Project revenue is not in your plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "项目开始"
@@ -20444,6 +20510,9 @@ msgstr "设置定价"
 
 msgid "Set Quantity"
 msgstr "设置数量"
+
+msgid "Set terms"
+msgstr ""
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "设置协议的开始日期以查看会计处理。"
@@ -23775,6 +23844,9 @@ msgid "Tightened"
 msgstr "加严检验"
 
 msgid "Time & materials"
+msgstr ""
+
+msgid "Time & Materials"
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

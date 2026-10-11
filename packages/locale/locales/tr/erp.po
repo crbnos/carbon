@@ -3936,8 +3936,14 @@ msgstr "Faturalandırma döngüsü"
 msgid "Billing Cycle"
 msgstr "Faturalandırma Döngüsü"
 
+msgid "Billing Element"
+msgstr ""
+
 msgid "Billing Frequency"
 msgstr "Faturalama Sıklığı"
+
+msgid "Billing Method"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "Faturalandırma Dönemleri"
@@ -3947,6 +3953,12 @@ msgstr "Fatura dönemleri bu tarihten itibaren kesilir"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Faturalandırma dönemleri, sözleşme etkinleştirildiğinde oluşturulur."
+
+msgid "Billing stops at this amount"
+msgstr ""
+
+msgid "Billing Terms"
+msgstr ""
 
 msgid "Billing timing"
 msgstr "Faturalandırma zamanlaması"
@@ -3959,6 +3971,9 @@ msgstr "Tüm adetler iade edilene kadar her dönem faturalandırılır."
 
 msgid "Bills of material"
 msgstr "Malzeme Faturaları"
+
+msgid "Bills the work charged to this element and the elements below it"
+msgstr ""
 
 msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
 msgstr ""
@@ -4527,6 +4542,9 @@ msgstr "Neden olan çalıştırma: "
 
 msgid "CC"
 msgstr "Bilgi"
+
+msgid "Ceiling"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "Merkezi Faturalama Adresi"
@@ -6013,6 +6031,15 @@ msgid "Cost of Sales"
 msgstr "Satışların Maliyeti"
 
 msgid "Cost of service work covered by a warranty"
+msgstr ""
+
+msgid "Cost Plus"
+msgstr ""
+
+msgid "Cost Plus and Percent Complete need an upgrade."
+msgstr ""
+
+msgid "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
 msgstr ""
 
 msgid "Cost Rate"
@@ -9393,6 +9420,9 @@ msgstr "Alt ağacı genişlet"
 msgid "Expansion"
 msgstr "Genişleme"
 
+msgid "Expected cost over the next 30 to 90 days"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "İmalat yapılan bir parça için herhangi bir satış siparişi oluşturulmadan önceden hafta hafta girilen beklenen gelecek talep; planlama bunu arz karşısında hesaplar ve yöntem açıklarını bileşenleri önceden sipariş etmek için açar."
 
@@ -10028,6 +10058,12 @@ msgstr "Faks Numarası"
 msgid "Fed by"
 msgstr ""
 
+msgid "Fee (%)"
+msgstr ""
+
+msgid "Fee on allowable cost"
+msgstr ""
+
 msgid "Feeds"
 msgstr ""
 
@@ -10418,6 +10454,15 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded Amount"
+msgstr ""
+
+msgid "Funded Cost"
+msgstr ""
+
+msgid "Funding without the fee; the funding notices compare cost with it"
+msgstr ""
+
 msgid "FX G/L"
 msgstr "FX K/Z"
 
@@ -10796,6 +10841,9 @@ msgstr "Tekrarlanan ve tersine çevirme muhasebe fişi girişlerini yönetin."
 
 msgid "Handled by {delegatedTo}"
 msgstr "{delegatedTo} tarafından yönetilir"
+
+msgid "Handling (%)"
+msgstr ""
 
 msgid "Hands-on"
 msgstr "Uygulamalı"
@@ -13148,6 +13196,9 @@ msgstr "Kişiyi aralıktaki her gün için işaretler. Uzakta iken çizelgelenma
 msgid "Markup by Category"
 msgstr "Kategori Başına Marj"
 
+msgid "Markup on material and other direct cost"
+msgstr ""
+
 msgid "Markup Percent"
 msgstr "Kar Marjı Yüzdesi"
 
@@ -15282,6 +15333,12 @@ msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturala
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
 
+msgid "Notice At (%)"
+msgstr ""
+
+msgid "Notice Window (Days)"
+msgstr ""
+
 msgid "Notification"
 msgstr "Bildirim"
 
@@ -15333,6 +15390,9 @@ msgstr "adet"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "başında {0}s"
+
+msgid "Of the funded cost, from 75% to 85%"
+msgstr ""
 
 msgid "Off"
 msgstr "Kapalı"
@@ -17252,6 +17312,9 @@ msgstr "Kar Yüzdesi"
 msgid "Progress"
 msgstr "İlerleme"
 
+msgid "Progress is this element's cost against its estimate at completion"
+msgstr ""
+
 msgid "Project"
 msgstr "Proje"
 
@@ -17275,6 +17338,9 @@ msgstr "Proje sahibi"
 
 msgid "Project Plan"
 msgstr "Proje Planı"
+
+msgid "Project revenue is not in your plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "Proje başlangıcı"
@@ -20444,6 +20510,9 @@ msgstr "Fiyatlandırmayı Ayarla"
 
 msgid "Set Quantity"
 msgstr "Miktarı Ayarla"
+
+msgid "Set terms"
+msgstr ""
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Muhasebe işlemini görmek için sözleşmenin başlangıç tarihini ayarlayın."
@@ -23775,6 +23844,9 @@ msgid "Tightened"
 msgstr "Sıkılaştırılmış"
 
 msgid "Time & materials"
+msgstr ""
+
+msgid "Time & Materials"
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

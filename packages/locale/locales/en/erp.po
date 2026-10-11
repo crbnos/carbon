@@ -3936,8 +3936,14 @@ msgstr "Billing cycle"
 msgid "Billing Cycle"
 msgstr "Billing Cycle"
 
+msgid "Billing Element"
+msgstr "Billing Element"
+
 msgid "Billing Frequency"
 msgstr "Billing Frequency"
+
+msgid "Billing Method"
+msgstr "Billing Method"
 
 msgid "Billing Periods"
 msgstr "Billing Periods"
@@ -3947,6 +3953,12 @@ msgstr "Billing periods are cut from this date"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Billing periods are cut when the agreement is activated."
+
+msgid "Billing stops at this amount"
+msgstr "Billing stops at this amount"
+
+msgid "Billing Terms"
+msgstr "Billing Terms"
 
 msgid "Billing timing"
 msgstr "Billing timing"
@@ -3959,6 +3971,9 @@ msgstr "Bills each period until every unit is returned."
 
 msgid "Bills of material"
 msgstr "Bills of material"
+
+msgid "Bills the work charged to this element and the elements below it"
+msgstr "Bills the work charged to this element and the elements below it"
 
 msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
 msgstr "Bills this node and the work under it as one line. Leave it empty to bill each item."
@@ -4527,6 +4542,9 @@ msgstr "Causing run: "
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Ceiling"
+msgstr "Ceiling"
 
 msgid "Centralized Billing Address"
 msgstr "Centralized Billing Address"
@@ -6014,6 +6032,15 @@ msgstr "Cost of Sales"
 
 msgid "Cost of service work covered by a warranty"
 msgstr "Cost of service work covered by a warranty"
+
+msgid "Cost Plus"
+msgstr "Cost Plus"
+
+msgid "Cost Plus and Percent Complete need an upgrade."
+msgstr "Cost Plus and Percent Complete need an upgrade."
+
+msgid "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
+msgstr "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
 
 msgid "Cost Rate"
 msgstr "Cost Rate"
@@ -9393,6 +9420,9 @@ msgstr "Expand subtree"
 msgid "Expansion"
 msgstr "Expansion"
 
+msgid "Expected cost over the next 30 to 90 days"
+msgstr "Expected cost over the next 30 to 90 days"
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 
@@ -10028,6 +10058,12 @@ msgstr "Fax Number"
 msgid "Fed by"
 msgstr "Fed by"
 
+msgid "Fee (%)"
+msgstr "Fee (%)"
+
+msgid "Fee on allowable cost"
+msgstr "Fee on allowable cost"
+
 msgid "Feeds"
 msgstr "Feeds"
 
@@ -10418,6 +10454,15 @@ msgstr "Function"
 msgid "Functional"
 msgstr "Functional"
 
+msgid "Funded Amount"
+msgstr "Funded Amount"
+
+msgid "Funded Cost"
+msgstr "Funded Cost"
+
+msgid "Funding without the fee; the funding notices compare cost with it"
+msgstr "Funding without the fee; the funding notices compare cost with it"
+
 msgid "FX G/L"
 msgstr "FX G/L"
 
@@ -10796,6 +10841,9 @@ msgstr "Handle recurring and reversing journal entries"
 
 msgid "Handled by {delegatedTo}"
 msgstr "Handled by {delegatedTo}"
+
+msgid "Handling (%)"
+msgstr "Handling (%)"
 
 msgid "Hands-on"
 msgstr "Hands-on"
@@ -13148,6 +13196,9 @@ msgstr "Marks the person off for every day in the range. They won't be scheduled
 msgid "Markup by Category"
 msgstr "Markup by Category"
 
+msgid "Markup on material and other direct cost"
+msgstr "Markup on material and other direct cost"
+
 msgid "Markup Percent"
 msgstr "Markup Percent"
 
@@ -15282,6 +15333,12 @@ msgstr "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
 
+msgid "Notice At (%)"
+msgstr "Notice At (%)"
+
+msgid "Notice Window (Days)"
+msgstr "Notice Window (Days)"
+
 msgid "Notification"
 msgstr "Notification"
 
@@ -15333,6 +15390,9 @@ msgstr "of"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "of {0}h"
+
+msgid "Of the funded cost, from 75% to 85%"
+msgstr "Of the funded cost, from 75% to 85%"
 
 msgid "Off"
 msgstr "Off"
@@ -17252,6 +17312,9 @@ msgstr "Profit Percent"
 msgid "Progress"
 msgstr "Progress"
 
+msgid "Progress is this element's cost against its estimate at completion"
+msgstr "Progress is this element's cost against its estimate at completion"
+
 msgid "Project"
 msgstr "Project"
 
@@ -17275,6 +17338,9 @@ msgstr "Project owner"
 
 msgid "Project Plan"
 msgstr "Project Plan"
+
+msgid "Project revenue is not in your plan"
+msgstr "Project revenue is not in your plan"
 
 msgid "Project start"
 msgstr "Project start"
@@ -20444,6 +20510,9 @@ msgstr "Set Pricing"
 
 msgid "Set Quantity"
 msgstr "Set Quantity"
+
+msgid "Set terms"
+msgstr "Set terms"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Set the agreement's start date to see the accounting treatment."
@@ -23776,6 +23845,9 @@ msgstr "Tightened"
 
 msgid "Time & materials"
 msgstr "Time & materials"
+
+msgid "Time & Materials"
+msgstr "Time & Materials"
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Time and dollar utilization of the rental fleet by asset and class"

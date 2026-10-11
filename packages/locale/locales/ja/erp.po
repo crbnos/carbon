@@ -3936,8 +3936,14 @@ msgstr "請求周期"
 msgid "Billing Cycle"
 msgstr "請求サイクル"
 
+msgid "Billing Element"
+msgstr ""
+
 msgid "Billing Frequency"
 msgstr "請求頻度"
+
+msgid "Billing Method"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "請求期間"
@@ -3947,6 +3953,12 @@ msgstr "請求期間はこの日付から開始されます。"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "契約が有効化されると請求期間が作成されます。"
+
+msgid "Billing stops at this amount"
+msgstr ""
+
+msgid "Billing Terms"
+msgstr ""
 
 msgid "Billing timing"
 msgstr "請求タイミング"
@@ -3959,6 +3971,9 @@ msgstr "すべての個が返却されるまで、各期間に請求されます
 
 msgid "Bills of material"
 msgstr "部品表"
+
+msgid "Bills the work charged to this element and the elements below it"
+msgstr ""
 
 msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
 msgstr ""
@@ -4527,6 +4542,9 @@ msgstr "実行を引き起こす:"
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Ceiling"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "一元化された請求先住所"
@@ -6013,6 +6031,15 @@ msgid "Cost of Sales"
 msgstr "販売原価"
 
 msgid "Cost of service work covered by a warranty"
+msgstr ""
+
+msgid "Cost Plus"
+msgstr ""
+
+msgid "Cost Plus and Percent Complete need an upgrade."
+msgstr ""
+
+msgid "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
 msgstr ""
 
 msgid "Cost Rate"
@@ -9393,6 +9420,9 @@ msgstr "サブツリーを展開"
 msgid "Expansion"
 msgstr "拡張"
 
+msgid "Expected cost over the next 30 to 90 days"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "販売受注が存在する前に週単位で入力される内製品目の所要量見通し。計画はこれを供給に対して相殺し、先行して部品を発注するために製法を展開します。"
 
@@ -10028,6 +10058,12 @@ msgstr "ファックス番号"
 msgid "Fed by"
 msgstr ""
 
+msgid "Fee (%)"
+msgstr ""
+
+msgid "Fee on allowable cost"
+msgstr ""
+
 msgid "Feeds"
 msgstr ""
 
@@ -10418,6 +10454,15 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded Amount"
+msgstr ""
+
+msgid "Funded Cost"
+msgstr ""
+
+msgid "Funding without the fee; the funding notices compare cost with it"
+msgstr ""
+
 msgid "FX G/L"
 msgstr "FX G/L"
 
@@ -10796,6 +10841,9 @@ msgstr "繰り返しおよび逆仕訳の処理"
 
 msgid "Handled by {delegatedTo}"
 msgstr "{delegatedTo}によって処理されています"
+
+msgid "Handling (%)"
+msgstr ""
 
 msgid "Hands-on"
 msgstr "ハンズオン"
@@ -13148,6 +13196,9 @@ msgstr "範囲内のすべての日について、その人を休止します。
 msgid "Markup by Category"
 msgstr "カテゴリ別マークアップ"
 
+msgid "Markup on material and other direct cost"
+msgstr ""
+
 msgid "Markup Percent"
 msgstr "マークアップパーセント"
 
@@ -15282,6 +15333,12 @@ msgstr "まだ認識するものがありません。売上高は請求書が請
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
 
+msgid "Notice At (%)"
+msgstr ""
+
+msgid "Notice Window (Days)"
+msgstr ""
+
 msgid "Notification"
 msgstr "通知"
 
@@ -15333,6 +15390,9 @@ msgstr "の"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "{0}h中"
+
+msgid "Of the funded cost, from 75% to 85%"
+msgstr ""
 
 msgid "Off"
 msgstr "オフ"
@@ -17252,6 +17312,9 @@ msgstr "利益パーセント"
 msgid "Progress"
 msgstr "進捗"
 
+msgid "Progress is this element's cost against its estimate at completion"
+msgstr ""
+
 msgid "Project"
 msgstr "プロジェクト"
 
@@ -17275,6 +17338,9 @@ msgstr "プロジェクト責任者"
 
 msgid "Project Plan"
 msgstr "プロジェクト計画"
+
+msgid "Project revenue is not in your plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "プロジェクト開始"
@@ -20444,6 +20510,9 @@ msgstr "価格設定"
 
 msgid "Set Quantity"
 msgstr "数量を設定"
+
+msgid "Set terms"
+msgstr ""
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "契約の開始日を設定して会計処理を表示してください。"
@@ -23775,6 +23844,9 @@ msgid "Tightened"
 msgstr "きつい検査"
 
 msgid "Time & materials"
+msgstr ""
+
+msgid "Time & Materials"
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

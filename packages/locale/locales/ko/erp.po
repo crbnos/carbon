@@ -3936,8 +3936,14 @@ msgstr "청구 주기"
 msgid "Billing Cycle"
 msgstr "청구 주기"
 
+msgid "Billing Element"
+msgstr ""
+
 msgid "Billing Frequency"
 msgstr "청구 주기"
+
+msgid "Billing Method"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "청구 기간"
@@ -3947,6 +3953,12 @@ msgstr "청구 기간이 이 날짜부터 생성됩니다"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "청구 기간은 계약이 활성화될 때 생성됩니다."
+
+msgid "Billing stops at this amount"
+msgstr ""
+
+msgid "Billing Terms"
+msgstr ""
 
 msgid "Billing timing"
 msgstr "청구 시기"
@@ -3959,6 +3971,9 @@ msgstr "모든 단위가 반환될 때까지 각 기간마다 청구합니다."
 
 msgid "Bills of material"
 msgstr "자재명세서"
+
+msgid "Bills the work charged to this element and the elements below it"
+msgstr ""
 
 msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
 msgstr ""
@@ -4527,6 +4542,9 @@ msgstr "원인 실행: "
 
 msgid "CC"
 msgstr "참조"
+
+msgid "Ceiling"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "통합 청구 주소"
@@ -6013,6 +6031,15 @@ msgid "Cost of Sales"
 msgstr "매출 원가"
 
 msgid "Cost of service work covered by a warranty"
+msgstr ""
+
+msgid "Cost Plus"
+msgstr ""
+
+msgid "Cost Plus and Percent Complete need an upgrade."
+msgstr ""
+
+msgid "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
 msgstr ""
 
 msgid "Cost Rate"
@@ -9393,6 +9420,9 @@ msgstr "하위 트리 펼치기"
 msgid "Expansion"
 msgstr "확대"
 
+msgid "Expected cost over the next 30 to 90 days"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "수주가 존재하기 전에 주별로 입력되는 사내 생산 부품의 예상 향후 소요량; 계획이 이를 공급과 상계하고 방법을 전개하여 구성 요소를 미리 주문합니다."
 
@@ -10028,6 +10058,12 @@ msgstr "팩스 번호"
 msgid "Fed by"
 msgstr ""
 
+msgid "Fee (%)"
+msgstr ""
+
+msgid "Fee on allowable cost"
+msgstr ""
+
 msgid "Feeds"
 msgstr ""
 
@@ -10418,6 +10454,15 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded Amount"
+msgstr ""
+
+msgid "Funded Cost"
+msgstr ""
+
+msgid "Funding without the fee; the funding notices compare cost with it"
+msgstr ""
+
 msgid "FX G/L"
 msgstr "외환 손익"
 
@@ -10796,6 +10841,9 @@ msgstr "반복 및 역분개 전표 처리"
 
 msgid "Handled by {delegatedTo}"
 msgstr "{delegatedTo}에서 처리됨"
+
+msgid "Handling (%)"
+msgstr ""
 
 msgid "Hands-on"
 msgstr "밀착형"
@@ -13148,6 +13196,9 @@ msgstr "범위 내의 모든 날짜에 대해 해당 사람을 표시합니다. 
 msgid "Markup by Category"
 msgstr "상품군별 마크업"
 
+msgid "Markup on material and other direct cost"
+msgstr ""
+
 msgid "Markup Percent"
 msgstr "마진율 퍼센트"
 
@@ -15282,6 +15333,12 @@ msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 �
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
 
+msgid "Notice At (%)"
+msgstr ""
+
+msgid "Notice Window (Days)"
+msgstr ""
+
 msgid "Notification"
 msgstr "알림"
 
@@ -15333,6 +15390,9 @@ msgstr "중"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "{0}h 중"
+
+msgid "Of the funded cost, from 75% to 85%"
+msgstr ""
 
 msgid "Off"
 msgstr "끔"
@@ -17252,6 +17312,9 @@ msgstr "수익률"
 msgid "Progress"
 msgstr "진행 상황"
 
+msgid "Progress is this element's cost against its estimate at completion"
+msgstr ""
+
 msgid "Project"
 msgstr "프로젝트"
 
@@ -17275,6 +17338,9 @@ msgstr "프로젝트 책임자"
 
 msgid "Project Plan"
 msgstr "프로젝트 계획"
+
+msgid "Project revenue is not in your plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "프로젝트 시작"
@@ -20444,6 +20510,9 @@ msgstr "가격 책정 설정"
 
 msgid "Set Quantity"
 msgstr "수량 설정"
+
+msgid "Set terms"
+msgstr ""
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "회계 처리를 확인하려면 계약의 시작일을 설정하세요."
@@ -23775,6 +23844,9 @@ msgid "Tightened"
 msgstr "까다로운 검사"
 
 msgid "Time & materials"
+msgstr ""
+
+msgid "Time & Materials"
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

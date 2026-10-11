@@ -3936,8 +3936,14 @@ msgstr "Цикл выставления счета"
 msgid "Billing Cycle"
 msgstr "Цикл выставления счетов"
 
+msgid "Billing Element"
+msgstr ""
+
 msgid "Billing Frequency"
 msgstr "Частота выставления счетов"
+
+msgid "Billing Method"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "Периоды выставления счетов"
@@ -3947,6 +3953,12 @@ msgstr "Периоды выставления счетов создаются с
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Периоды выставления счетов создаются при активации договора."
+
+msgid "Billing stops at this amount"
+msgstr ""
+
+msgid "Billing Terms"
+msgstr ""
 
 msgid "Billing timing"
 msgstr "График выставления счета"
@@ -3959,6 +3971,9 @@ msgstr "Выставляет счета в каждом периоде до во
 
 msgid "Bills of material"
 msgstr "Спецификации материалов"
+
+msgid "Bills the work charged to this element and the elements below it"
+msgstr ""
 
 msgid "Bills this node and the work under it as one line. Leave it empty to bill each item."
 msgstr ""
@@ -4527,6 +4542,9 @@ msgstr "Запуск-причина: "
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Ceiling"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "Централизованный адрес выставления счетов"
@@ -6013,6 +6031,15 @@ msgid "Cost of Sales"
 msgstr "Себестоимость продаж"
 
 msgid "Cost of service work covered by a warranty"
+msgstr ""
+
+msgid "Cost Plus"
+msgstr ""
+
+msgid "Cost Plus and Percent Complete need an upgrade."
+msgstr ""
+
+msgid "Cost Plus billing and Percent Complete revenue need an upgrade. Time & Materials billing and Right to Invoice revenue are included."
 msgstr ""
 
 msgid "Cost Rate"
@@ -9393,6 +9420,9 @@ msgstr "Развернуть поддерево"
 msgid "Expansion"
 msgstr "Расширение"
 
+msgid "Expected cost over the next 30 to 90 days"
+msgstr ""
+
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Ожидаемая будущая потребность для производимой номенклатуры, вводимая еженедельно до создания заказа покупателя; планирование согласует её с обеспечением и разворачивает метод для заказа компонентов заранее."
 
@@ -10028,6 +10058,12 @@ msgstr "Номер факса"
 msgid "Fed by"
 msgstr ""
 
+msgid "Fee (%)"
+msgstr ""
+
+msgid "Fee on allowable cost"
+msgstr ""
+
 msgid "Feeds"
 msgstr ""
 
@@ -10418,6 +10454,15 @@ msgstr ""
 msgid "Functional"
 msgstr ""
 
+msgid "Funded Amount"
+msgstr ""
+
+msgid "Funded Cost"
+msgstr ""
+
+msgid "Funding without the fee; the funding notices compare cost with it"
+msgstr ""
+
 msgid "FX G/L"
 msgstr "Прибыль/убыток по курсу"
 
@@ -10796,6 +10841,9 @@ msgstr "Обработка повторяющихся и сторнирующи�
 
 msgid "Handled by {delegatedTo}"
 msgstr "Обработано {delegatedTo}"
+
+msgid "Handling (%)"
+msgstr ""
 
 msgid "Hands-on"
 msgstr "Практический"
@@ -13148,6 +13196,9 @@ msgstr "Отмечает человека как отсутствующего н
 msgid "Markup by Category"
 msgstr "Наценка по категориям"
 
+msgid "Markup on material and other direct cost"
+msgstr ""
+
 msgid "Markup Percent"
 msgstr "Процент наценки"
 
@@ -15282,6 +15333,12 @@ msgstr "Нечего признавать. Выручка следует за т
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
 
+msgid "Notice At (%)"
+msgstr ""
+
+msgid "Notice Window (Days)"
+msgstr ""
+
 msgid "Notification"
 msgstr "Уведомление"
 
@@ -15333,6 +15390,9 @@ msgstr "из"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "из {0}ч"
+
+msgid "Of the funded cost, from 75% to 85%"
+msgstr ""
 
 msgid "Off"
 msgstr "Выключено"
@@ -17252,6 +17312,9 @@ msgstr "Процент прибыли"
 msgid "Progress"
 msgstr "Прогресс"
 
+msgid "Progress is this element's cost against its estimate at completion"
+msgstr ""
+
 msgid "Project"
 msgstr "Проект"
 
@@ -17275,6 +17338,9 @@ msgstr "Ответственный проекта"
 
 msgid "Project Plan"
 msgstr "План проекта"
+
+msgid "Project revenue is not in your plan"
+msgstr ""
 
 msgid "Project start"
 msgstr "Начало проекта"
@@ -20444,6 +20510,9 @@ msgstr "Установить ценообразование"
 
 msgid "Set Quantity"
 msgstr "Установить количество"
+
+msgid "Set terms"
+msgstr ""
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Установите дату начала соглашения для просмотра бухгалтерской обработки."
@@ -23775,6 +23844,9 @@ msgid "Tightened"
 msgstr "Усиленный"
 
 msgid "Time & materials"
+msgstr ""
+
+msgid "Time & Materials"
 msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"

@@ -2057,21 +2057,16 @@ export function isProjectBillingMethod(
   return billingMethod === "Time & Materials" || billingMethod === "Cost Plus";
 }
 
-function checkContractLine(
-  line: {
-    revenueType: (typeof contractRevenueTypes)[number];
-    rateUnit?: string;
-    startDate: string;
-    endDate?: string;
-    discountEndsOn?: string;
-    revenueMethod: (typeof contractRevenueMethods)[number];
-    projectId?: string;
-    billingMethod: (typeof contractBillingMethods)[number];
-    projectElementId?: string;
-    feePercent?: number;
-  },
-  ctx: z.RefinementCtx
-) {
+type BillingTerms = {
+  revenueMethod: (typeof contractRevenueMethods)[number];
+  projectId?: string;
+  billingMethod: (typeof contractBillingMethods)[number];
+  projectElementId?: string;
+  feePercent?: number;
+};
+
+/** The billing rules of a line (plan decision P6 and the line CHECKs). */
+function checkBillingTerms(line: BillingTerms, ctx: z.RefinementCtx) {
   const allowed: readonly string[] =
     contractRevenueMethodsByBillingMethod[line.billingMethod];
   if (!allowed.includes(line.revenueMethod)) {
@@ -2104,13 +2099,44 @@ function checkContractLine(
       path: ["feePercent"]
     });
   }
-  if (line.revenueMethod === "Percent Complete" && !line.projectElementId) {
+  if (
+    line.revenueMethod === "Percent Complete" &&
+    !isProjectBillingMethod(line.billingMethod) &&
+    !line.projectElementId
+  ) {
     ctx.addIssue({
       code: "custom",
       message: "Percent Complete needs a billing element",
       path: ["projectElementId"]
     });
   }
+}
+
+/** The billing terms of an amendment's added line, edited apart from the
+ *  amendment grid. Percents in percent points. */
+export const contractLineBillingTermsValidator = z
+  .object({
+    billingMethod: contractLineFields.billingMethod,
+    revenueMethod: contractLineFields.revenueMethod,
+    projectId: contractLineFields.projectId,
+    projectElementId: contractLineFields.projectElementId,
+    materialHandlingPercent: contractLineFields.materialHandlingPercent,
+    feePercent: contractLineFields.feePercent,
+    ...contractLineFundingFields
+  })
+  .superRefine(checkBillingTerms);
+
+function checkContractLine(
+  line: BillingTerms & {
+    revenueType: (typeof contractRevenueTypes)[number];
+    rateUnit?: string;
+    startDate: string;
+    endDate?: string;
+    discountEndsOn?: string;
+  },
+  ctx: z.RefinementCtx
+) {
+  checkBillingTerms(line, ctx);
   if (line.revenueType === "Recurring" && !line.rateUnit) {
     ctx.addIssue({
       code: "custom",
