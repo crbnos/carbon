@@ -392,6 +392,7 @@ export async function projectBillingTestFixture(
       reversalOfId?: string | null;
       documentType?: string;
       journalLineId?: string | null;
+      unallowable?: boolean;
     }[]
   ) =>
     db.transaction().execute((trx) =>
@@ -412,6 +413,7 @@ export async function projectBillingTestFixture(
             amount: row.amount,
             reversalOfId: row.reversalOfId ?? null,
             journalLineId: row.journalLineId ?? null,
+            unallowable: row.unallowable ?? false,
             createdBy: USER
           })
         )

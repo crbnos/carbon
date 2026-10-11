@@ -453,6 +453,8 @@ export async function postReimbursementJournal(
               Number(reimbursement.exchangeRate)
             ),
             journalLineId: journalLineIds[index] ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
             createdBy: userId
           })
         ]

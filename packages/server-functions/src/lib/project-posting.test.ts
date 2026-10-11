@@ -10,6 +10,7 @@ import {
   buildBillableItem,
   buildContractBillableItem,
   buildProjectLedgerRow,
+  isUnallowableCharge,
   ProjectChargeError,
   type ProjectPostingAsset,
   type ProjectPostingContext,
@@ -37,6 +38,8 @@ function project(
     costTreatment: "Expense",
     costAccountId: null,
     fixedAssetId: null,
+    restrictCharging: false,
+    memberIds: [],
     ...overrides
   };
 }
@@ -55,6 +58,7 @@ function element(
     costAccountId: null,
     isFinalAsset: false,
     fixedAssetId: null,
+    isUnallowable: false,
     ...overrides
   };
 }
@@ -68,6 +72,7 @@ function context(
     ancestors: [],
     defaults,
     assets: new Map(),
+    accountAllowability: {},
     ...overrides
   };
 }
@@ -371,6 +376,54 @@ describe("assertChargeable", () => {
       )
     ).toThrow(/Project ST is Closed/);
   });
+
+  it("refuses a non-member's time on a project that restricts charging", () => {
+    const ctx = context({
+      project: project({ restrictCharging: true, memberIds: ["user-a"] })
+    });
+    expect(() => assertChargeable(ctx, "new", "user-b")).toThrow(
+      /ST accepts time only from its members/
+    );
+  });
+
+  it("accepts a member's time, and any charge with no employee", () => {
+    const ctx = context({
+      project: project({ restrictCharging: true, memberIds: ["user-a"] })
+    });
+    expect(() => assertChargeable(ctx, "new", "user-a")).not.toThrow();
+    expect(() => assertChargeable(ctx, "new")).not.toThrow();
+    expect(() => assertChargeable(ctx, "commitment")).not.toThrow();
+  });
+});
+
+describe("isUnallowableCharge", () => {
+  it("flags an element under an unallowable parent", () => {
+    const parent = element({ id: "el-parent", isUnallowable: true });
+    const ctx = context({
+      element: element({ parentId: "el-parent" }),
+      ancestors: [parent],
+      accountAllowability: { "acct-expense": "Allowable" }
+    });
+    expect(isUnallowableCharge(ctx, "acct-expense")).toBe(true);
+  });
+
+  it("flags an Expressly Unallowable account", () => {
+    const ctx = context({
+      element: element(),
+      accountAllowability: { "acct-expense": "Expressly Unallowable" }
+    });
+    expect(isUnallowableCharge(ctx, "acct-expense")).toBe(true);
+  });
+
+  it("allows an Allowable account with no flagged element", () => {
+    const ctx = context({
+      element: element(),
+      ancestors: [element({ id: "el-parent" })],
+      accountAllowability: { "acct-expense": "Allowable" }
+    });
+    expect(isUnallowableCharge(ctx, "acct-expense")).toBe(false);
+    expect(isUnallowableCharge(ctx, null)).toBe(false);
+  });
 });
 
 describe("buildProjectLedgerRow", () => {
@@ -385,6 +438,7 @@ describe("buildProjectLedgerRow", () => {
       documentId: "tse-1",
       quantity: 6,
       amount: 510.0000049,
+      unallowable: false,
       createdBy: "user-1"
     });
     expect(row.amount).toBe(510);

@@ -26,7 +26,9 @@ function contexts(
           status: "Released",
           costTreatment,
           costAccountId: null,
-          fixedAssetId: null
+          fixedAssetId: null,
+          restrictCharging: false,
+          memberIds: []
         },
         element: null,
         ancestors: [],
@@ -37,7 +39,8 @@ function contexts(
           costOfGoodsSoldAccount: "5010",
           workInProgressAccount: "1230"
         },
-        assets: new Map()
+        assets: new Map(),
+        accountAllowability: {}
       }
     ]
   ]);

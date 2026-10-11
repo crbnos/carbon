@@ -18,6 +18,7 @@ import {
   buildBillableItem,
   buildProjectLedgerRow,
   insertProjectLedgerRows,
+  isUnallowableCharge,
   loadProjectPostingContexts,
   loadServicePostingContext,
   ProjectChargeError,
@@ -164,8 +165,10 @@ const reclassProjectCoverage = defineServerFn({
       let journalId: string | null = null;
       let debitLineId: string | null = null;
       let creditLineId: string | null = null;
+      // The account the replacement posts to; null with accounting off.
+      let newAccount: string | null = null;
       if (accountingEnabled && amount !== 0) {
-        const newAccount = resolveProjectPostingAccount(
+        newAccount = resolveProjectPostingAccount(
           context,
           postingDate,
           coverage
@@ -259,7 +262,8 @@ const reclassProjectCoverage = defineServerFn({
               journalLineId: creditLineId,
               reversalOfId: source.id,
               coverage: source.coverage,
-              coverageReason: source.coverageReason
+              coverageReason: source.coverageReason,
+              unallowable: source.unallowable
             })
           ]
         })
@@ -275,7 +279,8 @@ const reclassProjectCoverage = defineServerFn({
               amount,
               journalLineId: debitLineId,
               coverage,
-              coverageReason: reason
+              coverageReason: reason,
+              unallowable: isUnallowableCharge(context, newAccount)
             })
           ]
         })

@@ -1023,6 +1023,7 @@ const postPurchaseInvoice = defineServerFn({
         journalLineIndex: number | null;
         fixedAssetId: string | null;
         postCapitalization: boolean;
+        unallowable: boolean;
       }[] = [];
 
       for await (const invoiceLine of purchaseInvoiceLines.data) {
@@ -1171,6 +1172,7 @@ const postPurchaseInvoice = defineServerFn({
                       fixedAssetId: directProjectCharge.fixedAssetId,
                       postCapitalization:
                         directProjectCharge.postCapitalization,
+                      unallowable: directProjectCharge.unallowable,
                       costType:
                         invoiceLine.invoiceLineType === "Service"
                           ? "Purchased Service"
@@ -1640,6 +1642,7 @@ const postPurchaseInvoice = defineServerFn({
                         projectElementId: null,
                         fixedAssetId: memberCharge.fixedAssetId,
                         postCapitalization: memberCharge.postCapitalization,
+                        unallowable: memberCharge.unallowable,
                         costType: "Material Variance",
                         itemId: invoiceLine.itemId ?? null,
                         quantity: share.quantity,
@@ -1680,6 +1683,7 @@ const postPurchaseInvoice = defineServerFn({
                         fixedAssetId: receiptProjectCharge.fixedAssetId,
                         postCapitalization:
                           receiptProjectCharge.postCapitalization,
+                        unallowable: receiptProjectCharge.unallowable,
                         costType: "Material Variance",
                         itemId: invoiceLine.itemId ?? null,
                         quantity: quantityToReverse,
@@ -1731,6 +1735,7 @@ const postPurchaseInvoice = defineServerFn({
                       // Stock builds no asset until it is issued.
                       fixedAssetId: null,
                       postCapitalization: false,
+                      unallowable: stockReceiptCharge.unallowable,
                       costType: "Material Variance",
                       itemId: invoiceLine.itemId ?? null,
                       quantity: quantityToReverse,
@@ -1831,6 +1836,7 @@ const postPurchaseInvoice = defineServerFn({
                         fixedAssetId: serviceProjectCharge.fixedAssetId,
                         postCapitalization:
                           serviceProjectCharge.postCapitalization,
+                        unallowable: serviceProjectCharge.unallowable,
                         costType: "Purchased Service",
                         itemId: invoiceLine.itemId ?? null,
                         quantity: quantityToAccrue,
@@ -2293,6 +2299,7 @@ const postPurchaseInvoice = defineServerFn({
                   projectElementId: glProjectCharge.projectElementId,
                   fixedAssetId: glProjectCharge.fixedAssetId,
                   postCapitalization: glProjectCharge.postCapitalization,
+                  unallowable: glProjectCharge.unallowable,
                   costType: "Other Direct",
                   itemId: null,
                   quantity: invoiceLineQuantityInInventoryUnit,
@@ -2841,6 +2848,7 @@ const postPurchaseInvoice = defineServerFn({
                   draft.journalLineIndex === null
                     ? null
                     : (invoiceJournalLineIds[draft.journalLineIndex] ?? null),
+                unallowable: draft.unallowable,
                 createdBy: userId
               })
             )

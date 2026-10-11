@@ -10,6 +10,7 @@ import type { KyselyDatabase as DB } from "@carbon/database/client";
 import type { Kysely } from "kysely";
 import {
   assertChargeable,
+  isUnallowableCharge,
   loadProjectPostingContexts,
   ProjectChargeError,
   projectPostingKey,
@@ -26,6 +27,8 @@ export type ReceiptProjectRoute = {
   /** The asset a Capitalize line builds, else null. */
   fixedAssetId: string | null;
   postCapitalization: boolean;
+  /** `isUnallowableCharge` for `accountId`. */
+  unallowable: boolean;
 };
 
 type RoutablePurchaseOrderLine = {
@@ -130,7 +133,8 @@ export async function loadReceiptProjectRoutes(
       ...charge,
       accountId,
       fixedAssetId,
-      postCapitalization
+      postCapitalization,
+      unallowable: isUnallowableCharge(context, accountId)
     });
   }
 

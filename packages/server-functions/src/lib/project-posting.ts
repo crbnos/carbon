@@ -38,6 +38,10 @@ export type ProjectPostingProject = {
   fixedAssetId: string | null;
   /** A Service project's contract project (By Coverage → Contract). */
   parentProjectId?: string | null;
+  /** Time only from the members in `memberIds` (DCAA charge restrictions). */
+  restrictCharging: boolean;
+  /** The project's members; loaded only when `restrictCharging` is true. */
+  memberIds: string[];
   /** For messages only. */
   identifier?: string | null;
   name?: string;
@@ -54,9 +58,14 @@ export type ProjectPostingElement = {
   /** A final-asset element holds its own CIP asset (Capitalize). */
   isFinalAsset: boolean;
   fixedAssetId: string | null;
+  /** The branch is unallowable (FAR 31.201-6): every charge under it is. */
+  isUnallowable: boolean;
   /** For messages only. */
   readableId?: string;
 };
+
+export type AccountAllowability =
+  Database["public"]["Enums"]["accountAllowability"];
 
 /** A capital project's asset, with the asset account of its current class. */
 export type ProjectPostingAsset = {
@@ -81,6 +90,11 @@ export type ProjectPostingContext = {
   };
   /** The project's asset and each final-asset node's asset, by asset id. */
   assets: Map<string, ProjectPostingAsset>;
+  /**
+   * The allowability of every account the defaults, the project, the
+   * elements and the assets name, by account id.
+   */
+  accountAllowability: Record<string, AccountAllowability>;
   /**
    * The parent project's own context (no element), when the project names one.
    * A Service project's Contract charges post to its account.
@@ -329,10 +343,19 @@ export function resolveProjectPostingAccount(
  */
 export function assertChargeable(
   ctx: ProjectPostingContext,
-  mode: "new" | "commitment"
+  mode: "new" | "commitment",
+  timeEmployeeId?: string
 ): void {
   const { project, element } = ctx;
   const label = projectLabel(project);
+
+  if (
+    timeEmployeeId &&
+    project.restrictCharging &&
+    !project.memberIds.includes(timeEmployeeId)
+  ) {
+    throw new ProjectChargeError(`${label} accepts time only from its members`);
+  }
 
   if (mode === "new") {
     if (project.status !== "Released") {
@@ -377,6 +400,26 @@ export function assertChargeable(
   }
 }
 
+/**
+ * True when a charge is unallowable (FAR 31.201-6): its account is not
+ * Allowable, or its element or one of the element's ancestors is flagged.
+ * `accountId` is the account the row posts to (`resolveProjectPostingAccount`),
+ * or null when the charge keeps its natural account (Statistical).
+ */
+export function isUnallowableCharge(
+  ctx: ProjectPostingContext,
+  accountId: string | null
+): boolean {
+  if (accountId) {
+    const allowability =
+      ctx.accountAllowability[accountId] ??
+      ctx.parent?.accountAllowability[accountId];
+    if (allowability && allowability !== "Allowable") return true;
+  }
+  const chain = ctx.element ? [ctx.element, ...ctx.ancestors] : [];
+  return chain.some((element) => element.isUnallowable);
+}
+
 /** One projectLedger row. The amount is rounded at internal precision. */
 export function buildProjectLedgerRow(args: {
   companyId: string;
@@ -400,6 +443,8 @@ export function buildProjectLedgerRow(args: {
   /** A Service project's charge: who pays for it. */
   coverage?: ServiceCoverage | null;
   coverageReason?: string | null;
+  /** `isUnallowableCharge` for the row's account; a reversal copies it. */
+  unallowable: boolean;
   createdBy: string;
 }): ProjectLedgerInsert {
   return {
@@ -426,6 +471,7 @@ export function buildProjectLedgerRow(args: {
     reversalOfId: args.reversalOfId ?? null,
     coverage: args.coverage ?? null,
     coverageReason: args.coverageReason ?? null,
+    unallowable: args.unallowable,
     createdBy: args.createdBy
   };
 }
@@ -450,12 +496,15 @@ type ElementRow = {
   costAccountId: string | null;
   isFinalAsset: boolean;
   fixedAssetId: string | null;
+  isUnallowable: boolean;
 };
 
 /**
- * Loads the posting context of every (project, element) ref in 4 queries:
- * the projects, the elements with all their ancestors, the account
- * defaults, and the capital assets the projects and elements hold. A ref whose project is missing, or whose element is missing or
+ * Loads the posting context of every (project, element) ref in at most 6
+ * queries: the projects, the elements with all their ancestors, the account
+ * defaults, the capital assets the projects and elements hold, the
+ * allowability of the accounts they name, and the members of the projects
+ * that restrict charging. A ref whose project is missing, or whose element is missing or
  * belongs to another project, has no entry in the map. A project that names a
  * parent project (a Service project's contract project) gets the parent's
  * context in `parent`, loaded by one more call only when one is named.
@@ -490,7 +539,8 @@ export async function loadProjectPostingContexts(
           "costTreatment",
           "costAccountId",
           "fixedAssetId",
-          "parentProjectId"
+          "parentProjectId",
+          "restrictCharging"
         ])
         .where("id", "in", projectIds)
         .where("companyId", "=", companyId)
@@ -504,7 +554,7 @@ export async function loadProjectPostingContexts(
                 SELECT e."id", e."parentId", e."projectId", e."readableId",
                   e."isChargeable", e."stateId", e."costTreatment",
                   e."costTreatmentEffectiveFrom", e."costAccountId",
-                  e."isFinalAsset", e."fixedAssetId"
+                  e."isFinalAsset", e."fixedAssetId", e."isUnallowable"
                 FROM "projectElement" e
                 WHERE e."id" IN (${sql.join(elementIds)})
                   AND e."companyId" = ${companyId}
@@ -512,7 +562,7 @@ export async function loadProjectPostingContexts(
                 SELECT p."id", p."parentId", p."projectId", p."readableId",
                   p."isChargeable", p."stateId", p."costTreatment",
                   p."costTreatmentEffectiveFrom", p."costAccountId",
-                  p."isFinalAsset", p."fixedAssetId"
+                  p."isFinalAsset", p."fixedAssetId", p."isUnallowable"
                 FROM "projectElement" p
                 JOIN chain c ON p."id" = c."parentId"
                 WHERE p."companyId" = ${companyId}
@@ -520,7 +570,7 @@ export async function loadProjectPostingContexts(
               SELECT c."id", c."parentId", c."projectId", c."readableId",
                 c."isChargeable", s."group" AS "stateGroup", c."costTreatment",
                 c."costTreatmentEffectiveFrom", c."costAccountId",
-                c."isFinalAsset", c."fixedAssetId"
+                c."isFinalAsset", c."fixedAssetId", c."isUnallowable"
               FROM chain c
               JOIN "projectState" s ON s."id" = c."stateId" AND s."companyId" = ${companyId}
             `.execute(trx)
@@ -558,7 +608,8 @@ export async function loadProjectPostingContexts(
         costTreatmentEffectiveFrom: row.costTreatmentEffectiveFrom,
         costAccountId: row.costAccountId,
         isFinalAsset: row.isFinalAsset,
-        fixedAssetId: row.fixedAssetId
+        fixedAssetId: row.fixedAssetId,
+        isUnallowable: row.isUnallowable
       }
     ])
   );
@@ -607,6 +658,51 @@ export async function loadProjectPostingContexts(
     costOfGoodsSoldAccount: defaults?.costOfGoodsSoldAccount ?? null,
     workInProgressAccount: defaults?.workInProgressAccount ?? null
   };
+
+  // The allowability of every account a charge of these refs can post to,
+  // and the members of the restricted projects: at most 2 more queries.
+  const accountIds = [
+    ...new Set(
+      [
+        ...Object.values(accountDefaults),
+        ...projects.map((project) => project.costAccountId),
+        ...elements.map((row) => row.costAccountId),
+        ...assetRows.map((row) => row.assetAccountId)
+      ].filter((id): id is string => Boolean(id))
+    )
+  ];
+  const restrictedProjectIds = projects
+    .filter((project) => project.restrictCharging)
+    .map((project) => project.id);
+  const [allowabilityRows, memberRows] = await inOrder([
+    () =>
+      accountIds.length === 0
+        ? Promise.resolve([])
+        : trx
+            .selectFrom("account")
+            .select(["id", "allowability"])
+            .where("id", "in", accountIds)
+            .execute(),
+    () =>
+      restrictedProjectIds.length === 0
+        ? Promise.resolve([])
+        : trx
+            .selectFrom("projectMember")
+            .select(["projectId", "userId"])
+            .where("projectId", "in", restrictedProjectIds)
+            .where("companyId", "=", companyId)
+            .execute()
+  ]);
+  const accountAllowability: Record<string, AccountAllowability> =
+    Object.fromEntries(
+      allowabilityRows.map((row) => [row.id, row.allowability])
+    );
+  const membersByProject = new Map<string, string[]>();
+  for (const row of memberRows) {
+    const members = membersByProject.get(row.projectId) ?? [];
+    members.push(row.userId);
+    membersByProject.set(row.projectId, members);
+  }
 
   // A Service project's contract project, loaded one level deep (its own
   // parent is never read), only when a project names one.
@@ -658,6 +754,8 @@ export async function loadProjectPostingContexts(
         costAccountId: project.costAccountId,
         fixedAssetId: project.fixedAssetId,
         parentProjectId: project.parentProjectId,
+        restrictCharging: project.restrictCharging,
+        memberIds: membersByProject.get(project.id) ?? [],
         identifier: project.identifier,
         name: project.name
       },
@@ -665,6 +763,7 @@ export async function loadProjectPostingContexts(
       ancestors,
       defaults: accountDefaults,
       assets,
+      accountAllowability,
       parent: project.parentProjectId
         ? (parents.get(projectPostingKey(project.parentProjectId, null)) ??
           null)
@@ -720,6 +819,8 @@ export type JobProjectCharge = {
   postingDate: string;
   /** True for a capital job: the cost stays on WIP. */
   keepsWip: boolean;
+  /** `isUnallowableCharge` of the job's charge number. */
+  unallowable: boolean;
 };
 
 /**
@@ -789,7 +890,8 @@ export async function loadJobProjectCharge(
     projectElementId: job.projectElementId,
     accountId,
     postingDate,
-    keepsWip: false
+    keepsWip: false,
+    unallowable: isUnallowableCharge(context, accountId)
   };
 }
 
@@ -826,7 +928,12 @@ async function loadCapitalJobCharge(
     ...ref,
     accountId: defaults.workInProgressAccount,
     postingDate,
-    keepsWip: true
+    keepsWip: true,
+    // The cost ends on the asset the job builds, so its account decides.
+    unallowable: isUnallowableCharge(
+      context,
+      resolveProjectPostingAccount(context, postingDate).accountId
+    )
   };
 }
 
@@ -835,6 +942,8 @@ export type ProjectLineCharge = {
   accountId: string;
   fixedAssetId: string | null;
   postCapitalization: boolean;
+  /** `isUnallowableCharge` for `accountId`. */
+  unallowable: boolean;
 };
 
 /**
@@ -881,7 +990,12 @@ export async function resolveProjectLineCharges(
       resolveProjectPostingAccount(context, postingDate);
     if (treatment === "Statistical" || !accountId) continue;
     assertChargeable(context, "commitment");
-    charges.set(line.id, { accountId, fixedAssetId, postCapitalization });
+    charges.set(line.id, {
+      accountId,
+      fixedAssetId,
+      postCapitalization,
+      unallowable: isUnallowableCharge(context, accountId)
+    });
   }
   return charges;
 }
@@ -961,6 +1075,7 @@ export async function reverseProjectLedgerRows(
         reversalOfId: row.id,
         coverage: row.coverage,
         coverageReason: row.coverageReason,
+        unallowable: row.unallowable,
         createdBy: args.userId
       })
     );

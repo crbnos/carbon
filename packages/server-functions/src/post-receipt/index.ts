@@ -1284,6 +1284,7 @@ const postReceipt = defineServerFn({
             journalLineIndex: number | null;
             fixedAssetId: string | null;
             postCapitalization: boolean;
+            unallowable: boolean;
           }[] = [];
           // Tracked units consumed by their project at receipt.
           const projectConsumedEntityIds: string[] = [];
@@ -2139,7 +2140,8 @@ const postReceipt = defineServerFn({
                 fixedAssetId: projectStock ? null : projectRoute.fixedAssetId,
                 postCapitalization: projectStock
                   ? false
-                  : projectRoute.postCapitalization
+                  : projectRoute.postCapitalization,
+                unallowable: projectRoute.unallowable
               });
             }
 
@@ -2944,6 +2946,7 @@ const postReceipt = defineServerFn({
                         ? null
                         : (receiptJournalLineIds[draft.journalLineIndex] ??
                           null),
+                    unallowable: draft.unallowable,
                     createdBy: userId
                   })
                 )

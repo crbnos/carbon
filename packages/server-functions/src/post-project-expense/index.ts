@@ -21,6 +21,7 @@ import {
   buildBillableItem,
   buildProjectLedgerRow,
   insertProjectLedgerRows,
+  isUnallowableCharge,
   loadProjectPostingContexts,
   loadServicePostingContext,
   ProjectChargeError,
@@ -260,6 +261,7 @@ const postProjectExpense = defineServerFn({
                 reversalOfId: original?.id ?? null,
                 coverage,
                 coverageReason,
+                unallowable: isUnallowableCharge(context, resolved.accountId),
                 createdBy: userId
               })
             ]

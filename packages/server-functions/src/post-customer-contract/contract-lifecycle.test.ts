@@ -2169,6 +2169,7 @@ databaseTest(
               documentId: `${contractId}-issue`,
               quantity: 4,
               amount: 200,
+              unallowable: false,
               createdBy: USER
             })
           ]

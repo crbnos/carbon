@@ -409,6 +409,8 @@ export async function postChargeJournal(
               projectSign *
               toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
             journalLineId: projectJournalLineIdByLineId.get(line.id) ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
             createdBy: userId
           })
         ]

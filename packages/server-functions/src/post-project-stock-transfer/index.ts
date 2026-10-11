@@ -567,6 +567,10 @@ const postProjectStockTransfer = defineServerFn({
                   quantity,
                   amount: variance,
                   journalLineId,
+                  // A payback variance sits on the project root (no element)
+                  // and posts to the inventory variance account, not to a
+                  // project account: no allowability decides it.
+                  unallowable: false,
                   createdBy: userId
                 })
               ]

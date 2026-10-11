@@ -11,6 +11,7 @@
 import { credit, debit, round, type ServiceCoverage } from "@carbon/utils";
 import {
   assertChargeable,
+  isUnallowableCharge,
   ProjectChargeError,
   type ProjectCostTreatment,
   type ProjectPostingContext,
@@ -75,6 +76,8 @@ export type TimesheetLedgerRow = {
   postCapitalization: boolean;
   coverage: ServiceCoverage | null;
   coverageReason: string | null;
+  /** `isUnallowableCharge` for the project account. */
+  unallowable: boolean;
 };
 
 export type TimesheetStamp = {
@@ -171,7 +174,8 @@ export function planTimesheetPosting(
       postCapitalization,
       coverage: treatment === "By Coverage" ? (entry.coverage ?? null) : null,
       coverageReason:
-        treatment === "By Coverage" ? (entry.coverageReason ?? null) : null
+        treatment === "By Coverage" ? (entry.coverageReason ?? null) : null,
+      unallowable: isUnallowableCharge(ctx, accountId)
     });
 
     if (!options.accountingEnabled || cost === 0) continue;

@@ -796,6 +796,7 @@ async function insertJobProjectLedgerRows(
         quantity: row.quantity,
         amount: row.amount,
         journalLineId: row.journalLineId,
+        unallowable: args.charge.unallowable,
         createdBy: args.userId
       })
     )

@@ -11,6 +11,7 @@ import type { KyselyDatabase as DB } from "@carbon/database/client";
 import type { Kysely } from "kysely";
 import {
   assertChargeable,
+  isUnallowableCharge,
   loadProjectPostingContexts,
   ProjectChargeError,
   projectPostingKey,
@@ -27,6 +28,8 @@ export type InvoiceProjectCharge = {
   /** The asset a Capitalize line builds, else null. */
   fixedAssetId: string | null;
   postCapitalization: boolean;
+  /** `isUnallowableCharge` for `accountId`. */
+  unallowable: boolean;
 };
 
 type ChargeableInvoiceLine = {
@@ -67,9 +70,11 @@ export type InvoiceProjectCharges = {
    * The invoice adjusts the stock's layers, and the project's ledger gets
    * the price variance as well.
    */
-  stockChargedAtReceipt(
-    purchaseOrderLineId: string
-  ): { projectId: string; projectElementId: string | null } | null;
+  stockChargedAtReceipt(purchaseOrderLineId: string): {
+    projectId: string;
+    projectElementId: string | null;
+    unallowable: boolean;
+  } | null;
   /**
    * The project account the consumed price variance of a member stripe's
    * layer goes to (Projects Phase 3: a PO line made for a planning group),
@@ -242,7 +247,13 @@ export async function loadInvoiceProjectCharges(
           resolveProjectPostingAccount(context, args.postingDate);
         if (treatment !== "Statistical" && accountId) {
           assertChargeable(context, "commitment");
-          charge = { ...ref, accountId, fixedAssetId, postCapitalization };
+          charge = {
+            ...ref,
+            accountId,
+            fixedAssetId,
+            postCapitalization,
+            unallowable: isUnallowableCharge(context, accountId)
+          };
         }
       }
       lineCharges.set(invoiceLineId, charge);
@@ -255,7 +266,13 @@ export async function loadInvoiceProjectCharges(
         resolveProjectPostingAccount(context, args.postingDate);
       if (treatment === "Statistical" || !accountId) return null;
       assertChargeable(context, "commitment");
-      return { ...ref, accountId, fixedAssetId, postCapitalization };
+      return {
+        ...ref,
+        accountId,
+        fixedAssetId,
+        postCapitalization,
+        unallowable: isUnallowableCharge(context, accountId)
+      };
     },
     stockStripe(invoiceLineId) {
       const ref = refByInvoiceLineId.get(invoiceLineId);
@@ -264,9 +281,13 @@ export async function loadInvoiceProjectCharges(
     stockChargedAtReceipt(purchaseOrderLineId) {
       const row = receiptRowByLineId.get(purchaseOrderLineId);
       if (!row || !projectStock.has(row.projectId)) return null;
-      return {
+      const ref = {
         projectId: row.projectId,
         projectElementId: row.projectElementId
+      };
+      return {
+        ...ref,
+        unallowable: isUnallowableCharge(contextOf(ref), row.accountId)
       };
     },
     chargedAtReceipt(purchaseOrderLineId) {
@@ -291,19 +312,32 @@ export async function loadInvoiceProjectCharges(
           ...ref,
           accountId: resolved.accountId!,
           fixedAssetId: resolved.fixedAssetId,
-          postCapitalization: resolved.postCapitalization
+          postCapitalization: resolved.postCapitalization,
+          unallowable: isUnallowableCharge(context, resolved.accountId)
         };
       }
       const noAsset = { fixedAssetId: null, postCapitalization: false };
       if (row.accountId) {
-        return { ...ref, accountId: row.accountId, ...noAsset };
+        return {
+          ...ref,
+          accountId: row.accountId,
+          ...noAsset,
+          unallowable: isUnallowableCharge(context, row.accountId)
+        };
       }
       // Posted with accounting off: resolve the account now.
       const { accountId } = resolveProjectPostingAccount(
         context,
         args.postingDate
       );
-      return accountId ? { ...ref, accountId, ...noAsset } : null;
+      return accountId
+        ? {
+            ...ref,
+            accountId,
+            ...noAsset,
+            unallowable: isUnallowableCharge(context, accountId)
+          }
+        : null;
     }
   };
 }

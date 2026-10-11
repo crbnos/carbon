@@ -448,6 +448,7 @@ const postTimesheet = defineServerFn({
               reversalOfId: row.reversalOfId,
               coverage: row.coverage,
               coverageReason: row.coverageReason,
+              unallowable: row.unallowable,
               createdBy: userId
             })
           )

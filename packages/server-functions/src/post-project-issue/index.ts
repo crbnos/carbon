@@ -25,6 +25,7 @@ import {
   assertChargeable,
   buildProjectLedgerRow,
   insertProjectLedgerRows,
+  isUnallowableCharge,
   loadProjectPostingContexts,
   loadServicePostingContext,
   ProjectChargeError,
@@ -531,6 +532,7 @@ const postProjectIssue = defineServerFn({
                 reversalOfId: returnedIssue?.id ?? null,
                 coverage,
                 coverageReason,
+                unallowable: isUnallowableCharge(context, accountId),
                 createdBy: userId
               })
             ]

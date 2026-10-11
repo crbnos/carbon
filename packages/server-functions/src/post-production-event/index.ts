@@ -561,6 +561,7 @@ const postProductionEvent = defineServerFn({
             quantity: row.quantity === null ? null : -Number(row.quantity),
             amount: -Number(row.amount),
             reversalOfId: row.id,
+            unallowable: row.unallowable,
             createdBy: userId
           })
         ),
@@ -594,6 +595,7 @@ const postProductionEvent = defineServerFn({
                   quantity: hours,
                   amount,
                   journalLineId: journalLineResults[lineIndex]?.id ?? null,
+                  unallowable: projectCharge.unallowable,
                   createdBy: userId
                 })
               )
