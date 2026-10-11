@@ -292,6 +292,16 @@ export const auditConfig = {
       }
     },
 
+    // A lessee lease, with its payment rows; a classification override is
+    // audit-logged against it.
+    lease: {
+      label: "Lease",
+      tables: {
+        lease: { role: "root" },
+        leasePayment: { entityIdColumn: "leaseId" }
+      }
+    },
+
     purchaseOrder: {
       label: "Purchase Order",
       tables: {
@@ -734,6 +744,8 @@ export const auditConfig = {
     salesOrderShipment: "Shipment",
     rentalAgreement: "Rental Agreement",
     rentalAgreementLine: "Unit",
+    lease: "Lease",
+    leasePayment: "Payment",
     purchaseOrder: "Purchase Order",
     purchaseOrderLine: "Line Item",
     purchaseOrderPayment: "Payment",

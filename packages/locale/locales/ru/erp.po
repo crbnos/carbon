@@ -1575,6 +1575,9 @@ msgstr "Накопленная амортизация"
 msgid "Accum. Tax Depr."
 msgstr "Накопл. налог. амортизация"
 
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Накопленная амортизация"
 
@@ -2286,6 +2289,12 @@ msgstr "Изменение"
 
 msgid "Amendments"
 msgstr "Изменения"
+
+msgid "Amortization"
+msgstr ""
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr ""
 
 msgid "Amount"
 msgstr "Сумма"
@@ -3295,6 +3304,9 @@ msgstr "Счет учета активов, признанный при нача
 
 msgid "Asset ID"
 msgstr "ID активов"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr ""
 
 msgid "Asset scrap disposals"
 msgstr "Выбытие брака основных средств"
@@ -5238,6 +5250,9 @@ msgstr "Продолжить"
 msgid "Continue Setup"
 msgstr "Продолжить настройку"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Контрактивный счет учета на общую амортизацию основных средств"
 
@@ -6644,6 +6659,9 @@ msgstr "Счета по умолчанию для деловых расходо�
 
 msgid "Default accounts for customer transactions and receivables"
 msgstr "Счета по умолчанию для операций покупателей и дебиторской задолженности"
+
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr ""
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "Счета по умолчанию для долгосрочных активов и амортизации"
@@ -10985,6 +11003,9 @@ msgstr "Проценты"
 msgid "Interest (default)"
 msgstr "Проценты (по умолчанию)"
 
+msgid "Interest Expense – Leases"
+msgstr ""
+
 msgid "Interest Income – Leases"
 msgstr "Процентный доход – Лизинг"
 
@@ -10993,6 +11014,9 @@ msgstr "Процентный доход – Лизинг (по умолчани�
 
 msgid "Interest income or expense from banking activities"
 msgstr "Процентный доход или расход от банковской деятельности"
+
+msgid "Interest on finance lease liabilities"
+msgstr ""
 
 msgid "Internal"
 msgstr "Внутренние"
@@ -11750,14 +11774,23 @@ msgstr "Узнать"
 msgid "Learn more"
 msgstr "Узнать больше"
 
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr ""
+
 msgid "Lease Classification"
 msgstr "Классификация аренды"
+
+msgid "Lease Liabilities"
+msgstr ""
 
 msgid "Lease Revenue"
 msgstr "Выручка от лизинга"
 
 msgid "Lease Revenue (default)"
 msgstr "Выручка от лизинга (по умолчанию)"
+
+msgid "Leases (Lessee)"
+msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "Оставить все связанные квитанции без изменений"
@@ -14824,6 +14857,9 @@ msgstr "Операционный доход"
 msgid "Operating lease"
 msgstr "Операционный лизинг"
 
+msgid "Operating Lease Expense"
+msgstr ""
+
 msgid "operation"
 msgstr "операция"
 
@@ -15920,6 +15956,9 @@ msgstr "Предоплаты (по умолчанию)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Текущая стоимость платежей составляет не менее {threshold} справедливой стоимости ({actual})"
+
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr ""
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "Приведенная стоимость аренды составляет по меньшей мере {threshold} справедливой стоимости единицы"
@@ -18124,6 +18163,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Правый элемент"
 
+msgid "Right-of-Use Assets"
+msgstr ""
+
 msgid "Risk"
 msgstr "Риск"
 
@@ -20246,6 +20288,12 @@ msgstr "Хранить фиксированное количество дней 
 
 msgid "Straight line"
 msgstr "Линейный метод"
+
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr ""
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr ""
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23552,6 +23600,9 @@ msgstr "Значения применяют сегодняшние себест�
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Значения в этом запуске были сведены. Полные детали хранятся 7 дней."
+
+msgid "Variable Lease Expense"
+msgstr ""
 
 msgid "Variables"
 msgstr "Переменные"

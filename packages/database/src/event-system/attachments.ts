@@ -167,6 +167,7 @@ export const attachments = {
   jobOperationStepRecord: { statement: ["broadcast_table_changes"] },
   journal: { events: true, statement: ["broadcast_table_changes"] },
   journalLine: { events: true },
+  lease: { events: true },
   location: {
     after: ["sync_create_location_related_records"],
     events: true,

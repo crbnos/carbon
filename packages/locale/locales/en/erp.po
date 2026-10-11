@@ -1575,6 +1575,9 @@ msgstr "Accum. Depreciation"
 msgid "Accum. Tax Depr."
 msgstr "Accum. Tax Depr."
 
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr "Accumulated Amortization – Right-of-Use Assets"
+
 msgid "Accumulated Depreciation"
 msgstr "Accumulated Depreciation"
 
@@ -2286,6 +2289,12 @@ msgstr "Amendment"
 
 msgid "Amendments"
 msgstr "Amendments"
+
+msgid "Amortization"
+msgstr "Amortization"
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr "Amortization – Right-of-Use Assets"
 
 msgid "Amount"
 msgstr "Amount"
@@ -3295,6 +3304,9 @@ msgstr "Asset GL account recognized when a sales-type lease starts, holding the 
 
 msgid "Asset ID"
 msgstr "Asset ID"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr "Asset recognized at lease commencement for the right to use a leased asset"
 
 msgid "Asset scrap disposals"
 msgstr "Asset scrap disposals"
@@ -5238,6 +5250,9 @@ msgstr "Continue"
 msgid "Continue Setup"
 msgstr "Continue Setup"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr "Contra-asset account for the amortization of right-of-use assets"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Contra-asset account for total depreciation of fixed assets"
 
@@ -6644,6 +6659,9 @@ msgstr "Default accounts for business expenses"
 
 msgid "Default accounts for customer transactions and receivables"
 msgstr "Default accounts for customer transactions and receivables"
+
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr "Default accounts for leases the company pays, under ASC 842"
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "Default accounts for long-term assets and depreciation"
@@ -10985,6 +11003,9 @@ msgstr "Interest"
 msgid "Interest (default)"
 msgstr "Interest (default)"
 
+msgid "Interest Expense – Leases"
+msgstr "Interest Expense – Leases"
+
 msgid "Interest Income – Leases"
 msgstr "Interest Income – Leases"
 
@@ -10993,6 +11014,9 @@ msgstr "Interest Income – Leases (default)"
 
 msgid "Interest income or expense from banking activities"
 msgstr "Interest income or expense from banking activities"
+
+msgid "Interest on finance lease liabilities"
+msgstr "Interest on finance lease liabilities"
 
 msgid "Internal"
 msgstr "Internal"
@@ -11750,14 +11774,23 @@ msgstr "Learn"
 msgid "Learn more"
 msgstr "Learn more"
 
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+
 msgid "Lease Classification"
 msgstr "Lease Classification"
+
+msgid "Lease Liabilities"
+msgstr "Lease Liabilities"
 
 msgid "Lease Revenue"
 msgstr "Lease Revenue"
 
 msgid "Lease Revenue (default)"
 msgstr "Lease Revenue (default)"
+
+msgid "Leases (Lessee)"
+msgstr "Leases (Lessee)"
 
 msgid "Leave any related receipts untouched"
 msgstr "Leave any related receipts untouched"
@@ -14824,6 +14857,9 @@ msgstr "Operating Income"
 msgid "Operating lease"
 msgstr "Operating lease"
 
+msgid "Operating Lease Expense"
+msgstr "Operating Lease Expense"
+
 msgid "operation"
 msgstr "operation"
 
@@ -15920,6 +15956,9 @@ msgstr "Prepayments (default)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Present value of payments is at least {threshold} of fair value ({actual})"
+
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr "Present value of the lease payments not yet paid, reduced by each lease invoice"
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "Present value of the rent is at least {threshold} of a unit's fair value"
@@ -18124,6 +18163,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Right item"
 
+msgid "Right-of-Use Assets"
+msgstr "Right-of-Use Assets"
+
 msgid "Risk"
 msgstr "Risk"
 
@@ -20246,6 +20288,12 @@ msgstr "Store a fixed number of days on this item. Expiry start date is set on e
 
 msgid "Straight line"
 msgstr "Straight line"
+
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr "Straight-line amortization of finance lease right-of-use assets"
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr "Straight-line lease cost of operating leases, and the payments of short-term leases"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23552,6 +23600,9 @@ msgstr "Values apply today's unit costs to historical quantities."
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Values in this run have been summarised. Full detail is kept for 7 days."
+
+msgid "Variable Lease Expense"
+msgstr "Variable Lease Expense"
 
 msgid "Variables"
 msgstr "Variables"

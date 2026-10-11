@@ -900,6 +900,10 @@ export const manifest = {
     update: false
   }),
   kanban: company("inventory"),
+  lease: company("purchasing", { read: "purchasing_view" }),
+  leaseEvent: company("purchasing", { read: "purchasing_view" }),
+  leasePayment: company("purchasing", { read: "purchasing_view" }),
+  leaseScheduleLine: company("purchasing", { read: "purchasing_view" }),
   lessonCompletion: policies({
     select: owner("userId"),
     insert: owner("userId")

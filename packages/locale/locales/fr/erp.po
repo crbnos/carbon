@@ -1575,6 +1575,9 @@ msgstr "Amortissement cumulé"
 msgid "Accum. Tax Depr."
 msgstr "Amort. fiscal cumulé"
 
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Amortissement cumulé"
 
@@ -2286,6 +2289,12 @@ msgstr "Modification"
 
 msgid "Amendments"
 msgstr "Modifications"
+
+msgid "Amortization"
+msgstr ""
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr ""
 
 msgid "Amount"
 msgstr "Montant"
@@ -3295,6 +3304,9 @@ msgstr "Compte général d'immobilisation reconnu au démarrage d'un contrat de 
 
 msgid "Asset ID"
 msgstr "ID d'actif"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr ""
 
 msgid "Asset scrap disposals"
 msgstr "Cessions d'Immobilisations au rebut"
@@ -5238,6 +5250,9 @@ msgstr "Continuer"
 msgid "Continue Setup"
 msgstr "Continuer la configuration"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Compte correcteur d'actif pour l'amortissement total des immobilisations"
 
@@ -6644,6 +6659,9 @@ msgstr "Comptes par défaut pour les charges commerciales"
 
 msgid "Default accounts for customer transactions and receivables"
 msgstr "Comptes par défaut pour les transactions clients et les créances"
+
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr ""
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "Comptes par défaut pour les actifs à long terme et l'amortissement"
@@ -10985,6 +11003,9 @@ msgstr "Intérêt"
 msgid "Interest (default)"
 msgstr "Intérêt (par défaut)"
 
+msgid "Interest Expense – Leases"
+msgstr ""
+
 msgid "Interest Income – Leases"
 msgstr "Revenus d'intérêts – Contrats de location"
 
@@ -10993,6 +11014,9 @@ msgstr "Revenus d'intérêts – Contrats de location (par défaut)"
 
 msgid "Interest income or expense from banking activities"
 msgstr "Produits ou charges d'intérêts provenant d'activités bancaires"
+
+msgid "Interest on finance lease liabilities"
+msgstr ""
 
 msgid "Internal"
 msgstr "Interne"
@@ -11750,14 +11774,23 @@ msgstr "Apprendre"
 msgid "Learn more"
 msgstr "En savoir plus"
 
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr ""
+
 msgid "Lease Classification"
 msgstr "Classification de location"
+
+msgid "Lease Liabilities"
+msgstr ""
 
 msgid "Lease Revenue"
 msgstr "Revenus de location"
 
 msgid "Lease Revenue (default)"
 msgstr "Revenus de location (par défaut)"
+
+msgid "Leases (Lessee)"
+msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "Laisser les reçus connexes intacts"
@@ -14824,6 +14857,9 @@ msgstr "Produits d'exploitation"
 msgid "Operating lease"
 msgstr "Location simple"
 
+msgid "Operating Lease Expense"
+msgstr ""
+
 msgid "operation"
 msgstr "opération"
 
@@ -15920,6 +15956,9 @@ msgstr "Acomptes (par défaut)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "La valeur actualisée des paiements est au moins {threshold} de la juste valeur ({actual})"
+
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr ""
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "La valeur actuelle du loyer est au moins {threshold} de la juste valeur d'une unité"
@@ -18124,6 +18163,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Élément de droite"
 
+msgid "Right-of-Use Assets"
+msgstr ""
+
 msgid "Risk"
 msgstr "Risque"
 
@@ -20246,6 +20288,12 @@ msgstr "Stocker un nombre fixe de jours sur cet article. La date de début de p�
 
 msgid "Straight line"
 msgstr "Linéaire"
+
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr ""
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr ""
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23552,6 +23600,9 @@ msgstr "Les valeurs appliquent les coûts unitaires d'aujourd'hui aux quantités
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Les valeurs de cette exécution ont été résumées. Les détails complets sont conservés pendant 7 jours."
+
+msgid "Variable Lease Expense"
+msgstr ""
 
 msgid "Variables"
 msgstr "Variables"

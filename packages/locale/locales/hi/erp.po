@@ -1575,6 +1575,9 @@ msgstr "संचित मूल्यह्रास"
 msgid "Accum. Tax Depr."
 msgstr "संचित कर मूल्यह्रास"
 
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "संचित मूल्यह्रास"
 
@@ -2286,6 +2289,12 @@ msgstr "संशोधन"
 
 msgid "Amendments"
 msgstr "संशोधन"
+
+msgid "Amortization"
+msgstr ""
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr ""
 
 msgid "Amount"
 msgstr "रकम"
@@ -3295,6 +3304,9 @@ msgstr "विक्रय प्रकार के पट्टे के श�
 
 msgid "Asset ID"
 msgstr "परिसंपत्ति ID"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr ""
 
 msgid "Asset scrap disposals"
 msgstr "संपत्ति स्क्रैप निपटान"
@@ -5238,6 +5250,9 @@ msgstr "जारी रखें"
 msgid "Continue Setup"
 msgstr "सेटअप जारी रखें"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "अचल संपत्तियों के कुल मूल्यह्रास के लिए विरोधी संपत्ति खाता"
 
@@ -6644,6 +6659,9 @@ msgstr "व्यावसायिक व्यय के लिए डिफ�
 
 msgid "Default accounts for customer transactions and receivables"
 msgstr "ग्राहक लेनदेन और प्राप्य राशि के लिए डिफ़ॉल्ट खाते"
+
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr ""
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "दीर्घकालिक संपत्ति और मूल्यह्रास के लिए डिफ़ॉल्ट खाते"
@@ -10985,6 +11003,9 @@ msgstr "ब्याज"
 msgid "Interest (default)"
 msgstr "ब्याज (डिफ़ॉल्ट)"
 
+msgid "Interest Expense – Leases"
+msgstr ""
+
 msgid "Interest Income – Leases"
 msgstr "ब्याज आय – पट्टे"
 
@@ -10993,6 +11014,9 @@ msgstr "ब्याज आय – पट्टे (डिफ़ॉल्ट)"
 
 msgid "Interest income or expense from banking activities"
 msgstr "बैंकिंग गतिविधियों से ब्याज आय या व्यय"
+
+msgid "Interest on finance lease liabilities"
+msgstr ""
 
 msgid "Internal"
 msgstr "आंतरिक"
@@ -11750,14 +11774,23 @@ msgstr "सीखें"
 msgid "Learn more"
 msgstr "अधिक जानें"
 
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr ""
+
 msgid "Lease Classification"
 msgstr "लीज वर्गीकरण"
+
+msgid "Lease Liabilities"
+msgstr ""
 
 msgid "Lease Revenue"
 msgstr "पट्टा राजस्व"
 
 msgid "Lease Revenue (default)"
 msgstr "पट्टा राजस्व (डिफ़ॉल्ट)"
+
+msgid "Leases (Lessee)"
+msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "किसी भी संबंधित रसीदों को अछूता छोड़ें"
@@ -14824,6 +14857,9 @@ msgstr "परिचालन आय"
 msgid "Operating lease"
 msgstr "संचालन पट्टा"
 
+msgid "Operating Lease Expense"
+msgstr ""
+
 msgid "operation"
 msgstr "ऑपरेशन"
 
@@ -15920,6 +15956,9 @@ msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "भुगतान का वर्तमान मूल्य न्यायसंगत मूल्य का कम से कम {threshold} है ({actual})"
+
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr ""
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "किराए का वर्तमान मूल्य एक इकाई के उचित मूल्य का कम से कम {threshold} है"
@@ -18124,6 +18163,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "दाहिनी वस्तु"
 
+msgid "Right-of-Use Assets"
+msgstr ""
+
 msgid "Risk"
 msgstr "जोखिम"
 
@@ -20246,6 +20288,12 @@ msgstr "इस आइटम पर निश्चित संख्या क�
 
 msgid "Straight line"
 msgstr "सीधी रेखा"
+
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr ""
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr ""
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23552,6 +23600,9 @@ msgstr "मान ऐतिहासिक मात्राओं पर आ�
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "इस रन में मान सारांशित किए गए हैं। पूर्ण विस्तार 7 दिनों के लिए रखा जाता है।"
+
+msgid "Variable Lease Expense"
+msgstr ""
 
 msgid "Variables"
 msgstr "चर"

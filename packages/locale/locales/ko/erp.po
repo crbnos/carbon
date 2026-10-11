@@ -1575,6 +1575,9 @@ msgstr "누적 감가상각"
 msgid "Accum. Tax Depr."
 msgstr "누적 세무 감가상각"
 
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "감가상각누계액"
 
@@ -2286,6 +2289,12 @@ msgstr "수정"
 
 msgid "Amendments"
 msgstr "수정"
+
+msgid "Amortization"
+msgstr ""
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr ""
 
 msgid "Amount"
 msgstr "금액"
@@ -3295,6 +3304,9 @@ msgstr "판매형 리스 개시 시 인식되는 자산 계정과목으로, 지�
 
 msgid "Asset ID"
 msgstr "자산 ID"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr ""
 
 msgid "Asset scrap disposals"
 msgstr "자산 스크랩 처분"
@@ -5238,6 +5250,9 @@ msgstr "계속"
 msgid "Continue Setup"
 msgstr "계속 설정"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "고정자산 총 감가상각액에 대한 자산 차감 계정"
 
@@ -6644,6 +6659,9 @@ msgstr "사업 비용에 대한 기본 계정"
 
 msgid "Default accounts for customer transactions and receivables"
 msgstr "고객 거래 및 매출채권에 대한 기본 계정"
+
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr ""
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "장기자산 및 감가상각에 대한 기본 계정"
@@ -10985,6 +11003,9 @@ msgstr "이자"
 msgid "Interest (default)"
 msgstr "이자(기본값)"
 
+msgid "Interest Expense – Leases"
+msgstr ""
+
 msgid "Interest Income – Leases"
 msgstr "이자수익 – 리스"
 
@@ -10993,6 +11014,9 @@ msgstr "이자수익 – 리스 (기본값)"
 
 msgid "Interest income or expense from banking activities"
 msgstr "은행 거래에서 발생하는 이자 수익 또는 비용"
+
+msgid "Interest on finance lease liabilities"
+msgstr ""
 
 msgid "Internal"
 msgstr "내부"
@@ -11750,14 +11774,23 @@ msgstr "학습"
 msgid "Learn more"
 msgstr "자세히 알아보기"
 
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr ""
+
 msgid "Lease Classification"
 msgstr "리스 분류"
+
+msgid "Lease Liabilities"
+msgstr ""
 
 msgid "Lease Revenue"
 msgstr "리스 매출"
 
 msgid "Lease Revenue (default)"
 msgstr "리스 매출 (기본값)"
+
+msgid "Leases (Lessee)"
+msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "관련 입고는 그대로 둡니다"
@@ -14824,6 +14857,9 @@ msgstr "영업 수익"
 msgid "Operating lease"
 msgstr "영업 리스"
 
+msgid "Operating Lease Expense"
+msgstr ""
+
 msgid "operation"
 msgstr "공정"
 
@@ -15920,6 +15956,9 @@ msgstr "선급금(기본값)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "지불의 현재가치는 공정가치의 최소 {threshold}입니다 ({actual})"
+
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr ""
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "렌트의 현재 가치가 개의 공정 가치의 {threshold} 이상입니다."
@@ -18124,6 +18163,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "올바른 품목"
 
+msgid "Right-of-Use Assets"
+msgstr ""
+
 msgid "Risk"
 msgstr "리스크"
 
@@ -20246,6 +20288,12 @@ msgstr "이 품목에 고정 일수를 저장합니다. 유통기한 시작일�
 
 msgid "Straight line"
 msgstr "정액법"
+
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr ""
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr ""
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23552,6 +23600,9 @@ msgstr "값은 과거 수량에 오늘의 단위 원가를 적용합니다."
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "이 실행의 값이 요약되었습니다. 전체 세부정보는 7일간 유지됩니다."
+
+msgid "Variable Lease Expense"
+msgstr ""
 
 msgid "Variables"
 msgstr "변수"

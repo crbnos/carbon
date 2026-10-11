@@ -1575,6 +1575,9 @@ msgstr "減価償却累計額"
 msgid "Accum. Tax Depr."
 msgstr "税務減価償却累計額"
 
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "減価償却累計額"
 
@@ -2286,6 +2289,12 @@ msgstr "修正"
 
 msgid "Amendments"
 msgstr "修正"
+
+msgid "Amortization"
+msgstr ""
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr ""
 
 msgid "Amount"
 msgstr "金額"
@@ -3295,6 +3304,9 @@ msgstr "売却型リース開始時に認識される資産勘定科目で、支
 
 msgid "Asset ID"
 msgstr "資産 ID"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr ""
 
 msgid "Asset scrap disposals"
 msgstr "資産スクラップ除却"
@@ -5238,6 +5250,9 @@ msgstr "続行"
 msgid "Continue Setup"
 msgstr "セットアップを続行"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定資産の総減価償却費の逆資産勘定"
 
@@ -6644,6 +6659,9 @@ msgstr "ビジネス費用のデフォルト勘定"
 
 msgid "Default accounts for customer transactions and receivables"
 msgstr "得意先取引と売掛金のデフォルト勘定科目"
+
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr ""
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "長期資産と減価償却のデフォルト口座"
@@ -10985,6 +11003,9 @@ msgstr "利息"
 msgid "Interest (default)"
 msgstr "利息 (デフォルト)"
 
+msgid "Interest Expense – Leases"
+msgstr ""
+
 msgid "Interest Income – Leases"
 msgstr "利息収入 – リース"
 
@@ -10993,6 +11014,9 @@ msgstr "利息収入 – リース（デフォルト）"
 
 msgid "Interest income or expense from banking activities"
 msgstr "銀行業務からの利息収益または利息費用"
+
+msgid "Interest on finance lease liabilities"
+msgstr ""
 
 msgid "Internal"
 msgstr "社内"
@@ -11750,14 +11774,23 @@ msgstr "学ぶ"
 msgid "Learn more"
 msgstr "詳細情報"
 
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr ""
+
 msgid "Lease Classification"
 msgstr "リース分類"
+
+msgid "Lease Liabilities"
+msgstr ""
 
 msgid "Lease Revenue"
 msgstr "リース売上高"
 
 msgid "Lease Revenue (default)"
 msgstr "リース売上高（デフォルト）"
+
+msgid "Leases (Lessee)"
+msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "関連するすべての領収書はそのままにしておく"
@@ -14824,6 +14857,9 @@ msgstr "営業収益"
 msgid "Operating lease"
 msgstr "リース契約"
 
+msgid "Operating Lease Expense"
+msgstr ""
+
 msgid "operation"
 msgstr "工程"
 
@@ -15920,6 +15956,9 @@ msgstr "前払金 (デフォルト)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "支払の現在価値は公正価値の{threshold}以上です({actual})"
+
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr ""
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "リース料金の現在価値は、個の公正価値の少なくとも {threshold} です"
@@ -18124,6 +18163,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "右側の項目"
 
+msgid "Right-of-Use Assets"
+msgstr ""
+
 msgid "Risk"
 msgstr "リスク"
 
@@ -20246,6 +20288,12 @@ msgstr "このアイテムの使用期限を固定日数で管理します。各
 
 msgid "Straight line"
 msgstr "定額法"
+
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr ""
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr ""
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23552,6 +23600,9 @@ msgstr "値は本日の単位原価を過去の数量に適用します。"
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "このランの値が要約されました。詳細は7日間保持されます。"
+
+msgid "Variable Lease Expense"
+msgstr ""
 
 msgid "Variables"
 msgstr "変数"

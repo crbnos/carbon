@@ -1575,6 +1575,9 @@ msgstr "Toplam Amortisman"
 msgid "Accum. Tax Depr."
 msgstr "Toplam Vergi Amor."
 
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Birikmiş amortisman"
 
@@ -2286,6 +2289,12 @@ msgstr "Düzeltme"
 
 msgid "Amendments"
 msgstr "Düzeltmeler"
+
+msgid "Amortization"
+msgstr ""
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr ""
 
 msgid "Amount"
 msgstr "Tutar"
@@ -3295,6 +3304,9 @@ msgstr "Satış türü bir kiralama başladığında muhasebeleştirilen muhaseb
 
 msgid "Asset ID"
 msgstr "Varlık Kimliği"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr ""
 
 msgid "Asset scrap disposals"
 msgstr "Sabit kıymet fire elden çıkarmaları"
@@ -5238,6 +5250,9 @@ msgstr "Devam Et"
 msgid "Continue Setup"
 msgstr "Kuruluma Devam Et"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Sabit kıymetlerin toplam amortismanı için karşı hesap"
 
@@ -6644,6 +6659,9 @@ msgstr "İşletme giderleri için varsayılan hesaplar"
 
 msgid "Default accounts for customer transactions and receivables"
 msgstr "Müşteri işlemleri ve alacaklar için varsayılan hesaplar"
+
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr ""
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "Uzun vadeli varlıklar ve amortisman için varsayılan hesaplar"
@@ -10985,6 +11003,9 @@ msgstr "Faiz"
 msgid "Interest (default)"
 msgstr "Faiz (varsayılan)"
 
+msgid "Interest Expense – Leases"
+msgstr ""
+
 msgid "Interest Income – Leases"
 msgstr "Faiz Geliri – Finansal Kiralama"
 
@@ -10993,6 +11014,9 @@ msgstr "Faiz Geliri – Finansal Kiralama (varsayılan)"
 
 msgid "Interest income or expense from banking activities"
 msgstr "Bankacılık faaliyetlerinden faiz geliri veya gideri"
+
+msgid "Interest on finance lease liabilities"
+msgstr ""
 
 msgid "Internal"
 msgstr "Dahili"
@@ -11750,14 +11774,23 @@ msgstr "Öğren"
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
 
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr ""
+
 msgid "Lease Classification"
 msgstr "Kiralama Sınıflandırması"
+
+msgid "Lease Liabilities"
+msgstr ""
 
 msgid "Lease Revenue"
 msgstr "Finansal Kiralama Hasılat"
 
 msgid "Lease Revenue (default)"
 msgstr "Finansal Kiralama Hasılat (varsayılan)"
+
+msgid "Leases (Lessee)"
+msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "İlgili tüm makbuzları dokunulmamış bırakır"
@@ -14824,6 +14857,9 @@ msgstr "İşletme Geliri"
 msgid "Operating lease"
 msgstr "İşletme Kiralaması"
 
+msgid "Operating Lease Expense"
+msgstr ""
+
 msgid "operation"
 msgstr "operasyon"
 
@@ -15920,6 +15956,9 @@ msgstr "Avanslar (varsayılan)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Ödemelerin bugünkü değeri adil değerin en azından {threshold}'idir ({actual})"
+
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr ""
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "Kira bedelinin bugünkü değeri, bir adetin gerçeğe uygun değerinin en az {threshold} oranında olmalıdır"
@@ -18124,6 +18163,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Sağ öğe"
 
+msgid "Right-of-Use Assets"
+msgstr ""
+
 msgid "Risk"
 msgstr "Risk"
 
@@ -20246,6 +20288,12 @@ msgstr "Bu stok kartında sabit gün sayılı raf ömrü belirleyin. Partiye vey
 
 msgid "Straight line"
 msgstr "Doğrusal"
+
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr ""
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr ""
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23552,6 +23600,9 @@ msgstr "Değerler, tarihsel miktarlara bugünün birim maliyetlerini uygular."
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Bu çalışmadaki değerler özetlenmiştir. Tam ayrıntılar 7 gün boyunca tutulur."
+
+msgid "Variable Lease Expense"
+msgstr ""
 
 msgid "Variables"
 msgstr "Değişkenler"

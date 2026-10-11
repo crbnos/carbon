@@ -1575,6 +1575,9 @@ msgstr "累积折旧"
 msgid "Accum. Tax Depr."
 msgstr "累积税收折旧"
 
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
 
@@ -2286,6 +2289,12 @@ msgstr "修订"
 
 msgid "Amendments"
 msgstr "修订"
+
+msgid "Amortization"
+msgstr ""
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr ""
 
 msgid "Amount"
 msgstr "金额"
@@ -3295,6 +3304,9 @@ msgstr "销售型租赁开始时确认的资产总账科目，记录付款和残
 
 msgid "Asset ID"
 msgstr "资产ID"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr ""
 
 msgid "Asset scrap disposals"
 msgstr "资产报废处置"
@@ -5238,6 +5250,9 @@ msgstr "继续"
 msgid "Continue Setup"
 msgstr "继续配置"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr ""
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定资产累计折旧对冲资产账户"
 
@@ -6644,6 +6659,9 @@ msgstr "业务费用的默认账户"
 
 msgid "Default accounts for customer transactions and receivables"
 msgstr "客户交易和应收款项的默认科目"
+
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr ""
 
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "长期资产和折旧的默认账户"
@@ -10985,6 +11003,9 @@ msgstr "利息"
 msgid "Interest (default)"
 msgstr "利息（默认）"
 
+msgid "Interest Expense – Leases"
+msgstr ""
+
 msgid "Interest Income – Leases"
 msgstr "利息收入 – 租赁"
 
@@ -10993,6 +11014,9 @@ msgstr "利息收入 – 租赁（默认）"
 
 msgid "Interest income or expense from banking activities"
 msgstr "银行活动产生的利息收益或费用"
+
+msgid "Interest on finance lease liabilities"
+msgstr ""
 
 msgid "Internal"
 msgstr "内部"
@@ -11750,14 +11774,23 @@ msgstr "学习"
 msgid "Learn more"
 msgstr "了解更多"
 
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr ""
+
 msgid "Lease Classification"
 msgstr "租赁分类"
+
+msgid "Lease Liabilities"
+msgstr ""
 
 msgid "Lease Revenue"
 msgstr "租赁收入"
 
 msgid "Lease Revenue (default)"
 msgstr "租赁收入（默认）"
+
+msgid "Leases (Lessee)"
+msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "保留任何相关收据不变"
@@ -14824,6 +14857,9 @@ msgstr "营运收益"
 msgid "Operating lease"
 msgstr "经营租赁"
 
+msgid "Operating Lease Expense"
+msgstr ""
+
 msgid "operation"
 msgstr "工序"
 
@@ -15920,6 +15956,9 @@ msgstr "预付款（默认）"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "付款现值至少为公允价值的{threshold}({actual})"
+
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr ""
 
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "租赁的现值至少为一个单位公平价值的 {threshold}"
@@ -18124,6 +18163,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "右项"
 
+msgid "Right-of-Use Assets"
+msgstr ""
+
 msgid "Risk"
 msgstr "风险"
 
@@ -20246,6 +20288,12 @@ msgstr "在此物料上存储固定天数。在收到每个生产批次或序列
 
 msgid "Straight line"
 msgstr "直线法"
+
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr ""
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr ""
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23552,6 +23600,9 @@ msgstr "价值采用今日的单位成本应用于历史数量。"
 
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "该运行中的值已汇总。完整详情保留 7 天。"
+
+msgid "Variable Lease Expense"
+msgstr ""
 
 msgid "Variables"
 msgstr "变量"
