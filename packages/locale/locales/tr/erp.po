@@ -4448,6 +4448,12 @@ msgstr "Nakliyeci Hesabı"
 msgid "Cash & Banking"
 msgstr "Nakit ve Bankacılık"
 
+msgid "Cash paid: finance leases"
+msgstr ""
+
+msgid "Cash paid: operating leases"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "Stokun nasıl depolandığını sınıflandıran kategoriler"
 
@@ -6321,6 +6327,9 @@ msgstr "Cari Net Defter Değeri:"
 
 msgid "Current Password"
 msgstr "Mevcut Şifre"
+
+msgid "Current portion"
+msgstr ""
 
 msgid "Current projection"
 msgstr "Mevcut projeksiyon"
@@ -9763,6 +9772,12 @@ msgstr "Mali bir ayı Açık → Kilitli → Kapalı yaşam döngüsü aracılı
 msgid "Finance"
 msgstr ""
 
+msgid "Finance lease: amortization of ROU assets"
+msgstr ""
+
+msgid "Finance lease: interest on lease liabilities"
+msgstr ""
+
 msgid "Financial Statements"
 msgstr "Mali Tablolar"
 
@@ -11977,6 +11992,9 @@ msgstr ""
 msgid "Lease Liabilities"
 msgstr ""
 
+msgid "Lease liability"
+msgstr ""
+
 msgid "Lease Liability"
 msgstr ""
 
@@ -11993,6 +12011,9 @@ msgid "Lease Revenue (default)"
 msgstr "Finansal Kiralama Hasılat (varsayılan)"
 
 msgid "Lease Run"
+msgstr ""
+
+msgid "Lease run entries and posted lease invoice lines in the period."
 msgstr ""
 
 msgid "Lease Runs"
@@ -12043,6 +12064,9 @@ msgstr "Artık Parçalar Tespit Edildi"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Kalan hazırlanan malzeme tüm iş tamamlandığında geri döner."
 
+msgid "Less imputed interest"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Daha az manuel çalışma"
 
@@ -12051,6 +12075,9 @@ msgstr "Daha az manuel çalışma, daha az hata"
 
 msgid "Less overtime"
 msgstr "Daha az fazla mesai"
+
+msgid "Lessee lease balances, maturity analysis and lease cost"
+msgstr ""
 
 msgid "Lessor"
 msgstr ""
@@ -12858,6 +12885,9 @@ msgstr "Malzemeler dahil değil"
 msgid "Matrix"
 msgstr "Matris"
 
+msgid "Maturity Analysis"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "Maks. Miktar"
 
@@ -13144,6 +13174,9 @@ msgstr "Aylık Kira"
 msgid "Monthly Rent:"
 msgstr "Aylık Kira:"
 
+msgid "Months Left"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Bu varlığın vergi amaçları için amorti edildiği aylar (MACRS kullanılmıyorsa)."
 
@@ -13365,6 +13398,9 @@ msgstr "Net Kiralama Yatırımı"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Net Kiralama Yatırımı (varsayılan)"
+
+msgid "Net right-of-use asset"
+msgstr ""
 
 msgid "Net Right-of-Use Asset:"
 msgstr ""
@@ -14544,6 +14580,12 @@ msgstr "Uygunsuzluk ve muayene Fire"
 msgid "Non-conformances"
 msgstr "Uygunsuzluklar"
 
+msgid "Non-Current"
+msgstr ""
+
+msgid "Non-current portion"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "Stok dışı"
 
@@ -15144,6 +15186,9 @@ msgstr "İşletme Geliri"
 
 msgid "Operating lease"
 msgstr "İşletme Kiralaması"
+
+msgid "Operating lease cost"
+msgstr ""
 
 msgid "Operating Lease Expense"
 msgstr ""
@@ -19983,6 +20028,9 @@ msgstr "Kısmi toplama {itemName}"
 msgid "Short-Term"
 msgstr ""
 
+msgid "Short-term lease cost"
+msgstr ""
+
 msgid "Short-Term Lease Expedient"
 msgstr ""
 
@@ -22476,6 +22524,9 @@ msgstr "Bu operasyonlarda kurulum, işçilik veya makine süresi yok, bu nedenle
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Bu kredileri uygulanacak hiçbir ödenmemiş tutar yok."
 
+msgid "Thereafter"
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Bu özel alanlar yalnızca aynı etiketlere sahip varlıklar için kullanılabilir"
 
@@ -23166,6 +23217,9 @@ msgstr "Toplam Saat"
 msgid "Total Indirect Cost"
 msgstr "Toplam Dolaylı Maliyet"
 
+msgid "Total lease cost"
+msgstr ""
+
 msgid "Total Material Cost"
 msgstr "Toplam Malzeme Maliyeti"
 
@@ -23201,6 +23255,9 @@ msgstr "Toplam fire miktarı"
 
 msgid "Total tax"
 msgstr "Toplam vergi"
+
+msgid "Total undiscounted payments"
+msgstr ""
 
 msgid "Total Value"
 msgstr "Toplam Değer"
@@ -23508,6 +23565,9 @@ msgstr "Sabit Yeniden Sipariş Miktarı altında, yeniden sipariş noktası her 
 
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "Maksimum Miktar politikası altında, yeniden sipariş noktası tetiklendiğinde planlama siparişleri bu kullanıma hazır stok seviyesine kadar yapılır."
+
+msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
+msgstr ""
 
 msgid "Undo"
 msgstr "Geri Al"
@@ -24058,6 +24118,9 @@ msgstr "Değerler, tarihsel miktarlara bugünün birim maliyetlerini uygular."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Bu çalışmadaki değerler özetlenmiştir. Tam ayrıntılar 7 gün boyunca tutulur."
 
+msgid "Variable lease cost"
+msgstr ""
+
 msgid "Variable Lease Expense"
 msgstr ""
 
@@ -24548,6 +24611,12 @@ msgstr "Ağırlıklı Ortalama"
 
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Faturanın işlendiği sırada hesaplanan ağırlıklı ortalama maliyet"
+
+msgid "Weighted-average discount rate"
+msgstr ""
+
+msgid "Weighted-average remaining term (years)"
+msgstr ""
 
 msgid "Welcome back, {name}."
 msgstr "Tekrar hoş geldin, {name}."

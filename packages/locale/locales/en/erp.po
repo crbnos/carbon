@@ -4448,6 +4448,12 @@ msgstr "Carrier Account"
 msgid "Cash & Banking"
 msgstr "Cash & Banking"
 
+msgid "Cash paid: finance leases"
+msgstr "Cash paid: finance leases"
+
+msgid "Cash paid: operating leases"
+msgstr "Cash paid: operating leases"
+
 msgid "Categories that classify how stock is stored"
 msgstr "Categories that classify how stock is stored"
 
@@ -6321,6 +6327,9 @@ msgstr "Current Net Book Value:"
 
 msgid "Current Password"
 msgstr "Current Password"
+
+msgid "Current portion"
+msgstr "Current portion"
 
 msgid "Current projection"
 msgstr "Current projection"
@@ -9763,6 +9772,12 @@ msgstr "Finalizing a fiscal month through the Open → Locked → Closed lifecyc
 msgid "Finance"
 msgstr "Finance"
 
+msgid "Finance lease: amortization of ROU assets"
+msgstr "Finance lease: amortization of ROU assets"
+
+msgid "Finance lease: interest on lease liabilities"
+msgstr "Finance lease: interest on lease liabilities"
+
 msgid "Financial Statements"
 msgstr "Financial Statements"
 
@@ -11977,6 +11992,9 @@ msgstr "Lease Cost"
 msgid "Lease Liabilities"
 msgstr "Lease Liabilities"
 
+msgid "Lease liability"
+msgstr "Lease liability"
+
 msgid "Lease Liability"
 msgstr "Lease Liability"
 
@@ -11994,6 +12012,9 @@ msgstr "Lease Revenue (default)"
 
 msgid "Lease Run"
 msgstr "Lease Run"
+
+msgid "Lease run entries and posted lease invoice lines in the period."
+msgstr "Lease run entries and posted lease invoice lines in the period."
 
 msgid "Lease Runs"
 msgstr "Lease Runs"
@@ -12043,6 +12064,9 @@ msgstr "Leftover Parts Detected"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Leftover staged material returns when the whole job completes."
 
+msgid "Less imputed interest"
+msgstr "Less imputed interest"
+
 msgid "Less manual work"
 msgstr "Less manual work"
 
@@ -12051,6 +12075,9 @@ msgstr "Less manual work, fewer errors"
 
 msgid "Less overtime"
 msgstr "Less overtime"
+
+msgid "Lessee lease balances, maturity analysis and lease cost"
+msgstr "Lessee lease balances, maturity analysis and lease cost"
 
 msgid "Lessor"
 msgstr "Lessor"
@@ -12858,6 +12885,9 @@ msgstr "Materials are not included"
 msgid "Matrix"
 msgstr "Matrix"
 
+msgid "Maturity Analysis"
+msgstr "Maturity Analysis"
+
 msgid "Max Qty"
 msgstr "Max Qty"
 
@@ -13144,6 +13174,9 @@ msgstr "Monthly Rent"
 msgid "Monthly Rent:"
 msgstr "Monthly Rent:"
 
+msgid "Months Left"
+msgstr "Months Left"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 
@@ -13365,6 +13398,9 @@ msgstr "Net Investment in Leases"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Net Investment in Leases (default)"
+
+msgid "Net right-of-use asset"
+msgstr "Net right-of-use asset"
 
 msgid "Net Right-of-Use Asset:"
 msgstr "Net Right-of-Use Asset:"
@@ -14544,6 +14580,12 @@ msgstr "Non-conformance and inspection scrap"
 msgid "Non-conformances"
 msgstr "Non-conformances"
 
+msgid "Non-Current"
+msgstr "Non-Current"
+
+msgid "Non-current portion"
+msgstr "Non-current portion"
+
 msgid "Non-Inventory"
 msgstr "Non-Inventory"
 
@@ -15144,6 +15186,9 @@ msgstr "Operating Income"
 
 msgid "Operating lease"
 msgstr "Operating lease"
+
+msgid "Operating lease cost"
+msgstr "Operating lease cost"
 
 msgid "Operating Lease Expense"
 msgstr "Operating Lease Expense"
@@ -19983,6 +20028,9 @@ msgstr "Short pick {itemName}"
 msgid "Short-Term"
 msgstr "Short-Term"
 
+msgid "Short-term lease cost"
+msgstr "Short-term lease cost"
+
 msgid "Short-Term Lease Expedient"
 msgstr "Short-Term Lease Expedient"
 
@@ -22476,6 +22524,9 @@ msgstr "There's no setup, labor, or machine time on these operations, so there's
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "There's nothing outstanding to apply these credits to."
 
+msgid "Thereafter"
+msgstr "Thereafter"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "These custom fields will only be available for entities with the same tags"
 
@@ -23166,6 +23217,9 @@ msgstr "Total Hours"
 msgid "Total Indirect Cost"
 msgstr "Total Indirect Cost"
 
+msgid "Total lease cost"
+msgstr "Total lease cost"
+
 msgid "Total Material Cost"
 msgstr "Total Material Cost"
 
@@ -23201,6 +23255,9 @@ msgstr "Total scrap quantity"
 
 msgid "Total tax"
 msgstr "Total tax"
+
+msgid "Total undiscounted payments"
+msgstr "Total undiscounted payments"
 
 msgid "Total Value"
 msgstr "Total Value"
@@ -23508,6 +23565,9 @@ msgstr "Under Fixed Reorder Quantity, the exact quantity planning orders each ti
 
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
+
+msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
+msgstr "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
 
 msgid "Undo"
 msgstr "Undo"
@@ -24058,6 +24118,9 @@ msgstr "Values apply today's unit costs to historical quantities."
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Values in this run have been summarised. Full detail is kept for 7 days."
 
+msgid "Variable lease cost"
+msgstr "Variable lease cost"
+
 msgid "Variable Lease Expense"
 msgstr "Variable Lease Expense"
 
@@ -24548,6 +24611,12 @@ msgstr "Weighted Average"
 
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Weighted average cost over last year calculated when the invoice is posted"
+
+msgid "Weighted-average discount rate"
+msgstr "Weighted-average discount rate"
+
+msgid "Weighted-average remaining term (years)"
+msgstr "Weighted-average remaining term (years)"
 
 msgid "Welcome back, {name}."
 msgstr "Welcome back, {name}."

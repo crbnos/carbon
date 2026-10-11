@@ -4448,6 +4448,12 @@ msgstr "運送業者アカウント"
 msgid "Cash & Banking"
 msgstr "現金と銀行"
 
+msgid "Cash paid: finance leases"
+msgstr ""
+
+msgid "Cash paid: operating leases"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "在庫がどのように保管されるかを分類するカテゴリ"
 
@@ -6321,6 +6327,9 @@ msgstr "現在の未償却残高:"
 
 msgid "Current Password"
 msgstr "現在のパスワード"
+
+msgid "Current portion"
+msgstr ""
 
 msgid "Current projection"
 msgstr "現在の予測"
@@ -9763,6 +9772,12 @@ msgstr "会計月をオープン → ロック中 → クローズ済のライ�
 msgid "Finance"
 msgstr ""
 
+msgid "Finance lease: amortization of ROU assets"
+msgstr ""
+
+msgid "Finance lease: interest on lease liabilities"
+msgstr ""
+
 msgid "Financial Statements"
 msgstr "財務諸表"
 
@@ -11977,6 +11992,9 @@ msgstr ""
 msgid "Lease Liabilities"
 msgstr ""
 
+msgid "Lease liability"
+msgstr ""
+
 msgid "Lease Liability"
 msgstr ""
 
@@ -11993,6 +12011,9 @@ msgid "Lease Revenue (default)"
 msgstr "リース売上高（デフォルト）"
 
 msgid "Lease Run"
+msgstr ""
+
+msgid "Lease run entries and posted lease invoice lines in the period."
 msgstr ""
 
 msgid "Lease Runs"
@@ -12043,6 +12064,9 @@ msgstr "余剰部品が検出されました"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "ジョブ全体が完了したときに、ステージングされたままの材料が戻されます。"
 
+msgid "Less imputed interest"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "手作業を減らす"
 
@@ -12051,6 +12075,9 @@ msgstr "手作業を減らし、エラーを削減"
 
 msgid "Less overtime"
 msgstr "残業を減らす"
+
+msgid "Lessee lease balances, maturity analysis and lease cost"
+msgstr ""
 
 msgid "Lessor"
 msgstr ""
@@ -12858,6 +12885,9 @@ msgstr "材料は含まれていません"
 msgid "Matrix"
 msgstr "マトリックス"
 
+msgid "Maturity Analysis"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "最大数量"
 
@@ -13144,6 +13174,9 @@ msgstr "毎月のレンタル料"
 msgid "Monthly Rent:"
 msgstr "月額レンタル料:"
 
+msgid "Months Left"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "このアセットが税務上償却される月数（MACRS使用時以外）。"
 
@@ -13365,6 +13398,9 @@ msgstr "リース投資純額"
 
 msgid "Net Investment in Leases (default)"
 msgstr "リース投資純額（デフォルト）"
+
+msgid "Net right-of-use asset"
+msgstr ""
 
 msgid "Net Right-of-Use Asset:"
 msgstr ""
@@ -14544,6 +14580,12 @@ msgstr "不適合と検査スクラップ"
 msgid "Non-conformances"
 msgstr "不適合"
 
+msgid "Non-Current"
+msgstr ""
+
+msgid "Non-current portion"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "非在庫"
 
@@ -15144,6 +15186,9 @@ msgstr "営業収益"
 
 msgid "Operating lease"
 msgstr "リース契約"
+
+msgid "Operating lease cost"
+msgstr ""
 
 msgid "Operating Lease Expense"
 msgstr ""
@@ -19983,6 +20028,9 @@ msgstr "短いピック {itemName}"
 msgid "Short-Term"
 msgstr ""
 
+msgid "Short-term lease cost"
+msgstr ""
+
 msgid "Short-Term Lease Expedient"
 msgstr ""
 
@@ -22476,6 +22524,9 @@ msgstr "これらの工程に段取り、労務、機械時間がないため、
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "これらのクレジットを適用する未処理項目がありません。"
 
+msgid "Thereafter"
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "これらのカスタムフィールドは、同じタグを持つエンティティでのみ利用可能です"
 
@@ -23166,6 +23217,9 @@ msgstr "合計時間"
 msgid "Total Indirect Cost"
 msgstr "間接原価合計"
 
+msgid "Total lease cost"
+msgstr ""
+
 msgid "Total Material Cost"
 msgstr "材料原価合計"
 
@@ -23201,6 +23255,9 @@ msgstr "合計スクラップ数量"
 
 msgid "Total tax"
 msgstr "合計税金"
+
+msgid "Total undiscounted payments"
+msgstr ""
 
 msgid "Total Value"
 msgstr "合計価値"
@@ -23508,6 +23565,9 @@ msgstr "固定再発注数量の場合、再発注点がトリガされるたび
 
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "最大数量ポリシーの場合、再発注点がトリガされたときに手元在庫レベルまで計画注文が行われます。"
+
+msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
+msgstr ""
 
 msgid "Undo"
 msgstr "元に戻す"
@@ -24058,6 +24118,9 @@ msgstr "値は本日の単位原価を過去の数量に適用します。"
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "このランの値が要約されました。詳細は7日間保持されます。"
 
+msgid "Variable lease cost"
+msgstr ""
+
 msgid "Variable Lease Expense"
 msgstr ""
 
@@ -24548,6 +24611,12 @@ msgstr "加重平均"
 
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "過去1年間の加重平均原価は請求書が転記されるときに計算されます"
+
+msgid "Weighted-average discount rate"
+msgstr ""
+
+msgid "Weighted-average remaining term (years)"
+msgstr ""
 
 msgid "Welcome back, {name}."
 msgstr "お帰りなさい、{name}。"

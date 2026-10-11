@@ -4448,6 +4448,12 @@ msgstr "वाहक खाता"
 msgid "Cash & Banking"
 msgstr "नकद और बैंकिंग"
 
+msgid "Cash paid: finance leases"
+msgstr ""
+
+msgid "Cash paid: operating leases"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "स्टॉक को कैसे संग्रहीत किया जाता है, इसे वर्गीकृत करने वाली श्रेणियां"
 
@@ -6321,6 +6327,9 @@ msgstr "वर्तमान शुद्ध बही मूल्य:"
 
 msgid "Current Password"
 msgstr "वर्तमान पासवर्ड"
+
+msgid "Current portion"
+msgstr ""
 
 msgid "Current projection"
 msgstr "वर्तमान प्रक्षेपण"
@@ -9763,6 +9772,12 @@ msgstr "एक वित्तीय महीने को खुला → ल
 msgid "Finance"
 msgstr ""
 
+msgid "Finance lease: amortization of ROU assets"
+msgstr ""
+
+msgid "Finance lease: interest on lease liabilities"
+msgstr ""
+
 msgid "Financial Statements"
 msgstr "वित्तीय विवरण"
 
@@ -11977,6 +11992,9 @@ msgstr ""
 msgid "Lease Liabilities"
 msgstr ""
 
+msgid "Lease liability"
+msgstr ""
+
 msgid "Lease Liability"
 msgstr ""
 
@@ -11993,6 +12011,9 @@ msgid "Lease Revenue (default)"
 msgstr "पट्टा राजस्व (डिफ़ॉल्ट)"
 
 msgid "Lease Run"
+msgstr ""
+
+msgid "Lease run entries and posted lease invoice lines in the period."
 msgstr ""
 
 msgid "Lease Runs"
@@ -12043,6 +12064,9 @@ msgstr "बचे हुए पार्ट्स का पता चला"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "बची हुई सामग्री पूरी जॉब पूरी होने पर वापस आती है।"
 
+msgid "Less imputed interest"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "कम मैनुअल काम"
 
@@ -12051,6 +12075,9 @@ msgstr "कम मैनुअल काम, कम त्रुटियां"
 
 msgid "Less overtime"
 msgstr "कम ओवरटाइम"
+
+msgid "Lessee lease balances, maturity analysis and lease cost"
+msgstr ""
 
 msgid "Lessor"
 msgstr ""
@@ -12858,6 +12885,9 @@ msgstr "सामग्री शामिल नहीं है"
 msgid "Matrix"
 msgstr "मैट्रिक्स"
 
+msgid "Maturity Analysis"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "अधिकतम मात्रा"
 
@@ -13144,6 +13174,9 @@ msgstr "मासिक किराया"
 msgid "Monthly Rent:"
 msgstr "मासिक किराया:"
 
+msgid "Months Left"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "महीनों की संख्या जिसके दौरान यह संपत्ति कर उद्देश्यों के लिए मूल्यह्रास होती है (जब MACRS का उपयोग नहीं किया जा रहा है)।"
 
@@ -13365,6 +13398,9 @@ msgstr "पट्टों में शुद्ध निवेश"
 
 msgid "Net Investment in Leases (default)"
 msgstr "पट्टों में शुद्ध निवेश (डिफ़ॉल्ट)"
+
+msgid "Net right-of-use asset"
+msgstr ""
 
 msgid "Net Right-of-Use Asset:"
 msgstr ""
@@ -14544,6 +14580,12 @@ msgstr "गैर-अनुरूपता और निरीक्षण स�
 msgid "Non-conformances"
 msgstr "गैर-अनुरूपताएँ"
 
+msgid "Non-Current"
+msgstr ""
+
+msgid "Non-current portion"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "गैर-इन्वेंटरी"
 
@@ -15144,6 +15186,9 @@ msgstr "परिचालन आय"
 
 msgid "Operating lease"
 msgstr "संचालन पट्टा"
+
+msgid "Operating lease cost"
+msgstr ""
 
 msgid "Operating Lease Expense"
 msgstr ""
@@ -19983,6 +20028,9 @@ msgstr "Short pick {itemName}"
 msgid "Short-Term"
 msgstr ""
 
+msgid "Short-term lease cost"
+msgstr ""
+
 msgid "Short-Term Lease Expedient"
 msgstr ""
 
@@ -22476,6 +22524,9 @@ msgstr "इन ऑपरेशन पर कोई सेटअप, श्रम
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "इन क्रेडिट्स को लागू करने के लिए कुछ भी बकाया नहीं है।"
 
+msgid "Thereafter"
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "ये कस्टम फ़ील्ड केवल समान टैग वाली संस्थाओं के लिए उपलब्ध होंगी"
 
@@ -23166,6 +23217,9 @@ msgstr "कुल घंटे"
 msgid "Total Indirect Cost"
 msgstr "कुल अप्रत्यक्ष लागत"
 
+msgid "Total lease cost"
+msgstr ""
+
 msgid "Total Material Cost"
 msgstr "कुल सामग्री लागत"
 
@@ -23201,6 +23255,9 @@ msgstr "कुल स्क्रैप मात्रा"
 
 msgid "Total tax"
 msgstr "कुल कर"
+
+msgid "Total undiscounted payments"
+msgstr ""
 
 msgid "Total Value"
 msgstr "कुल मूल्य"
@@ -23508,6 +23565,9 @@ msgstr "निश्चित पुनः आदेश मात्रा क�
 
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "अधिकतम मात्रा नीति के तहत, योजना जब पुनः ऑर्डर बिंदु सक्रिय होता है इस हाथ में स्तर तक का आदेश देता है।"
+
+msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
+msgstr ""
 
 msgid "Undo"
 msgstr "पूर्ववत करें"
@@ -24058,6 +24118,9 @@ msgstr "मान ऐतिहासिक मात्राओं पर आ�
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "इस रन में मान सारांशित किए गए हैं। पूर्ण विस्तार 7 दिनों के लिए रखा जाता है।"
 
+msgid "Variable lease cost"
+msgstr ""
+
 msgid "Variable Lease Expense"
 msgstr ""
 
@@ -24548,6 +24611,12 @@ msgstr "भारित औसत"
 
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "पिछले साल की भारित औसत लागत जो चालान पोस्ट किए जाने पर गणना की जाती है"
+
+msgid "Weighted-average discount rate"
+msgstr ""
+
+msgid "Weighted-average remaining term (years)"
+msgstr ""
 
 msgid "Welcome back, {name}."
 msgstr "आपका स्वागत है, {name}।"

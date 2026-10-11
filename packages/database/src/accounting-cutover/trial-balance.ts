@@ -216,6 +216,9 @@ export async function getCutoverOpeningInputs(
       defaults.finishedGoodsAccount,
       defaults.deferredRevenueAccount,
       defaults.netInvestmentInLeasesAccount,
+      defaults.leaseLiabilityAccount,
+      defaults.rightOfUseAssetAccount,
+      defaults.accumulatedRightOfUseAmortizationAccount,
       ...classes.flatMap((row) => [
         row.assetAccountId,
         row.accumulatedDepreciationAccountId

@@ -1250,6 +1250,165 @@ async function getLeaseNetInvestmentItems(
   return items;
 }
 
+/**
+ * Lessee leases: per lease commenced before the cutover, the three balances
+ * its journals carry at the cutover, read from the lease rows rather than the
+ * journals (a lease commenced before the reset has none):
+ *
+ * - the lease liability: the closing liability of its last schedule line
+ *   before the cutover (else its initial liability), plus any remeasurement
+ *   effective after that line and before the cutover;
+ * - the right-of-use asset at cost: the initial asset plus every
+ *   remeasurement effective before the cutover;
+ * - the accumulated amortization: every schedule line's amortization before
+ *   the cutover.
+ *
+ * A lease terminated or purchased before the cutover was derecognized and
+ * has none. A short-term lease is never on the balance sheet.
+ */
+async function getLeaseLiabilityItems(
+  db: CutoverDb,
+  companyId: string,
+  cutoverDate: string,
+  defaults: AccountDefaults
+): Promise<DraftItem[]> {
+  const leases = await db
+    .selectFrom("lease")
+    .select(["id", "status", "initialLiability", "initialRouAsset"])
+    .where("companyId", "=", companyId)
+    .where("status", "in", ["Active", "Expired", "Terminated", "Purchased"])
+    .where("lesseeClassification", "in", ["Operating", "Finance"])
+    .where("initialLiability", "is not", null)
+    .where("commencementDate", "<", cutoverDate)
+    .execute();
+  if (leases.length === 0) return [];
+  const leaseIds = leases.map((lease) => lease.id);
+
+  const [lastLines, amortization, events] = await Promise.all([
+    db
+      .selectFrom("leaseScheduleLine")
+      .distinctOn("leaseId")
+      .select(["leaseId", "periodDate", "closingLiability"])
+      .where("companyId", "=", companyId)
+      .where("leaseId", "in", leaseIds)
+      .where("periodDate", "<", cutoverDate)
+      .orderBy("leaseId")
+      .orderBy("periodDate", "desc")
+      .execute(),
+    db
+      .selectFrom("leaseScheduleLine")
+      .select(["leaseId", (eb) => eb.fn.sum("rouAmortization").as("total")])
+      .where("companyId", "=", companyId)
+      .where("leaseId", "in", leaseIds)
+      .where("periodDate", "<", cutoverDate)
+      .groupBy("leaseId")
+      .execute(),
+    db
+      .selectFrom("leaseEvent")
+      .select([
+        "leaseId",
+        "eventType",
+        "effectiveDate",
+        "liabilityBefore",
+        "liabilityAfter",
+        "rouAssetBefore",
+        "rouAssetAfter"
+      ])
+      .where("companyId", "=", companyId)
+      .where("leaseId", "in", leaseIds)
+      .where("effectiveDate", "<", cutoverDate)
+      .execute()
+  ]);
+  const lastLineByLease = new Map(lastLines.map((row) => [row.leaseId, row]));
+  const amortizationByLease = new Map(
+    amortization.map((row) => [row.leaseId, Number(row.total ?? 0)])
+  );
+
+  const accounts = {
+    liability: defaults.leaseLiabilityAccount,
+    rou: defaults.rightOfUseAssetAccount,
+    accumulated: defaults.accumulatedRightOfUseAmortizationAccount
+  };
+  const required = (accountId: string | null | undefined, column: string) => {
+    if (!accountId) throw new Error(`Set the ${column} account default`);
+    return accountId;
+  };
+
+  const items: DraftItem[] = [];
+  for (const lease of leases) {
+    const own = events.filter((event) => event.leaseId === lease.id);
+    // Derecognized before the cutover: its accounts were cleared then.
+    if (own.some((event) => event.eventType !== "Modification")) continue;
+    const remeasurements = own.filter(
+      (event) => event.eventType === "Modification"
+    );
+
+    const lastLine = lastLineByLease.get(lease.id);
+    const liability =
+      (lastLine
+        ? Number(lastLine.closingLiability)
+        : Number(lease.initialLiability ?? 0)) +
+      remeasurements
+        .filter(
+          (event) => !lastLine || event.effectiveDate > lastLine.periodDate
+        )
+        .reduce(
+          (sum, event) =>
+            sum + Number(event.liabilityAfter) - Number(event.liabilityBefore),
+          0
+        );
+    const rouCost =
+      Number(lease.initialRouAsset ?? 0) +
+      remeasurements.reduce(
+        (sum, event) =>
+          sum + Number(event.rouAssetAfter) - Number(event.rouAssetBefore),
+        0
+      );
+    const accumulated = amortizationByLease.get(lease.id) ?? 0;
+
+    const lines = [
+      {
+        openItemType: "Lease Liability" as const,
+        accountId: accounts.liability,
+        column: "leaseLiabilityAccount",
+        // A credit balance.
+        original: -round(liability),
+        description: "Lease Liability"
+      },
+      {
+        openItemType: "Right-of-Use Asset" as const,
+        accountId: accounts.rou,
+        column: "rightOfUseAssetAccount",
+        original: round(rouCost),
+        description: "Right-of-Use Asset"
+      },
+      {
+        openItemType: "Accumulated ROU Amortization" as const,
+        accountId: accounts.accumulated,
+        column: "accumulatedRightOfUseAmortizationAccount",
+        // A credit balance.
+        original: -round(accumulated),
+        description: "Accumulated ROU Amortization"
+      }
+    ];
+    for (const line of lines) {
+      if (Math.abs(line.original) <= EPSILON) continue;
+      items.push({
+        openItemType: line.openItemType,
+        accountId: required(line.accountId, line.column),
+        basis: "debit",
+        original: line.original,
+        settled: 0,
+        documentType: "Lease",
+        documentId: lease.id,
+        documentLineReference: null,
+        description: line.description
+      });
+    }
+  }
+  return items;
+}
+
 /** Converts draft items to open items, signed for each account's class. */
 export async function finishItems(
   db: CutoverDb,
@@ -1293,7 +1452,8 @@ export async function finishItems(
  * Every document-level item open at the cutover, in base currency, positive
  * on the natural side of its account: receivables, payables, employee
  * reimbursements, unapplied credit, deposits, received-not-invoiced,
- * invoiced-not-received, work in progress, deferred revenue and lease net investment. Inventory and fixed assets come from
+ * invoiced-not-received, work in progress, deferred revenue, lease net
+ * investment and lessee lease balances. Inventory and fixed assets come from
  * `getCutoverInventory` and `getCutoverFixedAssets`.
  */
 export async function getCutoverOpenItems(
@@ -1327,7 +1487,8 @@ export async function openItemsFor(
     getInvoicedNotReceivedItems(db, companyId, cutoverDate, defaults),
     getWorkInProgressItems(db, companyId, cutoverDate, defaults),
     getDeferredRevenueItems(db, companyId, cutoverDate, defaults),
-    getLeaseNetInvestmentItems(db, companyId, cutoverDate, defaults)
+    getLeaseNetInvestmentItems(db, companyId, cutoverDate, defaults),
+    getLeaseLiabilityItems(db, companyId, cutoverDate, defaults)
   ]);
   return finishItems(db, company.companyGroupId, groups.flat());
 }

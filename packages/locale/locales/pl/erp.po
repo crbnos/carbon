@@ -4448,6 +4448,12 @@ msgstr "Konto przewoźnika"
 msgid "Cash & Banking"
 msgstr "Gotówka i Bankowość"
 
+msgid "Cash paid: finance leases"
+msgstr ""
+
+msgid "Cash paid: operating leases"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "Kategorie klasyfikujące sposób przechowywania zapasów"
 
@@ -6321,6 +6327,9 @@ msgstr "Bieżąca Wartość księgowa netto:"
 
 msgid "Current Password"
 msgstr "Bieżące hasło"
+
+msgid "Current portion"
+msgstr ""
 
 msgid "Current projection"
 msgstr "Bieżąca projekcja"
@@ -9763,6 +9772,12 @@ msgstr "Finalizowanie miesiąca obrachunkowego poprzez cykl Otwarte → Zablokow
 msgid "Finance"
 msgstr ""
 
+msgid "Finance lease: amortization of ROU assets"
+msgstr ""
+
+msgid "Finance lease: interest on lease liabilities"
+msgstr ""
+
 msgid "Financial Statements"
 msgstr "Sprawozdania finansowe"
 
@@ -11977,6 +11992,9 @@ msgstr ""
 msgid "Lease Liabilities"
 msgstr ""
 
+msgid "Lease liability"
+msgstr ""
+
 msgid "Lease Liability"
 msgstr ""
 
@@ -11993,6 +12011,9 @@ msgid "Lease Revenue (default)"
 msgstr "Przychód z dzierżawy (domyślnie)"
 
 msgid "Lease Run"
+msgstr ""
+
+msgid "Lease run entries and posted lease invoice lines in the period."
 msgstr ""
 
 msgid "Lease Runs"
@@ -12043,6 +12064,9 @@ msgstr "Wykryte nadmiarowe części"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Pozostały materiał przygotowany wraca, gdy całe zadanie się zakończy."
 
+msgid "Less imputed interest"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Mniej pracy ręcznej"
 
@@ -12051,6 +12075,9 @@ msgstr "Mniej pracy ręcznej, mniej błędów"
 
 msgid "Less overtime"
 msgstr "Mniej nadgodzin"
+
+msgid "Lessee lease balances, maturity analysis and lease cost"
+msgstr ""
 
 msgid "Lessor"
 msgstr ""
@@ -12858,6 +12885,9 @@ msgstr "Materiały nie są uwzględnione"
 msgid "Matrix"
 msgstr "Macierz"
 
+msgid "Maturity Analysis"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "Maks. Ilość"
 
@@ -13144,6 +13174,9 @@ msgstr "Czynsz miesięczny"
 msgid "Monthly Rent:"
 msgstr "Czynsz co miesiąc:"
 
+msgid "Months Left"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Miesiące, przez które ten składnik aktywów jest amortyzowany dla celów podatkowych (jeśli nie jest używany MACRS)."
 
@@ -13365,6 +13398,9 @@ msgstr "Netto inwestycja w leasingi"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Netto inwestycja w leasingi (domyślnie)"
+
+msgid "Net right-of-use asset"
+msgstr ""
 
 msgid "Net Right-of-Use Asset:"
 msgstr ""
@@ -14544,6 +14580,12 @@ msgstr "Niezgodności i braki z kontroli"
 msgid "Non-conformances"
 msgstr "Niezgodności"
 
+msgid "Non-Current"
+msgstr ""
+
+msgid "Non-current portion"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "Niemagazynowy"
 
@@ -15144,6 +15186,9 @@ msgstr "Przychody operacyjne"
 
 msgid "Operating lease"
 msgstr "Leasing operacyjny"
+
+msgid "Operating lease cost"
+msgstr ""
 
 msgid "Operating Lease Expense"
 msgstr ""
@@ -19983,6 +20028,9 @@ msgstr "Niedozbór {itemName}"
 msgid "Short-Term"
 msgstr ""
 
+msgid "Short-term lease cost"
+msgstr ""
+
 msgid "Short-Term Lease Expedient"
 msgstr ""
 
@@ -22476,6 +22524,9 @@ msgstr "Na tych operacjach nie ma przezbrojenia, robocizny ani czasu maszynowego
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Nie ma nic do wyrównania, do czego można by zastosować te kredyty."
 
+msgid "Thereafter"
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Te pola niestandardowe będą dostępne tylko dla obiektów z tymi samymi tagami"
 
@@ -23166,6 +23217,9 @@ msgstr "Łącznie godzin"
 msgid "Total Indirect Cost"
 msgstr "Suma kosztów pośrednich"
 
+msgid "Total lease cost"
+msgstr ""
+
 msgid "Total Material Cost"
 msgstr "Całkowity koszt materiałów"
 
@@ -23201,6 +23255,9 @@ msgstr "Całkowita ilość braków"
 
 msgid "Total tax"
 msgstr "Podatek całkowity"
+
+msgid "Total undiscounted payments"
+msgstr ""
 
 msgid "Total Value"
 msgstr "Wartość całkowita"
@@ -23508,6 +23565,9 @@ msgstr "W ramach stałej ilości zamawiania planowanie zamawia dokładnie tę il
 
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "W ramach polityki maksymalnej ilości planowanie zamawia do tego poziomu dostępności zapasu, gdy punkt zamawiania jest osiągnięty."
+
+msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
+msgstr ""
 
 msgid "Undo"
 msgstr "Cofnij"
@@ -24058,6 +24118,9 @@ msgstr "Wartości stosują dzisiejsze koszty jednostkowe do historycznych ilośc
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Wartości w tym przebiegu zostały podsumowane. Pełne szczegóły są przechowywane przez 7 dni."
 
+msgid "Variable lease cost"
+msgstr ""
+
 msgid "Variable Lease Expense"
 msgstr ""
 
@@ -24548,6 +24611,12 @@ msgstr "Średnia ważona"
 
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Średni ważony koszt z ostatniego roku obliczony podczas księgowania faktury"
+
+msgid "Weighted-average discount rate"
+msgstr ""
+
+msgid "Weighted-average remaining term (years)"
+msgstr ""
 
 msgid "Welcome back, {name}."
 msgstr "Witaj z powrotem, {name}."

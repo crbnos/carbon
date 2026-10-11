@@ -4448,6 +4448,12 @@ msgstr "Счет перевозчика"
 msgid "Cash & Banking"
 msgstr "Денежные средства и Банк"
 
+msgid "Cash paid: finance leases"
+msgstr ""
+
+msgid "Cash paid: operating leases"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "Категории, которые классифицируют способ хранения запасов"
 
@@ -6321,6 +6327,9 @@ msgstr "Текущая остаточная стоимость:"
 
 msgid "Current Password"
 msgstr "Текущий пароль"
+
+msgid "Current portion"
+msgstr ""
 
 msgid "Current projection"
 msgstr "Текущий прогноз"
@@ -9763,6 +9772,12 @@ msgstr "Завершение финансового месяца через ци
 msgid "Finance"
 msgstr ""
 
+msgid "Finance lease: amortization of ROU assets"
+msgstr ""
+
+msgid "Finance lease: interest on lease liabilities"
+msgstr ""
+
 msgid "Financial Statements"
 msgstr "Финансовые отчеты"
 
@@ -11977,6 +11992,9 @@ msgstr ""
 msgid "Lease Liabilities"
 msgstr ""
 
+msgid "Lease liability"
+msgstr ""
+
 msgid "Lease Liability"
 msgstr ""
 
@@ -11993,6 +12011,9 @@ msgid "Lease Revenue (default)"
 msgstr "Выручка от лизинга (по умолчанию)"
 
 msgid "Lease Run"
+msgstr ""
+
+msgid "Lease run entries and posted lease invoice lines in the period."
 msgstr ""
 
 msgid "Lease Runs"
@@ -12043,6 +12064,9 @@ msgstr "Обнаружены лишние детали"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "Оставшийся подготовленный материал возвращается по завершении всей работы."
 
+msgid "Less imputed interest"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Меньше ручной работы"
 
@@ -12051,6 +12075,9 @@ msgstr "Меньше ручной работы, меньше ошибок"
 
 msgid "Less overtime"
 msgstr "Меньше переработки"
+
+msgid "Lessee lease balances, maturity analysis and lease cost"
+msgstr ""
 
 msgid "Lessor"
 msgstr ""
@@ -12858,6 +12885,9 @@ msgstr "Материалы не включены"
 msgid "Matrix"
 msgstr "Матрица"
 
+msgid "Maturity Analysis"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "Макс. кол-во"
 
@@ -13144,6 +13174,9 @@ msgstr "Ежемесячная аренда"
 msgid "Monthly Rent:"
 msgstr "Ежемесячная аренда:"
 
+msgid "Months Left"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Месяцы, в течение которых это имущество амортизируется в налоговых целях (при отсутствии MACRS)."
 
@@ -13365,6 +13398,9 @@ msgstr "Чистые инвестиции в лизинг"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Чистые инвестиции в лизинг (по умолчанию)"
+
+msgid "Net right-of-use asset"
+msgstr ""
 
 msgid "Net Right-of-Use Asset:"
 msgstr ""
@@ -14544,6 +14580,12 @@ msgstr "Несоответствие и брак при контроле"
 msgid "Non-conformances"
 msgstr "Несоответствия"
 
+msgid "Non-Current"
+msgstr ""
+
+msgid "Non-current portion"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "Нескладской"
 
@@ -15144,6 +15186,9 @@ msgstr "Операционный доход"
 
 msgid "Operating lease"
 msgstr "Операционный лизинг"
+
+msgid "Operating lease cost"
+msgstr ""
 
 msgid "Operating Lease Expense"
 msgstr ""
@@ -19983,6 +20028,9 @@ msgstr "Короткий отбор {itemName}"
 msgid "Short-Term"
 msgstr ""
 
+msgid "Short-term lease cost"
+msgstr ""
+
 msgid "Short-Term Lease Expedient"
 msgstr ""
 
@@ -22476,6 +22524,9 @@ msgstr "На этих операциях нет наладки, труда ил�
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Нечего применять эти кредиты."
 
+msgid "Thereafter"
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Эти пользовательские поля будут доступны только для объектов с одинаковыми тегами"
 
@@ -23166,6 +23217,9 @@ msgstr "Всего часов"
 msgid "Total Indirect Cost"
 msgstr "Общие косвенные затраты"
 
+msgid "Total lease cost"
+msgstr ""
+
 msgid "Total Material Cost"
 msgstr "Итоговая себестоимость материалов"
 
@@ -23201,6 +23255,9 @@ msgstr "Общее количество брака"
 
 msgid "Total tax"
 msgstr "Общий налог"
+
+msgid "Total undiscounted payments"
+msgstr ""
 
 msgid "Total Value"
 msgstr "Общая стоимость"
@@ -23508,6 +23565,9 @@ msgstr "При политике фиксированного количеств�
 
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "При политике максимального количества планирование заказывает до этого уровня остатка на складе, когда срабатывает точка заказа"
+
+msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
+msgstr ""
 
 msgid "Undo"
 msgstr "Отменить"
@@ -24058,6 +24118,9 @@ msgstr "Значения применяют сегодняшние себест�
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Значения в этом запуске были сведены. Полные детали хранятся 7 дней."
 
+msgid "Variable lease cost"
+msgstr ""
+
 msgid "Variable Lease Expense"
 msgstr ""
 
@@ -24548,6 +24611,12 @@ msgstr "Средневзвешенное значение"
 
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Средневзвешенная себестоимость за последний год, рассчитанная при проведении счета-фактуры"
+
+msgid "Weighted-average discount rate"
+msgstr ""
+
+msgid "Weighted-average remaining term (years)"
+msgstr ""
 
 msgid "Welcome back, {name}."
 msgstr "Добро пожаловать назад, {name}."

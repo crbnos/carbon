@@ -4448,6 +4448,12 @@ msgstr "Conta da Transportadora"
 msgid "Cash & Banking"
 msgstr "Caixa e Banco"
 
+msgid "Cash paid: finance leases"
+msgstr ""
+
+msgid "Cash paid: operating leases"
+msgstr ""
+
 msgid "Categories that classify how stock is stored"
 msgstr "Categorias que classificam como o estoque é armazenado"
 
@@ -6321,6 +6327,9 @@ msgstr "Valor Líquido Contábil Atual:"
 
 msgid "Current Password"
 msgstr "Senha Atual"
+
+msgid "Current portion"
+msgstr ""
 
 msgid "Current projection"
 msgstr "Projeção atual"
@@ -9763,6 +9772,12 @@ msgstr "Finalizando um mês fiscal através do ciclo de vida Aberto → Bloquead
 msgid "Finance"
 msgstr ""
 
+msgid "Finance lease: amortization of ROU assets"
+msgstr ""
+
+msgid "Finance lease: interest on lease liabilities"
+msgstr ""
+
 msgid "Financial Statements"
 msgstr "Demonstrações Financeiras"
 
@@ -11977,6 +11992,9 @@ msgstr ""
 msgid "Lease Liabilities"
 msgstr ""
 
+msgid "Lease liability"
+msgstr ""
+
 msgid "Lease Liability"
 msgstr ""
 
@@ -11993,6 +12011,9 @@ msgid "Lease Revenue (default)"
 msgstr "Receita de Arrendamento (padrão)"
 
 msgid "Lease Run"
+msgstr ""
+
+msgid "Lease run entries and posted lease invoice lines in the period."
 msgstr ""
 
 msgid "Lease Runs"
@@ -12043,6 +12064,9 @@ msgstr "Peças Excedentes Detectadas"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "O material preparado restante retorna quando todo o trabalho é concluído."
 
+msgid "Less imputed interest"
+msgstr ""
+
 msgid "Less manual work"
 msgstr "Menos trabalho manual"
 
@@ -12051,6 +12075,9 @@ msgstr "Menos trabalho manual, menos erros"
 
 msgid "Less overtime"
 msgstr "Menos horas extras"
+
+msgid "Lessee lease balances, maturity analysis and lease cost"
+msgstr ""
 
 msgid "Lessor"
 msgstr ""
@@ -12858,6 +12885,9 @@ msgstr "Materiais não estão incluídos"
 msgid "Matrix"
 msgstr "Matriz"
 
+msgid "Maturity Analysis"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "Qtd Máx"
 
@@ -13144,6 +13174,9 @@ msgstr "Aluguel Mensal"
 msgid "Monthly Rent:"
 msgstr "Aluguel mensal:"
 
+msgid "Months Left"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Meses durante os quais esse ativo é depreciado para fins fiscais (quando não está usando MACRS)."
 
@@ -13365,6 +13398,9 @@ msgstr "Investimento Líquido em Arrendamentos"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Investimento Líquido em Arrendamentos (padrão)"
+
+msgid "Net right-of-use asset"
+msgstr ""
 
 msgid "Net Right-of-Use Asset:"
 msgstr ""
@@ -14544,6 +14580,12 @@ msgstr "Não conformidade e refugo de inspeção"
 msgid "Non-conformances"
 msgstr "Não conformidades"
 
+msgid "Non-Current"
+msgstr ""
+
+msgid "Non-current portion"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "Não estocável"
 
@@ -15144,6 +15186,9 @@ msgstr "Receita operacional"
 
 msgid "Operating lease"
 msgstr "Arrendamento operacional"
+
+msgid "Operating lease cost"
+msgstr ""
 
 msgid "Operating Lease Expense"
 msgstr ""
@@ -19983,6 +20028,9 @@ msgstr "Colheita curta {itemName}"
 msgid "Short-Term"
 msgstr ""
 
+msgid "Short-term lease cost"
+msgstr ""
+
 msgid "Short-Term Lease Expedient"
 msgstr ""
 
@@ -22476,6 +22524,9 @@ msgstr "Não há Setup, mão de obra ou tempo de máquina nessas operações, en
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Não há nada pendente para aplicar esses créditos."
 
+msgid "Thereafter"
+msgstr ""
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Estes campos personalizados estarão disponíveis apenas para entidades com as mesmas tags"
 
@@ -23166,6 +23217,9 @@ msgstr "Total de Horas"
 msgid "Total Indirect Cost"
 msgstr "Custo indireto total"
 
+msgid "Total lease cost"
+msgstr ""
+
 msgid "Total Material Cost"
 msgstr "Custo de Material Total"
 
@@ -23201,6 +23255,9 @@ msgstr "Quantidade total de refugo"
 
 msgid "Total tax"
 msgstr "Imposto total"
+
+msgid "Total undiscounted payments"
+msgstr ""
 
 msgid "Total Value"
 msgstr "Valor Total"
@@ -23508,6 +23565,9 @@ msgstr "Sob quantidade fixa de ressuprimento, a quantidade exata que o planejame
 
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "Sob política de quantidade máxima, o planejamento pede até este nível de estoque quando o ponto de ressuprimento é acionado."
+
+msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
+msgstr ""
 
 msgid "Undo"
 msgstr "Desfazer"
@@ -24058,6 +24118,9 @@ msgstr "Os valores aplicam os custos unitários de hoje às quantidades históri
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "Os valores nesta execução foram resumidos. O detalhe completo é mantido por 7 dias."
 
+msgid "Variable lease cost"
+msgstr ""
+
 msgid "Variable Lease Expense"
 msgstr ""
 
@@ -24548,6 +24611,12 @@ msgstr "Média Ponderada"
 
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Custo médio ponderado do último ano calculado quando a fatura é lançada"
+
+msgid "Weighted-average discount rate"
+msgstr ""
+
+msgid "Weighted-average remaining term (years)"
+msgstr ""
 
 msgid "Welcome back, {name}."
 msgstr "Bem-vindo de volta, {name}."
