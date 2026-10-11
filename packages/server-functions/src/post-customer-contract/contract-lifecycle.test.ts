@@ -14,6 +14,10 @@ import { type Kysely, sql } from "kysely";
 import { expect } from "vitest";
 import createContractInvoices from "../create-contract-invoices";
 import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows
+} from "../lib/project-posting";
+import {
   connectLocalTestDatabase,
   databaseTest
 } from "../local-database-test-fixture";
@@ -2129,6 +2133,71 @@ databaseTest(
       expect((await confirm(expensed)).error?.message).toContain(
         "cost treatment must be Contract"
       );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a confirmed Time & Materials line bills the element's earlier ledger rows",
+  async () => {
+    const f = await contractFixture();
+    const { ctx, db, companyId } = f;
+    try {
+      const billing = await projectBillingFixture(f);
+      const project = await billing.addProject("backfill", "PF", "Contract");
+      const contractId = await billing.addTimeAndMaterialsContract({
+        key: "tm-backfill",
+        projectId: project.projectId,
+        projectElementId: project.rootId
+      });
+
+      // Posted while the contract is a Draft: no live line, so no item.
+      await db.transaction().execute((trx) =>
+        insertProjectLedgerRows(trx, {
+          companyId,
+          userId: USER,
+          rows: [
+            buildProjectLedgerRow({
+              companyId,
+              projectId: project.projectId,
+              projectElementId: project.childId,
+              postingDate: "2026-01-01",
+              costType: "Material",
+              documentType: "Project Issue",
+              documentId: `${contractId}-issue`,
+              quantity: 4,
+              amount: 200,
+              createdBy: USER
+            })
+          ]
+        })
+      );
+      const itemsOf = () =>
+        db
+          .selectFrom("projectBillableItem")
+          .select(["amount", "status", "customerContractLineId"])
+          .where("projectId", "=", project.projectId)
+          .where("companyId", "=", companyId)
+          .execute();
+      expect(await itemsOf()).toEqual([]);
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+
+      const items = await itemsOf();
+      expect(
+        items.map((item) => [
+          Number(item.amount),
+          item.status,
+          item.customerContractLineId
+        ])
+      ).toEqual([[220, "Unbilled", `${contractId}-line`]]);
     } finally {
       await f.cleanup();
     }

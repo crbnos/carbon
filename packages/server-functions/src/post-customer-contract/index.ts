@@ -59,6 +59,7 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { generateTimeAndMaterialsItems } from "../lib/project-posting";
 import {
   billedTotals,
   changedRevenueLines,
@@ -758,6 +759,17 @@ async function confirm(
       .where("id", "=", contract.id)
       .where("companyId", "=", companyId)
       .execute();
+
+    // 6. Bill the work posted before the contract was confirmed (P15).
+    for (const line of lines) {
+      if (line.billingMethod !== "Time & Materials") continue;
+      await generateTimeAndMaterialsItems(trx, {
+        companyId,
+        userId,
+        customerContractLineId: line.id,
+        through: payload.asOf
+      });
+    }
 
     return { customerContractId: contract.id };
   });
@@ -1725,7 +1737,7 @@ async function amend(
         throw new InvalidInputError(billingProblems.join("; "));
       }
       if (inserts.length > 0) {
-        await trx
+        const added = await trx
           .insertInto("customerContractLine")
           .values(
             inserts.map(({ fields, overrides }) =>
@@ -1735,7 +1747,18 @@ async function amend(
               })
             )
           )
+          .returning(["id", "billingMethod"])
           .execute();
+        // An added T&M line bills the work posted before it (P15).
+        for (const line of added) {
+          if (line.billingMethod !== "Time & Materials") continue;
+          await generateTimeAndMaterialsItems(trx, {
+            companyId,
+            userId,
+            customerContractLineId: line.id,
+            through: payload.asOf
+          });
+        }
       }
 
       // A discount on a new line that ends inside it is split off now, as at
