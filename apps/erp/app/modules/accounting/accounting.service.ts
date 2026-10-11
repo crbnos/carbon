@@ -3380,6 +3380,58 @@ export function runPreviewer(
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
 }
 
+/** A timesheet entry in one of these is not posted yet. */
+const OPEN_TIMESHEET_STATUSES = [
+  "Draft",
+  "Submitted",
+  "Approved",
+  "Rejected",
+  "Pending Employee Review"
+] as const;
+
+/**
+ * The "Timesheets complete" close check (Government Contracting 5a). In
+ * Standard timekeeping it always passes. In DCAA mode it counts the entries
+ * dated in the period that are not Posted, plus the scheduled work days in it
+ * with no entry (`get_missing_timesheet_days`). A failed read counts as one,
+ * so the warning shows rather than a false pass.
+ */
+async function getPeriodTimesheetReadiness(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ failing: boolean; count: number }> {
+  const settings = await client
+    .from("companySettings")
+    .select("timekeepingControls")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return { failing: true, count: 1 };
+  if (settings.data?.timekeepingControls !== "DCAA") {
+    return { failing: false, count: 0 };
+  }
+
+  const [openEntries, missingDays] = await Promise.all([
+    client
+      .from("timesheetEntry")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .in("status", [...OPEN_TIMESHEET_STATUSES])
+      .gte("entryDate", startDate)
+      .lte("entryDate", endDate),
+    client.rpc(
+      "get_missing_timesheet_days",
+      { p_company_id: companyId, p_from: startDate, p_to: endDate },
+      { count: "exact", head: true }
+    )
+  ]);
+  const count =
+    (openEntries.error ? 1 : (openEntries.count ?? 0)) +
+    (missingDays.error ? 1 : (missingDays.count ?? 0));
+  return { failing: count > 0, count };
+}
+
 /**
  * Evaluates every Auto close check for the period. `runPreview` is what new
  * revenue recognition and depreciation runs for `endDate` would hold
@@ -3565,6 +3617,14 @@ export async function computePeriodReadiness(
     runPreview.depreciation.count +
     (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
 
+  // Read last, and only in DCAA mode (see the helper).
+  const timesheets = await getPeriodTimesheetReadiness(
+    client,
+    companyId,
+    startDate,
+    endDate
+  );
+
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
       !isBalanced(
@@ -3704,6 +3764,16 @@ export async function computePeriodReadiness(
       label: "Unmatched intercompany transactions involving this company",
       failing: (unmatchedIC.count ?? 0) > 0,
       count: unmatchedIC.count ?? 0
+    },
+    // This evaluator MUST exist for the seeded "Timesheets complete" task
+    // (Government Contracting 5a): an Auto task with no evaluator fails closed.
+    {
+      autoCheckKey: "timesheets-complete",
+      severity: "Warning",
+      label:
+        "Timesheet entries dated in this period that are not posted, and scheduled work days with no time entered",
+      failing: timesheets.failing,
+      count: timesheets.count
     }
   ];
 

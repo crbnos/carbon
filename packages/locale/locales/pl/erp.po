@@ -11877,6 +11877,9 @@ msgstr ""
 msgid "In DCAA mode, compares a submitted week with the employee's timecards."
 msgstr ""
 
+msgid "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
+msgstr ""
+
 msgid "In DCAA timekeeping, only the project's members can charge time to it"
 msgstr ""
 

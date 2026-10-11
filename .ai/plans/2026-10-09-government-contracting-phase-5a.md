@@ -89,7 +89,7 @@ The spec leaves these points open. The plan decides them, and Task 34 records th
 - [x] Task 27: Invoice by CLIN with ACRN allocation
 - [x] Task 28: Add the payroll totals import and list
 - [x] Task 29: Add the daily missing-time check
-- [ ] Task 30: Add the Timesheets complete close task
+- [x] Task 30: Add the Timesheets complete close task
 - [ ] Task 31: Add the report queries and the CSV route
 - [ ] Task 32: Add the Reports page
 - [ ] Task 33: Keep the demo datasets green
@@ -1659,4 +1659,11 @@ ls .ai/playbooks/government-contracting-phase-5a.md
   5. The topic is General, the destinations are in-app and email (as `ContractFundingThreshold`), the topbar row has a clock icon, and both links open `path.to.timesheet`.
   6. Verify: the SQL test ran through `/tmp/kpsql -X -v ON_ERROR_STOP=1 < …` (there is no `psql` binary) and raised no error. It covers a Monday shift with no entry (listed), a Tuesday (not a shift day), a holiday, an absence and an entry (each removes the day), and the has-work function with no DCAA company and with one. `buildMissingTimeEvents` has a unit test. `@carbon/notifications` 16 and `@carbon/jobs` 951 pass.
   7. `pnpm run generate:types` changed nothing: the 2 new functions are in the `util` schema.
+- Task 30:
+  1. Main's close checklist registers an Auto task as one entry in the `checks` array of `computePeriodReadiness` (the evaluator registry, keyed by `autoCheckKey`); `evaluateCloseChecklist` fails an Auto task closed when its key has no entry. The new entry `timesheets-complete` sits after `unmatched-ic`. The route `periods.$periodId.close.tsx` describes each Auto task by its key, so it gains a description for the new key. The plan does not list the route.
+  2. The check is the helper `getPeriodTimesheetReadiness`, awaited after the batched reads, not inside the `Promise.all`. `accounting.periods.test.ts` scripts the client's answers in call order, so a read added inside the batch would shift every scripted answer. Read last, it gets no answer in those tests, reads the mode as Standard, and passes, which is the Standard-mode behavior.
+  3. In DCAA mode, the open entries are one count (`head: true`) over Draft, Submitted, Approved, Rejected and Pending Employee Review entries dated in the period. The missing days are `rpc("get_missing_timesheet_days", …, { count: "exact", head: true })`, so the count is exact past PostgREST's 1,000-row cap. A failed read counts as 1, so the warning shows rather than a false pass.
+  4. The checks run with the closing user's client, as every other close check does. `get_missing_timesheet_days` is SECURITY INVOKER, so a user who cannot see shifts, employees or timesheets (no `people` or `projects` view) gets fewer rows and a lower count.
+  5. Sort order 9, as the plan says. "External GL sync complete" also has 9; ties already exist (sort order 5 has 2 tasks).
+  6. Verify: the migration applied and the count of companies without the definition is 0. `pnpm run generate:types` changed nothing. `erp` and `@carbon/database` typecheck, and `erp` tests pass (2,207).
 

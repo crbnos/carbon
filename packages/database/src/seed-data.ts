@@ -2436,6 +2436,18 @@ export const periodCloseTaskDefinitions = [
     severity: "Blocker",
     active: true,
     isSystem: true
+  },
+  // Government Contracting 5a. Passes in Standard timekeeping; in DCAA mode it
+  // warns about unposted entries and missing days in the period.
+  {
+    name: "Timesheets complete",
+    taskType: "Auto",
+    autoCheckKey: "timesheets-complete",
+    sortOrder: 9,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
   }
 ];
 
