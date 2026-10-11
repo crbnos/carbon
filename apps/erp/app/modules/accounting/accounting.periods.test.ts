@@ -40,6 +40,7 @@ import {
   computePeriodReadiness,
   createFiscalYearPeriods,
   deleteAccountingPeriod,
+  earnedValueClosedCheck,
   evaluateCloseChecklist,
   getAccountingPeriodDeletability,
   getFiscalCalendarCommitted,
@@ -1308,5 +1309,86 @@ describe("computePeriodReadiness — burden check", () => {
       failing: true,
       count: 1
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The "Close earned value for the period" check (Government Contracting 5c,
+// C14). The task is required for every company, so it must pass when it does
+// not apply.
+// ---------------------------------------------------------------------------
+
+describe("earnedValueClosedCheck", () => {
+  it("passes, not applicable, without GOVERNMENT_CONTRACTING", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: false, projectsWithoutSnapshot: 2 })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("fails while a project with a work package has no snapshot", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: true, projectsWithoutSnapshot: 1 })
+    ).toEqual({ failing: true, count: 1 });
+  });
+
+  it("passes once the project has a snapshot, or with no work package", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: true, projectsWithoutSnapshot: 0 })
+    ).toEqual({ failing: false, count: 0 });
+  });
+});
+
+describe("computePeriodReadiness — earned value check", () => {
+  const script: Scripted[] = [
+    { data: { timezone: "America/New_York" } },
+    { data: [] }, // external GL readiness: no active integrations
+    { count: 0 }, // draft journals
+    { data: [] }, // posted journals in period
+    { data: [] }, // draft depreciation runs
+    { count: 0 }, // unmatched intercompany
+    { count: 0 }, // pending receipts
+    { count: 0 }, // pending shipments
+    { count: 0 }, // pending sales invoices
+    { count: 0 }, // pending purchase invoices
+    { count: 0 }, // draft payments
+    { count: 0 }, // draft memos
+    { data: [] } // Planned rows held by Draft revenue runs
+  ];
+  // A Kysely stand-in that records each read. The earned value check must
+  // not read at all without the feature.
+  const reads: string[] = [];
+  const db = {
+    selectFrom: (table: string) => {
+      reads.push(table);
+      const builder: any = {
+        select: () => builder,
+        where: () => builder,
+        executeTakeFirst: async () => undefined
+      };
+      return builder;
+    },
+    getExecutor: () => {
+      reads.push("sql");
+      throw new Error("no raw SQL without the feature");
+    }
+  };
+
+  it("passes, not applicable, for a company without GOVERNMENT_CONTRACTING", async () => {
+    for (const governmentContracting of [false, undefined]) {
+      reads.length = 0;
+      const result = await computePeriodReadiness(
+        makeClient(script) as any,
+        db as any,
+        "C1",
+        "2026-10-01",
+        "2026-10-31",
+        nothingDue,
+        { governmentContracting }
+      );
+      expect(
+        result.checks.find((c) => c.autoCheckKey === "earned-value-closed")
+      ).toMatchObject({ severity: "Warning", failing: false, count: 0 });
+      expect(reads).not.toContain("sql");
+    }
   });
 });

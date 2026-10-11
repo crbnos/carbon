@@ -5342,6 +5342,9 @@ msgstr "Дата закрытия"
 msgid "Close Date"
 msgstr "Дата закрытия"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "Закрыть меню"
 
@@ -27620,6 +27623,9 @@ msgstr "Счет списания"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Списание запасов, забракованных или возвращенных по результатам контроля и решениям по NCR"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Уменьшение стоимости актива в течение его жизни — ежемесячная серия, которую вы создаете, рассматриваете как черновик, затем проводите."

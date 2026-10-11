@@ -5342,6 +5342,9 @@ msgstr "Schließungsdatum"
 msgid "Close Date"
 msgstr "Schließungsdatum"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "Menü schließen"
 
@@ -27620,6 +27623,9 @@ msgstr "Ausbuchungskonto"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Ausbuchung von Bestand, der über Prüfungsablehnungen und NCR-Verwendungsentscheide verschrottet oder zurückgegeben wird"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Den Wert eines Vermögenswerts über seine Lebensdauer abschreiben — ein monatlicher Batch, den Sie erstellen, als Entwurf überprüfen und dann buchen."

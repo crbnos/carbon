@@ -5342,6 +5342,9 @@ msgstr "Date de fermeture"
 msgid "Close Date"
 msgstr "Date de fermeture"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "Fermer le menu"
 
@@ -27620,6 +27623,9 @@ msgstr "Compte de passage en perte"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Passage en perte du stock mis au rebut ou retourné par les rejets de contrôle et les traitements de NCR"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Réduire progressivement la valeur d'un bien sur sa durée de vie — un lot mensuel que vous créez, examinez en tant que brouillon, puis comptabilisez."

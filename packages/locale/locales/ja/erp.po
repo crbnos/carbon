@@ -5342,6 +5342,9 @@ msgstr "完了日"
 msgid "Close Date"
 msgstr "終了日"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "メニューを閉じる"
 
@@ -27620,6 +27623,9 @@ msgstr "償却勘定"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "検査却下およびNCR処置によってスクラップされたまたは返却された在庫の償却。"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "資産の価値を耐用年数にわたって減額する―毎月作成し、下書きとしてレビューしてから転記するバッチです。"

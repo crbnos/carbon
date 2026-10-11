@@ -98,7 +98,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 11: Warn on timesheets
 - [x] Task 12: Add the ACWP loader and the material point of measurement
 - [x] Task 13: Add `getEarnedValue` and `closeEarnedValuePeriod`
-- [ ] Task 14: Add the close checklist task
+- [x] Task 14: Add the close checklist task
 - [ ] Task 15: Add the ACWP export
 - [ ] Task 16: Add stop-work orders
 - [ ] Task 17: Add the control fields to project settings and the element page
@@ -1182,3 +1182,11 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   5. `updateElementEarnedValue` clears the fields the technique does not use (the percent unless Percent Complete; the base and factor unless Apportioned; the manager unless a control account), so the CHECKs hold. It also refuses a technique on an element that is not chargeable ("Only a chargeable element takes an earned value technique.") and an element apportioned to itself.
   6. `getEarnedValueSnapshots` reads with the user's client (the RLS lets every employee read) and loads the element names in a second query.
   7. Tests: 2 cases of `computeProjectEarnedValue` (the spec criterion 50/50 → BCWP 5,000.00, Apportioned, direct ACWP, the control account roll-up; and "Take a baseline first"). The whole ee suite: 150 files, 2,043 tests pass with `SUPABASE_DB_URL` on the worktree database. Without it, the 15 database tests of 6 files fail on port 54322 (the shell's default), which is the environment, not a flaky test.
+- Task 14 (Brad's decision 4, the 5b Task 13 pattern):
+  1. The check passes as not applicable without `GOVERNMENT_CONTRACTING` (the close route passes `entitlements.governmentContracting`; MCP and the API pass none) and when no project has work packages. Without the feature it reads nothing.
+  2. One SQL statement over the Kysely `db` counts the Released, On Hold and Technically Complete projects that have a WORK PACKAGE (an element with a technique and a control account above it, C7, the same rule as `closeEarnedValuePeriod`) and no `earnedValuePeriod` row for the period. The plan counted projects with any technique; such a project with no control account would get no snapshot and fail the check forever. The count is the failing projects, so `max(0, evProjects − evSnapshots)` cannot hide one project behind another's snapshot.
+  3. The pure decision is `earnedValueClosedCheck`; the read runs beside the burden read in one `Promise.all`. A failed read counts as one.
+  4. A rolled-back psql run proved the statement: a Released project with a control account and a 50/50 work package counts 1; after a snapshot row for the period it counts 0.
+  5. The close route's `close-earned-value` intent calls `requireFeature`, then `closeEarnedValuePeriod`. A refusal or an `EntitlementError` flashes its message. Warnings flash as an error after "Earned value closed for <n> projects". The **Close Earned Value** button shows on the failing task once the period is Locked, like **Compute Burden**.
+  6. Tests: 3 cases of `earnedValueClosedCheck` and 1 of `computePeriodReadiness` (not applicable with the feature off or not passed, and no raw SQL runs). `accounting.periods.test.ts`: 50 pass.
+  7. The new task tooltip and button strings get empty `msgstr` in the catalogs, as in 5b. A `/translate` pass is still due.

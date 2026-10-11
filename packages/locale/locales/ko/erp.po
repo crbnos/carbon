@@ -5342,6 +5342,9 @@ msgstr "마감일"
 msgid "Close Date"
 msgstr "마감일"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "메뉴 닫기"
 
@@ -27620,6 +27623,9 @@ msgstr "대손 처리 계정"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "검사 거부 및 NCR 처분 결정을 통해 폐기되거나 반품된 재고의 대손 처리"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 생성하여 초안으로 검토한 후 전기하는 배치 작업입니다."

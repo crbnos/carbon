@@ -5342,6 +5342,9 @@ msgstr "Close date"
 msgid "Close Date"
 msgstr "Close Date"
 
+msgid "Close Earned Value"
+msgstr "Close Earned Value"
+
 msgid "Close menu"
 msgstr "Close menu"
 
@@ -27620,6 +27623,9 @@ msgstr "Write-Off Account"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."

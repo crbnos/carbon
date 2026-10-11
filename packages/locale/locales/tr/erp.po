@@ -5342,6 +5342,9 @@ msgstr "Kapanış tarihi"
 msgid "Close Date"
 msgstr "Kapatma Tarihi"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "Menüyü kapat"
 
@@ -27620,6 +27623,9 @@ msgstr "Kayıttan Düşme Hesabı"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Muayene reddiyesi ve NCR kararları yoluyla hurdaya çıkarılan veya iade edilen stokun kayıttan düşmesi"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Bir varlığın değerini yaşamı boyunca azaltma — her ay oluşturduğunuz, taslak olarak incelediğiniz ve sonra muhasebeleştirdiğiniz bir işlem."

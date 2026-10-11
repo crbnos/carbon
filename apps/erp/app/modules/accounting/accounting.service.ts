@@ -3413,7 +3413,8 @@ async function getPeriodTimesheetReadiness(
  * import. MCP and the API pass none, so those checks are not applicable there.
  */
 export type PeriodCloseEntitlements = {
-  /** GOVERNMENT_CONTRACTING: the "Compute burden for the period" check. */
+  /** GOVERNMENT_CONTRACTING: the "Compute burden for the period" and the
+   *  "Close earned value for the period" checks. */
   governmentContracting?: boolean;
 };
 
@@ -3491,6 +3492,85 @@ async function getPeriodBurdenReadiness(
       entitled,
       poolCount,
       burdenComputedAt: run?.burdenComputedAt ?? null
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * The "Close earned value for the period" decision (Government Contracting
+ * 5c, C14). Not applicable, so passing, when the company lacks
+ * GOVERNMENT_CONTRACTING or no project has earned value work packages.
+ * Otherwise it fails while a project with work packages has no snapshot for
+ * the period; the count is those projects.
+ */
+export function earnedValueClosedCheck({
+  entitled,
+  projectsWithoutSnapshot
+}: {
+  entitled: boolean;
+  projectsWithoutSnapshot: number;
+}): { failing: boolean; count: number } {
+  const count = entitled ? Math.max(0, projectsWithoutSnapshot) : 0;
+  return { failing: count > 0, count };
+}
+
+/**
+ * The "Close earned value for the period" close check. It reads with the
+ * privileged Kysely client, and only when the company has
+ * GOVERNMENT_CONTRACTING. One statement counts the Released, On Hold and
+ * Technically Complete projects with a work package (an element with a
+ * technique below a control account, C7) and no `earnedValuePeriod` row for
+ * the period. A failed read counts as one, so the warning shows rather than
+ * a false pass.
+ */
+async function getPeriodEarnedValueReadiness(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  entitled: boolean
+): Promise<{ failing: boolean; count: number }> {
+  if (!entitled) {
+    return earnedValueClosedCheck({ entitled, projectsWithoutSnapshot: 0 });
+  }
+  try {
+    const result = await sql<{ count: number }>`
+      WITH RECURSIVE ancestors AS (
+        SELECT e."projectId", e."parentId" AS "ancestorId"
+        FROM "projectElement" e
+        JOIN "project" p ON p."id" = e."projectId" AND p."companyId" = e."companyId"
+        WHERE e."companyId" = ${companyId}
+          AND e."earnedValueTechnique" IS NOT NULL
+          AND p."status" IN ('Released', 'On Hold', 'Technically Complete')
+        UNION
+        SELECT a."projectId", parent."parentId"
+        FROM ancestors a
+        JOIN "projectElement" parent
+          ON parent."id" = a."ancestorId" AND parent."companyId" = ${companyId}
+      ),
+      projects AS (
+        SELECT DISTINCT a."projectId"
+        FROM ancestors a
+        JOIN "projectElement" ca
+          ON ca."id" = a."ancestorId" AND ca."companyId" = ${companyId}
+        WHERE ca."isControlAccount"
+      )
+      SELECT COUNT(*)::int AS "count"
+      FROM projects pr
+      WHERE NOT EXISTS (
+        SELECT 1 FROM "earnedValuePeriod" ev
+        JOIN "accountingPeriod" ap ON ap."id" = ev."accountingPeriodId"
+        WHERE ev."companyId" = ${companyId}
+          AND ev."projectId" = pr."projectId"
+          AND ap."startDate" = ${startDate}::date
+          AND ap."endDate" = ${endDate}::date
+      )
+    `.execute(db);
+    return earnedValueClosedCheck({
+      entitled,
+      projectsWithoutSnapshot: Number(result.rows[0]?.count ?? 0)
     });
   } catch {
     return { failing: true, count: 1 };
@@ -3691,14 +3771,23 @@ export async function computePeriodReadiness(
     startDate,
     endDate
   );
-  // Read last, and only with GOVERNMENT_CONTRACTING (see the helper).
-  const burden = await getPeriodBurdenReadiness(
-    db,
-    companyId,
-    startDate,
-    endDate,
-    entitlements.governmentContracting === true
-  );
+  // Read last, and only with GOVERNMENT_CONTRACTING (see the helpers).
+  const [burden, earnedValue] = await Promise.all([
+    getPeriodBurdenReadiness(
+      db,
+      companyId,
+      startDate,
+      endDate,
+      entitlements.governmentContracting === true
+    ),
+    getPeriodEarnedValueReadiness(
+      db,
+      companyId,
+      startDate,
+      endDate,
+      entitlements.governmentContracting === true
+    )
+  ]);
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
@@ -3859,6 +3948,16 @@ export async function computePeriodReadiness(
       label: "Burden not yet computed for this period",
       failing: burden.failing,
       count: burden.count
+    },
+    // The same for the seeded "Close earned value for the period" task
+    // (Government Contracting 5c): it MUST pass when not applicable.
+    {
+      autoCheckKey: "earned-value-closed",
+      severity: "Warning",
+      label:
+        "Projects with work packages that have no earned value snapshot for this period",
+      failing: earnedValue.failing,
+      count: earnedValue.count
     }
   ];
 

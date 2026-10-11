@@ -5342,6 +5342,9 @@ msgstr "Fecha de cierre"
 msgid "Close Date"
 msgstr "Fecha de Cierre"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "Cerrar menú"
 
@@ -27620,6 +27623,9 @@ msgstr "Cuenta de Cancelación contable"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "Cancelación contable de existencias desperdiciadas o devueltas a través de rechazos de inspección y disposiciones de NCR"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Reducir el valor de un activo a lo largo de su vida útil — un lote mensual que crea, revisa como borrador y luego contabiliza."

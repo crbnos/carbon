@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { runIndirectRatePeriod } from "@carbon/ee/indirect-rates.server";
 import { companyHasFeature, requireFeature } from "@carbon/ee/plan.server";
+import { closeEarnedValuePeriod } from "@carbon/ee/project-control.server";
 import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
@@ -90,7 +91,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "accounting-period-close");
 
 /** The commercial features the close checks depend on (Government
- *  Contracting 5b: the burden check). */
+ *  Contracting 5b: the burden check; 5c: the earned value check). */
 async function closeEntitlements(
   client: Parameters<typeof companyHasFeature>[0],
   companyId: string
@@ -421,6 +422,57 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({}, await flash(request, success("Burden computed")));
   }
 
+  if (intent === "close-earned-value") {
+    await requireFeature({
+      request,
+      client,
+      companyId,
+      redirectTo: path.to.accountingPeriodClose(periodId),
+      feature: "GOVERNMENT_CONTRACTING"
+    });
+    try {
+      const result = await closeEarnedValuePeriod(getDatabaseClient(), client, {
+        companyId,
+        userId,
+        accountingPeriodId: periodId
+      });
+      if (result.error) {
+        return data(
+          {},
+          await flash(request, error(result.error, result.error.message))
+        );
+      }
+      const closed = `Earned value closed for ${result.data.projects} ${
+        result.data.projects === 1 ? "project" : "projects"
+      }`;
+      // A project without a baseline gets no snapshot: the warning says so,
+      // and the check keeps failing for it.
+      if (result.data.warnings.length > 0) {
+        return data(
+          {},
+          await flash(
+            request,
+            error(null, `${closed}. ${result.data.warnings.join(" ")}`)
+          )
+        );
+      }
+      return data({}, await flash(request, success(closed)));
+    } catch (e) {
+      if (e instanceof EntitlementError) {
+        return data({}, await flash(request, error(e, e.message)));
+      }
+      logger.error("Failed to close earned value", {
+        companyId,
+        periodId,
+        error: e
+      });
+      return data(
+        {},
+        await flash(request, error(e, "Failed to close earned value"))
+      );
+    }
+  }
+
   if (intent === "close") {
     // `closePeriodWithChecklist` with a previewer that holds the project
     // revenue synthesizers, which the browser-bundled service cannot import.
@@ -584,6 +636,8 @@ function PeriodCloseTaskRow({
         return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
+      case "earned-value-closed":
+        return t`Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages.`;
       case "burden-computed":
         return t`Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period.`;
       case "timesheets-complete":
@@ -625,6 +679,13 @@ function PeriodCloseTaskRow({
   // period is locked (Government Contracting 5b).
   const canComputeBurden =
     task.autoCheckKey === "burden-computed" &&
+    status === "Open" &&
+    task.autoCheck?.failing === true &&
+    closeStatus === "Locked";
+  // The earned value check offers to write the period's snapshot, once the
+  // period is locked (Government Contracting 5c).
+  const canCloseEarnedValue =
+    task.autoCheckKey === "earned-value-closed" &&
     status === "Open" &&
     task.autoCheck?.failing === true &&
     closeStatus === "Locked";
@@ -811,6 +872,20 @@ function PeriodCloseTaskRow({
                   isLoading={isBusy}
                 >
                   <Trans>Compute Burden</Trans>
+                </Button>
+              </fetcher.Form>
+            )}
+            {canCloseEarnedValue && (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value="close-earned-value" />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<LuCalculator />}
+                  isLoading={isBusy}
+                >
+                  <Trans>Close Earned Value</Trans>
                 </Button>
               </fetcher.Form>
             )}

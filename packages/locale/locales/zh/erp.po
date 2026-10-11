@@ -5342,6 +5342,9 @@ msgstr "关闭日期"
 msgid "Close Date"
 msgstr "关闭日期"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "关闭菜单"
 
@@ -27620,6 +27623,9 @@ msgstr "核销账户"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "库存核销报废或通过检验拒收和 NCR 处置退回"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "在资产的生命周期内减少其价值——你创建的每月批次,作为草稿进行评审,然后过账。"

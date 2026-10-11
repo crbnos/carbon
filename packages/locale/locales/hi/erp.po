@@ -5342,6 +5342,9 @@ msgstr "समापन तारीख"
 msgid "Close Date"
 msgstr "बंद करने की तारीख"
 
+msgid "Close Earned Value"
+msgstr ""
+
 msgid "Close menu"
 msgstr "मेनू बंद करें"
 
@@ -27620,6 +27623,9 @@ msgstr "बट्टे खाते"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "निरीक्षण अस्वीकृतियों और NCR निपटान के माध्यम से खराब या वापस किए गए स्टॉक का बट्टे खाते"
+
+msgid "Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages."
+msgstr ""
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "किसी संपत्ति के मूल्य को उसके जीवन काल में कम करना — एक मासिक बैच जो आप बनाते हैं, ड्राफ्ट के रूप में समीक्षा करते हैं, फिर पोस्ट करते हैं।"
