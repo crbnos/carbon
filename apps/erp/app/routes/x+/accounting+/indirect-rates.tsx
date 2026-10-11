@@ -118,9 +118,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     lockedPeriods
   })) {
     if (result.error) {
-      logger.error(`Failed to load the indirect rates ${name}`, {
+      logger.error("Failed to load the indirect rates page", {
         companyId,
         fiscalYear,
+        read: name,
         error: result.error
       });
     }
