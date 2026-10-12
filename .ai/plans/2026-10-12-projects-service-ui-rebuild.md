@@ -196,7 +196,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [ ] Task 2: Apply the terminology table and add the glossary entries
 - [x] Task 3: Give `Empty` a title and a description
 - [x] Task 4: Add `ReadOnlyField` for read-only values
-- [ ] Task 5: Add the grid helpers `EditableByRow` and `useStableEditableComponents`
+- [x] Task 5: Add the grid helpers `EditableByRow` and `useStableEditableComponents`
 - [ ] Task 6: Add collapsible groups and counts to the sidebars
 - [ ] Task 7: Add `useGovernmentContracting` and `UpgradeOverlayRow`
 - [ ] Task 8: Fix the week views on a Sunday

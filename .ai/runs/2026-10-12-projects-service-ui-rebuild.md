@@ -26,6 +26,10 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 5: Add the grid helpers EditableByRow and useStableEditableComponents
 
+- Added `EditableByRow` and `useStableEditableComponents` in `apps/erp/app/components/Editable/`, exported from its `index.ts`.
+- `useStableEditableComponents` is generic over the callbacks `C` and the returned editor record `R`, so a caller keeps its exact editor keys.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed. No screen uses the helpers yet, so no screenshot.
+
 ## Task 6: Add collapsible groups and counts to the sidebars
 
 ## Task 7: Add useGovernmentContracting and UpgradeOverlayRow
