@@ -58,8 +58,8 @@ Carbon's Onshape integration on main pulls from inside Carbon. The BoM Explorer 
 
 No new tables or columns.
 
-- Migration `20261012122200_onshape-v2-integration.sql` inserts the `onshape-v2` row into `integration`.
-- Migration `20261012122201_onshape-v2-vault-secrets.sql` moves plaintext tokens in `onshape-v2` metadata into Vault. `SECRET_KEYS["onshape-v2"]` names the access and refresh token.
+- Migration `20261012221000_onshape-v2-integration.sql` inserts the `onshape-v2` row into `integration`.
+- Migration `20261012221001_onshape-v2-vault-secrets.sql` moves plaintext tokens in `onshape-v2` metadata into Vault. `SECRET_KEYS["onshape-v2"]` names the access and refresh token.
 - `companyIntegration.metadata` for `onshape-v2` holds `credentials` (type, expiry), `propertyMap`, `descriptionModes` and five `default*` push-default keys.
 - `externalIntegrationMapping` rows with integration `onshape-v2` record identity:
 
