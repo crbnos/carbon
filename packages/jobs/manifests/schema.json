@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261011231328",
+  "schemaVersion": "20261012005458",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-11T23:16:57.552Z",
+  "exportedAt": "2026-10-12T00:59:12.440Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -1229,7 +1229,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "rdActivityRole"
       ]
     },
     {
@@ -3896,7 +3897,8 @@
         "tags",
         "laborCategoryId",
         "defaultStorageUnitId",
-        "flsaStatus"
+        "flsaStatus",
+        "isOfficer"
       ]
     },
     {
@@ -4742,7 +4744,10 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "researchFunded",
+        "paymentContingentOnSuccess",
+        "contractorRetainsRights"
       ]
     },
     {
@@ -6015,7 +6020,10 @@
         "earnedValueTechnique",
         "earnedValuePercent",
         "apportionedToElementId",
-        "apportionedFactor"
+        "apportionedFactor",
+        "isBusinessComponent",
+        "rdComponentType",
+        "rdSoftwareType"
       ]
     },
     {
@@ -7705,7 +7713,9 @@
         "serviceVisitId",
         "lateReason",
         "correctionOfId",
-        "dilutionFactor"
+        "dilutionFactor",
+        "rdActivityRole",
+        "workLocationId"
       ]
     },
     {

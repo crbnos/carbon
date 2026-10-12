@@ -10981,6 +10981,15 @@ export default {
             $ref: "#/parameters/rowFilter.projectElement.apportionedFactor"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElement.isBusinessComponent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.rdComponentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.rdSoftwareType"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -11226,6 +11235,15 @@ export default {
             $ref: "#/parameters/rowFilter.projectElement.apportionedFactor"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElement.isBusinessComponent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.rdComponentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.rdSoftwareType"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -11423,6 +11441,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectElement.apportionedFactor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.isBusinessComponent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.rdComponentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.rdSoftwareType"
           },
           {
             $ref: "#/parameters/body.projectElement"
@@ -49588,6 +49615,12 @@ export default {
             $ref: "#/parameters/rowFilter.timesheetEntry.dilutionFactor"
           },
           {
+            $ref: "#/parameters/rowFilter.timesheetEntry.rdActivityRole"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.workLocationId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -49734,6 +49767,12 @@ export default {
             $ref: "#/parameters/rowFilter.timesheetEntry.dilutionFactor"
           },
           {
+            $ref: "#/parameters/rowFilter.timesheetEntry.rdActivityRole"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.workLocationId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -49832,6 +49871,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.timesheetEntry.dilutionFactor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.rdActivityRole"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.workLocationId"
           },
           {
             $ref: "#/parameters/body.timesheetEntry"
@@ -57313,6 +57358,9 @@ export default {
             $ref: "#/parameters/rowFilter.laborCategory.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.laborCategory.rdActivityRole"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -57399,6 +57447,9 @@ export default {
             $ref: "#/parameters/rowFilter.laborCategory.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.laborCategory.rdActivityRole"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -57437,6 +57488,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.laborCategory.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.laborCategory.rdActivityRole"
           },
           {
             $ref: "#/parameters/body.laborCategory"
@@ -63181,6 +63235,15 @@ export default {
             $ref: "#/parameters/rowFilter.customerContract.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContract.researchFunded"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContract.paymentContingentOnSuccess"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContract.contractorRetainsRights"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -63366,6 +63429,15 @@ export default {
             $ref: "#/parameters/rowFilter.customerContract.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContract.researchFunded"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContract.paymentContingentOnSuccess"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContract.contractorRetainsRights"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -63503,6 +63575,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerContract.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContract.researchFunded"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContract.paymentContingentOnSuccess"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContract.contractorRetainsRights"
           },
           {
             $ref: "#/parameters/body.customerContract"
@@ -84742,6 +84823,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.flsaStatus"
           },
           {
+            $ref: "#/parameters/rowFilter.employeeJob.isOfficer"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -84846,6 +84930,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.flsaStatus"
           },
           {
+            $ref: "#/parameters/rowFilter.employeeJob.isOfficer"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -84902,6 +84989,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employeeJob.flsaStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeJob.isOfficer"
           },
           {
             $ref: "#/parameters/body.employeeJob"
@@ -132358,7 +132448,8 @@ export default {
         "isUnallowable",
         "isPreproduction",
         "isLeave",
-        "isControlAccount"
+        "isControlAccount",
+        "isBusinessComponent"
       ],
       properties: {
         id: {
@@ -132678,6 +132769,19 @@ export default {
         apportionedFactor: {
           format: "numeric",
           type: "number"
+        },
+        isBusinessComponent: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        rdComponentType: {
+          format: "text",
+          type: "string"
+        },
+        rdSoftwareType: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -150907,6 +151011,20 @@ export default {
         dilutionFactor: {
           format: "numeric",
           type: "number"
+        },
+        rdActivityRole: {
+          enum: [
+            "Direct Research",
+            "Direct Supervision",
+            "Direct Support",
+            "Not Qualified"
+          ],
+          format: 'public."rdActivityRole"',
+          type: "string"
+        },
+        workLocationId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -154381,6 +154499,16 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        rdActivityRole: {
+          enum: [
+            "Direct Research",
+            "Direct Supervision",
+            "Direct Support",
+            "Not Qualified"
+          ],
+          format: 'public."rdActivityRole"',
+          type: "string"
         }
       },
       type: "object"
@@ -157149,7 +157277,9 @@ export default {
         "currencyCode",
         "exchangeRate",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "paymentContingentOnSuccess",
+        "contractorRetainsRights"
       ],
       properties: {
         id: {
@@ -157370,6 +157500,20 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        researchFunded: {
+          format: "boolean",
+          type: "boolean"
+        },
+        paymentContingentOnSuccess: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        contractorRetainsRights: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -167117,7 +167261,7 @@ export default {
       type: "object"
     },
     employeeJob: {
-      required: ["id", "locationId", "companyId"],
+      required: ["id", "locationId", "companyId", "isOfficer"],
       properties: {
         id: {
           description:
@@ -167197,6 +167341,11 @@ export default {
           enum: ["Exempt", "Non-Exempt"],
           format: 'public."flsaStatus"',
           type: "string"
+        },
+        isOfficer: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -186856,6 +187005,24 @@ export default {
     },
     "rowFilter.projectElement.apportionedFactor": {
       name: "apportionedFactor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.isBusinessComponent": {
+      name: "isBusinessComponent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.rdComponentType": {
+      name: "rdComponentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.rdSoftwareType": {
+      name: "rdSoftwareType",
       required: false,
       in: "query",
       type: "string"
@@ -207179,6 +207346,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.timesheetEntry.rdActivityRole": {
+      name: "rdActivityRole",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.workLocationId": {
+      name: "workLocationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesOrderCustomers": {
       name: "salesOrderCustomers",
       description: "salesOrderCustomers",
@@ -210929,6 +211108,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.laborCategory.rdActivityRole": {
+      name: "rdActivityRole",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.rentalAgreementLine": {
       name: "rentalAgreementLine",
       description: "rentalAgreementLine",
@@ -214406,6 +214591,24 @@ export default {
     },
     "rowFilter.customerContract.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContract.researchFunded": {
+      name: "researchFunded",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContract.paymentContingentOnSuccess": {
+      name: "paymentContingentOnSuccess",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContract.contractorRetainsRights": {
+      name: "contractorRetainsRights",
       required: false,
       in: "query",
       type: "string"
@@ -225240,6 +225443,12 @@ export default {
     },
     "rowFilter.employeeJob.flsaStatus": {
       name: "flsaStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeeJob.isOfficer": {
+      name: "isOfficer",
       required: false,
       in: "query",
       type: "string"

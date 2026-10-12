@@ -11294,6 +11294,7 @@ export type Database = {
           companyId: string
           confirmedAt: string | null
           confirmedBy: string | null
+          contractorRetainsRights: boolean
           contractType: Database["public"]["Enums"]["customerContractType"]
           createdAt: string
           createdBy: string
@@ -11315,11 +11316,13 @@ export type Database = {
           invoiceCustomerLocationId: string | null
           name: string
           notes: Json | null
+          paymentContingentOnSuccess: boolean
           paymentTermId: string | null
           projectId: string | null
           recognizeRevenueFrom: string | null
           renewal: Database["public"]["Enums"]["contractRenewal"]
           renewalUplift: number
+          researchFunded: boolean | null
           salesOrderId: string | null
           salesPersonId: string | null
           shipToCustomerLocationId: string | null
@@ -11340,6 +11343,7 @@ export type Database = {
           companyId: string
           confirmedAt?: string | null
           confirmedBy?: string | null
+          contractorRetainsRights?: boolean
           contractType?: Database["public"]["Enums"]["customerContractType"]
           createdAt?: string
           createdBy: string
@@ -11361,11 +11365,13 @@ export type Database = {
           invoiceCustomerLocationId?: string | null
           name: string
           notes?: Json | null
+          paymentContingentOnSuccess?: boolean
           paymentTermId?: string | null
           projectId?: string | null
           recognizeRevenueFrom?: string | null
           renewal?: Database["public"]["Enums"]["contractRenewal"]
           renewalUplift?: number
+          researchFunded?: boolean | null
           salesOrderId?: string | null
           salesPersonId?: string | null
           shipToCustomerLocationId?: string | null
@@ -11386,6 +11392,7 @@ export type Database = {
           companyId?: string
           confirmedAt?: string | null
           confirmedBy?: string | null
+          contractorRetainsRights?: boolean
           contractType?: Database["public"]["Enums"]["customerContractType"]
           createdAt?: string
           createdBy?: string
@@ -11407,11 +11414,13 @@ export type Database = {
           invoiceCustomerLocationId?: string | null
           name?: string
           notes?: Json | null
+          paymentContingentOnSuccess?: boolean
           paymentTermId?: string | null
           projectId?: string | null
           recognizeRevenueFrom?: string | null
           renewal?: Database["public"]["Enums"]["contractRenewal"]
           renewalUplift?: number
+          researchFunded?: boolean | null
           salesOrderId?: string | null
           salesPersonId?: string | null
           shipToCustomerLocationId?: string | null
@@ -17753,6 +17762,7 @@ export type Database = {
           departmentId: string | null
           flsaStatus: Database["public"]["Enums"]["flsaStatus"] | null
           id: string
+          isOfficer: boolean
           laborCategoryId: string | null
           locationId: string
           managerId: string | null
@@ -17770,6 +17780,7 @@ export type Database = {
           departmentId?: string | null
           flsaStatus?: Database["public"]["Enums"]["flsaStatus"] | null
           id: string
+          isOfficer?: boolean
           laborCategoryId?: string | null
           locationId: string
           managerId?: string | null
@@ -17787,6 +17798,7 @@ export type Database = {
           departmentId?: string | null
           flsaStatus?: Database["public"]["Enums"]["flsaStatus"] | null
           id?: string
+          isOfficer?: boolean
           laborCategoryId?: string | null
           locationId?: string
           managerId?: string | null
@@ -33305,6 +33317,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          rdActivityRole: Database["public"]["Enums"]["rdActivityRole"] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -33316,6 +33329,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          rdActivityRole?: Database["public"]["Enums"]["rdActivityRole"] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -33327,6 +33341,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          rdActivityRole?: Database["public"]["Enums"]["rdActivityRole"] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -49663,6 +49678,7 @@ export type Database = {
           fixedPrice: number | null
           id: string
           isBilling: boolean
+          isBusinessComponent: boolean
           isChargeable: boolean
           isControlAccount: boolean
           isFinalAsset: boolean
@@ -49683,6 +49699,8 @@ export type Database = {
           priority: Database["public"]["Enums"]["projectElementPriority"]
           projectId: string
           qualityDocumentId: string | null
+          rdComponentType: string | null
+          rdSoftwareType: string | null
           readableId: string
           requirementCategory:
             | Database["public"]["Enums"]["requirementCategory"]
@@ -49737,6 +49755,7 @@ export type Database = {
           fixedPrice?: number | null
           id?: string
           isBilling?: boolean
+          isBusinessComponent?: boolean
           isChargeable?: boolean
           isControlAccount?: boolean
           isFinalAsset?: boolean
@@ -49759,6 +49778,8 @@ export type Database = {
           priority?: Database["public"]["Enums"]["projectElementPriority"]
           projectId: string
           qualityDocumentId?: string | null
+          rdComponentType?: string | null
+          rdSoftwareType?: string | null
           readableId?: string
           requirementCategory?:
             | Database["public"]["Enums"]["requirementCategory"]
@@ -49813,6 +49834,7 @@ export type Database = {
           fixedPrice?: number | null
           id?: string
           isBilling?: boolean
+          isBusinessComponent?: boolean
           isChargeable?: boolean
           isControlAccount?: boolean
           isFinalAsset?: boolean
@@ -49835,6 +49857,8 @@ export type Database = {
           priority?: Database["public"]["Enums"]["projectElementPriority"]
           projectId?: string
           qualityDocumentId?: string | null
+          rdComponentType?: string | null
+          rdSoftwareType?: string | null
           readableId?: string
           requirementCategory?:
             | Database["public"]["Enums"]["requirementCategory"]
@@ -76108,6 +76132,7 @@ export type Database = {
           postedAt: string | null
           projectElementId: string | null
           projectId: string
+          rdActivityRole: Database["public"]["Enums"]["rdActivityRole"] | null
           rejectionNote: string | null
           reversalOfId: string | null
           serviceVisitId: string | null
@@ -76115,6 +76140,7 @@ export type Database = {
           submittedAt: string | null
           updatedAt: string | null
           updatedBy: string | null
+          workLocationId: string | null
         }
         Insert: {
           approvedAt?: string | null
@@ -76139,6 +76165,7 @@ export type Database = {
           postedAt?: string | null
           projectElementId?: string | null
           projectId: string
+          rdActivityRole?: Database["public"]["Enums"]["rdActivityRole"] | null
           rejectionNote?: string | null
           reversalOfId?: string | null
           serviceVisitId?: string | null
@@ -76146,6 +76173,7 @@ export type Database = {
           submittedAt?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          workLocationId?: string | null
         }
         Update: {
           approvedAt?: string | null
@@ -76170,6 +76198,7 @@ export type Database = {
           postedAt?: string | null
           projectElementId?: string | null
           projectId?: string
+          rdActivityRole?: Database["public"]["Enums"]["rdActivityRole"] | null
           rejectionNote?: string | null
           reversalOfId?: string | null
           serviceVisitId?: string | null
@@ -76177,6 +76206,7 @@ export type Database = {
           submittedAt?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          workLocationId?: string | null
         }
         Relationships: [
           {
@@ -76401,6 +76431,13 @@ export type Database = {
             columns: ["serviceVisitId", "companyId"]
             isOneToOne: false
             referencedRelation: "serviceVisit"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_workLocationId_fkey"
+            columns: ["workLocationId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "location"
             referencedColumns: ["id", "companyId"]
           }
         ]
@@ -103157,6 +103194,11 @@ export type Database = {
         | "Lost"
         | "Cancelled"
         | "Expired"
+      rdActivityRole:
+        | "Direct Research"
+        | "Direct Supervision"
+        | "Direct Support"
+        | "Not Qualified"
       receiptSourceDocument:
         | "Sales Order"
         | "Sales Invoice"
@@ -104904,6 +104946,12 @@ export const Constants = {
         "Lost",
         "Cancelled",
         "Expired",
+      ],
+      rdActivityRole: [
+        "Direct Research",
+        "Direct Supervision",
+        "Direct Support",
+        "Not Qualified",
       ],
       receiptSourceDocument: [
         "Sales Order",
