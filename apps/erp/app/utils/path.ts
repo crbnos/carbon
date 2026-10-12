@@ -1534,9 +1534,15 @@ export const path = {
       generatePath(`${x}/lease/${id}/payments/new`),
     leasePaymentsRegenerate: (id: string) =>
       generatePath(`${x}/lease/${id}/payments/regenerate`),
+    leasePaymentUpdate: (id: string, paymentId: string) =>
+      generatePath(`${x}/lease/${id}/payments/${paymentId}/update`),
     leasePurchase: (id: string) => generatePath(`${x}/lease/${id}/purchase`),
     leaseRuns: `${x}/accounting/lease-runs`,
     leaseSchedule: (id: string) => generatePath(`${x}/lease/${id}/schedule`),
+    leaseSetup: (
+      id: string,
+      step: "details" | "payments" | "accounting" | "review"
+    ) => generatePath(`${x}/lease/${id}/setup/${step}`),
     leaseStatus: (id: string) => generatePath(`${x}/lease/${id}/status`),
     leases: `${x}/purchasing/leases`,
     leaseTerminate: (id: string) => generatePath(`${x}/lease/${id}/terminate`),

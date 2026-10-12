@@ -278,6 +278,10 @@ msgstr "{0} işlem · {1} adet"
 msgid "{0} orders"
 msgstr "{0} sipariş"
 
+#. placeholder {0}: payments.length
+msgid "{0} payments"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} sorun — yayınlanmadı"
@@ -708,6 +712,9 @@ msgstr "1 parça atlandı — zaten açık bir işi var"
 
 msgid "1 part skipped — nothing to make"
 msgstr "1 parça atlandı — yapılacak bir şey yok"
+
+msgid "1 payment"
+msgstr ""
 
 msgid "1 planned invoice is removed."
 msgstr "1 planlanan fatura kaldırıldı."
@@ -1701,6 +1708,9 @@ msgstr "Etkinleştirme, her adetin kullanılabilir olup olmadığını denetler,
 msgid "Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards."
 msgstr "Aktifleştirmek, kiralamayı sınıflandırır, kullanım hakkı varlığını ve kiralama yükümlülüğünü kaydeder ve aylık çizelgeyi yazar. Koşullar ve ödeme satırları bundan sonra sabitlenir."
 
+msgid "Activating fixes the terms and the payment rows, classifies the lease and books it. After that, purchase invoices are drafted automatically as payments come due."
+msgstr ""
+
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Etkinleştirme koşulları ve adeitleri sabitler, her adeti sınıflandırır ve ilk fatura dönemlerini keser. Bundan sonra, dönemler vadesi geldiğinde faturalar otomatik olarak oluşturulur."
 
@@ -1829,6 +1839,9 @@ msgstr "Varlık Sınıfı Ekle"
 
 msgid "Add at least one payment row before activating."
 msgstr "Aktifleştirmeden önce en az bir ödeme satırı ekle."
+
+msgid "Add at least one payment row."
+msgstr ""
 
 msgid "Add at least one service."
 msgstr "En az bir hizmet ekleyin."
@@ -2150,9 +2163,6 @@ msgstr "Yönetici"
 
 msgid "Advance"
 msgstr "Avans"
-
-msgid "Advance (start of each period)"
-msgstr "Avans (her dönemin başında)"
 
 msgid "Advance to {nextStatus}"
 msgstr "{nextStatus} konumuna geç"
@@ -2643,6 +2653,9 @@ msgstr "Uygulandı"
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Uygulanan tutarlar şirket temel para birimindedir ({baseCurrency})."
 
+msgid "Applied on each anniversary of the commencement date"
+msgstr ""
+
 msgid "Applied To"
 msgstr "Uygulandı"
 
@@ -2887,6 +2900,10 @@ msgstr "{orderLabel}'yi silmek istediğinizden emin misiniz? Bu geri alınamaz."
 
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "Gerçekten {readableId} silmek istiyor musunuz? Bu işlem geri alınamaz."
+
+#. placeholder {0}: deleting.number
+msgid "Are you sure you want to delete payment {0}?"
+msgstr ""
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -3273,9 +3290,6 @@ msgstr "Emin misiniz?"
 
 msgid "Arrears"
 msgstr "Gecikmeler"
-
-msgid "Arrears (end of each period)"
-msgstr "Geri Ödeme (her dönemin sonunda)"
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "Sanki atölyenin kuyruğunun başına geçmiş gibi."
@@ -6755,6 +6769,9 @@ msgstr "Bir iş merkezine alınan ancak tüketilmeyen malzemenin depoya geri ak�
 msgid "Decided when the lease is activated, from the payment rows and the classification inputs."
 msgstr "Kiralama etkinleştirildiğinde ödeme satırlarından ve sınıflandırma girdilerinden karar verilir."
 
+msgid "Decided when the lease is activated, from the payment rows and the inputs below."
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
 
@@ -8036,6 +8053,12 @@ msgstr "Her ay kiralama çalışması, faizi ve kullanım hakkı amortismanını
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Her operasyonun kullanılmayan malzemesi operasyon tamamlandıktan hemen sonra geri döner."
 
+msgid "Each payment is due on the first day of its period."
+msgstr ""
+
+msgid "Each payment is due on the last day of its period."
+msgstr ""
+
 msgid "Each period is 28 days from the start date."
 msgstr "Her dönem başlangıç tarihinden itibaren 28 gündür."
 
@@ -8787,9 +8810,6 @@ msgstr "Giriş Türü"
 
 msgid "EORI"
 msgstr "EORI"
-
-msgid "Equipment, vehicles or buildings the company rents from a supplier. Payment rows are cut from the payment terms and can be edited until the lease is activated."
-msgstr "Şirketin bir tedarikçiden kiraladığı ekipman, araçlar veya binalar. Ödeme satırları ödeme koşullarından kesilir ve kiralama etkinleştirilene kadar düzenlenebilir."
 
 msgid "Equity"
 msgstr "Özkaynak"
@@ -10640,6 +10660,9 @@ msgstr "Her fazın ne kadar sürdüğü, haftalar cinsinden. Plan zaman çizelge
 msgid "How long one execution of this schedule typically takes; scheduling blocks the work center for this many minutes on each scheduled instance."
 msgstr "Bu programın bir yürütülmesi genellikle ne kadar sürer; planlama, her planlanan örnek için iş merkezini bu kadar dakika boyunca engeller."
 
+msgid "How long the asset is usable, by anyone"
+msgstr ""
+
 msgid "How many"
 msgstr "Kaç"
 
@@ -12028,6 +12051,9 @@ msgstr "Dönemdeki kira çalışması girdileri ve muhasebeleştirildi kira fatu
 msgid "Lease Runs"
 msgstr "Kira Çalışmaları"
 
+msgid "Lease setup"
+msgstr ""
+
 msgid "Leased Asset"
 msgstr "Kiralanan Varlık"
 
@@ -12926,6 +12952,9 @@ msgstr "Arızalar Arası Ortalama Süre"
 
 msgid "Mean Time To Repair"
 msgstr "Onarım Süresi"
+
+msgid "Measurement"
+msgstr ""
 
 msgid "Measurement Standard"
 msgstr "Ölçüm Standardı"
@@ -14322,6 +14351,9 @@ msgstr "Henüz hiçbir geçiş anahtarı kaydedilmedi."
 msgid "No payables"
 msgstr "Borç yok"
 
+msgid "No payment rows yet. Enter the payment amount above, or add a row."
+msgstr ""
+
 msgid "No payment rows. Regenerate them from the terms or add one."
 msgstr "Ödeme satırı yok. Bunları koşullardan yeniden oluşturun veya bir tane ekleyin."
 
@@ -14925,6 +14957,15 @@ msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kulland�
 
 msgid "One or more quantities cannot meet this date"
 msgstr "Bir veya daha fazla miktar bu tarihi karşılayamıyor"
+
+msgid "One payment for each month of the term."
+msgstr ""
+
+msgid "One payment for each year of the term."
+msgstr ""
+
+msgid "One payment for every three months."
+msgstr ""
 
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Her fatura için bir satır, her satır için bir sütun. Bir tarihi veya tutarı değiştirin, bir fatura ekleyin veya silin."
@@ -15556,9 +15597,6 @@ msgstr "Sahiplik"
 msgid "Ownership transfers"
 msgstr "Mülkiyet Transferi"
 
-msgid "Ownership transfers at the end of the term"
-msgstr "Mülkiyet kiralama döneminin sonunda devredilir"
-
 msgid "Ownership transfers to the customer"
 msgstr "Mülkiyet müşteriye devrediyor"
 
@@ -15752,6 +15790,10 @@ msgstr "Borçlar yaşlandırması"
 msgid "Payment"
 msgstr "Ödeme"
 
+#. placeholder {0}: deleting.number
+msgid "payment {0}"
+msgstr ""
+
 msgid "Payment actions"
 msgstr "Ödeme işlemleri"
 
@@ -15775,6 +15817,12 @@ msgstr "Ödeme Kimliği"
 
 msgid "Payment Rate"
 msgstr "Ödeme döviz kuru"
+
+msgid "Payment Rows"
+msgstr ""
+
+msgid "Payment rows are cut from this date"
+msgstr ""
 
 msgid "payment term"
 msgstr "ödeme koşulu"
@@ -15809,8 +15857,8 @@ msgstr "Bu faturaya uygulanan ödemeler ve alacaklar. Uygulanan tutarlar ve kur 
 msgid "Payments due after the termination date are removed. Invoiced payments stay."
 msgstr "Sona erme tarihinden sonra ödenmesi gerekenler kaldırılır. Faturalandırılan ödemeler kalır."
 
-msgid "Payments due before this date are marked paid outside Carbon"
-msgstr "Bu tarihten önce ödenmesi gerekenler Carbon dışında ödendi olarak işaretlenir"
+msgid "Payments due before this date were paid outside Carbon"
+msgstr ""
 
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Bu belge için tutulan depozitöyü müşteri avanslarından geri öde."
@@ -17437,9 +17485,6 @@ msgstr "Alınan Miktar"
 
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Alınan Miktar henüz Alacak dekontusunda muhasebeleştirilmedi. Alacak dekontu Taslak olarak oluşturuldu."
-
-msgid "Receives the invoice digest and the reminders"
-msgstr "Fatura özetini ve anımsatıcıları alır"
 
 msgid "Receives the invoice email"
 msgstr "Fatura e-postasını alır"
@@ -21490,6 +21535,9 @@ msgstr "Ödeme vadesinin hesaplama yönteminden sonraki gün sayısı"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı girdilerinin toplamı ve gerçeğin kaynağıdır."
 
+msgid "The asset has no other use to the supplier once the term ends."
+msgstr ""
+
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "Varlık, hizmet sınıfına geçer ve hizmet tarihinden itibaren amortismana tabi olmaya başlar."
 
@@ -21597,6 +21645,9 @@ msgstr "Bir bankayı uluslararası olarak tanımlayan kod, 8 veya 11 karakter. S
 
 msgid "The company already has a posted opening balance journal."
 msgstr "Şirket zaten muhasebeleştirilmiş bir açılış bakiyesi muhasebe fişine sahip."
+
+msgid "The company expects to buy the asset at the end of the term."
+msgstr ""
 
 msgid "The company has no account defaults."
 msgstr "Şirketin hesap varsayılanları yoktur."
@@ -21737,9 +21788,6 @@ msgstr "Bu müşterinin alıntı ve satış siparişi satırlarına uygulanan va
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Bu departmanın raporlama ve personel sayısı hiyerarşisinde bağlı olduğu departman; üst seviye bir departman için boş bırakın."
 
-msgid "The discount rate values the payments. The inputs below decide whether this is an operating or a finance lease."
-msgstr "İskonto oranı ödemelerin değerini belirler. Aşağıdaki girdiler bunun bir işletme kiralaması mı yoksa finansman kiralaması mı olduğuna karar verir."
-
 msgid "The early hours, {name}."
 msgstr "Sabah saatleri, {name}."
 
@@ -21752,9 +21800,6 @@ msgstr "Bu maliyet merkezi için sorumlu çalışan — satın alma siparişi on
 msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
 msgstr "Muhasebe etkinleştirmesi, her stok kartının stoğunu kesinti tarihindeki eldeki miktarına aşağıdaki birim maliyetle sıfırlar. Ortalama maliyetli stok kartılarının maliyetini gözden geçirin."
 
-msgid "The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "Son tarih, makul olarak kesin olan yenilemeler dahil olmak üzere, kiralama döneminin son günüdür."
-
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "Müşteriye fiyat teklifi vermekten ödeme tahsilatına kadar uçtan uca ticari akış: RFQ'den fiyat teklifine satış siparişine, ardından sevkiyat, fatura ve ödenen ödemeye."
 
@@ -21763,9 +21808,6 @@ msgstr "Tablo güncellendiğinde güncellenmiş verilerle bir POST isteği alan 
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Bu kontrol planının bağlı olduğu mühendislik çizimi; bu parçaya karşı kaydedilen muayeneler bu çizime geri referans verir."
-
-msgid "The escalation applies on each anniversary of the commencement date."
-msgstr "Artış, başlangıç tarihinin her yıldönümünde uygulanır."
 
 msgid "The evening hours, {name}."
 msgstr "Akşam saatleri, {name}."
@@ -21925,6 +21967,9 @@ msgstr "Yenileme veya sonlandırma bildirimi vermek için son gün"
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Tedarikçinin teslim süresine göre bu Satın Alma Siparişini (PO) ihtiyaç tarihine kadar ulaşması için en geç tarih."
+
+msgid "The lease is ready to activate."
+msgstr ""
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
 msgstr "Kiralanan kıymet, kullanım tarihinden itibaren amortisman gideri olan sabit bir kıymete dönüşür. Bundan sonra vadesi gelen ödemeler kaldırılır."
@@ -22112,6 +22157,9 @@ msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni i�
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "Bu adımın bileşenlerinin oynatma sırasında hareket ettiği yol; modelden hesaplanmış veya Yolu Düzenle ile elle çizilmiş."
 
+msgid "The payment rows below are cut from these terms. Changing a term cuts them again."
+msgstr ""
+
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Carbon tarafındaki uygulamanızı yönetecek Personel ve onlara ulaşmanız için nasıl yapılır."
 
@@ -22195,6 +22243,9 @@ msgstr "Ramp bağlantısının süresi doldu"
 
 msgid "The rate at the effective date"
 msgstr "Yürürlüğe giriş tarihindeki oran"
+
+msgid "The rate the payments are discounted at, and what the asset is worth and how long it lasts."
+msgstr ""
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Satın aldığınız ve tükettiğiniz ham stok ve malzeme ana kaydı"
@@ -23060,6 +23111,9 @@ msgstr "Saat Dilim"
 msgid "Title"
 msgstr "Unvan"
 
+msgid "Title passes to the company when the term ends."
+msgstr ""
+
 msgid "Title passes to the customer when the term ends."
 msgstr "Mülkiyet, dönem sona erdiğinde müşteri'ye geçer."
 
@@ -23250,6 +23304,9 @@ msgstr "Toplam Dakika"
 
 msgid "Total Outside Cost"
 msgstr "Toplam Dış Maliyet"
+
+msgid "Total Payments"
+msgstr ""
 
 msgid "Total Price"
 msgstr "Toplam Fiyat"
@@ -24670,6 +24727,9 @@ msgstr "Hangi veri"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Envanterin yükselmesine veya düşmesine neyin sebep olduğu, herhangi bir boyuta göre"
 
+msgid "What each period's payment is in the first year"
+msgstr ""
+
 msgid "What happens to an invoice once it is created"
 msgstr "Fatura oluşturulduktan sonra ne olur"
 
@@ -24678,6 +24738,9 @@ msgstr "Bir fatura taslaklandıktan sonra ne olur"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Kiralama anlaşmaları ve sözleşmelerden her gün otomatik olarak oluşturulan faturaların işlenmesi. Kiralama ücretleri, krediler, hükümsüz faturaların yeniden faturalandırılması veya kural ihlalleri içeren faturalar her zaman inceleme için bekler."
+
+msgid "What happens to the asset when the term ends. A purchase option that is reasonably certain becomes a payment row."
+msgstr ""
 
 msgid "What happens to the units when the term ends, and the rate the rent is discounted at."
 msgstr "Dönem sona erdiğinde adetlere ne olur ve kiranın iskonto yapıldığı oran."
@@ -24712,6 +24775,12 @@ msgstr "Bu teklif türü nedir — standart tedarikçi teklifi, genel uyum fiyat
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "Bu boyut izin verilen değerlerini hangi kaynaktan alır (özel liste veya müşteri, konum, çalışan gibi mevcut bir varlık)."
 
+msgid "What the asset would cost to buy today"
+msgstr ""
+
+msgid "What the company can buy the asset for at the end"
+msgstr ""
+
 msgid "What the customer can buy each unit for at the end"
 msgstr "Müşterinin sonunda her adeti ne kadara satın alabileceği"
 
@@ -24720,6 +24789,9 @@ msgstr "Müşterinin peşin ödediği, kiranın vergisi ve faturaların vadesi."
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Vade tarihinin geri sayımı nereden başlıyor (fatura tarihi, ay sonu, vb.)."
+
+msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
+msgstr ""
 
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr ""
@@ -24849,6 +24921,9 @@ msgstr "Mallar gerçekten geldiğinde; makbuzda kaydedilmiş ve tedarikçinin za
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Kanban kartı tarandığında, iş otomatik olarak taslaktan çıkarılır ve yere yayınlanır."
+
+msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
+msgstr ""
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Mal kabul lokasyonunun stokun teslim alınmasını beklediği zaman; varış yerinde MRP uygunluğunu belirler."
@@ -24997,6 +25072,9 @@ msgstr "Teklifleri, siparişleri ve satın almaları kimin onaylaması gerektiğ
 msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
 msgstr "MRP planlama eylemlerinin sahibi kimdir. Lokasyonlar şirket varsayılanını devralır; stok kartı grupları bulundukları lokasyonu devralır. En spesifik atama kazanır ve her stok kartı, Planlama sekmesinde değiştirebilir."
 
+msgid "Who owns the lease here: they get the invoice digest and the date reminders."
+msgstr ""
+
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Faturaları kim alır, nereye ve hangi koşullarda."
 
@@ -25045,8 +25123,8 @@ msgstr "Satıcı, faturalandırılan para birimi ve notlar."
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Kim sattı, kime ait ve ne zaman kapatıldı."
 
-msgid "Who the company leases from, and who owns it here."
-msgstr "Şirketin kimden kiraladığı ve burada kimin sahip olduğu."
+msgid "Who the company leases from, and who to call there."
+msgstr ""
 
 msgid "Who the contract is with and what it is called."
 msgstr "Sözleşmenin karşı tarafı ve adı."

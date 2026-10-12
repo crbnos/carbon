@@ -7,21 +7,26 @@ A **<Term id="lessee-lease">lease</Term>** records an asset your company rents f
 
 Leases live under **Purchasing → Leases**. To rent your own fleet to a customer, use a [rental agreement](/docs/reference/rental-agreements) instead. The examples below use a forklift leased for 36 months from January 1, 2027, at 2,000 a month paid in advance and discounted at 6%.
 
-## Entering a lease
+## Setting up a lease
 
-A new lease is saved as a **Draft**. Its form has five sections:
+A new lease opens a four-step setup. **"Next"** on the first step saves it as a draft, and later steps save as you edit. Opening a draft continues its setup if you can edit purchasing; anyone else sees its page.
 
-<FieldTable>
-  <Field name="Lessor">The **"Supplier"** and the **"Owner"**, who gets the invoice digest and the date reminders.</Field>
-  <Field name="Leased Asset">The **"Name"**, such as "Forklift FL-12", and the **"Location"** where it is used.</Field>
-  <Field name="Term">**"Commencement Date"**, **"End Date"** (including renewals that are reasonably certain) and **"Notice Date"**, the last day to give notice. Payments due before **"Invoice From"** are marked as paid outside Carbon.</Field>
-  <Field name="Payments">**"Payment Amount"**, **"Payment Frequency"** (Monthly, Quarterly or Annual), **"Payment Timing"** (Advance or Arrears) and **"Annual Escalation (%)"**, applied on each anniversary of commencement.</Field>
-  <Field name="Accounting Treatment">**"Discount Rate (%)"**, prefilled from the company's incremental borrowing rate, and the [classification](#classification) inputs.</Field>
-</FieldTable>
+<Steps>
+<Step>
+**Details.** The **"Supplier"**, **"Supplier Location"** and **"Supplier Contact"**; the leased asset's **"Name"**, such as "Forklift FL-12", and the **"Location"** where it is used; then the term: **"Commencement Date"**, **"End Date"** (including renewals that are reasonably certain), **"Notice Date"**, the last day to give notice, and **"Invoice From"**: payments due before it are marked as paid outside Carbon. Under **More Details**, the **"Owner"**, who gets the invoice digest and the date reminders.
+</Step>
+<Step>
+**Payments.** **"Payment Amount"**, **"Annual Escalation (%)"** (applied on each anniversary of commencement), **"Payment Frequency"** (Monthly, Quarterly or Annual) and **"Payment Timing"** (Advance or Arrears). Each change cuts the **payment rows** again: one per period, a short last period prorated by days, and a purchase option row on the end date when its exercise is reasonably certain. Click a cell to change a row's period, due date or amount, for a rent holiday or an irregular step; **"Add Payment"** adds a row, and **"Regenerate from Terms"** cuts every row again, replacing your edits.
+</Step>
+<Step>
+**Accounting.** How the lease would be [classified](#classification), live, with **"Override"** for an accountant. Below it the **"Discount Rate (%)"**, prefilled from the company's incremental borrowing rate, the asset's **"Fair Value"** and **"Economic Life (months)"**, the **"Purchase Option"**, and the end-of-term switches.
+</Step>
+<Step>
+**Review.** A summary, a linked list of anything that blocks **"Activate"** (no payment row, or a currency other than the company's), and the journal activation posts. **"Activate"** is here, and **"Save as Draft"** returns to the list.
+</Step>
+</Steps>
 
-Saving cuts the **payment rows** from the terms: one per period, a short last period prorated by days, and a purchase option row on the end date when its exercise is reasonably certain. While the lease is a draft, **"Add Payment"** adds a row, the row menu edits or deletes one, and **"Regenerate from Terms"** cuts every row again, replacing your edits.
-
-<Screenshot label="Draft lease page showing the Payments section with its payment rows and the Regenerate from Terms and Add Payment buttons" caption="A draft lease, before activation." />
+<Screenshot label="Lease setup on the Payments step, showing the payment terms and the editable payment rows" caption="A draft lease's Payments step." />
 
 ## Lifecycle
 
@@ -135,7 +140,7 @@ A change to the thresholds or the expedient applies to leases activated afterwar
 ## Troubleshooting
 
 ### "A lease needs at least one payment row to activate"
-The draft has no `leasePayment` rows. Use **Regenerate from Terms** or **Add Payment**.
+The draft has no `leasePayment` rows. On the setup's **Payments** step, enter the **"Payment Amount"** or use **"Add Payment"**.
 
 ### "Leases in a foreign currency are not supported yet"
 `lease.currencyCode` differs from the company's base currency. The form always writes the base currency; this comes from an API or MCP write.

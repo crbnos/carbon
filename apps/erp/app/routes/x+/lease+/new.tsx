@@ -9,13 +9,17 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { NewRecordPage } from "~/components/NewRecordPage";
+import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import { insertLease, leaseValidator } from "~/modules/purchasing";
 import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.server";
-import { LeaseForm } from "~/modules/purchasing/ui/Leases";
+import {
+  LeaseDetailsForm,
+  LeaseSetupSteps
+} from "~/modules/purchasing/ui/Leases";
 import { getCompanySettings, getNextSequence } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -84,38 +88,42 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // The payment rows are cut from the terms; the lease page shows them for
-  // editing before activation.
-  try {
-    await regenerateLeasePayments(getDatabaseClient(), {
-      leaseId: lease.data.id,
-      companyId,
-      userId
-    });
-  } catch (err) {
-    logger.error("lease payment rows were not cut", {
-      companyId,
-      leaseId: lease.data.id,
-      error: err
-    });
-    throw redirect(
-      path.to.leaseDetails(lease.data.id),
-      await flash(
-        request,
-        error(
-          err,
-          getErrorMessage(
+  // The payment rows are cut from the payment terms, which the Payments
+  // step sets; a lease created with them (the API) has its rows already.
+  if (data.paymentAmount > 0) {
+    try {
+      await regenerateLeasePayments(getDatabaseClient(), {
+        leaseId: lease.data.id,
+        companyId,
+        userId
+      });
+    } catch (err) {
+      logger.error("lease payment rows were not cut", {
+        companyId,
+        leaseId: lease.data.id,
+        error: err
+      });
+      throw redirect(
+        path.to.leaseSetup(lease.data.id, "payments"),
+        await flash(
+          request,
+          error(
             err,
-            "Lease created, but its payment rows could not be cut"
+            getErrorMessage(
+              err,
+              "Lease created, but its payment rows could not be cut"
+            )
           )
         )
-      )
-    );
+      );
+    }
   }
 
-  throw redirect(path.to.leaseDetails(lease.data.id));
+  throw redirect(path.to.leaseSetup(lease.data.id, "payments"));
 }
 
+/** Step 1 of the lease setup: creating the Draft. Every later step edits the
+ *  Draft this saves (`$id.setup.*`). */
 export default function NewLeaseRoute() {
   const { defaultDiscountRate } = useLoaderData<typeof loader>();
   const [params] = useUrlParams();
@@ -145,8 +153,15 @@ export default function NewLeaseRoute() {
   };
 
   return (
-    <NewRecordPage>
-      <LeaseForm initialValues={initialValues} />
-    </NewRecordPage>
+    <SetupFrame
+      title={<Trans>New Lease</Trans>}
+      step="details"
+      steps={<LeaseSetupSteps current="details" />}
+    >
+      <LeaseDetailsForm
+        initialValues={initialValues}
+        action={path.to.newLease}
+      />
+    </SetupFrame>
   );
 }

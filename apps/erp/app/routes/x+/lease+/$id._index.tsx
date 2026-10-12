@@ -5,16 +5,21 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import { draftLeaseSetupPath } from "~/modules/purchasing/purchasing.server";
 import { path } from "~/utils/path";
 
-/** Opening a lease shows its details. */
+/** Opening a lease: a Draft continues its setup, anything else shows its
+ *  page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "purchasing"
   });
   const { id } = params;
   if (!id) throw new Error("Could not find id");
-  throw redirect(path.to.leaseDetails(id));
+  throw redirect(
+    (await draftLeaseSetupPath(client, { companyId, userId, id })) ??
+      path.to.leaseDetails(id)
+  );
 }
 
 export const middleware = [redirectBeforeLoaders(loader)];

@@ -10,7 +10,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
   getLease,
@@ -181,7 +181,14 @@ export default function LeaseShellRoute() {
   const { lease, payments, schedule, leasePolicy } =
     useLoaderData<typeof loader>();
   const { id } = useParams();
+  const matches = useMatches();
   if (!id) throw new Error("Could not find id");
+
+  // The setup wizard (`$id.setup`) is a child of this route so it reads the
+  // same loader, but it takes the whole page rather than the workspace.
+  if (matches.some((match) => match.id.endsWith("$id.setup"))) {
+    return <RecordOutlet />;
+  }
 
   return (
     <PanelProvider>

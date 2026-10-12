@@ -147,3 +147,26 @@ export function previewLesseeClassification(args: {
     return null;
   }
 }
+
+/** What stops a Draft from activating, as the `post-lease` activate refuses
+ *  it (`activateBlocker`): no payment row, or a currency other than the
+ *  company's base currency. The Review step lists them and the setup footer
+ *  disables Activate. */
+export type LeaseActivationGap = "noPayments" | "foreignCurrency";
+
+export function leaseActivationGaps(args: {
+  lease: Pick<Lease, "currencyCode">;
+  payments: unknown[];
+  baseCurrencyCode: string | null | undefined;
+}): LeaseActivationGap[] {
+  const gaps: LeaseActivationGap[] = [];
+  if (args.payments.length === 0) gaps.push("noPayments");
+  if (
+    args.baseCurrencyCode &&
+    args.lease.currencyCode &&
+    args.lease.currencyCode !== args.baseCurrencyCode
+  ) {
+    gaps.push("foreignCurrency");
+  }
+  return gaps;
+}

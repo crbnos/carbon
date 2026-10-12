@@ -278,6 +278,10 @@ msgstr "{0} Vorgänge · {1} Stück"
 msgid "{0} orders"
 msgstr "{0} Bestellungen"
 
+#. placeholder {0}: payments.length
+msgid "{0} payments"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} Probleme — nicht veröffentlicht"
@@ -708,6 +712,9 @@ msgstr "1 Teil übersprungen — es hat bereits einen offenen Auftrag"
 
 msgid "1 part skipped — nothing to make"
 msgstr "1 Teil übersprungen — es gibt nichts zu produzieren"
+
+msgid "1 payment"
+msgstr ""
 
 msgid "1 planned invoice is removed."
 msgstr "Eine geplante Rechnung wird entfernt."
@@ -1701,6 +1708,9 @@ msgstr "Beim Aktivieren wird überprüft, dass jede Einheit verfügbar ist, die 
 msgid "Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards."
 msgstr "Die Aktivierung klassifiziert das Leasing, bucht das Nutzungsrecht und die Leasingverbindlichkeit und erstellt den monatlichen Terminplan. Die Bedingungen und Zahlungszeilen werden danach fixiert."
 
+msgid "Activating fixes the terms and the payment rows, classifies the lease and books it. After that, purchase invoices are drafted automatically as payments come due."
+msgstr ""
+
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Aktivierung legt die Bedingungen und Einheiten fest, klassifiziert jede Einheit und erstellt die ersten Abrechnungsperioden. Danach werden Rechnungen automatisch erstellt, wenn Perioden fällig werden."
 
@@ -1829,6 +1839,9 @@ msgstr "Anlagenklasse hinzufügen"
 
 msgid "Add at least one payment row before activating."
 msgstr "Fügen Sie mindestens eine Zahlungszeile vor der Aktivierung hinzu."
+
+msgid "Add at least one payment row."
+msgstr ""
 
 msgid "Add at least one service."
 msgstr "Fügen Sie mindestens eine Dienstleistung hinzu."
@@ -2150,9 +2163,6 @@ msgstr "Admin"
 
 msgid "Advance"
 msgstr "Anzahlung"
-
-msgid "Advance (start of each period)"
-msgstr "Vorauszahlung (Anfang jedes Zeitraums)"
 
 msgid "Advance to {nextStatus}"
 msgstr "Zu {nextStatus} übergehen"
@@ -2643,6 +2653,9 @@ msgstr "Angewendet"
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Angewendete Beträge sind in der Basiswährung des Unternehmens ({baseCurrency})."
 
+msgid "Applied on each anniversary of the commencement date"
+msgstr ""
+
 msgid "Applied To"
 msgstr "Angewendet auf"
 
@@ -2887,6 +2900,10 @@ msgstr "Sind Sie sicher, dass Sie {orderLabel} löschen möchten? Dies kann nich
 
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie {readableId} löschen möchten? Dies kann nicht rückgängig gemacht werden."
+
+#. placeholder {0}: deleting.number
+msgid "Are you sure you want to delete payment {0}?"
+msgstr ""
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -3273,9 +3290,6 @@ msgstr "Sind Sie sicher?"
 
 msgid "Arrears"
 msgstr "Zahlungsrückstand"
-
-msgid "Arrears (end of each period)"
-msgstr "Rückstände (Ende jedes Zeitraums)"
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "Als würde es vor die Werkstattschlange springen."
@@ -6755,6 +6769,9 @@ msgstr "Entscheiden Sie, wann Material, das zu einem Arbeitsplatz kommissioniert
 msgid "Decided when the lease is activated, from the payment rows and the classification inputs."
 msgstr "Entschieden bei Aktivierung des Mietvertrags anhand der Zahlungszeilen und der Klassifizierungseingaben."
 
+msgid "Decided when the lease is activated, from the payment rows and the inputs below."
+msgstr ""
+
 msgid "Decimal Places"
 msgstr "Dezimalstellen"
 
@@ -8036,6 +8053,12 @@ msgstr "Monatlich werden die Zinsen und die Abschreibung der Nutzungsrechte gebu
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Die ungenutzten Materialien jedes Arbeitsgangs werden zurückgegeben, sobald der Arbeitsgang erledigt ist."
 
+msgid "Each payment is due on the first day of its period."
+msgstr ""
+
+msgid "Each payment is due on the last day of its period."
+msgstr ""
+
 msgid "Each period is 28 days from the start date."
 msgstr "Jede Periode beträgt 28 Tage vom Startdatum an."
 
@@ -8787,9 +8810,6 @@ msgstr "Eintragstyp"
 
 msgid "EORI"
 msgstr "EORI"
-
-msgid "Equipment, vehicles or buildings the company rents from a supplier. Payment rows are cut from the payment terms and can be edited until the lease is activated."
-msgstr "Anlage, Fahrzeuge oder Gebäude, die das Unternehmen von einem Lieferanten mietet. Zahlungszeilen werden aus den Zahlungsbedingungen gekürzt und können bis zur Aktivierung des Mietvertrags bearbeitet werden."
 
 msgid "Equity"
 msgstr "Eigenkapital"
@@ -10640,6 +10660,9 @@ msgstr "Wie lange jede Phase läuft, in Wochen. Bestimmt die Plan-Zeitleiste; la
 msgid "How long one execution of this schedule typically takes; scheduling blocks the work center for this many minutes on each scheduled instance."
 msgstr "Wie lange eine Ausführung dieses Terminplans typischerweise dauert; die Planung blockiert den Arbeitsplatz für diese Anzahl von Minuten bei jeder geplanten Instanz."
 
+msgid "How long the asset is usable, by anyone"
+msgstr ""
+
 msgid "How many"
 msgstr "Wie viele"
 
@@ -12028,6 +12051,9 @@ msgstr "Leasing-Durchlauf-Einträge und gebuchte Leasing-Rechnungspositionen in 
 msgid "Lease Runs"
 msgstr "Leasing-Durchläufe"
 
+msgid "Lease setup"
+msgstr ""
+
 msgid "Leased Asset"
 msgstr "Geleaste Anlage"
 
@@ -12926,6 +12952,9 @@ msgstr "Mittlere Zeit zwischen Ausfällen"
 
 msgid "Mean Time To Repair"
 msgstr "Mittlere Reparaturzeit"
+
+msgid "Measurement"
+msgstr ""
 
 msgid "Measurement Standard"
 msgstr "Messnorm"
@@ -14322,6 +14351,9 @@ msgstr "Noch keine Passkeys registriert."
 msgid "No payables"
 msgstr "Keine Verbindlichkeiten"
 
+msgid "No payment rows yet. Enter the payment amount above, or add a row."
+msgstr ""
+
 msgid "No payment rows. Regenerate them from the terms or add one."
 msgstr "Keine Zahlungspositionen. Regenerieren Sie diese aus den Bedingungen oder fügen Sie eine hinzu."
 
@@ -14925,6 +14957,15 @@ msgstr "Ein Workflow-Durchlauf, aufgezeichnet Schritt für Schritt mit den Werte
 
 msgid "One or more quantities cannot meet this date"
 msgstr "Eine oder mehrere Mengen können diesen Termin nicht erfüllen"
+
+msgid "One payment for each month of the term."
+msgstr ""
+
+msgid "One payment for each year of the term."
+msgstr ""
+
+msgid "One payment for every three months."
+msgstr ""
 
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Eine Zeile pro Rechnung, eine Spalte pro Position. Ändern Sie ein Datum oder einen Betrag, fügen Sie eine Rechnung hinzu oder löschen Sie eine."
@@ -15556,9 +15597,6 @@ msgstr "Zuständigkeit"
 msgid "Ownership transfers"
 msgstr "Eigentumsübertragungen"
 
-msgid "Ownership transfers at the end of the term"
-msgstr "Eigentum wird am Ende der Laufzeit übertragen"
-
 msgid "Ownership transfers to the customer"
 msgstr "Eigentum wird auf den Kunden übertragen"
 
@@ -15752,6 +15790,10 @@ msgstr "Verbindlichkeiten nach Fälligkeit"
 msgid "Payment"
 msgstr "Zahlung"
 
+#. placeholder {0}: deleting.number
+msgid "payment {0}"
+msgstr ""
+
 msgid "Payment actions"
 msgstr "Zahlungsmaßnahmen"
 
@@ -15775,6 +15817,12 @@ msgstr "Zahlungs-ID"
 
 msgid "Payment Rate"
 msgstr "Wechselkurs der Zahlung"
+
+msgid "Payment Rows"
+msgstr ""
+
+msgid "Payment rows are cut from this date"
+msgstr ""
 
 msgid "payment term"
 msgstr "Zahlungsbedingungen"
@@ -15809,8 +15857,8 @@ msgstr "Mit dieser Rechnung verrechnete Zahlungen und Guthaben. Verrechnete Betr
 msgid "Payments due after the termination date are removed. Invoiced payments stay."
 msgstr "Zahlungen, die nach dem Kündigungsdatum fällig sind, werden entfernt. Fakturierte Zahlungen bleiben erhalten."
 
-msgid "Payments due before this date are marked paid outside Carbon"
-msgstr "Zahlungen, die vor diesem Datum fällig sind, werden als außerhalb von Carbon bezahlt gekennzeichnet."
+msgid "Payments due before this date were paid outside Carbon"
+msgstr ""
 
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Zahlt die für dieses Dokument gehaltene Anzahlung aus Kundenanzahlungen zurück."
@@ -17437,9 +17485,6 @@ msgstr "Empfangene Menge"
 
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Empfangene Menge noch nicht kreditiert. Das Gutschriftenmemo wird als Entwurf erstellt."
-
-msgid "Receives the invoice digest and the reminders"
-msgstr "Erhält die Rechnungszusammenfassung und die Erinnerungen"
 
 msgid "Receives the invoice email"
 msgstr "Erhält die Rechnungs-E-Mail"
@@ -21490,6 +21535,9 @@ msgstr "Die Anzahl der Tage nach der Berechnungsmethode, bis die Zahlung fällig
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Der unveränderliche Datensatz jeder Bestandsbewegung; der verfügbare Bestand ist die Summe seiner signierten Einträge und die maßgebliche Quelle."
 
+msgid "The asset has no other use to the supplier once the term ends."
+msgstr ""
+
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "Der Vermögenswert wechselt in seine Betriebsklasse und wird ab dem Inbetriebnahmedatum abgeschrieben."
 
@@ -21597,6 +21645,9 @@ msgstr "Der Code, der eine Bank international identifiziert, 8 oder 11 Zeichen l
 
 msgid "The company already has a posted opening balance journal."
 msgstr "Das Unternehmen hat bereits einen gebuchten Eröffnungsbuchungssatz."
+
+msgid "The company expects to buy the asset at the end of the term."
+msgstr ""
 
 msgid "The company has no account defaults."
 msgstr "Das Unternehmen hat keine Kontostandardwerte."
@@ -21737,9 +21788,6 @@ msgstr "Der Steuersatz, der auf die Angebots- und Kundenauftrags-Positionen dies
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Die Abteilung, unter die diese für Berichterstattung und Kopfzahlen-Hierarchien untergeordnet ist; leer lassen für eine Abteilung der obersten Ebene."
 
-msgid "The discount rate values the payments. The inputs below decide whether this is an operating or a finance lease."
-msgstr "Der Diskontierungssatz bewertet die Zahlungen. Die folgenden Eingaben entscheiden, ob dies ein Operating-Leasing oder Finance-Leasing ist."
-
 msgid "The early hours, {name}."
 msgstr "Die frühen Stunden, {name}."
 
@@ -21752,9 +21800,6 @@ msgstr "Der Mitarbeiter, der für diese Kostenstelle verantwortlich ist – wenn
 msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
 msgstr "Die Aktivierung setzt den Bestand jedes Artikels auf seine Istmenge zum Stichtagsdatum zurück, zum unten angegebenen Stückpreis. Überprüfen Sie die Kosten jedes Artikels mit Durchschnittskostenmethode."
 
-msgid "The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "Das Enddatum ist der letzte Tag des Leasingzeitraums, einschließlich Verlängerungen, die angemessen sicher sind."
-
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "Der durchgehende kommerzielle Ablauf von der Angebotserstellung für einen Kunden bis zum Zahlungsempfang: Anfrage zu Angebot zu Kundenauftrag, dann Lieferung, Rechnung und eingegangene Zahlung."
 
@@ -21763,9 +21808,6 @@ msgstr "Der Endpunkt, der eine POST-Anfrage mit den aktualisierten Daten empfän
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Die technische Zeichnung, an die dieser Prüfplan gekoppelt ist; Prüfungen, die gegen diesen Teil aufgezeichnet werden, beziehen sich auf diese Zeichnung."
-
-msgid "The escalation applies on each anniversary of the commencement date."
-msgstr "Die Eskalation wird an jedem Jahrestag des Stichtags angewendet."
 
 msgid "The evening hours, {name}."
 msgstr "Die Abendstunden, {name}."
@@ -21925,6 +21967,9 @@ msgstr "Der letzte Tag, um eine Verlängerungs- oder Kündigungsmitteilung einzu
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Das späteste Datum, um diese Bestellung aufzugeben, damit sie bis zum Bedarfsdatum eintrifft, angesichts der Beschaffungszeit des Lieferanten."
+
+msgid "The lease is ready to activate."
+msgstr ""
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
 msgstr "Das geleasete Anlagegut wird zu einem Anlagegut, das ab dem Ausübungsdatum abgeschrieben wird. Zahlungen danach werden entfernt."
@@ -22112,6 +22157,9 @@ msgstr "Der Teil wird dem bestehenden Bestand entnommen, wenn das übergeordnete
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "Der Pfad, auf dem die Komponenten dieses Schritts während der Wiedergabe an ihren Platz fahren; aus dem Modell ermittelt oder von Hand mit Bearbeitungspfad gezeichnet."
 
+msgid "The payment rows below are cut from these terms. Changing a term cuts them again."
+msgstr ""
+
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Das Personal auf der Carbon-Seite, das Ihre Umsetzung durchführt, und wie Sie sie erreichen."
 
@@ -22195,6 +22243,9 @@ msgstr "Die Ramp-Verbindung ist abgelaufen"
 
 msgid "The rate at the effective date"
 msgstr "Der Satz am gültigen Datum"
+
+msgid "The rate the payments are discounted at, and what the asset is worth and how long it lasts."
+msgstr ""
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Der Rohstoff und das Materialmaterial, das Sie kaufen und verbrauchen"
@@ -23060,6 +23111,9 @@ msgstr "Zeitzone"
 msgid "Title"
 msgstr "Titel"
 
+msgid "Title passes to the company when the term ends."
+msgstr ""
+
 msgid "Title passes to the customer when the term ends."
 msgstr "Das Eigentum geht auf den Kunden über, wenn die Vertragslaufzeit endet."
 
@@ -23250,6 +23304,9 @@ msgstr "Gesamtminuten"
 
 msgid "Total Outside Cost"
 msgstr "Gesamte Fremdleistungskosten"
+
+msgid "Total Payments"
+msgstr ""
 
 msgid "Total Price"
 msgstr "Gesamtpreis"
@@ -24670,6 +24727,9 @@ msgstr "Welche Daten"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Was den Bestand nach oben oder unten getrieben hat, nach beliebiger Dimension"
 
+msgid "What each period's payment is in the first year"
+msgstr ""
+
 msgid "What happens to an invoice once it is created"
 msgstr "Was mit einer Rechnung geschieht, nachdem sie erstellt wird"
 
@@ -24678,6 +24738,9 @@ msgstr "Was mit einer Rechnung geschieht, wenn sie als Entwurf erstellt wird."
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "Was mit Rechnungen geschieht, die täglich automatisch aus Mietverträgen und Verträgen erstellt werden. Rechnungen mit Mietgebühren, Gutschriften, Neuabrechnungen stornierter Rechnungen oder Regelverletzungen warten immer auf Überprüfung."
+
+msgid "What happens to the asset when the term ends. A purchase option that is reasonably certain becomes a payment row."
+msgstr ""
 
 msgid "What happens to the units when the term ends, and the rate the rent is discounted at."
 msgstr "Was mit den Einheiten geschieht, wenn die Laufzeit endet, und der Satz, mit dem die Miete diskontiert wird."
@@ -24712,6 +24775,12 @@ msgstr "Welche Art von Angebot dies ist — Standardlieferantengebot, Pauschalve
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "Welche Quelle diese Dimension ihre zulässigen Werte bezieht (benutzerdefinierte Liste oder eine bestehende Entität wie Kunde, Standort, Mitarbeiter)."
 
+msgid "What the asset would cost to buy today"
+msgstr ""
+
+msgid "What the company can buy the asset for at the end"
+msgstr ""
+
 msgid "What the customer can buy each unit for at the end"
 msgstr "Was der Kunde am Ende für jede Einheit kaufen kann"
 
@@ -24720,6 +24789,9 @@ msgstr "Was der Kunde im Voraus zahlt, die Steuer auf die Miete und wann Rechnun
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Wovon der Countdown der Fälligkeitsfrist beginnt (Rechnungsdatum, Monatsende usw.)."
+
+msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
+msgstr ""
 
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr ""
@@ -24849,6 +24921,9 @@ msgstr "Wenn die Waren tatsächlich ankamen; auf dem Beleg aufgezeichnet und zur
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Wenn die Kanban-Karte gescannt wird, wird der Job automatisch aus dem Entwurf entfernt und zur Freigabe auf den Boden freigegeben."
+
+msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
+msgstr ""
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Wann der Empfangsort die Ankunft des Bestandes erwartet; treibt die MRP-Verfügbarkeit am Bestimmungsort."
@@ -24997,6 +25072,9 @@ msgstr "Wer muss Angebote, Bestellungen und Käufe genehmigen – und wann"
 msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
 msgstr "Wer ist Eigentümer von MRP-Planungsaktionen. Standorte erben den Unternehmensstandard; Artikelgruppen erben ihren Standort. Die spezifischste Zuweisung gewinnt, und jeder Artikel kann auf seiner Registerkarte „Planung\" eine Übersteuerung vornehmen."
 
+msgid "Who owns the lease here: they get the invoice digest and the date reminders."
+msgstr ""
+
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Wer die Rechnungen erhält, wo und zu welchen Bedingungen."
 
@@ -25045,8 +25123,8 @@ msgstr "Wer es verkauft hat, die Währung, in der abgerechnet wird, und alle Not
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Wer es verkauft hat, wem es gehört und wann es abgeschlossen wurde."
 
-msgid "Who the company leases from, and who owns it here."
-msgstr "Von wem das Unternehmen least, und wer es hier besitzt."
+msgid "Who the company leases from, and who to call there."
+msgstr ""
 
 msgid "Who the contract is with and what it is called."
 msgstr "Mit wem der Vertrag abgeschlossen ist und wie er heißt."

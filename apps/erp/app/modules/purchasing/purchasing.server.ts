@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { hasPermission } from "@carbon/auth";
+import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
@@ -13,6 +15,7 @@ import type { DraftedLeaseInvoice } from "@carbon/server-functions/create-lease-
 import { generateLeasePayments } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
+import { path } from "~/utils/path";
 
 /**
  * Server-only purchasing helpers. Lives in a `.server.ts` (NOT the barrel-exported
@@ -334,4 +337,28 @@ export async function generateLeaseInvoicesNow(
     throw new Error(failures.map((f) => f.error).join("; "));
   }
   return { invoices, invoiceIds };
+}
+
+/** Where a Draft lease is worked on: its setup wizard, for someone who can
+ *  edit it. Null for any other lease, or a viewer, who sees the lease page —
+ *  as `draftRentalAgreementSetupPath`. */
+export async function draftLeaseSetupPath(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string; id: string }
+): Promise<string | null> {
+  const { companyId, userId, id } = args;
+  const [lease, claims] = await Promise.all([
+    client
+      .from("lease")
+      .select("status")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getUserClaims(userId, companyId)
+  ]);
+  if (lease.data?.status !== "Draft") return null;
+  if (!hasPermission(claims?.permissions, "purchasing", "update", companyId)) {
+    return null;
+  }
+  return path.to.leaseSetup(id, "payments");
 }

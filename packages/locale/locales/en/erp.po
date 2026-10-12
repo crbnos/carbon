@@ -278,6 +278,10 @@ msgstr "{0} ops · {1} pcs"
 msgid "{0} orders"
 msgstr "{0} orders"
 
+#. placeholder {0}: payments.length
+msgid "{0} payments"
+msgstr "{0} payments"
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} problems — not published"
@@ -708,6 +712,9 @@ msgstr "1 part skipped — it already has an open job"
 
 msgid "1 part skipped — nothing to make"
 msgstr "1 part skipped — nothing to make"
+
+msgid "1 payment"
+msgstr "1 payment"
 
 msgid "1 planned invoice is removed."
 msgstr "1 planned invoice is removed."
@@ -1701,6 +1708,9 @@ msgstr "Activating checks every unit is available, classifies each unit's accoun
 msgid "Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards."
 msgstr "Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards."
 
+msgid "Activating fixes the terms and the payment rows, classifies the lease and books it. After that, purchase invoices are drafted automatically as payments come due."
+msgstr "Activating fixes the terms and the payment rows, classifies the lease and books it. After that, purchase invoices are drafted automatically as payments come due."
+
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 
@@ -1829,6 +1839,9 @@ msgstr "Add Asset Class"
 
 msgid "Add at least one payment row before activating."
 msgstr "Add at least one payment row before activating."
+
+msgid "Add at least one payment row."
+msgstr "Add at least one payment row."
 
 msgid "Add at least one service."
 msgstr "Add at least one service."
@@ -2150,9 +2163,6 @@ msgstr "Admin"
 
 msgid "Advance"
 msgstr "Advance"
-
-msgid "Advance (start of each period)"
-msgstr "Advance (start of each period)"
 
 msgid "Advance to {nextStatus}"
 msgstr "Advance to {nextStatus}"
@@ -2643,6 +2653,9 @@ msgstr "Applied"
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Applied amounts are in company base currency ({baseCurrency})."
 
+msgid "Applied on each anniversary of the commencement date"
+msgstr "Applied on each anniversary of the commencement date"
+
 msgid "Applied To"
 msgstr "Applied To"
 
@@ -2887,6 +2900,10 @@ msgstr "Are you sure you want to delete {orderLabel}? This cannot be undone."
 
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "Are you sure you want to delete {readableId}? This cannot be undone."
+
+#. placeholder {0}: deleting.number
+msgid "Are you sure you want to delete payment {0}?"
+msgstr "Are you sure you want to delete payment {0}?"
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -3273,9 +3290,6 @@ msgstr "Are you sure?"
 
 msgid "Arrears"
 msgstr "Arrears"
-
-msgid "Arrears (end of each period)"
-msgstr "Arrears (end of each period)"
 
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "As if it jumped to the front of the shop's queue."
@@ -6755,6 +6769,9 @@ msgstr "Decide when material picked to a work center but not consumed flows back
 msgid "Decided when the lease is activated, from the payment rows and the classification inputs."
 msgstr "Decided when the lease is activated, from the payment rows and the classification inputs."
 
+msgid "Decided when the lease is activated, from the payment rows and the inputs below."
+msgstr "Decided when the lease is activated, from the payment rows and the inputs below."
+
 msgid "Decimal Places"
 msgstr "Decimal Places"
 
@@ -8036,6 +8053,12 @@ msgstr "Each month the lease run posts the interest and the right-of-use amortiz
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Each operation's unused material returns as soon as the operation is done."
 
+msgid "Each payment is due on the first day of its period."
+msgstr "Each payment is due on the first day of its period."
+
+msgid "Each payment is due on the last day of its period."
+msgstr "Each payment is due on the last day of its period."
+
 msgid "Each period is 28 days from the start date."
 msgstr "Each period is 28 days from the start date."
 
@@ -8787,9 +8810,6 @@ msgstr "Entry Type"
 
 msgid "EORI"
 msgstr "EORI"
-
-msgid "Equipment, vehicles or buildings the company rents from a supplier. Payment rows are cut from the payment terms and can be edited until the lease is activated."
-msgstr "Equipment, vehicles or buildings the company rents from a supplier. Payment rows are cut from the payment terms and can be edited until the lease is activated."
 
 msgid "Equity"
 msgstr "Equity"
@@ -10640,6 +10660,9 @@ msgstr "How long each phase runs, in weeks. Drives the Plan timeline; leave blan
 msgid "How long one execution of this schedule typically takes; scheduling blocks the work center for this many minutes on each scheduled instance."
 msgstr "How long one execution of this schedule typically takes; scheduling blocks the work center for this many minutes on each scheduled instance."
 
+msgid "How long the asset is usable, by anyone"
+msgstr "How long the asset is usable, by anyone"
+
 msgid "How many"
 msgstr "How many"
 
@@ -12028,6 +12051,9 @@ msgstr "Lease run entries and posted lease invoice lines in the period."
 msgid "Lease Runs"
 msgstr "Lease Runs"
 
+msgid "Lease setup"
+msgstr "Lease setup"
+
 msgid "Leased Asset"
 msgstr "Leased Asset"
 
@@ -12926,6 +12952,9 @@ msgstr "Mean Time Between Failures"
 
 msgid "Mean Time To Repair"
 msgstr "Mean Time To Repair"
+
+msgid "Measurement"
+msgstr "Measurement"
 
 msgid "Measurement Standard"
 msgstr "Measurement Standard"
@@ -14322,6 +14351,9 @@ msgstr "No passkeys registered yet."
 msgid "No payables"
 msgstr "No payables"
 
+msgid "No payment rows yet. Enter the payment amount above, or add a row."
+msgstr "No payment rows yet. Enter the payment amount above, or add a row."
+
 msgid "No payment rows. Regenerate them from the terms or add one."
 msgstr "No payment rows. Regenerate them from the terms or add one."
 
@@ -14925,6 +14957,15 @@ msgstr "One firing of a workflow, recorded step by step with the values each ste
 
 msgid "One or more quantities cannot meet this date"
 msgstr "One or more quantities cannot meet this date"
+
+msgid "One payment for each month of the term."
+msgstr "One payment for each month of the term."
+
+msgid "One payment for each year of the term."
+msgstr "One payment for each year of the term."
+
+msgid "One payment for every three months."
+msgstr "One payment for every three months."
 
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
@@ -15556,9 +15597,6 @@ msgstr "Ownership"
 msgid "Ownership transfers"
 msgstr "Ownership transfers"
 
-msgid "Ownership transfers at the end of the term"
-msgstr "Ownership transfers at the end of the term"
-
 msgid "Ownership transfers to the customer"
 msgstr "Ownership transfers to the customer"
 
@@ -15752,6 +15790,10 @@ msgstr "Payables aging"
 msgid "Payment"
 msgstr "Payment"
 
+#. placeholder {0}: deleting.number
+msgid "payment {0}"
+msgstr "payment {0}"
+
 msgid "Payment actions"
 msgstr "Payment actions"
 
@@ -15775,6 +15817,12 @@ msgstr "Payment ID"
 
 msgid "Payment Rate"
 msgstr "Payment Rate"
+
+msgid "Payment Rows"
+msgstr "Payment Rows"
+
+msgid "Payment rows are cut from this date"
+msgstr "Payment rows are cut from this date"
 
 msgid "payment term"
 msgstr "payment term"
@@ -15809,8 +15857,8 @@ msgstr "Payments and credits applied to this invoice. Applied amounts and FX are
 msgid "Payments due after the termination date are removed. Invoiced payments stay."
 msgstr "Payments due after the termination date are removed. Invoiced payments stay."
 
-msgid "Payments due before this date are marked paid outside Carbon"
-msgstr "Payments due before this date are marked paid outside Carbon"
+msgid "Payments due before this date were paid outside Carbon"
+msgstr "Payments due before this date were paid outside Carbon"
 
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Pays the deposit held for this document back out of customer prepayments."
@@ -17437,9 +17485,6 @@ msgstr "Received Qty"
 
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Received quantity not yet credited. The credit memo is created as a draft."
-
-msgid "Receives the invoice digest and the reminders"
-msgstr "Receives the invoice digest and the reminders"
 
 msgid "Receives the invoice email"
 msgstr "Receives the invoice email"
@@ -21490,6 +21535,9 @@ msgstr "The amount of days after the calculation method that the payment is due"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 
+msgid "The asset has no other use to the supplier once the term ends."
+msgstr "The asset has no other use to the supplier once the term ends."
+
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "The asset moves into its in-service class and starts depreciating from the in-service date."
 
@@ -21597,6 +21645,9 @@ msgstr "The code that identifies a bank internationally, 8 or 11 characters. A c
 
 msgid "The company already has a posted opening balance journal."
 msgstr "The company already has a posted opening balance journal."
+
+msgid "The company expects to buy the asset at the end of the term."
+msgstr "The company expects to buy the asset at the end of the term."
 
 msgid "The company has no account defaults."
 msgstr "The company has no account defaults."
@@ -21737,9 +21788,6 @@ msgstr "The default tax rate applied to this customer's quote and sales-order li
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 
-msgid "The discount rate values the payments. The inputs below decide whether this is an operating or a finance lease."
-msgstr "The discount rate values the payments. The inputs below decide whether this is an operating or a finance lease."
-
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."
 
@@ -21752,9 +21800,6 @@ msgstr "The employee accountable for this cost center — when purchase order ap
 msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
 msgstr "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
 
-msgid "The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "The end date is the last day of the term, including renewals that are reasonably certain."
-
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 
@@ -21763,9 +21808,6 @@ msgstr "The endpoint that receives a POST request with the updated data when the
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
-
-msgid "The escalation applies on each anniversary of the commencement date."
-msgstr "The escalation applies on each anniversary of the commencement date."
 
 msgid "The evening hours, {name}."
 msgstr "The evening hours, {name}."
@@ -21925,6 +21967,9 @@ msgstr "The last day to give renewal or termination notice"
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
+
+msgid "The lease is ready to activate."
+msgstr "The lease is ready to activate."
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
 msgstr "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
@@ -22112,6 +22157,9 @@ msgstr "The part is taken from existing stock when its parent is built — no ne
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 
+msgid "The payment rows below are cut from these terms. Changing a term cuts them again."
+msgstr "The payment rows below are cut from these terms. Changing a term cuts them again."
+
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "The people on the Carbon side who will run your implementation, and how to reach them."
 
@@ -22195,6 +22243,9 @@ msgstr "The Ramp connection expired"
 
 msgid "The rate at the effective date"
 msgstr "The rate at the effective date"
+
+msgid "The rate the payments are discounted at, and what the asset is worth and how long it lasts."
+msgstr "The rate the payments are discounted at, and what the asset is worth and how long it lasts."
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "The raw stock and material master you buy and consume"
@@ -23060,6 +23111,9 @@ msgstr "Timezone"
 msgid "Title"
 msgstr "Title"
 
+msgid "Title passes to the company when the term ends."
+msgstr "Title passes to the company when the term ends."
+
 msgid "Title passes to the customer when the term ends."
 msgstr "Title passes to the customer when the term ends."
 
@@ -23250,6 +23304,9 @@ msgstr "Total Minutes"
 
 msgid "Total Outside Cost"
 msgstr "Total Outside Cost"
+
+msgid "Total Payments"
+msgstr "Total Payments"
 
 msgid "Total Price"
 msgstr "Total Price"
@@ -24670,6 +24727,9 @@ msgstr "What data"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "What drove inventory up or down, by any dimension"
 
+msgid "What each period's payment is in the first year"
+msgstr "What each period's payment is in the first year"
+
 msgid "What happens to an invoice once it is created"
 msgstr "What happens to an invoice once it is created"
 
@@ -24678,6 +24738,9 @@ msgstr "What happens to an invoice once it is drafted"
 
 msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 msgstr "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
+
+msgid "What happens to the asset when the term ends. A purchase option that is reasonably certain becomes a payment row."
+msgstr "What happens to the asset when the term ends. A purchase option that is reasonably certain becomes a payment row."
 
 msgid "What happens to the units when the term ends, and the rate the rent is discounted at."
 msgstr "What happens to the units when the term ends, and the rate the rent is discounted at."
@@ -24712,6 +24775,12 @@ msgstr "What kind of quote this is — standard supplier quote, blanket-agreemen
 msgid "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 msgstr "What source this dimension pulls its allowed values from (custom list or an existing entity like customer, location, employee)."
 
+msgid "What the asset would cost to buy today"
+msgstr "What the asset would cost to buy today"
+
+msgid "What the company can buy the asset for at the end"
+msgstr "What the company can buy the asset for at the end"
+
 msgid "What the customer can buy each unit for at the end"
 msgstr "What the customer can buy each unit for at the end"
 
@@ -24720,6 +24789,9 @@ msgstr "What the customer pays up front, the tax on rent, and when invoices are 
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "What the due-date countdown starts from (invoice date, end of month, etc.)."
+
+msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
+msgstr "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
 
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
 msgstr "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
@@ -24849,6 +24921,9 @@ msgstr "When the goods actually arrived; recorded on the receipt and used for su
 
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
+
+msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
+msgstr "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
@@ -24997,6 +25072,9 @@ msgstr "Who has to approve quotes, orders, and purchases — and when"
 msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
 msgstr "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
 
+msgid "Who owns the lease here: they get the invoice digest and the date reminders."
+msgstr "Who owns the lease here: they get the invoice digest and the date reminders."
+
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Who receives the invoices, where, and on what terms."
 
@@ -25045,8 +25123,8 @@ msgstr "Who sold it, the currency it bills in, and any notes."
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Who sold it, what it belongs to, and when it closed."
 
-msgid "Who the company leases from, and who owns it here."
-msgstr "Who the company leases from, and who owns it here."
+msgid "Who the company leases from, and who to call there."
+msgstr "Who the company leases from, and who to call there."
 
 msgid "Who the contract is with and what it is called."
 msgstr "Who the contract is with and what it is called."
