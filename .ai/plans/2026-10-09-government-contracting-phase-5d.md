@@ -52,8 +52,8 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 
 ## Progress
 
-- [ ] Task 1: Check the prerequisites
-- [ ] Task 2: Create the enum migration
+- [x] Task 1: Check the prerequisites
+- [x] Task 2: Create the enum migration
 - [ ] Task 3: Create the R&D tax columns migration
 - [ ] Task 4: Apply migrations and regenerate types
 - [ ] Task 5: Add the pure R&D tax helpers
@@ -607,3 +607,7 @@ ls .ai/playbooks/government-contracting-phase-5d.md
 ```
 
 **Out of scope:** Phases 5b and 5c.
+
+## Execution notes
+
+- Task 1: every prerequisite exists. `location` has `PRIMARY KEY ("id")` and a separate `UNIQUE ("id", "companyId")`, so Task 3 writes the plain FK of the plan. `location.countryCode` exists; the local database has 2 locations with `US` and 8 with none. Task 1 changes no code, so it has no commit of its own; its tick is in the Task 2 commit.
