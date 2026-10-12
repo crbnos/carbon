@@ -2780,6 +2780,9 @@ msgstr "工程变更是指受影响的物料，其方法在草稿上修订后一
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "一种企业登录方法,公司注册电子邮件域中的所有人通过公司自己的 SAML 身份提供商进行身份验证,而不是使用魔法链接,因此 IT 可以集中授予和撤销访问权限。"
 
+msgid "An entry older than this needs a late reason."
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "当工作流到达该步骤时，Carbon向您的系统发送的HTTPS请求，携带您配置的任何标头和请求体。"
 
@@ -5775,6 +5778,9 @@ msgstr "与当前比较"
 msgid "Compare with…"
 msgstr "与…比较"
 
+msgid "Compares a submitted week with the employee's timecards."
+msgstr ""
+
 msgid "Compatibility rules"
 msgstr "兼容性规则"
 
@@ -7669,6 +7675,9 @@ msgstr "DCAA"
 
 msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 msgstr "DCAA要求每日录入、每项变更都有原因、提交时认证以及仅由项目成员计费。"
+
+msgid "DCAA rules"
+msgstr ""
 
 msgid "Deactivate"
 msgstr "停用"
@@ -12365,17 +12374,11 @@ msgstr "在 {0} 中；供应商零件的换算系数给出采购数量"
 msgid "In an open menu"
 msgstr "在打开的菜单中"
 
-msgid "In DCAA mode, an entry older than this needs a late reason."
-msgstr "在 DCAA 模式下，比此日期更早的条目需要迟到原因。"
-
 msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr "在 DCAA 模式下，豁免员工超出标准周的小时数会稀释每小时成本。"
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr ""
-
-msgid "In DCAA mode, compares a submitted week with the employee's timecards."
-msgstr "在 DCAA 模式下，将已提交的周与员工的工时记录进行比较。"
 
 msgid "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
 msgstr "在 DCAA 工时管理中，期间内的每个工时条目应已过账，每个计划工作日应有时间条目，以便期间内的人工成本完整。在标准工时管理中总是通过。如果间隙已知，可跳过并提供原因。"
@@ -24493,6 +24496,9 @@ msgstr "接收表格更新时包含更新数据的POST请求的端点"
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "此检验计划关联的工程图纸；针对此零件记录的检验将引用此图纸。"
 
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "傍晚时段，{name}。"
 
@@ -24577,8 +24583,8 @@ msgstr "此工作中心运行机械的每小时成本；与记录的机器小时
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "应用于此工作中心的每小时间接成本负担；人工 + 机器与完整报价率之间的差异就是制造费用吸收的内容。"
 
-msgid "The hours an exempt employee's week is diluted to in DCAA mode."
-msgstr "在DCAA模式下豁免员工一周被稀释到的小时数。"
+msgid "The hours an exempt employee's week is diluted to."
+msgstr ""
 
 msgid "the hours the scheduler placed on the station."
 msgstr "计划员在工作站上安排的小时数。"
@@ -25872,9 +25878,6 @@ msgstr "工时记录"
 
 msgid "Timekeeping controls"
 msgstr ""
-
-msgid "Timekeeping Controls"
-msgstr "工时记录控制"
 
 msgid "Timer running"
 msgstr "计时器运行中"

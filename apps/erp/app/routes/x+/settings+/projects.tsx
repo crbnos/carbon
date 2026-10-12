@@ -14,18 +14,17 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   ScrollArea,
   Switch,
-  toast,
-  VStack
+  toast
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
   deleteProjectLabel,
   deleteProjectState,
@@ -258,13 +257,10 @@ export default function ProjectsSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Projects</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <Card>
           <CardHeader>
@@ -323,7 +319,7 @@ export default function ProjectsSettingsRoute() {
 
         <ProjectStatesGrid states={states} />
         <ProjectLabelsGrid labels={labels} />
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

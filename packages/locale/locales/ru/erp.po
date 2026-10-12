@@ -2780,6 +2780,9 @@ msgstr "Конструкторское изменение: затронутая 
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "Метод входа в Enterprise, при котором все сотрудники организации в зарегистрированных доменах электронной почты аутентифицируются через собственного поставщика удостоверений SAML организации вместо магической ссылки, позволяя IT централизованно предоставлять и отзывать доступ."
 
+msgid "An entry older than this needs a late reason."
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "HTTPS-запрос, который Carbon отправляет в вашу систему, когда рабочий процесс достигает этого шага, с любыми заголовками и телом, которые вы настроили."
 
@@ -5775,6 +5778,9 @@ msgstr "Сравнить с текущим"
 msgid "Compare with…"
 msgstr "Сравнить с…"
 
+msgid "Compares a submitted week with the employee's timecards."
+msgstr ""
+
 msgid "Compatibility rules"
 msgstr "Правила совместимости"
 
@@ -7669,6 +7675,9 @@ msgstr "DCAA"
 
 msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 msgstr "DCAA требует ежедневного ввода, причину для каждого изменения, подтверждение при отправке и начисление только участниками проекта."
+
+msgid "DCAA rules"
+msgstr ""
 
 msgid "Deactivate"
 msgstr "Деактивировать"
@@ -12365,17 +12374,11 @@ msgstr "В {0}; коэффициент пересчета детали пост�
 msgid "In an open menu"
 msgstr "В открытом меню"
 
-msgid "In DCAA mode, an entry older than this needs a late reason."
-msgstr "В режиме DCAA запись старше этого требует причину задержки."
-
 msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr "В режиме DCAA часы освобожденного сотрудника сверх стандартной недели разбавляют стоимость каждого часа."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr ""
-
-msgid "In DCAA mode, compares a submitted week with the employee's timecards."
-msgstr "В режиме DCAA сравнивает отправленную неделю с табелями сотрудника."
 
 msgid "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
 msgstr "При учете времени DCAA каждая запись в табеле, датированная в периоде, должна быть проведена, и каждый запланированный рабочий день должен иметь введенное время, чтобы стоимость труда в периоде была полной. Всегда проходит при стандартном учете времени. Пропустите с причиной, если пробелы известны."
@@ -24493,6 +24496,9 @@ msgstr "Конечная точка, которая получает POST-зап
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Техническая схема, к которой привязан данный план контроля; проверки, записанные для этой детали, ссылаются на эту схему."
 
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "Вечерние часы, {name}."
 
@@ -24577,8 +24583,8 @@ msgstr "Почасовая Себестоимость работы Станка 
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Почасовая нагрузка косвенных расходов, применяемая к этому Рабочему центру; разница между Трудом + Станком и полной ставкой котировки — это то, что поглощают Накладные расходы."
 
-msgid "The hours an exempt employee's week is diluted to in DCAA mode."
-msgstr "Часы, на которые разбавляется неделя освобожденного сотрудника в режиме DCAA."
+msgid "The hours an exempt employee's week is diluted to."
+msgstr ""
 
 msgid "the hours the scheduler placed on the station."
 msgstr "часы, которые планировщик разместил на станции."
@@ -25872,9 +25878,6 @@ msgstr "Учет рабочего времени"
 
 msgid "Timekeeping controls"
 msgstr ""
-
-msgid "Timekeeping Controls"
-msgstr "Элементы управления учетом рабочего времени"
 
 msgid "Timer running"
 msgstr "Таймер запущен"

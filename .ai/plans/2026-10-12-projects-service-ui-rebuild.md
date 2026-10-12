@@ -229,7 +229,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 34: Rebuild Projects → Reports as one list (Brad asked for accounting-style report pages instead: the list links to `/x/projects/reports/<key>`, one full-width page per report with its table, inputs and Download CSV)
 - [x] Task 35: Turn Indirect Rates into a runs list with a Rates drawer
 - [x] Task 36: Move Burden Settings to Settings → Accounting and default the fiscal year
-- [ ] Task 37: Match Settings → Timekeeping and Projects to Settings → Inventory
+- [x] Task 37: Match Settings → Timekeeping and Projects to Settings → Inventory
 - [ ] Task 38: Sweep the remaining empty states
 - [ ] Task 39: Sweep every boolean field to `bordered`
 - [ ] Task 40: Sweep the glossary popovers onto the rebuilt screens
@@ -1744,3 +1744,4 @@ Run of 2026-10-12, Part C (Tasks 30–38):
 - Task 35: the rates grid lost its card (the drawer title and description replace it). `termId`s: `indirect-pool` (Pool header), `provisional-rate` and `final-rate` (beside those rate types), `burden` (Burden column of the runs). The route keeps its `settings` intent and loads the burden settings until Task 36 moves them.
 - Task 36: the current fiscal year is one helper, `getCurrentFiscalYear(client, companyId)` (`accounting.server.ts`: today in the company time zone, counted from the fiscal year's start month). The Indirect Rates page, the ICE drawer and the statement drawer all use it, so a bare `/ice` or `/statement` opens the year the page would show. The page's own copy of that computation is gone.
 - Task 36: the `burdenSettings` intent needs `update: settings` (the page's own permission), where the old Indirect Rates intent needed `update: accounting`. `BurdenSettingsForm` posts it with a toast on save (`useAction`), passes `bordered` on its boolean and `termId="burden"` on Burden Rate Type. The Indirect Rates route lost its `settings` intent and no longer reads the burden settings. A gated company sees one `UpgradeOverlayRow` (Business) in place of the card.
+- Task 37: one `ValidatedForm` spans both Timekeeping cards, because the action saves every field at once. The DCAA rules card follows the Controls picker as it changes (before a save) and only hides under Standard, so its fields still post (D14). The one Save sits in the footer of the last card shown. The helper texts lost their "In DCAA mode" prefix, now that the card says so. Settings → Projects only moved onto `SettingsPage` / `SettingsPageHeading` (same width and padding as before); its cards and grids are unchanged. Neither page uses `SettingsSectionHeader`: two to four cards need no section labels.

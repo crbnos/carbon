@@ -2780,6 +2780,9 @@ msgstr "설계 변경: 초안에서 방법이 수정되고 함께 릴리스되�
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "회사의 등록된 이메일 도메인의 모든 사용자가 마법 링크 대신 회사 자체의 SAML ID 제공자를 통해 인증하는 엔터프라이즈 로그인 방식이므로 IT가 중앙에서 액세스를 부여하고 해제합니다."
 
+msgid "An entry older than this needs a late reason."
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "워크플로우가 해당 단계에 도달할 때 Carbon이 귀사의 시스템으로 보내는 https 요청으로, 구성한 헤더 및 본문을 전달합니다."
 
@@ -5775,6 +5778,9 @@ msgstr "현재와 비교"
 msgid "Compare with…"
 msgstr "…와 비교"
 
+msgid "Compares a submitted week with the employee's timecards."
+msgstr ""
+
 msgid "Compatibility rules"
 msgstr "호환성 규칙"
 
@@ -7669,6 +7675,9 @@ msgstr "DCAA"
 
 msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 msgstr "DCAA는 매일 항목, 각 변경에 대한 사유, 제출 시 인증 및 프로젝트 멤버에 의해서만 청구할 것을 요구합니다."
+
+msgid "DCAA rules"
+msgstr ""
 
 msgid "Deactivate"
 msgstr "비활성화"
@@ -12365,17 +12374,11 @@ msgstr "In {0}; 공급업체 부품의 환산 계수가 구매 수량을 결정�
 msgid "In an open menu"
 msgstr "열린 메뉴에서"
 
-msgid "In DCAA mode, an entry older than this needs a late reason."
-msgstr "DCAA 모드에서 이보다 오래된 항목은 지연 사유가 필요합니다."
-
 msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr "DCAA 모드에서 면제된 직원의 표준주 초과 시간이 시간당 원가를 희석합니다."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr ""
-
-msgid "In DCAA mode, compares a submitted week with the employee's timecards."
-msgstr "DCAA 모드에서 제출된 주와 직원의 타임카드를 비교합니다."
 
 msgid "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
 msgstr "DCAA 근무시간 기록에서, 기간에 표기된 모든 근무시간표 항목은 전기되어야 하고, 모든 예정된 업무일은 시간이 입력되어야 하므로 기간의 노무 원가가 완전합니다. 표준 근무시간 기록에서는 항상 통과합니다. 차이가 알려진 경우 사유와 함께 건너뜁니다."
@@ -24493,6 +24496,9 @@ msgstr "테이블이 업데이트될 때 변경된 데이터를 담은 POST 요�
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "이 검사 계획이 연결된 엔지니어링 드로잉입니다. 이 부품에 대해 기록된 검사는 이 드로잉을 참조합니다."
 
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "저녁 시간, {name}."
 
@@ -24577,8 +24583,8 @@ msgstr "이 작업장에서 기계 운영의 시간당 원가이며, 기록된 �
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "이 작업장에 적용되는 시간당 간접비 부담률입니다. 노무비+기계비와 전체 견적 요율의 차이를 간접비가 흡수합니다."
 
-msgid "The hours an exempt employee's week is diluted to in DCAA mode."
-msgstr "DCAA 모드에서 면제 직원의 주가 단축되는 시간입니다."
+msgid "The hours an exempt employee's week is diluted to."
+msgstr ""
 
 msgid "the hours the scheduler placed on the station."
 msgstr "스케줄러가 스테이션에 배치한 시간."
@@ -25872,9 +25878,6 @@ msgstr "시간 관리"
 
 msgid "Timekeeping controls"
 msgstr ""
-
-msgid "Timekeeping Controls"
-msgstr "시간 관리 제어"
 
 msgid "Timer running"
 msgstr "타이머 실행 중"

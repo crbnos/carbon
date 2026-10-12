@@ -2780,6 +2780,9 @@ msgstr "Eine technische Änderung: die betroffenen Elemente, deren Methoden in e
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "Eine Unternehmens-Anmeldemethode, bei der sich alle Benutzer in registrierten E-Mail-Domänen eines Unternehmens über den SAML-Identitätsanbieter des Unternehmens anmelden, statt über einen Magic Link, sodass die IT den Zugriff zentral gewähren und widerrufen kann."
 
+msgid "An entry older than this needs a late reason."
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Eine HTTPS-Anfrage, die Carbon an Ihr System sendet, wenn ein Workflow diesen Schritt erreicht, mit den von Ihnen konfigurierten Headern und Text."
 
@@ -5775,6 +5778,9 @@ msgstr "Mit aktuell vergleichen"
 msgid "Compare with…"
 msgstr "Vergleichen mit…"
 
+msgid "Compares a submitted week with the employee's timecards."
+msgstr ""
+
 msgid "Compatibility rules"
 msgstr "Kompatibilitätsregeln"
 
@@ -7669,6 +7675,9 @@ msgstr "DCAA"
 
 msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 msgstr "DCAA erfordert tägliche Einträge, einen Grund für jede Änderung, Zertifizierung beim Einreichen und Belastung nur durch Projektmitglieder."
+
+msgid "DCAA rules"
+msgstr ""
 
 msgid "Deactivate"
 msgstr "Deaktivieren"
@@ -12365,17 +12374,11 @@ msgstr "In {0}; der Umrechnungsfaktor des Lieferanten-Teils ergibt die Einkaufsm
 msgid "In an open menu"
 msgstr "In einem offenen Menü"
 
-msgid "In DCAA mode, an entry older than this needs a late reason."
-msgstr "Im DCAA-Modus benötigt ein älterer Eintrag einen Grund für die Verzögerung."
-
 msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr "Im DCAA-Modus verdünnen die Stunden eines freigestellten Mitarbeiters über die Standardwoche die Kosten pro Stunde."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr ""
-
-msgid "In DCAA mode, compares a submitted week with the employee's timecards."
-msgstr "Im DCAA-Modus vergleicht eine eingereichte Woche mit der Zeiterfassung des Mitarbeiters."
 
 msgid "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
 msgstr "In der DCAA-Zeiterfassung sollte jeder Zeiteintrag mit Datum in der Periode gebucht sein, und jeder geplante Arbeitstag sollte Zeit erfasst haben, damit die Personalkosten in der Periode vollständig sind. Im Normalmodus wird immer bestanden. Bei bekannten Lücken mit Grund überspringen."
@@ -24493,6 +24496,9 @@ msgstr "Der Endpunkt, der eine POST-Anfrage mit den aktualisierten Daten empfän
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Die technische Zeichnung, an die dieser Prüfplan gekoppelt ist; Prüfungen, die gegen diesen Teil aufgezeichnet werden, beziehen sich auf diese Zeichnung."
 
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "Die Abendstunden, {name}."
 
@@ -24577,8 +24583,8 @@ msgstr "Die Stundensätze für Maschinenkosten an diesem Arbeitsplatz; kombinier
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "Die auf diesem Arbeitsplatz angewendeten Stundensätze für indirekte Kosten; der Unterschied zwischen Personal + Maschine und dem vollständigen Angebotssatz wird durch die Gemeinkosten abgedeckt."
 
-msgid "The hours an exempt employee's week is diluted to in DCAA mode."
-msgstr "Die Stunden, auf die die Woche eines befreiten Mitarbeiters im DCAA-Modus reduziert wird."
+msgid "The hours an exempt employee's week is diluted to."
+msgstr ""
 
 msgid "the hours the scheduler placed on the station."
 msgstr "die Stunden, die der Planer auf der Station platziert hat."
@@ -25872,9 +25878,6 @@ msgstr "Zeiterfassung"
 
 msgid "Timekeeping controls"
 msgstr ""
-
-msgid "Timekeeping Controls"
-msgstr "Zeiterfassungskontrollen"
 
 msgid "Timer running"
 msgstr "Timer läuft"

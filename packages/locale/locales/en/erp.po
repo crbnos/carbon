@@ -2780,6 +2780,9 @@ msgstr "An engineering change: the affected items whose methods are revised on a
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 
+msgid "An entry older than this needs a late reason."
+msgstr "An entry older than this needs a late reason."
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 
@@ -5775,6 +5778,9 @@ msgstr "Compare with current"
 msgid "Compare with…"
 msgstr "Compare with…"
 
+msgid "Compares a submitted week with the employee's timecards."
+msgstr "Compares a submitted week with the employee's timecards."
+
 msgid "Compatibility rules"
 msgstr "Compatibility rules"
 
@@ -7669,6 +7675,9 @@ msgstr "DCAA"
 
 msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 msgstr "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
+
+msgid "DCAA rules"
+msgstr "DCAA rules"
 
 msgid "Deactivate"
 msgstr "Deactivate"
@@ -12365,17 +12374,11 @@ msgstr "In {0}; the supplier part's conversion factor gives the purchase quantit
 msgid "In an open menu"
 msgstr "In an open menu"
 
-msgid "In DCAA mode, an entry older than this needs a late reason."
-msgstr "In DCAA mode, an entry older than this needs a late reason."
-
 msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
-
-msgid "In DCAA mode, compares a submitted week with the employee's timecards."
-msgstr "In DCAA mode, compares a submitted week with the employee's timecards."
 
 msgid "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
 msgstr "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
@@ -24493,6 +24496,9 @@ msgstr "The endpoint that receives a POST request with the updated data when the
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+msgstr "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+
 msgid "The evening hours, {name}."
 msgstr "The evening hours, {name}."
 
@@ -24577,8 +24583,8 @@ msgstr "The hourly cost of running the machinery on this work center; combined w
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 
-msgid "The hours an exempt employee's week is diluted to in DCAA mode."
-msgstr "The hours an exempt employee's week is diluted to in DCAA mode."
+msgid "The hours an exempt employee's week is diluted to."
+msgstr "The hours an exempt employee's week is diluted to."
 
 msgid "the hours the scheduler placed on the station."
 msgstr "the hours the scheduler placed on the station."
@@ -25872,9 +25878,6 @@ msgstr "Timekeeping"
 
 msgid "Timekeeping controls"
 msgstr "Timekeeping controls"
-
-msgid "Timekeeping Controls"
-msgstr "Timekeeping Controls"
 
 msgid "Timer running"
 msgstr "Timer running"

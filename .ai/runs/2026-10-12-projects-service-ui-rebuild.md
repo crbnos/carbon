@@ -329,6 +329,10 @@ Shots: `36-settings-accounting.png`, `36-settings-accounting-burden.png` (the ca
 
 ## Task 37: Match Settings → Timekeeping and Projects to Settings → Inventory
 
+Shots: `37-settings-timekeeping.png` (Standard: the Controls card alone), `37-settings-timekeeping-dcaa.png` (DCAA picked, not saved: the DCAA rules card appears), `37-settings-projects.png`. Checked: Save under Standard toasts "Timekeeping settings updated" and keeps the DCAA values (1 day, 40 hours).
+
+1. Reference pattern: yes — Settings → Inventory (`SettingsPage`, `SettingsPageHeading`, a card per subject, 400 px short fields). 2. No overlap: yes. 3. One toolbar row: n/a. 4. One primary: yes (one Save). 5. No input box in a table: n/a (the projects grids are Task 14's). 6. Secondary actions in menus: n/a. 7. Advanced fields hidden: yes, the DCAA rules show only under DCAA.
+
 ## Task 38: Sweep the remaining empty states
 
 ## Task 39: Sweep every boolean field to bordered

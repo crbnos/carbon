@@ -2780,6 +2780,9 @@ msgstr "एक इंजीनियरिंग परिवर्तन: प�
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "एक एंटरप्राइज साइन-इन विधि जिसमें कंपनी के पंजीकृत ईमेल डोमेन के सभी उपयोगकर्ता मैजिक लिंक के बजाय कंपनी के अपने SAML आइडेंटिटी प्रदाता के माध्यम से प्रमाणीकरण करते हैं, ताकि IT केंद्रीय रूप से एक्सेस दे और रद्द कर सके।"
 
+msgid "An entry older than this needs a late reason."
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "एक HTTPS अनुरोध जो कार्बन आपके सिस्टम को भेजता है जब एक वर्कफ़्लो उस चरण तक पहुंचता है, आपके द्वारा कॉन्फ़िगर किए गए किसी भी हेडर और बॉडी को ले जाता है।"
 
@@ -5775,6 +5778,9 @@ msgstr "वर्तमान के साथ तुलना करें"
 msgid "Compare with…"
 msgstr "इसके साथ तुलना करें…"
 
+msgid "Compares a submitted week with the employee's timecards."
+msgstr ""
+
 msgid "Compatibility rules"
 msgstr "अनुकूलता नियम"
 
@@ -7669,6 +7675,9 @@ msgstr "DCAA"
 
 msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 msgstr "DCAA को दैनिक प्रविष्टि, प्रत्येक परिवर्तन के लिए कारण, सबमिट पर प्रमाणन और केवल परियोजना सदस्यों द्वारा चार्जिंग की आवश्यकता है।"
+
+msgid "DCAA rules"
+msgstr ""
 
 msgid "Deactivate"
 msgstr "निष्क्रिय करें"
@@ -12365,17 +12374,11 @@ msgstr "में {0}; आपूर्तिकर्ता पार्ट क�
 msgid "In an open menu"
 msgstr "एक खुले मेनू में"
 
-msgid "In DCAA mode, an entry older than this needs a late reason."
-msgstr "DCAA मोड में, इससे पुरानी प्रविष्टि को विलंबित कारण की आवश्यकता है।"
-
 msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr "DCAA मोड में, छूट प्राप्त कर्मचारी के मानक सप्ताह से अधिक घंटे प्रत्येक घंटे की लागत को कम करते हैं।"
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr ""
-
-msgid "In DCAA mode, compares a submitted week with the employee's timecards."
-msgstr "DCAA मोड में, प्रस्तुत सप्ताह की कर्मचारी के टाइमकार्ड से तुलना करता है।"
 
 msgid "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
 msgstr "DCAA समय प्रबंधन में, अवधि में दिनांकित प्रत्येक टाइमशीट प्रविष्टि पोस्ट की जानी चाहिए, और प्रत्येक निर्धारित कार्य दिवस के लिए समय दर्ज होना चाहिए, ताकि अवधि में श्रम लागत पूर्ण हो। मानक समय प्रबंधन में हमेशा पास करता है। यदि अंतराल ज्ञात हैं तो कारण के साथ छोड़ दें।"
@@ -24493,6 +24496,9 @@ msgstr "वह एंडपॉइंट जो तालिका अपडे�
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "इंजीनियरिंग ड्राइंग जिसे यह निरीक्षण योजना बंधी है; इस हिस्से के विरुद्ध दर्ज निरीक्षण इस ड्राइंग को वापस संदर्भित करते हैं।"
 
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "शाम के घंटे, {name}।"
 
@@ -24577,8 +24583,8 @@ msgstr "इस वर्क सेंटर पर मशीनरी चला�
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "इस वर्क सेंटर पर लागू अप्रत्यक्ष लागत का प्रति घंटा भार; श्रम + मशीन और पूर्ण कोटेशन दर के बीच अंतर वह है जो उपरिव्यय ले लेता है।"
 
-msgid "The hours an exempt employee's week is diluted to in DCAA mode."
-msgstr "DCAA मोड में छूट प्राप्त कर्मचारी का सप्ताह कितने घंटों तक कम किया जाता है।"
+msgid "The hours an exempt employee's week is diluted to."
+msgstr ""
 
 msgid "the hours the scheduler placed on the station."
 msgstr "स्टेशन पर शेड्यूलर द्वारा रखे गए घंटे।"
@@ -25872,9 +25878,6 @@ msgstr "समय रिकॉर्डिंग"
 
 msgid "Timekeeping controls"
 msgstr ""
-
-msgid "Timekeeping Controls"
-msgstr "समय रिकॉर्डिंग नियंत्रण"
 
 msgid "Timer running"
 msgstr "टाइमर चल रहा है"

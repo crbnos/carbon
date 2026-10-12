@@ -2780,6 +2780,9 @@ msgstr "設計変更。影響を受ける品目の製法が下書きで改訂さ
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "エンタープライズ認証方式で、会社の登録済みメールドメイン上の全員が、マジックリンクの代わりに会社自身の SAML アイデンティティプロバイダーを通じて認証されるため、IT は中央でアクセスを付与および取り消します。"
 
+msgid "An entry older than this needs a late reason."
+msgstr ""
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "ワークフローがそのステップに到達したときに、Carbonがあなたのシステムに送信するHTTPSリクエスト。設定したヘッダーと本文が含まれます。"
 
@@ -5775,6 +5778,9 @@ msgstr "現在と比較"
 msgid "Compare with…"
 msgstr "比較対象を選択"
 
+msgid "Compares a submitted week with the employee's timecards."
+msgstr ""
+
 msgid "Compatibility rules"
 msgstr "互換性ルール"
 
@@ -7669,6 +7675,9 @@ msgstr "DCAA"
 
 msgid "DCAA requires daily entry, a reason for each change, certification at submit, and charging only by project members."
 msgstr "DCAIAは毎日のエントリー、各変更の理由、提出時の認証、およびプロジェクトメンバーによるチャージのみを要求します。"
+
+msgid "DCAA rules"
+msgstr ""
 
 msgid "Deactivate"
 msgstr "無効化"
@@ -12365,17 +12374,11 @@ msgstr "{0}で、仕入先品目の換算係数が購買数量を決定する"
 msgid "In an open menu"
 msgstr "開いているメニュー内"
 
-msgid "In DCAA mode, an entry older than this needs a late reason."
-msgstr "DCAA モードでは、これより古いエントリは遅延理由が必要です。"
-
 msgid "In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour."
 msgstr "DCAA モードでは、超過勤務時間従業員の標準週超の時間は、各時間の原価を希薄化します。"
 
 msgid "In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour."
 msgstr ""
-
-msgid "In DCAA mode, compares a submitted week with the employee's timecards."
-msgstr "DCAA モードでは、提出された週と従業員のタイムカードを比較します。"
 
 msgid "In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known."
 msgstr "DCAA タイムキーピングでは、期間内に日付のあるタイムシートエントリはすべて転記済である必要があり、スケジュール済みの作業日にはすべて時間が入力される必要があるため、期間内の労務原価は完全です。標準タイムキーピングでは常にパスします。ギャップが既知の場合は理由をつけてスキップしてください。"
@@ -24493,6 +24496,9 @@ msgstr "テーブルが更新されたときに、更新されたデータを含
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "この検査計画が関連付けられているエンジニアリング図面。このパーツに対して記録された検査はこの図面を参照します。"
 
+msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "夜間のようですね、{name}さん。"
 
@@ -24577,8 +24583,8 @@ msgstr "この作業区の機械実行の時間単価。ログされた機械時
 msgid "The hourly indirect-cost burden applied to this work center; the difference between labor + machine and the full quoting rate is what overhead absorbs."
 msgstr "この作業区に適用される時間当たりの間接費負担。労務 + 機械と完全な見積レートの差が間接費で吸収されます。"
 
-msgid "The hours an exempt employee's week is diluted to in DCAA mode."
-msgstr "DCAUモードで免除従業員の週が希釈される時間。"
+msgid "The hours an exempt employee's week is diluted to."
+msgstr ""
 
 msgid "the hours the scheduler placed on the station."
 msgstr "スケジューラーがステーションに配置した時間。"
@@ -25872,9 +25878,6 @@ msgstr "労務管理"
 
 msgid "Timekeeping controls"
 msgstr ""
-
-msgid "Timekeeping Controls"
-msgstr "労務管理コントロール"
 
 msgid "Timer running"
 msgstr "タイマー実行中"
