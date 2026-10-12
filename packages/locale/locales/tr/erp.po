@@ -131,7 +131,7 @@ msgstr "{0} zaten başlatıldı"
 
 #. placeholder {0}: lines.length
 msgid "{0} assets"
-msgstr ""
+msgstr "{0} varlık"
 
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
@@ -439,7 +439,7 @@ msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# iş emri serbest bırakıldı} other {# iş emirleri serbest bırakıldı}}"
 
 msgid "{count} assets"
-msgstr ""
+msgstr "{count} varlık"
 
 msgid "{count} of {total} units"
 msgstr "{count}/{total} adet"
@@ -560,7 +560,7 @@ msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# parça} other {# parça}}"
 
 msgid "{passing} of {total} assets"
-msgstr ""
+msgstr "{passing} / {total} varlık"
 
 msgid "{percent} picked"
 msgstr "{percent} toplandı"
@@ -590,7 +590,7 @@ msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
 
 msgid "{termMonths} months"
-msgstr ""
+msgstr "{termMonths} ay"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} aşama şirketinizi Carbon'da canlı hale getirmek için. Her biri bir kontrol noktasında sona erer."
@@ -678,7 +678,7 @@ msgid "0-4 weeks"
 msgstr "0-4 hafta"
 
 msgid "1 asset"
-msgstr ""
+msgstr "1 varlık"
 
 msgid "1 Asset"
 msgstr "1 Sabit Kıymet"
@@ -1113,7 +1113,7 @@ msgid "A purchase invoice is a document that specifies the products or services 
 msgstr "Alış faturası, bir müşteri tarafından satın alınan ürün veya hizmetleri ve bunlara karşılık gelen maliyeti belirten belgedir."
 
 msgid "A purchase invoice is drafted for each due date, with a line for each asset's payment."
-msgstr ""
+msgstr "Her son tarih için bir alış faturası hazırlanır, her varlığın ödemesi için bir satır ile."
 
 msgid "A purchase invoice is posted"
 msgstr "Alış faturası muhasebeleştirildi"
@@ -1362,10 +1362,10 @@ msgid "A shipment's tracking number changes"
 msgstr "Bir sevkiyatın takip numarası değişti"
 
 msgid "A short-term asset has no schedule: only its payment rows change, and no journal is posted."
-msgstr ""
+msgstr "Kısa vadeli bir varlığın çizelgesi yoktur: yalnızca ödeme satırları değişir ve muhasebe fişi muhasebeleştirilmez."
 
 msgid "A short-term asset posts no journal at activation. Each invoice is expensed when it posts."
-msgstr ""
+msgstr "Kısa vadeli bir varlık etkinleştirme sırasında muhasebe fişi muhasebeleştirmez. Her fatura muhasebeleştirildiğinde gider olarak kaydedilir."
 
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "Kısa vadeli bir kiralama çizelgesine sahip değil. Her fatura masraf olarak kaydedilir."
@@ -1712,10 +1712,10 @@ msgid "Activating checks every unit is available, classifies each unit's account
 msgstr "Etkinleştirme, her adetin kullanılabilir olup olmadığını denetler, her adetin muhasebe muamelesi sınıflandırılır ve her adetin tarifesinde ilk faturalama dönemleri kesilir. Şartlar ve satırlar sonradan sabitlenir."
 
 msgid "Activating classifies each asset, books its right-of-use asset and lease liability, and writes its monthly schedule. The terms and payment rows are fixed afterwards."
-msgstr ""
+msgstr "Aktivasyon her varlığı sınıflandırır, kullanım hakkı varlığını ve kira yükümlülüğünü muhasebeleştirir ve aylık çizelgesini oluşturur. Koşullar ve ödeme satırları daha sonra sabitlenir."
 
 msgid "Activating fixes the terms and the payment rows, classifies each asset and books it. After that, purchase invoices are drafted automatically as payments come due."
-msgstr ""
+msgstr "Etkinleştirme, koşulları ve ödeme satırlarını belirler, her varlığı sınıflandırır ve kaydeder. Bundan sonra, ödemeler vadesi geldiğinde otomatik olarak alış faturaları hazırlanır."
 
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Etkinleştirme koşulları ve adeitleri sabitler, her adeti sınıflandırır ve ilk fatura dönemlerini keser. Bundan sonra, dönemler vadesi geldiğinde faturalar otomatik olarak oluşturulur."
@@ -1841,16 +1841,16 @@ msgid "Add Approval Requirement"
 msgstr "Onay Gereklilik Ekle"
 
 msgid "Add Asset"
-msgstr ""
+msgstr "Varlık Ekle"
 
 msgid "Add Asset Class"
 msgstr "Varlık Sınıfı Ekle"
 
 msgid "Add at least one asset before activating."
-msgstr ""
+msgstr "Etkinleştirmeden önce en az bir varlık ekleyin."
 
 msgid "Add at least one asset."
-msgstr ""
+msgstr "En az bir varlık ekleyin."
 
 msgid "Add at least one service."
 msgstr "En az bir hizmet ekleyin."
@@ -2073,7 +2073,7 @@ msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
 
 msgid "Add the leased assets to see how each one is accounted for."
-msgstr ""
+msgstr "Kiralanmış varlıkları ekleyin ve her birinin nasıl muhasebeleştirildiğini görün."
 
 msgid "Add the materials this item uses."
 msgstr "Bu stok kartının kullandığı malzemeleri ekleyin."
@@ -2409,10 +2409,10 @@ msgid "An approval requirement on a non-conformance whose reviewers (seeded Engi
 msgstr "Sorun kapanmadan önce gözden geçirenler (Mühendislik ve Kalite) onay vermelidir uygunsuzluk üzerinde bir onay gerekliliği."
 
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
-msgstr ""
+msgstr "Varlık, bunlardan herhangi biri doğru olduğunda finansal kiralama, hiçbiri doğru olmadığında faaliyet kiralamasıdır."
 
 msgid "An asset leased for 12 months or less with no purchase option reasonably certain is short-term. Otherwise it is a finance lease when any of these is true, and an operating lease when none is."
-msgstr ""
+msgstr "12 ay veya daha kısa süre için kiralanmış ve makul ölçüde kesin bir satın alma seçeneği olmayan varlık kısa vadeli olarak sınıflandırılır. Diğer durumlarda, bunlardan herhangi biri doğru olduğunda finansal kiralama, hiçbiri doğru olmadığında faaliyet kiralamasıdır."
 
 msgid "An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization."
 msgstr "Şirketin bir tedarikçiden kiraladığı ve ASC 842 kapsamında muhasebeleştirilen bir varlık: etkinleştirme bunu İşletme, Finansal veya Kısa Vadeli olarak sınıflandırır ve kullanım hakkı varlığını ve kiralama yükümlülüğünü muhasebeleştirir; ödeme satırları alış faturaları olarak oluşturulur ve kiralama çalışması aylık faizini ve itfa payını muhasebeleştirir."
@@ -3237,7 +3237,7 @@ msgstr "Bu iş emrini serbest bırakmak istediğinizden emin misiniz? Atölyede 
 
 #. placeholder {0}: deleting.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
-msgstr ""
+msgstr "Gerçekten {0} ve ödeme satırlarını bu kiralamadan kaldırmak istiyor musunuz?"
 
 #. placeholder {0}: supplierName(deleteTarget.supplierId)
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
@@ -3386,7 +3386,7 @@ msgid "Asset Acquisition Cost (default)"
 msgstr "Varlık Edinme Maliyeti (varsayılan)"
 
 msgid "Asset actions"
-msgstr ""
+msgstr "Varlık işlemleri"
 
 msgid "asset class"
 msgstr "varlık sınıfı"
@@ -3419,7 +3419,7 @@ msgid "Asset ID"
 msgstr "Varlık Kimliği"
 
 msgid "Asset Inputs"
-msgstr ""
+msgstr "Varlık Girdileri"
 
 msgid "Asset Name"
 msgstr "Varlık Adı"
@@ -4322,7 +4322,7 @@ msgid "Cancelling voids the agreement and releases its units. An agreement with 
 msgstr "İptal etmek, sözleşmeyi hükümsüz kılar ve birimlerini serbest bırakır. Kirada olan bir birime sahip veya faturalandırılmış bir döneme sahip bir sözleşme iptal edilemez."
 
 msgid "Cancelling voids the lease's journals and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate its assets instead."
-msgstr ""
+msgstr "İptal etmek, kiralamayı hükümsüz kılar ve çizelgeyi kaldırır. Faturalandırılmış ödemeye veya muhasebeleştirilmiş kiralama çalışmasına sahip bir kiralama iptal edilemez; bunun yerine varlıklarını sonlandırın."
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Kaydedilmemiş işleme parametre eklenemez"
@@ -6783,10 +6783,10 @@ msgid "Decide when material picked to a work center but not consumed flows back 
 msgstr "Bir iş merkezine alınan ancak tüketilmeyen malzemenin depoya geri akışının ne zaman gerçekleşeceğine karar verin."
 
 msgid "Decided for each asset when the lease is activated, from its payment rows and its classification inputs."
-msgstr ""
+msgstr "Her varlık için kiralama etkinleştirildiğinde, ödeme satırları ve sınıflandırma girdilerinden belirlenir."
 
 msgid "Decided for each asset when the lease is activated, from its payment rows and the inputs below."
-msgstr ""
+msgstr "Her varlık için kiralama etkinleştirildiğinde, ödeme satırları ve aşağıdaki girdilerden belirlenir."
 
 msgid "Decimal Places"
 msgstr "Ondalık Basamaklar"
@@ -8031,7 +8031,7 @@ msgid "e.g. Zebra 2x1"
 msgstr "örneğin Zebra 2x1"
 
 msgid "Each active asset's remaining payments are cut again from these terms and discounted at the revised rate. Its right-of-use asset moves by the same amount as its liability."
-msgstr ""
+msgstr "Her aktif varlığın kalan ödemeleri bu koşullardan yeniden kesilerek gözden geçirilmiş oranda iskonto edilir. Kullanım hakkı varlığı, yükümlülüğü ile aynı miktarda hareket eder."
 
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "Her tutar, satırın faturalandırılacak kalanından başlar."
@@ -8040,19 +8040,19 @@ msgid "Each amount starts at what the line has left to recognize."
 msgstr "Her tutar, satırın muhasebeleştirilecek kalanından başlar."
 
 msgid "Each asset is accounted for on its own, at its own payment. Click a cell to change it."
-msgstr ""
+msgstr "Her varlık kendi ödeme oranında bağımsız olarak muhasebeleştirilir. Değiştirmek için bir hücreyi tıklayın."
 
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
-msgstr ""
+msgstr "Her varlık bağımsız olarak muhasebeleştirilir. Ödeme satırları, kiralama ödeme koşullarından kesilir."
 
 msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr ""
+msgstr "Her varlık bağımsız olarak muhasebeleştirilir. Burada birini sonlandırın veya satın alın; diğerleri değişmez."
 
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
-msgstr ""
+msgstr "Her varlığın gerçeğe uygun değeri, ekonomik ömrü ve satın alma seçeneği Varlıklar kartındaki satırında yer alır."
 
 msgid "Each asset's payment rows below are cut from these terms at its own payment. Changing a term cuts them again."
-msgstr ""
+msgstr "Her varlığın aşağıdaki ödeme satırları, bu koşullardan kendi ödemesi temelinde kesilir. Bir koşulu değiştirmek bunları yeniden keser."
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
@@ -8082,7 +8082,7 @@ msgid "Each line shows its item ID and revision."
 msgstr "Her satır stok kartı kimliğini ve revizyonunu gösterir."
 
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
-msgstr ""
+msgstr "Her ay kiralama çalışması, her varlığın faizini ve kullanım hakkı amortismanını muhasebeleştirir."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Her operasyonun kullanılmayan malzemesi operasyon tamamlandıktan hemen sonra geri döner."
@@ -8985,10 +8985,10 @@ msgid "Every account default is set"
 msgstr "Her hesap varsayılanı ayarlandı"
 
 msgid "Every asset needs a payment row before activating."
-msgstr ""
+msgstr "Etkinleştirmeden önce her varlığın bir ödeme satırı olmalıdır."
 
 msgid "Every asset's payment rows are cut again from the payment terms. Rows you edited, added or deleted are replaced."
-msgstr ""
+msgstr "Her varlığın ödeme satırları ödeme koşullarından yeniden kesilir. Düzenlediğiniz, eklediğiniz veya sildiğiniz satırlar değiştirilir."
 
 msgid "Every change to an active lease, with the amounts before and after."
 msgstr "Aktif kiralamada yapılan her değişiklik, önceki ve sonraki tutarlarla birlikte."
@@ -9091,7 +9091,7 @@ msgstr "Satın alma opsiyonunu kullan"
 
 #. placeholder {0}: line.description
 msgid "Exercise Purchase Option: {0}"
-msgstr ""
+msgstr "Satın Alma Seçeneğini Kullan: {0}"
 
 msgid "Existing"
 msgstr "Mevcut"
@@ -10009,7 +10009,7 @@ msgstr "Filo Adetleri"
 
 #. placeholder {0}: lease.assetCount
 msgid "for {0} assets"
-msgstr ""
+msgstr "{0} varlık için"
 
 msgid "For <0/>"
 msgstr "İçin <0/>"
@@ -10264,7 +10264,7 @@ msgid "Getting set up"
 msgstr "Kurulum yapılıyor"
 
 msgid "Give every asset a payment."
-msgstr ""
+msgstr "Her varlığa bir ödeme verin."
 
 msgid "Give it an owner and a date"
 msgstr "Ona bir sahip ve bir tarih verin"
@@ -13991,7 +13991,7 @@ msgid "No assets to depreciate for this period."
 msgstr "Bu dönem için amortisman yapılacak varlık yok."
 
 msgid "No assets yet. Add each asset the lease covers, with what it pays for it."
-msgstr ""
+msgstr "Henüz varlık yok. Kiralamadaki her varlığı ve bunun için ödediği tutarı ekleyin."
 
 msgid "No attachments."
 msgstr "Ek ekli değil."
@@ -14033,7 +14033,7 @@ msgid "No changes yet."
 msgstr "Henüz değişiklik yok."
 
 msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr ""
+msgstr "Henüz değişiklik yok. Kiralama etkinleştirildikten sonra, Düzenle başlıkta ve her varlığın Sonlandır ve Satın Al Varlıklar kartında yer alır."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Herhangi bir ücret yok. Kilometre, hasar, teslimat veya temizlik ücretleri sonraki faturaya dahil edilir."
@@ -14397,13 +14397,13 @@ msgid "No payables"
 msgstr "Borç yok"
 
 msgid "No payment"
-msgstr ""
+msgstr "Ödeme yok"
 
 msgid "No payment rows yet. Give each asset its payment on the Assets step, or add a row."
-msgstr ""
+msgstr "Henüz ödeme satırı yok. Her varlığa Varlıklar adımında ödemesini verin veya bir satır ekleyin."
 
 msgid "No payment rows."
-msgstr ""
+msgstr "Ödeme satırı yok."
 
 msgid "No payments yet."
 msgstr "Henüz ödeme yok."
@@ -15595,7 +15595,7 @@ msgstr "Sınıflandırmayı Geçersiz Kıl"
 
 #. placeholder {0}: line.description
 msgid "Override Classification of {0}"
-msgstr ""
+msgstr "{0} Sınıflandırmasını Geçersiz Kıl"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Geçersiz kılma işlemi inventory:update İzni ve bir neden gerektirir"
@@ -15650,7 +15650,7 @@ msgid "Ownership transfers"
 msgstr "Mülkiyet Transferi"
 
 msgid "Ownership Transfers"
-msgstr ""
+msgstr "Sahiplik Transferleri"
 
 msgid "Ownership transfers to the customer"
 msgstr "Mülkiyet müşteriye devrediyor"
@@ -15847,7 +15847,7 @@ msgstr "Ödeme"
 
 #. placeholder {0}: line.description
 msgid "Payment — {0}"
-msgstr ""
+msgstr "Ödeme — {0}"
 
 #. placeholder {0}: deleting.number
 msgid "payment {0}"
@@ -17437,7 +17437,7 @@ msgid "Reason for skipping (required)"
 msgstr "Atlamak için neden (gerekli)"
 
 msgid "Reasonably Certain"
-msgstr ""
+msgstr "Makul Ölçüde Kesin"
 
 msgid "Reasons"
 msgstr "Nedenler"
@@ -17873,7 +17873,7 @@ msgid "Remove {label}"
 msgstr "{label}'i Kaldır"
 
 msgid "Remove Asset"
-msgstr ""
+msgstr "Kıymeti Kaldır"
 
 msgid "Remove authenticator app"
 msgstr "Kimlik Doğrulayıcı Uygulamasını Kaldır"
@@ -20498,7 +20498,7 @@ msgid "Spec"
 msgstr "Spesifikasyon"
 
 msgid "Specialized"
-msgstr ""
+msgstr "Özel Amaçlı"
 
 msgid "Specialized asset"
 msgstr "Özel Varlık"
@@ -21510,7 +21510,7 @@ msgid "Terminate {0}"
 msgstr "Sonlandır {0}"
 
 msgid "Terminate Asset"
-msgstr ""
+msgstr "Kıymeti Sonlandır"
 
 msgid "Terminated"
 msgstr "Sonlandırılmış"
@@ -21887,7 +21887,7 @@ msgid "The first day a company keeps its books in Carbon, set once when accounti
 msgstr "Şirketin Carbon'da muhasebe tutmaya başladığı ilk gün; muhasebe kurulduğunda bir kez ayarlanır ve değiştirilmez; bundan sonra her Muhasebeleştirme Muhasebeleştirildi bir Muhasebe fişi oluşturur."
 
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
-msgstr ""
+msgstr "Kiralama ayının ilk günü (gün {commencementDay}) — son muhasebeleştirilmiş kiralama çalıştırmasından sonra ödeme döneminin başladığı gün"
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Parti büyüklüğüne bakılmaksızın her Lot'un başından muayene edilecek sabit Adet sayısı."
@@ -22028,10 +22028,10 @@ msgid "The lease is ready to activate."
 msgstr "Kiralama etkinleştirmeye hazırdır."
 
 msgid "The lease's"
-msgstr ""
+msgstr "Kiralamının"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
-msgstr ""
+msgstr "Kiralanmış varlık kullanım hakkı varlığına (sabit kıymet) dönüşür ve kullanım tarihinden itibaren amortize edilir. Sonrası ödenecek ödemeleri kaldırılır. Kiralamının diğer varlıkları değişmez."
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "Malları alan müşteriden farklı olduğunda faturalandırılacak yasal kuruluş - ebeveyn/yan kuruluş veya üçüncü taraf faturalandırma düzenlemeleri için."
@@ -22301,7 +22301,7 @@ msgid "The rate at the effective date"
 msgstr "Yürürlüğe giriş tarihindeki oran"
 
 msgid "The rate every asset's payments are discounted at."
-msgstr ""
+msgstr "Her varlığın ödemelerinin iskonto edileceği oran."
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Satın aldığınız ve tükettiğiniz ham stok ve malzeme ana kaydı"
@@ -22703,7 +22703,7 @@ msgid "This amendment cannot be made"
 msgstr "Bu değişiklik yapılamaz"
 
 msgid "This asset's payments due after the termination date are removed. Invoiced payments stay. The lease's other assets do not change."
-msgstr ""
+msgstr "Bu varlığın sonlandırma tarihinden sonrası ödenecek ödemeleri kaldırılır. Faturalandı ödemeler kalır. Kiralamının diğer varlıkları değişmez."
 
 msgid "This backup could not be completed."
 msgstr "Bu yedekleme tamamlanamadı."
@@ -22828,7 +22828,7 @@ msgstr "Bu işin malzeme için kendi gerekli miktarı."
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
-msgstr ""
+msgstr "Bu kiralama, muhasebe ayarlanmadan önce başlamıştır. Etkinleştirmek, {0} tarihinde (veya sonrasındaki ilk açık dönemin başlangıcında) açılış bakiyesini muhasebeleştirir: her varlığın kullanım hakkı varlığı, amortismanı ve o tarihteki kiralama yükümlülüğü, fark dağıtılmamış kârlarla. Öncesi aylar muhasebeleştirilmiş olarak işaretlenir."
 
 msgid "This line has no routing to schedule."
 msgstr "Bu satırın zamanlama için bir rotası yok."
@@ -24281,7 +24281,7 @@ msgid "Variance only"
 msgstr "Yalnızca sapma"
 
 msgid "Varies by asset"
-msgstr ""
+msgstr "Varlığa göre değişir"
 
 msgid "VAT Number"
 msgstr "Vergi numarası"
@@ -24781,10 +24781,10 @@ msgid "What drove inventory up or down, by any dimension"
 msgstr "Envanterin yükselmesine veya düşmesine neyin sebep olduğu, herhangi bir boyuta göre"
 
 msgid "What each asset is worth, how long it lasts, and what happens to it at the end of the term. A purchase option that is reasonably certain becomes a payment row. Click a cell to change it."
-msgstr ""
+msgstr "Her varlığın değeri, ne kadar sürdüğü ve dönem sonunda ona ne olacağı. Makul ölçüde kesin olan satın alma seçeneği bir ödeme satırı haline gelir. Değiştirmek için bir hücreyi tıklayın."
 
 msgid "What each period's payment is for this asset in the first year"
-msgstr ""
+msgstr "İlk yılda bu varlık için her dönemin ödeme tutarı"
 
 msgid "What happens to an invoice once it is created"
 msgstr "Fatura oluşturulduktan sonra ne olur"
@@ -24811,7 +24811,7 @@ msgid "What is leased and where it is used."
 msgstr "Neyin kiralandığı ve nerede kullanıldığı."
 
 msgid "What is leased, for example Forklift FL-12"
-msgstr ""
+msgstr "Kiralanan nedir, örneğin Forklift FL-12"
 
 msgid "What it is"
 msgstr "Ne olduğu"

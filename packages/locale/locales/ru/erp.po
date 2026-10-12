@@ -131,7 +131,7 @@ msgstr "{0} уже начата"
 
 #. placeholder {0}: lines.length
 msgid "{0} assets"
-msgstr ""
+msgstr "{0} активов"
 
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
@@ -439,7 +439,7 @@ msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Запущен # производственный заказ} few {Запущено # производственных заказа} many {Запущено # производственных заказов} other {Запущено # производственных заказов}}"
 
 msgid "{count} assets"
-msgstr ""
+msgstr "{count} активов"
 
 msgid "{count} of {total} units"
 msgstr "{count} из {total} единиц"
@@ -560,7 +560,7 @@ msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# деталь} other {# деталей}}"
 
 msgid "{passing} of {total} assets"
-msgstr ""
+msgstr "{passing} из {total} активов"
 
 msgid "{percent} picked"
 msgstr "{percent} отобрано"
@@ -590,7 +590,7 @@ msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
 
 msgid "{termMonths} months"
-msgstr ""
+msgstr "{termMonths} месяцев"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} этапов для запуска вашей организации на Carbon. Каждый завершается контрольной точкой."
@@ -678,7 +678,7 @@ msgid "0-4 weeks"
 msgstr "0-4 недели"
 
 msgid "1 asset"
-msgstr ""
+msgstr "1 актив"
 
 msgid "1 Asset"
 msgstr "1 Актив"
@@ -1113,7 +1113,7 @@ msgid "A purchase invoice is a document that specifies the products or services 
 msgstr "Счет-фактура полученная — это документ, который определяет товары или услуги, приобретенные покупателем, и соответствующую себестоимость."
 
 msgid "A purchase invoice is drafted for each due date, with a line for each asset's payment."
-msgstr ""
+msgstr "Счет-фактура полученная составляется для каждого срока выполнения со строкой платежа для каждого актива."
 
 msgid "A purchase invoice is posted"
 msgstr "Счет-фактура полученная проведена"
@@ -1362,10 +1362,10 @@ msgid "A shipment's tracking number changes"
 msgstr "Номер отслеживания отгрузки изменился"
 
 msgid "A short-term asset has no schedule: only its payment rows change, and no journal is posted."
-msgstr ""
+msgstr "Краткосрочный актив не имеет графика: изменяются только его строки платежей, и ни одна операция не проводится."
 
 msgid "A short-term asset posts no journal at activation. Each invoice is expensed when it posts."
-msgstr ""
+msgstr "Краткосрочный актив не проводит никакую операцию при активации. Каждая счет-фактура отнесена на расходы при проведении."
 
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "Краткосрочная аренда не имеет графика. Каждый счет-фактура учитывается как расход."
@@ -1712,10 +1712,10 @@ msgid "Activating checks every unit is available, classifies each unit's account
 msgstr "Активация проверяет, доступна ли каждая единица, классифицирует бухгалтерский учет каждой единицы и устанавливает первые периоды выставления счетов по тарифу каждой единицы. Условия и строки фиксируются после этого."
 
 msgid "Activating classifies each asset, books its right-of-use asset and lease liability, and writes its monthly schedule. The terms and payment rows are fixed afterwards."
-msgstr ""
+msgstr "При активации каждый актив классифицируется, его актив с правом пользования и обязательство по аренде учитываются, и записывается его ежемесячный график. Затем условия и строки платежей фиксируются."
 
 msgid "Activating fixes the terms and the payment rows, classifies each asset and books it. After that, purchase invoices are drafted automatically as payments come due."
-msgstr ""
+msgstr "При активации фиксируются условия и строки платежей, каждый актив классифицируется и учитывается. После этого счет-фактура полученная разрабатывается автоматически по мере наступления платежей."
 
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Активация фиксирует условия и единицы, классифицирует каждую единицу и создает первые периоды выставления счетов. После этого счета-фактуры создаются автоматически по наступлении периодов."
@@ -1841,16 +1841,16 @@ msgid "Add Approval Requirement"
 msgstr "Добавить требование утверждения"
 
 msgid "Add Asset"
-msgstr ""
+msgstr "Добавить актив"
 
 msgid "Add Asset Class"
 msgstr "Добавить класс основных средств"
 
 msgid "Add at least one asset before activating."
-msgstr ""
+msgstr "Добавьте по крайней мере один актив перед активацией."
 
 msgid "Add at least one asset."
-msgstr ""
+msgstr "Добавьте по крайней мере один актив."
 
 msgid "Add at least one service."
 msgstr "Добавьте хотя бы одну услугу."
@@ -2073,7 +2073,7 @@ msgid "Add Supplier"
 msgstr "Добавить поставщика"
 
 msgid "Add the leased assets to see how each one is accounted for."
-msgstr ""
+msgstr "Добавьте арендованные активы, чтобы увидеть, как каждый учитывается."
 
 msgid "Add the materials this item uses."
 msgstr "Добавить материалы, которые использует эта номенклатура."
@@ -2409,10 +2409,10 @@ msgid "An approval requirement on a non-conformance whose reviewers (seeded Engi
 msgstr "Требование утверждения на несоответствии, которое должны утвердить рецензенты (предзагруженные Инженерия и Качество) перед закрытием проблемы."
 
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
-msgstr ""
+msgstr "Актив является финансовой арендой, если справедливо любое из этих условий, и операционной арендой, если ни одно не справедливо."
 
 msgid "An asset leased for 12 months or less with no purchase option reasonably certain is short-term. Otherwise it is a finance lease when any of these is true, and an operating lease when none is."
-msgstr ""
+msgstr "Если актив арендуется на 12 месяцев или менее без разумно вероятного варианта покупки, это краткосрочная аренда. В противном случае это финансовая аренда, если верно любое из этих условий, и операционная аренда, если ни одно из них не верно."
 
 msgid "An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization."
 msgstr "Активы, которые организация берёт в аренду у поставщика, учитываемые в соответствии с ASC 842: активация классифицирует их как Операционные, Финансовые или Краткосрочные и отражает право на использование активов и обязательство по аренде, строки платежей создаются как счета-фактуры полученные, и запуск аренды проводит ежемесячные проценты и амортизацию."
@@ -3237,7 +3237,7 @@ msgstr "Вы уверены, что хотите запустить в рабо�
 
 #. placeholder {0}: deleting.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
-msgstr ""
+msgstr "Вы уверены, что хотите убрать {0} и его строки платежей из этой аренды?"
 
 #. placeholder {0}: supplierName(deleteTarget.supplierId)
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
@@ -3386,7 +3386,7 @@ msgid "Asset Acquisition Cost (default)"
 msgstr "Стоимость приобретения основного средства (по умолчанию)"
 
 msgid "Asset actions"
-msgstr ""
+msgstr "Действия с активом"
 
 msgid "asset class"
 msgstr "класс основных средств"
@@ -3419,7 +3419,7 @@ msgid "Asset ID"
 msgstr "ID активов"
 
 msgid "Asset Inputs"
-msgstr ""
+msgstr "Входные данные актива"
 
 msgid "Asset Name"
 msgstr "Наименование актива"
@@ -4322,7 +4322,7 @@ msgid "Cancelling voids the agreement and releases its units. An agreement with 
 msgstr "Отмена аннулирует договор и освобождает его единицы. Договор с единицей на аренде или по которому выставлены счета не может быть отменен."
 
 msgid "Cancelling voids the lease's journals and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate its assets instead."
-msgstr ""
+msgstr "Отмена аннулирует операции аренды и удаляет график. Аренду с выставленным платежом или проведенным расчетом аренды невозможно отменить; вместо этого прекратите соответствующие активы."
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Невозможно добавить параметры к несохраненной операции"
@@ -6783,10 +6783,10 @@ msgid "Decide when material picked to a work center but not consumed flows back 
 msgstr "Решение о том, когда материал, отобранный в рабочий центр, но не использованный, поступает обратно на склад."
 
 msgid "Decided for each asset when the lease is activated, from its payment rows and its classification inputs."
-msgstr ""
+msgstr "Определено для каждого актива при активации аренды из его строк платежей и входных данных классификации."
 
 msgid "Decided for each asset when the lease is activated, from its payment rows and the inputs below."
-msgstr ""
+msgstr "Определено для каждого актива при активации аренды из его строк платежей и входных данных ниже."
 
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
@@ -8031,7 +8031,7 @@ msgid "e.g. Zebra 2x1"
 msgstr "например Zebra 2x1"
 
 msgid "Each active asset's remaining payments are cut again from these terms and discounted at the revised rate. Its right-of-use asset moves by the same amount as its liability."
-msgstr ""
+msgstr "Оставшиеся платежи каждого активного актива рассчитываются заново на основе этих условий и дисконтируются по пересмотренной ставке. Его актив с правом пользования изменяется на ту же сумму, что и его обязательство."
 
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "Каждая сумма начинается с остатка счета по строке."
@@ -8040,19 +8040,19 @@ msgid "Each amount starts at what the line has left to recognize."
 msgstr "Каждая сумма начинается с остатка для признания выручки по строке."
 
 msgid "Each asset is accounted for on its own, at its own payment. Click a cell to change it."
-msgstr ""
+msgstr "Каждый актив учитывается отдельно по собственному платежу. Нажмите на ячейку, чтобы изменить ее."
 
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
-msgstr ""
+msgstr "Каждый актив учитывается отдельно. Его строки платежей рассчитываются из условий оплаты аренды."
 
 msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr ""
+msgstr "Каждый актив учитывается отдельно. Прекратите или купите один здесь; остальные не изменяются."
 
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
-msgstr ""
+msgstr "Справедливая стоимость, экономическая жизнь и вариант покупки каждого актива находятся в его строке на карточке активов."
 
 msgid "Each asset's payment rows below are cut from these terms at its own payment. Changing a term cuts them again."
-msgstr ""
+msgstr "Строки платежей каждого актива ниже рассчитываются из этих условий при его собственном платеже. Изменение условия пересчитывает их снова."
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Каждая ячейка — это назначенные сотрудники в сравнении с необходимыми для работы в день сотрудниками."
@@ -8082,7 +8082,7 @@ msgid "Each line shows its item ID and revision."
 msgstr "Каждая строка показывает код номенклатуры и ревизию."
 
 msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
-msgstr ""
+msgstr "Каждый месяц расчет аренды проводит процентные расходы и амортизацию актива с правом пользования для каждого актива."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Неиспользованный материал каждой операции возвращается, как только операция завершена."
@@ -8985,10 +8985,10 @@ msgid "Every account default is set"
 msgstr "Установлены все значения по умолчанию счета"
 
 msgid "Every asset needs a payment row before activating."
-msgstr ""
+msgstr "Каждому активу требуется строка платежа перед активацией."
 
 msgid "Every asset's payment rows are cut again from the payment terms. Rows you edited, added or deleted are replaced."
-msgstr ""
+msgstr "Строки платежей каждого актива пересчитываются из условий оплаты. Все отредактированные, добавленные или удаленные строки будут заменены."
 
 msgid "Every change to an active lease, with the amounts before and after."
 msgstr "Все изменения активной аренды с суммами до и после."
@@ -9091,7 +9091,7 @@ msgstr "Осуществить опцион покупки"
 
 #. placeholder {0}: line.description
 msgid "Exercise Purchase Option: {0}"
-msgstr ""
+msgstr "Исполнить вариант покупки: {0}"
 
 msgid "Existing"
 msgstr "Существующий"
@@ -10009,7 +10009,7 @@ msgstr "Единицы флота"
 
 #. placeholder {0}: lease.assetCount
 msgid "for {0} assets"
-msgstr ""
+msgstr "для {0} активов"
 
 msgid "For <0/>"
 msgstr "На <0/>"
@@ -10264,7 +10264,7 @@ msgid "Getting set up"
 msgstr "Начало работы"
 
 msgid "Give every asset a payment."
-msgstr ""
+msgstr "Назначьте платеж для каждого актива."
 
 msgid "Give it an owner and a date"
 msgstr "Назначьте ответственного и дату"
@@ -13991,7 +13991,7 @@ msgid "No assets to depreciate for this period."
 msgstr "Нет активов для амортизации за этот период."
 
 msgid "No assets yet. Add each asset the lease covers, with what it pays for it."
-msgstr ""
+msgstr "Нет активов. Добавьте каждый актив, на который распространяется аренда, с суммой его платежа."
 
 msgid "No attachments."
 msgstr "Нет вложений."
@@ -14033,7 +14033,7 @@ msgid "No changes yet."
 msgstr "Пока нет изменений."
 
 msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr ""
+msgstr "Нет изменений. Как только аренда станет активной, кнопка Изменить будет в заголовке, а Прекратить и Купить каждого актива будут на карточке активов."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
@@ -14397,13 +14397,13 @@ msgid "No payables"
 msgstr "Нет кредиторской задолженности"
 
 msgid "No payment"
-msgstr ""
+msgstr "Нет платежа"
 
 msgid "No payment rows yet. Give each asset its payment on the Assets step, or add a row."
-msgstr ""
+msgstr "Нет строк платежей. Назначьте платеж для каждого актива на шаге активов или добавьте строку."
 
 msgid "No payment rows."
-msgstr ""
+msgstr "Нет строк платежей."
 
 msgid "No payments yet."
 msgstr "Платежей пока нет."
@@ -15595,7 +15595,7 @@ msgstr "Переопределение классификации"
 
 #. placeholder {0}: line.description
 msgid "Override Classification of {0}"
-msgstr ""
+msgstr "Переопределение классификации {0}"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Для переопределения требуется право доступа inventory:update и причина."
@@ -15650,7 +15650,7 @@ msgid "Ownership transfers"
 msgstr "Передача собственности"
 
 msgid "Ownership Transfers"
-msgstr ""
+msgstr "Передача прав собственности"
 
 msgid "Ownership transfers to the customer"
 msgstr "Право собственности переходит к Покупателю"
@@ -15847,7 +15847,7 @@ msgstr "Платеж"
 
 #. placeholder {0}: line.description
 msgid "Payment — {0}"
-msgstr ""
+msgstr "Платеж — {0}"
 
 #. placeholder {0}: deleting.number
 msgid "payment {0}"
@@ -17437,7 +17437,7 @@ msgid "Reason for skipping (required)"
 msgstr "Причина пропуска (требуется)"
 
 msgid "Reasonably Certain"
-msgstr ""
+msgstr "Разумно вероятно"
 
 msgid "Reasons"
 msgstr "Причины"
@@ -17873,7 +17873,7 @@ msgid "Remove {label}"
 msgstr "Убрать {label}"
 
 msgid "Remove Asset"
-msgstr ""
+msgstr "Убрать основное средство"
 
 msgid "Remove authenticator app"
 msgstr "Удалить приложение аутентификации"
@@ -20498,7 +20498,7 @@ msgid "Spec"
 msgstr "Тех. условия"
 
 msgid "Specialized"
-msgstr ""
+msgstr "Специализированный"
 
 msgid "Specialized asset"
 msgstr "Специализированный актив"
@@ -21510,7 +21510,7 @@ msgid "Terminate {0}"
 msgstr "Прекратить {0}"
 
 msgid "Terminate Asset"
-msgstr ""
+msgstr "Завершить основное средство"
 
 msgid "Terminated"
 msgstr "Расторгнуто"
@@ -21887,7 +21887,7 @@ msgid "The first day a company keeps its books in Carbon, set once when accounti
 msgstr "Первый день, когда организация начинает вести учёт в Carbon, устанавливается один раз при настройке бухгалтерии и никогда не меняется; с этого момента каждое проведение создаёт проведённую операцию."
 
 msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
-msgstr ""
+msgstr "Первый день месяца аренды (день {commencementDay}), когда начинается период платежей, после последнего проведенного запуска аренды"
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Фиксированное количество единиц для проверки с передней части каждой партии, независимо от размера партии."
@@ -22028,10 +22028,10 @@ msgid "The lease is ready to activate."
 msgstr "Аренда готова к активации."
 
 msgid "The lease's"
-msgstr ""
+msgstr "Аренды"
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
-msgstr ""
+msgstr "Арендованное основное средство становится основным средством, которое амортизируется с даты исполнения. Его причитающиеся платежи после этой даты удаляются. Другие активы аренды не изменяются."
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "Организация для выставления счета, если отличается от покупателя, получающего товары — для взаимоотношений между головной компанией/дочерней компанией или третьей стороной."
@@ -22301,7 +22301,7 @@ msgid "The rate at the effective date"
 msgstr "Ставка на дату вступления в силу"
 
 msgid "The rate every asset's payments are discounted at."
-msgstr ""
+msgstr "Ставка, по которой дисконтируются платежи каждого актива."
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Сырьё и материалы, которые вы покупаете и используете"
@@ -22703,7 +22703,7 @@ msgid "This amendment cannot be made"
 msgstr "Это изменение не может быть выполнено"
 
 msgid "This asset's payments due after the termination date are removed. Invoiced payments stay. The lease's other assets do not change."
-msgstr ""
+msgstr "Платежи этого актива, причитающиеся после даты расторжения, удаляются. Платежи со счетом остаются. Другие активы аренды не изменяются."
 
 msgid "This backup could not be completed."
 msgstr "Эта резервная копия не может быть завершена."
@@ -22828,7 +22828,7 @@ msgstr "Собственное требуемое количество мате�
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
-msgstr ""
+msgstr "Эта аренда началась до настройки бухгалтерии. При активации она проводит вводный остаток на {0} (или начало первого открытого периода после него): актив права пользования каждого актива, его амортизация и его обязательство по аренде на эту дату, с разницей в нераспределенную прибыль. Месяцы до этого помечены как проведено."
 
 msgid "This line has no routing to schedule."
 msgstr "На этой строке нет маршрута для планирования."
@@ -24281,7 +24281,7 @@ msgid "Variance only"
 msgstr "Только отклонения"
 
 msgid "Varies by asset"
-msgstr ""
+msgstr "Варьируется в зависимости от актива"
 
 msgid "VAT Number"
 msgstr "ИНН"
@@ -24781,10 +24781,10 @@ msgid "What drove inventory up or down, by any dimension"
 msgstr "Что повлияло на инвентаризацию вверх или вниз, по любому измерению"
 
 msgid "What each asset is worth, how long it lasts, and what happens to it at the end of the term. A purchase option that is reasonably certain becomes a payment row. Click a cell to change it."
-msgstr ""
+msgstr "Стоимость каждого актива, продолжительность его срока действия и то, что с ним происходит в конце срока. Опция покупки, которая разумно вероятна, становится строкой платежа. Щелкните ячейку для изменения."
 
 msgid "What each period's payment is for this asset in the first year"
-msgstr ""
+msgstr "Размер платежа каждого периода для этого актива в первый год"
 
 msgid "What happens to an invoice once it is created"
 msgstr "Что происходит со счетом-фактурой после его создания"
@@ -24811,7 +24811,7 @@ msgid "What is leased and where it is used."
 msgstr "Что сдается в лизинг и где оно используется."
 
 msgid "What is leased, for example Forklift FL-12"
-msgstr ""
+msgstr "Что арендуется, например Вилочный погрузчик FL-12"
 
 msgid "What it is"
 msgstr "Что это такое"
