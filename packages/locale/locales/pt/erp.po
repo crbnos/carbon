@@ -7684,6 +7684,9 @@ msgstr "Prioridade Padrão"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Conta GL de receita padrão creditada quando uma fatura de venda é lançada."
 
+msgid "Default role for time in this category"
+msgstr ""
+
 msgid "Default Sampling"
 msgstr "Amostragem Padrão"
 

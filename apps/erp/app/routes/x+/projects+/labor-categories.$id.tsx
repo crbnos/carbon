@@ -151,6 +151,7 @@ export default function LaborCategoryRoute() {
         id: category.id,
         name: category.name,
         description: category.description ?? "",
+        rdActivityRole: category.rdActivityRole ?? undefined,
         active: category.active
       }}
       rates={rates}

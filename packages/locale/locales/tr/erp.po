@@ -7684,6 +7684,9 @@ msgstr "Varsayılan Öncelik"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Satış faturası muhasebeleştirildiğinde alacaklandırılan varsayılan hasılat muhasebe hesabı"
 
+msgid "Default role for time in this category"
+msgstr ""
+
 msgid "Default Sampling"
 msgstr "Varsayılan Örnekleme"
 

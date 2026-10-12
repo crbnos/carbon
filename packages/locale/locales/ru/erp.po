@@ -7684,6 +7684,9 @@ msgstr "Приоритет по умолчанию"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Счет учета выручки по умолчанию, кредитуемый при проведении счета-фактуры выданной."
 
+msgid "Default role for time in this category"
+msgstr ""
+
 msgid "Default Sampling"
 msgstr "Выборочный контроль по умолчанию"
 

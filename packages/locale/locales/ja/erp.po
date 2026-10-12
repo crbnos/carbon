@@ -7684,6 +7684,9 @@ msgstr "デフォルト優先度"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "売上請求書が転記されるときにクレジットされるデフォルトの売上高勘定科目"
 
+msgid "Default role for time in this category"
+msgstr ""
+
 msgid "Default Sampling"
 msgstr "デフォルト抜取検査"
 

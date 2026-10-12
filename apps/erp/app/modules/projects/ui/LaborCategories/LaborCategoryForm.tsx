@@ -42,6 +42,7 @@ import {
   Hidden,
   Input,
   Number as NumberField,
+  Select,
   Submit,
   TextArea
 } from "~/components/Form";
@@ -56,9 +57,11 @@ import {
 import { path } from "~/utils/path";
 import {
   laborCategoryRateValidator,
-  laborCategoryValidator
+  laborCategoryValidator,
+  rdActivityRoles
 } from "../../projects.models";
 import type { LaborCategoryRate } from "../../types";
+import { useRdActivityRoleLabels } from "../RdTax/useRdTaxLabels";
 
 type LaborCategoryFormProps = {
   initialValues: z.infer<typeof laborCategoryValidator>;
@@ -84,6 +87,7 @@ const LaborCategoryForm = ({
   onClose
 }: LaborCategoryFormProps) => {
   const { t } = useLingui();
+  const roleLabels = useRdActivityRoleLabels();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
   const today = useCompanyToday();
@@ -132,6 +136,16 @@ const LaborCategoryForm = ({
                 <VStack spacing={4}>
                   <Input name="name" label={t`Name`} autoFocus={!isEditing} />
                   <TextArea name="description" label={t`Description`} />
+                  <Select
+                    name="rdActivityRole"
+                    label={t`Research role`}
+                    isOptional
+                    helperText={t`Default role for time in this category`}
+                    options={rdActivityRoles.map((value) => ({
+                      value,
+                      label: roleLabels[value]
+                    }))}
+                  />
                   <Boolean
                     name="active"
                     label={t`Active`}

@@ -7684,6 +7684,9 @@ msgstr "डिफ़ॉल्ट प्राथमिकता"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "जब विक्रय चालान पोस्ट होता है तो डिफ़ॉल्ट राजस्व लेजर खाता जमा किया जाता है।"
 
+msgid "Default role for time in this category"
+msgstr ""
+
 msgid "Default Sampling"
 msgstr "डिफ़ॉल्ट नमूनाकरण"
 

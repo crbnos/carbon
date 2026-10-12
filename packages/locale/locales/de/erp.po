@@ -7684,6 +7684,9 @@ msgstr "Standardpriorität"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Standard-Sachkonto für Umsatzerlöse, das gutgeschrieben wird, wenn eine Ausgangsrechnung gebucht wird."
 
+msgid "Default role for time in this category"
+msgstr ""
+
 msgid "Default Sampling"
 msgstr "Standard-Stichprobenprüfung"
 

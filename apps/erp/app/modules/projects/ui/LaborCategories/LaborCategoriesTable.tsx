@@ -15,6 +15,7 @@ import {
   LuBriefcaseBusiness,
   LuCheck,
   LuCoins,
+  LuFlaskConical,
   LuPencil,
   LuText
 } from "react-icons/lu";
@@ -23,6 +24,7 @@ import { Hyperlink, New, Table } from "~/components";
 import { useCompanyToday, useCurrencyFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { LaborCategory } from "../../types";
+import { useRdActivityRoleLabels } from "../RdTax/useRdTaxLabels";
 
 type LaborCategoryRow = LaborCategory & {
   rates?: {
@@ -54,6 +56,7 @@ const LaborCategoriesTable = memo(
     const permissions = usePermissions();
     const today = useCompanyToday();
     const formatRate = useCurrencyFormatter({ rate: true });
+    const roleLabels = useRdActivityRoleLabels();
 
     const columns = useMemo<ColumnDef<LaborCategoryRow>[]>(
       () => [
@@ -114,13 +117,28 @@ const LaborCategoriesTable = memo(
           }
         },
         {
+          accessorKey: "rdActivityRole",
+          header: t`Research role`,
+          cell: ({ row }) =>
+            row.original.rdActivityRole ? (
+              roleLabels[row.original.rdActivityRole]
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            ),
+          meta: {
+            icon: <LuFlaskConical />,
+            exportValue: (row) =>
+              row.rdActivityRole ? roleLabels[row.rdActivityRole] : null
+          }
+        },
+        {
           accessorKey: "active",
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: { icon: <LuCheck /> }
         }
       ],
-      [t, today, formatRate]
+      [t, today, formatRate, roleLabels]
     );
 
     const renderContextMenu = useCallback(

@@ -7684,6 +7684,9 @@ msgstr "기본 우선순위"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "매출 송장이 전기될 때 대변되는 기본 매출 계정과목"
 
+msgid "Default role for time in this category"
+msgstr ""
+
 msgid "Default Sampling"
 msgstr "기본 샘플링"
 

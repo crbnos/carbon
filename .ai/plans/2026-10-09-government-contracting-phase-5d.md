@@ -61,7 +61,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 7: Add the validators and service functions
 - [x] Task 8: Add the work location and research role to My Timesheet
 - [x] Task 9: Add the business component fields to the element
-- [ ] Task 10: Add the research role to the labor category
+- [x] Task 10: Add the research role to the labor category
 - [ ] Task 11: Add the research flags to the contract
 - [ ] Task 12: Add the officer flag to the employee job
 - [ ] Task 13: Add the R&D report queries and builders
@@ -639,3 +639,7 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   2. The two selects are a new `ChoicePill` in `ElementProperties.tsx`, the shape of `MilestonePill`: a ghost pill with a radio dropdown, saved through `useElementField` and the existing field update route. Software type has a **None** choice; component type does not. The sidebar has no form `Select`, so a pill matches its other property rows.
   3. `PROJECT_ELEMENT_LIST_COLUMNS` selects `isBusinessComponent`; the List layout shows a secondary **R&D** badge after the name, beside the Unallowable badge. `pnpm run generate:mcp` changes the response digest of the element list reads.
   4. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 10:
+  1. **Research role** is an optional (clearable) `Select` after **Description**, with the hint "Default role for time in this category". The table has a **Research role** column (an em dash when none; the CSV exports the label).
+  2. `labor-categories.$id.tsx` now passes the stored `rdActivityRole` in the form's initial values. The plan does not list the route, but without it a save would clear the role. Both actions already spread the validated fields into `upsertLaborCategory`.
+  3. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.

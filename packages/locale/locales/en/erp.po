@@ -7684,6 +7684,9 @@ msgstr "Default Priority"
 msgid "Default revenue GL account credited when a sales invoice posts."
 msgstr "Default revenue GL account credited when a sales invoice posts."
 
+msgid "Default role for time in this category"
+msgstr "Default role for time in this category"
+
 msgid "Default Sampling"
 msgstr "Default Sampling"
 
