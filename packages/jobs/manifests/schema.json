@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261012164449",
+  "schemaVersion": "20261012193140",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-12T17:06:27.740Z",
+  "exportedAt": "2026-10-12T22:49:25.404Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -3930,7 +3930,8 @@
         "laborCategoryId",
         "defaultStorageUnitId",
         "flsaStatus",
-        "isOfficer"
+        "isOfficer",
+        "timesheetRequired"
       ]
     },
     {

@@ -168,6 +168,23 @@ each company's calendar through `get_missing_timesheet_days` (shift days of acti
 employees, minus holidays, absences and days with any entry) in one query, and sends
 `NotificationEvent.TimesheetMissing` to the employee and one notice per manager.
 
+`get_missing_timesheet_days` (redefined in `20261012193140_missing-time-population.sql`)
+is the one definition of the population, so the daily notice, the report and the close
+check agree. It lists a shift day of an active employee only when:
+`employeeJob.timesheetRequired` is on (default true; no job row counts as on), the day
+is on or after `employeeJob.startDate`, the day has ended (never after
+`company_today - 1`), and the day has no holiday, absence or entry. Research:
+`.ai/research/missing-time-report.md`.
+
+**Projects → Reports → Missing Time** (`reports.missing-time.tsx`) reads
+`getMissingTimeByEmployee`: one row per employee with the missing dates
+(`array_agg`), filtered in the loader by `search` and `filter=` on `employeeId`,
+`managerId`, `departmentId` and `locationId`. Its action has three intents
+(`missingTimeActionValidator`): `remind` sends `TimesheetMissing` to each selected
+employee with the dates re-read from the database; `exclude` and `include` set
+`timesheetRequired` through `updateTimesheetRequired` and need `update: people`.
+`?excluded=true` lists the active employees with it off. The CSV stays one row per day.
+
 The close checklist task **Timesheets complete** (`timesheets-complete`, Warning) counts,
 in DCAA mode, the period's entries that are not Posted plus its missing days.
 `getTimesheetCloseReadiness` (`@carbon/database/timesheet-readiness`) reads with the

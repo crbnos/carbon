@@ -388,7 +388,7 @@ export default function MESTimesheetPage() {
               {approvalRequired ? (
                 <Trans>Submit week</Trans>
               ) : (
-                <Trans>Submit and post week</Trans>
+                <Trans>Post</Trans>
               )}
             </Button>
           </submitFetcher.Form>

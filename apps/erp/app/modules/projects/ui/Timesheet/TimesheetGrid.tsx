@@ -734,7 +734,7 @@ export default function TimesheetGrid({
                 {settings.timesheetApprovalRequired ? (
                   <Trans>Submit week</Trans>
                 ) : (
-                  <Trans>Submit and post week</Trans>
+                  <Trans>Post</Trans>
                 )}
               </Button>
             </submitFetcher.Form>

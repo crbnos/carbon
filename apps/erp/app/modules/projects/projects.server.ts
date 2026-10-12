@@ -23,7 +23,8 @@ import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
 import type { SaveTimesheetEntryResult } from "@carbon/server-functions/save-timesheet-entry";
 import type { SubmitTimesheetWeekResult } from "@carbon/server-functions/submit-timesheet-week";
-import { datetime, timesheetWeek } from "@carbon/utils";
+import { datetime, taxYearBounds, timesheetWeek } from "@carbon/utils";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { customAlphabet } from "nanoid";
@@ -73,6 +74,7 @@ import {
   groupTimesheetRows,
   isProjectPlanLocked,
   mergeChangeRequestItem,
+  monthNumber,
   netBuildComponents,
   overlayPlanRows,
   PLAN_LAYER_FIELDS,
@@ -89,6 +91,7 @@ import {
   projectPlanLockedMessage,
   rebaseChangeRequestItems,
   rollUpRequirementStatus,
+  taxYearOf,
   toPlanSnapshot,
   typeSpecificElementFields
 } from "./projects.models";
@@ -106,6 +109,9 @@ import {
   getProjectElementPlanLines,
   getProjectElements,
   getProjectItemValues,
+  getRdComponents,
+  getRdEmployeeYear,
+  getRdLedgerRows,
   getTimesheetApprovalCount,
   getTimesheetWeek
 } from "./projects.service";
@@ -4675,4 +4681,111 @@ export async function getApprovalCountForUser(
     return 0;
   }
   return result.count ?? 0;
+}
+
+// --- Projects → Reports ---------------------------------------------------------
+
+/** A `YYYY-MM-DD` search param, or null when it is missing or not a date. */
+function dateParam(value: string | null) {
+  if (!value) return null;
+  try {
+    return parseDate(value).toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The dates of a range report from its `startDate` and `endDate` search
+ * params, and the fiscal year's start month for the range presets. A
+ * missing or bad pair falls back to this month on the company's calendar,
+ * the range the report page opens on.
+ */
+export async function getProjectReportRange(
+  db: Kysely<KyselyDatabase>,
+  request: Request,
+  companyId: string
+) {
+  const params = new URL(request.url).searchParams;
+  const [timeZone, settings] = await Promise.all([
+    getCompanyTimeZone(db, companyId),
+    db
+      .selectFrom("fiscalYearSettings")
+      .select("startMonth")
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+  ]);
+  const fiscalStartMonth = monthNumber(settings?.startMonth);
+  const startDate = dateParam(params.get("startDate"));
+  const endDate = dateParam(params.get("endDate"));
+  if (startDate && endDate && startDate <= endDate) {
+    return { startDate, endDate, fiscalStartMonth };
+  }
+  const today = datetime.today(timeZone);
+  return {
+    startDate: today.set({ day: 1 }).toString(),
+    endDate: endOfMonth(today).toString(),
+    fiscalStartMonth
+  };
+}
+
+/** A `taxYear` search param, or null when it is missing or not a year. */
+export function taxYearParam(value: string | null) {
+  const taxYear = Number(value);
+  return value &&
+    Number.isInteger(taxYear) &&
+    taxYear >= 1900 &&
+    taxYear <= 9999
+    ? taxYear
+    : null;
+}
+
+/**
+ * The inputs of the R&D tax reports (§174A and Form 6765 Section G) for one
+ * tax year. A null `taxYear` reads the tax year that holds today. A tax year
+ * starts in the company's tax start month and is named by the calendar year
+ * in which it starts.
+ */
+export async function getRdTaxReport(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { companyId: string; taxYear: number | null; withEmployees: boolean }
+) {
+  const [settings, company, timeZone] = await Promise.all([
+    db
+      .selectFrom("fiscalYearSettings")
+      .select("taxStartMonth")
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst(),
+    db
+      .selectFrom("company")
+      .select("taxId")
+      .where("id", "=", args.companyId)
+      .executeTakeFirst(),
+    getCompanyTimeZone(db, args.companyId)
+  ]);
+  const taxStartMonth = monthNumber(settings?.taxStartMonth);
+  const currentTaxYear = taxYearOf(
+    datetime.today(timeZone).toString(),
+    taxStartMonth
+  );
+  const taxYear = args.taxYear ?? currentTaxYear;
+  const range = {
+    companyId: args.companyId,
+    ...taxYearBounds(taxYear, taxStartMonth)
+  };
+  const [rows, employees, components] = await Promise.all([
+    getRdLedgerRows(db, range),
+    args.withEmployees ? getRdEmployeeYear(db, range) : Promise.resolve([]),
+    getRdComponents(client, args.companyId)
+  ]);
+  if (components.error) throw components.error;
+  return {
+    taxYear,
+    currentTaxYear,
+    rows,
+    employees,
+    components: components.data ?? [],
+    ein: company?.taxId ?? null
+  };
 }

@@ -150,7 +150,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Adicione uma impressora nas configurações de impressão para imprimir etiquetas diretamente."
 
 msgid "Add a row for each job or task you worked on."
-msgstr ""
+msgstr "Adicionar uma linha para cada ordem de produção ou tarefa em que trabalhou."
 
 msgid "Add Authenticator App"
 msgstr "Adicionar aplicativo autenticador"
@@ -352,7 +352,7 @@ msgid "Characteristics"
 msgstr "Características"
 
 msgid "Charge Number"
-msgstr ""
+msgstr "Número de Encargo"
 
 msgid "Chat"
 msgstr "Chat"
@@ -666,7 +666,7 @@ msgid "Enter each job's value, or fill every job at once from the first row. Emp
 msgstr "Insira o valor de cada ordem de produção ou preencha todas as ordens de produção de uma vez a partir da primeira linha. Linhas vazias são ignoradas."
 
 msgid "Enter hours from 0 to 24"
-msgstr ""
+msgstr "Insira as horas de 0 a 24"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1133,7 +1133,7 @@ msgid "My Hours"
 msgstr "Minhas Horas"
 
 msgid "My Time"
-msgstr ""
+msgstr "Meu Tempo"
 
 msgid "Name"
 msgstr "Nome"
@@ -1157,7 +1157,7 @@ msgid "Next step"
 msgstr "Próxima etapa"
 
 msgid "Next week"
-msgstr ""
+msgstr "Próxima semana"
 
 msgid "No"
 msgstr "Não"
@@ -1277,7 +1277,7 @@ msgid "No time entries for this week"
 msgstr "Nenhum registro de horas nesta semana"
 
 msgid "No time this week"
-msgstr ""
+msgstr "Sem tempo registrado esta semana"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Nenhum estoque de armazém está registrado para este item. Você ainda pode coletá-lo — o estoque disponível ficará negativo até que a contagem seja reconciliada."
@@ -1506,7 +1506,7 @@ msgid "PM schedule lapsed"
 msgstr "Cronograma de PM expirou"
 
 msgid "Post"
-msgstr ""
+msgstr "Contabilizar"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Pressione ? em qualquer página para abrir esta lista. Os atalhos são ignorados enquanto você digita em um campo."
@@ -1524,7 +1524,7 @@ msgid "Previous step"
 msgstr "Etapa anterior"
 
 msgid "Previous week"
-msgstr ""
+msgstr "Semana anterior"
 
 msgid "Print"
 msgstr "Imprimir"
@@ -1560,7 +1560,7 @@ msgid "Progress"
 msgstr "Progresso"
 
 msgid "Project"
-msgstr ""
+msgstr "Projeto"
 
 msgid "Purchasing"
 msgstr "Compras"
@@ -2081,7 +2081,7 @@ msgid "This unit will be permanently scrapped and a replacement serial number wi
 msgstr "Esta unidade será permanentemente descartada e um novo número de série de substituição será criado."
 
 msgid "This week"
-msgstr ""
+msgstr "Esta semana"
 
 msgid "Thumbnail"
 msgstr "Miniatura"

@@ -150,7 +150,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि आप सीधे लेबल प्रिंट कर सकें।"
 
 msgid "Add a row for each job or task you worked on."
-msgstr ""
+msgstr "प्रत्येक जॉब या कार्य के लिए जो आपने काम किया है, एक पंक्ति जोड़ें।"
 
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
@@ -352,7 +352,7 @@ msgid "Characteristics"
 msgstr "विशेषताएं"
 
 msgid "Charge Number"
-msgstr ""
+msgstr "चार्ज संख्या"
 
 msgid "Chat"
 msgstr "चैट"
@@ -666,7 +666,7 @@ msgid "Enter each job's value, or fill every job at once from the first row. Emp
 msgstr "प्रत्येक जॉब का मान दर्ज करें, या पहली पंक्ति से सभी जॉब्स को एक बार में भरें। खाली पंक्तियां छोड़ दी जाती हैं।"
 
 msgid "Enter hours from 0 to 24"
-msgstr ""
+msgstr "0 से 24 तक घंटे दर्ज करें"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1133,7 +1133,7 @@ msgid "My Hours"
 msgstr "मेरे घंटे"
 
 msgid "My Time"
-msgstr ""
+msgstr "मेरा समय"
 
 msgid "Name"
 msgstr "नाम"
@@ -1157,7 +1157,7 @@ msgid "Next step"
 msgstr "अगला चरण"
 
 msgid "Next week"
-msgstr ""
+msgstr "अगला सप्ताह"
 
 msgid "No"
 msgstr "नहीं"
@@ -1277,7 +1277,7 @@ msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
 msgid "No time this week"
-msgstr ""
+msgstr "इस सप्ताह कोई समय नहीं"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
@@ -1506,7 +1506,7 @@ msgid "PM schedule lapsed"
 msgstr "PM शेड्यूल समाप्त"
 
 msgid "Post"
-msgstr ""
+msgstr "पोस्ट करें"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "किसी भी पृष्ठ पर ? दबाएँ इस सूची को खोलने के लिए। जब आप किसी फील्ड में टाइप करते हैं, तो शॉर्टकट को अनदेखा किया जाता है।"
@@ -1524,7 +1524,7 @@ msgid "Previous step"
 msgstr "पिछला चरण"
 
 msgid "Previous week"
-msgstr ""
+msgstr "पिछला सप्ताह"
 
 msgid "Print"
 msgstr "प्रिंट करें"
@@ -1560,7 +1560,7 @@ msgid "Progress"
 msgstr "प्रगति"
 
 msgid "Project"
-msgstr ""
+msgstr "प्रकल्प"
 
 msgid "Purchasing"
 msgstr "क्रय"
@@ -2081,7 +2081,7 @@ msgid "This unit will be permanently scrapped and a replacement serial number wi
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट सीरियल नंबर बनाया जाएगा।"
 
 msgid "This week"
-msgstr ""
+msgstr "इस सप्ताह"
 
 msgid "Thumbnail"
 msgstr "थंबनेल"

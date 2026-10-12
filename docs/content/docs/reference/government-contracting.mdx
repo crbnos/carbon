@@ -85,6 +85,8 @@ Carbon has no payroll, so you import each pay period's totals to reconcile labor
 
 In DCAA mode Carbon checks yesterday every day. When a scheduled shift day has no time entered, and the day is not a holiday or a recorded absence, the employee and their manager get a notice with **Open timesheet**.
 
+Only employees with **Timesheet required** on count, and only from their start date. Both are on the person's **Job** page. Timesheet required is on for every employee until you turn it off, for example for shop floor staff who never charge a project. The daily notice, the **Missing Time** report and the close checklist all follow it. A day counts only once it has ended.
+
 The [close checklist](/docs/reference/period-close#the-close-checklist) gains **Timesheets complete**, a warning. In DCAA mode it counts the period's entries that are not posted, plus its days with missing time.
 
 ## CLIN and ACRN funding
@@ -112,7 +114,7 @@ The two R&D tax reports:
 
 ## Reports
 
-Open **Projects → Reports**. Each report downloads as a CSV for a date range, except labor distribution, which runs for one accounting period, and the R&D tax reports, which run for one tax year:
+Open **Projects → Reports** and pick a report. Each one opens on its own page as a table, with **Download CSV** for the same rows. Each report runs for a date range, except labor distribution, which runs for one accounting period, and the R&D tax reports, which run for one tax year. Pin the reports you use most; pins are per person.
 
 | Report | What it lists | Needs |
 |---|---|---|
@@ -126,6 +128,8 @@ Open **Projects → Reports**. Each report downloads as a CSV for a date range, 
 | **Form 6765 Section G** | Qualified research expenses of each business component, columns 49(a)–56, and a Total row, in whole dollars | Projects and Accounting |
 
 A report you do not have the permission for is not shown. In labor distribution, an employee with no imported payroll for the period shows "No payroll imported".
+
+The **Missing Time** report has one row per employee, with the number of missing days, the first and the last, and the manager. Expand a row to see the days. Search, or filter by employee, manager, department or location. Select employees and choose **Send Reminder** to send each one a notice that lists their missing days. **Exclude from Report** in a row's menu turns the person's Timesheet required off, and **Excluded** lists those people so you can add them back; both need permission to update People.
 
 <AgentContext>
 Internals (Government Contracting Phase 5a, rule `.claude/rules/government-contracting.md`):

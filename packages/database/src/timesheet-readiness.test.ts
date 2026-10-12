@@ -36,11 +36,12 @@ describe.skipIf(!url)(
     const companyId = `t-${suffix}-company`;
     const employeeId = `t-${suffix}-employee`;
     const closerId = randomUUID();
-    // 2030-01-07 and 2030-01-14 are Mondays, the only shift day.
+    // 2024-01-08 and 2024-01-15 are Mondays, the only shift day. Both are in
+    // the past: `get_missing_timesheet_days` never lists a day after yesterday.
     const period = {
       companyId,
-      startDate: "2030-01-07",
-      endDate: "2030-01-20"
+      startDate: "2024-01-08",
+      endDate: "2024-01-21"
     };
 
     beforeAll(async () => {
@@ -54,7 +55,7 @@ describe.skipIf(!url)(
     });
 
     /** A DCAA company with one Monday-shift employee and one Draft entry on
-     *  2030-01-14: one open entry and one missing day (2030-01-07). The closing
+     *  2024-01-15: one open entry and one missing day (2024-01-08). The closing
      *  user holds `accounting` only, with no `people` or `projects` view. */
     async function begin(mode: "DCAA" | "Standard") {
       await client.query("BEGIN");
@@ -89,7 +90,7 @@ describe.skipIf(!url)(
       await client.query(
         `INSERT INTO "timesheetEntry" ("companyId", "employeeId", "entryDate", "projectId",
                                      "laborCategoryId", "hours", "status", "createdBy")
-       VALUES ($1, $2, '2030-01-14', 'none', 'none', 8, 'Draft', 'system')`,
+       VALUES ($1, $2, '2024-01-15', 'none', 'none', 8, 'Draft', 'system')`,
         [companyId, employeeId]
       );
       await client.query(
@@ -165,7 +166,7 @@ describe.skipIf(!url)(
         [companyId]
       );
       await client.query("SET LOCAL session_replication_role = origin");
-      // Only 2030-01-07 is left: a missing day.
+      // Only 2024-01-08 is left: a missing day.
       expect(await getTimesheetCloseReadiness(db, period)).toEqual({
         failing: true,
         count: 1

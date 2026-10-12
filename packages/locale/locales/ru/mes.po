@@ -150,7 +150,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати, чтобы печатать наклейки непосредственно."
 
 msgid "Add a row for each job or task you worked on."
-msgstr ""
+msgstr "Добавьте строку для каждого производственного заказа или задачи, над которыми вы работали."
 
 msgid "Add Authenticator App"
 msgstr "Добавить приложение аутентификатора"
@@ -352,7 +352,7 @@ msgid "Characteristics"
 msgstr "Характеристики"
 
 msgid "Charge Number"
-msgstr ""
+msgstr "Номер заказа"
 
 msgid "Chat"
 msgstr "Чат"
@@ -666,7 +666,7 @@ msgid "Enter each job's value, or fill every job at once from the first row. Emp
 msgstr "Введите значение для каждого производственного заказа или заполните все производственные заказы одновременно из первой строки. Пустые строки пропускаются."
 
 msgid "Enter hours from 0 to 24"
-msgstr ""
+msgstr "Введите часы от 0 до 24"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1133,7 +1133,7 @@ msgid "My Hours"
 msgstr "Мои часы"
 
 msgid "My Time"
-msgstr ""
+msgstr "Моё время"
 
 msgid "Name"
 msgstr "Имя"
@@ -1157,7 +1157,7 @@ msgid "Next step"
 msgstr "Следующий шаг"
 
 msgid "Next week"
-msgstr ""
+msgstr "Следующая неделя"
 
 msgid "No"
 msgstr "Нет"
@@ -1277,7 +1277,7 @@ msgid "No time entries for this week"
 msgstr "Нет записей учёта времени за эту неделю"
 
 msgid "No time this week"
-msgstr ""
+msgstr "На этой неделе нет времени"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
@@ -1506,7 +1506,7 @@ msgid "PM schedule lapsed"
 msgstr "График обслуживания истек"
 
 msgid "Post"
-msgstr ""
+msgstr "Провести"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Нажмите ? на любой странице, чтобы открыть этот список. Горячие клавиши отключены при вводе в поле."
@@ -1524,7 +1524,7 @@ msgid "Previous step"
 msgstr "Предыдущий шаг"
 
 msgid "Previous week"
-msgstr ""
+msgstr "Предыдущая неделя"
 
 msgid "Print"
 msgstr "Печать"
@@ -1560,7 +1560,7 @@ msgid "Progress"
 msgstr "Прогресс"
 
 msgid "Project"
-msgstr ""
+msgstr "Проект"
 
 msgid "Purchasing"
 msgstr "Закупки"
@@ -2081,7 +2081,7 @@ msgid "This unit will be permanently scrapped and a replacement serial number wi
 msgstr "Эта единица будет окончательно списана, и будет создан новый серийный номер замены."
 
 msgid "This week"
-msgstr ""
+msgstr "Эта неделя"
 
 msgid "Thumbnail"
 msgstr "Миниатюра"

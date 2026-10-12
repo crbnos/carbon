@@ -80,6 +80,12 @@ const PersonJob = ({ initialValues }: PersonJobProps) => {
               label={t`Officer`}
               description={t`Used for Form 6765 Section E`}
             />
+            <Boolean
+              bordered
+              name="timesheetRequired"
+              label={t`Timesheet required`}
+              description={t`Listed on the Missing Time report for scheduled days with no time`}
+            />
             <LaborCategory
               name="laborCategoryId"
               label={t`Labor Category`}

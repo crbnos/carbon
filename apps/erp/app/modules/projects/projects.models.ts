@@ -4051,6 +4051,50 @@ export function isProjectReportKey(value: string): value is ProjectReportKey {
   return (projectReportKeys as readonly string[]).includes(value);
 }
 
+/**
+ * The modules a user must be able to view to run each report. The report
+ * page, its CSV and the Reports list all read this one map.
+ */
+export const projectReportPermissions: Record<
+  ProjectReportKey,
+  { view: string[] }
+> = {
+  "late-entries": { view: ["projects"] },
+  "missing-time": { view: ["projects"] },
+  "labor-transfers": { view: ["projects"] },
+  "timesheet-audit": { view: ["projects"] },
+  "labor-distribution": { view: ["projects", "people"] },
+  "cost-by-clin": { view: ["sales"] },
+  "rd-section-174a": { view: ["projects", "accounting"] },
+  "rd-form-6765-g": { view: ["projects", "accounting"] }
+};
+
+/**
+ * The Missing Time report's actions: take an employee out of the report
+ * (`timesheetRequired` off) or back in, or remind the selected employees.
+ */
+export const missingTimeActionValidator = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.enum(["exclude", "include"]),
+    employeeId: z.string().min(1)
+  }),
+  z.object({
+    intent: z.literal("remind"),
+    employeeIds: zfd.repeatableOfType(z.string().min(1)),
+    startDate: z.string().refine(isCalendarDate),
+    endDate: z.string().refine(isCalendarDate)
+  })
+]);
+
+/** True for a valid `YYYY-MM-DD` date. */
+function isCalendarDate(value: string) {
+  try {
+    return parseDate(value).toString() === value;
+  } catch {
+    return false;
+  }
+}
+
 /** A report row's charge number: the element's id, else the project's. */
 export function reportChargeNumber(row: {
   projectIdentifier: string | null;

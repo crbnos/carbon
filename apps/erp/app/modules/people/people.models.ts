@@ -65,7 +65,9 @@ export const employeeJobValidator = z.object({
   /** Government Contracting 5a: dilution applies to Exempt staff. */
   flsaStatus: zfd.text(z.enum(flsaStatuses).optional()),
   /** Government Contracting 5d: Form 6765 Section E, line 38. */
-  isOfficer: zfd.checkbox().optional()
+  isOfficer: zfd.checkbox().optional(),
+  /** In the missing-time population (Projects → Reports → Missing Time). */
+  timesheetRequired: zfd.checkbox().optional()
 });
 
 export const holidayValidator = z.object({

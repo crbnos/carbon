@@ -144,7 +144,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `project.costObjective` / `restrictCharging`, `projectMember` | Cost objective and the charge restriction (Government Contracting 5a; `.claude/rules/government-contracting.md`) |
 | `projectElement.isUnallowable` / `isPreproduction` / `isLeave` | Element flags (5a) |
 | `timesheetEntryRevision`, `timesheetCertification` | DCAA correction trail and weekly certification (5a) |
-| `get_missing_timesheet_days` (RPC) | Scheduled work days with no entry (5a) |
+| `get_missing_timesheet_days` (RPC) | Scheduled work days with no entry (5a): `timesheetRequired` employees only, from their start date, up to yesterday |
+| `getMissingTimeByEmployee` / `getMissingTimeExcludedCount` / `updateTimesheetRequired` | The Missing Time report: one row per employee, the excluded list, and Exclude / Include (`employeeJob.timesheetRequired`) |
 | `projectElement.isBusinessComponent` / `rdComponentType` / `rdSoftwareType`, `timesheetEntry.rdActivityRole` / `workLocationId`, `laborCategory.rdActivityRole` | R&D tax tags (Government Contracting 5d; `government-contracting.md` → *R&D tax*) |
 | `projectPeg` | Versioned pegs: supply (`supplyType`, `supplyId`), member demand, `state`, `supersededAt`, `hardenedAt`, `itemLedgerId` |
 

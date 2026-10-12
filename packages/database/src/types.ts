@@ -17769,6 +17769,7 @@ export type Database = {
           shiftId: string | null
           startDate: string | null
           tags: string[] | null
+          timesheetRequired: boolean
           title: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -17787,6 +17788,7 @@ export type Database = {
           shiftId?: string | null
           startDate?: string | null
           tags?: string[] | null
+          timesheetRequired?: boolean
           title?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -17805,6 +17807,7 @@ export type Database = {
           shiftId?: string | null
           startDate?: string | null
           tags?: string[] | null
+          timesheetRequired?: boolean
           title?: string | null
           updatedAt?: string | null
           updatedBy?: string | null

@@ -8,8 +8,7 @@ import { getLogger } from "@carbon/logger";
 import {
   chunkArray,
   section6765FilingRows,
-  section6765OfficerWages,
-  taxYearBounds
+  section6765OfficerWages
 } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -21,19 +20,22 @@ import {
   getLaborTransfers,
   getLateTimesheetEntries,
   getMissingTimesheetDays,
-  getRdComponents,
-  getRdEmployeeYear,
-  getRdLedgerRows,
+  type getRdEmployeeYear,
+  type getRdLedgerRows,
   getTimesheetAuditRows,
   isProjectReportKey,
   isRdTaxReportKey,
-  monthNumber,
   type ProjectReportKey,
+  projectReportPermissions,
   type RdComponent,
   rdSoftwareTypeIrsText,
   type rdTaxReportKeys,
   reportChargeNumber
 } from "~/modules/projects";
+import {
+  getRdTaxReport,
+  taxYearParam
+} from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "projects-reports-csv");
@@ -42,21 +44,6 @@ const logger = getLogger("erp", "projects-reports-csv");
 const PAGE_SIZE = 1000;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-/** The permissions each report needs (plan Task 31, step 3). */
-const REPORT_PERMISSIONS: Record<
-  ProjectReportKey,
-  { view: string | string[] }
-> = {
-  "late-entries": { view: "projects" },
-  "missing-time": { view: "projects" },
-  "labor-transfers": { view: "projects" },
-  "timesheet-audit": { view: "projects" },
-  "labor-distribution": { view: ["projects", "people"] },
-  "cost-by-clin": { view: "sales" },
-  "rd-section-174a": { view: ["projects", "accounting"] },
-  "rd-form-6765-g": { view: ["projects", "accounting"] }
-};
 
 type Csv = { fields: string[]; rows: Record<string, unknown>[] };
 
@@ -73,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const { client, companyId } = await requirePermissions(request, {
-    ...REPORT_PERMISSIONS[reportKey],
+    ...projectReportPermissions[reportKey],
     role: "employee"
   });
 
@@ -97,39 +84,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       csv = laborDistributionCsv(rows);
       fileName = `labor-distribution-${rows.period.startDate}-${rows.period.endDate}.csv`;
     } else if (isRdTaxReportKey(reportKey)) {
-      const taxYear = Number(searchParams.get("taxYear"));
-      if (!Number.isInteger(taxYear) || taxYear < 1900 || taxYear > 9999) {
+      const taxYear = taxYearParam(searchParams.get("taxYear"));
+      if (taxYear === null) {
         throw new Response("Choose a tax year", { status: 400 });
       }
-      const [settings, company] = await Promise.all([
-        db
-          .selectFrom("fiscalYearSettings")
-          .select("taxStartMonth")
-          .where("companyId", "=", companyId)
-          .executeTakeFirst(),
-        db
-          .selectFrom("company")
-          .select("taxId")
-          .where("id", "=", companyId)
-          .executeTakeFirst()
-      ]);
-      const range = {
+      const report = await getRdTaxReport(db, client, {
         companyId,
-        ...taxYearBounds(taxYear, monthNumber(settings?.taxStartMonth))
-      };
-      const [rows, employees, components] = await Promise.all([
-        getRdLedgerRows(db, range),
-        reportKey === "rd-form-6765-g"
-          ? getRdEmployeeYear(db, range)
-          : Promise.resolve([]),
-        getRdComponents(client, companyId)
-      ]);
-      if (components.error) throw components.error;
+        taxYear,
+        withEmployees: reportKey === "rd-form-6765-g"
+      });
       csv =
         reportKey === "rd-section-174a"
-          ? section174ACsv(rows, components.data ?? [])
-          : section6765Csv(rows, employees, components.data ?? [], {
-              ein: company?.taxId ?? null
+          ? section174ACsv(report.rows, report.components)
+          : section6765Csv(report.rows, report.employees, report.components, {
+              ein: report.ein
             });
       fileName = `${reportKey}-${taxYear}.csv`;
     } else {

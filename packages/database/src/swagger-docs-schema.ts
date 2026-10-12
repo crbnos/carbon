@@ -84808,6 +84808,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.isOfficer"
           },
           {
+            $ref: "#/parameters/rowFilter.employeeJob.timesheetRequired"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -84915,6 +84918,9 @@ export default {
             $ref: "#/parameters/rowFilter.employeeJob.isOfficer"
           },
           {
+            $ref: "#/parameters/rowFilter.employeeJob.timesheetRequired"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -84974,6 +84980,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employeeJob.isOfficer"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeeJob.timesheetRequired"
           },
           {
             $ref: "#/parameters/body.employeeJob"
@@ -167233,7 +167242,13 @@ export default {
       type: "object"
     },
     employeeJob: {
-      required: ["id", "locationId", "companyId", "isOfficer"],
+      required: [
+        "id",
+        "locationId",
+        "companyId",
+        "isOfficer",
+        "timesheetRequired"
+      ],
       properties: {
         id: {
           description:
@@ -167316,6 +167331,11 @@ export default {
         },
         isOfficer: {
           default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        timesheetRequired: {
+          default: true,
           format: "boolean",
           type: "boolean"
         }
@@ -225409,6 +225429,12 @@ export default {
     },
     "rowFilter.employeeJob.isOfficer": {
       name: "isOfficer",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeeJob.timesheetRequired": {
+      name: "timesheetRequired",
       required: false,
       in: "query",
       type: "string"

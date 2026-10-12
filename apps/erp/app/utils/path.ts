@@ -2116,6 +2116,8 @@ export const path = {
       generatePath(`${x}/project/${id}/pegging/manual`),
     projectPlaceInService: (id: string) =>
       generatePath(`${x}/project/${id}/place-in-service`),
+    projectReport: (reportKey: string) =>
+      generatePath(`${x}/projects/reports/${reportKey}`),
     projectReports: `${x}/projects/reports`,
     projectSettings: (id: string) =>
       generatePath(`${x}/project/${id}/settings`),

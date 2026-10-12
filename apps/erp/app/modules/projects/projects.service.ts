@@ -4572,6 +4572,114 @@ export async function getMissingTimesheetDays(
   return result.rows;
 }
 
+/** One employee of the Missing Time report (`getMissingTimeByEmployee`). */
+export type MissingTimeEmployee = {
+  employeeId: string;
+  employeeName: string | null;
+  managerId: string | null;
+  managerName: string | null;
+  departmentId: string | null;
+  departmentName: string | null;
+  locationId: string | null;
+  locationName: string | null;
+  /** The scheduled days with no time, oldest first (`YYYY-MM-DD`). */
+  dates: string[];
+};
+
+/**
+ * The Missing Time report, one row per employee. Without `excluded`: each
+ * employee with missing days in the range (`get_missing_timesheet_days`),
+ * most days first. With `excluded`: the active employees whose
+ * `timesheetRequired` is off, who are never listed as missing.
+ */
+export async function getMissingTimeByEmployee(
+  db: Kysely<KyselyDatabase>,
+  args: ReportRange & { excluded: boolean }
+) {
+  const result = args.excluded
+    ? await sql<MissingTimeEmployee>`
+        SELECT e."id" AS "employeeId", u."fullName" AS "employeeName",
+          ej."managerId", mu."fullName" AS "managerName",
+          ej."departmentId", d."name" AS "departmentName",
+          ej."locationId", l."name" AS "locationName",
+          ARRAY[]::text[] AS "dates"
+        FROM "employee" e
+        JOIN "employeeJob" ej ON ej."id" = e."id" AND ej."companyId" = e."companyId"
+        LEFT JOIN "user" u ON u."id" = e."id"
+        LEFT JOIN "user" mu ON mu."id" = ej."managerId"
+        LEFT JOIN "department" d ON d."id" = ej."departmentId" AND d."companyId" = e."companyId"
+        LEFT JOIN "location" l ON l."id" = ej."locationId" AND l."companyId" = e."companyId"
+        WHERE e."companyId" = ${args.companyId}
+          AND e."active"
+          AND NOT ej."timesheetRequired"
+        ORDER BY u."fullName", e."id"
+      `.execute(db)
+    : await sql<MissingTimeEmployee>`
+        SELECT m."employeeId", u."fullName" AS "employeeName",
+          m."managerId", mu."fullName" AS "managerName",
+          ej."departmentId", d."name" AS "departmentName",
+          ej."locationId", l."name" AS "locationName",
+          array_agg(m."date"::text ORDER BY m."date") AS "dates"
+        FROM get_missing_timesheet_days(${args.companyId}, ${args.from}::date, ${args.to}::date) m
+        LEFT JOIN "employeeJob" ej ON ej."id" = m."employeeId" AND ej."companyId" = ${args.companyId}
+        LEFT JOIN "user" u ON u."id" = m."employeeId"
+        LEFT JOIN "user" mu ON mu."id" = m."managerId"
+        LEFT JOIN "department" d ON d."id" = ej."departmentId" AND d."companyId" = ${args.companyId}
+        LEFT JOIN "location" l ON l."id" = ej."locationId" AND l."companyId" = ${args.companyId}
+        GROUP BY m."employeeId", u."fullName", m."managerId", mu."fullName",
+          ej."departmentId", d."name", ej."locationId", l."name"
+        ORDER BY count(*) DESC, u."fullName", m."employeeId"
+      `.execute(db);
+  return result.rows;
+}
+
+/** How many active employees have `timesheetRequired` off. */
+export async function getMissingTimeExcludedCount(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string }
+) {
+  const row = await db
+    .selectFrom("employee")
+    .innerJoin("employeeJob", (join) =>
+      join
+        .onRef("employeeJob.id", "=", "employee.id")
+        .onRef("employeeJob.companyId", "=", "employee.companyId")
+    )
+    .select((eb) => eb.fn.countAll<number>().as("count"))
+    .where("employee.companyId", "=", args.companyId)
+    .where("employee.active", "=", true)
+    .where("employeeJob.timesheetRequired", "=", false)
+    .executeTakeFirst();
+  return Number(row?.count ?? 0);
+}
+
+/**
+ * Turns an employee's `timesheetRequired` on or off (the Missing Time
+ * report's Exclude and Include). Returns false when the employee has no job
+ * row in the company.
+ */
+export async function updateTimesheetRequired(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    timesheetRequired: boolean;
+    updatedBy: string;
+  }
+) {
+  const result = await db
+    .updateTable("employeeJob")
+    .set({
+      timesheetRequired: args.timesheetRequired,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", args.employeeId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  return Number(result.numUpdatedRows) > 0;
+}
+
 /**
  * Labor transfers made in the range: replacement entries (`correctionOfId`)
  * whose project or element differs from the entry they correct.

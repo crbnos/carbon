@@ -1,6 +1,8 @@
 -- The daily missing-time check (Government Contracting 5a,
 -- 20261011194847_timesheet-missing-time-sweep.sql): which scheduled work days
--- `get_missing_timesheet_days` lists, and when the sweep wakes the job.
+-- `get_missing_timesheet_days` lists, and when the sweep wakes the job. The
+-- population rules (`timesheetRequired`, the start date, no day after
+-- yesterday) are 20261012193140_missing-time-population.sql.
 -- Run from the repository root against an existing local database that has an
 -- active employee in a company with a location:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/timesheet-missing-time.test.sql
@@ -21,9 +23,10 @@ $fn$;
 
 DO $proof$
 DECLARE
-  -- 2030-01-07 is a Monday; 2030-01-08 a Tuesday.
-  monday CONSTANT date := DATE '2030-01-07';
-  tuesday CONSTANT date := DATE '2030-01-08';
+  -- 2024-01-08 is a Monday; 2024-01-09 a Tuesday. Both are in the past:
+  -- the function never lists a day after yesterday.
+  monday CONSTANT date := DATE '2024-01-08';
+  tuesday CONSTANT date := DATE '2024-01-09';
   v_company text;
   v_employee text;
   v_location text;
@@ -55,6 +58,12 @@ BEGIN
   RETURNING "id" INTO v_shift;
   INSERT INTO "employeeShift" ("employeeId", "shiftId", "companyId")
   VALUES (v_employee, v_shift, v_company);
+
+  -- The employee must record time and started long before the test days.
+  INSERT INTO "employeeJob" ("id", "companyId", "locationId", "startDate", "timesheetRequired")
+  VALUES (v_employee, v_company, v_location, DATE '2020-01-01', true)
+  ON CONFLICT ("id", "companyId") DO UPDATE
+  SET "startDate" = DATE '2020-01-01', "timesheetRequired" = true;
 
   -- 1. A Monday shift and no entry on a Monday: listed. Not on the Tuesday.
   SELECT EXISTS (
@@ -107,6 +116,40 @@ BEGIN
   ) INTO listed;
   PERFORM pg_temp.expect('An entry removes the day', listed, false);
   DELETE FROM "timesheetEntry" WHERE "id" = v_entry;
+
+  -- 4a. An employee who need not record time is not listed.
+  UPDATE "employeeJob" SET "timesheetRequired" = false
+  WHERE "id" = v_employee AND "companyId" = v_company;
+  SELECT EXISTS (
+    SELECT 1 FROM get_missing_timesheet_days(v_company, monday, monday) m
+    WHERE m."employeeId" = v_employee
+  ) INTO listed;
+  PERFORM pg_temp.expect('timesheetRequired = false removes the employee', listed, false);
+  UPDATE "employeeJob" SET "timesheetRequired" = true
+  WHERE "id" = v_employee AND "companyId" = v_company;
+
+  -- 4b. A day before the start date is not listed.
+  UPDATE "employeeJob" SET "startDate" = tuesday
+  WHERE "id" = v_employee AND "companyId" = v_company;
+  SELECT EXISTS (
+    SELECT 1 FROM get_missing_timesheet_days(v_company, monday, monday) m
+    WHERE m."employeeId" = v_employee
+  ) INTO listed;
+  PERFORM pg_temp.expect('A day before the start date is not listed', listed, false);
+  UPDATE "employeeJob" SET "startDate" = DATE '2020-01-01'
+  WHERE "id" = v_employee AND "companyId" = v_company;
+
+  -- 4c. Today and later are never listed, even on a shift day.
+  UPDATE "shift" SET "tuesday" = true, "wednesday" = true, "thursday" = true,
+    "friday" = true, "saturday" = true, "sunday" = true
+  WHERE "id" = v_shift;
+  SELECT EXISTS (
+    SELECT 1 FROM get_missing_timesheet_days(
+      v_company, company_today(v_company), company_today(v_company) + 7
+    ) m
+    WHERE m."employeeId" = v_employee
+  ) INTO listed;
+  PERFORM pg_temp.expect('Today and later are not listed', listed, false);
 
   -- 3. The sweep has work only while a company runs DCAA mode.
   UPDATE "companySettings" SET "timekeepingControls" = 'Standard'

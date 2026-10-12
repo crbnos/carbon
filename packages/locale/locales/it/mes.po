@@ -150,7 +150,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Aggiungi una stampante nelle impostazioni di stampa per stampare le etichette direttamente."
 
 msgid "Add a row for each job or task you worked on."
-msgstr ""
+msgstr "Aggiungi una riga per ogni ordine di produzione o attività su cui hai lavorato."
 
 msgid "Add Authenticator App"
 msgstr "Aggiungi App Autenticatore"
@@ -352,7 +352,7 @@ msgid "Characteristics"
 msgstr "Caratteristiche"
 
 msgid "Charge Number"
-msgstr ""
+msgstr "Numero di imputazione"
 
 msgid "Chat"
 msgstr "Chat"
@@ -666,7 +666,7 @@ msgid "Enter each job's value, or fill every job at once from the first row. Emp
 msgstr "Inserisci il valore di ogni ordine di produzione, o compila ogni ordine di produzione tutto insieme dalla prima riga. Le righe vuote vengono saltate."
 
 msgid "Enter hours from 0 to 24"
-msgstr ""
+msgstr "Inserisci le ore da 0 a 24"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1133,7 +1133,7 @@ msgid "My Hours"
 msgstr "Le Mie Ore"
 
 msgid "My Time"
-msgstr ""
+msgstr "Mio orario"
 
 msgid "Name"
 msgstr "Nome"
@@ -1157,7 +1157,7 @@ msgid "Next step"
 msgstr "Passo successivo"
 
 msgid "Next week"
-msgstr ""
+msgstr "Settimana prossima"
 
 msgid "No"
 msgstr "No"
@@ -1277,7 +1277,7 @@ msgid "No time entries for this week"
 msgstr "Nessuna registrazione oraria per questa settimana"
 
 msgid "No time this week"
-msgstr ""
+msgstr "Nessun orario questa settimana"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non è registrata giacenza di deposito per questo articolo. Puoi comunque effettuare il prelievo — la giacenza disponibile diventerà negativa fino al riconciliamento dell'inventario."
@@ -1506,7 +1506,7 @@ msgid "PM schedule lapsed"
 msgstr "Pianificazione PM scaduta"
 
 msgid "Post"
-msgstr ""
+msgstr "Registra"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Premi ? su qualsiasi pagina per aprire questo elenco. Le scorciatoie vengono ignorate mentre digiti in un campo."
@@ -1524,7 +1524,7 @@ msgid "Previous step"
 msgstr "Passo precedente"
 
 msgid "Previous week"
-msgstr ""
+msgstr "Settimana precedente"
 
 msgid "Print"
 msgstr "Stampa"
@@ -1560,7 +1560,7 @@ msgid "Progress"
 msgstr "Avanzamento"
 
 msgid "Project"
-msgstr ""
+msgstr "Progetto"
 
 msgid "Purchasing"
 msgstr "Acquisti"
@@ -2081,7 +2081,7 @@ msgid "This unit will be permanently scrapped and a replacement serial number wi
 msgstr "Questa unità sarà permanentemente scartata e verrà creato un nuovo numero seriale."
 
 msgid "This week"
-msgstr ""
+msgstr "Questa settimana"
 
 msgid "Thumbnail"
 msgstr "Miniatura"

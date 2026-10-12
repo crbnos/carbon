@@ -150,7 +150,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Einen Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt zu drucken."
 
 msgid "Add a row for each job or task you worked on."
-msgstr ""
+msgstr "Fügen Sie eine Zeile für jeden Fertigungsauftrag oder jede Aufgabe ein, an dem/der Sie gearbeitet haben."
 
 msgid "Add Authenticator App"
 msgstr "Authentifizierungs-App hinzufügen"
@@ -352,7 +352,7 @@ msgid "Characteristics"
 msgstr "Merkmale"
 
 msgid "Charge Number"
-msgstr ""
+msgstr "Abrechnungsnummer"
 
 msgid "Chat"
 msgstr "Chat"
@@ -666,7 +666,7 @@ msgid "Enter each job's value, or fill every job at once from the first row. Emp
 msgstr "Geben Sie den Wert jedes Fertigungsauftrags ein oder füllen Sie alle Fertigungsaufträge auf einmal aus der ersten Zeile. Leere Zeilen werden übersprungen."
 
 msgid "Enter hours from 0 to 24"
-msgstr ""
+msgstr "Geben Sie Stunden von 0 bis 24 ein"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1133,7 +1133,7 @@ msgid "My Hours"
 msgstr "Meine Stunden"
 
 msgid "My Time"
-msgstr ""
+msgstr "Meine Zeit"
 
 msgid "Name"
 msgstr "Name"
@@ -1157,7 +1157,7 @@ msgid "Next step"
 msgstr "Nächster Schritt"
 
 msgid "Next week"
-msgstr ""
+msgstr "Nächste Woche"
 
 msgid "No"
 msgstr "Nein"
@@ -1277,7 +1277,7 @@ msgid "No time entries for this week"
 msgstr "Keine Zeiteinträge für diese Woche"
 
 msgid "No time this week"
-msgstr ""
+msgstr "Keine Zeit diese Woche"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Kein Lagerbestand für diesen Artikel ist erfasst. Sie können ihn trotzdem kommissionieren — der verfügbare Bestand wird negativ, bis die Inventur abgestimmt ist."
@@ -1506,7 +1506,7 @@ msgid "PM schedule lapsed"
 msgstr "Wartungsplan abgelaufen"
 
 msgid "Post"
-msgstr ""
+msgstr "Buchen"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Drücken Sie ? auf jeder Seite, um diese Liste zu öffnen. Tastaturverknüpfungen werden ignoriert, während Sie in einem Feld tippen."
@@ -1524,7 +1524,7 @@ msgid "Previous step"
 msgstr "Vorheriger Schritt"
 
 msgid "Previous week"
-msgstr ""
+msgstr "Vorherige Woche"
 
 msgid "Print"
 msgstr "Drucken"
@@ -1560,7 +1560,7 @@ msgid "Progress"
 msgstr "Fortschritt"
 
 msgid "Project"
-msgstr ""
+msgstr "Projekt"
 
 msgid "Purchasing"
 msgstr "Einkauf"
@@ -2081,7 +2081,7 @@ msgid "This unit will be permanently scrapped and a replacement serial number wi
 msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Seriennummer erstellt."
 
 msgid "This week"
-msgstr ""
+msgstr "Diese Woche"
 
 msgid "Thumbnail"
 msgstr "Vorschaubild"

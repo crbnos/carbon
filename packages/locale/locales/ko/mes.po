@@ -150,7 +150,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
 
 msgid "Add a row for each job or task you worked on."
-msgstr ""
+msgstr "근무한 각 작업 지시 또는 작업마다 행을 추가하세요."
 
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
@@ -352,7 +352,7 @@ msgid "Characteristics"
 msgstr "특성"
 
 msgid "Charge Number"
-msgstr ""
+msgstr "청구 번호"
 
 msgid "Chat"
 msgstr "채팅"
@@ -666,7 +666,7 @@ msgid "Enter each job's value, or fill every job at once from the first row. Emp
 msgstr "각 작업 지시의 값을 입력하거나, 첫 번째 행에서 모든 작업 지시를 한 번에 채우세요. 빈 행은 건너뜁니다."
 
 msgid "Enter hours from 0 to 24"
-msgstr ""
+msgstr "0에서 24 사이의 시간을 입력하세요"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1133,7 +1133,7 @@ msgid "My Hours"
 msgstr "내 근무 시간"
 
 msgid "My Time"
-msgstr ""
+msgstr "내 시간"
 
 msgid "Name"
 msgstr "이름"
@@ -1157,7 +1157,7 @@ msgid "Next step"
 msgstr "다음 단계"
 
 msgid "Next week"
-msgstr ""
+msgstr "다음 주"
 
 msgid "No"
 msgstr "아니요"
@@ -1277,7 +1277,7 @@ msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
 msgid "No time this week"
-msgstr ""
+msgstr "이번 주 시간이 없습니다"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
@@ -1506,7 +1506,7 @@ msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
 
 msgid "Post"
-msgstr ""
+msgstr "전기"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
@@ -1524,7 +1524,7 @@ msgid "Previous step"
 msgstr "이전 단계"
 
 msgid "Previous week"
-msgstr ""
+msgstr "지난 주"
 
 msgid "Print"
 msgstr "인쇄"
@@ -1560,7 +1560,7 @@ msgid "Progress"
 msgstr "진행 상황"
 
 msgid "Project"
-msgstr ""
+msgstr "프로젝트"
 
 msgid "Purchasing"
 msgstr "구매"
@@ -2081,7 +2081,7 @@ msgid "This unit will be permanently scrapped and a replacement serial number wi
 msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 생성됩니다."
 
 msgid "This week"
-msgstr ""
+msgstr "이번 주"
 
 msgid "Thumbnail"
 msgstr "썸네일"

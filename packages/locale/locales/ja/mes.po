@@ -150,7 +150,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
 msgid "Add a row for each job or task you worked on."
-msgstr ""
+msgstr "作業した製造指図またはタスクをそれぞれ行として追加してください"
 
 msgid "Add Authenticator App"
 msgstr "認証アプリを追加"
@@ -352,7 +352,7 @@ msgid "Characteristics"
 msgstr "特性"
 
 msgid "Charge Number"
-msgstr ""
+msgstr "チャージ番号"
 
 msgid "Chat"
 msgstr "チャット"
@@ -666,7 +666,7 @@ msgid "Enter each job's value, or fill every job at once from the first row. Emp
 msgstr "各製造指図の値を入力するか、最初の行からすべての製造指図を一度に入力します。空の行はスキップされます。"
 
 msgid "Enter hours from 0 to 24"
-msgstr ""
+msgstr "0～24の時間を入力してください"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1133,7 +1133,7 @@ msgid "My Hours"
 msgstr "勤務時間"
 
 msgid "My Time"
-msgstr ""
+msgstr "マイタイム"
 
 msgid "Name"
 msgstr "名前"
@@ -1157,7 +1157,7 @@ msgid "Next step"
 msgstr "次のステップ"
 
 msgid "Next week"
-msgstr ""
+msgstr "来週"
 
 msgid "No"
 msgstr "いいえ"
@@ -1277,7 +1277,7 @@ msgid "No time entries for this week"
 msgstr "今週のタイムエントリーはありません"
 
 msgid "No time this week"
-msgstr ""
+msgstr "今週の時間なし"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
@@ -1506,7 +1506,7 @@ msgid "PM schedule lapsed"
 msgstr "PM スケジュール失効"
 
 msgid "Post"
-msgstr ""
+msgstr "転記"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "任意のページで「?」を押すとこのリストが表示されます。フィールドへの入力中はショートカットが無視されます。"
@@ -1524,7 +1524,7 @@ msgid "Previous step"
 msgstr "前のステップ"
 
 msgid "Previous week"
-msgstr ""
+msgstr "先週"
 
 msgid "Print"
 msgstr "印刷"
@@ -1560,7 +1560,7 @@ msgid "Progress"
 msgstr "進捗"
 
 msgid "Project"
-msgstr ""
+msgstr "プロジェクト"
 
 msgid "Purchasing"
 msgstr "購買"
@@ -2081,7 +2081,7 @@ msgid "This unit will be permanently scrapped and a replacement serial number wi
 msgstr "このユニットは永久にスクラップされ、代替シリアル番号が作成されます。"
 
 msgid "This week"
-msgstr ""
+msgstr "今週"
 
 msgid "Thumbnail"
 msgstr "サムネイル"

@@ -150,7 +150,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
 msgid "Add a row for each job or task you worked on."
-msgstr ""
+msgstr "为您工作过的每个工单或任务添加一行。"
 
 msgid "Add Authenticator App"
 msgstr "添加身份验证应用"
@@ -352,7 +352,7 @@ msgid "Characteristics"
 msgstr "特性"
 
 msgid "Charge Number"
-msgstr ""
+msgstr "费用代码"
 
 msgid "Chat"
 msgstr "聊天"
@@ -666,7 +666,7 @@ msgid "Enter each job's value, or fill every job at once from the first row. Emp
 msgstr "为每个工单输入值，或从第一行同时填充所有工单。空行将被跳过。"
 
 msgid "Enter hours from 0 to 24"
-msgstr ""
+msgstr "输入 0 到 24 之间的小时数"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1133,7 +1133,7 @@ msgid "My Hours"
 msgstr "我的工时"
 
 msgid "My Time"
-msgstr ""
+msgstr "我的工作时间"
 
 msgid "Name"
 msgstr "名称"
@@ -1157,7 +1157,7 @@ msgid "Next step"
 msgstr "下一步骤"
 
 msgid "Next week"
-msgstr ""
+msgstr "下周"
 
 msgid "No"
 msgstr "否"
@@ -1277,7 +1277,7 @@ msgid "No time entries for this week"
 msgstr "本周无考勤记录"
 
 msgid "No time this week"
-msgstr ""
+msgstr "本周没有时间"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
@@ -1506,7 +1506,7 @@ msgid "PM schedule lapsed"
 msgstr "PM排程已逾期"
 
 msgid "Post"
-msgstr ""
+msgstr "过账"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "在任何页面按 ? 打开此列表。在字段中输入时快捷键不可用。"
@@ -1524,7 +1524,7 @@ msgid "Previous step"
 msgstr "上一步骤"
 
 msgid "Previous week"
-msgstr ""
+msgstr "上周"
 
 msgid "Print"
 msgstr "打印"
@@ -1560,7 +1560,7 @@ msgid "Progress"
 msgstr "进度"
 
 msgid "Project"
-msgstr ""
+msgstr "项目"
 
 msgid "Purchasing"
 msgstr "采购"
@@ -2081,7 +2081,7 @@ msgid "This unit will be permanently scrapped and a replacement serial number wi
 msgstr "此单元将被永久报废，并将创建替换序列号。"
 
 msgid "This week"
-msgstr ""
+msgstr "本周"
 
 msgid "Thumbnail"
 msgstr "缩略图"

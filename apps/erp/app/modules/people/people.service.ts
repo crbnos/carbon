@@ -665,6 +665,9 @@ export async function updateEmployeeJob(
       ...(typeof sanitized.isOfficer === "boolean"
         ? { isOfficer: sanitized.isOfficer }
         : {}),
+      ...(typeof sanitized.timesheetRequired === "boolean"
+        ? { timesheetRequired: sanitized.timesheetRequired }
+        : {}),
       ...("customFields" in sanitized
         ? { customFields: sanitized.customFields }
         : {}),
