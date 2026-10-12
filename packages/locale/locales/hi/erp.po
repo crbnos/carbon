@@ -16457,9 +16457,6 @@ msgstr "अभी तक कोई सिंक ऑपरेशन नहीं"
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
-msgid "No time is waiting for approval."
-msgstr "अनुमोदन की प्रतीक्षा में कोई समय नहीं है।"
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "कुछ भी शेड्यूल नहीं किया गय�
 msgid "Nothing selected yet"
 msgstr "अभी कुछ नहीं चुना गया"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "अभी तक कोई चालान करने के लिए कुछ नहीं। कार्य पर लगाया गया समय, पार्ट्स और व्यय यहां दिखाई देते हैं।"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "अभी मान्यता देने के लिए कुछ नहीं। राजस्व उसके अनुसार है जो चालान बिल करते हैं।"
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक चरण केवल तभी मान प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
@@ -23473,6 +23476,9 @@ msgstr "सबमिट किया गया {0}"
 msgid "Submitted By"
 msgstr "द्वारा प्रस्तुत"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "सबमिट किया गया समय परियोजना में पोस्ट होने से पहले अनुमोदन में प्रतीक्षा करता है। जब यह बंद होता है, तो समय जैसे ही सबमिट होता है पोस्ट होता है।"
 
@@ -25514,6 +25520,9 @@ msgstr "इस सामग्री के लिए इस कार्य क
 
 msgid "This line has no routing to schedule."
 msgstr "इस पंक्ति के पास शेड्यूल करने के लिए कोई रूटिंग नहीं है।"
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "यह स्थान केवल स्टाफ वाले वर्क सेंटर को शेड्यूल करता है, लेकिन यह एक लाइट्स-आउट (24×7) स्टेशन है — यह छूट प्राप्त है और निरीक्षण के बिना चल रहा है।"

@@ -16457,9 +16457,6 @@ msgstr "Nenhuma operação de sincronização ainda"
 msgid "No time entries for this week"
 msgstr "Sem registros de tempo para esta semana"
 
-msgid "No time is waiting for approval."
-msgstr "Nenhum tempo aguardando aprovação."
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "Nada agendado — adicione uma estação abaixo."
 msgid "Nothing selected yet"
 msgstr "Nenhum selecionado ainda"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Nada para faturar ainda. Tempo, peças e despesas cobradas ao trabalho aparecem aqui."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nada a reconhecer ainda. A receita segue o que as faturas faturam."
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nada ainda. Uma etapa só oferece valores após ser configurada."
@@ -23473,6 +23476,9 @@ msgstr "Enviado {0}"
 msgid "Submitted By"
 msgstr "Enviado por"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "Tempo enviado aguarda em Aprovações antes de ser contabilizado no projeto. Quando isso está desligado, o tempo é contabilizado assim que é enviado."
 
@@ -25514,6 +25520,9 @@ msgstr "A quantidade própria exigida por este trabalho para o material."
 
 msgid "This line has no routing to schedule."
 msgstr "Esta Linha não possui Roteiro de produção para programar."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Este local programa apenas centros de trabalho com escalação, mas esta é uma estação sem pessoal (24×7) — ela está isenta e continua funcionando sem supervisão."

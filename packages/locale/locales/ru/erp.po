@@ -16457,9 +16457,6 @@ msgstr "Операции синхронизации еще не выполнен
 msgid "No time entries for this week"
 msgstr "Нет записей о времени на эту неделю"
 
-msgid "No time is waiting for approval."
-msgstr "Нет времени, ожидающего утверждения."
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "Ничего не запланировано — добавьте раб
 msgid "Nothing selected yet"
 msgstr "Ничего не выбрано"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Нечего биллировать. Время, детали и расходы, начисленные на работу, показываются здесь."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Нечего признавать. Выручка следует за тем, что выставляют счетом счета."
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
@@ -23473,6 +23476,9 @@ msgstr "Отправлено {0}"
 msgid "Submitted By"
 msgstr "Отправлено"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "Отправленное время ожидает утверждения перед проведением в проект. Когда это отключено, время проводится сразу же после отправки."
 
@@ -25514,6 +25520,9 @@ msgstr "Собственное требуемое количество мате�
 
 msgid "This line has no routing to schedule."
 msgstr "На этой строке нет маршрута для планирования."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Эта площадка планирует только укомплектованные рабочие центры, но эта станция работает без персонала (24×7) — она исключена и продолжает работать без присмотра."

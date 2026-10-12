@@ -270,6 +270,11 @@ Unverified in the browser: this worktree runs no MES dev server (the brief says 
 
 ## Task 27: Rebuild Approvals with Time and Billing tabs
 
+Shots: `27-approvals-time.png`, `27-approvals-billing.png` (`/x/projects/billing` landed on `/x/projects/approvals?tab=billing`). The demo has no billable item, so the Billing tab shows its empty state.
+
+1. Reference pattern: yes — a list page with its title and a `Tabs` switch, like Job's views.
+2. No overlap: yes. 3. One toolbar row: yes (Approvals + Time / Billing). 4. One primary: yes (Approve all per card, as before). 5. No input box in a table: yes. 6. Secondary actions: yes (Reject all, Open timesheet stay on the card). 7. Advanced fields hidden: n/a.
+
 ## Task 28: Edit labor category rates in a grid
 
 ## Task 29: Edit contract labor rates, funding actions and rate ceilings in grids

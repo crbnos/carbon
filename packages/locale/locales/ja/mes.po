@@ -1556,6 +1556,9 @@ msgstr "プロフィール"
 msgid "Progress"
 msgstr "進捗"
 
+msgid "Project"
+msgstr ""
+
 msgid "Purchasing"
 msgstr "購買"
 

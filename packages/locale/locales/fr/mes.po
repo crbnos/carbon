@@ -1556,6 +1556,9 @@ msgstr "Profil"
 msgid "Progress"
 msgstr "Progression"
 
+msgid "Project"
+msgstr ""
+
 msgid "Purchasing"
 msgstr "Achats"
 

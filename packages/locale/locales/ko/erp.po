@@ -16457,9 +16457,6 @@ msgstr "아직 동기화된 공정이 없습니다"
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
-msgid "No time is waiting for approval."
-msgstr "승인을 기다리는 시간이 없습니다."
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요.
 msgid "Nothing selected yet"
 msgstr "아직 선택된 항목이 없습니다"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "아직 청구할 것이 없습니다. 작업에 청구된 시간, 부품 및 비용이 여기에 표시됩니다."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 대로 따릅니다."
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
@@ -23473,6 +23476,9 @@ msgstr "{0}에 제출됨"
 msgid "Submitted By"
 msgstr "제출자"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "제출된 시간은 프로젝트에 기록되기 전에 승인을 기다립니다. 이것이 꺼지면 제출되는 즉시 시간이 기록됩니다."
 
@@ -25514,6 +25520,9 @@ msgstr "이 작업 자체의 자재 소요 수량입니다."
 
 msgid "This line has no routing to schedule."
 msgstr "이 라인은 일정 계획을 위한 라우팅이 없습니다."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "이 사업장은 인력이 배치된 작업장만 일정을 계획하지만, 이것은 무인(24×7) 작업장입니다 — 면제되며 무인으로 계속 운영됩니다."

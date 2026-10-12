@@ -16457,9 +16457,6 @@ msgstr "No sync operations yet"
 msgid "No time entries for this week"
 msgstr "No time entries for this week"
 
-msgid "No time is waiting for approval."
-msgstr "No time is waiting for approval."
-
 msgid "No time this week"
 msgstr "No time this week"
 
@@ -16740,11 +16737,17 @@ msgstr "Nothing scheduled — add a station below."
 msgid "Nothing selected yet"
 msgstr "Nothing selected yet"
 
+msgid "Nothing to approve"
+msgstr "Nothing to approve"
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nothing to recognize yet. Revenue follows what the invoices bill."
+
+msgid "Nothing to review"
+msgstr "Nothing to review"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
@@ -23473,6 +23476,9 @@ msgstr "Submitted {0}"
 msgid "Submitted By"
 msgstr "Submitted By"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr "Submitted time shows here until it is approved or rejected."
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 
@@ -25514,6 +25520,9 @@ msgstr "This job's own required quantity for the material."
 
 msgid "This line has no routing to schedule."
 msgstr "This line has no routing to schedule."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr "This list shows Unbilled and On Hold items only."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."

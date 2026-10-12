@@ -34,9 +34,10 @@ import { weekStartOf } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuCalendarDays, LuCheck, LuClipboardCheck, LuX } from "react-icons/lu";
+import { LuCalendarDays, LuCheck, LuX } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { EmployeeAvatar } from "~/components";
+import Empty from "~/components/Empty";
 import {
   useCompanyToday,
   useDateFormatter,
@@ -50,7 +51,8 @@ type ApprovalGroup = NonNullable<
 >[number];
 
 /**
- * Submitted time, one card per employee and week. Approve posts the time;
+ * Submitted time, one card per employee and week (the Time tab of
+ * Approvals). Approve posts the time;
  * Reject sends it back to the employee with a note.
  */
 export default function TimesheetApprovals({
@@ -58,23 +60,19 @@ export default function TimesheetApprovals({
 }: {
   groups: ApprovalGroup[];
 }) {
+  const { t } = useLingui();
   const [rejecting, setRejecting] = useState<{
     ids: string[];
     label: string;
   } | null>(null);
 
   return (
-    <div className="flex w-full max-w-[80rem] flex-col gap-4 p-4 mx-auto">
-      <h2 className="text-base font-medium">
-        <Trans>Approvals</Trans>
-      </h2>
+    <div className="flex w-full max-w-[80rem] flex-col gap-4 overflow-y-auto p-4 pt-2 mx-auto">
       {groups.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
-          <LuClipboardCheck className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            <Trans>No time is waiting for approval.</Trans>
-          </p>
-        </div>
+        <Empty
+          title={t`Nothing to approve`}
+          description={t`Submitted time shows here until it is approved or rejected.`}
+        />
       ) : (
         groups.map((group) => (
           <ApprovalCard

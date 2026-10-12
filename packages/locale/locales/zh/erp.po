@@ -16457,9 +16457,6 @@ msgstr "还没有同步操作"
 msgid "No time entries for this week"
 msgstr "本周没有时间条目"
 
-msgid "No time is waiting for approval."
-msgstr "没有工时在等待审批。"
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "未安排任何事项——在下方添加工位。"
 msgid "Nothing selected yet"
 msgstr "尚未选择任何内容"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "还没有账单。向工作收取的工时、零件和费用显示在这里。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -23473,6 +23476,9 @@ msgstr "已提交 {0}"
 msgid "Submitted By"
 msgstr "提交者"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "已提交的时间在过账到项目之前在审批中等待。如果关闭此选项，时间将在提交后立即过账到项目。"
 
@@ -25514,6 +25520,9 @@ msgstr "这个工单所需的原材料数量。"
 
 msgid "This line has no routing to schedule."
 msgstr "此行没有要排程的工艺路线。"
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "此地点仅排程有人值守的工作中心，但这是一个无人值守工作站（24×7）— 它被豁免并保持无人运行。"

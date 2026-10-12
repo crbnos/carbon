@@ -16457,9 +16457,6 @@ msgstr "Aucune opération de synchronisation pour le moment"
 msgid "No time entries for this week"
 msgstr "Aucune entrée de temps pour cette semaine"
 
-msgid "No time is waiting for approval."
-msgstr "Aucun temps n'attend l'approbation."
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "Rien de programmé — ajoutez une station ci-dessous."
 msgid "Nothing selected yet"
 msgstr "Aucune sélection pour le moment"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Rien à facturer encore. Le temps, les pièces et les charges facturés au travail s'affichent ici."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Rien à reconnaître pour le moment. Les revenus suivent ce que les factures facturent."
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Rien pour le moment. Une étape n'offre des valeurs qu'une fois configurée."
@@ -23473,6 +23476,9 @@ msgstr "Soumis {0}"
 msgid "Submitted By"
 msgstr "Soumis par"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "Le temps soumis attend dans Approbations avant de se comptabiliser sur le projet. Lorsque cette option est désactivée, le temps se comptabilise dès qu'il est soumis."
 
@@ -25514,6 +25520,9 @@ msgstr "La quantité propre requise par cette tâche pour le matériau."
 
 msgid "This line has no routing to schedule."
 msgstr "Cette ligne n'a pas de gamme à planifier."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Ce site ne planifie que les postes de travail dotés en personnel, mais c'est une station sans surveillance (24×7) — elle est exemptée et continue de fonctionner automatiquement."

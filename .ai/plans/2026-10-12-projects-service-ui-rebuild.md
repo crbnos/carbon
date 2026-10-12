@@ -219,7 +219,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [ ] Task 24: Put all plan lines in one grid
 - [x] Task 25: Rebuild ERP My Time as a grid
 - [x] Task 26: Rebuild MES My Time as a touch grid
-- [ ] Task 27: Rebuild Approvals with Time and Billing tabs
+- [x] Task 27: Rebuild Approvals with Time and Billing tabs
 - [ ] Task 28: Edit labor category rates in a grid
 - [ ] Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
 - [ ] Task 30: Fix My Visits, the Build from part drawer and the Service empty states
@@ -1713,3 +1713,7 @@ Run of 2026-10-12, Part B (Tasks 25–29):
 - Task 25: Correct for a posted cell is in the row menu, one item per posted day ("Correct Mon 12"); the menu column shows only while a row has a posted cell. A cell's status shows as its icon beside the hours unless Draft; the R&D research role is muted text after the labor category, not a badge.
 - Task 25: the manager page (`projects+/timesheets.$employeeId.tsx`) uses the same component; the dev company has one employee, whose own id redirects to My Time, so it is unverified in the browser.
 - Task 26: the MES week is one header row (title, previous, the range, This week, next, then Add row and Submit week at `size="lg"`) and one `<table>` with a sticky header, a sticky Charge Number column and a sticky footer of day totals and the week total. A day cell is a borderless `<input inputMode="decimal">` (`min-h-12`, inset focus ring, saves on blur and Enter, Escape reverts), copied from `InspectionMeasurementMatrix`'s touch cells, keeping `DayCell`'s save and revert (the typed text is local state; a refused save drops it, so the stored hours show again). Out-of-range text (not a number, below 0 or above 24) toasts and reverts. The row and totals cards are gone; an empty week shows one quiet line, like the ERP empty state. The submit button now reads as in the ERP ("Submit and post week" when approval is off): the loader reads `timesheetApprovalRequired`, which the action already read. Not verified in a browser (no MES server here).
+- Task 27: Approvals has a title and a `Tabs` switch (Time / Billing) written to `?tab=`; the loader reads only the open tab's rows (the Billing branch is the old Billing loader, moved). `billing.tsx` is a loader-only redirect to `approvals?tab=billing` that keeps the query, with `redirectBeforeLoaders` (GET only, so the `billing.update` POST below it is untouched). Switching tabs drops the other tab's filters.
+- Task 27, deviation: step 5 says the Billing tab shows only to users with `view: sales`, "as today". Today Billing had no sales check: its loader needed `view: projects` and `billing.update` needs `update: projects`. The tab follows today's rule, so it shows to anyone who can open Approvals (`update: projects`). Ask Brad whether billing review should need `view: sales`.
+- Task 27, open point: Approvals is in the sidebar only while time approval or DCAA is on (Task 9's rule), so with both off, billing review has no sidebar link (the project's Billing page and the old URL still reach it).
+- Task 27: the Time tab's empty state is `Empty` ("Nothing to approve"), and the Billing tab's says it shows Unbilled and On Hold items only.

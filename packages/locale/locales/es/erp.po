@@ -16457,9 +16457,6 @@ msgstr "Sin operaciones de sincronización aún"
 msgid "No time entries for this week"
 msgstr "No hay entradas de tiempo para esta semana"
 
-msgid "No time is waiting for approval."
-msgstr "No hay tiempo esperando aprobación."
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "Nada programado — agrega una estación a continuación."
 msgid "Nothing selected yet"
 msgstr "Nada seleccionado aún"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Nada que facturar aún. El tiempo, las piezas y los gastos cargados al trabajo se muestran aquí."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nada que reconocer aún. Los ingresos por ventas siguen lo que facturan las facturas."
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Aún no hay nada. Un paso solo ofrece valores una vez que está configurado."
@@ -23473,6 +23476,9 @@ msgstr "Enviado {0}"
 msgid "Submitted By"
 msgstr "Enviado por"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "El tiempo enviado espera en Aprobaciones antes de contabilizarse en el proyecto. Cuando está desactivado, el tiempo se contabiliza tan pronto como se envía."
 
@@ -25514,6 +25520,9 @@ msgstr "La cantidad propia requerida por este trabajo para el material."
 
 msgid "This line has no routing to schedule."
 msgstr "Esta línea no tiene una ruta de fabricación para programar."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Esta ubicación solo programa centros de trabajo con personal, pero esta es una estación sin personal (24×7) — está exenta y continúa funcionando sin vigilancia."

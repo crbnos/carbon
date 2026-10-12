@@ -1556,6 +1556,9 @@ msgstr "प्रोफाइल"
 msgid "Progress"
 msgstr "प्रगति"
 
+msgid "Project"
+msgstr ""
+
 msgid "Purchasing"
 msgstr "क्रय"
 

@@ -16457,9 +16457,6 @@ msgstr "まだ同期工程はありません"
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリがありません"
 
-msgid "No time is waiting for approval."
-msgstr "承認を待っている時間がありません。"
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "スケジュールがありません。以下にステーションを追
 msgid "Nothing selected yet"
 msgstr "まだ選択されていません"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "請求するものがまだありません。作業に請求された時間、部品、および費用がここに表示されます。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "まだ認識するものがありません。売上高は請求書が請求する金額に従います。"
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
@@ -23473,6 +23476,9 @@ msgstr "提出済み {0}"
 msgid "Submitted By"
 msgstr "提出者"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "提出された時間は、プロジェクトに転記される前に承認で待機します。これがオフの場合、時間は提出されるとすぐに転記されます。"
 
@@ -25514,6 +25520,9 @@ msgstr "この材料に対するこのジョブ自体の必要数量。"
 
 msgid "This line has no routing to schedule."
 msgstr "この明細にはスケジュール対象の工順がありません。"
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "この拠点は人員配置された作業区のみをスケジュールしますが、これは無人(24×7)ステーションです — 適用対象外であり、無人で稼働し続けます。"

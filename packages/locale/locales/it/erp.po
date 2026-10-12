@@ -16457,9 +16457,6 @@ msgstr "Nessuna operazione di sincronizzazione ancora"
 msgid "No time entries for this week"
 msgstr "Nessuna registrazione oraria per questa settimana"
 
-msgid "No time is waiting for approval."
-msgstr "Nessun orario è in attesa di approvazione."
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "Niente programmato — aggiungi una stazione di seguito."
 msgid "Nothing selected yet"
 msgstr "Niente selezionato ancora"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Nulla da fatturare per ora. Il tempo, i componenti e le spese addebitati al lavoro vengono mostrati qui."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nulla da riconoscere ancora. I ricavi seguono ciò che le fatture fatturano."
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Non c'è ancora nulla. Un passaggio offre valori solo dopo essere stato configurato."
@@ -23473,6 +23476,9 @@ msgstr "Inviato {0}"
 msgid "Submitted By"
 msgstr "Inviato da"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "Il tempo inviato rimane in Approvazioni prima di essere registrato al progetto. Se disabilitato, il tempo viene registrato non appena viene inviato."
 
@@ -25514,6 +25520,9 @@ msgstr "La quantità richiesta da questo lavoro per il materiale."
 
 msgid "This line has no routing to schedule."
 msgstr "Questa riga non ha un ciclo di lavorazione da programmare."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Questa ubicazione pianifica solo centri di lavoro con personale assegnato, ma questa è una stazione di lights-out (24×7) — è esente e continua a funzionare senza supervisione."

@@ -7,20 +7,28 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { Tabs, TabsList, TabsTrigger, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { data, useLoaderData, useSearchParams } from "react-router";
+import Empty from "~/components/Empty";
 import {
   approveTimesheetEntries,
   assertCanApprove,
+  getContractBillableItems,
+  getContractBillingLines,
   getTimesheetApprovals,
   rejectTimesheetEntries
 } from "~/modules/projects";
 import { postTimesheetEntries } from "~/modules/projects/projects.server";
+import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import TimesheetApprovals from "~/modules/projects/ui/Timesheet/TimesheetApprovals";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { getGenericQueryFilters } from "~/utils/query";
 
 const logger = getLogger("erp", "project-timesheet-approvals");
 
@@ -30,10 +38,69 @@ export const handle: Handle = {
   module: "projects"
 };
 
+export type ApprovalsTab = "time" | "billing";
+
+/**
+ * Two review queues: submitted time (`?tab=time`, the default) and the
+ * contract billable items to review (`?tab=billing`, which was Projects →
+ * Billing). Only the open tab's rows are read.
+ */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "projects"
   });
+
+  const searchParams = new URL(request.url).searchParams;
+  const tab: ApprovalsTab =
+    searchParams.get("tab") === "billing" ? "billing" : "time";
+
+  if (tab === "billing") {
+    // With no status filter the list shows Unbilled and On Hold items.
+    const { limit, offset, sorts, filters } =
+      getGenericQueryFilters(searchParams);
+    const hasStatusFilter = (filters ?? []).some(
+      (filter) => filter.column === "status"
+    );
+    const [items, lines] = await Promise.all([
+      getContractBillableItems(client, {
+        companyId,
+        status: hasStatusFilter ? null : ["Unbilled", "On Hold"],
+        limit,
+        offset,
+        sorts,
+        filters
+      }),
+      getContractBillingLines(client, { companyId })
+    ]);
+    if (items.error) {
+      logger.error("Failed to load billable items", {
+        companyId,
+        error: items.error
+      });
+      throw redirect(
+        path.to.projects,
+        await flash(
+          request,
+          error(items.error, "Failed to load billable items")
+        )
+      );
+    }
+    if (lines.error) {
+      logger.error("Failed to load contract billing lines", {
+        companyId,
+        error: lines.error
+      });
+    }
+    return {
+      tab,
+      groups: [],
+      billing: {
+        items: items.data ?? [],
+        count: items.count ?? 0,
+        lines: lines.data ?? []
+      }
+    };
+  }
 
   // A projects_update holder approves time on every project.
   const approvals = await getTimesheetApprovals(client, companyId, {
@@ -46,7 +113,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  return { groups: approvals.data ?? [] };
+  return { tab, groups: approvals.data ?? [], billing: null };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -235,6 +302,63 @@ async function laborTransferRefusal(
 }
 
 export default function ProjectTimesheetApprovalsRoute() {
-  const { groups } = useLoaderData<typeof loader>();
-  return <TimesheetApprovals groups={groups} />;
+  const { t } = useLingui();
+  const { tab, groups, billing } = useLoaderData<typeof loader>();
+  const [, setSearchParams] = useSearchParams();
+
+  const projects = new Map<string, string>();
+  for (const item of billing?.items ?? []) {
+    if (item.project)
+      projects.set(
+        item.project.id,
+        item.project.identifier ?? item.project.name
+      );
+  }
+
+  return (
+    <VStack spacing={0} className="h-full">
+      <div className="flex w-full shrink-0 items-center gap-4 px-4 pt-4 pb-2">
+        <h2 className="text-base font-medium">
+          <Trans>Approvals</Trans>
+        </h2>
+        <Tabs
+          value={tab}
+          onValueChange={(value) =>
+            // A tab starts with its own filters.
+            setSearchParams(value === "billing" ? { tab: "billing" } : {})
+          }
+        >
+          <TabsList>
+            <TabsTrigger value="time">
+              <Trans>Time</Trans>
+            </TabsTrigger>
+            <TabsTrigger value="billing">
+              <Trans>Billing</Trans>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+      {billing ? (
+        <ProjectBillableItemsTable
+          data={billing.items}
+          count={billing.count}
+          projects={[...projects].map(([value, label]) => ({ value, label }))}
+          lines={billing.lines.map((line) => ({
+            value: line.id,
+            label: `${line.contract?.customerContractId ?? ""} · ${
+              line.description || line.item?.name || line.id
+            }`
+          }))}
+          emptyState={
+            <Empty
+              title={t`Nothing to review`}
+              description={t`This list shows Unbilled and On Hold items only.`}
+            />
+          }
+        />
+      ) : (
+        <TimesheetApprovals groups={groups} />
+      )}
+    </VStack>
+  );
 }

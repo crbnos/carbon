@@ -16457,9 +16457,6 @@ msgstr "Brak operacji synchronizacji"
 msgid "No time entries for this week"
 msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
-msgid "No time is waiting for approval."
-msgstr "Brak czasu oczekującego na zatwierdzenie."
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "Nic nie zaplanowano — dodaj stanowisko poniżej."
 msgid "Nothing selected yet"
 msgstr "Nic nie wybrano"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Nic do rozliczenia jeszcze. Czas, części i wydatki naliczone na pracę pojawiają się tutaj."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nic do rozpoznania. Przychody ze sprzedaży wynikają z tego, co faktury rozliczają."
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nic jeszcze. Krok oferuje wartości dopiero po skonfigurowaniu."
@@ -23473,6 +23476,9 @@ msgstr "Przesłane {0}"
 msgid "Submitted By"
 msgstr "Przesłane przez"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "Przesłany czas oczekuje w Zatwierdzeniach przed zaksięgowaniem do projektu. Gdy to jest wyłączone, czas jest księgowany natychmiast po przesłaniu."
 
@@ -25514,6 +25520,9 @@ msgstr "Własna wymagana ilość materiału dla tego zadania."
 
 msgid "This line has no routing to schedule."
 msgstr "Ta pozycja nie ma przypisanej marszruty do zaplanowania."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Ta lokalizacja planuje tylko stanowiska robocze z obsadą personelu, ale to stanowisko pracuje w trybie lights-out (24×7) — jest zwolnione z planowania i pracuje bez nadzoru."

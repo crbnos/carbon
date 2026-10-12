@@ -16457,9 +16457,6 @@ msgstr "Henüz senkronizasyon operasyonu yok"
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
-msgid "No time is waiting for approval."
-msgstr "Onay bekleyen zaman yok."
-
 msgid "No time this week"
 msgstr ""
 
@@ -16740,11 +16737,17 @@ msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
 msgid "Nothing selected yet"
 msgstr "Henüz hiçbir şey seçilmedi"
 
+msgid "Nothing to approve"
+msgstr ""
+
 msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
 msgstr "Henüz faturalanacak hiçbir şey yok. İşe ücretlendirilen zaman, parçalar ve giderler burada görünür."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturalandırdığını takip eder."
+
+msgid "Nothing to review"
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
@@ -23473,6 +23476,9 @@ msgstr "Gönderildi {0}"
 msgid "Submitted By"
 msgstr "Gönderen"
 
+msgid "Submitted time shows here until it is approved or rejected."
+msgstr ""
+
 msgid "Submitted time waits in Approvals before it posts to the project. When this is off, time posts as soon as it is submitted."
 msgstr "Gönderilen zaman, projeye muhasebeleştirilmeden önce Onaylar'da bekler. Bu kapalıyken, zaman gönderilen anda muhasebeleştirilir."
 
@@ -25514,6 +25520,9 @@ msgstr "Bu işin malzeme için kendi gerekli miktarı."
 
 msgid "This line has no routing to schedule."
 msgstr "Bu satırın zamanlama için bir rotası yok."
+
+msgid "This list shows Unbilled and On Hold items only."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Bu lokasyon yalnızca personel atanmış iş merkezlerini çizelgelendirir, ancak bu otomatik (24×7) istasyondur — muaf tutulur ve gözetimsiz çalışmaya devam eder."
