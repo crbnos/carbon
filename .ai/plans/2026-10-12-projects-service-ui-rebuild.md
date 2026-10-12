@@ -236,7 +236,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 41: Update the rules, AGENTS.md, lessons and the design skill
 - [x] Task 42: Update the docs reference pages
 - [ ] Task 43: Fill the translations
-- [ ] Task 44: Run the final screenshot pass
+- [x] Task 44: Run the final screenshot pass
 
 ## Dependencies
 

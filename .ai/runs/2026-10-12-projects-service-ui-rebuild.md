@@ -372,6 +372,61 @@ Shots: `38-baselines.png`, `38-change-requests.png` (OB2 has neither: the `Empty
 
 ## Task 44: Run the final screenshot pass
 
+Screens shot at 1440 × 900 (and the 5 workspace pages at 1024 × 768) on 2026-10-12, signed in as `test@carbon.ms` in the agent-browser session `uir-final`. Shots are in `.ai/scratch/ui-rebuild/` (git-ignored). "Passes the checks" means all 7 questions of the screenshot check are yes. The record ids are the current ones (OB2 `prj_5vCwDZeAP2MHdjqYeYe7iP`, SVC000001 `svc_CkLCmMQLPLzMKBJhbijLYU`, CON000001 `con_EgV3wUdAaChPJGWYgr8MQj`, CON000003 `con_HPq5QWsbf5He5J8SBUwyUe`, template TPL-FMQKGZ, Systems Engineer `lbc_6xtdZUYAge7BuQ1epf3wyB`).
+
+| Screen | Screenshot | Passes the checks | Note |
+|---|---|---|---|
+| Projects list | `99-projects-list` | y | One New Project; Filter; Approvals is absent (no time approval or DCAA in the dev company). |
+| Project Overview | `99-project-overview, -1024` | y | One muted fact line, Budget, Next milestone, Needs attention. |
+| Plan, List | `99-project-elements, 99-project-plan-1024` | y | Linear list grouped by state; one toolbar row. |
+| Plan, Tree | `99-plan-tree` | y | The breadcrumb crumb is capped at 192 px (`max-w-48`, deliberate), so the project name truncates. |
+| Plan, Reader | `99-plan-reader` | y | Export PDF is the icon button beside Filter. |
+| Element page (Requirement) | `99-project-element, 40-element` | y | No Optional tags (fix A5); Milestone glossary icon. |
+| Element page (System, plan lines) | `99-element-page-system` | y | The plan grid fits the 800 px column. |
+| Schedule | `99-project-schedule, -1024` | y | Monthly scale, current quarter tinted. |
+| Costs | `99-project-costs, -1024` | y | At 1024 px the tree scrolls sideways inside its pane (its 63 rem minimum). |
+| Time | `99-project-time, -1024` | y | At 1024 px the Status column scrolls inside the table. |
+| Stock | `99-project-stock` | y | Transfer split button; empty sections are one muted line. |
+| Pegging | `99-project-pegging` | y | As of in the toolbar row. |
+| Billing (project) | `a2-project-billing, 99-project-billing` | y | Fix A2: five columns, the line name truncates with a tooltip. |
+| Settings (project) | `99-project-settings, 40-glossary-popover` | y | Folded sections; glossary popovers. |
+| Baselines | `99-baselines` | y | `Empty`; one action in the header. |
+| Change requests | `99-change-requests` | y | `Empty`; one action in the header. |
+| My Time (ERP) | `99-my-time` | y | Grid, footer totals, Add row quiet. |
+| My Time (MES) | `—` | n/a | No MES dev server in this worktree (502); not shot. |
+| Approvals (Time, Billing) | `99-approvals, 99-approvals-billing` | y | Tabs; `Empty`. No sidebar link is active, because Approvals is hidden while time approval and DCAA are off. |
+| Labor category drawer | `99-labor-category` | y | Rates `Grid`; Research role glossary icon. |
+| Planning groups | `99-planning-groups` | y | Unchanged list. |
+| Reports | `99-reports` | n/a | Another session's uncommitted work (Task 34 follow-up); not judged here. |
+| Indirect Rates | `99-indirect-rates` | y | Runs list, `Empty`, ⋯ and Run Period. |
+| Indirect Rates drawer | `a4-indirect-rates-drawer, 99-indirect-rates-drawer` | y | Fix A4: twelve months fit (890 px, no overflow). |
+| Service orders list | `99-service-orders` | y | One Add Service Order. |
+| New Service Order drawer | `99-new-service-order` | y | More folded. |
+| Service order (Details, Work) | `99-service-order, 99-service-work` | n | Not rebuilt by this plan: the header shows Put on Hold, Complete and Cancel as three buttons (see open items). No Optional tags in Properties (fix A5). |
+| Service schedule | `99-service-schedule` | y | Unchanged. |
+| My Visits | `99-my-visits` | y | Title aligned left. |
+| Service template | `99-service-template` | y | Record header, copy at the end. |
+| Contract line (Fixed, locked) | `99-contract-line` | y | Read-only text; glossary icons. |
+| Contract Service Orders tab | `a1-contract-service-orders, 99-contract-service-orders` | y | Fix A1: five columns, no sideways scroll beside Properties. |
+| Contract line billing (T&M) | `a3-contract-line-billing, 99-contract-line-billing` | y | Fix A3: Review Items is a link in the card description. |
+| Settings → Timekeeping | `99-settings-timekeeping` | y | Matches Settings → Inventory. |
+| Settings → Projects | `99-settings-projects` | y | States and labels grids. |
+| Settings → Accounting | `99-settings-accounting` | y | Burden Settings card. |
+
+- Environment: the ERP dev server stopped during the pass (502 on the last shots); nothing listened on `PORT_ERP`, so it was restarted with `/tmp/uir/start-erp.sh` and the failed shots were taken again.
+- Fixed in this pass (`7b35971dcb`): the Copy from helper text, and "My Timesheet" in code comments.
+- Fixed in this pass: Settings → Timekeeping (Task 37) seeded `useState` from loader data, which the `no-state-copy-of-loader-data` conformance check refuses. Only the user's pick is state now; until a pick, the saved setting decides. Checked: picking DCAA shows the DCAA rules card before a save (`44-timekeeping-dcaa.png`).
+- Gates: `pnpm --filter erp build` exit 0 (no "Server-only module referenced by client"), `pnpm --filter mes build` exit 0, `pnpm --filter @carbon/checks test` 300 passed after the Timekeeping fix, `typecheck --filter=erp` exit 0, erp tests 2,272 passed.
+- Bigger, not fixed: the service order header has three transition buttons (Put on Hold, Complete, Cancel), outside this plan's scope; Approvals has no sidebar link while time approval and DCAA are off, so billing review is reached only from the project and line pages; MES My Time is unverified in a browser.
+
+## Fixes after the review (Part A, 2026-10-12)
+
+- A1 `5b3b9b3169`: the contract's Service Orders tab shows Service Order, Status, Customer Asset, Scheduled (next unfinished visit) and Total Cost; the site, dates and billed amount stay on the order page.
+- A2 `10517c554b`: the project Billing contract lines have five columns; the line name is one truncated line with a tooltip; Method left (it is on the line's page).
+- A3 `9e55970dd0`: Review Items on the line billing page is a link in the Billable Items card's description, not a washed-out full-width button.
+- A4 `d6b2448a74`: the Indirect Rates drawer's grid uses narrow cell padding; twelve months fit the `xl` drawer at 1440 px.
+- A5 `12cb424c52`: the element page's properties column and the service order's Properties panel hide the "Optional" tag (`hideOptionalTags`, a `data-optional-tag` attribute on `FormLabel`'s tag); `isOptional` stays, so the clear buttons stay.
+
 ## Batch close (2026-10-12): header, menus, final build
 
 - Header (`da5a18a411`): no primary button; the status transitions open the ⋯ menu (next step first); the copy button and ⋯ menu at the right end (`RecordHeader` `toolsPlacement="end"`). Shot `header-no-primary.png`. NSOPS: Put on hold, then Resume, from the menu; it ends Released.

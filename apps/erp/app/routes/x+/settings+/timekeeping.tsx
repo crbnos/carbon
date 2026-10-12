@@ -139,11 +139,13 @@ export default function TimekeepingSettingsRoute() {
     }
   }, [fetcher.state, fetcher.data]);
 
-  // The DCAA card follows the picker as it changes, before a save.
-  const [controls, setControls] = useState<"Standard" | "DCAA">(
-    companySettings.timekeepingControls === "DCAA" ? "DCAA" : "Standard"
+  // The DCAA card follows the picker as it changes, before a save. Only the
+  // user's pick is state; until they pick, the saved setting decides.
+  const [controlsChoice, setControls] = useState<"Standard" | "DCAA" | null>(
+    null
   );
-  const isDcaa = controls === "DCAA";
+  const isDcaa =
+    (controlsChoice ?? companySettings.timekeepingControls) === "DCAA";
 
   const controlsLabels: Record<
     (typeof timekeepingControlsModes)[number],
