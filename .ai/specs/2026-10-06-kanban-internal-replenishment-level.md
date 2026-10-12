@@ -142,10 +142,10 @@ The handler and the sweep follow the pattern of `20261004183512_scheduled-jobs-f
 
 ```ts
 { mode: "scan", kanbanId: string }
-| { mode: "level", kanbanIds?: string[] }   // undefined = every armed kanban of the company
+| { mode: "level", kanbanIds: string[] }   // at least one id; every sender names the kanbans
 ```
 
-`permissions: "system"`: both callers elevate. The scan route does it after `requirePermissions`; the job has no user.
+`permissions` depends on the mode: `scan` needs `create: "inventory"`, `level` is `"system"`. The scan route calls the function as the scanner (`serverFns.as`), so it keeps the check that the `stockTransfer` RLS rule made before. Only the job calls level mode, and it has no user.
 
 Behaviour, in one Kysely transaction per call:
 
@@ -204,7 +204,7 @@ A transfer with `kanbanId` set is a **kanban replenishment**. The stock transfer
 | Multi-tenancy (heuristic 1) | no new table; new columns on tables with composite PK `("id","companyId")` | `kanban` and `stockTransfer` already comply. |
 | Service shape (heuristic 2) | server function returns `{ data, error }`; ERP services unchanged | `defineServerFn` contract. |
 | RLS (heuristic 3) | no new table; `kanbanId` inherits `stockTransfer` policies | The level path writes through Kysely as `system`, which bypasses RLS by design, like `dispatch.ts` and `mrp.ts`. |
-| Permissions (heuristic 4) | scan stays `role: "employee"`; kanban CRUD stays `inventory_*`; the server function is system-mode in both callers | The scan already writes with `role: employee`. The function needs no new scope. |
+| Permissions (heuristic 4) | the scan route stays `role: "employee"` and calls the function with `serverFns.as`; scan mode needs `create: "inventory"`; level mode is `"system"`; kanban CRUD stays `inventory_*` | Before this change the scan inserted through the RLS client, and `stockTransfer` RLS asks for `inventory_create`. A `system` call would have dropped that check for every employee. |
 | Form (heuristic 5) | `ValidatedForm` + `kanbanValidator` + existing route actions | One new `Number` field. |
 | Module layout (heuristic 6) | models in `inventory.models.ts`, services in `inventory.service.ts`, UI in `ui/Kanbans/` | No new files in the module except the badge component. |
 | Backward compatibility (heuristic 7) | additive columns, nullable; the enum is unchanged | Existing kanbans and transfers are untouched. The API gains optional fields. |
@@ -288,7 +288,7 @@ After the migration: `pnpm run generate:types`.
 ### `packages/server-functions`
 
 - New `src/kanban-replenish/index.ts`, registered in `src/invoke.ts` and exported per `packages/server-functions/AGENTS.md`. Input and behaviour as in "Signal B". It reads on `trx` while the transaction is open (AGENTS.md rule, line 86).
-- The system-mode caller passes `userId: "system"` for the level path and the scanner's `userId` for the scan path.
+- The job calls level mode with `serverFns.system` and `userId: "system"`. The scan route calls scan mode with `serverFns.as` and the scanner's client and `userId`.
 
 ### `@carbon/database`
 
@@ -303,7 +303,7 @@ After the migration: `pnpm run generate:types`.
 
 | File | Change |
 |---|---|
-| `api+/kanban.$id.tsx` | The `Transfer` branch calls `serverFns.system({ db: getDatabaseClient(), companyId, userId }).invoke("kanban-replenish", { mode: "scan", kanbanId })` and redirects to `path.to.stockTransfer(result.id)`. The bin-ownership guard moves into the server function. The branch keeps its error strings. |
+| `api+/kanban.$id.tsx` | The `Transfer` branch calls `serverFns.as({ client, db: getDatabaseClient(), companyId, userId }).invoke("kanban-replenish", { mode: "scan", kanbanId })` and redirects to `path.to.stockTransfer(result.id)`. The bin-ownership guard moves into the server function. The branch keeps its error strings. |
 | `inventory.models.ts` | `kanbanValidator` gains `replenishmentLevel: zfd.numeric(z.number().min(0).optional())`. A new refine: `replenishmentLevel` is only allowed when `replenishmentSystem === "Transfer"` (error on `replenishmentLevel`). |
 | `inventory.service.ts` | `upsertKanban` writes `replenishmentLevel` as `null` when the field is blank or the system is not Transfer (zod omits a blank optional field, so a plain spread would keep the old value). `getStockTransfers` and `getStockTransfer` already select `*`, so `kanbanId` arrives; `getStockTransfers` accepts a derived `source` filter (`kanbanId IS NULL` / `IS NOT NULL`), as `getWorkflows` does for its status. |
 | `x+/inventory+/kanbans.tsx` | The loader also calls a new `getKanbanProjectedQuantities(client, companyId, kanbanIds)` for the armed kanbans on the page, through `get_kanban_projected_quantities`. One query per page load. |
@@ -429,7 +429,8 @@ No change in this version. Each dataset's Transfer kanban stays scan-only, with 
 
 ## Changelog
 
-- 2026-10-09: Implemented (Tasks 1–18). Deviations: the migrations are `20261009142613` / `20261009142615`, named to sort after a `main` migration stamped ahead of UTC; the stock transfer header shows the Kanban badge in its meta line, because the header is now `DocumentPageHeader`; the docs page also gained a "never fires" troubleshooting entry and a screenshot slot.
+- 2026-10-13: Self-review fixes. Scan mode needs `create: "inventory"` and runs as the scanner (`serverFns.as`); a `system` call had dropped the check that `stockTransfer` RLS made. `kanbanIds` is required in level mode. The new kanbans list columns are hidden by default. Only one QR code popover opens at a time.
+- 2026-10-09: Implemented (Tasks 1–18). Deviations: the migrations are `20261009192317` / `20261009192320`, named to sort after the newest `main` migration; the stock transfer header shows the Kanban badge in its meta line, because the header is now `DocumentPageHeader`; the docs page also gained a "never fires" troubleshooting entry and a screenshot slot.
 - 2026-10-09: Demo dataset seeding removed from scope on the user's request. The datasets' Transfer kanbans stay scan-only.
 - 2026-10-09: Planned (`.ai/plans/2026-10-06-kanban-internal-replenishment-level.md`). Corrections from the code:
   - The migration recreates the `kanbans` view.

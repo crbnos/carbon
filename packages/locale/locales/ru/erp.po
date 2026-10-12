@@ -16084,6 +16084,9 @@ msgstr "ТС платежей"
 msgid "PV of Residual"
 msgstr "ТС остатка"
 
+msgid "QR Code to complete the current operation for this kanban"
+msgstr "QR-код для завершения текущей операции для этого канбана"
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-код для создания {0} для этого канбана"

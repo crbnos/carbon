@@ -16084,6 +16084,9 @@ msgstr "WO płatności"
 msgid "PV of Residual"
 msgstr "WO wartości resztkowej"
 
+msgid "QR Code to complete the current operation for this kanban"
+msgstr "QR Code do zakończenia bieżącej operacji dla tego kanban"
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Kod QR do utworzenia {0} dla tego kanbanu"

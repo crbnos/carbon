@@ -63,7 +63,7 @@ How a card is rendered is a per-company setting, **Kanban Output**, with three m
 | Label | A printed PDF label, six to a page, with the QR, item thumbnail, name, storage unit, quantity, and supplier. When the kanban has a replenishment level, a `MIN:` line prints under `QTY:`. |
 | URL | A copyable link that hits the same scan endpoint directly. |
 
-For `Make` kanbans, the list view also surfaces the **start** and **complete** affordances. `Buy` and `Transfer` kanbans show only the order signal, since there's no job to start. The list also shows **Replenishment Level** and **Projected (To)** columns, with a **Below level** pill when the projected quantity is under the level.
+For `Make` kanbans, the list view also surfaces the **start** and **complete** affordances. `Buy` and `Transfer` kanbans show only the order signal, since there's no job to start. Two columns are hidden by default: **Replenishment Level** and **Projected (To)**. Turn them on from the column picker. **Projected (To)** shows a **Below level** pill when the projected quantity is under the level.
 
 ## Kanban vs. reordering policy
 

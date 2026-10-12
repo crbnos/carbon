@@ -14,7 +14,7 @@ function replenish(
   f: Fixture,
   input:
     | { mode: "scan"; kanbanId: string }
-    | { mode: "level"; kanbanIds?: string[] }
+    | { mode: "level"; kanbanIds: string[] }
 ) {
   return serverFns
     .system({ db: f.db, companyId: f.companyId, userId: "system" })
@@ -56,7 +56,10 @@ databaseTest("level mode at or above the level writes nothing", async () => {
   const f = await kanbanFixture();
   try {
     await f.adjustToBin(12);
-    const { results } = await replenish(f, { mode: "level" });
+    const { results } = await replenish(f, {
+      mode: "level",
+      kanbanIds: [f.kanbanId]
+    });
     expect(results).toEqual([
       { kanbanId: f.kanbanId, outcome: "at-level", projectedQuantity: 12 }
     ]);
@@ -72,7 +75,10 @@ databaseTest(
     const f = await kanbanFixture();
     try {
       await f.adjustToBin(9);
-      const { results } = await replenish(f, { mode: "level" });
+      const { results } = await replenish(f, {
+        mode: "level",
+        kanbanIds: [f.kanbanId]
+      });
       expect(results).toHaveLength(1);
       expect(first(results).outcome).toBe("created");
 
@@ -105,8 +111,11 @@ databaseTest(
     const f = await kanbanFixture();
     try {
       await f.adjustToBin(9);
-      await replenish(f, { mode: "level" });
-      const { results } = await replenish(f, { mode: "level" });
+      await replenish(f, { mode: "level", kanbanIds: [f.kanbanId] });
+      const { results } = await replenish(f, {
+        mode: "level",
+        kanbanIds: [f.kanbanId]
+      });
       expect(results).toEqual([
         { kanbanId: f.kanbanId, outcome: "at-level", projectedQuantity: 14 }
       ]);
@@ -123,7 +132,7 @@ databaseTest(
     const f = await kanbanFixture();
     try {
       await f.adjustToBin(9);
-      await replenish(f, { mode: "level" });
+      await replenish(f, { mode: "level", kanbanIds: [f.kanbanId] });
       const transfer = first(await transfers(f));
       const line = first(await lines(f, transfer.id));
 
@@ -136,13 +145,19 @@ databaseTest(
       await f.adjustFromBin(-5);
       await f.adjustToBin(5);
 
-      const afterPick = await replenish(f, { mode: "level" });
+      const afterPick = await replenish(f, {
+        mode: "level",
+        kanbanIds: [f.kanbanId]
+      });
       expect(afterPick.results).toEqual([
         { kanbanId: f.kanbanId, outcome: "at-level", projectedQuantity: 14 }
       ]);
 
       await f.adjustToBin(-6);
-      const afterDrawDown = await replenish(f, { mode: "level" });
+      const afterDrawDown = await replenish(f, {
+        mode: "level",
+        kanbanIds: [f.kanbanId]
+      });
       expect(first(afterDrawDown.results).outcome).toBe("created");
       expect(await transfers(f)).toHaveLength(2);
     } finally {

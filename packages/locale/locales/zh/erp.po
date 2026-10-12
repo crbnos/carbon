@@ -16084,6 +16084,9 @@ msgstr "付款现值"
 msgid "PV of Residual"
 msgstr "残值现值"
 
+msgid "QR Code to complete the current operation for this kanban"
+msgstr "为此看板完成当前工序的QR代码"
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "二维码以为此看板创建{0}"

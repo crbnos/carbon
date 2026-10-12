@@ -16084,6 +16084,9 @@ msgstr "지불의 현재가치"
 msgid "PV of Residual"
 msgstr "잔존가치의 현재가치"
 
+msgid "QR Code to complete the current operation for this kanban"
+msgstr "이 칸반의 현재 공정을 완료 처리하기 위한 QR 코드"
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "이 칸반에 대한 {0}을(를) 생성하는 QR 코드"

@@ -23,7 +23,7 @@ export const kanbanReplenishInput = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("scan"), kanbanId: z.string().min(1) }),
   z.object({
     mode: z.literal("level"),
-    kanbanIds: z.array(z.string().min(1)).optional()
+    kanbanIds: z.array(z.string().min(1)).min(1)
   })
 ]);
 
@@ -67,15 +67,16 @@ export type KanbanReplenishResult = { results: KanbanReplenishOutcome[] };
 const kanbanReplenish = defineServerFn({
   name: "kanban-replenish",
   input: kanbanReplenishInput,
-  // Both callers elevate: the scan route after requirePermissions, the job
-  // with no user. Every statement below is scoped by companyId.
-  permissions: "system",
+  // A scan writes a stock transfer as the person who scanned, so it needs the
+  // same permission the stock transfer's RLS rule asks for. The level path
+  // runs only from the job, with no user behind it. Every statement below is
+  // scoped by companyId.
+  permissions: {
+    by: "mode",
+    rules: { scan: { create: "inventory" }, level: "system" }
+  },
   async run(ctx, input): Promise<KanbanReplenishResult> {
     const { db, companyId, userId } = ctx;
-
-    if (input.mode === "level" && input.kanbanIds?.length === 0) {
-      return { results: [] };
-    }
 
     const { results, created } = await db.transaction().execute(async (trx) => {
       let kanbanQuery = trx
@@ -92,15 +93,10 @@ const kanbanReplenish = defineServerFn({
         ])
         .where("companyId", "=", companyId);
 
-      if (input.mode === "scan") {
-        kanbanQuery = kanbanQuery.where("id", "=", input.kanbanId);
-      } else if (input.kanbanIds) {
-        kanbanQuery = kanbanQuery.where("id", "in", input.kanbanIds);
-      } else {
-        kanbanQuery = kanbanQuery
-          .where("replenishmentSystem", "=", "Transfer")
-          .where("replenishmentLevel", "is not", null);
-      }
+      kanbanQuery =
+        input.mode === "scan"
+          ? kanbanQuery.where("id", "=", input.kanbanId)
+          : kanbanQuery.where("id", "in", input.kanbanIds);
 
       const kanbans = await kanbanQuery.orderBy("id").forUpdate().execute();
 

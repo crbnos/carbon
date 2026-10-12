@@ -16084,6 +16084,9 @@ msgstr "Ödemelerin BDH"
 msgid "PV of Residual"
 msgstr "Kalıntıların BDH"
 
+msgid "QR Code to complete the current operation for this kanban"
+msgstr "Bu kanban için geçerli operasyonu tamamlamak için QR Kodu"
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için QR Kod"

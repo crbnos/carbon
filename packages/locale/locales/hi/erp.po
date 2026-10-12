@@ -16084,6 +16084,9 @@ msgstr "भुगतान का PV"
 msgid "PV of Residual"
 msgstr "अवशिष्ट का PV"
 
+msgid "QR Code to complete the current operation for this kanban"
+msgstr "इस कानबान के लिए वर्तमान ऑपरेशन पूर्ण करने के लिए QR कोड"
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "इस कानबान के लिए एक {0} बनाने के लिए QR कोड"

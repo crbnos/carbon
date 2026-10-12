@@ -28,7 +28,7 @@ Routes: `/x/inventory/kanbans/new?location=<id>`, `/x/inventory/kanbans/<id>`, `
 - To = A1-L2, Quantity 5, Level 3 → requestSubmit "Create Kanban".
 - Within about 10 s: one Released transfer, created by System. Note: "Kanban replenishment — FST-M6-A286,
   A1-L1 → A1-L2, 5 EA. Signal: level 3 (projected 0)." Line A1-L1 → A1-L2, quantity 5.
-- List row: Replenishment Level 3, Projected (To) 5, no pill.
+- List row: Replenishment Level 3, Projected (To) 5, no pill. Both columns are hidden by default: turn them on from the column picker first.
 ### 3. Stock movement path
 - Item quantities page → Update Inventory → Storage Unit A1-L2, Positive Adjustment, Quantity 8 → Save.
   Projected 13, so no transfer.
@@ -36,7 +36,7 @@ Routes: `/x/inventory/kanbans/new?location=<id>`, `/x/inventory/kanbans/<id>`, `
 - Update Inventory → A1-L2, Negative Adjustment, Quantity 4 → Save. Projected 9 is below 10, so one transfer
   appears about 1 s later. Note "…Signal: level 10 (projected 9)."
 ### 4. Scan
-- Open `/api/kanban/<id>` → redirects to a new transfer. Note "…Signal: scan by <name>.", created by you.
+- Open `/api/kanban/<id>` → redirects to a new transfer. The scanner needs inventory create permission. Note "…Signal: scan by <name>.", created by you.
 ### 5. Marking
 - Stock Transfers list: the Source column shows Kanban or Manual. `?filter=source:eq:Kanban` and `:Manual` split them.
 - Transfer header meta line: "Created … by System · [Kanban]". The badge opens `/x/inventory/kanbans/<id>`.

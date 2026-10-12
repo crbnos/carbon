@@ -353,8 +353,10 @@ async function handleKanban({
     // kanban-replenish re-reads the kanban under companyId, checks both
     // storage units belong to the kanban's location (CWE-639), and writes the
     // Released transfer with its kanbanId and "Kanban replenishment" note.
+    // Run as the scanner: a scan needs inventory create permission, the same
+    // check the stock transfer's RLS rule makes.
     const replenish = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
+      .as({ client, db: getDatabaseClient(), companyId, userId })
       .invoke("kanban-replenish", { mode: "scan", kanbanId: id });
 
     if (replenish.error) {

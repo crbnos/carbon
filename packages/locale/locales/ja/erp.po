@@ -16084,6 +16084,9 @@ msgstr "支払のPV"
 msgid "PV of Residual"
 msgstr "残存価値のPV"
 
+msgid "QR Code to complete the current operation for this kanban"
+msgstr "このかんばんの現在の工程を完了するためのQRコード"
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのQR Code"
