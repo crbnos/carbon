@@ -2224,6 +2224,9 @@ msgstr "Deposito concordato:"
 msgid "Agreement"
 msgstr "Contratto"
 
+msgid "Agreements"
+msgstr "Accordi"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "L'IA non ha potuto associare con sicurezza alcun conto"
 
@@ -6761,9 +6764,6 @@ msgstr "Tipo di scadenza"
 
 msgid "Deadline Type"
 msgstr "Tipo di Scadenza"
-
-msgid "Deals"
-msgstr "Accordi"
 
 msgid "Debit"
 msgstr "Dare"
@@ -17285,6 +17285,9 @@ msgstr "Le offerte, gli ordini e le fatture vengono bloccati fino a quando il fo
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Offerte, ordini, fatture e RdO"
+
+msgid "Quoting"
+msgstr "Preventivi"
 
 msgid "Quoting and sales orders"
 msgstr "Preventivi e ordini di vendita"

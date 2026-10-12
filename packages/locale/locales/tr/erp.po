@@ -2224,6 +2224,9 @@ msgstr "Kararlaştırılan depozito:"
 msgid "Agreement"
 msgstr "Sözleşme"
 
+msgid "Agreements"
+msgstr "Sözleşmeler"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "Yapay Zeka herhangi bir hesapı emin bir şekilde eşleştiremedi"
 
@@ -6761,9 +6764,6 @@ msgstr "Son tarih türü"
 
 msgid "Deadline Type"
 msgstr "Son Teslim Tarihi Türü"
-
-msgid "Deals"
-msgstr "Anlaşmalar"
 
 msgid "Debit"
 msgstr "Borç"
@@ -17285,6 +17285,9 @@ msgstr "Tedarikçinin bir e-posta adresi olan ilgili kişi ve bir ülkesi olan l
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Teklifler, siparişler, faturalar ve teklif talepleri"
+
+msgid "Quoting"
+msgstr "Teklif Verme"
 
 msgid "Quoting and sales orders"
 msgstr "Teklifler ve satış siparişleri"

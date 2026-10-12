@@ -2224,6 +2224,9 @@ msgstr "Uzgodniony depozyt:"
 msgid "Agreement"
 msgstr "Umowa"
 
+msgid "Agreements"
+msgstr "Umowy"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "AI nie potrafił pewnie dopasować żadnych kont"
 
@@ -6761,9 +6764,6 @@ msgstr "Typ terminu"
 
 msgid "Deadline Type"
 msgstr "Typ terminu"
-
-msgid "Deals"
-msgstr "Umowy"
 
 msgid "Debit"
 msgstr "Winien"
@@ -17285,6 +17285,9 @@ msgstr "Oferty, zamówienia i faktury są zablokowane do czasu, aż dostawca bę
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Oferty, zamówienia, faktury i RFQ"
+
+msgid "Quoting"
+msgstr "Ofertowanie"
 
 msgid "Quoting and sales orders"
 msgstr "Wycena i zamówienia sprzedaży"

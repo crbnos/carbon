@@ -2224,6 +2224,9 @@ msgstr "Dépôt convenu :"
 msgid "Agreement"
 msgstr "Accord"
 
+msgid "Agreements"
+msgstr "Contrats"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "L'IA n'a pas pu apparier avec confiance aucun compte"
 
@@ -6761,9 +6764,6 @@ msgstr "Type d'échéance"
 
 msgid "Deadline Type"
 msgstr "Type d'échéance"
-
-msgid "Deals"
-msgstr "Contrats"
 
 msgid "Debit"
 msgstr "Débit"
@@ -17285,6 +17285,9 @@ msgstr "Les devis, commandes et factures sont bloqués jusqu'à ce que le fourni
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Devis, commandes, factures et RFQ"
+
+msgid "Quoting"
+msgstr "Devis"
 
 msgid "Quoting and sales orders"
 msgstr "Devis et commandes clients"

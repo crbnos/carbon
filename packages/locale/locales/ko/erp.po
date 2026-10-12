@@ -2224,6 +2224,9 @@ msgstr "합의된 보증금:"
 msgid "Agreement"
 msgstr "계약"
 
+msgid "Agreements"
+msgstr "계약"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "AI가 계정을 확실하게 매칭하지 못했습니다"
 
@@ -6761,9 +6764,6 @@ msgstr "마감일 유형"
 
 msgid "Deadline Type"
 msgstr "마감 유형"
-
-msgid "Deals"
-msgstr "거래"
 
 msgid "Debit"
 msgstr "차변"
@@ -17285,6 +17285,9 @@ msgstr "공급업체가 이메일 주소가 있는 담당자와 국가가 있는
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "견적서, 주문, 송장 및 견적 요청"
+
+msgid "Quoting"
+msgstr "견적"
 
 msgid "Quoting and sales orders"
 msgstr "견적서 작성 및 수주"

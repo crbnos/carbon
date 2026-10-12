@@ -2224,6 +2224,9 @@ msgstr "Vereinbarte Kaution:"
 msgid "Agreement"
 msgstr "Vertrag"
 
+msgid "Agreements"
+msgstr "Vereinbarungen"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "KI konnte keine Konten sicher zuordnen"
 
@@ -6761,9 +6764,6 @@ msgstr "Fristtyp"
 
 msgid "Deadline Type"
 msgstr "Deadline-Typ"
-
-msgid "Deals"
-msgstr "Vereinbarungen"
 
 msgid "Debit"
 msgstr "Soll"
@@ -17285,6 +17285,9 @@ msgstr "Angebote, Bestellungen und Rechnungen werden blockiert, bis der Lieferan
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Angebote, Bestellungen, Rechnungen und Anfragen"
+
+msgid "Quoting"
+msgstr "Angebotserstellung"
 
 msgid "Quoting and sales orders"
 msgstr "Angebote und Kundenaufträge"

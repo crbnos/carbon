@@ -2224,6 +2224,9 @@ msgstr "Depósito acordado:"
 msgid "Agreement"
 msgstr "Acuerdo"
 
+msgid "Agreements"
+msgstr "Acuerdos"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "La IA no pudo emparejar con confianza ninguna cuenta"
 
@@ -6761,9 +6764,6 @@ msgstr "Tipo de plazo"
 
 msgid "Deadline Type"
 msgstr "Tipo de Plazo"
-
-msgid "Deals"
-msgstr "Acuerdos"
 
 msgid "Debit"
 msgstr "Debe"
@@ -17285,6 +17285,9 @@ msgstr "Las cotizaciones, pedidos y facturas se bloquean hasta que el proveedor 
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Cotizaciones, pedidos, facturas y RFQ"
+
+msgid "Quoting"
+msgstr "Cotización"
 
 msgid "Quoting and sales orders"
 msgstr "Presupuestos y pedidos de venta"

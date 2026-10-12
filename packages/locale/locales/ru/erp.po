@@ -2224,6 +2224,9 @@ msgstr "Согласованный залог:"
 msgid "Agreement"
 msgstr "Договор"
 
+msgid "Agreements"
+msgstr "Соглашения"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "ИИ не смог уверенно сопоставить ни один счет"
 
@@ -6761,9 +6764,6 @@ msgstr "Тип срока"
 
 msgid "Deadline Type"
 msgstr "Тип срока"
-
-msgid "Deals"
-msgstr "Сделки"
 
 msgid "Debit"
 msgstr "Дебет"
@@ -17285,6 +17285,9 @@ msgstr "Коммерческие предложения, заказы и сче�
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Коммерческие предложения, заказы, счета-фактуры и запросы цен"
+
+msgid "Quoting"
+msgstr "Предложения"
 
 msgid "Quoting and sales orders"
 msgstr "Коммерческие предложения и заказы покупателей"

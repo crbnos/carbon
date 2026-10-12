@@ -2224,6 +2224,9 @@ msgstr "Agreed deposit:"
 msgid "Agreement"
 msgstr "Agreement"
 
+msgid "Agreements"
+msgstr "Agreements"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "AI couldn't confidently match any accounts"
 
@@ -6761,9 +6764,6 @@ msgstr "Deadline type"
 
 msgid "Deadline Type"
 msgstr "Deadline Type"
-
-msgid "Deals"
-msgstr "Deals"
 
 msgid "Debit"
 msgstr "Debit"
@@ -17285,6 +17285,9 @@ msgstr "Quotes, orders and invoices are blocked until the supplier has a contact
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "Quotes, orders, invoices and RFQs"
+
+msgid "Quoting"
+msgstr "Quoting"
 
 msgid "Quoting and sales orders"
 msgstr "Quoting and sales orders"

@@ -2224,6 +2224,9 @@ msgstr "约定 保证金："
 msgid "Agreement"
 msgstr "协议"
 
+msgid "Agreements"
+msgstr "协议"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "AI 无法自信地匹配任何账户"
 
@@ -6761,9 +6764,6 @@ msgstr "截止日期类型"
 
 msgid "Deadline Type"
 msgstr "截止日期类型"
-
-msgid "Deals"
-msgstr "交易"
 
 msgid "Debit"
 msgstr "借方"
@@ -17285,6 +17285,9 @@ msgstr "报价单、订单和发票被阻止，直到供应商有一个带有电
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "报价单、订单、发票和询价单"
+
+msgid "Quoting"
+msgstr "报价"
 
 msgid "Quoting and sales orders"
 msgstr "报价和销售订单"

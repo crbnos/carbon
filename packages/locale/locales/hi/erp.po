@@ -2224,6 +2224,9 @@ msgstr "सहमत जमा:"
 msgid "Agreement"
 msgstr "समझौता"
 
+msgid "Agreements"
+msgstr "अनुबंध"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "एआई किसी भी खातों को आत्मविश्वास से मिलाने में असमर्थ रहा"
 
@@ -6761,9 +6764,6 @@ msgstr "समय सीमा प्रकार"
 
 msgid "Deadline Type"
 msgstr "समय सीमा प्रकार"
-
-msgid "Deals"
-msgstr "सौदे"
 
 msgid "Debit"
 msgstr "नामे"
@@ -17285,6 +17285,9 @@ msgstr "कोटेशन, आदेश और चालान को ब्ल
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "कोटेशन, आदेश, चालान और RFQ"
+
+msgid "Quoting"
+msgstr "कोटेशन"
 
 msgid "Quoting and sales orders"
 msgstr "कोटेशन और विक्रय आदेश"

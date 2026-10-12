@@ -2224,6 +2224,9 @@ msgstr "合意された保証金："
 msgid "Agreement"
 msgstr "契約"
 
+msgid "Agreements"
+msgstr "契約"
+
 msgid "AI couldn't confidently match any accounts"
 msgstr "AIは確実にアカウントを照合できませんでした"
 
@@ -6761,9 +6764,6 @@ msgstr "期限のタイプ"
 
 msgid "Deadline Type"
 msgstr "期限タイプ"
-
-msgid "Deals"
-msgstr "案件"
 
 msgid "Debit"
 msgstr "借方"
@@ -17285,6 +17285,9 @@ msgstr "仕入先がメールアドレスを持つ担当者と国を指定した
 
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "見積、受注、請求書および見積依頼"
+
+msgid "Quoting"
+msgstr "見積"
 
 msgid "Quoting and sales orders"
 msgstr "見積と受注"
