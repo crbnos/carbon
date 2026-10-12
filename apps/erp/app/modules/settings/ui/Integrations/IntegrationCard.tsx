@@ -15,10 +15,10 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  toast,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  toast,
   useRouteData
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
