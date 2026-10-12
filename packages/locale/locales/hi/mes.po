@@ -159,7 +159,7 @@ msgid "Add Passkey"
 msgstr "पासकी जोड़ें"
 
 msgid "Add row"
-msgstr ""
+msgstr "पंक्ति जोड़ें"
 
 msgid "Add Sample"
 msgstr "नमूना जोड़ें"
@@ -543,13 +543,13 @@ msgid "Details"
 msgstr "विवरण"
 
 msgid "Direct Research"
-msgstr ""
+msgstr "प्रत्यक्ष अनुसंधान"
 
 msgid "Direct Supervision"
-msgstr ""
+msgstr "प्रत्यक्ष पर्यवेक्षण"
 
 msgid "Direct Support"
-msgstr ""
+msgstr "प्रत्यक्ष सहायता"
 
 msgid "Dispatch not found"
 msgstr "रखरखाव कार्य नहीं मिला"
@@ -737,10 +737,10 @@ msgid "Failed to save result"
 msgstr "परिणाम को सहेजने में विफल"
 
 msgid "Failed to save the hours"
-msgstr ""
+msgstr "घंटे सहेजने में विफल रहा"
 
 msgid "Failed to submit the week"
-msgstr ""
+msgstr "सप्ताह सबमिट करने में विफल रहा"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -815,7 +815,7 @@ msgid "Hide description"
 msgstr "विवरण छिपाएं"
 
 msgid "Hours on {label}"
-msgstr ""
+msgstr "{label} पर घंटे"
 
 msgid "How Carbon looks in this browser."
 msgstr "इस ब्राउज़र में Carbon कैसा दिखता है।"
@@ -939,7 +939,7 @@ msgid "Labor"
 msgstr "श्रम"
 
 msgid "Labor category"
-msgstr ""
+msgstr "श्रम श्रेणी"
 
 msgid "Last completed"
 msgstr "अंतिम पूर्ण"
@@ -1124,7 +1124,7 @@ msgid "My Hours"
 msgstr "मेरे घंटे"
 
 msgid "My Timesheet"
-msgstr ""
+msgstr "मेरी टाइमशीट"
 
 msgid "Name"
 msgstr "नाम"
@@ -1265,7 +1265,7 @@ msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
 msgid "No time this week. Add a row for each job or task you worked on."
-msgstr ""
+msgstr "इस सप्ताह कोई समय नहीं। प्रत्येक जॉब या कार्य के लिए जिस पर आपने काम किया, एक पंक्ति जोड़ें।"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
@@ -1283,13 +1283,13 @@ msgid "None"
 msgstr "कोई नहीं"
 
 msgid "Not Qualified"
-msgstr ""
+msgstr "योग्य नहीं"
 
 msgid "Notes"
 msgstr "नोट्स"
 
 msgid "Nothing matches your search."
-msgstr ""
+msgstr "आपकी खोज से कुछ नहीं मिला।"
 
 msgid "Nothing running"
 msgstr "कुछ नहीं चल रहा"
@@ -1449,7 +1449,7 @@ msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
 
 msgid "Pick what you worked on, then the labor category."
-msgstr ""
+msgstr "उस जॉब या कार्य को चुनें जिस पर आपने काम किया, फिर श्रम श्रेणी को चुनें।"
 
 msgid "Picked"
 msgstr "उठाया गया"
@@ -1742,7 +1742,7 @@ msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
 msgid "Search projects and tasks"
-msgstr ""
+msgstr "परियोजनाओं और कार्यों को खोजें"
 
 msgid "Search..."
 msgstr "खोजें..."
@@ -1892,7 +1892,7 @@ msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
 
 msgid "Signature pad"
-msgstr ""
+msgstr "हस्ताक्षर पैड"
 
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
@@ -1978,7 +1978,7 @@ msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
 
 msgid "Submit week"
-msgstr ""
+msgstr "सप्ताह सबमिट करें"
 
 msgid "Suggestion"
 msgstr "सुझाव"

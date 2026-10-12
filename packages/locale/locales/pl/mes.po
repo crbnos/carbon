@@ -159,7 +159,7 @@ msgid "Add Passkey"
 msgstr "Dodaj klucz dostępu"
 
 msgid "Add row"
-msgstr ""
+msgstr "Dodaj wiersz"
 
 msgid "Add Sample"
 msgstr "Dodaj próbkę"
@@ -543,13 +543,13 @@ msgid "Details"
 msgstr "Szczegóły"
 
 msgid "Direct Research"
-msgstr ""
+msgstr "Badania bezpośrednie"
 
 msgid "Direct Supervision"
-msgstr ""
+msgstr "Nadzór bezpośredni"
 
 msgid "Direct Support"
-msgstr ""
+msgstr "Wsparcie bezpośrednie"
 
 msgid "Dispatch not found"
 msgstr "Nie znaleziono zlecenia utrzymania ruchu"
@@ -737,10 +737,10 @@ msgid "Failed to save result"
 msgstr "Nie udało się zapisać wyniku"
 
 msgid "Failed to save the hours"
-msgstr ""
+msgstr "Nie udało się zapisać godzin"
 
 msgid "Failed to submit the week"
-msgstr ""
+msgstr "Nie udało się przesłać tygodnia"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -815,7 +815,7 @@ msgid "Hide description"
 msgstr "Ukryj opis"
 
 msgid "Hours on {label}"
-msgstr ""
+msgstr "Godziny na {label}"
 
 msgid "How Carbon looks in this browser."
 msgstr "Jak wygląda Carbon w tej przeglądarce."
@@ -939,7 +939,7 @@ msgid "Labor"
 msgstr "Robocizna"
 
 msgid "Labor category"
-msgstr ""
+msgstr "Kategoria robocizny"
 
 msgid "Last completed"
 msgstr "Ostatnio ukończono"
@@ -1124,7 +1124,7 @@ msgid "My Hours"
 msgstr "Moje godziny"
 
 msgid "My Timesheet"
-msgstr ""
+msgstr "Moja karta czasu pracy"
 
 msgid "Name"
 msgstr "Nazwa"
@@ -1265,7 +1265,7 @@ msgid "No time entries for this week"
 msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
 msgid "No time this week. Add a row for each job or task you worked on."
-msgstr ""
+msgstr "Brak czasu w tym tygodniu. Dodaj wiersz dla każdego zlecenia produkcyjnego lub zadania, nad którym pracowałeś."
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
@@ -1283,13 +1283,13 @@ msgid "None"
 msgstr "Brak"
 
 msgid "Not Qualified"
-msgstr ""
+msgstr "Niekwalifikowany"
 
 msgid "Notes"
 msgstr "Notatki"
 
 msgid "Nothing matches your search."
-msgstr ""
+msgstr "Nic nie pasuje do wyszukiwania."
 
 msgid "Nothing running"
 msgstr "Nic nie działa"
@@ -1449,7 +1449,7 @@ msgid "Pick tracked item"
 msgstr "Wybierz śledzony element"
 
 msgid "Pick what you worked on, then the labor category."
-msgstr ""
+msgstr "Wybierz to, nad czym pracowałeś, a następnie kategorię robocizny."
 
 msgid "Picked"
 msgstr "Pobrane"
@@ -1742,7 +1742,7 @@ msgid "Search operators..."
 msgstr "Szukaj operatorów..."
 
 msgid "Search projects and tasks"
-msgstr ""
+msgstr "Szukaj projektów i zadań"
 
 msgid "Search..."
 msgstr "Szukaj..."
@@ -1892,7 +1892,7 @@ msgid "Sign out instead"
 msgstr "Zamiast tego wyloguj się"
 
 msgid "Signature pad"
-msgstr ""
+msgstr "Podpis"
 
 msgid "Signed in as {stationName}"
 msgstr "Zalogowany jako {stationName}"
@@ -1978,7 +1978,7 @@ msgid "Submit anonymously"
 msgstr "Prześlij anonimowo"
 
 msgid "Submit week"
-msgstr ""
+msgstr "Prześlij tydzień"
 
 msgid "Suggestion"
 msgstr "Propozycja"

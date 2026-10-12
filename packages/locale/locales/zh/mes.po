@@ -159,7 +159,7 @@ msgid "Add Passkey"
 msgstr "添加通行密钥"
 
 msgid "Add row"
-msgstr ""
+msgstr "添加行"
 
 msgid "Add Sample"
 msgstr "添加样本"
@@ -543,13 +543,13 @@ msgid "Details"
 msgstr "详情"
 
 msgid "Direct Research"
-msgstr ""
+msgstr "直接研究"
 
 msgid "Direct Supervision"
-msgstr ""
+msgstr "直接监督"
 
 msgid "Direct Support"
-msgstr ""
+msgstr "直接支持"
 
 msgid "Dispatch not found"
 msgstr "找不到维护工单"
@@ -737,10 +737,10 @@ msgid "Failed to save result"
 msgstr "无法保存结果"
 
 msgid "Failed to save the hours"
-msgstr ""
+msgstr "工时保存失败"
 
 msgid "Failed to submit the week"
-msgstr ""
+msgstr "周提交失败"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -815,7 +815,7 @@ msgid "Hide description"
 msgstr "隐藏描述"
 
 msgid "Hours on {label}"
-msgstr ""
+msgstr "{label}的工时"
 
 msgid "How Carbon looks in this browser."
 msgstr "Carbon 在此浏览器中的外观。"
@@ -939,7 +939,7 @@ msgid "Labor"
 msgstr "人工"
 
 msgid "Labor category"
-msgstr ""
+msgstr "人工类别"
 
 msgid "Last completed"
 msgstr "最后完成"
@@ -1124,7 +1124,7 @@ msgid "My Hours"
 msgstr "我的工时"
 
 msgid "My Timesheet"
-msgstr ""
+msgstr "我的工时单"
 
 msgid "Name"
 msgstr "名称"
@@ -1265,7 +1265,7 @@ msgid "No time entries for this week"
 msgstr "本周无考勤记录"
 
 msgid "No time this week. Add a row for each job or task you worked on."
-msgstr ""
+msgstr "本周没有工时。请为您所做的每个工单或任务添加一行。"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
@@ -1283,13 +1283,13 @@ msgid "None"
 msgstr "无"
 
 msgid "Not Qualified"
-msgstr ""
+msgstr "不合格"
 
 msgid "Notes"
 msgstr "备注"
 
 msgid "Nothing matches your search."
-msgstr ""
+msgstr "没有匹配您搜索的内容。"
 
 msgid "Nothing running"
 msgstr "没有运行"
@@ -1449,7 +1449,7 @@ msgid "Pick tracked item"
 msgstr "拣货追踪物料"
 
 msgid "Pick what you worked on, then the labor category."
-msgstr ""
+msgstr "选择您所做的工作，然后选择人工类别。"
 
 msgid "Picked"
 msgstr "已拣货"
@@ -1742,7 +1742,7 @@ msgid "Search operators..."
 msgstr "搜索操作员..."
 
 msgid "Search projects and tasks"
-msgstr ""
+msgstr "搜索项目和任务"
 
 msgid "Search..."
 msgstr "搜索..."
@@ -1892,7 +1892,7 @@ msgid "Sign out instead"
 msgstr "改为登出"
 
 msgid "Signature pad"
-msgstr ""
+msgstr "签名板"
 
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
@@ -1978,7 +1978,7 @@ msgid "Submit anonymously"
 msgstr "匿名提交"
 
 msgid "Submit week"
-msgstr ""
+msgstr "提交周"
 
 msgid "Suggestion"
 msgstr "建议"

@@ -109,7 +109,7 @@ Open:
 - Restoring a backup into another company does not rewrite ids inside the baseline snapshot and change request JSON columns (Phase 1c).
 - Re-applying a demo dataset over a company with contract invoice lines fails in the wipe (`customerContractInvoiceLine_parent_check`). This is a contracts issue, found in Phase 1a Task 45.
 - `projects.mdx` is over the docs skill's 1,500-word limit for an entity page, and Phase 3 added a *Planning groups* section.
-- Run `/translate` once for the whole branch before the PR. Every phase left new UI strings with an empty `msgstr` in the other locales.
+- Done 2026-10-12: `/translate` filled 13,128 strings (1,094 in each of 12 locales). `linguito check` passes. The glossary check finds 315 enforced violations in the new strings and 1,767 in strings that came from `main`. Repair them one locale at a time with `.ai/plans/2026-08-27-translation-consistency-runbook.md`. Russian has the most (90 new, 457 in total).
 - Projects 2a: a posted project stock transfer has no void.
 - Projects 3 Task 16: run `pnpm db:check:datasets` when the stack is up. Only its first layer (the validator) ran: the worktree's Postgres container no longer exists (its `pgdata` volume does), so the tier SQL that seeds the Star Tracker group has not run against a database.
 - Projects 3 Task 14: a group segment can get a Transfer from common stock with the group id as `toProjectId`. Applying it fails on the project FK.

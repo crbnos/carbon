@@ -159,7 +159,7 @@ msgid "Add Passkey"
 msgstr "Geçiş Anahtarı Ekle"
 
 msgid "Add row"
-msgstr ""
+msgstr "Satır Ekle"
 
 msgid "Add Sample"
 msgstr "Örnek Ekle"
@@ -543,13 +543,13 @@ msgid "Details"
 msgstr "Detaylar"
 
 msgid "Direct Research"
-msgstr ""
+msgstr "Doğrudan Araştırma"
 
 msgid "Direct Supervision"
-msgstr ""
+msgstr "Doğrudan Gözetim"
 
 msgid "Direct Support"
-msgstr ""
+msgstr "Doğrudan Destek"
 
 msgid "Dispatch not found"
 msgstr "Bakım emri bulunamadı"
@@ -737,10 +737,10 @@ msgid "Failed to save result"
 msgstr "Sonuç kaydedilemedi"
 
 msgid "Failed to save the hours"
-msgstr ""
+msgstr "Saatler kaydedilemedi"
 
 msgid "Failed to submit the week"
-msgstr ""
+msgstr "Hafta gönderilemedi"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -815,7 +815,7 @@ msgid "Hide description"
 msgstr "Açıklamayı gizle"
 
 msgid "Hours on {label}"
-msgstr ""
+msgstr "{label} Saatleri"
 
 msgid "How Carbon looks in this browser."
 msgstr "Bu tarayıcıda Carbon'un görünüşü."
@@ -939,7 +939,7 @@ msgid "Labor"
 msgstr "İşçilik"
 
 msgid "Labor category"
-msgstr ""
+msgstr "İşçilik kategorisi"
 
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
@@ -1124,7 +1124,7 @@ msgid "My Hours"
 msgstr "Saatlik Çalışmalarım"
 
 msgid "My Timesheet"
-msgstr ""
+msgstr "Zaman Çizelgesim"
 
 msgid "Name"
 msgstr "Adı"
@@ -1265,7 +1265,7 @@ msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
 msgid "No time this week. Add a row for each job or task you worked on."
-msgstr ""
+msgstr "Bu hafta zaman yok. Çalıştığınız her İş emri veya Görev için bir satır ekleyin."
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
@@ -1283,13 +1283,13 @@ msgid "None"
 msgstr "Hiçbiri"
 
 msgid "Not Qualified"
-msgstr ""
+msgstr "Yeterli Değil"
 
 msgid "Notes"
 msgstr "Notlar"
 
 msgid "Nothing matches your search."
-msgstr ""
+msgstr "Aramanızla eşleşen hiçbir şey yok."
 
 msgid "Nothing running"
 msgstr "Hiçbir şey çalışmıyor"
@@ -1449,7 +1449,7 @@ msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
 
 msgid "Pick what you worked on, then the labor category."
-msgstr ""
+msgstr "Çalıştığınız işi, ardından işçilik kategorisini seçin."
 
 msgid "Picked"
 msgstr "Alındı"
@@ -1742,7 +1742,7 @@ msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
 msgid "Search projects and tasks"
-msgstr ""
+msgstr "Projeleri ve Görevleri Arayın"
 
 msgid "Search..."
 msgstr "Ara..."
@@ -1892,7 +1892,7 @@ msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
 
 msgid "Signature pad"
-msgstr ""
+msgstr "İmza Yastığı"
 
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
@@ -1978,7 +1978,7 @@ msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"
 
 msgid "Submit week"
-msgstr ""
+msgstr "Haftayı Gönder"
 
 msgid "Suggestion"
 msgstr "Öneri"

@@ -159,7 +159,7 @@ msgid "Add Passkey"
 msgstr "Ajouter une clé d'accès"
 
 msgid "Add row"
-msgstr ""
+msgstr "Ajouter une ligne"
 
 msgid "Add Sample"
 msgstr "Ajouter échantillon"
@@ -543,13 +543,13 @@ msgid "Details"
 msgstr "Détails"
 
 msgid "Direct Research"
-msgstr ""
+msgstr "Recherche directe"
 
 msgid "Direct Supervision"
-msgstr ""
+msgstr "Supervision directe"
 
 msgid "Direct Support"
-msgstr ""
+msgstr "Support direct"
 
 msgid "Dispatch not found"
 msgstr "Intervention de maintenance non trouvée"
@@ -737,10 +737,10 @@ msgid "Failed to save result"
 msgstr "Échec de l'enregistrement du résultat"
 
 msgid "Failed to save the hours"
-msgstr ""
+msgstr "Impossible d'enregistrer les heures"
 
 msgid "Failed to submit the week"
-msgstr ""
+msgstr "Impossible de soumettre la semaine"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -815,7 +815,7 @@ msgid "Hide description"
 msgstr "Masquer la description"
 
 msgid "Hours on {label}"
-msgstr ""
+msgstr "Heures sur {label}"
 
 msgid "How Carbon looks in this browser."
 msgstr "Aspect de Carbon dans ce navigateur."
@@ -939,7 +939,7 @@ msgid "Labor"
 msgstr "Main-d'œuvre"
 
 msgid "Labor category"
-msgstr ""
+msgstr "Catégorie de main-d'œuvre"
 
 msgid "Last completed"
 msgstr "Dernier complété"
@@ -1124,7 +1124,7 @@ msgid "My Hours"
 msgstr "Mes heures"
 
 msgid "My Timesheet"
-msgstr ""
+msgstr "Ma feuille de temps"
 
 msgid "Name"
 msgstr "Nom"
@@ -1265,7 +1265,7 @@ msgid "No time entries for this week"
 msgstr "Aucune saisie de temps pour cette semaine"
 
 msgid "No time this week. Add a row for each job or task you worked on."
-msgstr ""
+msgstr "Aucune heure cette semaine. Ajouter une ligne pour chaque ordre de fabrication ou tâche sur laquelle vous avez travaillé."
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Aucun stock d'entrepôt n'est enregistré pour cet article. Vous pouvez toujours le prélever — le stock disponible deviendra négatif jusqu'à ce que le décompte soit rapproché."
@@ -1283,13 +1283,13 @@ msgid "None"
 msgstr "Aucun"
 
 msgid "Not Qualified"
-msgstr ""
+msgstr "Non qualifié"
 
 msgid "Notes"
 msgstr "Notes"
 
 msgid "Nothing matches your search."
-msgstr ""
+msgstr "Rien ne correspond à votre recherche."
 
 msgid "Nothing running"
 msgstr "Rien en cours"
@@ -1449,7 +1449,7 @@ msgid "Pick tracked item"
 msgstr "Sélectionner un article suivi"
 
 msgid "Pick what you worked on, then the labor category."
-msgstr ""
+msgstr "Sélectionner ce sur quoi vous avez travaillé, puis la catégorie de main-d'œuvre."
 
 msgid "Picked"
 msgstr "Prélevé"
@@ -1742,7 +1742,7 @@ msgid "Search operators..."
 msgstr "Rechercher des opérateurs..."
 
 msgid "Search projects and tasks"
-msgstr ""
+msgstr "Rechercher les projets et tâches"
 
 msgid "Search..."
 msgstr "Rechercher..."
@@ -1892,7 +1892,7 @@ msgid "Sign out instead"
 msgstr "Se déconnecter plutôt"
 
 msgid "Signature pad"
-msgstr ""
+msgstr "Bloc de signature"
 
 msgid "Signed in as {stationName}"
 msgstr "Connecté en tant que {stationName}"
@@ -1978,7 +1978,7 @@ msgid "Submit anonymously"
 msgstr "Soumettre anonymement"
 
 msgid "Submit week"
-msgstr ""
+msgstr "Soumettre la semaine"
 
 msgid "Suggestion"
 msgstr "Suggestion"
