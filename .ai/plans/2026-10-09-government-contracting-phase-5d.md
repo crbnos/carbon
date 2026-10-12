@@ -57,7 +57,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 3: Create the R&D tax columns migration
 - [x] Task 4: Apply migrations and regenerate types
 - [x] Task 5: Add the pure R&D tax helpers
-- [ ] Task 6: Default the work location and research role on timesheet entries
+- [x] Task 6: Default the work location and research role on timesheet entries
 - [ ] Task 7: Add the validators and service functions
 - [ ] Task 8: Add the work location and research role to My Timesheet
 - [ ] Task 9: Add the business component fields to the element
@@ -614,3 +614,8 @@ ls .ai/playbooks/government-contracting-phase-5d.md
 - Task 3: the work location FK is composite, `("workLocationId", "companyId") REFERENCES "location"("id", "companyId") ON DELETE SET NULL ("workLocationId")`, against `location`'s `UNIQUE ("id", "companyId")`. The plan's plain FK on `location("id")` would accept a location of another company. The index is `("workLocationId", "companyId")`, as the 5a self FKs do. Tasks 2 and 3 ran together in a `BEGIN … ROLLBACK` dry run against the local database before the commit (the backfill updated 0 rows there).
 - Task 4: `pnpm db:migrate` applied both migrations (11 and 1 statements recorded) and regenerated the types and swagger. `authz check` reports no drift. `pnpm db:check:datasets` passes all four datasets with no change: no `COVERAGE` set is built from `rdActivityRole`, so step 3 does not apply. The workflow catalog is current. The regenerated MCP digest changes the response digest of the tools that return `employeeJob`, `laborCategory`, `projectElement` and `customerContract` rows; it is in this commit. The pre-commit backup check skipped Tasks 2 and 3 (their migrations were not applied yet), so this commit also holds the backup baseline `packages/jobs/manifests/schema.json`, from `pnpm db:check:backups -- --stage` (restorable).
 - Task 5: `RdActivityRole` derives from the generated enum (`Database["public"]["Enums"]["rdActivityRole"]`), as `timekeeping.ts` does for its enums, in place of a hand-written union. The 4 thresholds are exported constants (`SUBSTANTIALLY_ALL_SHARE`, `CONTRACT_RESEARCH_SHARE`, `SECTION_G_MAX_ROWS`, `SECTION_G_MIN_SHARE`). `workCountryClass` reads the code in upper case. The aggregate row has an empty `componentId`. If the grand total is 0, no row is listed, and the aggregate row holds every component. `rd-tax` 10 passed.
+- Task 6:
+  1. A field the input leaves out (`undefined`) takes its default; an explicit `null` means "none". So the ERP grid can post a row whose entries have no role without picking up the category's role. `resolveRdDefaults` reads the job location and the category role (one query each, only for a field that is left out) before the cell lookup, because the resolved values are part of the cell's key in both modes. The defaults apply to every write, not only to a new entry: on an update the key already matched the stored values.
+  2. Each of the 3 inserts writes both fields. The DCAA revision's `before` and `after` hold both fields.
+  3. `createTimesheetCorrection` takes optional `workLocationId` and `rdActivityRole`. The reversal copies the original's values; the replacement takes the new values, else the original's. Its DCAA revision fields are unchanged (the plan names only the copy). `pnpm run generate:mcp` changes `projects_createTimesheetCorrection` (8 parameters).
+  4. `save-timesheet-entry` 12 passed (2 new). The second test also checks that an employee with no `employeeJob` row gets no work location.

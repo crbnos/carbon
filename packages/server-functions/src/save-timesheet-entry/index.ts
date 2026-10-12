@@ -18,6 +18,7 @@ import {
   datetime,
   isEntryDateAllowed,
   nextEntryStatus,
+  type RdActivityRole,
   TIMESHEET_REFUSAL_NOT_DRAFT,
   type TimesheetEntryStatus
 } from "@carbon/utils";
@@ -47,7 +48,25 @@ export const saveTimesheetEntryInput = z.object({
    *  Standard mode; DCAA mode saves the owner's entry as Draft. */
   status: z.enum(["Draft", "Submitted"]).optional(),
   /** `add` only: the service visit the time belongs to. */
-  serviceVisitId: z.string().min(1).nullable().optional()
+  serviceVisitId: z.string().min(1).nullable().optional(),
+  /**
+   * Where the work took place (R&D tax). Left out, it is the employee's job
+   * location; null means no location.
+   */
+  workLocationId: z.string().min(1).nullable().optional(),
+  /**
+   * The research role of the time (R&D tax). Left out, it is the labor
+   * category's role; null means no role.
+   */
+  rdActivityRole: z
+    .enum([
+      "Direct Research",
+      "Direct Supervision",
+      "Direct Support",
+      "Not Qualified"
+    ] satisfies [RdActivityRole, ...RdActivityRole[]])
+    .nullable()
+    .optional()
 });
 
 export type SaveTimesheetEntryResult = {
@@ -79,6 +98,8 @@ type EntryRow = Pick<
   | "projectElementId"
   | "laborCategoryId"
   | "entryDate"
+  | "workLocationId"
+  | "rdActivityRole"
 >;
 
 /**
@@ -96,12 +117,16 @@ function revisionFields(entry: {
   projectElementId: string | null;
   laborCategoryId: string;
   entryDate: string;
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
 }) {
   return {
     hours: Number(entry.hours),
     projectElementId: entry.projectElementId,
     laborCategoryId: entry.laborCategoryId,
-    entryDate: entry.entryDate
+    entryDate: entry.entryDate,
+    workLocationId: entry.workLocationId,
+    rdActivityRole: entry.rdActivityRole
   };
 }
 
@@ -150,17 +175,28 @@ const saveTimesheetEntry = defineServerFn({
   permissions: { update: "projects" },
   async run(ctx, input): Promise<SaveTimesheetEntryResult> {
     const { db, companyId, userId } = ctx;
-    return db
-      .transaction()
-      .execute((trx) => save(trx, { ...input, companyId, userId }));
+    return db.transaction().execute(async (trx) =>
+      save(trx, {
+        ...input,
+        companyId,
+        userId,
+        ...(await resolveRdDefaults(trx, { ...input, companyId }))
+      })
+    );
   }
 });
 
 export default saveTimesheetEntry;
 
-type SaveInput = z.output<typeof saveTimesheetEntryInput> & {
+type SaveInput = Omit<
+  z.output<typeof saveTimesheetEntryInput>,
+  "workLocationId" | "rdActivityRole"
+> & {
   companyId: string;
   userId: string;
+  /** Resolved: the input's value, else the default (`resolveRdDefaults`). */
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
 };
 
 type Settings =
@@ -169,6 +205,51 @@ type Settings =
       "timekeepingControls" | "timesheetEntryWindowDays"
     >
   | undefined;
+
+/**
+ * The work location and research role of the entry (R&D tax). A value the
+ * input leaves out takes its default: the employee's job location, and the
+ * labor category's role. Both are part of the cell's key, so two entries on
+ * one day may differ only by location or role.
+ */
+async function resolveRdDefaults(
+  trx: Transaction<DB>,
+  input: z.output<typeof saveTimesheetEntryInput> & { companyId: string }
+): Promise<{
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
+}> {
+  const [job, category] = await inOrder([
+    () =>
+      input.workLocationId === undefined
+        ? trx
+            .selectFrom("employeeJob")
+            .select("locationId")
+            .where("id", "=", input.employeeId)
+            .where("companyId", "=", input.companyId)
+            .executeTakeFirst()
+        : Promise.resolve(null),
+    () =>
+      input.rdActivityRole === undefined
+        ? trx
+            .selectFrom("laborCategory")
+            .select("rdActivityRole")
+            .where("id", "=", input.laborCategoryId)
+            .where("companyId", "=", input.companyId)
+            .executeTakeFirst()
+        : Promise.resolve(null)
+  ]);
+  return {
+    workLocationId:
+      input.workLocationId === undefined
+        ? (job?.locationId ?? null)
+        : input.workLocationId,
+    rdActivityRole:
+      input.rdActivityRole === undefined
+        ? (category?.rdActivityRole ?? null)
+        : input.rdActivityRole
+  };
+}
 
 async function save(
   trx: Transaction<DB>,
@@ -196,7 +277,9 @@ async function save(
       "hours",
       "projectElementId",
       "laborCategoryId",
-      "entryDate"
+      "entryDate",
+      "workLocationId",
+      "rdActivityRole"
     ])
     .where("companyId", "=", companyId)
     .where("employeeId", "=", employeeId)
@@ -207,6 +290,12 @@ async function save(
   existingQuery = input.projectElementId
     ? existingQuery.where("projectElementId", "=", input.projectElementId)
     : existingQuery.where("projectElementId", "is", null);
+  existingQuery = input.workLocationId
+    ? existingQuery.where("workLocationId", "=", input.workLocationId)
+    : existingQuery.where("workLocationId", "is", null);
+  existingQuery = input.rdActivityRole
+    ? existingQuery.where("rdActivityRole", "=", input.rdActivityRole)
+    : existingQuery.where("rdActivityRole", "is", null);
   const rows = await existingQuery.orderBy("id").forUpdate().execute();
   const current = currentEntry(rows);
 
@@ -241,6 +330,8 @@ async function save(
         projectId: input.projectId,
         projectElementId: input.projectElementId,
         laborCategoryId: input.laborCategoryId,
+        workLocationId: input.workLocationId,
+        rdActivityRole: input.rdActivityRole,
         hours: input.hours,
         note: input.note ?? null,
         lateReason: late ? lateReason : null,
@@ -440,6 +531,8 @@ async function addEntry(
       projectElementId: input.projectElementId,
       serviceVisitId: input.serviceVisitId ?? null,
       laborCategoryId: input.laborCategoryId,
+      workLocationId: input.workLocationId,
+      rdActivityRole: input.rdActivityRole,
       hours: input.hours,
       note: input.note ?? null,
       lateReason: late ? lateReason : null,
@@ -521,6 +614,8 @@ async function saveStandard(
         projectId: input.projectId,
         projectElementId: input.projectElementId,
         laborCategoryId: input.laborCategoryId,
+        workLocationId: input.workLocationId,
+        rdActivityRole: input.rdActivityRole,
         hours: input.hours,
         note: input.note ?? null,
         status: "Draft",

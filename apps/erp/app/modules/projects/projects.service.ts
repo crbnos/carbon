@@ -3312,6 +3312,9 @@ export async function createTimesheetCorrection(
     projectId?: string;
     projectElementId?: string;
     laborCategoryId?: string;
+    /** R&D tax: a new work location or research role for the replacement. */
+    workLocationId?: string;
+    rdActivityRole?: Database["public"]["Enums"]["rdActivityRole"];
   }
 ) {
   return db.transaction().execute(async (trx) => {
@@ -3346,6 +3349,9 @@ export async function createTimesheetCorrection(
       projectId: original.projectId,
       projectElementId: original.projectElementId,
       laborCategoryId: original.laborCategoryId,
+      // R&D tax: the reversal undoes the time where and as it was done.
+      workLocationId: original.workLocationId,
+      rdActivityRole: original.rdActivityRole,
       // A service entry's correction stays on the visit the time was for.
       serviceVisitId: original.serviceVisitId,
       note: original.note,
@@ -3391,6 +3397,8 @@ export async function createTimesheetCorrection(
           projectId,
           projectElementId,
           laborCategoryId,
+          workLocationId: args.workLocationId || original.workLocationId,
+          rdActivityRole: args.rdActivityRole || original.rdActivityRole,
           // The visit and the coverage override belong to the original
           // project: a transfer to another project drops them.
           ...(movesProject

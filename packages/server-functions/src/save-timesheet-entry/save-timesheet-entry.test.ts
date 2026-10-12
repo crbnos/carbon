@@ -541,3 +541,97 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "R&D tax: an entry saved with no location gets the job location, and another location is another entry",
+  async () => {
+    const f = await timesheetFixture("Standard");
+    const jobLocationId = `${f.prefix}-job-location`;
+    const foreignLocationId = `${f.prefix}-foreign-location`;
+    try {
+      await f.db.transaction().execute(async (trx) => {
+        await trx
+          .insertInto("location")
+          .values(
+            [
+              { id: jobLocationId, name: "Plant", countryCode: "US" },
+              { id: foreignLocationId, name: "Werk", countryCode: "DE" }
+            ].map((location) => ({
+              ...location,
+              addressLine1: "1 Main St",
+              city: "Springfield",
+              postalCode: "00000",
+              timezone: "America/New_York",
+              companyId: f.companyId,
+              createdBy: PROJECT_TEST_USER
+            }))
+          )
+          .execute();
+        await trx
+          .insertInto("employeeJob")
+          .values({
+            id: PROJECT_TEST_USER,
+            companyId: f.companyId,
+            locationId: jobLocationId
+          })
+          .execute();
+      });
+
+      const saved = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        entryDate: day(-2),
+        hours: 6
+      });
+      expect(saved.error).toBeNull();
+      expect((await f.entry(saved.data!.entryId!)).workLocationId).toEqual(
+        jobLocationId
+      );
+
+      // The same cell at another location is a second entry.
+      const abroad = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        entryDate: day(-2),
+        hours: 2,
+        workLocationId: foreignLocationId
+      });
+      expect(abroad.error).toBeNull();
+      expect(abroad.data?.entryId).not.toEqual(saved.data?.entryId);
+      expect(Number((await f.entry(saved.data!.entryId!)).hours)).toEqual(6);
+      expect((await f.entry(abroad.data!.entryId!)).workLocationId).toEqual(
+        foreignLocationId
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "R&D tax: an entry on a Direct Research category gets that role",
+  async () => {
+    const f = await timesheetFixture("Standard");
+    try {
+      await f.db
+        .updateTable("laborCategory")
+        .set({ rdActivityRole: "Direct Research" })
+        .where("id", "=", f.laborCategoryId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const saved = await saveTimesheetEntry(f.ctx, {
+        ...f.cell,
+        mode: "add",
+        status: "Submitted",
+        entryDate: day(-1),
+        hours: 3
+      });
+      expect(saved.error).toBeNull();
+      const entry = await f.entry(saved.data!.entryId!);
+      expect(entry.rdActivityRole).toEqual("Direct Research");
+      // No job row: no work location.
+      expect(entry.workLocationId).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
