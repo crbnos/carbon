@@ -53,7 +53,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ["open time", openEntries]
   ] as const) {
     if (result.error) {
-      logger.error(`Failed to load the project's ${what}`, {
+      logger.error("Failed to load a part of the project overview", {
+        what,
         companyId,
         projectId,
         error: result.error

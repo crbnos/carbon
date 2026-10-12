@@ -26,7 +26,7 @@ import {
   TabsTrigger,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, RoundingMode, round } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -216,7 +216,7 @@ export default function MilestoneSchedule({
         milestones.flatMap((m) => [m.startDate, m.endDate]),
         today,
         scale,
-        Math.ceil(paneWidth / dayWidth)
+        round(paneWidth / dayWidth, 0, RoundingMode.Up)
       ),
     [milestones, today, scale, paneWidth, dayWidth]
   );
@@ -282,7 +282,8 @@ export default function MilestoneSchedule({
     if (scale === "month") {
       return formatDate(span.start, { month: "short" }, locale);
     }
-    const quarterNumber = Math.floor((parseDate(span.start).month - 1) / 3) + 1;
+    const quarterNumber =
+      round((parseDate(span.start).month - 1) / 3, 0, RoundingMode.Down) + 1;
     return t`Q${quarterNumber}`;
   };
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { RoundingMode, round } from "@carbon/utils";
 import {
   type CalendarDate,
   parseDate,
@@ -45,7 +46,10 @@ const month: Unit = {
 };
 const quarter: Unit = {
   startOf: (date) =>
-    date.set({ month: Math.floor((date.month - 1) / 3) * 3 + 1, day: 1 }),
+    date.set({
+      month: round((date.month - 1) / 3, 0, RoundingMode.Down) * 3 + 1,
+      day: 1
+    }),
   next: (date) => date.add({ months: 3 })
 };
 const year: Unit = {

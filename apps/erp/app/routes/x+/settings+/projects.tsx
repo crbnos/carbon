@@ -70,7 +70,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ["labels", labels]
   ] as const) {
     if (result.error) {
-      logger.error(`Failed to load the project ${what}`, {
+      logger.error("Failed to load the project settings", {
+        what,
         companyId,
         error: result.error
       });
