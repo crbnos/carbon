@@ -3,14 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
-  IconButton,
-  Modal,
-  ModalBody,
-  ModalContent,
+  LabelWithHelp,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -18,34 +14,29 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  ModalTitle,
-  Table as TableBase,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuPencil, LuPlus } from "react-icons/lu";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
+  EditableDate,
+  EditableNumber,
+  useStableEditableComponents
+} from "~/components/Editable";
+import {
   Boolean,
-  DatePicker,
   Hidden,
   Input,
-  Number as NumberField,
   Select,
   Submit,
   TextArea
 } from "~/components/Form";
+import Grid from "~/components/Grid";
+import { useCellSave } from "~/components/Setup";
 import {
   useCompanyToday,
   useCurrencyDecimals,
@@ -55,13 +46,11 @@ import {
   useUser
 } from "~/hooks";
 import { path } from "~/utils/path";
-import {
-  laborCategoryRateValidator,
-  laborCategoryValidator,
-  rdActivityRoles
-} from "../../projects.models";
+import { laborCategoryValidator, rdActivityRoles } from "../../projects.models";
 import type { LaborCategoryRate } from "../../types";
 import { useRdActivityRoleLabels } from "../RdTax/useRdTaxLabels";
+
+const LABOR_CATEGORY_FORM = "labor-category-form";
 
 type LaborCategoryFormProps = {
   initialValues: z.infer<typeof laborCategoryValidator>;
@@ -70,16 +59,9 @@ type LaborCategoryFormProps = {
   onClose: () => void;
 };
 
-type EditingRate = {
-  id?: string;
-  effectiveFrom: string;
-  costRate?: number;
-  billRate?: number;
-};
-
 /**
  * Creates or edits a labor category in a drawer. An existing category also
- * lists its effective-dated cost rates; a rate opens in a modal.
+ * edits its effective-dated rates in a grid.
  */
 const LaborCategoryForm = ({
   initialValues,
@@ -90,10 +72,6 @@ const LaborCategoryForm = ({
   const roleLabels = useRdActivityRoleLabels();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
-  const today = useCompanyToday();
-  const formatMoney = useCurrencyFormatter({ rate: true });
-  const { formatDate } = useDateFormatter();
-  const [editingRate, setEditingRate] = useState<EditingRate | null>(null);
 
   const isEditing = initialValues.id !== undefined;
   const canSave = isEditing
@@ -110,18 +88,10 @@ const LaborCategoryForm = ({
           }}
         >
           <ModalDrawerContent>
-            <ValidatedForm
-              validator={laborCategoryValidator}
-              method="post"
-              action={
-                isEditing
-                  ? path.to.laborCategory(initialValues.id!)
-                  : path.to.newLaborCategory
-              }
-              defaultValues={initialValues}
-              fetcher={fetcher}
-              className="flex flex-col h-full"
-            >
+            {/* The form holds the category's fields only: the rates grid
+                sits outside it, so Enter in a grid cell never submits the
+                category. Save reaches the form through `formId`. */}
+            <div className="flex h-full flex-col">
               <ModalDrawerHeader>
                 <ModalDrawerTitle>
                   {isEditing ? (
@@ -132,123 +102,58 @@ const LaborCategoryForm = ({
                 </ModalDrawerTitle>
               </ModalDrawerHeader>
               <ModalDrawerBody>
-                <Hidden name="id" />
-                <VStack spacing={4}>
-                  <Input name="name" label={t`Name`} autoFocus={!isEditing} />
-                  <TextArea name="description" label={t`Description`} />
-                  <Select
-                    name="rdActivityRole"
-                    label={t`Research role`}
-                    isOptional
-                    helperText={t`Default role for time in this category`}
-                    options={rdActivityRoles.map((value) => ({
-                      value,
-                      label: roleLabels[value]
-                    }))}
-                  />
-                  <Boolean
-                    bordered
-                    name="active"
-                    label={t`Active`}
-                    description={t`Inactive categories cannot be picked for new time`}
-                  />
-                  {isEditing && (
-                    <div className="flex w-full flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          <Trans>Rates</Trans>
-                        </span>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          leftIcon={<LuPlus />}
-                          isDisabled={!canSave}
-                          onClick={() =>
-                            setEditingRate({ effectiveFrom: today })
-                          }
-                        >
-                          <Trans>Add Rate</Trans>
-                        </Button>
-                      </div>
-                      {(rates ?? []).length === 0 ? (
-                        <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-                          <Trans>
-                            No rates yet. Time on this category cannot post to
-                            an Expense or Contract project until it has one.
-                          </Trans>
-                        </p>
-                      ) : (
-                        <div className="w-full overflow-x-auto rounded-md border border-border">
-                          <TableBase full>
-                            <Thead>
-                              <Tr>
-                                <Th>
-                                  <Trans>Effective From</Trans>
-                                </Th>
-                                <Th className="text-right">
-                                  <Trans>Cost Rate</Trans>
-                                </Th>
-                                <Th className="text-right">
-                                  <Trans>Bill Rate</Trans>
-                                </Th>
-                                <Th className="w-12">
-                                  <span className="sr-only">
-                                    <Trans>Actions</Trans>
-                                  </span>
-                                </Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {(rates ?? []).map((rate) => (
-                                <Tr key={rate.id}>
-                                  <Td className="whitespace-nowrap tabular-nums">
-                                    {formatDate(rate.effectiveFrom)}
-                                  </Td>
-                                  <Td className="text-right tabular-nums">
-                                    {formatMoney.format(Number(rate.costRate))}
-                                  </Td>
-                                  <Td className="text-right tabular-nums">
-                                    {rate.billRate === null ? (
-                                      <span className="text-muted-foreground">
-                                        —
-                                      </span>
-                                    ) : (
-                                      formatMoney.format(Number(rate.billRate))
-                                    )}
-                                  </Td>
-                                  <Td>
-                                    <IconButton
-                                      aria-label={t`Edit rate`}
-                                      icon={<LuPencil />}
-                                      variant="ghost"
-                                      size="sm"
-                                      isDisabled={!canSave}
-                                      onClick={() =>
-                                        setEditingRate({
-                                          id: rate.id,
-                                          effectiveFrom: rate.effectiveFrom,
-                                          costRate: Number(rate.costRate),
-                                          billRate:
-                                            rate.billRate === null
-                                              ? undefined
-                                              : Number(rate.billRate)
-                                        })
-                                      }
-                                    />
-                                  </Td>
-                                </Tr>
-                              ))}
-                            </Tbody>
-                          </TableBase>
-                        </div>
-                      )}
-                    </div>
+                <VStack spacing={8}>
+                  <ValidatedForm
+                    id={LABOR_CATEGORY_FORM}
+                    validator={laborCategoryValidator}
+                    method="post"
+                    action={
+                      isEditing
+                        ? path.to.laborCategory(initialValues.id!)
+                        : path.to.newLaborCategory
+                    }
+                    defaultValues={initialValues}
+                    fetcher={fetcher}
+                    className="w-full"
+                  >
+                    <Hidden name="id" />
+                    <VStack spacing={4}>
+                      <Input
+                        name="name"
+                        label={t`Name`}
+                        autoFocus={!isEditing}
+                      />
+                      <TextArea name="description" label={t`Description`} />
+                      <Select
+                        name="rdActivityRole"
+                        label={t`Research role`}
+                        isOptional
+                        helperText={t`Default role for time in this category`}
+                        options={rdActivityRoles.map((value) => ({
+                          value,
+                          label: roleLabels[value]
+                        }))}
+                      />
+                      <Boolean
+                        bordered
+                        name="active"
+                        label={t`Active`}
+                        description={t`Inactive categories cannot be picked for new time`}
+                      />
+                    </VStack>
+                  </ValidatedForm>
+                  {isEditing && initialValues.id && (
+                    <LaborRatesGrid
+                      laborCategoryId={initialValues.id}
+                      rates={rates ?? []}
+                      canEdit={canSave}
+                    />
                   )}
                 </VStack>
               </ModalDrawerBody>
               <ModalDrawerFooter>
                 <HStack>
-                  <Submit isDisabled={!canSave}>
+                  <Submit formId={LABOR_CATEGORY_FORM} isDisabled={!canSave}>
                     <Trans>Save</Trans>
                   </Submit>
                   <Button size="md" variant="solid" onClick={onClose}>
@@ -256,95 +161,205 @@ const LaborCategoryForm = ({
                   </Button>
                 </HStack>
               </ModalDrawerFooter>
-            </ValidatedForm>
+            </div>
           </ModalDrawerContent>
         </ModalDrawer>
       </ModalDrawerProvider>
-
-      {/* A sibling of the drawer, not inside its form: a nested form would
-          submit both. */}
-      {editingRate && initialValues.id && (
-        <RateModal
-          laborCategoryId={initialValues.id}
-          initialValues={editingRate}
-          onClose={() => setEditingRate(null)}
-        />
-      )}
     </>
   );
 };
 
-function RateModal({
+type RateRow = {
+  /** The rate's id; a draft row has none until it saves. */
+  id: string | null;
+  key: string;
+  effectiveFrom: string;
+  costRate: number | null;
+  billRate: number | null;
+};
+
+/**
+ * The category's effective-dated rates as a grid, newest first. A cell
+ * saves the whole rate (`intent=rate`, quiet). "New" adds a draft row from
+ * today, which saves once it has a cost rate. Rates have no delete.
+ */
+function LaborRatesGrid({
   laborCategoryId,
-  initialValues,
-  onClose
+  rates,
+  canEdit
 }: {
   laborCategoryId: string;
-  initialValues: EditingRate;
-  onClose: () => void;
+  rates: LaborCategoryRate[];
+  canEdit: boolean;
 }) {
   const { t } = useLingui();
-  const fetcher = useAction({ onSuccess: onClose });
+  const today = useCompanyToday();
+  const save = useCellSave();
+  const formatRate = useCurrencyFormatter({ rate: true });
+  const { formatDate } = useDateFormatter();
   const { company } = useUser();
   const currencyCode = company.baseCurrencyCode;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
+  const [drafts, setDrafts] = useState<RateRow[]>([]);
+  const draftCount = useRef(0);
+  const action = path.to.laborCategory(laborCategoryId);
+
+  const rows = useMemo<RateRow[]>(
+    () => [
+      ...rates.map((rate) => ({
+        id: rate.id,
+        key: rate.id,
+        effectiveFrom: rate.effectiveFrom,
+        costRate: Number(rate.costRate),
+        billRate: rate.billRate === null ? null : Number(rate.billRate)
+      })),
+      ...drafts
+    ],
+    [rates, drafts]
+  );
+
+  // A cell posts the whole rate with the change. A draft keeps the change
+  // until it has a cost rate; then it saves and leaves the drafts.
+  const onCellEdit = useCallback(
+    async (key: string, value: unknown, row: RateRow) => {
+      const next: RateRow = { ...row };
+      if (key === "effectiveFrom") next.effectiveFrom = String(value ?? "");
+      if (key === "costRate" || key === "billRate") {
+        next[key] =
+          value === null || value === undefined || value === ""
+            ? null
+            : Number(value);
+      }
+      if (next.id === null && (next.costRate === null || !next.effectiveFrom)) {
+        setDrafts((previous) =>
+          previous.map((draft) => (draft.key === row.key ? next : draft))
+        );
+        return { data: null, error: null } as Awaited<ReturnType<typeof save>>;
+      }
+      const result = await save(action, {
+        intent: "rate",
+        id: next.id ?? "",
+        laborCategoryId,
+        effectiveFrom: next.effectiveFrom,
+        costRate: next.costRate === null ? "" : String(next.costRate),
+        billRate: next.billRate === null ? "" : String(next.billRate)
+      });
+      if (next.id === null && !result.error) {
+        setDrafts((previous) => previous.filter((d) => d.key !== row.key));
+      }
+      return result;
+    },
+    [action, laborCategoryId, save]
+  );
+
+  const editableComponents = useStableEditableComponents(
+    (latest) => {
+      const edit = (key: string, value: unknown, row: RateRow) =>
+        latest.current.onCellEdit(key, value, row);
+      const rate = {
+        minValue: 0,
+        formatOptions: INPUT_FORMAT.rate(currencyCode, currencyDecimals),
+        step: INPUT_STEP.rate
+      };
+      return {
+        effectiveFrom: EditableDate<RateRow>(edit, {
+          label: t`Effective From`
+        }),
+        costRate: EditableNumber<RateRow>(edit, rate, {
+          inputClassName: "text-right"
+        }),
+        billRate: EditableNumber<RateRow>(edit, rate, {
+          clearable: true,
+          inputClassName: "text-right"
+        })
+      };
+    },
+    { onCellEdit }
+  );
+
+  const columns = useMemo<ColumnDef<RateRow>[]>(
+    () => [
+      {
+        accessorKey: "effectiveFrom",
+        header: t`Effective From`,
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums">
+            {formatDate(row.original.effectiveFrom)}
+          </span>
+        )
+      },
+      {
+        accessorKey: "costRate",
+        header: t`Cost Rate`,
+        cell: ({ row }) =>
+          row.original.costRate === null ? (
+            <span className="text-muted-foreground">
+              <Trans>Enter a rate</Trans>
+            </span>
+          ) : (
+            <span className="block text-right tabular-nums">
+              {formatRate.format(row.original.costRate)}
+            </span>
+          )
+      },
+      {
+        accessorKey: "billRate",
+        header: () => (
+          <LabelWithHelp termId="bill-rate" variant="inline">
+            <Trans>Bill Rate</Trans>
+          </LabelWithHelp>
+        ),
+        cell: ({ row }) =>
+          row.original.billRate === null ? (
+            <span className="block text-right text-muted-foreground">—</span>
+          ) : (
+            <span className="block text-right tabular-nums">
+              {formatRate.format(row.original.billRate)}
+            </span>
+          )
+      }
+    ],
+    [t, formatDate, formatRate]
+  );
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={laborCategoryRateValidator}
-          method="post"
-          action={path.to.laborCategory(laborCategoryId)}
-          fetcher={fetcher}
-          defaultValues={{ ...initialValues, laborCategoryId }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {initialValues.id ? t`Edit Rate` : t`New Rate`}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="rate" />
-            <Hidden name="id" />
-            <Hidden name="laborCategoryId" />
-            <VStack spacing={4}>
-              <DatePicker name="effectiveFrom" label={t`Effective From`} />
-              <NumberField
-                name="costRate"
-                label={t`Cost Rate per Hour`}
-                minValue={0}
-                formatOptions={INPUT_FORMAT.rate(
-                  currencyCode,
-                  currencyDecimals
-                )}
-                step={INPUT_STEP.rate}
-              />
-              <NumberField
-                name="billRate"
-                label={t`Bill Rate per Hour`}
-                helperText={t`The default price of an hour on a Time & Materials contract line`}
-                minValue={0}
-                formatOptions={INPUT_FORMAT.rate(
-                  currencyCode,
-                  currencyDecimals
-                )}
-                step={INPUT_STEP.rate}
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Save</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <div className="flex w-full flex-col gap-2">
+      <span className="text-sm font-medium">
+        <Trans>Rates</Trans>
+      </span>
+      {rows.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          <Trans>
+            Time on this category cannot post to an Expense or Contract project
+            until it has a rate.
+          </Trans>
+        </p>
+      )}
+      <Grid<RateRow>
+        data={rows}
+        columns={columns}
+        canEdit={canEdit}
+        editableComponents={editableComponents}
+        withSimpleSorting={false}
+        onNewRow={
+          canEdit
+            ? () => {
+                draftCount.current += 1;
+                setDrafts((previous) => [
+                  ...previous,
+                  {
+                    id: null,
+                    key: `draft-${draftCount.current}`,
+                    effectiveFrom: today,
+                    costRate: null,
+                    billRate: null
+                  }
+                ]);
+              }
+            : undefined
+        }
+      />
+    </div>
   );
 }
 

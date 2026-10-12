@@ -4323,9 +4323,6 @@ msgstr ""
 msgid "Bill Rate"
 msgstr "计费费率"
 
-msgid "Bill Rate per Hour"
-msgstr "每小时计费费率"
-
 msgid "Bill To"
 msgstr "账单收款人"
 
@@ -6721,9 +6718,6 @@ msgstr "成本加成计费和完成百分比收入需要升级。包括计时计
 
 msgid "Cost Rate"
 msgstr "成本费率"
-
-msgid "Cost Rate per Hour"
-msgstr "每小时成本费率"
 
 msgid "Cost Relief"
 msgstr "成本减免"
@@ -9487,9 +9481,6 @@ msgstr "编辑采购订单行类型"
 msgid "Edit Question"
 msgstr "编辑问题"
 
-msgid "Edit rate"
-msgstr "编辑费率"
-
 msgid "Edit Rate"
 msgstr "编辑费率"
 
@@ -9898,6 +9889,9 @@ msgstr "在设置到期日期前输入生产批次号"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "请输入 1 至 {0} 之间的数量。"
+
+msgid "Enter a rate"
+msgstr ""
 
 msgid "Enter a reason to take the unit out of service"
 msgstr "输入停用该设备的原因"
@@ -15396,9 +15390,6 @@ msgstr "新报价"
 msgid "New Quote Line"
 msgstr "新报价行"
 
-msgid "New Rate"
-msgstr "新费率"
-
 msgid "New Receipt"
 msgstr "新收据"
 
@@ -16303,9 +16294,6 @@ msgstr "不报价原因"
 
 msgid "No rate"
 msgstr "无汇率"
-
-msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
-msgstr "还没有费率。在该类别上的工时必须有费率才能过账到费用或合同项目。"
 
 msgid "No receipts yet"
 msgstr "尚无收据"
@@ -24452,9 +24440,6 @@ msgstr "此人在项目上记录的时间的默认值"
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "订单拣货使用的默认方式，用于提供被跟踪实体：先到期先出（最早过期优先）、先进先出（最旧优先）或后进先出（最新优先）。"
 
-msgid "The default price of an hour on a Time & Materials contract line"
-msgstr "时间和物料合同行上每小时的默认价格"
-
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "制造此零件时的默认运行数量；计划轮次为此补充的倍数。"
 
@@ -25852,6 +25837,9 @@ msgstr "一天中的时间"
 
 msgid "Time off"
 msgstr "休息时间"
+
+msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "时间利用率"

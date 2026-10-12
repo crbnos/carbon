@@ -75,10 +75,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   if (formData.get("intent") === "rate") {
+    // A grid cell posts `quiet` and reads `{ error }` instead of a flash.
+    const quiet = formData.get("quiet") === "true";
     const validation = await validator(laborCategoryRateValidator).validate(
       formData
     );
-    if (validation.error) return validationError(validation.error);
+    if (validation.error) {
+      if (quiet) {
+        return data(
+          {
+            success: false,
+            error:
+              Object.values(validation.error.fieldErrors ?? {})[0] ??
+              "The rate is invalid"
+          },
+          { status: 400 }
+        );
+      }
+      return validationError(validation.error);
+    }
 
     const { id: rateId, ...rate } = validation.data;
     const saved = rateId
@@ -101,11 +116,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
         id,
         error: saved.error
       });
+      if (quiet) {
+        return data(
+          { success: false, error: "Failed to save the rate" },
+          { status: 400 }
+        );
+      }
       return data(
         { success: false },
         await flash(request, error(saved.error, "Failed to save the rate"))
       );
     }
+    if (quiet) return data({ success: true, error: null });
     return data({ success: true }, await flash(request, success("Rate saved")));
   }
 

@@ -4323,9 +4323,6 @@ msgstr ""
 msgid "Bill Rate"
 msgstr "Tasa de facturación"
 
-msgid "Bill Rate per Hour"
-msgstr "Tasa de facturación por hora"
-
 msgid "Bill To"
 msgstr "Facturar a"
 
@@ -6721,9 +6718,6 @@ msgstr "La facturación de Costo Plus y los ingresos de Porcentaje completado ne
 
 msgid "Cost Rate"
 msgstr "Tasa de costo"
-
-msgid "Cost Rate per Hour"
-msgstr "Tasa de costo por hora"
 
 msgid "Cost Relief"
 msgstr "Alivio de costo"
@@ -9487,9 +9481,6 @@ msgstr "Editar tipo de línea de orden de compra"
 msgid "Edit Question"
 msgstr "Editar Pregunta"
 
-msgid "Edit rate"
-msgstr "Editar tarifa"
-
 msgid "Edit Rate"
 msgstr "Editar Tarifa"
 
@@ -9898,6 +9889,9 @@ msgstr "Ingrese un número de lote antes de establecer la fecha de caducidad"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Ingrese una cantidad entre 1 y {0}."
+
+msgid "Enter a rate"
+msgstr ""
 
 msgid "Enter a reason to take the unit out of service"
 msgstr "Ingrese una razón para retirar la unidad del servicio"
@@ -15396,9 +15390,6 @@ msgstr "Nueva Cotización"
 msgid "New Quote Line"
 msgstr "Nueva Línea de Cotización"
 
-msgid "New Rate"
-msgstr "Nueva tarifa"
-
 msgid "New Receipt"
 msgstr "Nuevo Recibo"
 
@@ -16303,9 +16294,6 @@ msgstr "Razones sin cotización"
 
 msgid "No rate"
 msgstr "Sin tipo de cambio"
-
-msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
-msgstr "Aún no hay tasas. El tiempo en esta categoría no puede contabilizarse en un proyecto de Gastos o Contrato hasta que tenga uno."
 
 msgid "No receipts yet"
 msgstr "Sin recibos aún"
@@ -24452,9 +24440,6 @@ msgstr "El valor predeterminado para el tiempo que esta persona registra en proy
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "El orden predeterminado que usa picking para ofrecer entidades rastreadas: FEFO (primero vencimiento más próximo), FIFO (primero el más antiguo), o LIFO (primero el más nuevo)."
 
-msgid "The default price of an hour on a Time & Materials contract line"
-msgstr "El precio predeterminado de una hora en una línea de contrato de tiempo y materiales"
-
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "La cantidad de ejecución predeterminada cuando se fabrica esta parte; las rondas de planificación reponen hasta múltiplos de esto."
 
@@ -25852,6 +25837,9 @@ msgstr "Hora del día"
 
 msgid "Time off"
 msgstr "Tiempo libre"
+
+msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "Utilización de Tiempo"

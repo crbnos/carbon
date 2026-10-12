@@ -4323,9 +4323,6 @@ msgstr ""
 msgid "Bill Rate"
 msgstr "Ücret Tarifesi"
 
-msgid "Bill Rate per Hour"
-msgstr "Saatlik Ücret Tarifesi"
-
 msgid "Bill To"
 msgstr "Fatura Adresi"
 
@@ -6721,9 +6718,6 @@ msgstr "Maliyet Artı faturalandırması ve Yüzde Tamamlanma geliri yükseltme 
 
 msgid "Cost Rate"
 msgstr "Maliyet Oranı"
-
-msgid "Cost Rate per Hour"
-msgstr "Saat Başına Maliyet Oranı"
 
 msgid "Cost Relief"
 msgstr "Maliyet İndirim"
@@ -9487,9 +9481,6 @@ msgstr "Satın alma siparişi satır türünü düzenle"
 msgid "Edit Question"
 msgstr "Soruyu Düzenle"
 
-msgid "Edit rate"
-msgstr "Oranı düzenle"
-
 msgid "Edit Rate"
 msgstr "Oranı Düzenle"
 
@@ -9898,6 +9889,9 @@ msgstr "Son kullanma tarihini ayarlamadan önce bir parti numarası girin"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1 ile {0} arasında bir miktar girin."
+
+msgid "Enter a rate"
+msgstr ""
 
 msgid "Enter a reason to take the unit out of service"
 msgstr "Üniteyi hizmet dışı bırakmak için bir neden girin"
@@ -15396,9 +15390,6 @@ msgstr "Yeni Teklif"
 msgid "New Quote Line"
 msgstr "Yeni Teklif Satırı"
 
-msgid "New Rate"
-msgstr "Yeni Oran"
-
 msgid "New Receipt"
 msgstr "Yeni Alış"
 
@@ -16303,9 +16294,6 @@ msgstr "Teklif Nedeni Yok"
 
 msgid "No rate"
 msgstr "Kur yok"
-
-msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
-msgstr "Henüz ücret yok. Bu kategorideki zaman, bir ücrete sahip olana kadar bir Gider veya Sözleşme projesine muhasebeleştirilemiyor."
 
 msgid "No receipts yet"
 msgstr "Henüz makbuz yok"
@@ -24452,9 +24440,6 @@ msgstr "Bu kişinin projelere kaydettiği zamanın varsayılanı"
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "Siparişin toplama işleminde sunacağı takip edilen varlıkları seçin: FEFO (en yakında sona erecek ilk), FIFO (en eski ilk), veya LIFO (en yeni ilk)."
 
-msgid "The default price of an hour on a Time & Materials contract line"
-msgstr "Bir Zaman ve Malzeme kontrat satırı üzerinde bir saatin varsayılan fiyatı"
-
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "Bu parça yapıldığında varsayılan çalıştırma miktarı; planlama turları bunun katlarına kadar yenileme yapar."
 
@@ -25852,6 +25837,9 @@ msgstr "Günün saati"
 
 msgid "Time off"
 msgstr "Ara"
+
+msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "Zaman Kullanım Oranı"

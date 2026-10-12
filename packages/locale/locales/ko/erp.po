@@ -4323,9 +4323,6 @@ msgstr ""
 msgid "Bill Rate"
 msgstr "청구 요율"
 
-msgid "Bill Rate per Hour"
-msgstr "시간당 청구 요율"
-
 msgid "Bill To"
 msgstr "청구 대상"
 
@@ -6721,9 +6718,6 @@ msgstr "원가 가산 청구 및 백분율 완료 수익은 업그레이드가 �
 
 msgid "Cost Rate"
 msgstr "원가 비율"
-
-msgid "Cost Rate per Hour"
-msgstr "시간당 원가 비율"
 
 msgid "Cost Relief"
 msgstr "원가 경감"
@@ -9487,9 +9481,6 @@ msgstr "발주서 라인 유형 편집"
 msgid "Edit Question"
 msgstr "질문 편집"
 
-msgid "Edit rate"
-msgstr "요율 편집"
-
 msgid "Edit Rate"
 msgstr "요율 편집"
 
@@ -9898,6 +9889,9 @@ msgstr "만료일을 설정하기 전에 배치 번호를 입력하세요."
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1과 {0} 사이의 수량을 입력하세요."
+
+msgid "Enter a rate"
+msgstr ""
 
 msgid "Enter a reason to take the unit out of service"
 msgstr "장비를 운영 중단하는 이유를 입력하세요"
@@ -15396,9 +15390,6 @@ msgstr "새 견적"
 msgid "New Quote Line"
 msgstr "새 견적 라인"
 
-msgid "New Rate"
-msgstr "새 요율"
-
 msgid "New Receipt"
 msgstr "새 입고"
 
@@ -16303,9 +16294,6 @@ msgstr "견적 거절 사유"
 
 msgid "No rate"
 msgstr "환율 없음"
-
-msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
-msgstr "아직 요금이 없습니다. 이 카테고리의 시간은 요금이 있을 때까지 비용 또는 계약 프로젝트에 전기될 수 없습니다."
 
 msgid "No receipts yet"
 msgstr "아직 영수증 없음"
@@ -24452,9 +24440,6 @@ msgstr "이 사람이 프로젝트에 기록하는 시간의 기본값"
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "피킹이 추적된 항목을 제공할 때 사용하는 기본 순서입니다: FEFO(가장 빨리 만료되는 것 우선), FIFO(선입선출), 또는 LIFO(최신 우선)."
 
-msgid "The default price of an hour on a Time & Materials contract line"
-msgstr "Time & Materials 계약 라인에서 시간의 기본 가격"
-
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "이 품목을 생산할 때의 기본 생산 수량으로, 계획 시 보충량을 이 배수로 올림 처리합니다."
 
@@ -25852,6 +25837,9 @@ msgstr "하루 중 시간"
 
 msgid "Time off"
 msgstr "휴무"
+
+msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "시간 이용률"

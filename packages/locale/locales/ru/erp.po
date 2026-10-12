@@ -4323,9 +4323,6 @@ msgstr ""
 msgid "Bill Rate"
 msgstr "Ставка выставления счетов"
 
-msgid "Bill Rate per Hour"
-msgstr "Ставка выставления счетов в час"
-
 msgid "Bill To"
 msgstr "Счет для"
 
@@ -6721,9 +6718,6 @@ msgstr "Выставление счетов Cost Plus и доход Percent Comp
 
 msgid "Cost Rate"
 msgstr "Ставка затрат"
-
-msgid "Cost Rate per Hour"
-msgstr "Ставка затрат в час"
 
 msgid "Cost Relief"
 msgstr "Облегчение затрат"
@@ -9487,9 +9481,6 @@ msgstr "Изменить тип строки заказа поставщику"
 msgid "Edit Question"
 msgstr "Изменить Вопрос"
 
-msgid "Edit rate"
-msgstr "Изменить ставку"
-
 msgid "Edit Rate"
 msgstr "Изменить ставку"
 
@@ -9898,6 +9889,9 @@ msgstr "Введите номер серии перед установкой д�
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Введите количество от 1 до {0}."
+
+msgid "Enter a rate"
+msgstr ""
 
 msgid "Enter a reason to take the unit out of service"
 msgstr "Введите причину вывода единицы из эксплуатации"
@@ -15396,9 +15390,6 @@ msgstr "Новое предложение"
 msgid "New Quote Line"
 msgstr "Новая строка предложения"
 
-msgid "New Rate"
-msgstr "Новая ставка"
-
 msgid "New Receipt"
 msgstr "Новая квитанция"
 
@@ -16303,9 +16294,6 @@ msgstr "Причины отказа от предложения"
 
 msgid "No rate"
 msgstr "Курс отсутствует"
-
-msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
-msgstr "Ставок еще нет. Время в этой категории невозможно провести по Расходу или Контрактному проекту, пока оно не будет установлено."
 
 msgid "No receipts yet"
 msgstr "Никаких квитанций пока нет"
@@ -24452,9 +24440,6 @@ msgstr "По умолчанию для времени, которое это л�
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "Порядок отбора по умолчанию для предложения отслеживаемых сущностей: FEFO (самое раннее истечение в первую очередь), ФИФО (самое старое в первую очередь) или LIFO (самое новое в первую очередь)."
 
-msgid "The default price of an hour on a Time & Materials contract line"
-msgstr "Цена по умолчанию за час по строке контракта Time & Materials"
-
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "Количество прогона по умолчанию при изготовлении этой детали; циклы планирования дополняют пополнение на кратные этому."
 
@@ -25852,6 +25837,9 @@ msgstr "Время суток"
 
 msgid "Time off"
 msgstr "Выходной"
+
+msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "Использование времени"

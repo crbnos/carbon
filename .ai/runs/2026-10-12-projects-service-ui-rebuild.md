@@ -277,6 +277,10 @@ Shots: `27-approvals-time.png`, `27-approvals-billing.png` (`/x/projects/billing
 
 ## Task 28: Edit labor category rates in a grid
 
+Shot: `28-labor-rates.png` (Systems Engineer, after Bill Rate 150 was typed, committed with Tab, and the page reloaded; then cleared back to empty through the grid). Known gap: rates have no delete endpoint, so the grid has no delete.
+
+1. Reference pattern: yes — `Grid` with a "New" row, like `SupplierParts`. 2. No overlap: yes. 3. One toolbar row: n/a (a drawer). 4. One primary: yes (Save). 5. No input box in the table: yes. 6. Secondary actions in a menu: n/a (no row actions). 7. Advanced fields hidden: n/a.
+
 ## Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
 
 ## Task 30: Fix My Visits, the Build from part drawer and the Service empty states

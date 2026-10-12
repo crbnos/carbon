@@ -4323,9 +4323,6 @@ msgstr "Bill rate"
 msgid "Bill Rate"
 msgstr "Bill Rate"
 
-msgid "Bill Rate per Hour"
-msgstr "Bill Rate per Hour"
-
 msgid "Bill To"
 msgstr "Bill To"
 
@@ -6721,9 +6718,6 @@ msgstr "Cost Plus billing and Percent Complete revenue need an upgrade. Time & M
 
 msgid "Cost Rate"
 msgstr "Cost Rate"
-
-msgid "Cost Rate per Hour"
-msgstr "Cost Rate per Hour"
 
 msgid "Cost Relief"
 msgstr "Cost Relief"
@@ -9487,9 +9481,6 @@ msgstr "Edit purchase order line type"
 msgid "Edit Question"
 msgstr "Edit Question"
 
-msgid "Edit rate"
-msgstr "Edit rate"
-
 msgid "Edit Rate"
 msgstr "Edit Rate"
 
@@ -9898,6 +9889,9 @@ msgstr "Enter a batch number before setting the expiration date"
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "Enter a quantity between 1 and {0}."
+
+msgid "Enter a rate"
+msgstr "Enter a rate"
 
 msgid "Enter a reason to take the unit out of service"
 msgstr "Enter a reason to take the unit out of service"
@@ -15396,9 +15390,6 @@ msgstr "New Quote"
 msgid "New Quote Line"
 msgstr "New Quote Line"
 
-msgid "New Rate"
-msgstr "New Rate"
-
 msgid "New Receipt"
 msgstr "New Receipt"
 
@@ -16303,9 +16294,6 @@ msgstr "No Quote Reasons"
 
 msgid "No rate"
 msgstr "No rate"
-
-msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
-msgstr "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
 
 msgid "No receipts yet"
 msgstr "No receipts yet"
@@ -24452,9 +24440,6 @@ msgstr "The default for time this person logs on projects"
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 
-msgid "The default price of an hour on a Time & Materials contract line"
-msgstr "The default price of an hour on a Time & Materials contract line"
-
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 
@@ -25852,6 +25837,9 @@ msgstr "Time of day"
 
 msgid "Time off"
 msgstr "Time off"
+
+msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
+msgstr "Time on this category cannot post to an Expense or Contract project until it has a rate."
 
 msgid "Time Utilization"
 msgstr "Time Utilization"

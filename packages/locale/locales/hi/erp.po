@@ -4323,9 +4323,6 @@ msgstr ""
 msgid "Bill Rate"
 msgstr "बिल दर"
 
-msgid "Bill Rate per Hour"
-msgstr "प्रति घंटा बिल दर"
-
 msgid "Bill To"
 msgstr "बिल प्राप्तकर्ता"
 
@@ -6721,9 +6718,6 @@ msgstr "Cost Plus बिलिंग और Percent Complete राजस्व 
 
 msgid "Cost Rate"
 msgstr "लागत दर"
-
-msgid "Cost Rate per Hour"
-msgstr "प्रति घंटा लागत दर"
 
 msgid "Cost Relief"
 msgstr "लागत राहत"
@@ -9487,9 +9481,6 @@ msgstr "क्रय आदेश लाइन प्रकार संपा�
 msgid "Edit Question"
 msgstr "प्रश्न संपादित करें"
 
-msgid "Edit rate"
-msgstr "संपादित करें दर"
-
 msgid "Edit Rate"
 msgstr "संपादित करें दर"
 
@@ -9898,6 +9889,9 @@ msgstr "समाप्ति तिथि सेट करने से पह�
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1 और {0} के बीच मात्रा दर्ज करें।"
+
+msgid "Enter a rate"
+msgstr ""
 
 msgid "Enter a reason to take the unit out of service"
 msgstr "इकाई को सेवा से बाहर निकालने का कारण दर्ज करें"
@@ -15396,9 +15390,6 @@ msgstr "नया उद्धरण"
 msgid "New Quote Line"
 msgstr "नई कोटेशन पंक्ति"
 
-msgid "New Rate"
-msgstr "नई दर"
-
 msgid "New Receipt"
 msgstr "नई रसीद"
 
@@ -16303,9 +16294,6 @@ msgstr "कोई कोटेशन कारण नहीं"
 
 msgid "No rate"
 msgstr "कोई दर नहीं"
-
-msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
-msgstr "अभी तक कोई दरें नहीं। इस श्रेणी पर समय दर न होने तक किसी व्यय या अनुबंध परियोजना में पोस्ट नहीं कर सकता।"
 
 msgid "No receipts yet"
 msgstr "अभी कोई रसीद नहीं"
@@ -24452,9 +24440,6 @@ msgstr "इस व्यक्ति द्वारा परियोजना
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "डिफ़ॉल्ट ऑर्डर पिकिंग ट्रैक की गई संस्थाओं की पेशकश करने के लिए उपयोग करता है: FEFO (सबसे पहले समाप्ति), FIFO (सबसे पहले सबसे पुराना) या LIFO (सबसे पहले सबसे नया)।"
 
-msgid "The default price of an hour on a Time & Materials contract line"
-msgstr "समय और सामग्री अनुबंध लाइन पर एक घंटे की डिफ़ॉल्ट कीमत"
-
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "डिफ़ॉल्ट रन मात्रा जब यह भाग बनाया जाता है; योजना राउंड इसके गुणज तक पुनः भरण करते हैं।"
 
@@ -25852,6 +25837,9 @@ msgstr "दिन का समय"
 
 msgid "Time off"
 msgstr "छुट्टी"
+
+msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "समय उपयोग"

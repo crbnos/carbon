@@ -4323,9 +4323,6 @@ msgstr ""
 msgid "Bill Rate"
 msgstr "ビルレート"
 
-msgid "Bill Rate per Hour"
-msgstr "時間当たりビルレート"
-
 msgid "Bill To"
 msgstr "請求先"
 
@@ -6721,9 +6718,6 @@ msgstr "原価プラス請求と完了率収益にはアップグレードが必
 
 msgid "Cost Rate"
 msgstr "原価レート"
-
-msgid "Cost Rate per Hour"
-msgstr "時間当たり原価レート"
 
 msgid "Cost Relief"
 msgstr "原価相殺"
@@ -9487,9 +9481,6 @@ msgstr "発注書明細タイプを編集"
 msgid "Edit Question"
 msgstr "質問を編集"
 
-msgid "Edit rate"
-msgstr "レート編集"
-
 msgid "Edit Rate"
 msgstr "レート編集"
 
@@ -9898,6 +9889,9 @@ msgstr "有効期限を設定する前にバッチ番号を入力してくださ
 #. placeholder {0}: target.maxQuantity - 1
 msgid "Enter a quantity between 1 and {0}."
 msgstr "1～{0}の数量を入力してください。"
+
+msgid "Enter a rate"
+msgstr ""
 
 msgid "Enter a reason to take the unit out of service"
 msgstr "ユニットを使用停止にする理由を入力"
@@ -15396,9 +15390,6 @@ msgstr "新規見積"
 msgid "New Quote Line"
 msgstr "新規見積明細"
 
-msgid "New Rate"
-msgstr "新しいレート"
-
 msgid "New Receipt"
 msgstr "新しい領収書"
 
@@ -16303,9 +16294,6 @@ msgstr "見積辞退理由"
 
 msgid "No rate"
 msgstr "レートなし"
-
-msgid "No rates yet. Time on this category cannot post to an Expense or Contract project until it has one."
-msgstr "まだレートがありません。このカテゴリの時間は、レートを持つまで費用またはコントラクトプロジェクトに転記できません。"
 
 msgid "No receipts yet"
 msgstr "受領がまだありません"
@@ -24452,9 +24440,6 @@ msgstr "この個人がプロジェクトに記録する時間のデフォルト
 msgid "The default order picking uses to offer tracked entities: FEFO (earliest-expiry first), FIFO (oldest first), or LIFO (newest first)."
 msgstr "ピッキングが追跡対象エンティティを提供するデフォルト。FEFO（最短有効期限ファースト）、先入先出（古いものファースト）、または後入先出（新しいものファースト）。"
 
-msgid "The default price of an hour on a Time & Materials contract line"
-msgstr "時間・材料契約明細のデフォルト時間価格"
-
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "このパーツが製造される場合のデフォルト実行数量。計画ラウンドはこれの倍数まで補充を行います。"
 
@@ -25852,6 +25837,9 @@ msgstr "時間"
 
 msgid "Time off"
 msgstr "休み時間"
+
+msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "時間利用率"

@@ -220,7 +220,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 25: Rebuild ERP My Time as a grid
 - [x] Task 26: Rebuild MES My Time as a touch grid
 - [x] Task 27: Rebuild Approvals with Time and Billing tabs
-- [ ] Task 28: Edit labor category rates in a grid
+- [x] Task 28: Edit labor category rates in a grid
 - [ ] Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
 - [ ] Task 30: Fix My Visits, the Build from part drawer and the Service empty states
 - [ ] Task 31: Open New Service Order in a drawer
@@ -1717,3 +1717,7 @@ Run of 2026-10-12, Part B (Tasks 25–29):
 - Task 27, deviation: step 5 says the Billing tab shows only to users with `view: sales`, "as today". Today Billing had no sales check: its loader needed `view: projects` and `billing.update` needs `update: projects`. The tab follows today's rule, so it shows to anyone who can open Approvals (`update: projects`). Ask Brad whether billing review should need `view: sales`.
 - Task 27, open point: Approvals is in the sidebar only while time approval or DCAA is on (Task 9's rule), so with both off, billing review has no sidebar link (the project's Billing page and the old URL still reach it).
 - Task 27: the Time tab's empty state is `Empty` ("Nothing to approve"), and the Billing tab's says it shows Unbilled and On Hold items only.
+- Task 28: the rates are a `Grid` (Effective From `EditableDate`, Cost Rate and Bill Rate `EditableNumber` at the rate kind, Bill Rate with `termId="bill-rate"`). "New" adds a draft row from today that saves once it has a cost rate; each edit posts the whole rate with `intent=rate` through `useCellSave`, and the route answers `quiet` with `{ error }` and no flash. `RateModal`, the Add Rate button and the dashed empty box are gone; a category with no rate shows one muted line above the grid.
+- Task 28: the drawer's `ValidatedForm` now wraps only the category's fields, and Save reaches it through `Submit formId`. With the grid inside the form, Enter in a grid cell submitted the category (seen in the browser: the drawer closed and `laborCategory.updatedAt` moved).
+- Task 28: Enter in the last row of a `Grid` keeps the cell editing (the shared `Grid` does not move past the last row); Tab or a click elsewhere commits. Not changed here.
+- Environment: at 13:57 the stack restarted on new ports (database 60663 → 50683, ERP 60668 → 50688) and crbn started its own ERP server on 50688. The server restarted earlier on 60668 kept the old database port, so it hung; it was stopped. A Chrome renderer of the screenshot session then spun at 120 % CPU and was killed; the session was signed in again.
