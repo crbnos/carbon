@@ -67,8 +67,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const configuration = normalizeConfiguration(parsed.data.configuration);
   const partIds = [...new Set(parsed.data.partIds)];
 
+  // The service role: `companyIntegration` is visible only with settings
+  // view, which a panel user need not have.
+  const serviceRole = getCarbonServiceRole();
   const onshape = await getOnshapeClient(
-    client,
+    serviceRole,
     companyId,
     userId,
     ONSHAPE_V2_INTEGRATION_ID
@@ -109,7 +112,6 @@ export async function action({ request }: ActionFunctionArgs) {
     )
   ];
 
-  const serviceRole = getCarbonServiceRole();
   const [mappings, matches, options] = await Promise.all([
     client
       .from("externalIntegrationMapping")

@@ -67,8 +67,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { documentId, releaseId } = parsed.data;
 
+  // The service role: `companyIntegration` is visible only with settings
+  // view, which a panel user need not have.
+  const serviceRole = getCarbonServiceRole();
   const onshape = await getOnshapeClient(
-    client,
+    serviceRole,
     companyId,
     userId,
     ONSHAPE_V2_INTEGRATION_ID
@@ -170,7 +173,6 @@ export async function action({ request }: ActionFunctionArgs) {
         )
         .map((row) => row.id)
     );
-  const serviceRole = getCarbonServiceRole();
   const [methods, options] = await Promise.all([
     // A failure must answer 500, not read as "no method": that would plan a
     // BOM write over a released method.

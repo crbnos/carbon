@@ -934,6 +934,10 @@ const REFRESH_WAIT_DEADLINE_MS = 20_000;
 const REFRESH_WAIT_MS = 250;
 
 export async function getOnshapeClient(
+  /**
+   * Reads the connection row. The panel passes the service role: the row is
+   * visible only with settings view, which a panel user need not have.
+   */
   client: SupabaseClient<Database>,
   companyId: string,
   userId: string,

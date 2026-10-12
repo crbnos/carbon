@@ -26,6 +26,10 @@ either sync connection.
   passes it explicitly: `getOnshapeClient(…, ONSHAPE_V2_INTEGRATION_ID)`;
   omitted, `getOnshapeClient` resolves the company's sync connection. A bare
   `"onshape"` literal in panel code is a bug.
+- Panel routes pass the service role to `getOnshapeClient`. The
+  `companyIntegration` SELECT policy needs settings view and the panel asks
+  only for parts view, so through the user's client the row reads as absent
+  and the panel says "Onshape is not connected for this company".
 - `ONSHAPE_INTEGRATION_IDS`, `OnshapeIntegrationId` and `isOnshapeIntegrationId`
   (`lib/connection.ts`) cover the two SYNC connections only. The
   one-active-connection rule (`getConflictingOnshapeIntegration`) is between

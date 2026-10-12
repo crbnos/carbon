@@ -76,8 +76,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const { documentId, wv, wvId, elementId, depth } = parsed.data;
   const configuration = normalizeConfiguration(parsed.data.configuration);
 
+  // The service role: `companyIntegration` is visible only with settings
+  // view, which a panel user need not have.
+  const serviceRole = getCarbonServiceRole();
   const onshape = await getOnshapeClient(
-    client,
+    serviceRole,
     companyId,
     userId,
     ONSHAPE_V2_INTEGRATION_ID
@@ -216,7 +219,6 @@ export async function action({ request }: ActionFunctionArgs) {
     )
   ];
 
-  const serviceRole = getCarbonServiceRole();
   const [options, methods, links, itemLinks] = await Promise.all([
     loadPlanOptions(serviceRole, companyId),
     // Settled so a failure answers 500 instead of planning methods as missing.

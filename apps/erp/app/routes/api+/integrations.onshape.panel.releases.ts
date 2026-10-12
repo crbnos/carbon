@@ -49,8 +49,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ error: "Missing Onshape context" }, { status: 400 });
   }
 
+  // The service role: `companyIntegration` is visible only with settings
+  // view, which a panel user need not have.
   const onshape = await getOnshapeClient(
-    client,
+    getCarbonServiceRole(),
     companyId,
     userId,
     ONSHAPE_V2_INTEGRATION_ID
