@@ -15,7 +15,8 @@ funding, and the reports. Spec `.ai/specs/2026-10-09-government-contracting.md`;
 plan `.ai/plans/2026-10-09-government-contracting-phase-5a.md` (decisions P1–P10 and
 an *Execution notes* entry for every deviation). 5a is community code: nothing is in
 `packages/ee`. Phase 5b (indirect rates and burden, commercial) has its own rule:
-`indirect-rates.md`. Phases 5c (control, earned value) and 5d (R&D tax) are not built.
+`indirect-rates.md`. Phase 5c (budget control, earned value, stop-work orders,
+commercial) has its own rule: `project-control.md`. Phase 5d (R&D tax) is not built.
 
 ## Off by default
 

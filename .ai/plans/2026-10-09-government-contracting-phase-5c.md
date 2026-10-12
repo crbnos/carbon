@@ -106,7 +106,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 19: Add Stop work and Resume to the project header
 - [x] Task 20: Extend the demo datasets
 - [x] Task 21: Run the scoped gates
-- [ ] Task 22: Update the rules, docs and spec
+- [x] Task 22: Update the rules, docs and spec
 - [ ] Task 23: Verify in the browser
 
 ## Dependencies
@@ -1242,4 +1242,10 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   4. `pnpm --filter @carbon/checks clobbers`: no clobber risks against `origin/main`.
   5. `pnpm --filter erp build` and `pnpm --filter mes build` pass, with no "Server-only module referenced by client".
   6. `pnpm db:check:datasets` passed on the Task 20 commit (all four datasets, database layer included).
+- Task 22:
+  1. New rule `.claude/rules/project-control.md`. Its `paths:` name the ee package, the 6 routes that call `checkProjectBudget` (the wrapper of `checkBudgetAvailability`) and `ProjectEarnedValue.ee.tsx`. The timesheet callers are listed in the text; `government-contracting.md` already covers the timesheet files.
+  2. `commercial-licensing.md` gains the ✅ 5c entry (with `resumeWork` not gated); `projects-system.md` describes the baseline `schedule` (C6) and the stop-work guard in `updateProjectStatus` (C16); `government-contracting.md` points to the new rule.
+  3. The projects reference page gains **Budget control**, **Earned value** and **Stop-work orders** (each with the Business plan badge) and 2 troubleshooting entries. `cd docs && pnpm typecheck` passes; every `/docs/` link resolves.
+  4. The spec records C1–C17, corrects *Data Model Changes* and *API / Service Changes*, and marks Phase 5c done. It is not moved to `implemented/`, because Phase 5d is still planned.
+- Task 23: Browser verification deferred.
 

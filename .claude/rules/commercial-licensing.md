@@ -214,6 +214,17 @@ Refactor one at a time; each PR should leave the tree green.
   function, which the ee run calls through `serverFns`. Accounting → Indirect Pools and
   Indirect Rates show `IndirectRatesUpgradeOverlay` when gated; the contract line's rate
   ceilings use `UpgradeOverlaySection`. See `indirect-rates.md`.
+- ✅ **Government contracting (5c)** — budget control, earned value, the ACWP export and
+  stop-work orders in `packages/ee/src/project-control/` (`@carbon/ee/project-control`
+  client-safe, `@carbon/ee/project-control.server` server), feature
+  `GOVERNMENT_CONTRACTING`. `requireEntitlement` is embedded in
+  `updateProjectControlSettings`, `updateElementEarnedValue`, `closeEarnedValuePeriod`,
+  `buildAcwpExport` and `stopWork`; `checkBudgetAvailability`, `checkTimesheetBudget` and
+  `getEarnedValue` degrade with `companyHasFeature`. `resumeWork` is deliberately NOT
+  gated, so a company that loses the feature can still release a stopped project. The
+  project Settings section, the element sidebar section, the Costs tab section and the
+  Stop work modal are `.ee.tsx` and show the upgrade overlay when gated. See
+  `project-control.md`.
 - Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
   community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision

@@ -1,6 +1,6 @@
 # Government Contracting: an adequate accounting system, indirect rates, control and R&D tax
 
-> Status: Phases 5a and 5b implemented (2026-10-11); Phases 5c and 5d are planned. Every open question is resolved (Q1–Q3 answered 2026-10-09).
+> Status: Phases 5a, 5b and 5c implemented (2026-10-11); Phase 5d is planned. Every open question is resolved (Q1–Q3 answered 2026-10-09).
 > Author: Brad (with Claude)
 > Date: 2026-10-09
 > Research: `.ai/research/government-contracting-layer.md` and `.ai/research/projects-wbs-pmmo.md` (patterns 8 and 10, Answer 7). The first covers indirect rates, unallowable costs, DCAA timekeeping, CLIN/ACRN funding, budget control, earned value, R&D tax and the SF 1408 ranking.
@@ -241,6 +241,23 @@ A **Stop work** action on a Direct project records the order date and the 90-day
 | B12 | Entered rates (5b plan) | A rate "from period N" writes periods N to 12 with period rate = YTD rate. Only the run writes Actual rates. | Contracting officers set provisional rates per year. |
 | B13 | Cost relief (5b plan) | Memo Burden rows stay out of cost relief with no code change; applied burden is relieved with the rest. | Relieving a memo row would credit WIP that was never debited. |
 | B14 | Fiscal numbers (5b plan) | A period with no fiscal year or number gets them from `fiscalYearAndPeriodFor`. | Job-costing SQL creates periods without fiscal numbers. |
+| C1 | Where the 5c engine lives (5c plan) | `packages/ee/src/project-control/`, not `@carbon/utils`, including the budget and earned value engines. | Q1 makes 5c commercial. |
+| C2 | Budget check reads (5c plan) | 5 grouped queries over all the charged projects (projects, elements, open PO lines, direct ledger cost, Soft and Manual pegs on open PO lines), never one `get_project_cost_summary` call per project. A saved PO line's own commitment is left out. | One RPC per project is a query in a loop; an edited line would count twice. |
+| C3 | What the budget covers (5c plan) | Commitments plus ledger cost without Burden rows. | Burden rows are memo rows by default, and element budgets are direct budgets. |
+| C4 | Warn and Block (5c plan) | Warn saves and flashes the overrun; Block refuses at PO line save, PO finalize, Issue to Project and a job charge. On a timesheet both warn, and Block sends `ProjectBudgetExceeded` to the project owner. | Decision 8: a timesheet is never refused. |
+| C5 | Job charge (5c plan) | Only a consume-to-project job; new amount = job quantity × `itemCost.unitCost`, less the job's posted ledger cost. | Only such a job charges the project; posted cost is already actual. |
+| C6 | Baseline schedule (5c plan) | The baseline snapshot gains `schedule` (each element's `startDate` and `targetDate`, `formatVersion` 2). Change requests, the diff and the plan lock ignore it. Earned value uses the latest baseline with version ≥ 2 taken on or before the date; without one, "Take a baseline first". | Phase 1c keeps dates out of the plan layer, but BCWS spreads from the baseline. |
+| C7 | BAC and work packages (5c plan) | BAC is the work package's baseline `budget`. A work package is a chargeable element with a technique whose nearest ancestor is a control account; a control account takes no technique. | The spec defined neither BAC nor the link. |
+| C8 | Percent complete (5c plan) | `projectElement.earnedValuePercent`, a fraction 0–1. | The data model had no column for it. |
+| C9 | Milestone technique (5c plan) | The work package's direct children are its weighted milestones: baseline `budget` is the weight, baseline `targetDate` places BCWS, state group Completed earns it. No budgeted child: 0/100. | Carbon's milestones are project-level. |
+| C10 | Technique rules (5c plan) | BCWS: 0/100 at the end; 50/50 half at start and end; Percent Complete, Level of Effort and Apportioned by day. BCWP: 0/100 on Completed; 50/50 half on Started; Percent Complete from C8; LOE = BCWS; Apportioned = factor × base BCWP. | DAU Gold Card and NDIA guidance. |
+| C11 | Element of cost of ACWP (5c plan) | From the ledger cost type: Labor; Material, Material Variance, Payback Variance → Material; Outside Processing, Purchased Service → Subcontract; Machine, Overhead, Other Direct → Other Direct; Burden → G&A for a G&A pool, else Overhead. No Travel split. | A Contract row debits Project WIP, so the account's element of cost says nothing. |
+| C12 | Material point of measurement (5c plan) | `project.materialMeasurementPoint`: Receipt (default) or Issue. Issue holds back a `chargeAtReceipt` project's receipt Material rows until project-stock issues consume them, FIFO by quantity. | Carbon's receipt posts straight into stock, so Stock equals Receipt. |
+| C13 | Snapshot freeze (5c plan) | `earnedValuePeriod` also stores `projectId`, `controlAccountId`, `accountingPeriodId`, `technique`, `baselineId` and `bac`. Its trigger reads the period `FOR SHARE` and refuses a write to a Closed period. | The freeze needs the period; `FOR SHARE` serializes it against the close. |
+| C14 | Close task (5c plan) | "Close earned value for the period" (Warning) fails while a project with a work package has no snapshot for the period; the close page has **Close Earned Value**. | The spec named the item, not how it passes. |
+| C15 | ACWP export (5c plan) | Needs a Closed period. One row per charge number × element of cost, Direct or Burden. | "Period-closed ACWP"; Cobra maps by charge number. |
+| C16 | Stop work (5c plan) | Needs a Released Direct project. A CHECK keeps `stopWorkDate` only on On Hold, and `updateProjectStatus` refuses any other status while it is set; only Resume clears it. `resumeWork` is not gated. | FAR 52.242-15 applies to contracts; the status menu and the MCP tool must not bypass Resume. |
+| C17 | EAC (5c plan) | EAC = ACWP + (BAC − BCWP) ÷ CPI; with no CPI, EAC = BAC. VAC = BAC − EAC. | DAU Gold Card, the CPI method. |
 | B15 | ICE schedules (5b plan) | Computed at export time from the run's readers. Schedule G reconciles the project ledger to its journal lines. | No stored copy; contract cost sits in Project WIP, so a GL expense total cannot reconcile direct cost. |
 
 ## Data Model Changes
@@ -329,11 +346,14 @@ ALTER TABLE "companySettings" ADD COLUMN "burdenRateType" "indirectRateType" NOT
 ALTER TABLE "projectElement" ADD COLUMN "isControlAccount" BOOLEAN NOT NULL DEFAULT FALSE,
                              ADD COLUMN "controlAccountManagerId" TEXT REFERENCES "user"("id"),
                              ADD COLUMN "earnedValueTechnique" "earnedValueTechnique",
+                             ADD COLUMN "earnedValuePercent" NUMERIC,           -- C8: a fraction, 0–1
                              ADD COLUMN "apportionedToElementId" TEXT,
                              ADD COLUMN "apportionedFactor" NUMERIC;
-ALTER TABLE "project" ADD COLUMN "materialMeasurementPoint" TEXT;   -- 'Receipt' | 'Stock' | 'Issue'
-CREATE TABLE "earnedValuePeriod" (       -- id('evp'): projectElementId, fiscalYear, periodNumber,
-                                         -- bcws, bcwp, acwp, acwpHours, by element of cost (JSONB); frozen at period close
+ALTER TABLE "project" ADD COLUMN "materialMeasurementPoint" TEXT NOT NULL DEFAULT 'Receipt';  -- C12: 'Receipt' | 'Issue'
+CREATE TABLE "earnedValuePeriod" (       -- id('evp'): projectId, projectElementId, controlAccountId, accountingPeriodId,
+                                         -- fiscalYear, periodNumber, technique, baselineId, bac, bcws, bcwp, acwp,
+                                         -- acwpHours, acwpByElement JSONB; UNIQUE (projectElementId, accountingPeriodId,
+                                         -- companyId); frozen at period close by a FOR SHARE trigger (C13)
 );
 
 -- 5d
@@ -350,10 +370,11 @@ ALTER TABLE "customerContract" ADD COLUMN "researchFunded" BOOLEAN,
 
 ## API / Service Changes
 
-- **Pure helpers** (`@carbon/utils`, unit-tested): `isEntryDateAllowed`, `dilutionFactor`, `budgetAvailability`, `earnedValue(technique, budget, status, schedule)`, `section6765Rows(components, qres)`.
+- **Pure helpers** (`@carbon/utils`, unit-tested): `isEntryDateAllowed`, `dilutionFactor`, `section6765Rows(components, qres)`. `budgetAvailability` and `earnedValue` are ee code (C1, below).
 - **5b pure helpers** live in `packages/ee/src/indirect-rates/compute.ts` (`@carbon/ee/indirect-rates`, B1): `computePoolRates`, `projectBurdenTargets`, `burdenCatchUp`, `billingRateFor`, `burdenBillingAdjustments`; the ICE builders in `ice.ts`.
 - **Posting:** `project-posting.ts` sets `unallowable`; `post-timesheet` applies dilution and the DCAA rules; `assertChargeable` checks `restrictCharging`.
-- **Server functions:** `post-project-burden` (5b: writes the Burden rows and the applied burden journal), `close-earned-value-period`. The 5b runs are ee functions, not server functions (B1): `computeIndirectRates`, `computeProjectBurden` and `computeBurdenBilling`, which replaces `compute-retroactive-billing` (B5), run in that order by `runIndirectRatePeriod`; `runFinalTrueUp` runs the year-end true-up. The payroll import is the CSV import wizard (P8), not `import-payroll-totals`.
+- **5c helpers** live in `packages/ee/src/project-control/` (C1): `@carbon/ee/project-control` holds the pure `compute.ts` (`budgetAvailability`, `plannedValue`, `earnedValue`, `performanceIndexes`, `holdUntilIssued`, `stopWorkEnd`, `stopWorkDaysLeft`); `@carbon/ee/project-control.server` holds `checkBudgetAvailability`, `checkTimesheetBudget`, `getEarnedValue`, `getEarnedValueSnapshots`, `closeEarnedValuePeriod`, `buildAcwpExport`, `stopWork` and `resumeWork`.
+- **Server functions:** `post-project-burden` (5b: writes the Burden rows and the applied burden journal). The earned value close is the ee function `closeEarnedValuePeriod`, not a `close-earned-value-period` server function. The 5b runs are ee functions, not server functions (B1): `computeIndirectRates`, `computeProjectBurden` and `computeBurdenBilling`, which replaces `compute-retroactive-billing` (B5), run in that order by `runIndirectRatePeriod`; `runFinalTrueUp` runs the year-end true-up. The payroll import is the CSV import wizard (P8), not `import-payroll-totals`.
 - **Jobs:**
   - the daily missing-time check;
   - the monthly rate and burden run after period lock;
@@ -433,7 +454,7 @@ Phase 5d
 
 1. **Phase 5a: adequate system.** Cost objectives, unallowable, DCAA timekeeping, dilution, labor distribution with payroll import, CLIN/ACRN funding, preproduction. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34; the browser verification (Task 35) is deferred.
 2. **Phase 5b: indirect rates.** Pools, rates, computation, burden, provisional billing and ceilings, re-burden, retroactive billing, the ICE export. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5b.md`, Tasks 1–21; the browser verification (Task 22) is deferred. Rule: `.claude/rules/indirect-rates.md`.
-3. **Phase 5c: control and reporting.** Budget availability control, earned value (native and the export), stop-work.
+3. **Phase 5c: control and reporting.** Budget availability control, earned value (native and the export), stop-work. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5c.md`, Tasks 1–22; the browser verification (Task 23) is deferred. Rule: `.claude/rules/project-control.md`.
 4. **Phase 5d: R&D tax.** Tags and the two reports.
 
 ## Out of scope
@@ -487,3 +508,4 @@ Resolved autonomously (2026-10-09), open to veto:
 - 2026-10-09: Q1–Q3 resolved (Brad), each with the recommendation. Status: ready for /plan.
 - 2026-10-11: Phase 5a implemented (`.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34). Decisions P1–P10 of the plan are recorded in *Design Decisions*. Rule: `.claude/rules/government-contracting.md`. The browser verification (Task 35) is deferred.
 - 2026-10-11: Phase 5b implemented (`.ai/plans/2026-10-09-government-contracting-phase-5b.md`, Tasks 1–21). Decisions B1–B15 of the plan are recorded in *Design Decisions*; *Data Model Changes* and *API / Service Changes* now name `indirectRateRun`, the burden columns, `post-project-burden` and the ee runs. Rule: `.claude/rules/indirect-rates.md`. The browser verification (Task 22) is deferred.
+- 2026-10-11: Phase 5c implemented (`.ai/plans/2026-10-09-government-contracting-phase-5c.md`, Tasks 1–22). Decisions C1–C17 of the plan are recorded in *Design Decisions*; *Data Model Changes* now names `earnedValuePercent`, the `earnedValuePeriod` columns and the 2 values of `materialMeasurementPoint`; *API / Service Changes* names the ee helpers and `closeEarnedValuePeriod`. Rule: `.claude/rules/project-control.md`. The browser verification (Task 23) is deferred.

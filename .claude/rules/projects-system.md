@@ -144,7 +144,11 @@ only in DCAA mode and only for a new entry.
 In the ERP, `chargeNumberError` (`projects.server.ts`) checks a document's charge number
 in the route action: the project is the company's, the element belongs to it, and a
 consume-to-project job's project is not Statistical. `updateProjectStatus` refuses Close
-while a purchase order or job of the project is open.
+while a purchase order or job of the project is open, and refuses any status but On Hold
+while the project has a stop-work order (`stopWorkStatusRefusal`, decision C16 of
+Government Contracting 5c): only **Resume** (`$projectId.stop-work.tsx`) clears
+`stopWorkDate` and releases the project. The CHECK `project_stopWork_check` backs it.
+See `project-control.md`.
 
 ## Readable ids
 
@@ -583,6 +587,11 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
   `project.nextBaselineSequence` (the UPDATE locks the project row) then loads the
   snapshot (`loadPlanSnapshot`, 5 queries). Completing a milestone takes one
   (source Milestone). `diffPlanSnapshots` reuses `diffRows` (`modules/shared/diff.ts`).
+  Format version 2 (Government Contracting 5c, C6) adds `schedule`: each element's
+  `startDate` and `targetDate` (`PlanScheduleRow`). Dates stay progress fields, so
+  change requests, the diff and the plan lock ignore `schedule`
+  (`ProjectPlanSnapshotKey` leaves it out); earned value reads BCWS from it. A version
+  1 baseline has none.
 - **Change request** — `projectChangeRequest` (Draft → In Review → Approved → Applied,
   or Rejected / Cancelled) with one `projectChangeRequestItem` per touched row:
   `operation`, `targetTable`, `targetId` (an Add's id is made up front in the SQL

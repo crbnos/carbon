@@ -330,6 +330,56 @@ The **Costs** tab of a burdened project lists **Burden by pool**, allowable and 
 
 A Cost Plus contract line bills burden at the Final rate when one exists, else at the Provisional rate, plus the line's fee. On the line's **Billing** tab, **Rate Ceilings** caps a pool's rate for that line. Burden bills by difference, so a rate change or the true-up adds a positive or negative item, and a posted invoice never changes.
 
+## Budget control
+
+<PlanBadge plan="Business" />
+
+**Budget control** checks each charge against the budget of its nearest budgeted element: the element itself, else the closest element above it with a budget. Set it on the project's **Settings** tab, under **Project Control**:
+
+<FieldTable>
+  <Field name="Budget Control" type="enum" required>`None`, `Warn` or `Block`.</Field>
+  <Field name="Tolerance" type="number">How far over the budget a charge may go before the check reports it. Empty reads as 0 %.</Field>
+  <Field name="Material Measurement Point" type="enum" required>`Receipt` counts material when it is received. `Issue` counts it when project stock is issued (earned value only).</Field>
+</FieldTable>
+
+The check adds the new amount to the element's open purchase order lines and its direct actual cost. It runs when you save a purchase order line, finalize a purchase order, issue material to the project, and save a job that consumes to the project. **Warn** saves the document and shows the overrun. **Block** refuses it.
+
+<Callout type="note" title="A timesheet is never refused.">
+The work decides where time is charged, not the money left. On a timesheet, **Warn** and **Block** both save the time and show a warning. **Block** also sends the project owner a "Budget exceeded" notification.
+</Callout>
+
+## Earned value
+
+<PlanBadge plan="Business" />
+
+**Earned value** compares the work done with the plan and the cost. Set it up on the element page, under **Earned Value**:
+
+- Turn on **Control account** on the element that a control account manager owns. Pick the **Control account manager**.
+- On a chargeable element below a control account, pick a **Technique**. That element is a work package.
+
+| Technique | Planned value (BCWS) | Earned value (BCWP) |
+| --- | --- | --- |
+| `0/100` | All at the end date | All when the element is completed |
+| `50/50` | Half at the start date, half at the end date | Half when started, all when completed |
+| `Percent Complete` | Spread over the dates | The budget times **Percent complete** |
+| `Milestone` | Each child element's budget at its target date | The completed child elements |
+| `Level of Effort` | Spread over the dates | Equal to the planned value |
+| `Apportioned` | Spread over the dates | **Factor** times the **Base element**'s earned value |
+
+The budget at completion (BAC) and the dates come from the latest [baseline](#baselines). Take a baseline before you read earned value. Actual cost (ACWP) is the direct cost in the project ledger below the work package.
+
+The **Costs** tab shows one row per control account, with its work packages below it: BAC, BCWS, BCWP, ACWP, cost variance (CV), schedule variance (SV), the cost and schedule performance indexes (CPI, SPI), the estimate at completion (EAC) and the variance at completion (VAC). A CPI or SPI below 1 shows in red. EAC is ACWP plus the remaining budget divided by CPI.
+
+Pick **Current** or a closed period in the period picker. **Current** is live. A closed period shows the snapshot that **Close Earned Value** took on the period close page while the period was locked. The snapshot never changes after the period closes. For a closed period, **Export ACWP** downloads its actual cost by charge number and element of cost, in hours and amounts, direct and burden, for an earned value tool such as Cobra.
+
+## Stop-work orders
+
+<PlanBadge plan="Business" />
+
+A customer can order work on a contract to stop for 90 days (FAR 52.242-15). On a Released project with the cost objective `Direct`, open the **⋯** menu in the project header and click **Stop work**. Enter the order date.
+
+The project goes **"On Hold"**: it takes no new charges, and open purchase orders and jobs still post. The header shows the order date, the end date 90 days later and the days left. Only **Resume** releases the project and clears the order. The status buttons stay hidden while the order is open.
+
 ## Keyboard shortcuts
 
 **⌘⇧E**, **⌘⇧M**, **⌘⇧B**, **⌘⇧R**, **⌘⇧C**, **⌘⇧H**, **⌘⇧K** (Stock, with project stock), **⌘⇧S** and **⌘⇧D** open the project tabs in order (Ctrl instead of ⌘ on Windows). On the Elements tab and the element page, **C** adds an element, and **S**, **A**, **P** and **L** change the state, owner, priority and labels. On the element page, **T** logs time and **I** issues material. Press **?** for the [full list](/docs/reference/keyboard-shortcuts).
@@ -383,6 +433,12 @@ Close refuses while any purchase order of the project is not Completed, Closed o
 
 ### "A Closed project cannot change"
 Element create, update, move, delete and plan routes refuse a Closed project. Closed has no transition back.
+
+### "This project has a stop-work order. Use Resume."
+A project with an open [stop-work order](#stop-work-orders) stays On Hold. Click **Resume** in the project header.
+
+### "Earned value is recorded for this element or an element below it. It cannot be deleted."
+A closed period's earned value snapshot names the element as a work package or a control account. Keep the element.
 
 ### "The charge number is fixed once the job is released"
 A job's charge number can change only while the job is Draft or Planned.
