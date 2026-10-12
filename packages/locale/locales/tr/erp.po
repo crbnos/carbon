@@ -4380,6 +4380,9 @@ msgstr "Her ikisi"
 msgid "Both finishes compared against a date you choose."
 msgstr "Her iki bitişin seçtiğiniz tarihle karşılaştırılması."
 
+msgid "Both tests pass; consider Not funded (§41(d)(4)(H))"
+msgstr ""
+
 msgid "Bottleneck"
 msgstr "Darboğaz"
 
@@ -7592,6 +7595,12 @@ msgstr "Gece derin saatlerinde, {name}."
 
 msgid "Default"
 msgstr "Varsayılan"
+
+msgid "Default (funded: has a Cost Plus or Time & Materials line)"
+msgstr ""
+
+msgid "Default (not funded: no Cost Plus or Time & Materials line)"
+msgstr ""
 
 #. placeholder {0}: groupLabels[group]
 msgid "Default {0} state"
@@ -11212,6 +11221,9 @@ msgid "Funded Date"
 msgstr ""
 
 msgid "Funded Fee"
+msgstr ""
+
+msgid "Funded research"
 msgstr ""
 
 msgid "Funding"
@@ -16353,6 +16365,9 @@ msgstr "Yetersiz adet verisi"
 msgid "Not feasible"
 msgstr "Gerçekleştirilemez"
 
+msgid "Not funded"
+msgstr ""
+
 msgid "Not now"
 msgstr "Şimdi değil"
 
@@ -17615,6 +17630,9 @@ msgstr "Ödeme Uygulamaları"
 
 msgid "Payment Date"
 msgstr "Ödeme Tarihi"
+
+msgid "Payment depends on success"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "Müşteriden Ödeme"
@@ -20200,6 +20218,9 @@ msgid "Reschedule Tolerance"
 msgstr "Yeniden Planlama Toleransı"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research (R&D tax)"
 msgstr ""
 
 msgid "Research role"
@@ -27125,6 +27146,9 @@ msgstr "Tüm videoyu izle"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "Her sütunu otomatik olarak eşleştirdik. Devam etmeden önce aşağıdaki değerleri gözden geçirin."
+
+msgid "We keep substantial rights"
+msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "Sorunları hızlı bir şekilde sınıflandırıp çözeriz ve ekibiniz sisteme alışırken yanınızdayız"

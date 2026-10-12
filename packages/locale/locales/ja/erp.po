@@ -4380,6 +4380,9 @@ msgstr "両方"
 msgid "Both finishes compared against a date you choose."
 msgstr "両方の完了予定日を選択した日付と比較。"
 
+msgid "Both tests pass; consider Not funded (§41(d)(4)(H))"
+msgstr ""
+
 msgid "Bottleneck"
 msgstr "ボトルネック"
 
@@ -7592,6 +7595,12 @@ msgstr "真夜中ですね、{name}さん。"
 
 msgid "Default"
 msgstr "デフォルト"
+
+msgid "Default (funded: has a Cost Plus or Time & Materials line)"
+msgstr ""
+
+msgid "Default (not funded: no Cost Plus or Time & Materials line)"
+msgstr ""
 
 #. placeholder {0}: groupLabels[group]
 msgid "Default {0} state"
@@ -11212,6 +11221,9 @@ msgid "Funded Date"
 msgstr ""
 
 msgid "Funded Fee"
+msgstr ""
+
+msgid "Funded research"
 msgstr ""
 
 msgid "Funding"
@@ -16353,6 +16365,9 @@ msgstr "個データが不足しています"
 msgid "Not feasible"
 msgstr "実現不可能"
 
+msgid "Not funded"
+msgstr ""
+
 msgid "Not now"
 msgstr "後で"
 
@@ -17615,6 +17630,9 @@ msgstr "支払い適用"
 
 msgid "Payment Date"
 msgstr "支払日"
+
+msgid "Payment depends on success"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "得意先からの支払"
@@ -20200,6 +20218,9 @@ msgid "Reschedule Tolerance"
 msgstr "スケジュール変更許容値"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research (R&D tax)"
 msgstr ""
 
 msgid "Research role"
@@ -27125,6 +27146,9 @@ msgstr "フル動画を視聴"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "各列を自動マッチングしました。続行する前に下の値を確認してください。"
+
+msgid "We keep substantial rights"
+msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "チームが新しいシステムに慣れている間、問題を素早く分類して修正します"

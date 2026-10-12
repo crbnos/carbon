@@ -4380,6 +4380,9 @@ msgstr "दोनों"
 msgid "Both finishes compared against a date you choose."
 msgstr "दोनों समाप्तियों की तुलना आपके द्वारा चुनी गई तारीख से की गई है।"
 
+msgid "Both tests pass; consider Not funded (§41(d)(4)(H))"
+msgstr ""
+
 msgid "Bottleneck"
 msgstr "अड़चन"
 
@@ -7592,6 +7595,12 @@ msgstr "गहरी रात में, {name}।"
 
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
+
+msgid "Default (funded: has a Cost Plus or Time & Materials line)"
+msgstr ""
+
+msgid "Default (not funded: no Cost Plus or Time & Materials line)"
+msgstr ""
 
 #. placeholder {0}: groupLabels[group]
 msgid "Default {0} state"
@@ -11212,6 +11221,9 @@ msgid "Funded Date"
 msgstr ""
 
 msgid "Funded Fee"
+msgstr ""
+
+msgid "Funded research"
 msgstr ""
 
 msgid "Funding"
@@ -16353,6 +16365,9 @@ msgstr "पर्याप्त यूनिट डेटा नहीं"
 msgid "Not feasible"
 msgstr "संभव नहीं"
 
+msgid "Not funded"
+msgstr ""
+
 msgid "Not now"
 msgstr "अभी नहीं"
 
@@ -17615,6 +17630,9 @@ msgstr "भुगतान अनुप्रयोग"
 
 msgid "Payment Date"
 msgstr "भुगतान तारीख"
+
+msgid "Payment depends on success"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "ग्राहक से भुगतान"
@@ -20200,6 +20218,9 @@ msgid "Reschedule Tolerance"
 msgstr "पुनर्निर्धारण सहनशीलता"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research (R&D tax)"
 msgstr ""
 
 msgid "Research role"
@@ -27125,6 +27146,9 @@ msgstr "पूरा वीडियो देखें"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "हमने प्रत्येक कॉलम को स्वचालित रूप से मेल खाया है। जारी रखने से पहले नीचे दिए गए मानों की समीक्षा करें।"
+
+msgid "We keep substantial rights"
+msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "हम तेजी से समस्याओं को प्राथमिकता देते हैं और ठीक करते हैं जबकि आपकी टीम सिस्टम में स्थिर होती है"

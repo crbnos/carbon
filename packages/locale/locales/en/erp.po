@@ -4380,6 +4380,9 @@ msgstr "Both"
 msgid "Both finishes compared against a date you choose."
 msgstr "Both finishes compared against a date you choose."
 
+msgid "Both tests pass; consider Not funded (§41(d)(4)(H))"
+msgstr "Both tests pass; consider Not funded (§41(d)(4)(H))"
+
 msgid "Bottleneck"
 msgstr "Bottleneck"
 
@@ -7592,6 +7595,12 @@ msgstr "Deep in the small hours, {name}."
 
 msgid "Default"
 msgstr "Default"
+
+msgid "Default (funded: has a Cost Plus or Time & Materials line)"
+msgstr "Default (funded: has a Cost Plus or Time & Materials line)"
+
+msgid "Default (not funded: no Cost Plus or Time & Materials line)"
+msgstr "Default (not funded: no Cost Plus or Time & Materials line)"
 
 #. placeholder {0}: groupLabels[group]
 msgid "Default {0} state"
@@ -11213,6 +11222,9 @@ msgstr "Funded Date"
 
 msgid "Funded Fee"
 msgstr "Funded Fee"
+
+msgid "Funded research"
+msgstr "Funded research"
 
 msgid "Funding"
 msgstr "Funding"
@@ -16353,6 +16365,9 @@ msgstr "Not enough unit data"
 msgid "Not feasible"
 msgstr "Not feasible"
 
+msgid "Not funded"
+msgstr "Not funded"
+
 msgid "Not now"
 msgstr "Not now"
 
@@ -17615,6 +17630,9 @@ msgstr "Payment Applications"
 
 msgid "Payment Date"
 msgstr "Payment Date"
+
+msgid "Payment depends on success"
+msgstr "Payment depends on success"
 
 msgid "Payment from Customer"
 msgstr "Payment from Customer"
@@ -20201,6 +20219,9 @@ msgstr "Reschedule Tolerance"
 
 msgid "Reschedule Visit"
 msgstr "Reschedule Visit"
+
+msgid "Research (R&D tax)"
+msgstr "Research (R&D tax)"
 
 msgid "Research role"
 msgstr "Research role"
@@ -27125,6 +27146,9 @@ msgstr "Watch full video"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "We auto-matched each column. Review the values below before continuing."
+
+msgid "We keep substantial rights"
+msgstr "We keep substantial rights"
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "We triage and fix issues fast while your team settles in"

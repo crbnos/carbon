@@ -82,22 +82,35 @@ export async function loader({
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [contract, lines, schedule, amendments, storedRevenue, timeZone] =
-    await Promise.all([
-      getContract(client, id, companyId),
-      getContractLines(client, id, companyId),
-      getContractInvoiceSchedule(client, id, companyId),
-      getContractAmendments(client, id, companyId),
-      client
-        .from("customerContractRevenue")
-        .select(
-          "customerContractLineId, periodStart, periodEnd, amount, status"
-        )
-        .eq("customerContractId", id)
-        .eq("companyId", companyId)
-        .order("periodStart", { ascending: true }),
-      getCompanyTimeZone(client, companyId)
-    ]);
+  const [
+    contract,
+    lines,
+    schedule,
+    amendments,
+    storedRevenue,
+    timeZone,
+    researchFlags
+  ] = await Promise.all([
+    getContract(client, id, companyId),
+    getContractLines(client, id, companyId),
+    getContractInvoiceSchedule(client, id, companyId),
+    getContractAmendments(client, id, companyId),
+    client
+      .from("customerContractRevenue")
+      .select("customerContractLineId, periodStart, periodEnd, amount, status")
+      .eq("customerContractId", id)
+      .eq("companyId", companyId)
+      .order("periodStart", { ascending: true }),
+    getCompanyTimeZone(client, companyId),
+    client
+      .from("customerContract")
+      .select(
+        "researchFunded, paymentContingentOnSuccess, contractorRetainsRights"
+      )
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
 
   if (contract.error || !contract.data) {
     throw redirect(
@@ -137,6 +150,15 @@ export async function loader({
         )
       )
     );
+  }
+
+  if (researchFlags.error) {
+    // The panel then shows the defaults; the contract still opens.
+    logger.error("Failed to load the contract's R&D tax flags", {
+      companyId,
+      id,
+      error: researchFlags.error
+    });
   }
 
   const contractLines = lines.data ?? [];
@@ -335,7 +357,14 @@ export async function loader({
     lineTotals: plannedTotals,
     revenueRows,
     revenueIsStored,
-    revenueResiduals
+    revenueResiduals,
+    researchFlags: {
+      researchFunded: researchFlags.data?.researchFunded ?? null,
+      paymentContingentOnSuccess:
+        researchFlags.data?.paymentContingentOnSuccess ?? false,
+      contractorRetainsRights:
+        researchFlags.data?.contractorRetainsRights ?? false
+    }
   };
 }
 

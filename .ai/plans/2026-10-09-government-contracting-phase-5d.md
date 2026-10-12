@@ -62,7 +62,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 8: Add the work location and research role to My Timesheet
 - [x] Task 9: Add the business component fields to the element
 - [x] Task 10: Add the research role to the labor category
-- [ ] Task 11: Add the research flags to the contract
+- [x] Task 11: Add the research flags to the contract
 - [ ] Task 12: Add the officer flag to the employee job
 - [ ] Task 13: Add the R&D report queries and builders
 - [ ] Task 14: Add the two reports to the CSV route and the Reports page
@@ -643,3 +643,9 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   1. **Research role** is an optional (clearable) `Select` after **Description**, with the hint "Default role for time in this category". The table has a **Research role** column (an em dash when none; the CSV exports the label).
   2. `labor-categories.$id.tsx` now passes the stored `rdActivityRole` in the form's initial values. The plan does not list the route, but without it a save would clear the role. Both actions already spread the validated fields into `upsertLaborCategory`.
   3. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 11:
+  1. The `customerContracts` view predates the 3 columns, so the `$id.tsx` loader reads them from `customerContract` (one more query in its `Promise.all`) and returns `researchFlags` in `ContractRouteData`. A failed read is logged, and the panel shows the defaults. No migration recreates the view.
+  2. **Research (R&D tax)** is a new group of the properties panel, after the invoicing group and before **Notes**. **Funded research** is a `Select` (Default, Funded, Not funded; Radix refuses an empty item value, so the choices are `default`, `funded` and `notFunded`). Default reads "Default (funded: has a Cost Plus or Time & Materials line)" or "Default (not funded: no Cost Plus or Time & Materials line)", from the route's contract lines (any line whose `billingMethod` is not Fixed). The two switches are `Boolean` fields (`variant="small"`), the shape of the rental agreement properties.
+  3. Each field posts `intent=researchFlag` with `field` and `value` ("true", "false", or "" for Default) to `update.tsx`, which calls `updateContractResearchFlags` in any status. The route already requires `update: sales`. The fields stay editable on an Ended contract, as tax facts, for a user with `update: sales`.
+  4. The §41(d)(4)(H) hint shows when both switches are on and the EFFECTIVE value is funded (a stored Funded, or Default on a contract with a Cost Plus or Time & Materials line). The plan says "the value is Funded"; a Default that resolves to funded has the same effect on the report.
+  5. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.

@@ -4380,6 +4380,9 @@ msgstr "Ambos"
 msgid "Both finishes compared against a date you choose."
 msgstr "Ambas fechas de finalización comparadas con la fecha que elijas."
 
+msgid "Both tests pass; consider Not funded (§41(d)(4)(H))"
+msgstr ""
+
 msgid "Bottleneck"
 msgstr "Cuello de botella"
 
@@ -7592,6 +7595,12 @@ msgstr "Horas profundas de la madrugada, {name}."
 
 msgid "Default"
 msgstr "Predeterminado"
+
+msgid "Default (funded: has a Cost Plus or Time & Materials line)"
+msgstr ""
+
+msgid "Default (not funded: no Cost Plus or Time & Materials line)"
+msgstr ""
 
 #. placeholder {0}: groupLabels[group]
 msgid "Default {0} state"
@@ -11212,6 +11221,9 @@ msgid "Funded Date"
 msgstr ""
 
 msgid "Funded Fee"
+msgstr ""
+
+msgid "Funded research"
 msgstr ""
 
 msgid "Funding"
@@ -16353,6 +16365,9 @@ msgstr "Datos de unidad insuficientes"
 msgid "Not feasible"
 msgstr "No es viable"
 
+msgid "Not funded"
+msgstr ""
+
 msgid "Not now"
 msgstr "Ahora no"
 
@@ -17615,6 +17630,9 @@ msgstr "Aplicaciones de Pago"
 
 msgid "Payment Date"
 msgstr "Fecha de Pago"
+
+msgid "Payment depends on success"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "Pago del Cliente"
@@ -20200,6 +20218,9 @@ msgid "Reschedule Tolerance"
 msgstr "Tolerancia de Reprogramación"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research (R&D tax)"
 msgstr ""
 
 msgid "Research role"
@@ -27125,6 +27146,9 @@ msgstr "Ver video completo"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "Coincidimos automáticamente con cada columna. Revise los valores a continuación antes de continuar."
+
+msgid "We keep substantial rights"
+msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "Triamos y solucionamos problemas rápidamente mientras tu equipo se adapta"

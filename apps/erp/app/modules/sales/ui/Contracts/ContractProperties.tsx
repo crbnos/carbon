@@ -26,6 +26,7 @@ import { LuCopy, LuLink } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import {
+  Boolean,
   Currency,
   Customer,
   CustomerContact,
@@ -45,6 +46,7 @@ import {
   contractBillingTimings,
   contractDurations,
   contractRenewals,
+  type customerContractResearchFields,
   customerContractTypes,
   invoiceAutomations
 } from "../../sales.models";
@@ -84,13 +86,19 @@ type Term =
  *  customer change resets the bill-to, contact and addresses — shows the
  *  stored value rather than the form's first one. */
 const PropertyForm = (props: {
-  name: Term | "invoiceAutomation" | "contractType";
+  name: Term | "invoiceAutomation" | "contractType" | ResearchField;
   value: unknown;
   children: ReactNode;
 }) => <TermForm {...props} />;
 
 /** The Select's value for "no override": Radix refuses an empty item value. */
 const COMPANY_DEFAULT = "default";
+
+type ResearchField = (typeof customerContractResearchFields)[number];
+/** Funded research: the Select's values for the three choices. */
+const FUNDED_DEFAULT = "default";
+const FUNDED = "funded";
+const NOT_FUNDED = "notFunded";
 
 /** The contract's terms, in the properties panel every document with an
  *  explorer has. Editable while Draft. Once confirmed the terms change with
@@ -103,6 +111,12 @@ const ContractProperties = () => {
 
   const routeData = useRouteData<ContractRouteData>(path.to.contract(id));
   const contract = routeData?.contract;
+  const researchFlags = routeData?.researchFlags;
+  // D10: with no stored value, a contract with a Cost Plus or Time &
+  // Materials line is funded research.
+  const hasCostReimbursedLine = (routeData?.lines ?? []).some(
+    (line) => line.billingMethod && line.billingMethod !== "Fixed"
+  );
   const permissions = usePermissions();
   const companySettings = useSettings();
   const labels = useContractLabels();
@@ -648,6 +662,20 @@ const ContractProperties = () => {
         </PropertyForm>
       </VStack>
 
+      <VStack spacing={4} className="w-full border-t border-border pt-4">
+        <h3 className="text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Research (R&D tax)</Trans>
+        </h3>
+        <ContractResearchFlags
+          flags={researchFlags}
+          hasCostReimbursedLine={hasCostReimbursedLine}
+          isReadOnly={!canUpdate}
+          onUpdate={(field, value) =>
+            submit({ intent: "researchFlag", field, value })
+          }
+        />
+      </VStack>
+
       <PropertyForm name="notes" value={notesText}>
         <InputControlled
           name="notes"
@@ -680,5 +708,96 @@ const ContractProperties = () => {
     </VStack>
   );
 };
+
+/**
+ * The R&D tax facts of a contract (Government Contracting 5d): funded
+ * research (Default follows decision D10) and the two tests of
+ * §41(d)(4)(H). Editable in any status: they are tax facts, not terms.
+ */
+function ContractResearchFlags({
+  flags,
+  hasCostReimbursedLine,
+  isReadOnly,
+  onUpdate
+}: {
+  flags: ContractRouteData["researchFlags"] | undefined;
+  hasCostReimbursedLine: boolean;
+  isReadOnly: boolean;
+  onUpdate: (field: ResearchField, value: string) => void;
+}) {
+  const { t } = useLingui();
+  const researchFunded = flags?.researchFunded ?? null;
+  const contingent = flags?.paymentContingentOnSuccess ?? false;
+  const retainsRights = flags?.contractorRetainsRights ?? false;
+  const fundedValue =
+    researchFunded === null
+      ? FUNDED_DEFAULT
+      : researchFunded
+        ? FUNDED
+        : NOT_FUNDED;
+  const defaultLabel = hasCostReimbursedLine
+    ? t`Default (funded: has a Cost Plus or Time & Materials line)`
+    : t`Default (not funded: no Cost Plus or Time & Materials line)`;
+  const fundedOptions = [
+    { value: FUNDED_DEFAULT, label: defaultLabel },
+    { value: FUNDED, label: t`Funded` },
+    { value: NOT_FUNDED, label: t`Not funded` }
+  ];
+  const isFunded = researchFunded ?? hasCostReimbursedLine;
+
+  return (
+    <>
+      <PropertyForm name="researchFunded" value={fundedValue}>
+        <Select
+          name="researchFunded"
+          label={t`Funded research`}
+          inline={(value) => (
+            <span>
+              {fundedOptions.find((option) => option.value === value)?.label ??
+                value}
+            </span>
+          )}
+          isReadOnly={isReadOnly}
+          options={fundedOptions}
+          onChange={(option) => {
+            const next = option?.value ?? FUNDED_DEFAULT;
+            if (next === fundedValue) return;
+            onUpdate(
+              "researchFunded",
+              next === FUNDED ? "true" : next === NOT_FUNDED ? "false" : ""
+            );
+          }}
+        />
+      </PropertyForm>
+      <PropertyForm name="paymentContingentOnSuccess" value={contingent}>
+        <Boolean
+          name="paymentContingentOnSuccess"
+          label={t`Payment depends on success`}
+          variant="small"
+          isDisabled={isReadOnly}
+          onChange={(value) =>
+            onUpdate("paymentContingentOnSuccess", value ? "true" : "false")
+          }
+        />
+      </PropertyForm>
+      <PropertyForm name="contractorRetainsRights" value={retainsRights}>
+        <Boolean
+          name="contractorRetainsRights"
+          label={t`We keep substantial rights`}
+          variant="small"
+          isDisabled={isReadOnly}
+          onChange={(value) =>
+            onUpdate("contractorRetainsRights", value ? "true" : "false")
+          }
+        />
+      </PropertyForm>
+      {contingent && retainsRights && isFunded && (
+        <p className="text-xs text-muted-foreground">
+          <Trans>Both tests pass; consider Not funded (§41(d)(4)(H))</Trans>
+        </p>
+      )}
+    </>
+  );
+}
 
 export default ContractProperties;

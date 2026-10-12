@@ -4380,6 +4380,9 @@ msgstr "모두"
 msgid "Both finishes compared against a date you choose."
 msgstr "두 완료 날짜를 선택한 날짜와 비교합니다."
 
+msgid "Both tests pass; consider Not funded (§41(d)(4)(H))"
+msgstr ""
+
 msgid "Bottleneck"
 msgstr "병목"
 
@@ -7592,6 +7595,12 @@ msgstr "{name}님, 한밤중이군요."
 
 msgid "Default"
 msgstr "기본값"
+
+msgid "Default (funded: has a Cost Plus or Time & Materials line)"
+msgstr ""
+
+msgid "Default (not funded: no Cost Plus or Time & Materials line)"
+msgstr ""
 
 #. placeholder {0}: groupLabels[group]
 msgid "Default {0} state"
@@ -11212,6 +11221,9 @@ msgid "Funded Date"
 msgstr ""
 
 msgid "Funded Fee"
+msgstr ""
+
+msgid "Funded research"
 msgstr ""
 
 msgid "Funding"
@@ -16353,6 +16365,9 @@ msgstr "개에 대한 데이터가 부족합니다."
 msgid "Not feasible"
 msgstr "불가능"
 
+msgid "Not funded"
+msgstr ""
+
 msgid "Not now"
 msgstr "나중에"
 
@@ -17615,6 +17630,9 @@ msgstr "지불 적용"
 
 msgid "Payment Date"
 msgstr "지불 날짜"
+
+msgid "Payment depends on success"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "고객 지불"
@@ -20200,6 +20218,9 @@ msgid "Reschedule Tolerance"
 msgstr "재일정 허용도"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research (R&D tax)"
 msgstr ""
 
 msgid "Research role"
@@ -27125,6 +27146,9 @@ msgstr "전체 동영상 보기"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "각 열을 자동으로 매칭했습니다. 계속하기 전에 아래 값을 검토하세요."
+
+msgid "We keep substantial rights"
+msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "팀이 적응하는 동안 저희가 이슈를 신속하게 분류하고 해결합니다"

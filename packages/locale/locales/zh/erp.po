@@ -4380,6 +4380,9 @@ msgstr "两者"
 msgid "Both finishes compared against a date you choose."
 msgstr "将两个交期与您选择的日期进行对比。"
 
+msgid "Both tests pass; consider Not funded (§41(d)(4)(H))"
+msgstr ""
+
 msgid "Bottleneck"
 msgstr "瓶颈"
 
@@ -7592,6 +7595,12 @@ msgstr "深夜时分，{name}。"
 
 msgid "Default"
 msgstr "默认"
+
+msgid "Default (funded: has a Cost Plus or Time & Materials line)"
+msgstr ""
+
+msgid "Default (not funded: no Cost Plus or Time & Materials line)"
+msgstr ""
 
 #. placeholder {0}: groupLabels[group]
 msgid "Default {0} state"
@@ -11212,6 +11221,9 @@ msgid "Funded Date"
 msgstr ""
 
 msgid "Funded Fee"
+msgstr ""
+
+msgid "Funded research"
 msgstr ""
 
 msgid "Funding"
@@ -16353,6 +16365,9 @@ msgstr "单位数据不足"
 msgid "Not feasible"
 msgstr "不可行"
 
+msgid "Not funded"
+msgstr ""
+
 msgid "Not now"
 msgstr "暂不"
 
@@ -17615,6 +17630,9 @@ msgstr "付款应用"
 
 msgid "Payment Date"
 msgstr "付款日期"
+
+msgid "Payment depends on success"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "来自客户的付款"
@@ -20200,6 +20218,9 @@ msgid "Reschedule Tolerance"
 msgstr "重新安排容差"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research (R&D tax)"
 msgstr ""
 
 msgid "Research role"
@@ -27125,6 +27146,9 @@ msgstr "观看完整视频"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "我们自动匹配了每一列。继续前请查看下面的值。"
+
+msgid "We keep substantial rights"
+msgstr ""
 
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "在您的班组适应期间，我们快速分类和修复问题"
