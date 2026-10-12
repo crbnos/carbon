@@ -2,26 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
-import {
-  Combobox,
-  Input,
-  NumberField,
-  NumberInput,
-  Status
-} from "@carbon/react";
+import { Input, Status } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
+import { z } from "zod";
 import { DateTime, EmployeeAvatar } from "~/components";
+import { Select } from "~/components/Form";
 import { usePercentFormatter, useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import type {
   ParameterSource,
-  ProjectElementEditableField,
   RequirementCategory,
   RequirementTargetOperator,
   RequirementVerificationMethod,
@@ -43,7 +38,14 @@ import {
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
 import { useElementField } from "../Elements/ElementProperties";
-import { VerificationStatus } from "../Elements/VerificationStatus";
+import { VerificationStatusText } from "../Elements/VerificationStatus";
+import {
+  PropertyCombobox,
+  PropertyField,
+  PropertyNumber,
+  PropertySelect,
+  PropertyText
+} from "./PropertyFields";
 
 type Element = ProjectElementPage["element"];
 
@@ -79,147 +81,6 @@ export function ElementTypeBlock(props: ElementTypeBlockProps) {
     default:
       return null;
   }
-}
-
-/** One row: a 96 px label column and the value, as the properties column. */
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex min-h-8 items-center gap-2">
-      <span className="w-24 shrink-0 text-xs text-muted-foreground">
-        {label}
-      </span>
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Block({ children }: { children: ReactNode }) {
-  return <div className="flex w-full flex-col gap-1 text-sm">{children}</div>;
-}
-
-/** An enum or reference field as a button combobox. */
-function SelectField({
-  projectId,
-  elementId,
-  field,
-  value,
-  options,
-  placeholder,
-  isClearable = true,
-  isDisabled
-}: {
-  projectId: string;
-  elementId: string;
-  field: ProjectElementEditableField;
-  value: string | null;
-  options: { value: string; label: string; helper?: string }[];
-  placeholder: string;
-  isClearable?: boolean;
-  isDisabled: boolean;
-}) {
-  const { pending, submit } = useElementField(projectId, elementId, field);
-  const shown = pending === undefined ? value : pending;
-  return (
-    <div className="w-full max-w-64">
-      <Combobox
-        asButton
-        size="sm"
-        value={shown ?? ""}
-        options={options}
-        isClearable={isClearable}
-        isReadOnly={isDisabled}
-        placeholder={placeholder}
-        onChange={(next) => {
-          if ((next || null) !== shown) submit(next || null);
-        }}
-      />
-    </div>
-  );
-}
-
-/** A number field that saves on commit. */
-function NumberValueField({
-  projectId,
-  elementId,
-  field,
-  value,
-  label,
-  kind,
-  isDisabled
-}: {
-  projectId: string;
-  elementId: string;
-  field: ProjectElementEditableField;
-  value: number | null;
-  label: string;
-  kind: "quantity" | "percent";
-  isDisabled: boolean;
-}) {
-  const { pending, submit } = useElementField(projectId, elementId, field);
-  const shown =
-    pending === undefined ? value : pending === null ? null : Number(pending);
-  return (
-    <NumberField
-      aria-label={label}
-      value={shown === null ? Number.NaN : Number(shown)}
-      isDisabled={isDisabled}
-      formatOptions={
-        kind === "percent" ? INPUT_FORMAT.percent : INPUT_FORMAT.quantity
-      }
-      step={kind === "percent" ? INPUT_STEP.percent : INPUT_STEP.quantity}
-      minValue={kind === "percent" ? 0 : undefined}
-      maxValue={kind === "percent" ? 1 : undefined}
-      onChange={(next) => {
-        const nextValue = Number.isNaN(next) ? null : next;
-        if (nextValue !== shown) {
-          submit(nextValue === null ? null : String(nextValue));
-        }
-      }}
-    >
-      <NumberInput size="sm" className="w-32 tabular-nums" />
-    </NumberField>
-  );
-}
-
-/** A free-text field (a unit) that saves on blur. */
-function TextValueField({
-  projectId,
-  elementId,
-  field,
-  value,
-  label,
-  placeholder,
-  isDisabled
-}: {
-  projectId: string;
-  elementId: string;
-  field: ProjectElementEditableField;
-  value: string | null;
-  label: string;
-  placeholder: string;
-  isDisabled: boolean;
-}) {
-  const { submit } = useElementField(projectId, elementId, field);
-  return (
-    <Input
-      key={value ?? ""}
-      size="sm"
-      aria-label={label}
-      placeholder={placeholder}
-      defaultValue={value ?? ""}
-      isDisabled={isDisabled}
-      className="w-24"
-      onBlur={(event) => {
-        const next = event.target.value.trim() || null;
-        if (next !== value) submit(next);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") event.currentTarget.blur();
-      }}
-    />
-  );
 }
 
 function useParameterOptions(elements: ProjectElementPage["elements"]) {
@@ -283,104 +144,96 @@ function RequirementBlock({
   )?.parameterUnit;
 
   return (
-    <Block>
-      <Row label={t`Category`}>
-        <SelectField
+    <>
+      <PropertySelect
+        {...common}
+        field="requirementCategory"
+        label={t`Category`}
+        value={element.requirementCategory}
+        options={requirementCategories.map((value) => ({
+          value,
+          label: categoryLabels[value]
+        }))}
+      />
+      <PropertySelect
+        {...common}
+        field="targetOperator"
+        label={t`Target`}
+        value={element.targetOperator}
+        options={requirementTargetOperators.map((value) => ({
+          value,
+          label: operatorLabels[value]
+        }))}
+      />
+      {operator && (
+        <PropertyNumber
           {...common}
-          field="requirementCategory"
-          value={element.requirementCategory}
-          placeholder={t`No category`}
-          options={requirementCategories.map((value) => ({
-            value,
-            label: categoryLabels[value]
-          }))}
+          field="targetValue"
+          label={operator === "Range" ? t`Lower value` : t`Target value`}
+          value={numberOrNull(element.targetValue)}
+          formatOptions={INPUT_FORMAT.quantity}
+          step={INPUT_STEP.quantity}
         />
-      </Row>
-      <Row label={t`Target`}>
-        <div className="w-36">
-          <SelectField
-            {...common}
-            field="targetOperator"
-            value={element.targetOperator}
-            placeholder={t`No target`}
-            options={requirementTargetOperators.map((value) => ({
-              value,
-              label: operatorLabels[value]
-            }))}
-          />
-        </div>
-        {operator && (
-          <NumberValueField
-            {...common}
-            field="targetValue"
-            value={element.targetValue}
-            label={operator === "Range" ? t`Lower value` : t`Target value`}
-            kind="quantity"
-          />
-        )}
-        {operator === "Range" && (
-          <>
-            <span className="text-xs text-muted-foreground">
-              <Trans>to</Trans>
-            </span>
-            <NumberValueField
-              {...common}
-              field="targetUpperValue"
-              value={element.targetUpperValue}
-              label={t`Upper value`}
-              kind="quantity"
-            />
-          </>
-        )}
-        {operator && (
-          <TextValueField
-            {...common}
-            field="targetUnit"
-            value={element.targetUnit}
-            label={t`Unit`}
-            placeholder={t`Unit`}
-          />
-        )}
-      </Row>
-      <Row label={t`Verification method`}>
-        <SelectField
+      )}
+      {operator === "Range" && (
+        <PropertyNumber
           {...common}
-          field="verificationMethod"
-          value={element.verificationMethod}
-          placeholder={t`No method`}
-          options={requirementVerificationMethods.map((value) => ({
-            value,
-            label: methodLabels[value]
-          }))}
+          field="targetUpperValue"
+          label={t`Upper value`}
+          value={numberOrNull(element.targetUpperValue)}
+          formatOptions={INPUT_FORMAT.quantity}
+          step={INPUT_STEP.quantity}
         />
-      </Row>
-      <Row label={t`Actual parameter`}>
-        <SelectField
+      )}
+      {operator && (
+        <PropertyText
           {...common}
-          field="actualParameterId"
-          value={element.actualParameterId}
-          placeholder={t`No parameter`}
-          options={parameterOptions}
+          field="targetUnit"
+          label={t`Unit`}
+          value={element.targetUnit}
         />
-        {element.actualParameterId && (
-          <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
+      )}
+      <PropertySelect
+        {...common}
+        field="verificationMethod"
+        label={t`Verification method`}
+        value={element.verificationMethod}
+        options={requirementVerificationMethods.map((value) => ({
+          value,
+          label: methodLabels[value]
+        }))}
+      />
+      <PropertyCombobox
+        {...common}
+        field="actualParameterId"
+        label={t`Actual parameter`}
+        value={element.actualParameterId}
+        options={parameterOptions}
+      />
+      {element.actualParameterId && (
+        <PropertyField label={t`Actual value`}>
+          <span className="tabular-nums">
             {actual === null ? (
-              <Trans>No value</Trans>
+              <span className="text-muted-foreground">
+                <Trans>No value</Trans>
+              </span>
             ) : (
               `${formatQuantity(actual)}${actualUnit ? ` ${actualUnit}` : ""}`
             )}
           </span>
-        )}
-      </Row>
-      <Row label={t`Status`}>
-        <VerificationStatus status={requirementStatus[element.id]} />
-        {own?.kind === "Requirement" && own.checkCount > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {own.checkCount === 1 ? t`1 check` : t`${own.checkCount} checks`}
-          </span>
-        )}
-      </Row>
-    </Block>
+        </PropertyField>
+      )}
+      <PropertyField label={t`Verification`}>
+        <span className="flex items-center gap-2">
+          <VerificationStatusText status={requirementStatus[element.id]} />
+          {own?.kind === "Requirement" && own.checkCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {own.checkCount === 1 ? t`1 check` : t`${own.checkCount} checks`}
+            </span>
+          )}
+        </span>
+      </PropertyField>
+    </>
   );
 }
 
@@ -399,49 +252,45 @@ function TestCaseBlock({
     Inconclusive: t`Inconclusive`
   };
   return (
-    <Block>
-      <Row label={t`Verdict`}>
-        <SelectField
-          {...common}
-          field="verdict"
-          value={element.verdict}
-          placeholder={t`No verdict`}
-          options={testCaseVerdicts.map((value) => ({
-            value,
-            label: verdictLabels[value]
-          }))}
-        />
-      </Row>
-      <Row label={t`Procedure`}>
-        <SelectField
-          {...common}
-          field="qualityDocumentId"
-          value={element.qualityDocumentId}
-          placeholder={t`No procedure`}
-          options={qualityDocuments.map((doc) => ({
-            value: doc.id,
-            label: doc.name,
-            helper: t`Version ${doc.version}`
-          }))}
-        />
-        {element.qualityDocumentId && (
+    <>
+      <PropertySelect
+        {...common}
+        field="verdict"
+        label={t`Verdict`}
+        value={element.verdict}
+        options={testCaseVerdicts.map((value) => ({
+          value,
+          label: verdictLabels[value]
+        }))}
+      />
+      <PropertyCombobox
+        {...common}
+        field="qualityDocumentId"
+        label={t`Procedure`}
+        value={element.qualityDocumentId}
+        options={qualityDocuments.map((doc) => ({
+          value: doc.id,
+          label: doc.name,
+          helper: t`Version ${doc.version}`
+        }))}
+        renderValue={(value) => (
           <Link
-            to={path.to.qualityDocument(element.qualityDocumentId)}
-            className="text-xs text-muted-foreground hover:underline"
+            to={path.to.qualityDocument(value)}
+            className="truncate hover:underline"
           >
-            <Trans>Open</Trans>
+            {qualityDocuments.find((doc) => doc.id === value)?.name ?? value}
           </Link>
         )}
-      </Row>
+      />
       {element.verdictAt && element.verdictBy && (
-        <Row label={t`Last run`}>
-          <span className="inline-flex items-center gap-2 text-sm">
+        <PropertyField label={t`Last run`}>
+          <span className="inline-flex items-center gap-2">
             <EmployeeAvatar employeeId={element.verdictBy} size="xxs" />
             <DateTime value={element.verdictAt} />
           </span>
-        </Row>
+        </PropertyField>
       )}
-    </Block>
+    </>
   );
 }
 
@@ -489,52 +338,54 @@ function ParameterBlock({
   const contingency = Number(element.parameterContingencyPercent ?? 0);
 
   return (
-    <Block>
-      <Row label={t`Source`}>
-        <div className="w-full max-w-64">
-          <Combobox
-            asButton
-            size="sm"
-            value={shownSource}
-            options={parameterSources.map((value) => ({
-              value,
-              label: sourceLabels[value]
-            }))}
-            isReadOnly={isDisabled}
-            onChange={(next) => {
-              if (!next || next === shownSource) return;
-              if (next === "Formula" && !element.parameterFormula) {
-                setFormulaDraft(true);
-                return;
-              }
-              setFormulaDraft(false);
-              submitSource(next);
-            }}
-          />
-        </div>
-      </Row>
-      {shownSource === "Manual" && (
-        <Row label={t`Value`}>
-          <NumberValueField
-            {...common}
-            field="parameterValue"
-            value={element.parameterValue}
-            label={t`Value`}
-            kind="quantity"
-          />
-        </Row>
-      )}
-      <Row label={t`Unit`}>
-        <TextValueField
-          {...common}
-          field="parameterUnit"
-          value={element.parameterUnit}
-          label={t`Unit`}
-          placeholder={t`Unit`}
+    <>
+      <ValidatedForm
+        key={`parameterSource:${shownSource}`}
+        defaultValues={{ parameterSource: shownSource }}
+        validator={z.object({ parameterSource: z.string().min(1) })}
+        className="w-full"
+      >
+        <Select
+          name="parameterSource"
+          label={t`Source`}
+          isReadOnly={isDisabled}
+          options={parameterSources.map((value) => ({
+            value,
+            label: sourceLabels[value]
+          }))}
+          inline={(value) => (
+            <span>{sourceLabels[value as ParameterSource] ?? value}</span>
+          )}
+          onChange={(option) => {
+            const next = option?.value;
+            if (!next || next === shownSource) return;
+            if (next === "Formula" && !element.parameterFormula) {
+              setFormulaDraft(true);
+              return;
+            }
+            setFormulaDraft(false);
+            submitSource(next);
+          }}
         />
-      </Row>
+      </ValidatedForm>
+      {shownSource === "Manual" && (
+        <PropertyNumber
+          {...common}
+          field="parameterValue"
+          label={t`Value`}
+          value={numberOrNull(element.parameterValue)}
+          formatOptions={INPUT_FORMAT.quantity}
+          step={INPUT_STEP.quantity}
+        />
+      )}
+      <PropertyText
+        {...common}
+        field="parameterUnit"
+        label={t`Unit`}
+        value={element.parameterUnit}
+      />
       {shownSource === "Formula" && (
-        <Row label={t`Formula`}>
+        <PropertyField label={t`Formula`}>
           <FormulaField
             projectId={projectId}
             elementId={element.id}
@@ -543,97 +394,107 @@ function ParameterBlock({
             isDisabled={isDisabled}
             onSaved={() => setFormulaDraft(false)}
           />
-        </Row>
+        </PropertyField>
       )}
       {shownSource === "Item" && (
-        <Row label={t`Part field`}>
-          <SelectField
-            {...common}
-            field="parameterItemField"
-            value={element.parameterItemField ?? PARAMETER_ITEM_UNIT_COST}
-            placeholder={t`Choose a field`}
-            isClearable={false}
-            options={[
-              { value: PARAMETER_ITEM_UNIT_COST, label: t`Unit cost` },
-              ...itemFields.map((field) => ({
-                value: field.id,
-                label: field.name
-              }))
-            ]}
-          />
-        </Row>
+        <PropertySelect
+          {...common}
+          field="parameterItemField"
+          label={t`Part field`}
+          value={element.parameterItemField ?? PARAMETER_ITEM_UNIT_COST}
+          isOptional={false}
+          options={[
+            { value: PARAMETER_ITEM_UNIT_COST, label: t`Unit cost` },
+            ...itemFields.map((field) => ({
+              value: field.id,
+              label: field.name
+            }))
+          ]}
+        />
       )}
-      <Row label={t`Allocation`}>
-        <NumberValueField
-          {...common}
-          field="allocationPercent"
-          value={element.allocationPercent}
-          label={t`Allocation`}
-          kind="percent"
-        />
-      </Row>
-      <Row label={t`Contingency`}>
-        <NumberValueField
-          {...common}
-          field="parameterContingencyPercent"
-          value={element.parameterContingencyPercent}
-          label={t`Contingency`}
-          kind="percent"
-        />
-      </Row>
-      <Row label={t`Computed value`}>
-        {result?.computedValue !== null &&
-        result?.computedValue !== undefined ? (
-          <span className="font-medium tabular-nums">
-            {withUnit(result.computedValue)}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">
-            {result?.reason ?? t`No value`}
-          </span>
-        )}
-        {result?.mixedUnits && (
-          <span className="text-xs text-amber-600 dark:text-amber-500">
-            <Trans>Some inputs have another unit and are left out</Trans>
-          </span>
-        )}
-      </Row>
+      <PropertyNumber
+        {...common}
+        field="allocationPercent"
+        label={t`Allocation`}
+        value={numberOrNull(element.allocationPercent)}
+        formatOptions={INPUT_FORMAT.percent}
+        step={INPUT_STEP.percent}
+        minValue={0}
+        maxValue={1}
+      />
+      <PropertyNumber
+        {...common}
+        field="parameterContingencyPercent"
+        label={t`Contingency`}
+        value={numberOrNull(element.parameterContingencyPercent)}
+        formatOptions={INPUT_FORMAT.percent}
+        step={INPUT_STEP.percent}
+        minValue={0}
+        maxValue={1}
+      />
+      <PropertyField label={t`Computed value`}>
+        <span className="flex flex-wrap items-center gap-2">
+          {result?.computedValue !== null &&
+          result?.computedValue !== undefined ? (
+            <span className="font-medium tabular-nums">
+              {withUnit(result.computedValue)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              {result?.reason ?? t`No value`}
+            </span>
+          )}
+          {result?.mixedUnits && (
+            <span className="text-xs text-amber-600 dark:text-amber-500">
+              <Trans>Some inputs have another unit and are left out</Trans>
+            </span>
+          )}
+        </span>
+      </PropertyField>
       {contingency > 0 &&
         result?.checkedHigh !== null &&
         result?.checkedLow !== null &&
         result && (
-          <Row label={t`Checked value`}>
-            <span className="tabular-nums">
-              {withUnit(result.checkedLow!)} – {withUnit(result.checkedHigh!)}
+          <PropertyField label={t`Checked value`}>
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="tabular-nums">
+                {withUnit(result.checkedLow!)} – {withUnit(result.checkedHigh!)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t`with ${percentFormatter.format(contingency)} contingency`}
+              </span>
             </span>
-            <span className="text-xs text-muted-foreground">
-              {t`with ${percentFormatter.format(contingency)} contingency`}
-            </span>
-          </Row>
+          </PropertyField>
         )}
       {result?.budgetValue !== null &&
         result?.budgetValue !== undefined &&
         result.parentValue !== null &&
         element.allocationPercent !== null && (
-          <Row label={t`Budget`}>
-            <span className="tabular-nums">
-              {formatAllocation(
-                result.budgetValue,
-                Number(element.allocationPercent),
-                result.parentValue,
-                unit,
-                locale
+          <PropertyField label={t`Budget`}>
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="tabular-nums">
+                {formatAllocation(
+                  result.budgetValue,
+                  Number(element.allocationPercent),
+                  result.parentValue,
+                  unit,
+                  locale
+                )}
+              </span>
+              {result.budgetPass !== null && (
+                <Status color={result.budgetPass ? "green" : "red"}>
+                  {result.budgetPass ? t`Pass` : t`Fail`}
+                </Status>
               )}
             </span>
-            {result.budgetPass !== null && (
-              <Status color={result.budgetPass ? "green" : "red"}>
-                {result.budgetPass ? t`Pass` : t`Fail`}
-              </Status>
-            )}
-          </Row>
+          </PropertyField>
         )}
-    </Block>
+    </>
   );
+}
+
+function numberOrNull(value: number | string | null | undefined) {
+  return value === null || value === undefined ? null : Number(value);
 }
 
 /**

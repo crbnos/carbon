@@ -741,8 +741,8 @@ msgstr "{variances, plural, one {# 行が予想数量と異なります} other {
 msgid "{years}yr"
 msgstr "{years}年"
 
-msgid "§174A R&E (domestic and foreign)"
-msgstr "§174A R&E (domestic and foreign)"
+msgid "§174A R&E"
+msgstr ""
 
 msgid "/month/user"
 msgstr "/月/ユーザー"
@@ -901,6 +901,15 @@ msgstr "3時間"
 msgid "4 digits for a CLIN; 2 letters or digits more for a SubCLIN"
 msgstr "CLINは4桁、SubCLINはさらに2文字または数字"
 
+msgid "49(c) Business Component"
+msgstr ""
+
+msgid "49(d) Component Type"
+msgstr ""
+
+msgid "49(e) Software Type"
+msgstr ""
+
 msgid "4h"
 msgstr "4時間"
 
@@ -910,11 +919,32 @@ msgstr "最低 5 ユーザー"
 msgid "5-8 weeks"
 msgstr "5～8週間"
 
+msgid "50 Direct Research Wages"
+msgstr ""
+
 msgid "50/50"
 msgstr "50/50"
 
+msgid "51 Direct Supervision Wages"
+msgstr ""
+
+msgid "52 Direct Support Wages"
+msgstr ""
+
 msgid "52-week demand"
 msgstr "52 週間の所要量"
+
+msgid "53 Total Wages"
+msgstr ""
+
+msgid "54 Supplies"
+msgstr ""
+
+msgid "55 Computer Rental"
+msgstr ""
+
+msgid "56 Applicable Contract Research"
+msgstr ""
 
 msgid "5MB file limit"
 msgstr "5MBファイル制限"
@@ -1981,6 +2011,9 @@ msgstr "実際の開始"
 msgid "Actual time"
 msgstr "実際の時間"
 
+msgid "Actual value"
+msgstr ""
+
 msgid "ACWP"
 msgstr "ACWP"
 
@@ -2463,6 +2496,10 @@ msgstr "後（計算方法）"
 msgid "Afternoon, {name}."
 msgstr "午後、{name}さん。"
 
+#. placeholder {0}: row.original.aggregateCount
+msgid "Aggregate of {0} business components"
+msgstr ""
+
 msgid "Aging"
 msgstr "経過日数"
 
@@ -2508,6 +2545,9 @@ msgstr "すべてのアクションが選択されました"
 
 msgid "All advanced features available"
 msgstr "すべての高度な機能が利用可能"
+
+msgid "All amounts are in whole dollars. Columns 53, Total QRE and the Total row add the rounded amounts."
+msgstr ""
 
 msgid "All Audit Logs"
 msgstr "すべての監査ログ"
@@ -2630,8 +2670,11 @@ msgstr "許容性"
 msgid "Allowable"
 msgstr "許容可能な"
 
-msgid "Allowable and unallowable cost of each contract line item, with its funding and billing"
-msgstr "各契約明細の許容可能および許容不可能な原価、およびその資金と請求"
+msgid "Allowable and unallowable cost of each contract line, with funding and billing"
+msgstr ""
+
+msgid "Allowable Cost"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
@@ -3087,6 +3130,9 @@ msgstr "承認済 <0/> 〜 <1/>"
 
 msgid "Approved By"
 msgstr "承認者"
+
+msgid "Approved On"
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "概算 — スケジュール日付から派生; このエントリに対する容量予約は存在しません。"
@@ -3862,8 +3908,8 @@ msgstr "属性"
 msgid "Attributes are inherited from the procedure."
 msgstr "属性は手順書から継承されます。"
 
-msgid "Audit and contracts"
-msgstr "監査と契約"
+msgid "Audit and Contracts"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "監査ログ"
@@ -4206,6 +4252,9 @@ msgstr "BCWP"
 
 msgid "BCWS"
 msgstr "BCWS"
+
+msgid "Before"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "カットオーバー前"
@@ -4588,6 +4637,9 @@ msgstr "一括製造指図"
 msgid "Burden"
 msgstr "負担"
 
+msgid "Burden (for review)"
+msgstr ""
+
 msgid "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
 msgstr "負担は請求レートとシーリングの低い方で請求します。シーリングがない場合、プールはそのビルレートで請求します。"
 
@@ -4617,6 +4669,9 @@ msgid "Business"
 msgstr ""
 
 msgid "Business component"
+msgstr ""
+
+msgid "Business Component"
 msgstr ""
 
 msgid "Business component (R&D)"
@@ -5078,9 +5133,6 @@ msgstr "チャンピオン"
 msgid "Change"
 msgstr "変更"
 
-msgid "Change component type"
-msgstr "コンポーネントタイプを変更"
-
 msgid "Change Date"
 msgstr "変更日"
 
@@ -5135,9 +5187,6 @@ msgstr "変更リクエスト"
 msgid "Change Requests"
 msgstr "変更リクエスト"
 
-msgid "Change software type"
-msgstr "ソフトウェアタイプを変更"
-
 msgid "Change state"
 msgstr "状態を変更"
 
@@ -5146,18 +5195,6 @@ msgstr "ステータスを変更"
 
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "品目タイプを変更します（例：部品、材料、工具など）"
-
-msgid "Change the labels (the open or selected element)"
-msgstr "ラベルを変更(開いている、または選択された要素)"
-
-msgid "Change the owner (the open or selected element)"
-msgstr "責任者を変更(開いている、または選択された要素)"
-
-msgid "Change the priority (the open or selected element)"
-msgstr "優先度を変更(開いている、または選択された要素)"
-
-msgid "Change the state (the open or selected element)"
-msgstr "状態を変更(開いている、または選択された要素)"
 
 msgid "Change Time"
 msgstr "時間を変更"
@@ -5310,9 +5347,6 @@ msgstr "バッチ番号を選択"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "バッチ可能な工法を選択して、一緒に実行できる工程を確認してください。"
 
-msgid "Choose a field"
-msgstr "フィールドを選択"
-
 msgid "Choose a labor category"
 msgstr ""
 
@@ -5340,9 +5374,6 @@ msgstr "税年度を選択"
 
 msgid "Choose a template"
 msgstr "テンプレートを選択"
-
-msgid "Choose a type"
-msgstr "タイプを選択"
 
 msgid "Choose an element to log time, issue a part or add an expense."
 msgstr ""
@@ -5622,6 +5653,18 @@ msgstr ""
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
 msgstr "列 {0}/{count}"
+
+msgid "Column 49(b): enter the principal business activity (PBA) code from your return. Column 49(f) is required only on an amended return."
+msgstr ""
+
+msgid "Column 54 includes every Material cost. Remove the cost of depreciable property (§41(b)(2)(C))."
+msgstr ""
+
+msgid "Column 55 is not tracked in Carbon."
+msgstr ""
+
+msgid "Column 56 applies 65 % to all contract research, including Outside Processing and Purchased Service costs. Adjust payments that take another rate, and move basic research payments to line 46."
+msgstr ""
 
 msgid "Column dimension"
 msgstr "列ディメンション"
@@ -7596,6 +7639,9 @@ msgstr "日々の質問とローンチ後のハイパーケア"
 msgid "Days"
 msgstr "日数"
 
+msgid "Days After Entry"
+msgstr ""
+
 msgid "Days Discount"
 msgstr "値引日数"
 
@@ -8746,6 +8792,12 @@ msgstr "開いたドキュメントはここに表示され、すぐにアクセ
 msgid "Dollar Utilization"
 msgstr "ドル利用額"
 
+msgid "Dollars Difference"
+msgstr ""
+
+msgid "Domestic"
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "キャンセルしない"
 
@@ -9541,6 +9593,9 @@ msgstr "編集中 <0>{0}</0>: {1}。変更はこの変更要求に保存され�
 msgid "Effective From"
 msgstr "有効開始日"
 
+msgid "EIN (49(a)): {einText}"
+msgstr ""
+
 msgid "Element"
 msgstr "要素"
 
@@ -9622,6 +9677,9 @@ msgstr "従業員"
 
 msgid "Employees"
 msgstr "従業員"
+
+msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
+msgstr ""
 
 msgid "Empty"
 msgstr "空"
@@ -9867,6 +9925,9 @@ msgstr "製造にかかった原価を入力してください。その価値は
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
 
+msgid "Entered On"
+msgstr ""
+
 msgid "Enterprise"
 msgstr "エンタープライズ"
 
@@ -9899,6 +9960,9 @@ msgstr "エンティティタイプは変更できません"
 
 msgid "Entry"
 msgstr "仕訳"
+
+msgid "Entry Date"
+msgstr ""
 
 msgid "Entry Type"
 msgstr "エントリータイプ"
@@ -10066,8 +10130,8 @@ msgstr "会社に属するすべてのレコード。認証情報、連携トー
 msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
 
-msgid "Every entry dated in the range and every change made to it"
-msgstr "範囲内の日付が付けられたすべてのエントリと、それに加えられたすべての変更"
+msgid "Every entry in the range and every change made to it"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
@@ -11208,6 +11272,9 @@ msgstr "予測消費"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "予測方法：<0>{0}</0>。この行は稼働中の製造指図から派生していないため、親のソースは利用できません。"
 
+msgid "Foreign"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れましたか？"
 
@@ -11917,8 +11984,8 @@ msgstr "時間"
 msgid "Hours and amounts on T&M contracts"
 msgstr "T&M契約の時間と金額"
 
-msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
-msgstr "従業員と費用番号別の時間と金額、タイムカードと給与に調整"
+msgid "Hours and dollars by employee and charge number, reconciled to payroll"
+msgstr ""
 
 msgid "Hours assumed from location shifts"
 msgstr "場所のシフトから想定される時間"
@@ -11930,8 +11997,15 @@ msgstr "このステーションの時間"
 msgid "Hours burn · {0} planned"
 msgstr "時間バーン · {0} 計画済"
 
+msgid "Hours Difference"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr "時間推定"
+
+#. placeholder {0}: format.hours(unknownCountryHours)
+msgid "Hours excluded for an unknown work country: {0}"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "未配置の時間"
@@ -13346,8 +13420,8 @@ msgstr "労務カテゴリまたは従業員"
 msgid "Labor Costs"
 msgstr "労務費"
 
-msgid "Labor distribution"
-msgstr "労務配分"
+msgid "Labor Distribution"
+msgstr ""
 
 msgid "Labor ended"
 msgstr "労務終了"
@@ -13376,8 +13450,8 @@ msgstr "労務時間"
 msgid "Labor transfer"
 msgstr ""
 
-msgid "Labor transfers"
-msgstr "労務転送"
+msgid "Labor Transfers"
+msgstr ""
 
 msgid "Labor unit"
 msgstr "労務単位"
@@ -13473,14 +13547,17 @@ msgstr "最終教育訓練日"
 msgid "Last used"
 msgstr "最後に使用"
 
-msgid "Late entries"
-msgstr "遅延エントリ"
+msgid "Late Entries"
+msgstr ""
 
 msgid "Late Entry"
 msgstr "遅延エントリ"
 
 msgid "Late in the evening, {name}."
 msgstr "夜遅く、{name}さん。"
+
+msgid "Late Reason"
+msgstr ""
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "早い週が使い尽くされた後、後の週が消費されます。"
@@ -14667,8 +14744,8 @@ msgstr "送料が不足しています"
 msgid "Missing Suppliers"
 msgstr "仕入先が不足しています"
 
-msgid "Missing time"
-msgstr "不足時間"
+msgid "Missing Time"
+msgstr ""
 
 msgid "Missing:"
 msgstr "不足:"
@@ -15663,9 +15740,6 @@ msgstr "校正記録が見つかりません"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "表示する容量予約はありません。ジョブをスケジュールして作業センターの負荷を表示してください。"
 
-msgid "No category"
-msgstr "カテゴリなし"
-
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "上限なし。請求レートで負担請求されます。"
 
@@ -15843,6 +15917,9 @@ msgstr "対象の工程がありません"
 msgid "No email address for this customer"
 msgstr "この得意先にはメールアドレスがありません。"
 
+msgid "No employee"
+msgstr ""
+
 msgid "No employees assigned this week"
 msgstr "今週割り当てられた従業員がいません"
 
@@ -16014,9 +16091,6 @@ msgstr "メンバーがまだいません。プロジェクト在庫を持つプ
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "メンバーがまだいません。誰もプロジェクトに時間を請求できません。"
 
-msgid "No method"
-msgstr "製法なし"
-
 msgid "No milestone"
 msgstr "マイルストーンなし"
 
@@ -16111,14 +16185,8 @@ msgstr "残業予定なし"
 msgid "No owner"
 msgstr "責任者がいません"
 
-msgid "No parameter"
-msgstr "パラメーターがありません"
-
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "親ソースはまだ記録されていません。計画ページの「再計算」をクリックして属性を更新してください。"
-
-msgid "No part"
-msgstr "部品がありません"
 
 msgid "No part ID"
 msgstr "パーツIDなし"
@@ -16134,6 +16202,9 @@ msgstr "買掛金がありません"
 
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
+
+msgid "No payroll imported"
+msgstr ""
 
 msgid "No pegs on that day"
 msgstr ""
@@ -16182,9 +16253,6 @@ msgstr "優先度がありません"
 
 msgid "No problem described"
 msgstr "説明された問題がありません"
-
-msgid "No procedure"
-msgstr "手順書がありません"
 
 msgid "No process selected"
 msgstr "プロセスが選択されていません"
@@ -16372,9 +16440,6 @@ msgstr "仕入先がまだありません"
 msgid "No sync operations yet"
 msgstr "まだ同期工程はありません"
 
-msgid "No target"
-msgstr "ターゲットがありません"
-
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリがありません"
 
@@ -16437,9 +16502,6 @@ msgstr "{query}に一致する変数がありません"
 
 msgid "No variables available"
 msgstr "利用可能な変数がありません"
-
-msgid "No verdict"
-msgstr "評決がありません"
 
 msgid "No versions available"
 msgstr "利用可能なバージョンがありません"
@@ -16590,6 +16652,9 @@ msgstr "未送信"
 
 msgid "Not set"
 msgstr "未設定"
+
+msgid "not set in company settings"
+msgstr ""
 
 msgid "Not set up"
 msgstr "未設定"
@@ -16743,6 +16808,9 @@ msgstr "資金化されたコストの75％から85％"
 #. placeholder {0}: money(burden)
 msgid "of which burden: {0}"
 msgstr "そのうち負担：{0}"
+
+msgid "Of Which Funded"
+msgstr ""
 
 msgid "Off"
 msgstr "オフ"
@@ -19204,8 +19272,8 @@ msgstr "適格"
 msgid "Qualified Employees"
 msgstr "適格従業員"
 
-msgid "Qualified research expenses of each business component, in descending order, with the aggregate row"
-msgstr "各事業部門の適格研究費を降順で表示し、集計行を含めます。"
+msgid "Qualified research expenses of each business component"
+msgstr ""
 
 msgid "quality"
 msgstr "品質"
@@ -19401,8 +19469,8 @@ msgstr "見積と受注"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "見積、注文、構成注文"
 
-msgid "R&D tax"
-msgstr "R&D税"
+msgid "R&D Tax"
+msgstr ""
 
 msgid "Raise it at the weekly status call"
 msgstr "毎週のステータスミーティングで提起してください"
@@ -19770,6 +19838,12 @@ msgstr "{displayId}の従業員への支払を記録します。支払うべき�
 
 msgid "Record type"
 msgstr "レコード種別"
+
+msgid "Recorded At"
+msgstr ""
+
+msgid "Recorded By"
+msgstr ""
 
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "この校正で、測定器の読み取り値を信頼できる前に修理が必要であることを記録した。"
@@ -20306,6 +20380,9 @@ msgstr "新しい招待をリクエストする"
 msgid "Request Approval"
 msgstr "承認を依頼"
 
+msgid "Requested By"
+msgstr ""
+
 msgid "Requested Date"
 msgstr "希望納期"
 
@@ -20420,8 +20497,8 @@ msgstr "訪問をスケジュール変更"
 msgid "Research (R&D tax)"
 msgstr "研究（R&D税）"
 
-msgid "Research cost of each business component by tax year, split by the country where the work took place"
-msgstr "各事業部門の研究費を税年度ごとに、作業が行われた国で分割して表示します"
+msgid "Research cost of each business component, domestic and foreign"
+msgstr ""
 
 msgid "Research role"
 msgstr "研究ロール"
@@ -21438,8 +21515,8 @@ msgstr "計画保全"
 msgid "Scheduled Maintenances"
 msgstr "計画保全"
 
-msgid "Scheduled work days with no time entered, with each employee's manager"
-msgstr "時間が入力されていないスケジュール済み営業日と、各従業員のマネージャー"
+msgid "Scheduled work days with no time entered, with each manager"
+msgstr ""
 
 msgid "Schedules"
 msgstr "スケジュール"
@@ -21639,6 +21716,10 @@ msgstr "シークレットをクリップボードにコピーしました"
 
 msgid "Section"
 msgstr "セクション"
+
+#. placeholder {0}: format.money(officerWages)
+msgid "Section E line 38, officers' wage QREs: {0}"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "2FAでアカウントを保護"
@@ -25096,6 +25177,9 @@ msgstr "タイマーが手動で開始されます"
 msgid "The tooling and fixtures your operations rely on"
 msgstr "あなたの工程が依存する工具と治具。"
 
+msgid "The Total row sums every row, the aggregate row included. Its columns 53 to 56 go to Section F lines 42 to 45."
+msgstr ""
+
 msgid "The total to make across all jobs created in this bulk batch; combined with Quantity Per Job to decide how many jobs to create."
 msgstr "このバルクバッチで作成されるすべての製造指図を通じて作成する合計。1製造指図あたりの数量と組み合わせて、作成する製造指図の数を決定します。"
 
@@ -25737,11 +25821,11 @@ msgstr "時間&材料"
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "資産クラス別のレンタル資産の時間・金額利用率"
 
-msgid "Time entered after the entry window, with the reason the employee gave"
-msgstr "入力ウィンドウの後に入力された時間、従業員が提供した理由付き"
+msgid "Time entered after the entry window, with the reason given"
+msgstr ""
 
-msgid "Time moved between charge numbers, with the reason, the requester and the approver"
-msgstr "請求番号間で移動された時間、理由、要求者、承認者付き"
+msgid "Time moved between charge numbers, with the reason and approver"
+msgstr ""
 
 msgid "Time not posted yet"
 msgstr "まだ転記済ではない時間"
@@ -25760,6 +25844,9 @@ msgstr "タイムカード"
 
 msgid "Timecard check"
 msgstr "タイムカード確認"
+
+msgid "Timecard Hours"
+msgstr ""
 
 msgid "Timecards"
 msgstr "タイムカード"
@@ -25788,8 +25875,8 @@ msgstr "タイムシート"
 msgid "Timesheet Approval"
 msgstr "タイムシート承認"
 
-msgid "Timesheet export for auditors"
-msgstr "監査人向けタイムシートエクスポート"
+msgid "Timesheet Audit"
+msgstr ""
 
 msgid "Timezone"
 msgstr "タイムゾーン"
@@ -25799,9 +25886,6 @@ msgstr "タイトル"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "契約期間が終了すると、所有権が得意先に移転します。"
-
-msgid "to"
-msgstr "に"
 
 msgid "To"
 msgstr "へ"
@@ -26002,6 +26086,9 @@ msgstr "合計価格"
 
 msgid "Total Profit"
 msgstr "総利益"
+
+msgid "Total QRE"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "合計数量"
@@ -26307,6 +26394,9 @@ msgstr "ロック解除できません"
 msgid "Unallowable"
 msgstr "不認可"
 
+msgid "Unallowable Cost"
+msgstr ""
+
 msgid "Unallowable reason"
 msgstr "不認可の理由"
 
@@ -26351,6 +26441,9 @@ msgstr "請求済になる前に得られた賃料の売掛金"
 
 msgid "Unbilled:"
 msgstr "未請求:"
+
+msgid "Unclassified"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未計数行は投稿時に変更されないままです — ゼロにはなりません。"
@@ -26459,6 +26552,9 @@ msgstr "工程で回復不可能として報告された単位数（理由付き
 
 msgid "Unknown"
 msgstr "不明"
+
+msgid "Unknown Country"
+msgstr ""
 
 msgid "Unknown element"
 msgstr "不明な要素"

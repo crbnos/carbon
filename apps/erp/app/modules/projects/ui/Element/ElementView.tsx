@@ -46,12 +46,7 @@ import {
   useActiveChangeRequestId,
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
-import type { PillShortcutField } from "../Elements/ElementProperties";
-import {
-  PillShortcutProvider,
-  useElementField,
-  usePillShortcutRequest
-} from "../Elements/ElementProperties";
+import { useElementField } from "../Elements/ElementProperties";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
 import { ElementChildren } from "./ElementChildren";
 import { ElementComments } from "./ElementComments";
@@ -127,18 +122,9 @@ export function ElementView({
     permissions.can("update", "projects");
   const canAddChild = canCreate && element.type !== "Parameter";
 
-  // s / a / p / l open the properties' pills; t and i open Log time and
-  // Issue material. Never while typing or with a dialog open.
-  const [pillRequest, setPillRequest] = usePillShortcutRequest();
-  const openPill = (field: PillShortcutField) => (event: KeyboardEvent) => {
-    event.preventDefault();
-    setPillRequest({ elementId: element.id, field });
-  };
+  // t and i open Log time and Issue material. Never while typing or with a
+  // dialog open.
   useShortcutKeyMap([
-    { shortcut: PROJECT_SHORTCUTS.state, action: openPill("state") },
-    { shortcut: PROJECT_SHORTCUTS.owner, action: openPill("owner") },
-    { shortcut: PROJECT_SHORTCUTS.priority, action: openPill("priority") },
-    { shortcut: PROJECT_SHORTCUTS.labels, action: openPill("labels") },
     {
       shortcut: PROJECT_SHORTCUTS.logTime,
       action: (event) => {
@@ -398,37 +384,35 @@ export function ElementView({
               </Section>
             </div>
           </main>
-          <PillShortcutProvider value={pillRequest}>
-            <ElementSidebar
-              projectId={projectId}
-              element={element}
-              elements={elements}
-              capitalAsset={capitalAsset}
-              costTreatment={project?.costTreatment ?? null}
-              costObjective={project?.costObjective ?? null}
-              costSummary={costSummary}
-              states={states}
-              labels={labels}
-              milestones={milestones}
-              isDisabled={!canUpdate}
-              typeBlock={
-                hasTypeBlock(element.type) ? (
-                  <ElementTypeBlock
-                    key={element.id}
-                    projectId={projectId}
-                    element={element}
-                    elements={elements}
-                    verification={verification}
-                    requirementStatus={requirementStatus}
-                    qualityDocuments={qualityDocuments}
-                    itemFields={itemFields}
-                    isDisabled={!canUpdate}
-                  />
-                ) : undefined
-              }
-              className="shrink-0 border-t border-border px-5 py-6 @min-[56rem]:w-[300px] @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l"
-            />
-          </PillShortcutProvider>
+          <ElementSidebar
+            projectId={projectId}
+            element={element}
+            elements={elements}
+            capitalAsset={capitalAsset}
+            costTreatment={project?.costTreatment ?? null}
+            costObjective={project?.costObjective ?? null}
+            costSummary={costSummary}
+            states={states}
+            labels={labels}
+            milestones={milestones}
+            isDisabled={!canUpdate}
+            typeBlock={
+              hasTypeBlock(element.type) ? (
+                <ElementTypeBlock
+                  key={element.id}
+                  projectId={projectId}
+                  element={element}
+                  elements={elements}
+                  verification={verification}
+                  requirementStatus={requirementStatus}
+                  qualityDocuments={qualityDocuments}
+                  itemFields={itemFields}
+                  isDisabled={!canUpdate}
+                />
+              ) : undefined
+            }
+            className="shrink-0 border-t border-border px-5 py-6 @min-[56rem]:w-[300px] @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l"
+          />
         </div>
       </div>
 

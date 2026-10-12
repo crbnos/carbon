@@ -741,8 +741,8 @@ msgstr "{variances, plural, one {# Position unterscheidet sich von der erwartete
 msgid "{years}yr"
 msgstr "{years}J."
 
-msgid "§174A R&E (domestic and foreign)"
-msgstr "§174A F&E (inländisch und ausländisch)"
+msgid "§174A R&E"
+msgstr ""
 
 msgid "/month/user"
 msgstr "/Monat/Benutzer"
@@ -901,6 +901,15 @@ msgstr "3h"
 msgid "4 digits for a CLIN; 2 letters or digits more for a SubCLIN"
 msgstr "4 Ziffern für eine CLIN; 2 Buchstaben oder Ziffern mehr für eine SubCLIN"
 
+msgid "49(c) Business Component"
+msgstr ""
+
+msgid "49(d) Component Type"
+msgstr ""
+
+msgid "49(e) Software Type"
+msgstr ""
+
 msgid "4h"
 msgstr "4h"
 
@@ -910,11 +919,32 @@ msgstr "Minimum 5 Benutzer"
 msgid "5-8 weeks"
 msgstr "5-8 Wochen"
 
+msgid "50 Direct Research Wages"
+msgstr ""
+
 msgid "50/50"
 msgstr "50/50"
 
+msgid "51 Direct Supervision Wages"
+msgstr ""
+
+msgid "52 Direct Support Wages"
+msgstr ""
+
 msgid "52-week demand"
 msgstr "52-Wochen-Bedarf"
+
+msgid "53 Total Wages"
+msgstr ""
+
+msgid "54 Supplies"
+msgstr ""
+
+msgid "55 Computer Rental"
+msgstr ""
+
+msgid "56 Applicable Contract Research"
+msgstr ""
 
 msgid "5MB file limit"
 msgstr "5MB Dateigrößenlimit"
@@ -1981,6 +2011,9 @@ msgstr "Tatsächlicher Start"
 msgid "Actual time"
 msgstr "Tatsächliche Zeit"
 
+msgid "Actual value"
+msgstr ""
+
 msgid "ACWP"
 msgstr "ACWP"
 
@@ -2463,6 +2496,10 @@ msgstr "Nach (Berechnungsmethode)"
 msgid "Afternoon, {name}."
 msgstr "Nachmittag, {name}."
 
+#. placeholder {0}: row.original.aggregateCount
+msgid "Aggregate of {0} business components"
+msgstr ""
+
 msgid "Aging"
 msgstr "Altersanalyse"
 
@@ -2508,6 +2545,9 @@ msgstr "Alle Aktionen ausgewählt"
 
 msgid "All advanced features available"
 msgstr "Alle erweiterten Funktionen verfügbar"
+
+msgid "All amounts are in whole dollars. Columns 53, Total QRE and the Total row add the rounded amounts."
+msgstr ""
 
 msgid "All Audit Logs"
 msgstr "Alle Änderungsprotokolle"
@@ -2630,8 +2670,11 @@ msgstr "Zulässigkeit"
 msgid "Allowable"
 msgstr "Zulässig"
 
-msgid "Allowable and unallowable cost of each contract line item, with its funding and billing"
-msgstr "Zulässige und unzulässige Kosten jeder Vertragsposition mit deren Finanzierung und Abrechnung"
+msgid "Allowable and unallowable cost of each contract line, with funding and billing"
+msgstr ""
+
+msgid "Allowable Cost"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "Ermöglicht Bestätigung & Fortfahren"
@@ -3087,6 +3130,9 @@ msgstr "Genehmigt durch <0/> von <1/>"
 
 msgid "Approved By"
 msgstr "Genehmigt von"
+
+msgid "Approved On"
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Ungefähr — abgeleitet aus geplanten Terminen; es existiert keine Kapazitätsreservierung für diese Zeile."
@@ -3862,8 +3908,8 @@ msgstr "Attribute"
 msgid "Attributes are inherited from the procedure."
 msgstr "Attribute werden von der Verfahrensanweisung geerbt."
 
-msgid "Audit and contracts"
-msgstr "Audit und Verträge"
+msgid "Audit and Contracts"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "Änderungsprotokoll"
@@ -4206,6 +4252,9 @@ msgstr "BCWP"
 
 msgid "BCWS"
 msgstr "BCWS"
+
+msgid "Before"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "Vor der Migration"
@@ -4588,6 +4637,9 @@ msgstr "Massen-Fertigungsaufträge"
 msgid "Burden"
 msgstr "Belastung"
 
+msgid "Burden (for review)"
+msgstr ""
+
 msgid "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
 msgstr "Die Belastung wird zum niedrigeren Wert aus Abrechnungssatz und Obergrenze abgerechnet. Ohne Obergrenze wird ein Pool zu seinem Abrechnungssatz abgerechnet."
 
@@ -4617,6 +4669,9 @@ msgid "Business"
 msgstr ""
 
 msgid "Business component"
+msgstr ""
+
+msgid "Business Component"
 msgstr ""
 
 msgid "Business component (R&D)"
@@ -5078,9 +5133,6 @@ msgstr "Fachleute"
 msgid "Change"
 msgstr "Ändern"
 
-msgid "Change component type"
-msgstr "Komponententyp ändern"
-
 msgid "Change Date"
 msgstr "Änderungsdatum"
 
@@ -5135,9 +5187,6 @@ msgstr "Änderungsanforderungen"
 msgid "Change Requests"
 msgstr "Änderungsanforderungen"
 
-msgid "Change software type"
-msgstr "Softwaretyp ändern"
-
 msgid "Change state"
 msgstr "Status ändern"
 
@@ -5146,18 +5195,6 @@ msgstr "Status ändern"
 
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Ändern Sie die Artikelart (z. B. Teil, Werkstoff, Werkzeug usw.)"
-
-msgid "Change the labels (the open or selected element)"
-msgstr "Ändern Sie die Etiketten (das offene oder ausgewählte Element)."
-
-msgid "Change the owner (the open or selected element)"
-msgstr "Ändern Sie den Verantwortlichen (das offene oder ausgewählte Element)."
-
-msgid "Change the priority (the open or selected element)"
-msgstr "Ändern Sie die Priorität (das offene oder ausgewählte Element)."
-
-msgid "Change the state (the open or selected element)"
-msgstr "Ändern Sie den Status (das offene oder ausgewählte Element)."
 
 msgid "Change Time"
 msgstr "Zeit ändern"
@@ -5310,9 +5347,6 @@ msgstr "Wählen Sie eine Chargennummer"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Wählen Sie ein losfähiges Verfahren, um die Arbeitsgänge anzuzeigen, die zusammen laufen können."
 
-msgid "Choose a field"
-msgstr "Wählen Sie ein Feld"
-
 msgid "Choose a labor category"
 msgstr ""
 
@@ -5340,9 +5374,6 @@ msgstr "Wählen Sie ein Steuerjahr"
 
 msgid "Choose a template"
 msgstr "Wählen Sie eine Vorlage"
-
-msgid "Choose a type"
-msgstr "Wählen Sie einen Typ"
 
 msgid "Choose an element to log time, issue a part or add an expense."
 msgstr ""
@@ -5622,6 +5653,18 @@ msgstr ""
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
 msgstr "Spalte {0} von {count}"
+
+msgid "Column 49(b): enter the principal business activity (PBA) code from your return. Column 49(f) is required only on an amended return."
+msgstr ""
+
+msgid "Column 54 includes every Material cost. Remove the cost of depreciable property (§41(b)(2)(C))."
+msgstr ""
+
+msgid "Column 55 is not tracked in Carbon."
+msgstr ""
+
+msgid "Column 56 applies 65 % to all contract research, including Outside Processing and Purchased Service costs. Adjust payments that take another rate, and move basic research payments to line 46."
+msgstr ""
 
 msgid "Column dimension"
 msgstr "Spaltendimension"
@@ -7596,6 +7639,9 @@ msgstr "Tägliche Fragen und Hypercare nach dem Start"
 msgid "Days"
 msgstr "Tage"
 
+msgid "Days After Entry"
+msgstr ""
+
 msgid "Days Discount"
 msgstr "Tage Rabatt"
 
@@ -8746,6 +8792,12 @@ msgstr "Dokumente, die Sie öffnen, werden hier zur schnellen Zugreifbarkeit ang
 msgid "Dollar Utilization"
 msgstr "Dollarauslastung"
 
+msgid "Dollars Difference"
+msgstr ""
+
+msgid "Domestic"
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "Nicht abbrechen"
 
@@ -9541,6 +9593,9 @@ msgstr "Bearbeitung von <0>{0}</0>: {1}. Änderungen werden an diese Änderungsa
 msgid "Effective From"
 msgstr "Gültig ab"
 
+msgid "EIN (49(a)): {einText}"
+msgstr ""
+
 msgid "Element"
 msgstr "Element"
 
@@ -9622,6 +9677,9 @@ msgstr "Mitarbeiter"
 
 msgid "Employees"
 msgstr "Mitarbeiter"
+
+msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
+msgstr ""
 
 msgid "Empty"
 msgstr "Leer"
@@ -9867,6 +9925,9 @@ msgstr "Geben Sie ein, was die Herstellung gekostet hat. Der Wert wird der Anlag
 msgid "Entered At Receipt"
 msgstr "Bei Wareneingang erfasst"
 
+msgid "Entered On"
+msgstr ""
+
 msgid "Enterprise"
 msgstr "Enterprise"
 
@@ -9899,6 +9960,9 @@ msgstr "Entitätstyp kann nicht geändert werden"
 
 msgid "Entry"
 msgstr "Eintrag"
+
+msgid "Entry Date"
+msgstr ""
 
 msgid "Entry Type"
 msgstr "Eintragstyp"
@@ -10066,8 +10130,8 @@ msgstr "Alle unternehmensbezogenen Datensätze. Zugangsdaten, Integrations-Token
 msgid "Every condition must match"
 msgstr "Jede Bedingung muss erfüllt sein"
 
-msgid "Every entry dated in the range and every change made to it"
-msgstr "Jeder Eintrag mit Datum im Bereich und jede an ihm vorgenommene Änderung"
+msgid "Every entry in the range and every change made to it"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten bestanden."
@@ -11208,6 +11272,9 @@ msgstr "Prognose-Verbrauch"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Prognosemethode: <0>{0}</0>. Diese Zeile wurde nicht von laufenden Fertigungsaufträgen abgeleitet, daher sind keine übergeordneten Quellen verfügbar."
 
+msgid "Foreign"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Ausstempeln vergessen?"
 
@@ -11917,8 +11984,8 @@ msgstr "Stunden"
 msgid "Hours and amounts on T&M contracts"
 msgstr "Stunden und Beträge für T&M-Verträge"
 
-msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
-msgstr "Stunden und Dollar nach Mitarbeiter und Kostenträgernummer, abgestimmt mit Zeiterfassungen und Lohnabrechnung"
+msgid "Hours and dollars by employee and charge number, reconciled to payroll"
+msgstr ""
 
 msgid "Hours assumed from location shifts"
 msgstr "Stunden aus Standortschichten angenommen"
@@ -11930,8 +11997,15 @@ msgstr "Stunden bei dieser Station"
 msgid "Hours burn · {0} planned"
 msgstr "Stundenverbrauch · {0} geplant"
 
+msgid "Hours Difference"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr "Stundenvoranschlag"
+
+#. placeholder {0}: format.hours(unknownCountryHours)
+msgid "Hours excluded for an unknown work country: {0}"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Noch nicht zugewiesene Stunden"
@@ -13346,8 +13420,8 @@ msgstr "Personalkategorie oder Mitarbeiter"
 msgid "Labor Costs"
 msgstr "Personalkosten"
 
-msgid "Labor distribution"
-msgstr "Personalverteilung"
+msgid "Labor Distribution"
+msgstr ""
 
 msgid "Labor ended"
 msgstr "Personal beendet"
@@ -13376,8 +13450,8 @@ msgstr "Personalzeit"
 msgid "Labor transfer"
 msgstr ""
 
-msgid "Labor transfers"
-msgstr "Personalübertragungen"
+msgid "Labor Transfers"
+msgstr ""
 
 msgid "Labor unit"
 msgstr "Personaleinheit"
@@ -13473,14 +13547,17 @@ msgstr "Datum der letzten Schulung"
 msgid "Last used"
 msgstr "Zuletzt verwendet"
 
-msgid "Late entries"
-msgstr "Späte Einträge"
+msgid "Late Entries"
+msgstr ""
 
 msgid "Late Entry"
 msgstr "Später Eintrag"
 
 msgid "Late in the evening, {name}."
 msgstr "Spät am Abend, {name}."
+
+msgid "Late Reason"
+msgstr ""
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Spätere Wochen werden verbraucht, sobald frühere aufgebraucht sind."
@@ -14667,8 +14744,8 @@ msgstr "Fehlende Versandkosten"
 msgid "Missing Suppliers"
 msgstr "Fehlende Lieferanten"
 
-msgid "Missing time"
-msgstr "Fehlende Zeit"
+msgid "Missing Time"
+msgstr ""
 
 msgid "Missing:"
 msgstr "Fehlend:"
@@ -15663,9 +15740,6 @@ msgstr "Keine Kalibrierprotokolle gefunden"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Keine Kapazitätsreservierungen zum Visualisieren. Planen Sie einen Auftrag, um die Arbeitsplatzauslastung zu sehen."
 
-msgid "No category"
-msgstr "Keine Kategorie"
-
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Keine Obergrenzen. Gemeinkostenzuschläge werden mit den Abrechnungssätzen abgerechnet."
 
@@ -15843,6 +15917,9 @@ msgstr "Keine berechtigten Arbeitsgänge"
 msgid "No email address for this customer"
 msgstr "Keine E-Mail-Adresse für diesen Kunden"
 
+msgid "No employee"
+msgstr ""
+
 msgid "No employees assigned this week"
 msgstr "Keine Mitarbeiter in dieser Woche zugewiesen"
 
@@ -16014,9 +16091,6 @@ msgstr "Noch keine Mitglieder. Ein Projekt mit Projektbestand tritt der Gruppe a
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "Noch keine Mitglieder. Niemand kann dem Projekt Zeit in Rechnung stellen."
 
-msgid "No method"
-msgstr "Keine Methode"
-
 msgid "No milestone"
 msgstr "Kein Meilenstein"
 
@@ -16111,14 +16185,8 @@ msgstr "Keine Überstunden geplant"
 msgid "No owner"
 msgstr "Kein Verantwortlicher"
 
-msgid "No parameter"
-msgstr "Kein Parameter"
-
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Noch keine übergeordneten Quellen aufgezeichnet. Klicken Sie auf der Planungsseite auf Neu berechnen, um die Zuordnung zu aktualisieren."
-
-msgid "No part"
-msgstr "Kein Teil"
 
 msgid "No part ID"
 msgstr "Keine Teile-ID"
@@ -16134,6 +16202,9 @@ msgstr "Keine Verbindlichkeiten"
 
 msgid "No payments yet."
 msgstr "Noch keine Zahlungen."
+
+msgid "No payroll imported"
+msgstr ""
 
 msgid "No pegs on that day"
 msgstr ""
@@ -16182,9 +16253,6 @@ msgstr "Keine Priorität"
 
 msgid "No problem described"
 msgstr "Kein Problem beschrieben"
-
-msgid "No procedure"
-msgstr "Keine Verfahrensanweisung"
 
 msgid "No process selected"
 msgstr "Kein Prozess ausgewählt"
@@ -16372,9 +16440,6 @@ msgstr "Noch keine Lieferanten"
 msgid "No sync operations yet"
 msgstr "Noch keine Synchronisierungsvorgänge"
 
-msgid "No target"
-msgstr "Kein Ziel"
-
 msgid "No time entries for this week"
 msgstr "Keine Zeiteinträge für diese Woche"
 
@@ -16437,9 +16502,6 @@ msgstr "Keine Variable stimmt mit {query} überein"
 
 msgid "No variables available"
 msgstr "Keine Variablen verfügbar"
-
-msgid "No verdict"
-msgstr "Kein Ergebnis"
 
 msgid "No versions available"
 msgstr "Keine Versionen verfügbar"
@@ -16590,6 +16652,9 @@ msgstr "Nicht versendet"
 
 msgid "Not set"
 msgstr "Nicht festgelegt"
+
+msgid "not set in company settings"
+msgstr ""
 
 msgid "Not set up"
 msgstr "Nicht eingerichtet"
@@ -16743,6 +16808,9 @@ msgstr "Von den finanzierten Kosten zwischen 75% und 85%"
 #. placeholder {0}: money(burden)
 msgid "of which burden: {0}"
 msgstr "davon Gemeinkosten: {0}"
+
+msgid "Of Which Funded"
+msgstr ""
 
 msgid "Off"
 msgstr "Aus"
@@ -19204,8 +19272,8 @@ msgstr "Qualifiziert"
 msgid "Qualified Employees"
 msgstr "Qualifizierte Mitarbeiter"
 
-msgid "Qualified research expenses of each business component, in descending order, with the aggregate row"
-msgstr "Qualifizierte Forschungsausgaben jeder Geschäftskomponente in absteigender Reihenfolge mit der Gesamtposition"
+msgid "Qualified research expenses of each business component"
+msgstr ""
 
 msgid "quality"
 msgstr "qualität"
@@ -19401,8 +19469,8 @@ msgstr "Angebote und Kundenaufträge"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Angebote, Bestellungen, Konfigurieren nach Bestellung"
 
-msgid "R&D tax"
-msgstr "F&E Steuer"
+msgid "R&D Tax"
+msgstr ""
 
 msgid "Raise it at the weekly status call"
 msgstr "Bringen Sie es beim wöchentlichen Statusgespräch zur Sprache"
@@ -19770,6 +19838,12 @@ msgstr "Erfassen Sie die Auszahlung von {displayId} an den Mitarbeiter. Zahlen S
 
 msgid "Record type"
 msgstr "Datensatztyp"
+
+msgid "Recorded At"
+msgstr ""
+
+msgid "Recorded By"
+msgstr ""
 
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Erfasst bei einer Kalibrierung, dass das Prüfmittel repariert werden muss, bevor seinen Messwerten vertraut werden kann."
@@ -20306,6 +20380,9 @@ msgstr "Neue Einladung anfordern"
 msgid "Request Approval"
 msgstr "Genehmigung anfordern"
 
+msgid "Requested By"
+msgstr ""
+
 msgid "Requested Date"
 msgstr "Wunschtermin"
 
@@ -20420,8 +20497,8 @@ msgstr "Besuch neu terminieren"
 msgid "Research (R&D tax)"
 msgstr "Forschung (F&E Steuer)"
 
-msgid "Research cost of each business component by tax year, split by the country where the work took place"
-msgstr "Forschungskosten jeder Geschäftskomponente nach Steuerjahr, aufgeteilt nach dem Land, in dem die Arbeit stattgefunden hat"
+msgid "Research cost of each business component, domestic and foreign"
+msgstr ""
 
 msgid "Research role"
 msgstr "Forschungsrolle"
@@ -21438,8 +21515,8 @@ msgstr "Geplante Instandhaltung"
 msgid "Scheduled Maintenances"
 msgstr "Geplante Instandhaltungen"
 
-msgid "Scheduled work days with no time entered, with each employee's manager"
-msgstr "Geplante Arbeitstage ohne Zeiteintrag mit dem jeweiligen Mitarbeitervorgesetzten"
+msgid "Scheduled work days with no time entered, with each manager"
+msgstr ""
 
 msgid "Schedules"
 msgstr "Zeitpläne"
@@ -21639,6 +21716,10 @@ msgstr "Geheimnis in die Zwischenablage kopiert"
 
 msgid "Section"
 msgstr "Abschnitt"
+
+#. placeholder {0}: format.money(officerWages)
+msgid "Section E line 38, officers' wage QREs: {0}"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Schützen Sie Ihr Konto mit 2FA"
@@ -25096,6 +25177,9 @@ msgstr "Der Timer wird manuell gestartet"
 msgid "The tooling and fixtures your operations rely on"
 msgstr "Das Werkzeug und die Vorrichtungen, auf die Ihre Arbeitsgänge angewiesen sind"
 
+msgid "The Total row sums every row, the aggregate row included. Its columns 53 to 56 go to Section F lines 42 to 45."
+msgstr ""
+
 msgid "The total to make across all jobs created in this bulk batch; combined with Quantity Per Job to decide how many jobs to create."
 msgstr "Der Gesamtbetrag zum Herstellen über alle in dieser Massengroserie erstellten Fertigungsaufträge; kombiniert mit Menge Pro Fertigungsauftrag, um zu entscheiden, wie viele Fertigungsaufträge erstellt werden."
 
@@ -25737,11 +25821,11 @@ msgstr "Zeit & Materialien"
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Zeit- und Kostenauslastung der Leihflotte nach Anlage und Klasse"
 
-msgid "Time entered after the entry window, with the reason the employee gave"
-msgstr "Zeit, die nach dem Eingabefenster eingegeben wurde, mit dem Grund, den der Mitarbeiter angegeben hat"
+msgid "Time entered after the entry window, with the reason given"
+msgstr ""
 
-msgid "Time moved between charge numbers, with the reason, the requester and the approver"
-msgstr "Zeit zwischen Belastungsnummern verschoben, mit dem Grund, dem Anforderer und dem Genehmiger"
+msgid "Time moved between charge numbers, with the reason and approver"
+msgstr ""
 
 msgid "Time not posted yet"
 msgstr "Zeit noch nicht gebucht"
@@ -25760,6 +25844,9 @@ msgstr "Zeitkarte"
 
 msgid "Timecard check"
 msgstr "Zeitnachweis-Prüfung"
+
+msgid "Timecard Hours"
+msgstr ""
 
 msgid "Timecards"
 msgstr "Zeiterfassung"
@@ -25788,8 +25875,8 @@ msgstr "Zeiterfassungsblatt"
 msgid "Timesheet Approval"
 msgstr "Zeiterfassungsblatt-Genehmigung"
 
-msgid "Timesheet export for auditors"
-msgstr "Zeiterfassungsblatt-Export für Prüfer"
+msgid "Timesheet Audit"
+msgstr ""
 
 msgid "Timezone"
 msgstr "Zeitzone"
@@ -25799,9 +25886,6 @@ msgstr "Titel"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "Das Eigentum geht auf den Kunden über, wenn die Vertragslaufzeit endet."
-
-msgid "to"
-msgstr "zu"
 
 msgid "To"
 msgstr "An"
@@ -26002,6 +26086,9 @@ msgstr "Gesamtpreis"
 
 msgid "Total Profit"
 msgstr "Gesamtgewinn"
+
+msgid "Total QRE"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Gesamtmenge"
@@ -26307,6 +26394,9 @@ msgstr "Entsperrung nicht möglich"
 msgid "Unallowable"
 msgstr "Unzulässig"
 
+msgid "Unallowable Cost"
+msgstr ""
+
 msgid "Unallowable reason"
 msgstr "Unzulässiger Grund"
 
@@ -26351,6 +26441,9 @@ msgstr "Noch nicht fakturierte Mietforderung"
 
 msgid "Unbilled:"
 msgstr "Nicht fakturiert:"
+
+msgid "Unclassified"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Nicht gezählte Zeilen bleiben beim Buchen unverändert — sie werden nicht auf Null gesetzt."
@@ -26459,6 +26552,9 @@ msgstr "Einheiten, die bei einer Operation mit einem Grund als nicht behebbar ge
 
 msgid "Unknown"
 msgstr "Unbekannt"
+
+msgid "Unknown Country"
+msgstr ""
 
 msgid "Unknown element"
 msgstr "Unbekanntes Element"

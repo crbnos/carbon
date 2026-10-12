@@ -2,17 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Combobox } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { Link } from "react-router";
 import { ItemThumbnail } from "~/components";
+import { useSerialNumbers } from "~/modules/inventory/ui/Shipments/ShipmentLines";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { ItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import type { ProjectElementPage } from "../../projects.server";
 import { useElementField } from "../Elements/ElementProperties";
-import { SerialSelect } from "./SerialSelect";
+import { PropertyCombobox } from "./PropertyFields";
 
 type Element = ProjectElementPage["element"];
 
@@ -25,9 +25,10 @@ const LINKABLE_TYPES: ItemType[] = [
 ];
 
 /**
- * The element's linked part: an item of any type and, for a serial-tracked
- * item, one serial. A linked part shows its thumbnail and readable id with a
- * link to the item page. Picking another item drops the serial.
+ * The element's linked part, in the properties panel's inline pattern: an
+ * item of any type and, for a serial-tracked item, one serial. A linked part
+ * shows its thumbnail and readable id with a link to the item page. Picking
+ * another item drops the serial.
  */
 export function PartLink({
   projectId,
@@ -41,15 +42,8 @@ export function PartLink({
   const { t } = useLingui();
   const [items] = useItems();
   const itemField = useElementField(projectId, element.id, "itemId");
-  const serialField = useElementField(projectId, element.id, "trackedEntityId");
   const itemId =
     itemField.pending === undefined ? element.itemId : itemField.pending;
-  const trackedEntityId =
-    itemField.pending !== undefined
-      ? null
-      : serialField.pending === undefined
-        ? element.trackedEntityId
-        : serialField.pending;
 
   const options = useMemo(
     () =>
@@ -72,47 +66,89 @@ export function PartLink({
     (item?.itemTrackingType ?? loaded?.itemTrackingType) === "Serial";
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-1">
-      {itemId && readableId && (
-        <div className="flex min-w-0 items-center gap-2 px-2">
-          <ItemThumbnail
-            size="sm"
-            thumbnailPath={loaded?.thumbnailPath}
-            type={type}
-          />
-          {type && LINKABLE_TYPES.includes(type) ? (
-            <Link
-              to={getLinkToItemDetails(type, itemId)}
-              className="truncate font-mono text-sm hover:underline"
-            >
-              {readableId}
-            </Link>
-          ) : (
-            <span className="truncate font-mono text-sm">{readableId}</span>
-          )}
-        </div>
-      )}
-      <Combobox
-        asButton
-        size="sm"
-        value={itemId ?? ""}
+    <>
+      <PropertyCombobox
+        projectId={projectId}
+        elementId={element.id}
+        field="itemId"
+        label={t`Linked part`}
+        value={element.itemId}
         options={options}
-        isClearable
-        isReadOnly={isDisabled}
-        placeholder={t`No part`}
-        onChange={(next) => {
-          if ((next || null) !== itemId) itemField.submit(next || null);
-        }}
+        isDisabled={isDisabled}
+        renderValue={() => (
+          <span className="flex min-w-0 items-center gap-2">
+            <ItemThumbnail
+              size="sm"
+              thumbnailPath={loaded?.thumbnailPath}
+              type={type}
+            />
+            {itemId && type && LINKABLE_TYPES.includes(type) ? (
+              <Link
+                to={getLinkToItemDetails(type, itemId)}
+                className="truncate hover:underline"
+              >
+                {readableId}
+              </Link>
+            ) : (
+              <span className="truncate">{readableId}</span>
+            )}
+          </span>
+        )}
       />
       {itemId && isSerial && (
-        <SerialSelect
+        <SerialField
+          projectId={projectId}
+          element={element}
           itemId={itemId}
-          value={trackedEntityId}
-          current={element.trackedEntity}
-          isReadOnly={isDisabled}
-          onChange={(next) => serialField.submit(next)}
+          isDisabled={isDisabled}
         />
       )}
-    </div>
+    </>
+  );
+}
+
+/** The linked part's serial: the item's serials as an inline combobox. */
+function SerialField({
+  projectId,
+  element,
+  itemId,
+  isDisabled
+}: {
+  projectId: string;
+  element: Element;
+  itemId: string;
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const { data } = useSerialNumbers(itemId, true);
+  const current = element.trackedEntity;
+  const options = useMemo(() => {
+    const rows: { value: string; label: string; helper?: string }[] = (
+      data?.data ?? []
+    ).map((serial) => ({
+      value: serial.id,
+      label: serial.readableId ?? serial.id,
+      helper: serial.status
+    }));
+    // The current serial stays an option when the list no longer has it.
+    if (current && !rows.some((row) => row.value === current.id)) {
+      rows.unshift({
+        value: current.id,
+        label: current.readableId ?? current.id
+      });
+    }
+    return rows;
+  }, [data, current]);
+
+  return (
+    <PropertyCombobox
+      projectId={projectId}
+      elementId={element.id}
+      field="trackedEntityId"
+      label={t`Serial`}
+      value={element.itemId === itemId ? element.trackedEntityId : null}
+      options={options}
+      isDisabled={isDisabled}
+    />
   );
 }

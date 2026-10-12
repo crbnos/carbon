@@ -2,13 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, Copy, cn, Progress, Switch } from "@carbon/react";
+import { ValidatedForm } from "@carbon/form";
+import { Button, Copy, cn, Progress, VStack } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { LuBuilding2 } from "react-icons/lu";
 import { Link } from "react-router";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { Employee, MultiSelect } from "~/components/Form";
+import {
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
+import { useSettings } from "~/hooks/useSettings";
 import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
 import { path } from "~/utils/path";
 import type {
@@ -17,6 +29,7 @@ import type {
   ProjectCostTreatment
 } from "../../projects.models";
 import {
+  projectElementPriorities,
   rdComponentTypes,
   rdSoftwareTypes,
   rollUpCostSummary
@@ -24,55 +37,32 @@ import {
 import type { ProjectElementPage } from "../../projects.server";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import {
-  ChoicePill,
-  DatePill,
-  LabelsPill,
-  MilestonePill,
-  NumberPill,
-  OwnerPill,
-  PriorityPill,
-  StatePill,
-  useElementField
+  ElementPriorityIcon,
+  sortStates,
+  useElementField,
+  usePriorityLabels
 } from "../Elements/ElementProperties";
 import { useElementTypeLabels } from "../Elements/ElementTypeIcon";
+import { StateIcon } from "../Project/StateIcon";
 import {
   useRdComponentTypeLabels,
   useRdSoftwareTypeLabels
 } from "../RdTax/useRdTaxLabels";
-import { useGovernmentContracting } from "../useGovernmentContracting";
 import ElementEarnedValue from "./ElementEarnedValue.ee";
 import { PartLink } from "./PartLink";
 import { PlaceInServiceModal } from "./PlaceInServiceModal";
+import {
+  PropertyDate,
+  PropertyField,
+  PropertyGroup,
+  PropertyNumber,
+  PropertySelect,
+  PropertySwitch
+} from "./PropertyFields";
 
 type Element = ProjectElementPage["element"];
 type ListElement = ProjectElementPage["elements"][number];
 type CapitalAsset = ProjectElementPage["capitalAsset"];
-
-/** One property row: a 96 px label column and the value's ghost editor. */
-function Property({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex min-h-8 items-center gap-2">
-      <span className="w-24 shrink-0 text-xs text-muted-foreground">
-        {label}
-      </span>
-      <div className="flex min-w-0 flex-1 items-center">{children}</div>
-    </div>
-  );
-}
-
-/** A group of property rows under a small heading. */
-function Group({ title, children }: { title?: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-0.5">
-      {title && (
-        <h3 className="mb-1 text-xs font-medium text-muted-foreground">
-          {title}
-        </h3>
-      )}
-      {children}
-    </section>
-  );
-}
 
 const NO_COST: CostTotals = {
   plan: 0,
@@ -83,9 +73,10 @@ const NO_COST: CostTotals = {
 };
 
 /**
- * The element page's right column: the element's properties, each saving on
- * its own, then the fields that apply to its type, its costs, and the
- * government contracting fields (Layer 5).
+ * The element page's right column, in the inline pattern of the app's
+ * properties panels: the element's properties, each saving on its own, then
+ * the fields that apply to its type, its costs, and the government
+ * contracting fields (only with DCAA timekeeping, Layer 5).
  */
 export function ElementSidebar({
   projectId,
@@ -119,19 +110,38 @@ export function ElementSidebar({
 }) {
   const { t } = useLingui();
   const typeLabels = useElementTypeLabels();
+  const priorityLabels = usePriorityLabels();
   const formatMoney = useCurrencyFormatter();
-  const isGovernment = useGovernmentContracting();
-  const common = {
-    projectId,
-    elementId: element.id,
-    isDisabled,
-    variant: "ghost" as const
-  };
+  const { company } = useUser();
+  const currency = company.baseCurrencyCode;
+  const decimals = useCurrencyDecimals(currency);
+  const settings = useSettings();
+  const { isGated: isGovernmentGated } = usePlanGate({
+    feature: "GOVERNMENT_CONTRACTING"
+  });
+  // The government fields need DCAA timekeeping. With DCAA on and the
+  // feature gated, only earned value's upgrade row shows.
+  const isDcaa = settings.timekeepingControls === "DCAA";
+  const common = { projectId, elementId: element.id, isDisabled };
 
   const children = elements.filter((e) => e.parentId === element.id);
   const completed = children.filter(
     (child) => child.state?.group === "Completed"
   ).length;
+
+  const stateOptions = useMemo(
+    () =>
+      sortStates(states).map((state) => ({
+        value: state.id,
+        label: (
+          <span className="flex items-center gap-2">
+            <StateIcon group={state.group} color={state.color} />
+            <span>{state.name}</span>
+          </span>
+        )
+      })),
+    [states]
+  );
 
   // The element with its children: plan, actual and what is left of the
   // budget (or of the plan when no budget is set).
@@ -165,54 +175,70 @@ export function ElementSidebar({
   const hasCosts =
     costs.plan !== 0 || costs.committed !== 0 || costs.actual !== 0;
   const money = (value: number) => (
-    <span
-      className={cn("px-2 text-sm tabular-nums", value < 0 && "text-red-500")}
-    >
+    <span className={cn("tabular-nums", value < 0 && "text-red-500")}>
       {formatMoney.format(value)}
     </span>
   );
 
   return (
-    <div className={cn("flex flex-col gap-6 text-sm", className)}>
-      <Group>
-        <Property label={t`State`}>
-          <StatePill {...common} stateId={element.stateId} states={states} />
-        </Property>
-        <Property label={t`Owner`}>
-          <OwnerPill {...common} ownerId={element.ownerId} />
-        </Property>
-        <Property label={t`Priority`}>
-          <PriorityPill {...common} priority={element.priority} />
-        </Property>
-        <Property label={t`Milestone`}>
-          <MilestonePill
-            {...common}
-            milestoneId={element.milestoneId}
-            milestones={milestones}
-          />
-        </Property>
-        <Property label={t`Start date`}>
-          <DatePill {...common} field="startDate" date={element.startDate} />
-        </Property>
-        <Property label={t`Target date`}>
-          <DatePill
-            {...common}
-            field="targetDate"
-            date={element.targetDate}
-            isComplete={!!element.completedAt}
-          />
-        </Property>
-        <Property label={t`Labels`}>
-          <LabelsPill
-            {...common}
-            labelIds={(element.labels ?? []).map((l) => l.projectLabelId)}
-            labels={labels}
-          />
-        </Property>
+    <VStack spacing={8} className={cn("text-sm", className)}>
+      <PropertyGroup>
+        <PropertySelect
+          {...common}
+          field="stateId"
+          label={t`State`}
+          value={element.stateId}
+          options={stateOptions}
+          isOptional={false}
+        />
+        <OwnerField {...common} ownerId={element.ownerId} />
+        <PropertySelect
+          {...common}
+          field="priority"
+          label={t`Priority`}
+          value={element.priority ?? "None"}
+          isOptional={false}
+          options={projectElementPriorities.map((priority) => ({
+            value: priority,
+            label: (
+              <span className="flex items-center gap-2">
+                <ElementPriorityIcon priority={priority} />
+                <span>{priorityLabels[priority]}</span>
+              </span>
+            )
+          }))}
+        />
+        <PropertySelect
+          {...common}
+          field="milestoneId"
+          label={t`Milestone`}
+          value={element.milestoneId}
+          options={milestones.map((milestone) => ({
+            value: milestone.id,
+            label: milestone.name
+          }))}
+        />
+        <PropertyDate
+          {...common}
+          field="startDate"
+          label={t`Start date`}
+          value={element.startDate}
+        />
+        <PropertyDate
+          {...common}
+          field="targetDate"
+          label={t`Target date`}
+          value={element.targetDate}
+        />
+        <LabelsField
+          {...common}
+          labelIds={(element.labels ?? []).map((l) => l.projectLabelId)}
+          labels={labels}
+        />
         {children.length > 0 && (
-          <Property label={t`Children`}>
-            <div className="flex min-w-0 flex-1 items-center gap-2 px-2">
-              <span className="shrink-0 whitespace-nowrap text-sm tabular-nums">
+          <PropertyField label={t`Children`}>
+            <div className="flex w-full items-center gap-2">
+              <span className="shrink-0 whitespace-nowrap tabular-nums">
                 {t`${completed} of ${children.length} done`}
               </span>
               <Progress
@@ -222,80 +248,103 @@ export function ElementSidebar({
                 indicatorClassName="bg-foreground/70"
               />
             </div>
-          </Property>
+          </PropertyField>
         )}
-      </Group>
+      </PropertyGroup>
 
-      {typeBlock && <Group title={typeLabels[element.type]}>{typeBlock}</Group>}
+      {typeBlock && (
+        <PropertyGroup title={typeLabels[element.type]}>
+          {typeBlock}
+        </PropertyGroup>
+      )}
 
-      <Group title={t`Work`}>
-        <Property label={t`Chargeable`}>
-          <ChargeableSwitch
-            projectId={projectId}
-            elementId={element.id}
-            isChargeable={element.isChargeable}
-            isDisabled={isDisabled || element.type === "Parameter"}
-          />
-        </Property>
-        <Property label={t`Budget`}>
-          <NumberPill {...common} field="budget" number={element.budget} />
-        </Property>
-        <Property label={t`Hours estimate`}>
-          <NumberPill
-            {...common}
-            field="estimatedHours"
-            number={element.estimatedHours}
-          />
-        </Property>
+      <PropertyGroup title={t`Work`}>
+        <PropertySwitch
+          {...common}
+          field="isChargeable"
+          label={t`Chargeable`}
+          value={element.isChargeable}
+          isDisabled={isDisabled || element.type === "Parameter"}
+        />
+        <PropertyNumber
+          {...common}
+          field="budget"
+          label={t`Budget`}
+          value={element.budget === null ? null : Number(element.budget)}
+          formatOptions={INPUT_FORMAT.money(currency, decimals)}
+          step={INPUT_STEP.money(decimals)}
+          minValue={0}
+        />
+        <PropertyNumber
+          {...common}
+          field="estimatedHours"
+          label={t`Hours estimate`}
+          value={
+            element.estimatedHours === null
+              ? null
+              : Number(element.estimatedHours)
+          }
+          formatOptions={INPUT_FORMAT.quantity}
+          step={INPUT_STEP.quantity}
+          minValue={0}
+        />
         {element.type !== "Parameter" && (
-          <Property label={t`Linked part`}>
-            <PartLink
-              projectId={projectId}
-              element={element}
-              isDisabled={isDisabled}
-            />
-          </Property>
+          <PartLink
+            projectId={projectId}
+            element={element}
+            isDisabled={isDisabled}
+          />
         )}
         {costTreatment === "Capitalize" && element.type !== "Parameter" && (
           <>
-            <Property label={t`Final asset`}>
-              <FinalAssetSwitch
-                projectId={projectId}
-                elementId={element.id}
-                isFinalAsset={element.isFinalAsset}
-                isDisabled={isDisabled}
-              />
-            </Property>
+            <PropertySwitch
+              {...common}
+              field="isFinalAsset"
+              label={t`Final asset`}
+              value={element.isFinalAsset}
+            />
             {element.isFinalAsset && (
-              <Property label={t`Asset`}>
+              <PropertyField label={t`Asset`}>
                 <CapitalAssetLink projectId={projectId} asset={capitalAsset} />
-              </Property>
+              </PropertyField>
             )}
           </>
         )}
-      </Group>
+      </PropertyGroup>
 
       {hasCosts && (
-        <Group title={t`Costs, with children`}>
-          <Property label={t`Plan`}>{money(costs.plan)}</Property>
-          <Property label={t`Committed`}>{money(costs.committed)}</Property>
-          <Property label={t`Actual`}>{money(costs.actual)}</Property>
-          <Property label={t`Remaining`}>{money(costs.remaining)}</Property>
+        <PropertyGroup title={t`Costs, with children`}>
+          <PropertyField label={t`Plan`}>{money(costs.plan)}</PropertyField>
+          <PropertyField label={t`Committed`}>
+            {money(costs.committed)}
+          </PropertyField>
+          <PropertyField label={t`Actual`}>{money(costs.actual)}</PropertyField>
+          <PropertyField label={t`Remaining`}>
+            {money(costs.remaining)}
+          </PropertyField>
           <Link
             to={path.to.projectCostsElement(projectId, element.id)}
-            className="mt-1 self-start px-2 text-xs text-muted-foreground hover:text-foreground hover:underline"
+            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
           >
             <Trans>View costs</Trans>
           </Link>
-        </Group>
+        </PropertyGroup>
       )}
 
       {element.type !== "Parameter" &&
-        (isGovernment ? (
-          <Group title={t`Government contracting`}>
-            <Property label={t`Charge number`}>
-              <span className="inline-flex h-8 items-center gap-1 px-2">
-                <span className="whitespace-nowrap text-sm tabular-nums">
+        isDcaa &&
+        (isGovernmentGated ? (
+          <ElementEarnedValue
+            projectId={projectId}
+            element={element}
+            elements={elements}
+            isDisabled={isDisabled}
+          />
+        ) : (
+          <PropertyGroup title={t`Government contracting`}>
+            <PropertyField label={t`Charge number`}>
+              <span className="flex items-center gap-1">
+                <span className="whitespace-nowrap tabular-nums">
                   {element.readableId}
                 </span>
                 <Copy
@@ -304,38 +353,28 @@ export function ElementSidebar({
                   variant="ghost"
                 />
               </span>
-            </Property>
-            <Property label={t`Unallowable`}>
-              <FlagSwitch
-                projectId={projectId}
-                elementId={element.id}
-                field="isUnallowable"
-                label={t`Unallowable`}
-                value={element.isUnallowable}
-                isDisabled={isDisabled}
-              />
-            </Property>
-            <Property label={t`Preproduction`}>
-              <FlagSwitch
-                projectId={projectId}
-                elementId={element.id}
-                field="isPreproduction"
-                label={t`Preproduction`}
-                value={element.isPreproduction}
-                isDisabled={isDisabled}
-              />
-            </Property>
+            </PropertyField>
+            <PropertySwitch
+              {...common}
+              field="isUnallowable"
+              label={t`Unallowable`}
+              termId="allowability"
+              value={element.isUnallowable}
+            />
+            <PropertySwitch
+              {...common}
+              field="isPreproduction"
+              label={t`Preproduction`}
+              termId="preproduction"
+              value={element.isPreproduction}
+            />
             {costObjective === "Indirect" && (
-              <Property label={t`Leave`}>
-                <FlagSwitch
-                  projectId={projectId}
-                  elementId={element.id}
-                  field="isLeave"
-                  label={t`Leave`}
-                  value={element.isLeave}
-                  isDisabled={isDisabled}
-                />
-              </Property>
+              <PropertySwitch
+                {...common}
+                field="isLeave"
+                label={t`Leave`}
+                value={element.isLeave}
+              />
             )}
             <BusinessComponentFields
               projectId={projectId}
@@ -348,47 +387,88 @@ export function ElementSidebar({
               elements={elements}
               isDisabled={isDisabled}
             />
-          </Group>
-        ) : (
-          <ElementEarnedValue
-            projectId={projectId}
-            element={element}
-            elements={elements}
-            isDisabled={isDisabled}
-          />
+          </PropertyGroup>
         ))}
-    </div>
+    </VStack>
   );
 }
 
-function ChargeableSwitch({
+/** The owner: the form `Employee` combobox in its inline mode. */
+function OwnerField({
   projectId,
   elementId,
-  isChargeable,
+  ownerId,
   isDisabled
 }: {
   projectId: string;
   elementId: string;
-  isChargeable: boolean;
+  ownerId: string | null;
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
-  const { pending, submit } = useElementField(
-    projectId,
-    elementId,
-    "isChargeable"
-  );
-  const checked = pending === undefined ? isChargeable : pending === "true";
+  const { pending, submit } = useElementField(projectId, elementId, "ownerId");
+  const current = pending === undefined ? ownerId : pending;
   return (
-    <div className="px-2">
-      <Switch
-        variant="small"
-        aria-label={t`Chargeable`}
-        checked={checked}
-        disabled={isDisabled}
-        onCheckedChange={(next) => submit(next ? "true" : "false")}
+    <ValidatedForm
+      key={`ownerId:${ownerId ?? ""}`}
+      defaultValues={{ ownerId: ownerId ?? "" }}
+      validator={z.object({ ownerId: zfd.text(z.string().optional()) })}
+      className="w-full"
+    >
+      <Employee
+        name="ownerId"
+        label={t`Owner`}
+        inline
+        isOptional
+        isReadOnly={isDisabled}
+        onChange={(option) => {
+          const next = option?.value || null;
+          if (next !== current) submit(next);
+        }}
       />
-    </div>
+    </ValidatedForm>
+  );
+}
+
+/** The labels: the form `MultiSelect` in its inline mode. */
+function LabelsField({
+  projectId,
+  elementId,
+  labelIds,
+  labels,
+  isDisabled
+}: {
+  projectId: string;
+  elementId: string;
+  labelIds: string[];
+  labels: ProjectLabel[];
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const { submit } = useElementField(projectId, elementId, "labelIds");
+  return (
+    <ValidatedForm
+      key={`labelIds:${labelIds.join(",")}`}
+      defaultValues={{ labelIds }}
+      validator={z.object({ labelIds: z.array(z.string()).optional() })}
+      className="w-full"
+    >
+      <MultiSelect
+        name="labelIds"
+        label={t`Labels`}
+        inline
+        isReadOnly={isDisabled}
+        value={labelIds}
+        options={labels.map((label) => ({
+          value: label.id,
+          label: label.name
+        }))}
+        onChange={(next) => {
+          const ids = next.map((option) => option.value);
+          submit(ids.length > 0 ? ids.join(",") : null);
+        }}
+      />
+    </ValidatedForm>
   );
 }
 
@@ -409,6 +489,7 @@ function BusinessComponentFields({
   const { t } = useLingui();
   const componentTypeLabels = useRdComponentTypeLabels();
   const softwareTypeLabels = useRdSoftwareTypeLabels();
+  const common = { projectId, elementId: element.id, isDisabled };
   // The switch's own fetcher: its pending value shows the selects at once.
   const { pending } = useElementField(
     projectId,
@@ -420,120 +501,38 @@ function BusinessComponentFields({
 
   return (
     <>
-      <Property label={t`Business component (R&D)`}>
-        <FlagSwitch
-          projectId={projectId}
-          elementId={element.id}
-          field="isBusinessComponent"
-          label={t`Business component (R&D)`}
-          value={element.isBusinessComponent}
-          isDisabled={isDisabled}
-        />
-      </Property>
+      <PropertySwitch
+        {...common}
+        field="isBusinessComponent"
+        label={t`Business component (R&D)`}
+        termId="business-component"
+        value={element.isBusinessComponent}
+      />
       {isOn && (
         <>
-          <Property label={t`Component type`}>
-            <ChoicePill
-              projectId={projectId}
-              elementId={element.id}
-              field="rdComponentType"
-              value={element.rdComponentType}
-              options={rdComponentTypes.map((value) => ({
-                value,
-                label: componentTypeLabels[value]
-              }))}
-              placeholder={t`Choose a type`}
-              label={t`Change component type`}
-              variant="ghost"
-              isDisabled={isDisabled}
-            />
-          </Property>
-          <Property label={t`Software type`}>
-            <ChoicePill
-              projectId={projectId}
-              elementId={element.id}
-              field="rdSoftwareType"
-              value={element.rdSoftwareType}
-              options={rdSoftwareTypes.map((value) => ({
-                value,
-                label: softwareTypeLabels[value]
-              }))}
-              noneLabel={t`None`}
-              placeholder={t`None`}
-              label={t`Change software type`}
-              variant="ghost"
-              isDisabled={isDisabled}
-            />
-          </Property>
+          <PropertySelect
+            {...common}
+            field="rdComponentType"
+            label={t`Component type`}
+            value={element.rdComponentType}
+            options={rdComponentTypes.map((value) => ({
+              value,
+              label: componentTypeLabels[value]
+            }))}
+          />
+          <PropertySelect
+            {...common}
+            field="rdSoftwareType"
+            label={t`Software type`}
+            value={element.rdSoftwareType}
+            options={rdSoftwareTypes.map((value) => ({
+              value,
+              label: softwareTypeLabels[value]
+            }))}
+          />
         </>
       )}
     </>
-  );
-}
-
-/** A yes/no element flag, saved through the element field update route. */
-function FlagSwitch({
-  projectId,
-  elementId,
-  field,
-  label,
-  value,
-  isDisabled
-}: {
-  projectId: string;
-  elementId: string;
-  field:
-    | "isUnallowable"
-    | "isPreproduction"
-    | "isLeave"
-    | "isBusinessComponent";
-  label: string;
-  value: boolean;
-  isDisabled: boolean;
-}) {
-  const { pending, submit } = useElementField(projectId, elementId, field);
-  const checked = pending === undefined ? value : pending === "true";
-  return (
-    <div className="px-2">
-      <Switch
-        variant="small"
-        aria-label={label}
-        checked={checked}
-        disabled={isDisabled}
-        onCheckedChange={(next) => submit(next ? "true" : "false")}
-      />
-    </div>
-  );
-}
-
-function FinalAssetSwitch({
-  projectId,
-  elementId,
-  isFinalAsset,
-  isDisabled
-}: {
-  projectId: string;
-  elementId: string;
-  isFinalAsset: boolean;
-  isDisabled: boolean;
-}) {
-  const { t } = useLingui();
-  const { pending, submit } = useElementField(
-    projectId,
-    elementId,
-    "isFinalAsset"
-  );
-  const checked = pending === undefined ? isFinalAsset : pending === "true";
-  return (
-    <div className="px-2">
-      <Switch
-        variant="small"
-        aria-label={t`Final asset`}
-        checked={checked}
-        disabled={isDisabled}
-        onCheckedChange={(next) => submit(next ? "true" : "false")}
-      />
-    </div>
   );
 }
 
@@ -549,13 +548,13 @@ function CapitalAssetLink({
   const [placing, setPlacing] = useState(false);
   if (!asset) {
     return (
-      <span className="px-2 text-sm text-muted-foreground">
+      <span className="text-sm text-muted-foreground">
         <Trans>Created when the project is released</Trans>
       </span>
     );
   }
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2 px-2">
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
       <Link
         to={path.to.fixedAsset(asset.id)}
         className="font-mono text-sm hover:underline"

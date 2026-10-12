@@ -32,16 +32,8 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import type { ComponentPropsWithoutRef, ReactNode, RefObject } from "react";
-import {
-  createContext,
-  forwardRef,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import { forwardRef, useMemo, useState } from "react";
 import {
   LuCalendar,
   LuCalendarCheck,
@@ -200,62 +192,6 @@ type FieldPillProps = {
   isDisabled?: boolean;
 };
 
-// --- Keyboard shortcuts -------------------------------------------------------
-
-/** The pills a keyboard shortcut can open (`PROJECT_SHORTCUTS`). */
-export type PillShortcutField = "state" | "owner" | "priority" | "labels";
-
-export type PillShortcutRequest = {
-  elementId: string;
-  field: PillShortcutField;
-};
-
-const PillShortcutContext = createContext<PillShortcutRequest | null>(null);
-
-/**
- * Pills under this provider open when a shortcut asks for their element and
- * field. The element page and the List layout each have one, so the open
- * peek and the list row never both answer.
- */
-export const PillShortcutProvider = PillShortcutContext.Provider;
-
-/**
- * The request a shortcut makes, for `PillShortcutProvider`. It clears itself
- * after one commit: the pills' effects run before this (parent) effect, so a
- * row that mounts later never reopens.
- */
-export function usePillShortcutRequest() {
-  const [request, setRequest] = useState<PillShortcutRequest | null>(null);
-  useEffect(() => {
-    if (request) setRequest(null);
-  }, [request]);
-  return [request, setRequest] as const;
-}
-
-/**
- * Opens a pill when the nearest provider's request names it. A hidden copy
- * (the List row keeps a narrow and a wide state pill) has no box and stays
- * closed.
- */
-function usePillShortcut(
-  elementId: string,
-  field: PillShortcutField,
-  isDisabled: boolean | undefined,
-  triggerRef: RefObject<HTMLButtonElement>,
-  open: () => void
-) {
-  const request = useContext(PillShortcutContext);
-  const openRef = useRef(open);
-  openRef.current = open;
-  useEffect(() => {
-    if (!request || isDisabled) return;
-    if (request.elementId !== elementId || request.field !== field) return;
-    const trigger = triggerRef.current;
-    if (!trigger || trigger.getClientRects().length === 0) return;
-    openRef.current();
-  }, [request, elementId, field, isDisabled, triggerRef]);
-}
-
 // --- State --------------------------------------------------------------------
 
 const groupOrder = new Map<ProjectStateGroup, number>(
@@ -281,10 +217,6 @@ export function StatePill({
 }: FieldPillProps & { stateId: string; states: ProjectState[] }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  usePillShortcut(elementId, "state", isDisabled, triggerRef, () =>
-    setOpen(true)
-  );
   const { pending, submit } = useElementField(projectId, elementId, "stateId");
   const value = shown(pending, stateId);
   const state = states.find((s) => s.id === value);
@@ -294,7 +226,6 @@ export function StatePill({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Pill
-          ref={triggerRef}
           variant={variant}
           isDisabled={isDisabled}
           aria-label={t`Change state`}
@@ -346,10 +277,6 @@ export function OwnerPill({
 }: FieldPillProps & { ownerId: string | null }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  usePillShortcut(elementId, "owner", isDisabled, triggerRef, () =>
-    setOpen(true)
-  );
   const [people] = usePeople();
   const user = useUser();
   const { pending, submit } = useElementField(projectId, elementId, "ownerId");
@@ -370,7 +297,6 @@ export function OwnerPill({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Pill
-          ref={triggerRef}
           variant={variant}
           isDisabled={isDisabled}
           aria-label={t`Change owner`}
@@ -472,10 +398,6 @@ export function PriorityPill({
 }: FieldPillProps & { priority: ProjectElementPriority }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  usePillShortcut(elementId, "priority", isDisabled, triggerRef, () =>
-    setOpen(true)
-  );
   const labels = usePriorityLabels();
   const { pending, submit } = useElementField(projectId, elementId, "priority");
   const value = shown(pending, priority) ?? "None";
@@ -484,7 +406,6 @@ export function PriorityPill({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Pill
-          ref={triggerRef}
           variant={variant}
           isDisabled={isDisabled}
           aria-label={t`Change priority`}
@@ -536,10 +457,6 @@ export function LabelsPill({
 }: FieldPillProps & { labelIds: string[]; labels: ProjectLabel[] }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  usePillShortcut(elementId, "labels", isDisabled, triggerRef, () =>
-    setOpen(true)
-  );
   const { pending, submit } = useElementField(projectId, elementId, "labelIds");
   const value =
     pending === undefined
@@ -560,7 +477,6 @@ export function LabelsPill({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Pill
-          ref={triggerRef}
           variant={variant}
           isDisabled={isDisabled}
           aria-label={t`Change labels`}

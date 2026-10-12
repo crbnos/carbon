@@ -190,26 +190,6 @@ const ShortcutHelp = () => {
         group: projectElements
       },
       {
-        shortcut: PROJECT_SHORTCUTS.state,
-        description: t`Change the state (the open or selected element)`,
-        group: projectElements
-      },
-      {
-        shortcut: PROJECT_SHORTCUTS.owner,
-        description: t`Change the owner (the open or selected element)`,
-        group: projectElements
-      },
-      {
-        shortcut: PROJECT_SHORTCUTS.priority,
-        description: t`Change the priority (the open or selected element)`,
-        group: projectElements
-      },
-      {
-        shortcut: PROJECT_SHORTCUTS.labels,
-        description: t`Change the labels (the open or selected element)`,
-        group: projectElements
-      },
-      {
         shortcut: PROJECT_SHORTCUTS.logTime,
         description: t`Log time (the open element)`,
         group: projectElements

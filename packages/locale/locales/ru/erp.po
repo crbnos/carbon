@@ -741,8 +741,8 @@ msgstr "{variances, plural, one {# строка отличается от ожи
 msgid "{years}yr"
 msgstr "{years}год"
 
-msgid "§174A R&E (domestic and foreign)"
-msgstr "§174A R&E (отечественные и иностранные)"
+msgid "§174A R&E"
+msgstr ""
 
 msgid "/month/user"
 msgstr "/месяц/пользователь"
@@ -901,6 +901,15 @@ msgstr "3ч"
 msgid "4 digits for a CLIN; 2 letters or digits more for a SubCLIN"
 msgstr "4 цифры для CLIN; на 2 буквы или цифры больше для SubCLIN"
 
+msgid "49(c) Business Component"
+msgstr ""
+
+msgid "49(d) Component Type"
+msgstr ""
+
+msgid "49(e) Software Type"
+msgstr ""
+
 msgid "4h"
 msgstr "4ч"
 
@@ -910,11 +919,32 @@ msgstr "Минимум 5 пользователей"
 msgid "5-8 weeks"
 msgstr "5-8 недель"
 
+msgid "50 Direct Research Wages"
+msgstr ""
+
 msgid "50/50"
 msgstr "50/50"
 
+msgid "51 Direct Supervision Wages"
+msgstr ""
+
+msgid "52 Direct Support Wages"
+msgstr ""
+
 msgid "52-week demand"
 msgstr "Потребность на 52 недели"
+
+msgid "53 Total Wages"
+msgstr ""
+
+msgid "54 Supplies"
+msgstr ""
+
+msgid "55 Computer Rental"
+msgstr ""
+
+msgid "56 Applicable Contract Research"
+msgstr ""
 
 msgid "5MB file limit"
 msgstr "Лимит файла 5МБ"
@@ -1981,6 +2011,9 @@ msgstr "Фактическое начало"
 msgid "Actual time"
 msgstr "Фактическое время"
 
+msgid "Actual value"
+msgstr ""
+
 msgid "ACWP"
 msgstr "ACWP"
 
@@ -2463,6 +2496,10 @@ msgstr "После (способ расчета)"
 msgid "Afternoon, {name}."
 msgstr "Добрый день, {name}."
 
+#. placeholder {0}: row.original.aggregateCount
+msgid "Aggregate of {0} business components"
+msgstr ""
+
 msgid "Aging"
 msgstr "Возраст"
 
@@ -2508,6 +2545,9 @@ msgstr "Все действия выбраны"
 
 msgid "All advanced features available"
 msgstr "Все расширенные функции доступны"
+
+msgid "All amounts are in whole dollars. Columns 53, Total QRE and the Total row add the rounded amounts."
+msgstr ""
 
 msgid "All Audit Logs"
 msgstr "Все журналы аудита"
@@ -2630,8 +2670,11 @@ msgstr "Допустимость"
 msgid "Allowable"
 msgstr "Допустимо"
 
-msgid "Allowable and unallowable cost of each contract line item, with its funding and billing"
-msgstr "Допустимые и недопустимые затраты каждой строки контракта с её финансированием и выставлением счетов"
+msgid "Allowable and unallowable cost of each contract line, with funding and billing"
+msgstr ""
+
+msgid "Allowable Cost"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
@@ -3087,6 +3130,9 @@ msgstr "Утверждено <0/> пользователем <1/>"
 
 msgid "Approved By"
 msgstr "Одобрено"
+
+msgid "Approved On"
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Приблизительно — получено из запланированных дат; нет резервирования мощности для этой строки."
@@ -3862,8 +3908,8 @@ msgstr "Атрибуты"
 msgid "Attributes are inherited from the procedure."
 msgstr "Атрибуты наследуются из процедуры."
 
-msgid "Audit and contracts"
-msgstr "Аудит и контракты"
+msgid "Audit and Contracts"
+msgstr ""
 
 msgid "Audit Log"
 msgstr "Журнал аудита"
@@ -4206,6 +4252,9 @@ msgstr "BCWP"
 
 msgid "BCWS"
 msgstr "BCWS"
+
+msgid "Before"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "До переключения"
@@ -4588,6 +4637,9 @@ msgstr "Массовые производственные заказы"
 msgid "Burden"
 msgstr "Обремение"
 
+msgid "Burden (for review)"
+msgstr ""
+
 msgid "Burden bills at the lower of the billing rate and the ceiling. With no ceiling, a pool bills at its billing rate."
 msgstr "Обремение выставляет счета по наименьшему из тарифа выставления счетов и потолка. Без потолка пул выставляет счета по своему тарифу выставления счетов."
 
@@ -4617,6 +4669,9 @@ msgid "Business"
 msgstr ""
 
 msgid "Business component"
+msgstr ""
+
+msgid "Business Component"
 msgstr ""
 
 msgid "Business component (R&D)"
@@ -5078,9 +5133,6 @@ msgstr "Чемпионы"
 msgid "Change"
 msgstr "Изменить"
 
-msgid "Change component type"
-msgstr "Изменить тип компонента"
-
 msgid "Change Date"
 msgstr "Изменить дату"
 
@@ -5135,9 +5187,6 @@ msgstr "Запросы на изменение"
 msgid "Change Requests"
 msgstr "Запросы на изменение"
 
-msgid "Change software type"
-msgstr "Изменить тип программного обеспечения"
-
 msgid "Change state"
 msgstr "Изменить состояние"
 
@@ -5146,18 +5195,6 @@ msgstr "Изменить статус"
 
 msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
 msgstr "Измените тип номенклатуры (например, Деталь, Материал, Инструмент и т. д.)"
-
-msgid "Change the labels (the open or selected element)"
-msgstr "Изменить метки (открытого или выбранного элемента)"
-
-msgid "Change the owner (the open or selected element)"
-msgstr "Изменить ответственного (открытого или выбранного элемента)"
-
-msgid "Change the priority (the open or selected element)"
-msgstr "Изменить приоритет (открытого или выбранного элемента)"
-
-msgid "Change the state (the open or selected element)"
-msgstr "Изменить состояние (открытого или выбранного элемента)"
 
 msgid "Change Time"
 msgstr "Изменить время"
@@ -5310,9 +5347,6 @@ msgstr "Выберите номер партии"
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Выберите пакетируемый процесс, чтобы увидеть операции, которые могут выполняться вместе."
 
-msgid "Choose a field"
-msgstr "Выберите поле"
-
 msgid "Choose a labor category"
 msgstr ""
 
@@ -5340,9 +5374,6 @@ msgstr "Выберите налоговый год"
 
 msgid "Choose a template"
 msgstr "Выберите шаблон"
-
-msgid "Choose a type"
-msgstr "Выберите тип"
 
 msgid "Choose an element to log time, issue a part or add an expense."
 msgstr ""
@@ -5622,6 +5653,18 @@ msgstr ""
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
 msgstr "Столбец {0} из {count}"
+
+msgid "Column 49(b): enter the principal business activity (PBA) code from your return. Column 49(f) is required only on an amended return."
+msgstr ""
+
+msgid "Column 54 includes every Material cost. Remove the cost of depreciable property (§41(b)(2)(C))."
+msgstr ""
+
+msgid "Column 55 is not tracked in Carbon."
+msgstr ""
+
+msgid "Column 56 applies 65 % to all contract research, including Outside Processing and Purchased Service costs. Adjust payments that take another rate, and move basic research payments to line 46."
+msgstr ""
 
 msgid "Column dimension"
 msgstr "Измерение столбца"
@@ -7596,6 +7639,9 @@ msgstr "Ежедневные вопросы и поддержка после з�
 msgid "Days"
 msgstr "Дни"
 
+msgid "Days After Entry"
+msgstr ""
+
 msgid "Days Discount"
 msgstr "Дни скидки"
 
@@ -8746,6 +8792,12 @@ msgstr "Открытые вами документы появятся здесь
 msgid "Dollar Utilization"
 msgstr "Использование в долларах"
 
+msgid "Dollars Difference"
+msgstr ""
+
+msgid "Domestic"
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "Не отменять"
 
@@ -9541,6 +9593,9 @@ msgstr "Редактирование <0>{0}</0>: {1}. Изменения пер�
 msgid "Effective From"
 msgstr "Действует с"
 
+msgid "EIN (49(a)): {einText}"
+msgstr ""
+
 msgid "Element"
 msgstr "Элемент"
 
@@ -9622,6 +9677,9 @@ msgstr "сотрудники"
 
 msgid "Employees"
 msgstr "Сотрудники"
+
+msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
+msgstr ""
 
 msgid "Empty"
 msgstr "Пусто"
@@ -9867,6 +9925,9 @@ msgstr "Введите себестоимость производства. Ст
 msgid "Entered At Receipt"
 msgstr "Введено при получении"
 
+msgid "Entered On"
+msgstr ""
+
 msgid "Enterprise"
 msgstr "Enterprise"
 
@@ -9899,6 +9960,9 @@ msgstr "Тип сущности не может быть изменён"
 
 msgid "Entry"
 msgstr "Запись"
+
+msgid "Entry Date"
+msgstr ""
 
 msgid "Entry Type"
 msgstr "Тип записи"
@@ -10066,8 +10130,8 @@ msgstr "Все записи компании. Учётные данные, то�
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
-msgid "Every entry dated in the range and every change made to it"
-msgstr "Каждая запись с датой в диапазоне и каждое сделанное в ней изменение"
+msgid "Every entry in the range and every change made to it"
+msgstr ""
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
@@ -11208,6 +11272,9 @@ msgstr "Потребление прогноза"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Метод прогноза: <0>{0}</0>. Эта строка не была получена из активных производственных заказов, поэтому нет доступных источников."
 
+msgid "Foreign"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Забыли завершить окончание работы?"
 
@@ -11917,8 +11984,8 @@ msgstr "Часы"
 msgid "Hours and amounts on T&M contracts"
 msgstr "Часы и суммы по контрактам T&M"
 
-msgid "Hours and dollars by employee and charge number, reconciled to timecards and payroll"
-msgstr "Часы и доллары по сотруднику и номеру счета, согласованные с табелями и расчетной ведомостью"
+msgid "Hours and dollars by employee and charge number, reconciled to payroll"
+msgstr ""
 
 msgid "Hours assumed from location shifts"
 msgstr "Часы предполагаются на основе смен в месте"
@@ -11930,8 +11997,15 @@ msgstr "Часы на этом рабочем месте"
 msgid "Hours burn · {0} planned"
 msgstr "Сгорание часов · {0} запланировано"
 
+msgid "Hours Difference"
+msgstr ""
+
 msgid "Hours estimate"
 msgstr "Смета часов"
+
+#. placeholder {0}: format.hours(unknownCountryHours)
+msgid "Hours excluded for an unknown work country: {0}"
+msgstr ""
 
 msgid "Hours not yet assigned"
 msgstr "Часы, ещё не назначенные"
@@ -13346,8 +13420,8 @@ msgstr "Категория труда или Сотрудник"
 msgid "Labor Costs"
 msgstr "Стоимость труда"
 
-msgid "Labor distribution"
-msgstr "Распределение труда"
+msgid "Labor Distribution"
+msgstr ""
 
 msgid "Labor ended"
 msgstr "Труд завершен"
@@ -13376,8 +13450,8 @@ msgstr "Трудозатраты"
 msgid "Labor transfer"
 msgstr ""
 
-msgid "Labor transfers"
-msgstr "Перемещения труда"
+msgid "Labor Transfers"
+msgstr ""
 
 msgid "Labor unit"
 msgstr "Единица труда"
@@ -13473,14 +13547,17 @@ msgstr "Дата последнего обучения"
 msgid "Last used"
 msgstr "Последний раз использован"
 
-msgid "Late entries"
-msgstr "Поздние записи"
+msgid "Late Entries"
+msgstr ""
 
 msgid "Late Entry"
 msgstr "Поздняя запись"
 
 msgid "Late in the evening, {name}."
 msgstr "Поздно вечером, {name}."
+
+msgid "Late Reason"
+msgstr ""
 
 msgid "Later weeks are consumed once earlier ones are used up."
 msgstr "Запас из поздних недель расходуется после того, как запас из ранних недель исчерпан."
@@ -14667,8 +14744,8 @@ msgstr "Отсутствующие стоимости доставки"
 msgid "Missing Suppliers"
 msgstr "Отсутствуют поставщики"
 
-msgid "Missing time"
-msgstr "Недостающее время"
+msgid "Missing Time"
+msgstr ""
 
 msgid "Missing:"
 msgstr "Отсутствует:"
@@ -15663,9 +15740,6 @@ msgstr "Записи о калибровке не найдены"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Нет резервирований мощности для визуализации. Запланируйте задание, чтобы увидеть нагрузку рабочего центра."
 
-msgid "No category"
-msgstr "Нет категории"
-
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Нет лимитов. Косвенные расходы выставляются по ставкам выставления счетов."
 
@@ -15843,6 +15917,9 @@ msgstr "Нет подходящих операций"
 msgid "No email address for this customer"
 msgstr "Нет адреса электронной почты для этого покупателя"
 
+msgid "No employee"
+msgstr ""
+
 msgid "No employees assigned this week"
 msgstr "На эту неделю не назначены сотрудники"
 
@@ -16014,9 +16091,6 @@ msgstr "Членов еще нет. Проект с запасами проек�
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "Членов еще нет. Никто не может отнести время на проект."
 
-msgid "No method"
-msgstr "Нет метода"
-
 msgid "No milestone"
 msgstr "Нет вехи"
 
@@ -16111,14 +16185,8 @@ msgstr "Нет запланированных переработок"
 msgid "No owner"
 msgstr "Нет ответственного"
 
-msgid "No parameter"
-msgstr "Нет параметра"
-
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Родительские источники еще не записаны. Нажмите \"Пересчитать\" на странице планирования, чтобы обновить атрибуцию."
-
-msgid "No part"
-msgstr "Нет детали"
 
 msgid "No part ID"
 msgstr "Нет ID детали"
@@ -16134,6 +16202,9 @@ msgstr "Нет кредиторской задолженности"
 
 msgid "No payments yet."
 msgstr "Платежей пока нет."
+
+msgid "No payroll imported"
+msgstr ""
 
 msgid "No pegs on that day"
 msgstr ""
@@ -16182,9 +16253,6 @@ msgstr "Нет приоритета"
 
 msgid "No problem described"
 msgstr "Проблема не описана"
-
-msgid "No procedure"
-msgstr "Нет процедуры"
 
 msgid "No process selected"
 msgstr "Процесс не выбран"
@@ -16372,9 +16440,6 @@ msgstr "Поставщиков еще нет"
 msgid "No sync operations yet"
 msgstr "Операции синхронизации еще не выполнены"
 
-msgid "No target"
-msgstr "Нет цели"
-
 msgid "No time entries for this week"
 msgstr "Нет записей о времени на эту неделю"
 
@@ -16437,9 +16502,6 @@ msgstr "Нет переменных соответствующих {query}"
 
 msgid "No variables available"
 msgstr "Нет доступных переменных"
-
-msgid "No verdict"
-msgstr "Нет вердикта"
 
 msgid "No versions available"
 msgstr "Нет доступных версий"
@@ -16590,6 +16652,9 @@ msgstr "Не отправлено"
 
 msgid "Not set"
 msgstr "Не установлено"
+
+msgid "not set in company settings"
+msgstr ""
 
 msgid "Not set up"
 msgstr "Не настроено"
@@ -16743,6 +16808,9 @@ msgstr "Из финансируемой стоимости от 75% до 85%"
 #. placeholder {0}: money(burden)
 msgid "of which burden: {0}"
 msgstr "из которых бремя: {0}"
+
+msgid "Of Which Funded"
+msgstr ""
 
 msgid "Off"
 msgstr "Выключено"
@@ -19204,8 +19272,8 @@ msgstr "Квалифицирован"
 msgid "Qualified Employees"
 msgstr "Квалифицированные сотрудники"
 
-msgid "Qualified research expenses of each business component, in descending order, with the aggregate row"
-msgstr "Квалифицированные расходы на исследования каждого компонента бизнеса в порядке убывания с итоговой строкой"
+msgid "Qualified research expenses of each business component"
+msgstr ""
 
 msgid "quality"
 msgstr "качество"
@@ -19401,8 +19469,8 @@ msgstr "Коммерческие предложения и заказы поку
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Предложения, Заказы, Конфигурирование на заказ"
 
-msgid "R&D tax"
-msgstr "Налог на НИОКР"
+msgid "R&D Tax"
+msgstr ""
 
 msgid "Raise it at the weekly status call"
 msgstr "Поднимите это на еженедельном статус-звонке"
@@ -19770,6 +19838,12 @@ msgstr "Запишите выплату {displayId} сотруднику. Опл
 
 msgid "Record type"
 msgstr "Тип записи"
+
+msgid "Recorded At"
+msgstr ""
+
+msgid "Recorded By"
+msgstr ""
 
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Зафиксировано при калибровке, что средство измерения нуждается в ремонте перед использованием его показаний."
@@ -20306,6 +20380,9 @@ msgstr "Запросить новое приглашение"
 msgid "Request Approval"
 msgstr "Запросить утверждение"
 
+msgid "Requested By"
+msgstr ""
+
 msgid "Requested Date"
 msgstr "Запрошенная дата"
 
@@ -20420,8 +20497,8 @@ msgstr "Перенести визит"
 msgid "Research (R&D tax)"
 msgstr "Исследование (Налог на НИОКР)"
 
-msgid "Research cost of each business component by tax year, split by the country where the work took place"
-msgstr "Стоимость исследований каждого компонента бизнеса по налоговому году, разделенная по стране, где проводились работы"
+msgid "Research cost of each business component, domestic and foreign"
+msgstr ""
 
 msgid "Research role"
 msgstr "Исследовательская роль"
@@ -21438,8 +21515,8 @@ msgstr "Запланированное техобслуживание"
 msgid "Scheduled Maintenances"
 msgstr "Запланированные техобслуживания"
 
-msgid "Scheduled work days with no time entered, with each employee's manager"
-msgstr "Дни запланированной работы без введенного времени с каждым менеджером сотрудника"
+msgid "Scheduled work days with no time entered, with each manager"
+msgstr ""
 
 msgid "Schedules"
 msgstr "Расписания"
@@ -21639,6 +21716,10 @@ msgstr "Секрет скопирован в буфер обмена"
 
 msgid "Section"
 msgstr "Раздел"
+
+#. placeholder {0}: format.money(officerWages)
+msgid "Section E line 38, officers' wage QREs: {0}"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Защитите свою учетную запись с помощью 2FA"
@@ -25096,6 +25177,9 @@ msgstr "Таймер запускается вручную"
 msgid "The tooling and fixtures your operations rely on"
 msgstr "Инструменты и приспособления, на которые полагаются ваши операции"
 
+msgid "The Total row sums every row, the aggregate row included. Its columns 53 to 56 go to Section F lines 42 to 45."
+msgstr ""
+
 msgid "The total to make across all jobs created in this bulk batch; combined with Quantity Per Job to decide how many jobs to create."
 msgstr "Общее количество для производства по всем производственным заказам, созданным в этой групповой партии; в сочетании с Количество на производственный заказ решает, сколько производственных заказов создать."
 
@@ -25737,11 +25821,11 @@ msgstr "Время и материалы"
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Использование арендного парка по времени и стоимости по активам и классам"
 
-msgid "Time entered after the entry window, with the reason the employee gave"
-msgstr "Время, введенное после окна ввода, с причиной, указанной сотрудником"
+msgid "Time entered after the entry window, with the reason given"
+msgstr ""
 
-msgid "Time moved between charge numbers, with the reason, the requester and the approver"
-msgstr "Время перемещено между номерами начисления с причиной, запросившим и утверждающим"
+msgid "Time moved between charge numbers, with the reason and approver"
+msgstr ""
 
 msgid "Time not posted yet"
 msgstr "Время еще не проведено"
@@ -25760,6 +25844,9 @@ msgstr "Табель учета рабочего времени"
 
 msgid "Timecard check"
 msgstr "Проверка табеля учета рабочего времени"
+
+msgid "Timecard Hours"
+msgstr ""
 
 msgid "Timecards"
 msgstr "Табели учета рабочего времени"
@@ -25788,8 +25875,8 @@ msgstr "Табель учета рабочего времени"
 msgid "Timesheet Approval"
 msgstr "Утверждение табеля учета рабочего времени"
 
-msgid "Timesheet export for auditors"
-msgstr "Экспорт табеля учета рабочего времени для аудиторов"
+msgid "Timesheet Audit"
+msgstr ""
 
 msgid "Timezone"
 msgstr "Часовой пояс"
@@ -25799,9 +25886,6 @@ msgstr "Название"
 
 msgid "Title passes to the customer when the term ends."
 msgstr "Право собственности переходит к покупателю по окончании срока."
-
-msgid "to"
-msgstr "в"
 
 msgid "To"
 msgstr "До"
@@ -26002,6 +26086,9 @@ msgstr "Общая цена"
 
 msgid "Total Profit"
 msgstr "Итоговая прибыль"
+
+msgid "Total QRE"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Итого количество"
@@ -26307,6 +26394,9 @@ msgstr "Не удается разблокировать"
 msgid "Unallowable"
 msgstr "Недопустимо"
 
+msgid "Unallowable Cost"
+msgstr ""
+
 msgid "Unallowable reason"
 msgstr "Причина недопустимости"
 
@@ -26351,6 +26441,9 @@ msgstr "Дебиторская задолженность по ренте, за�
 
 msgid "Unbilled:"
 msgstr "Невыставленные:"
+
+msgid "Unclassified"
+msgstr ""
 
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Неучтённые строки остаются неизменными при отправке — они не обнуляются."
@@ -26459,6 +26552,9 @@ msgstr "Единицы, объявленные неремонтируемыми 
 
 msgid "Unknown"
 msgstr "Неизвестно"
+
+msgid "Unknown Country"
+msgstr ""
 
 msgid "Unknown element"
 msgstr "Неизвестный элемент"

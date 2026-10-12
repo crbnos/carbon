@@ -69,10 +69,6 @@ export const PROJECT_TAB_SHORTCUTS = {
  */
 export const PROJECT_SHORTCUTS = {
   create: SHORTCUTS.newRecord,
-  state: "s",
-  owner: "a",
-  priority: "p",
-  labels: "l",
   logTime: "t",
   issueMaterial: "i"
 } as const satisfies Record<string, ShortcutInput>;
